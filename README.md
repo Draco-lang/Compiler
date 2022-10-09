@@ -10,4 +10,4 @@
 </p>
 
 ### What is this?
-This is the repository for the work-in-progress compiler for the Draco programming language, a new .NET programming language under development. If you want further details on the language itself or want to contribute ideas, head over to the [language suggestions repository]([https://www.github.com/Draco-lang/Language-suggestions).
+This is the repository for the work-in-progress compiler for the Draco programming language, a new .NET programming language under development. If you want further details on the language itself or want to contribute ideas, head over to the [language suggestions repository](https://github.com/Draco-lang/Language-suggestions).

@@ -1,6 +1,6 @@
 <p align="center">
-    <img src="./Resources/Logo-Long.svg#gh-light-mode-only" width=60%>
-    <img src="./Resources/Logo-Long-Inverted.svg#gh-dark-mode-only" width=60%>
+    <img src="https://raw.githubusercontent.com/Draco-lang/Language-suggestions/main/Resources/Logo-Long.svg#gh-light-mode-only" width=60%>
+    <img src="https://raw.githubusercontent.com/Draco-lang/Language-suggestions/main/Resources/Logo-Long-Inverted.svg#gh-dark-mode-only" width=60%>
 </p>
 
 <h1 align="center">The Draco programming language compiler</h1>

@@ -28,30 +28,22 @@ public sealed class Lexer
     public Token Next()
     {
         // End of input
-        if (this.SourceReader.IsEnd) return new(TokenType.EndOfInput, string.Empty);
+        if (this.SourceReader.IsEnd) return new(TokenType.EndOfInput, ReadOnlyMemory<char>.Empty);
 
         var ch = this.Peek();
-
-        // NOTE: We are using the this.Skip method at quite a few places
-        // This means we have quite a bit of redundancy, while we could just use this.Take, because the length
-        // would be harder to mess up. I have two reasons to use this.Skip everywhere possible:
-        //  - this.Take builds up a new string, while this.Skip uses string constants. My hope is that this
-        //    results in less allocations overall.
-        //  - This is a good indicator for which tokens don't need text stored, as it could be inferred from the
-        //    token type. The only exception would be the keywords, we construct them from identifier tokens currently.
 
         // Newlines
         if (ch == '\r')
         {
             // Windows-style newline
-            if (this.Peek(1) == '\n') return this.Skip(TokenType.Newline, "\r\n");
+            if (this.Peek(1) == '\n') return this.Take(TokenType.Newline, 2);
             // OS-X 9-style newline
-            return this.Skip(TokenType.Newline, "\r");
+            return this.Take(TokenType.Newline, 1);
         }
         if (ch == '\n')
         {
             // UNIX-style newline
-            return this.Skip(TokenType.Newline, "\n");
+            return this.Take(TokenType.Newline, 1);
         }
 
         // Whitespace
@@ -77,17 +69,17 @@ public sealed class Lexer
         // Punctuation
         switch (ch)
         {
-        case '(': return this.Skip(TokenType.ParenOpen, "(");
-        case ')': return this.Skip(TokenType.ParenClose, ")");
-        case '{': return this.Skip(TokenType.CurlyOpen, "{");
-        case '}': return this.Skip(TokenType.CurlyClose, "}");
-        case '[': return this.Skip(TokenType.BracketOpen, "[");
-        case ']': return this.Skip(TokenType.BracketClose, "]");
+        case '(': return this.Take(TokenType.ParenOpen, 1);
+        case ')': return this.Take(TokenType.ParenClose, 1);
+        case '{': return this.Take(TokenType.CurlyOpen, 1);
+        case '}': return this.Take(TokenType.CurlyClose, 1);
+        case '[': return this.Take(TokenType.BracketOpen, 1);
+        case ']': return this.Take(TokenType.BracketClose, 1);
 
-        case '.': return this.Skip(TokenType.Dot, ".");
-        case ',': return this.Skip(TokenType.Comma, ",");
-        case ':': return this.Skip(TokenType.Colon, ":");
-        case ';': return this.Skip(TokenType.Semicolon, ";");
+        case '.': return this.Take(TokenType.Dot, 1);
+        case ',': return this.Take(TokenType.Comma, 1);
+        case ':': return this.Take(TokenType.Colon, 1);
+        case ';': return this.Take(TokenType.Semicolon, 1);
         }
 
         // Numeric literals
@@ -108,11 +100,12 @@ public sealed class Lexer
             for (; IsIdent(this.Peek(offset)); ++offset) ;
             var token = this.Take(TokenType.LiteralInteger, offset);
             // Remap keywords
+            // TODO: Any better/faster way?
             var newTokenType = token.Text switch
             {
-                "from" => TokenType.KeywordFrom,
-                "func" => TokenType.KeywordFunc,
-                "import" => TokenType.KeywordImport,
+                var _ when token.Text.Span.SequenceEqual("from") => TokenType.KeywordFrom,
+                var _ when token.Text.Span.SequenceEqual("func") => TokenType.KeywordFunc,
+                var _ when token.Text.Span.SequenceEqual("import") => TokenType.KeywordImport,
                 _ => TokenType.Identifier,
             };
             return new(newTokenType, token.Text);
@@ -122,25 +115,14 @@ public sealed class Lexer
         return this.Take(TokenType.Unknown, 1);
     }
 
-    // Utilities for token construction
-    private Token Take(TokenType tokenType, int length)
-    {
-        var sb = new StringBuilder();
-        for (var i = 0; i < length; ++i) sb.Append(this.Peek(i));
-        return this.Skip(tokenType, sb.ToString());
-    }
-
-    private Token Skip(TokenType tokenType, string text)
-    {
-        this.Advance(text.Length);
-        return new(tokenType, text);
-    }
+    // Utility for token construction
+    private Token Take(TokenType tokenType, int length) => new(tokenType, this.Advance(length));
 
     // Propagating functions to the source reader to decouple the API a bit, in case it changes
     // later for performance reasons
     private char Peek(int offset = 0, char @default = '\0') =>
         this.SourceReader.Peek(offset: offset, @default: @default);
-    private void Advance(int amount = 1) => this.SourceReader.Advance(amount);
+    private ReadOnlyMemory<char> Advance(int amount = 1) => this.SourceReader.Advance(amount);
 
     // Character categorization
     private static bool IsIdent(char ch) => char.IsLetterOrDigit(ch) || ch == '_';

@@ -11,4 +11,10 @@ namespace Draco.Compiler.Syntax;
 /// </summary>
 /// <param name="Type">The <see cref="TokenType"/> this token is categorized as.</param>
 /// <param name="Text">The text this token was constructed from.</param>
-public readonly record struct Token(TokenType Type, string Text);
+public readonly record struct Token(TokenType Type, ReadOnlyMemory<char> Text)
+{
+    /// <summary>
+    /// True, if this <see cref="Token"/> counts as trivia.
+    /// </summary>
+    public bool IsTrivia => this.Type.IsTrivia();
+}

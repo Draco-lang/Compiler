@@ -23,7 +23,13 @@ public static class SourceReader
             this.source = source;
         }
 
-        public void Advance(int amount = 1) => this.Position += amount;
+        public ReadOnlyMemory<char> Advance(int amount = 1)
+        {
+            var result = this.source.Slice(this.Position, amount);
+            this.Position += amount;
+            return result;
+        }
+
         public char Peek(int offset = 0, char @default = '\0') => this.Position + offset >= this.source.Length
             ? @default
             : this.source.Span[this.Position + offset];

@@ -35,5 +35,6 @@ public interface ISourceReader
     /// Advances <paramref name="amount"/> amount in the source.
     /// </summary>
     /// <param name="amount">The amount to advance.</param>
-    public void Advance(int amount = 1);
+    /// <returns>The segment of <see cref="ReadOnlyMemory{char}"/> that contains the text that was skipped over.</returns>
+    public ReadOnlyMemory<char> Advance(int amount = 1);
 }

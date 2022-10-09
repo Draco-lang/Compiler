@@ -11,31 +11,144 @@ namespace Draco.Compiler.Syntax;
 /// </summary>
 public enum TokenType
 {
+    /// <summary>
+    /// The end of the read source.
+    /// </summary>
     EndOfInput,
+
+    /// <summary>
+    /// Any unknown character.
+    /// </summary>
     Unknown,
 
+    /// <summary>
+    /// Any horizontal whitespace.
+    /// </summary>
     Whitespace,
+
+    /// <summary>
+    /// Any newline sequence.
+    /// </summary>
     Newline,
+
+    /// <summary>
+    /// Single line comments.
+    /// </summary>
     LineComment,
 
+    /// <summary>
+    /// Non-keyword names.
+    /// </summary>
     Identifier,
 
+    /// <summary>
+    /// An integer literal.
+    /// </summary>
     LiteralInteger,
 
+    /// <summary>
+    /// The start of a single-line string literal.
+    /// </summary>
+    LineStringStart,
+
+    /// <summary>
+    /// The end of a single-line string literal.
+    /// </summary>
+    LineStringEnd,
+
+    /// <summary>
+    /// The start of a multi-line string literal.
+    /// </summary>
+    MultiLineStringStart,
+
+    /// <summary>
+    /// The end of a multi-line string literal.
+    /// </summary>
+    MultiLineStringEnd,
+
+    /// <summary>
+    /// A non-whitespace sequence of characters in a string-literal.
+    /// </summary>
+    StringContent,
+
+    /// <summary>
+    /// The start of string interpolation.
+    /// </summary>
+    InterpolationStart,
+
+    /// <summary>
+    /// The end of string interpolation.
+    /// </summary>
+    InterpolationEnd,
+
+    /// <summary>
+    /// An escape sequence inside the string literal.
+    /// </summary>
+    EscapeSequence,
+
+    /// <summary>
+    /// The keyword 'from'.
+    /// </summary>
     KeywordFrom,
+
+    /// <summary>
+    /// The keyword 'func'.
+    /// </summary>
     KeywordFunc,
+
+    /// <summary>
+    /// The keyword 'import'.
+    /// </summary>
     KeywordImport,
 
+    /// <summary>
+    /// '('.
+    /// </summary>
     ParenOpen,
+
+    /// <summary>
+    /// ')'.
+    /// </summary>
     ParenClose,
+
+    /// <summary>
+    /// '{'.
+    /// </summary>
     CurlyOpen,
+
+    /// <summary>
+    /// '}'.
+    /// </summary>
     CurlyClose,
+
+    /// <summary>
+    /// '['.
+    /// </summary>
     BracketOpen,
+
+    /// <summary>
+    /// ']'.
+    /// </summary>
     BracketClose,
 
+    /// <summary>
+    /// '.'.
+    /// </summary>
     Dot,
+
+    /// <summary>
+    /// ','.
+    /// </summary>
     Comma,
+
+    /// <summary>
+    /// ':'.
+    /// </summary>
     Colon,
+
+    /// <summary>
+    /// ';'.
+    /// </summary>
     Semicolon,
 }
 

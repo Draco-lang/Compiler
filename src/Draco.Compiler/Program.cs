@@ -12,7 +12,11 @@ internal class Program
 from System.Console import { WriteLine };
 
 func main() {
+    """"""
+    Hello!
+    """"""
     WriteLine(0);
+    ""Bye""
 }
 ";
         var srcReader = SourceReader.From(src);

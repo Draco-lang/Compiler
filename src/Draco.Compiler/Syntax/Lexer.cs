@@ -12,13 +12,47 @@ namespace Draco.Compiler.Syntax;
 public sealed class Lexer
 {
     /// <summary>
+    /// The different kinds of modes the lexer can have.
+    /// </summary>
+    internal enum ModeKind
+    {
+        /// <summary>
+        /// Regular source code lexing.
+        /// </summary>
+        Normal,
+
+        /// <summary>
+        /// Line string lexing.
+        /// </summary>
+        LineString,
+
+        /// <summary>
+        /// Multi-line string lexing.
+        /// </summary>
+        MultiLineString,
+    }
+
+    /// <summary>
+    /// Represents a single mode on the mode stack.
+    /// </summary>
+    /// <param name="Kind">The kind of the mode.</param>
+    /// <param name="ExtendedDelims">The number of extended delimiter characters needed for the current mode,
+    /// in case it's a string lexing mode.</param>
+    internal readonly record struct Mode(ModeKind Kind, int ExtendedDelims);
+
+    /// <summary>
     /// The reader the source text is read from.
     /// </summary>
     public ISourceReader SourceReader { get; }
 
+    private Mode CurrentMode => this.modeStack.Peek();
+
+    private readonly Stack<Mode> modeStack = new();
+
     public Lexer(ISourceReader sourceReader)
     {
         this.SourceReader = sourceReader;
+        this.modeStack.Push(new(ModeKind.Normal, 0));
     }
 
     /// <summary>
@@ -27,6 +61,8 @@ public sealed class Lexer
     /// <returns>The <see cref="Token"/> read.</returns>
     public Token Next()
     {
+        // Mode-neutral things
+
         // End of input
         if (this.SourceReader.IsEnd) return new(TokenType.EndOfInput, ReadOnlyMemory<char>.Empty);
 
@@ -55,65 +91,103 @@ public sealed class Lexer
             return this.Take(TokenType.Whitespace, offset);
         }
 
-        // Line-comment
-        if (ch == '/' && this.Peek(1) == '/')
+        // Mode-specific
+        var mode = this.CurrentMode;
+        if (mode.Kind == ModeKind.Normal)
         {
-            var offset = 2;
-            // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
-            // which means that this will terminate, even if the comment was on the last line of the file
-            // without a line break
-            for (; !IsNewline(this.Peek(offset, @default: '\n')); ++offset) ;
-            return this.Take(TokenType.LineComment, offset);
-        }
-
-        // Punctuation
-        switch (ch)
-        {
-        case '(': return this.Take(TokenType.ParenOpen, 1);
-        case ')': return this.Take(TokenType.ParenClose, 1);
-        case '{': return this.Take(TokenType.CurlyOpen, 1);
-        case '}': return this.Take(TokenType.CurlyClose, 1);
-        case '[': return this.Take(TokenType.BracketOpen, 1);
-        case ']': return this.Take(TokenType.BracketClose, 1);
-
-        case '.': return this.Take(TokenType.Dot, 1);
-        case ',': return this.Take(TokenType.Comma, 1);
-        case ':': return this.Take(TokenType.Colon, 1);
-        case ';': return this.Take(TokenType.Semicolon, 1);
-        }
-
-        // Numeric literals
-        // NOTE: We check for numeric literals first, so we can be lazy with the identifier checking later
-        // Since digits would be a valid identifier character, we can avoid separating the check for the
-        // first character
-        if (char.IsDigit(ch))
-        {
-            var offset = 1;
-            for (; char.IsDigit(this.Peek(offset)); ++offset) ;
-            return this.Take(TokenType.LiteralInteger, offset);
-        }
-
-        // Identifier-like tokens
-        if (IsIdent(ch))
-        {
-            var offset = 1;
-            for (; IsIdent(this.Peek(offset)); ++offset) ;
-            var token = this.Take(TokenType.LiteralInteger, offset);
-            // Remap keywords
-            // TODO: Any better/faster way?
-            var newTokenType = token.Text switch
+            // Line-comment
+            if (ch == '/' && this.Peek(1) == '/')
             {
-                var _ when token.Text.Span.SequenceEqual("from") => TokenType.KeywordFrom,
-                var _ when token.Text.Span.SequenceEqual("func") => TokenType.KeywordFunc,
-                var _ when token.Text.Span.SequenceEqual("import") => TokenType.KeywordImport,
-                _ => TokenType.Identifier,
-            };
-            return new(newTokenType, token.Text);
-        }
+                var offset = 2;
+                // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
+                // which means that this will terminate, even if the comment was on the last line of the file
+                // without a line break
+                for (; !IsNewline(this.Peek(offset, @default: '\n')); ++offset) ;
+                return this.Take(TokenType.LineComment, offset);
+            }
 
-        // Unknown
-        return this.Take(TokenType.Unknown, 1);
+            // Punctuation
+            switch (ch)
+            {
+            case '(': return this.Take(TokenType.ParenOpen, 1);
+            case ')': return this.Take(TokenType.ParenClose, 1);
+            case '{': return this.Take(TokenType.CurlyOpen, 1);
+            case '}': return this.Take(TokenType.CurlyClose, 1);
+            case '[': return this.Take(TokenType.BracketOpen, 1);
+            case ']': return this.Take(TokenType.BracketClose, 1);
+
+            case '.': return this.Take(TokenType.Dot, 1);
+            case ',': return this.Take(TokenType.Comma, 1);
+            case ':': return this.Take(TokenType.Colon, 1);
+            case ';': return this.Take(TokenType.Semicolon, 1);
+            }
+
+            // Numeric literals
+            // NOTE: We check for numeric literals first, so we can be lazy with the identifier checking later
+            // Since digits would be a valid identifier character, we can avoid separating the check for the
+            // first character
+            if (char.IsDigit(ch))
+            {
+                var offset = 1;
+                for (; char.IsDigit(this.Peek(offset)); ++offset) ;
+                return this.Take(TokenType.LiteralInteger, offset);
+            }
+
+            // Identifier-like tokens
+            if (IsIdent(ch))
+            {
+                var offset = 1;
+                for (; IsIdent(this.Peek(offset)); ++offset) ;
+                var token = this.Take(TokenType.LiteralInteger, offset);
+                // Remap keywords
+                // TODO: Any better/faster way?
+                var newTokenType = token.Text switch
+                {
+                    var _ when token.Text.Span.SequenceEqual("from") => TokenType.KeywordFrom,
+                    var _ when token.Text.Span.SequenceEqual("func") => TokenType.KeywordFunc,
+                    var _ when token.Text.Span.SequenceEqual("import") => TokenType.KeywordImport,
+                    _ => TokenType.Identifier,
+                };
+                return new(newTokenType, token.Text);
+            }
+
+            // String literals
+            {
+                var extendedDelims = 0;
+                for (; this.Peek(extendedDelims) == '#'; ++extendedDelims) ;
+                var offset = extendedDelims;
+                if (this.Peek(offset) == '"')
+                {
+                    if (this.Peek(offset + 1) == '"' && this.Peek(offset + 2) == '"')
+                    {
+                        // Mutli-line string opening quotes
+                        this.PushMode(ModeKind.MultiLineString, extendedDelims);
+                        return this.Take(TokenType.MultiLineStringStart, offset + 3);
+                    }
+                    // Single-line string opening quote
+                    this.PushMode(ModeKind.LineString, extendedDelims);
+                    return this.Take(TokenType.LineStringStart, offset + 1);
+                }
+            }
+
+            // Unknown
+            return this.Take(TokenType.Unknown, 1);
+        }
+        else if (mode.Kind == ModeKind.LineString || mode.Kind == ModeKind.MultiLineString)
+        {
+            // Some kind of string mode
+            // TODO
+            throw new NotImplementedException();
+        }
+        else
+        {
+            throw new NotImplementedException("Unimplemented lexer mode");
+        }
     }
+
+    // Mode stack
+    private void PushMode(ModeKind kind, int extendedDelims) => this.modeStack.Push(new(kind, extendedDelims));
+    private void PopMode() => this.modeStack.Pop();
 
     // Utility for token construction
     private Token Take(TokenType tokenType, int length) => new(tokenType, this.Advance(length));

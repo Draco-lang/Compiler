@@ -61,7 +61,28 @@ public sealed class Lexer
     /// <returns>The <see cref="Token"/> read.</returns>
     public Token Next()
     {
-        // Mode-neutral things
+        // Mostly mode-neutral things
+        var mode = this.CurrentMode;
+
+        Token TakeNewline(int length)
+        {
+            switch (mode.Kind)
+            {
+            case ModeKind.Normal:
+                return this.Take(TokenType.Newline, length);
+
+            case ModeKind.LineString:
+                // We also pop off the string mode, not to infect the rest of the input
+                this.PopMode();
+                return this.Take(TokenType.Newline, length);
+
+            case ModeKind.MultiLineString:
+                return this.Take(TokenType.StringNewline, length);
+
+            default:
+                throw new InvalidOperationException();
+            }
+        }
 
         // End of input
         if (this.SourceReader.IsEnd) return new(TokenType.EndOfInput, ReadOnlyMemory<char>.Empty);
@@ -74,16 +95,15 @@ public sealed class Lexer
             // Windows-style newline
             if (this.Peek(1) == '\n') return this.Take(TokenType.Newline, 2);
             // OS-X 9-style newline
-            return this.Take(TokenType.Newline, 1);
+            return TakeNewline(1);
         }
         if (ch == '\n')
         {
             // UNIX-style newline
-            return this.Take(TokenType.Newline, 1);
+            return TakeNewline(1);
         }
 
         // Mode-specific
-        var mode = this.CurrentMode;
         if (mode.Kind == ModeKind.Normal)
         {
             // Whitespace
@@ -216,8 +236,46 @@ public sealed class Lexer
                 {
                     if (this.Peek(offset + i) != '#') goto not_escape_sequence;
                 }
+                offset += mode.ExtendedDelims;
                 // Some kind of escape
-                throw new NotImplementedException("Unimplemented escape sequence");
+                var esc = this.Peek(offset);
+                // Line continuations are only available in multi-line strings
+                if (mode.Kind == ModeKind.MultiLineString)
+                {
+                    if (esc == '\r')
+                    {
+                        // It's a line-continuation, either Windows or OS-X 9-style
+                        if (this.Peek(offset + 1) == '\n')
+                        {
+                            // Windows
+                            return this.Take(TokenType.EscapeSequence, offset + 2);
+                        }
+                        // OS-X 9
+                        return this.Take(TokenType.EscapeSequence, offset + 1);
+                    }
+                    if (esc == '\n')
+                    {
+                        // It's a line-continuation, UNIX-style
+                        return this.Take(TokenType.EscapeSequence, offset + 1);
+                    }
+                }
+                // Valid in any string
+                if (esc == 'u' && this.Peek(offset + 1) == '{')
+                {
+                    // Unicode codepoint specified in braces
+                    offset += 2;
+                    for (; IsHexDigit(this.Peek(offset)); ++offset) ;
+                    // Consume closing brace
+                    if (this.Peek(offset) == '}') ++offset;
+                    return this.Take(TokenType.EscapeSequence, offset);
+                }
+                if (esc == '{')
+                {
+                    // Interpolation start
+                    throw new NotImplementedException("Interpolation is not implemented yet");
+                }
+                // Any single-character escape
+                return this.Take(TokenType.EscapeSequence, offset + 1);
             }
 
         not_escape_sequence:
@@ -259,4 +317,8 @@ public sealed class Lexer
         && !char.IsControl(ch)
         && ch != '"'
         && ch != '\\';
+    private static bool IsHexDigit(char ch) =>
+           (ch >= '0' && ch <= '9')
+        || (ch >= 'a' && ch <= 'f')
+        || (ch >= 'A' && ch <= 'F');
 }

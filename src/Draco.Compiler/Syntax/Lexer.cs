@@ -22,6 +22,11 @@ public sealed class Lexer
         Normal,
 
         /// <summary>
+        /// Normal source code within string interpolation.
+        /// </summary>
+        Interpolation,
+
+        /// <summary>
         /// Line string lexing.
         /// </summary>
         LineString,
@@ -52,7 +57,7 @@ public sealed class Lexer
     public Lexer(ISourceReader sourceReader)
     {
         this.SourceReader = sourceReader;
-        this.modeStack.Push(new(ModeKind.Normal, 0));
+        this.PushMode(ModeKind.Normal, 0);
     }
 
     /// <summary>
@@ -69,6 +74,7 @@ public sealed class Lexer
             switch (mode.Kind)
             {
             case ModeKind.Normal:
+            case ModeKind.Interpolation:
                 return this.Take(TokenType.Newline, length);
 
             case ModeKind.LineString:
@@ -104,7 +110,7 @@ public sealed class Lexer
         }
 
         // Mode-specific
-        if (mode.Kind == ModeKind.Normal)
+        if (mode.Kind == ModeKind.Normal || mode.Kind == ModeKind.Interpolation)
         {
             // Whitespace
             if (IsSpace(ch))
@@ -131,8 +137,17 @@ public sealed class Lexer
             {
             case '(': return this.Take(TokenType.ParenOpen, 1);
             case ')': return this.Take(TokenType.ParenClose, 1);
-            case '{': return this.Take(TokenType.CurlyOpen, 1);
-            case '}': return this.Take(TokenType.CurlyClose, 1);
+            case '{':
+                if (mode.Kind == ModeKind.Interpolation) this.PushMode(ModeKind.Interpolation, 0);
+                return this.Take(TokenType.CurlyOpen, 1);
+            case '}':
+                if (mode.Kind == ModeKind.Interpolation)
+                {
+                    this.PopMode();
+                    // If we are not in interpolation anymore, this is an interpolation end token
+                    if (this.CurrentMode.Kind != ModeKind.Interpolation) return this.Take(TokenType.InterpolationEnd, 1);
+                }
+                return this.Take(TokenType.CurlyClose, 1);
             case '[': return this.Take(TokenType.BracketOpen, 1);
             case ']': return this.Take(TokenType.BracketClose, 1);
 
@@ -272,7 +287,8 @@ public sealed class Lexer
                 if (esc == '{')
                 {
                     // Interpolation start
-                    throw new NotImplementedException("Interpolation is not implemented yet");
+                    this.PushMode(ModeKind.Interpolation, 0);
+                    return this.Take(TokenType.InterpolationStart, offset + 1);
                 }
                 // Any single-character escape
                 return this.Take(TokenType.EscapeSequence, offset + 1);
@@ -297,7 +313,12 @@ public sealed class Lexer
 
     // Mode stack
     private void PushMode(ModeKind kind, int extendedDelims) => this.modeStack.Push(new(kind, extendedDelims));
-    private void PopMode() => this.modeStack.Pop();
+    private void PopMode()
+    {
+        // We don't allow knocking off the lowest level mode
+        if (this.modeStack.Count == 1) return;
+        this.modeStack.Pop();
+    }
 
     // Utility for token construction
     private Token Take(TokenType tokenType, int length) => new(tokenType, this.Advance(length));

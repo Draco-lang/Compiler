@@ -178,15 +178,15 @@ public sealed class Lexer
                 // TODO: Any better/faster way?
                 var newTokenType = token.Text switch
                 {
+                    var _ when token.Text.Span.SequenceEqual("else") => TokenType.KeywordElse,
                     var _ when token.Text.Span.SequenceEqual("from") => TokenType.KeywordFrom,
                     var _ when token.Text.Span.SequenceEqual("func") => TokenType.KeywordFunc,
-                    var _ when token.Text.Span.SequenceEqual("import") => TokenType.KeywordImport,
-                    var _ when token.Text.Span.SequenceEqual("return") => TokenType.KeywordReturn,
-                    var _ when token.Text.Span.SequenceEqual("if") => TokenType.KeywordIf,
-                    var _ when token.Text.Span.SequenceEqual("else") => TokenType.KeywordElse,
-                    var _ when token.Text.Span.SequenceEqual("var") => TokenType.KeywordVar,
-                    var _ when token.Text.Span.SequenceEqual("val") => TokenType.KeywordVal,
                     var _ when token.Text.Span.SequenceEqual("goto") => TokenType.KeywordGoto,
+                    var _ when token.Text.Span.SequenceEqual("if") => TokenType.KeywordIf,
+                    var _ when token.Text.Span.SequenceEqual("import") => TokenType.KeywordImport,
+                    var _ when token.Text.Span.SequenceEqual("val") => TokenType.KeywordVal,
+                    var _ when token.Text.Span.SequenceEqual("var") => TokenType.KeywordVar,
+                    var _ when token.Text.Span.SequenceEqual("return") => TokenType.KeywordReturn,
                     var _ when token.Text.Span.SequenceEqual("while") => TokenType.KeywordWhile,
                     _ => TokenType.Identifier,
                 };

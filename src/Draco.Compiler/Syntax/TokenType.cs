@@ -107,6 +107,41 @@ public enum TokenType
     KeywordImport,
 
     /// <summary>
+    /// The keyword 'return'.
+    /// </summary>
+    KeywordReturn,
+
+    /// <summary>
+    /// The keyword 'if'.
+    /// </summary>
+    KeywordIf,
+
+    /// <summary>
+    /// The keyword 'else'.
+    /// </summary>
+    KeywordElse,
+
+    /// <summary>
+    /// The keyword 'var'.
+    /// </summary>
+    KeywordVar,
+
+    /// <summary>
+    /// The keyword 'val'.
+    /// </summary>
+    KeywordVal,
+
+    /// <summary>
+    /// The keyword 'goto'.
+    /// </summary>
+    KeywordGoto,
+
+    /// <summary>
+    /// The keyword 'while'
+    /// </summary>
+    KeywordWhile,
+
+    /// <summary>
     /// '('.
     /// </summary>
     ParenOpen,

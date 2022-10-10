@@ -92,6 +92,11 @@ public enum TokenType
     EscapeSequence,
 
     /// <summary>
+    /// The keyword 'else'.
+    /// </summary>
+    KeywordElse,
+
+    /// <summary>
     /// The keyword 'from'.
     /// </summary>
     KeywordFrom,
@@ -102,9 +107,39 @@ public enum TokenType
     KeywordFunc,
 
     /// <summary>
+    /// The keyword 'goto'.
+    /// </summary>
+    KeywordGoto,
+
+    /// <summary>
+    /// The keyword 'if'.
+    /// </summary>
+    KeywordIf,
+
+    /// <summary>
     /// The keyword 'import'.
     /// </summary>
     KeywordImport,
+
+    /// <summary>
+    /// The keyword 'return'.
+    /// </summary>
+    KeywordReturn,
+
+    /// <summary>
+    /// The keyword 'val'.
+    /// </summary>
+    KeywordVal,
+
+    /// <summary>
+    /// The keyword 'var'.
+    /// </summary>
+    KeywordVar,
+
+    /// <summary>
+    /// The keyword 'while'
+    /// </summary>
+    KeywordWhile,
 
     /// <summary>
     /// '('.

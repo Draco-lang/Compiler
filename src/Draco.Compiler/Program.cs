@@ -11,7 +11,7 @@ internal class Program
 // Simple hello world
 from System.Console import { WriteLine };
 
-func main() {
+func main(): int32 {
     ""Hello \n \u{abc123}
 
 #""""""
@@ -19,6 +19,10 @@ Foo bar\#n
 \#{123}
 Baz
 """"""#
+    val x = true;
+    while(x){
+    }
+    return x;
 }
 ";
         var srcReader = SourceReader.From(src);

@@ -12,9 +12,9 @@ internal class Program
 from System.Console import { WriteLine };
 
 func main() {
-    """"""
-    Hello!
-    """"""
+    #""""""
+    Hello!\#
+    """"""#
     WriteLine(0);
     ""Bye""
 }

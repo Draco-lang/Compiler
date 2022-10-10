@@ -82,19 +82,19 @@ public sealed class Lexer
             return this.Take(TokenType.Newline, 1);
         }
 
-        // Whitespace
-        if (IsSpace(ch))
-        {
-            // We merge it into one chunk to not produce so many individual tokens
-            var offset = 1;
-            for (; IsSpace(this.Peek(offset)); ++offset) ;
-            return this.Take(TokenType.Whitespace, offset);
-        }
-
         // Mode-specific
         var mode = this.CurrentMode;
         if (mode.Kind == ModeKind.Normal)
         {
+            // Whitespace
+            if (IsSpace(ch))
+            {
+                // We merge it into one chunk to not produce so many individual tokens
+                var offset = 1;
+                for (; IsSpace(this.Peek(offset)); ++offset) ;
+                return this.Take(TokenType.Whitespace, offset);
+            }
+
             // Line-comment
             if (ch == '/' && this.Peek(1) == '/')
             {
@@ -151,7 +151,7 @@ public sealed class Lexer
                 return new(newTokenType, token.Text);
             }
 
-            // String literals
+            // String literal starts
             {
                 var extendedDelims = 0;
                 for (; this.Peek(extendedDelims) == '#'; ++extendedDelims) ;
@@ -176,8 +176,60 @@ public sealed class Lexer
         else if (mode.Kind == ModeKind.LineString || mode.Kind == ModeKind.MultiLineString)
         {
             // Some kind of string mode
-            // TODO
-            throw new NotImplementedException();
+
+            if (ch == '"')
+            {
+                // We are potentially closing a string here
+                var offset = 0;
+                if (mode.Kind == ModeKind.MultiLineString)
+                {
+                    // We are expecting 2 more quotes
+                    if (this.Peek(1) != '"' || this.Peek(2) != '"') goto not_string_end;
+                    offset = 3;
+                }
+                else
+                {
+                    // Just a line string
+                    offset = 1;
+                }
+                // Count the number of required closing delimiters
+                for (var i = 0; i < mode.ExtendedDelims; ++i)
+                {
+                    if (this.Peek(offset + i) != '#') goto not_string_end;
+                }
+                offset += mode.ExtendedDelims;
+                // Hit the end of the string
+                this.PopMode();
+                var tokenType = mode.Kind == ModeKind.LineString
+                    ? TokenType.LineStringEnd
+                    : TokenType.MultiLineStringEnd;
+                return this.Take(tokenType, offset);
+            }
+
+        not_string_end:
+            if (ch == '\\')
+            {
+                // Potential escape sequence
+                var offset = 1;
+                // Count the number of required delimiters
+                for (var i = 0; i < mode.ExtendedDelims; ++i)
+                {
+                    if (this.Peek(offset + i) != '#') goto not_escape_sequence;
+                }
+                // Some kind of escape
+                throw new NotImplementedException("Unimplemented escape sequence");
+            }
+
+        not_escape_sequence:
+            if (IsStringContent(ch))
+            {
+                var offset = 1;
+                for (; IsStringContent(this.Peek(offset)); ++offset) ;
+                return this.Take(TokenType.StringContent, offset);
+            }
+
+            // Anything else is categorized as a single-character string content
+            return this.Take(TokenType.StringContent, 1);
         }
         else
         {
@@ -202,4 +254,9 @@ public sealed class Lexer
     private static bool IsIdent(char ch) => char.IsLetterOrDigit(ch) || ch == '_';
     private static bool IsSpace(char ch) => char.IsWhiteSpace(ch) && !IsNewline(ch);
     private static bool IsNewline(char ch) => ch == '\r' || ch == '\n';
+    private static bool IsStringContent(char ch) =>
+           !IsNewline(ch)
+        && !char.IsControl(ch)
+        && ch != '"'
+        && ch != '\\';
 }

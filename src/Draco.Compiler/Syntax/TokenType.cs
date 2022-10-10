@@ -67,7 +67,7 @@ public enum TokenType
     MultiLineStringEnd,
 
     /// <summary>
-    /// A non-whitespace sequence of characters in a string-literal.
+    /// A sequence of characters in a string-literal.
     /// </summary>
     StringContent,
 

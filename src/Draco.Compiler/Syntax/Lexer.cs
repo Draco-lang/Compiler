@@ -193,6 +193,26 @@ public sealed class Lexer
                 return this.Take(TokenType.LiteralInteger, offset);
             }
 
+            // Character literals
+            if (ch == '\'')
+            {
+                var offset = 1;
+                if (this.Peek(offset) == '\\')
+                {
+                    // Potential escape sequence, try to parse it
+                    ++offset;
+                    this.TryParseEscapeSequence(ref offset);
+                }
+                else if (!char.IsControl(this.Peek(offset)))
+                {
+                    // Non-escape character
+                    ++offset;
+                }
+                // Consume closing tick
+                if (this.Peek(offset) == '\'') ++offset;
+                return this.Take(TokenType.LiteralCharacter, offset);
+            }
+
             // Identifier-like tokens
             if (IsIdent(ch))
             {
@@ -291,46 +311,10 @@ public sealed class Lexer
                     if (this.Peek(offset + i) != '#') goto not_escape_sequence;
                 }
                 offset += mode.ExtendedDelims;
-                // Some kind of escape
-                var esc = this.Peek(offset);
-                // Line continuations are only available in multi-line strings
-                if (mode.Kind == ModeKind.MultiLineString)
-                {
-                    if (esc == '\r')
-                    {
-                        // It's a line-continuation, either Windows or OS-X 9-style
-                        if (this.Peek(offset + 1) == '\n')
-                        {
-                            // Windows
-                            return this.Take(TokenType.EscapeSequence, offset + 2);
-                        }
-                        // OS-X 9
-                        return this.Take(TokenType.EscapeSequence, offset + 1);
-                    }
-                    if (esc == '\n')
-                    {
-                        // It's a line-continuation, UNIX-style
-                        return this.Take(TokenType.EscapeSequence, offset + 1);
-                    }
-                }
-                // Valid in any string
-                if (esc == 'u' && this.Peek(offset + 1) == '{')
-                {
-                    // Unicode codepoint specified in braces
-                    offset += 2;
-                    for (; IsHexDigit(this.Peek(offset)); ++offset) ;
-                    // Consume closing brace
-                    if (this.Peek(offset) == '}') ++offset;
-                    return this.Take(TokenType.EscapeSequence, offset);
-                }
-                if (esc == '{')
-                {
-                    // Interpolation start
-                    this.PushMode(ModeKind.Interpolation, 0);
-                    return this.Take(TokenType.InterpolationStart, offset + 1);
-                }
-                // Any single-character escape
-                return this.Take(TokenType.EscapeSequence, offset + 1);
+                // Try to parse an escape
+                if (this.TryParseEscapeSequence(ref offset)) return this.Take(TokenType.EscapeSequence, offset);
+                // This is an error, no sensible sequence followed the escape
+                else return this.Take(TokenType.Unknown, offset);
             }
 
         not_escape_sequence:
@@ -348,6 +332,67 @@ public sealed class Lexer
         {
             throw new NotImplementedException("Unimplemented lexer mode");
         }
+    }
+
+    /// <summary>
+    /// Parses an escape sequence for strings and character literals.
+    /// </summary>
+    /// <param name="offset">A reference to an offset that points after the backslash and optional extended
+    /// delimiter characters. If parsing the escape succeeded, the result is written back here.</param>
+    /// <returns>True, if an escape was successfully parsed.</returns>
+    private bool TryParseEscapeSequence(ref int offset)
+    {
+        var modeKind = this.CurrentMode.Kind;
+        var esc = this.Peek(offset);
+        // Line continuations are only available in multi-line strings
+        if (modeKind == ModeKind.MultiLineString)
+        {
+            if (esc == '\r')
+            {
+                // It's a line-continuation, either Windows or OS-X 9-style
+                if (this.Peek(offset + 1) == '\n')
+                {
+                    // Windows
+                    offset += 2;
+                    return true;
+                }
+                // OS-X 9
+                offset += 1;
+                return true;
+            }
+            if (esc == '\n')
+            {
+                // It's a line-continuation, UNIX-style
+                offset += 1;
+                return true;
+            }
+        }
+        // Valid in any string
+        if (esc == 'u' && this.Peek(offset + 1) == '{')
+        {
+            // Unicode codepoint specified in braces
+            var offset2 = offset + 2;
+            for (; IsHexDigit(this.Peek(offset2)); ++offset2) ;
+            // Consume closing brace
+            if (this.Peek(offset2) == '}') ++offset2;
+            offset = offset2;
+            return true;
+        }
+        // Only in strings
+        if ((modeKind == ModeKind.LineString || modeKind == ModeKind.MultiLineString) && esc == '{')
+        {
+            // Interpolation start
+            this.PushMode(ModeKind.Interpolation, 0);
+            ++offset;
+            return true;
+        }
+        // Any single-character escape
+        if (!char.IsControl(esc))
+        {
+            ++offset;
+            return true;
+        }
+        return false;
     }
 
     // Mode stack

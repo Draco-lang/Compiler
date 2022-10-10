@@ -47,6 +47,11 @@ public enum TokenType
     LiteralInteger,
 
     /// <summary>
+    /// A character literal.
+    /// </summary>
+    LiteralCharacter,
+
+    /// <summary>
     /// The start of a single-line string literal.
     /// </summary>
     LineStringStart,

@@ -12,6 +12,10 @@ internal class Program
 from System.Console import { WriteLine };
 
 func main(): int32 {
+    var a = 'x';
+    var b = '\n';
+    var c = '\u{123}';
+    var d = '\\';
     ""Hello \n \u{abc123}
 
 #""""""
@@ -33,6 +37,7 @@ Baz
         while (true)
         {
             var token = lexer.Next();
+            if (token.IsTrivia) continue;
             Console.WriteLine(token);
             if (token.Type == TokenType.EndOfInput) break;
         }

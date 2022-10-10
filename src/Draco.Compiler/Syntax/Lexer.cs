@@ -155,6 +155,31 @@ public sealed class Lexer
             case ',': return this.Take(TokenType.Comma, 1);
             case ':': return this.Take(TokenType.Colon, 1);
             case ';': return this.Take(TokenType.Semicolon, 1);
+            case '+':
+                if (this.Peek(1) == '=') return this.Take(TokenType.PlusAssign, 2);
+                return this.Take(TokenType.Plus, 1);
+            case '-':
+                if (this.Peek(1) == '=') return this.Take(TokenType.MinusAssign, 2);
+                return this.Take(TokenType.Minus, 1);
+            case '*':
+                if (this.Peek(1) == '=') return this.Take(TokenType.StarAssign, 2);
+                return this.Take(TokenType.Star, 1);
+            case '/':
+                if (this.Peek(1) == '=') return this.Take(TokenType.SlashAssign, 2);
+                return this.Take(TokenType.Slash, 1);
+            case '<':
+                if (this.Peek(1) == '=') return this.Take(TokenType.LessEqual, 2);
+                return this.Take(TokenType.LessThan, 1);
+            case '>':
+                if (this.Peek(1) == '=') return this.Take(TokenType.GreaterEqual, 2);
+                return this.Take(TokenType.GreaterThan, 1);
+            case '=':
+                if (this.Peek(1) == '=') return this.Take(TokenType.Equal, 2);
+                return this.Take(TokenType.Assign, 1);
+            case '!':
+                if (this.Peek(1) == '=') return this.Take(TokenType.NotEqual, 2);
+                // NOTE: '!' in it self is not negation!
+                break;
             }
 
             // Numeric literals
@@ -178,12 +203,17 @@ public sealed class Lexer
                 // TODO: Any better/faster way?
                 var newTokenType = token.Text switch
                 {
+                    var _ when token.Text.Span.SequenceEqual("and") => TokenType.KeywordAnd,
                     var _ when token.Text.Span.SequenceEqual("else") => TokenType.KeywordElse,
                     var _ when token.Text.Span.SequenceEqual("from") => TokenType.KeywordFrom,
                     var _ when token.Text.Span.SequenceEqual("func") => TokenType.KeywordFunc,
                     var _ when token.Text.Span.SequenceEqual("goto") => TokenType.KeywordGoto,
                     var _ when token.Text.Span.SequenceEqual("if") => TokenType.KeywordIf,
                     var _ when token.Text.Span.SequenceEqual("import") => TokenType.KeywordImport,
+                    var _ when token.Text.Span.SequenceEqual("mod") => TokenType.KeywordMod,
+                    var _ when token.Text.Span.SequenceEqual("not") => TokenType.KeywordNot,
+                    var _ when token.Text.Span.SequenceEqual("or") => TokenType.KeywordOr,
+                    var _ when token.Text.Span.SequenceEqual("rem") => TokenType.KeywordRem,
                     var _ when token.Text.Span.SequenceEqual("return") => TokenType.KeywordReturn,
                     var _ when token.Text.Span.SequenceEqual("val") => TokenType.KeywordVal,
                     var _ when token.Text.Span.SequenceEqual("var") => TokenType.KeywordVar,

@@ -92,6 +92,11 @@ public enum TokenType
     EscapeSequence,
 
     /// <summary>
+    /// The keyword 'and'.
+    /// </summary>
+    KeywordAnd,
+
+    /// <summary>
     /// The keyword 'else'.
     /// </summary>
     KeywordElse,
@@ -120,6 +125,26 @@ public enum TokenType
     /// The keyword 'import'.
     /// </summary>
     KeywordImport,
+
+    /// <summary>
+    /// The keyword 'mod'.
+    /// </summary>
+    KeywordMod,
+
+    /// <summary>
+    /// The keyword 'not'.
+    /// </summary>
+    KeywordNot,
+
+    /// <summary>
+    /// The keyword 'or'.
+    /// </summary>
+    KeywordOr,
+
+    /// <summary>
+    /// The keyword 'rem'.
+    /// </summary>
+    KeywordRem,
 
     /// <summary>
     /// The keyword 'return'.
@@ -190,6 +215,81 @@ public enum TokenType
     /// ';'.
     /// </summary>
     Semicolon,
+
+    /// <summary>
+    /// '+'.
+    /// </summary>
+    Plus,
+
+    /// <summary>
+    /// '-'.
+    /// </summary>
+    Minus,
+
+    /// <summary>
+    /// '*'.
+    /// </summary>
+    Star,
+
+    /// <summary>
+    /// '/'.
+    /// </summary>
+    Slash,
+
+    /// <summary>
+    /// '<'.
+    /// </summary>
+    LessThan,
+
+    /// <summary>
+    /// '>'.
+    /// </summary>
+    GreaterThan,
+
+    /// <summary>
+    /// '<='.
+    /// </summary>
+    LessEqual,
+
+    /// <summary>
+    /// '>='.
+    /// </summary>
+    GreaterEqual,
+
+    /// <summary>
+    /// '=='.
+    /// </summary>
+    Equal,
+
+    /// <summary>
+    /// '!='.
+    /// </summary>
+    NotEqual,
+
+    /// <summary>
+    /// '='.
+    /// </summary>
+    Assign,
+
+    /// <summary>
+    /// '+='.
+    /// </summary>
+    PlusAssign,
+
+    /// <summary>
+    /// '-='.
+    /// </summary>
+    MinusAssign,
+
+    /// <summary>
+    /// '*='.
+    /// </summary>
+    StarAssign,
+
+    /// <summary>
+    /// '/='.
+    /// </summary>
+    SlashAssign,
 }
 
 /// <summary>

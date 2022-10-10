@@ -23,6 +23,8 @@ Baz
     while(x){
     }
     return x;
+
+    var a = (x > y == z) != a + 23 * c += 9;
 }
 ";
         var srcReader = SourceReader.From(src);

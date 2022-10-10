@@ -25,6 +25,7 @@ Baz
     return x;
 
     var a = (x > y == z) != a + 23 * c += 9;
+    if (true) { return false; }
 }
 ";
         var srcReader = SourceReader.From(src);

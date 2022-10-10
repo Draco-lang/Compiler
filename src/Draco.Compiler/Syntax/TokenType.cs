@@ -102,6 +102,11 @@ public enum TokenType
     KeywordElse,
 
     /// <summary>
+    /// The keyword 'false'.
+    /// </summary>
+    KeywordFalse,
+
+    /// <summary>
     /// The keyword 'from'.
     /// </summary>
     KeywordFrom,
@@ -150,6 +155,11 @@ public enum TokenType
     /// The keyword 'return'.
     /// </summary>
     KeywordReturn,
+
+    /// <summary>
+    /// The keyword 'true'.
+    /// </summary>
+    KeywordTrue,
 
     /// <summary>
     /// The keyword 'val'.

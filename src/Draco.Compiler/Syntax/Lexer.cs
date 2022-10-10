@@ -205,6 +205,7 @@ public sealed class Lexer
                 {
                     var _ when token.Text.Span.SequenceEqual("and") => TokenType.KeywordAnd,
                     var _ when token.Text.Span.SequenceEqual("else") => TokenType.KeywordElse,
+                    var _ when token.Text.Span.SequenceEqual("false") => TokenType.KeywordFalse,
                     var _ when token.Text.Span.SequenceEqual("from") => TokenType.KeywordFrom,
                     var _ when token.Text.Span.SequenceEqual("func") => TokenType.KeywordFunc,
                     var _ when token.Text.Span.SequenceEqual("goto") => TokenType.KeywordGoto,
@@ -215,6 +216,7 @@ public sealed class Lexer
                     var _ when token.Text.Span.SequenceEqual("or") => TokenType.KeywordOr,
                     var _ when token.Text.Span.SequenceEqual("rem") => TokenType.KeywordRem,
                     var _ when token.Text.Span.SequenceEqual("return") => TokenType.KeywordReturn,
+                    var _ when token.Text.Span.SequenceEqual("true") => TokenType.KeywordTrue,
                     var _ when token.Text.Span.SequenceEqual("val") => TokenType.KeywordVal,
                     var _ when token.Text.Span.SequenceEqual("var") => TokenType.KeywordVar,
                     var _ when token.Text.Span.SequenceEqual("while") => TokenType.KeywordWhile,

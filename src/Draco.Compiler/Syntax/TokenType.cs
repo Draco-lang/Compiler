@@ -122,6 +122,11 @@ public enum TokenType
     KeywordImport,
 
     /// <summary>
+    /// The keyword 'return'.
+    /// </summary>
+    KeywordReturn,
+
+    /// <summary>
     /// The keyword 'val'.
     /// </summary>
     KeywordVal,
@@ -130,11 +135,6 @@ public enum TokenType
     /// The keyword 'var'.
     /// </summary>
     KeywordVar,
-
-    /// <summary>
-    /// The keyword 'return'.
-    /// </summary>
-    KeywordReturn,
 
     /// <summary>
     /// The keyword 'while'

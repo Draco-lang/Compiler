@@ -9,7 +9,7 @@ namespace Draco.Compiler.Syntax;
 /// <summary>
 /// The different kinds of tokens the lexer can recognize.
 /// </summary>
-public enum TokenType
+internal enum TokenType
 {
     /// <summary>
     /// The end of the read source.
@@ -310,7 +310,7 @@ public enum TokenType
 /// <summary>
 /// Extension functionality on <see cref="TokenType"/>.
 /// </summary>
-public static class TokenTypeExtensions
+internal static class TokenTypeExtensions
 {
     /// <summary>
     /// Checks, if <paramref name="tokenType"/> counts as a trivia category.
@@ -321,4 +321,57 @@ public static class TokenTypeExtensions
            tokenType == TokenType.Whitespace
         || tokenType == TokenType.Newline
         || tokenType == TokenType.LineComment;
+
+    /// <summary>
+    /// Retrieves the textual representation of a token with a type <paramref name="tokenType"/>.
+    /// Illegal to call for token types that have no unique textual representations.
+    /// </summary>
+    /// <param name="tokenType">The <see cref="TokenType"/> to get the text of.</param>
+    /// <returns>The textual representation of a token with type <paramref name="tokenType"/>.</returns>
+    public static string GetTokenText(this TokenType tokenType) => tokenType switch
+    {
+        TokenType.KeywordAnd => "and",
+        TokenType.KeywordElse => "else",
+        TokenType.KeywordFalse => "false",
+        TokenType.KeywordFrom => "from",
+        TokenType.KeywordFunc => "func",
+        TokenType.KeywordGoto => "goto",
+        TokenType.KeywordIf => "if",
+        TokenType.KeywordImport => "import",
+        TokenType.KeywordMod => "mod",
+        TokenType.KeywordNot => "not",
+        TokenType.KeywordOr => "or",
+        TokenType.KeywordRem => "rem",
+        TokenType.KeywordReturn => "return",
+        TokenType.KeywordTrue => "true",
+        TokenType.KeywordVal => "val",
+        TokenType.KeywordVar => "var",
+        TokenType.KeywordWhile => "while",
+        TokenType.ParenOpen => "(",
+        TokenType.ParenClose => ")",
+        TokenType.CurlyOpen => "{",
+        TokenType.CurlyClose => "}",
+        TokenType.BracketOpen => "[",
+        TokenType.BracketClose => "]",
+        TokenType.Dot => ".",
+        TokenType.Comma => ",",
+        TokenType.Colon => ":",
+        TokenType.Semicolon => ";",
+        TokenType.Plus => "+",
+        TokenType.Minus => "-",
+        TokenType.Star => "*",
+        TokenType.Slash => "/",
+        TokenType.LessThan => "<",
+        TokenType.GreaterThan => ">",
+        TokenType.LessEqual => "<=",
+        TokenType.GreaterEqual => ">=",
+        TokenType.Equal => "==",
+        TokenType.NotEqual => "!=",
+        TokenType.Assign => "=",
+        TokenType.PlusAssign => "+=",
+        TokenType.MinusAssign => "-=",
+        TokenType.StarAssign => "*=",
+        TokenType.SlashAssign => "/=",
+        _ => throw new InvalidOperationException($"{tokenType} has no unique text representation"),
+    };
 }

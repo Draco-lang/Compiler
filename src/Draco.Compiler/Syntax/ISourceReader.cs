@@ -9,7 +9,7 @@ namespace Draco.Compiler.Syntax;
 /// <summary>
 /// Represents a type that can be used to read source text.
 /// </summary>
-public interface ISourceReader
+internal interface ISourceReader
 {
     /// <summary>
     /// True, if the reader has reached the end of the source text.

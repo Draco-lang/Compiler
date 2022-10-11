@@ -9,7 +9,7 @@ namespace Draco.Compiler.Syntax;
 /// <summary>
 /// Factory functions for constructing <see cref="ISourceReader"/>s.
 /// </summary>
-public static class SourceReader
+internal static class SourceReader
 {
     private sealed class MemorySourceReader : ISourceReader
     {

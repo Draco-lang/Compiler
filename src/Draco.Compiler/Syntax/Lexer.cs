@@ -184,7 +184,7 @@ internal sealed class Lexer
         if (char.IsDigit(ch))
         {
             var offset = 1;
-            for (; char.IsDigit(this.Peek(offset)); ++offset) ;
+            while (char.IsDigit(this.Peek(offset))) ++offset;
             var view = this.Advance(offset);
             // TODO: Parsing into an int32 might not be the best idea
             var value = int.Parse(view.Span);
@@ -195,7 +195,7 @@ internal sealed class Lexer
         if (IsIdent(ch))
         {
             var offset = 1;
-            for (; IsIdent(this.Peek(offset)); ++offset) ;
+            while (IsIdent(this.Peek(offset))) ++offset;
             var ident = this.Advance(offset);
             // Remap keywords
             // TODO: Any better/faster way?
@@ -274,7 +274,7 @@ internal sealed class Lexer
         // String literal starts
         {
             var extendedDelims = 0;
-            for (; this.Peek(extendedDelims) == '#'; ++extendedDelims) ;
+            while (this.Peek(extendedDelims) == '#') ++extendedDelims;
             var offset = extendedDelims;
             if (this.Peek(offset) == '"')
             {
@@ -321,9 +321,12 @@ internal sealed class Lexer
             // Parse hex unicode value
             var unicodeValue = 0;
             var length = 0;
-            for (;
-                TryParseHexDigit(this.Peek(offset), out var digit);
-                unicodeValue = unicodeValue * 16 + digit, ++length, ++offset) ;
+            while (TryParseHexDigit(this.Peek(offset), out var digit))
+            {
+                unicodeValue = unicodeValue * 16 + digit;
+                ++length;
+                ++offset;
+            }
             // Expect closing brace
             if (this.Peek(offset) == '}')
             {
@@ -378,7 +381,7 @@ internal sealed class Lexer
     private void ParseLeadingTriviaList()
     {
         this.leadingTriviaList.Clear();
-        for (; this.TryParseTrivia(out var trivia); this.leadingTriviaList.Add(trivia)) ;
+        while (this.TryParseTrivia(out var trivia)) this.leadingTriviaList.Add(trivia);
     }
 
     /// <summary>
@@ -414,7 +417,7 @@ internal sealed class Lexer
         {
             // We merge it into one chunk to not produce so many individual tokens
             var offset = 1;
-            for (; IsSpace(this.Peek(offset)); ++offset) ;
+            while (IsSpace(this.Peek(offset))) ++offset;
             result = IToken.From(TokenType.Whitespace, this.AdvanceWithText(offset));
             return true;
         }
@@ -425,7 +428,7 @@ internal sealed class Lexer
             // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
             // which means that this will terminate, even if the comment was on the last line of the file
             // without a line break
-            for (; !IsNewline(this.Peek(offset, @default: '\n')); ++offset) ;
+            while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
             result = IToken.From(TokenType.LineComment, this.AdvanceWithText(offset));
             return true;
         }

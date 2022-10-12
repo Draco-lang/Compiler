@@ -298,8 +298,75 @@ internal sealed class Lexer
     {
         // First check for end of source here
         if (this.SourceReader.IsEnd) return IToken.From(TokenType.EndOfInput);
-        // TODO: Parse
-        throw new NotImplementedException();
+
+        // Get the largest continuous sequence without linebreaks or interpolation
+        var mode = this.CurrentMode;
+        var offset = 0;
+
+    start:
+        var ch = this.Peek(offset);
+
+        // Check for closing quotes
+        if (ch == '"')
+        {
+            var endLength = 0;
+            if (mode.Kind == ModeKind.MultiLineString)
+            {
+                // We are expecting 2 more quotes
+                if (this.Peek(offset + 1) != '"' || this.Peek(offset + 2) != '"') goto not_string_end;
+                endLength = 3;
+            }
+            else
+            {
+                // Just a line string
+                endLength = 1;
+            }
+            // Count the number of required closing delimiters
+            for (var i = 0; i < mode.ExtendedDelims; ++i)
+            {
+                if (this.Peek(offset + i) != '#') goto not_string_end;
+            }
+            endLength += mode.ExtendedDelims;
+            // Hit the end of the string
+            // NOTE: Since we are lexing the end of token as a separate character, we'll simply return what's
+            // been lexed so far without the closing quotes, the next lex call will actually lex the closing
+            // quotes.
+            if (offset == 0)
+            {
+                // Nothing lexed yet,we can return the end of string token
+                this.PopMode();
+                var tokenType = mode.Kind == ModeKind.LineString
+                    ? TokenType.LineStringEnd
+                    : TokenType.MultiLineStringEnd;
+                return IToken.From(tokenType, this.AdvanceWithText(endLength));
+            }
+            else
+            {
+                // This will only be the end of string in the next iteration, we just return what we have
+                // consumed so far
+                return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
+            }
+        }
+
+    not_string_end:
+        // Check for escape sequence
+        if (ch == '\\')
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+
+        // Check for newline
+        if (this.TryParseNewline(offset, out var newlineLength))
+        {
+            // TODO: handle for single-line vs multi-line
+            throw new NotImplementedException();
+        }
+
+        // Just consume as a content character
+        this.valueBuilder.Append(ch);
+        ++offset;
+        goto start;
     }
 
     /// <summary>
@@ -407,7 +474,7 @@ internal sealed class Lexer
     {
         var ch = this.Peek();
         // Newline
-        if (this.TryParseNewline(out var newlineLength))
+        if (this.TryParseNewline(0, out var newlineLength))
         {
             result = IToken.From(TokenType.Newline, this.AdvanceWithText(newlineLength));
             return true;
@@ -440,15 +507,16 @@ internal sealed class Lexer
     /// <summary>
     /// Attempts to parse a newline.
     /// </summary>
+    /// <param name="offset">The offset to start parsing from.</param>
     /// <param name="length">The length of the newline in characters.</param>
     /// <returns>True, if a newline was parsed, false otherwise.</returns>
-    private bool TryParseNewline(out int length)
+    private bool TryParseNewline(int offset, out int length)
     {
-        var ch = this.SourceReader.Peek();
+        var ch = this.SourceReader.Peek(offset);
         if (ch == '\r')
         {
             // OS-X 9 or Windows-style newline
-            if (this.SourceReader.Peek(1) == '\n')
+            if (this.SourceReader.Peek(offset + 1) == '\n')
             {
                 // Windows-style
                 length = 2;

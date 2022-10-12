@@ -12,32 +12,14 @@ internal class Program
 from System.Console import { WriteLine };
 
 func main(): int32 {
-    var a = 'x';
-    var b = '\n';
-    var c = '\u{123}';
-    var d = '\\';
-    ""Hello \n \u{abc123}
-
-#""""""
-Foo bar\#n
-\#{123}
-Baz
-""""""#
-    val x = true;
-    while(x){
-    }
-    return x;
-
-    var a = (x > y == z) != a + 23 * c += 9;
-    if (true) { return false; }
+    WriteLine(123);
 }
 ";
         var srcReader = SourceReader.From(src);
         var lexer = new Lexer(srcReader);
         while (true)
         {
-            var token = lexer.Next();
-            if (token.IsTrivia) continue;
+            var token = lexer.Lex();
             Console.WriteLine(token);
             if (token.Type == TokenType.EndOfInput) break;
         }

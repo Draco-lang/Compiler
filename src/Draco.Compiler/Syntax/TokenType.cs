@@ -330,6 +330,7 @@ internal static class TokenTypeExtensions
     /// <returns>The textual representation of a token with type <paramref name="tokenType"/>.</returns>
     public static string GetTokenText(this TokenType tokenType) => tokenType switch
     {
+        TokenType.EndOfInput => string.Empty,
         TokenType.KeywordAnd => "and",
         TokenType.KeywordElse => "else",
         TokenType.KeywordFalse => "false",

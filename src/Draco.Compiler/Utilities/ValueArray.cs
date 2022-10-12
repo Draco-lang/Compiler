@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -12,11 +13,16 @@ namespace Draco.Compiler.Utilities;
 /// Represents an immutable array that is compared element-wise instead of by reference.
 /// </summary>
 /// <typeparam name="T">The element type of the array.</typeparam>
-internal readonly struct ValueArray<T> : IEquatable<ValueArray<T>>
+internal readonly struct ValueArray<T> : IEquatable<ValueArray<T>>, IImmutableList<T>
 {
-    private readonly IReadOnlyList<T>? values;
+    /// <summary>
+    /// An empty <see cref="ValueArray{T}"/>.
+    /// </summary>
+    public static readonly ValueArray<T> Empty = new(ImmutableArray<T>.Empty);
 
-    public ValueArray(IReadOnlyList<T> values)
+    private readonly IImmutableList<T> values;
+
+    public ValueArray(IImmutableList<T> values)
     {
         this.values = values;
     }
@@ -27,9 +33,6 @@ internal readonly struct ValueArray<T> : IEquatable<ValueArray<T>>
     /// <inheritdoc/>
     public bool Equals(ValueArray<T> other)
     {
-        if (ReferenceEquals(this.values, other.values)) return true;
-        if (this.values is null || other.values is null) return false;
-
         if (this.values.Count != other.values.Count) return false;
         for (var i = 0; i < this.values.Count; i++)
         {
@@ -41,13 +44,67 @@ internal readonly struct ValueArray<T> : IEquatable<ValueArray<T>>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        if (this.values is null) return HashCode.Combine((object?)null);
-
         var hash = default(HashCode);
         foreach (var item in this.values) hash.Add(item);
         return hash.ToHashCode();
     }
 
     /// <inheritdoc/>
-    public override string ToString() => $"[{string.Join(", ", this.values ?? Enumerable.Empty<T>())}]";
+    public override string ToString() => $"[{string.Join(", ", this.values)}]";
+
+    // Implementation of IImmutableList<T> /////////////////////////////////////
+
+    /// <inheritdoc/>
+    public T this[int index] => ((IReadOnlyList<T>)this.values)[index];
+
+    /// <inheritdoc/>
+    public int Count => this.values.Count;
+
+    /// <inheritdoc/>
+    public IImmutableList<T> Add(T value) => this.values.Add(value);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> AddRange(IEnumerable<T> items) => this.values.AddRange(items);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> Clear() => this.values.Clear();
+
+    /// <inheritdoc/>
+    public IEnumerator<T> GetEnumerator() => this.values.GetEnumerator();
+
+    /// <inheritdoc/>
+    public int IndexOf(T item, int index, int count, IEqualityComparer<T>? equalityComparer) => this.values.IndexOf(item, index, count, equalityComparer);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> Insert(int index, T element) => this.values.Insert(index, element);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> InsertRange(int index, IEnumerable<T> items) => this.values.InsertRange(index, items);
+
+    /// <inheritdoc/>
+    public int LastIndexOf(T item, int index, int count, IEqualityComparer<T>? equalityComparer) => this.values.LastIndexOf(item, index, count, equalityComparer);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> Remove(T value, IEqualityComparer<T>? equalityComparer) => this.values.Remove(value, equalityComparer);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> RemoveAll(Predicate<T> match) => this.values.RemoveAll(match);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> RemoveAt(int index) => this.values.RemoveAt(index);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> RemoveRange(IEnumerable<T> items, IEqualityComparer<T>? equalityComparer) => this.values.RemoveRange(items, equalityComparer);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> RemoveRange(int index, int count) => this.values.RemoveRange(index, count);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> Replace(T oldValue, T newValue, IEqualityComparer<T>? equalityComparer) => this.values.Replace(oldValue, newValue, equalityComparer);
+
+    /// <inheritdoc/>
+    public IImmutableList<T> SetItem(int index, T value) => this.values.SetItem(index, value);
+
+    /// <inheritdoc/>
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)this.values).GetEnumerator();
 }

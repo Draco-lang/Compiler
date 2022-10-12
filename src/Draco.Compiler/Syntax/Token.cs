@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
 
@@ -30,12 +31,12 @@ internal partial interface IToken
     /// <summary>
     /// The leading trivia for this <see cref="IToken"/>.
     /// </summary>
-    public ImmutableArray<IToken> LeadingTrivia { get; }
+    public ValueArray<IToken> LeadingTrivia { get; }
 
     /// <summary>
     /// The trailing trivia for this <see cref="IToken"/>.
     /// </summary>
-    public ImmutableArray<IToken> TrailingTrivia { get; }
+    public ValueArray<IToken> TrailingTrivia { get; }
 }
 
 internal partial interface IToken
@@ -68,10 +69,10 @@ internal partial interface IToken
         public int Width => this.Text.Length;
 
         /// <inheritdoc/>
-        public ImmutableArray<IToken> LeadingTrivia => ImmutableArray<IToken>.Empty;
+        public ValueArray<IToken> LeadingTrivia => ValueArray<IToken>.Empty;
 
         /// <inheritdoc/>
-        public ImmutableArray<IToken> TrailingTrivia => ImmutableArray<IToken>.Empty;
+        public ValueArray<IToken> TrailingTrivia => ValueArray<IToken>.Empty;
     }
 }
 
@@ -90,10 +91,10 @@ internal partial interface IToken
         public int Width => this.Text.Length;
 
         /// <inheritdoc/>
-        public ImmutableArray<IToken> LeadingTrivia => ImmutableArray<IToken>.Empty;
+        public ValueArray<IToken> LeadingTrivia => ValueArray<IToken>.Empty;
 
         /// <inheritdoc/>
-        public ImmutableArray<IToken> TrailingTrivia => ImmutableArray<IToken>.Empty;
+        public ValueArray<IToken> TrailingTrivia => ValueArray<IToken>.Empty;
     }
 }
 
@@ -107,8 +108,8 @@ internal partial interface IToken
     /// <param name="TrailingTrivia">The trailing trivia of this token.</param>
     public sealed record class WithTrivia(
         TokenType Type,
-        ImmutableArray<IToken> LeadingTrivia,
-        ImmutableArray<IToken> TrailingTrivia) : IToken
+        ValueArray<IToken> LeadingTrivia,
+        ValueArray<IToken> TrailingTrivia) : IToken
     {
         /// <inheritdoc/>
         public string Text => this.Type.GetTokenText();
@@ -135,8 +136,8 @@ internal partial interface IToken
         TokenType Type,
         string Text,
         T Value,
-        ImmutableArray<IToken> LeadingTrivia,
-        ImmutableArray<IToken> TrailingTrivia) : IWithValue<T>
+        ValueArray<IToken> LeadingTrivia,
+        ValueArray<IToken> TrailingTrivia) : IWithValue<T>
     {
         /// <inheritdoc/>
         public int Width { get; } = LeadingTrivia.Sum(t => t.Width)

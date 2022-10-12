@@ -13,6 +13,9 @@ from System.Console import { WriteLine };
 
 func main(): int32 {
     WriteLine(123);
+    WriteLine('a');
+    WriteLine('\n');
+    WriteLine('\u{41}');
 }
 ";
         var srcReader = SourceReader.From(src);

@@ -236,8 +236,39 @@ internal sealed class Lexer
         // Character literals
         if (ch == '\'')
         {
-            // TODO
-            throw new NotImplementedException();
+            var offset = 1;
+            var ch2 = this.Peek(offset);
+            var resultChar = '\0';
+            if (ch2 == '\\')
+            {
+                // Escape-sequence
+                ++offset;
+                resultChar = this.ParseEscapeSequence(ref offset);
+            }
+            else if (!char.IsControl(ch2))
+            {
+                // Regular character
+                resultChar = ch2;
+                ++offset;
+            }
+            else
+            {
+                // TODO: Error, invalid in character literal
+                throw new NotImplementedException();
+            }
+            // Expect closing quote
+            if (this.Peek(offset) == '\'')
+            {
+                ++offset;
+            }
+            else
+            {
+                // TODO: Error, unclosed character literal
+                throw new NotImplementedException();
+            }
+            // Done
+            var text = this.AdvanceWithText(offset);
+            return IToken.From(TokenType.LiteralCharacter, text, resultChar);
         }
 
         // String literal starts
@@ -269,6 +300,75 @@ internal sealed class Lexer
         if (this.SourceReader.IsEnd) return IToken.From(TokenType.EndOfInput);
         // TODO: Parse
         throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Parses an escape sequence for strings and character literals.
+    /// Reports an error, if the escape sequence is illegal.
+    /// </summary>
+    /// <param name="offset">A reference to an offset that points after the backslash and optional extended
+    /// delimiter characters. If parsing the escape succeeded, the result is written back here.</param>
+    /// <param name="result">The resulting character value gets written here, if the escape was parsed
+    /// successfully.</param>
+    /// <returns>True, if an escape was successfully parsed.</returns>
+    private char ParseEscapeSequence(ref int offset)
+    {
+        var esc = this.Peek(offset);
+        // Valid in any string
+        if (esc == 'u' && this.Peek(offset + 1) == '{')
+        {
+            offset += 2;
+            // Parse hex unicode value
+            var unicodeValue = 0;
+            var length = 0;
+            for (;
+                TryParseHexDigit(this.Peek(offset), out var digit);
+                unicodeValue = unicodeValue * 16 + digit, ++length, ++offset) ;
+            // Expect closing brace
+            if (this.Peek(offset) == '}')
+            {
+                ++offset;
+                if (length > 0)
+                {
+                    // TODO: This doesn't exactly look efficient or fool-proof
+                    // Find out why this returns a string
+                    return char.ConvertFromUtf32(unicodeValue)[0];
+                }
+                else
+                {
+                    // TODO: Error, zero-length unicode codepoint
+                    throw new NotImplementedException();
+                }
+            }
+            else
+            {
+                // TODO: Error, expected closing brace
+                throw new NotImplementedException();
+            }
+        }
+        // Any single-character escape, find the escaped equivalent
+        char? escaped = esc switch
+        {
+            '0' => '\0',
+            'a' => '\a',
+            'b' => '\b',
+            'f' => '\f',
+            'n' => '\n',
+            'r' => '\r',
+            't' => '\t',
+            'v' => '\v',
+            _ => null,
+        };
+        if (escaped is not null)
+        {
+            ++offset;
+            return escaped.Value;
+        }
+        else
+        {
+            // TODO: Error, unknown escape
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -379,8 +479,8 @@ internal sealed class Lexer
     // later for performance reasons
     private char Peek(int offset = 0, char @default = '\0') =>
         this.SourceReader.Peek(offset: offset, @default: @default);
-    private ReadOnlyMemory<char> Advance(int amount = 1) => this.SourceReader.Advance(amount);
-    private string AdvanceWithText(int amount = 1) => this.Advance(amount).ToString();
+    private ReadOnlyMemory<char> Advance(int amount) => this.SourceReader.Advance(amount);
+    private string AdvanceWithText(int amount) => this.Advance(amount).ToString();
 
     // Character categorization
     private static bool IsIdent(char ch) => char.IsLetterOrDigit(ch) || ch == '_';
@@ -390,4 +490,24 @@ internal sealed class Lexer
            (ch >= '0' && ch <= '9')
         || (ch >= 'a' && ch <= 'f')
         || (ch >= 'A' && ch <= 'F');
+    private static bool TryParseHexDigit(char ch, out int value)
+    {
+        if (ch >= '0' && ch <= '9')
+        {
+            value = ch - '0';
+            return true;
+        }
+        if (ch >= 'a' && ch <= 'z')
+        {
+            value = ch - 'a' + 10;
+            return true;
+        }
+        if (ch >= 'A' && ch <= 'Z')
+        {
+            value = ch - 'A' + 10;
+            return true;
+        }
+        value = 0;
+        return false;
+    }
 }

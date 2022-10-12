@@ -10,6 +10,21 @@ using System.Threading.Tasks;
 namespace Draco.Compiler.Utilities;
 
 /// <summary>
+/// Factory methods for <see cref="ValueArray{T}"/>.
+/// </summary>
+internal static class ValueArray
+{
+    /// <summary>
+    /// Builds a <see cref="ValueArray{T}"/> from <paramref name="items"/>.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="items">The items to create the array from.</param>
+    /// <returns>The constructed array containing <paramref name="items"/>.</returns>
+    public static ValueArray<T> Create<T>(params T[] items) =>
+        new(ImmutableArray.Create(items));
+}
+
+/// <summary>
 /// Represents an immutable array that is compared element-wise instead of by reference.
 /// </summary>
 /// <typeparam name="T">The element type of the array.</typeparam>

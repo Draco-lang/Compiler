@@ -65,7 +65,7 @@ internal sealed class Lexer
     private readonly ImmutableArray<IToken>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<IToken>();
 
     //in string mode indicates if the next token is indentation start
-    private bool IsNextTokenIndentation = false;
+    private bool IsNextTokenInterpolation = false;
 
     public Lexer(ISourceReader sourceReader)
     {
@@ -307,10 +307,10 @@ internal sealed class Lexer
         var offset = 0;
 
         //if this is interpolation, push interpolation and return interpolation start token
-        if (this.IsNextTokenIndentation)
+        if (this.IsNextTokenInterpolation)
         {
             int count = 1 + mode.ExtendedDelims;
-            this.IsNextTokenIndentation = false;
+            this.IsNextTokenInterpolation = false;
             this.PushMode(ModeKind.Interpolation, 0);
             return IToken.From(TokenType.InterpolationStart, this.AdvanceWithText(count + 1));
         }
@@ -377,7 +377,7 @@ internal sealed class Lexer
             //interpolation
             if (this.Peek(offset + mode.ExtendedDelims)=='{')
             {
-                this.IsNextTokenIndentation = true;
+                this.IsNextTokenInterpolation = true;
                 offset--;
                 return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
             }

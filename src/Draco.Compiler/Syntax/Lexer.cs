@@ -64,7 +64,6 @@ internal sealed class Lexer
     private readonly ImmutableArray<IToken>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<IToken>();
     private readonly ImmutableArray<IToken>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<IToken>();
 
-
     public Lexer(ISourceReader sourceReader)
     {
         this.SourceReader = sourceReader;
@@ -86,7 +85,7 @@ internal sealed class Lexer
             // Normal tokens can have trivia
             this.ParseLeadingTriviaList();
             var token = this.LexNormal();
-            if(token.Type != TokenType.InterpolationEnd)
+            if (token.Type != TokenType.InterpolationEnd)
                 this.ParseTrailingTriviaList();
             // If there was any leading or trailing trivia, we have to re-map
             if (this.leadingTriviaList.Count > 0 || this.trailingTriviaList.Count > 0)
@@ -353,24 +352,22 @@ internal sealed class Lexer
         // Check for escape sequence
         if (ch == '\\')
         {
-            ++offset;
             // Count the number of required delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
-                if (this.Peek(offset + i) != '#')
+                if (this.Peek(offset + i + 1) != '#')
                 {
-                    offset--;
                     goto not_escape_sequence;
                 }
             }
 
-            //interpolation
-            if (this.Peek(offset + mode.ExtendedDelims)=='{')
+            // Interpolation
+            if (this.Peek(offset + mode.ExtendedDelims + 1)=='{')
             {
-                // Nothing lexed yet,we can return the end of string token
-                if (offset == 1)
+                // Nothing lexed yet,we can return the start of interpolation token
+                if (offset == 0)
                 {
-                    int count = mode.ExtendedDelims + 1;
+                    var count = mode.ExtendedDelims + 1;
                     this.PushMode(ModeKind.Interpolation, 0);
                     return IToken.From(TokenType.InterpolationStart, this.AdvanceWithText(count + 1));
                 }
@@ -378,12 +375,10 @@ internal sealed class Lexer
                 {
                     // This will only be interpolation in the next iteration, we just return what we have
                     // consumed so far
-                    offset--;
                     return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
                 }
-                
             }
-            offset += mode.ExtendedDelims;
+            offset += mode.ExtendedDelims + 1;
             // Try to parse an escape
             var escaped = this.ParseEscapeSequence(ref offset);
             // Append to result
@@ -410,7 +405,6 @@ internal sealed class Lexer
             }
         }
 
-
         // Just consume as a content character
         this.valueBuilder.Append(ch);
         ++offset;
@@ -429,7 +423,7 @@ internal sealed class Lexer
     private char ParseEscapeSequence(ref int offset)
     {
         var esc = this.Peek(offset);
-        int delims = this.CurrentMode.ExtendedDelims;
+        var delims = this.CurrentMode.ExtendedDelims;
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')
         {

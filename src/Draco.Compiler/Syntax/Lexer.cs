@@ -374,19 +374,20 @@ internal sealed class Lexer
                 }
             }
             offset += mode.ExtendedDelims + 1;
-            // Line continuation
-            var whiteCharOffset = 0;
+            // Line continuation           
             ch = this.Peek(offset);
             if (char.IsWhiteSpace(ch))
             {
-                while (char.IsWhiteSpace((ch = this.Peek(offset + whiteCharOffset))) && (ch != '\n')) whiteCharOffset++;
-                if (ch == '\n')
+                var whiteCharOffset = 0;
+                while (char.IsWhiteSpace(ch) && ch != '\n')
                 {
-                    for (int i = 0; i < whiteCharOffset; i++)
-                    {
-                        this.valueBuilder.Append(' ');
-                    }
-                    offset += whiteCharOffset + 1;
+                    whiteCharOffset++;
+                    ch = this.Peek(offset + whiteCharOffset);
+                }
+                if (this.TryParseNewline(offset + whiteCharOffset, out int length))
+                {
+                    //TODO: decide what to do if there are whitespaces after line continuation
+                    offset += whiteCharOffset + length;
                     goto start;
                 }
                 else

@@ -352,15 +352,37 @@ internal sealed class Lexer
         // Check for escape sequence
         if (ch == '\\')
         {
-            // TODO
-            throw new NotImplementedException();
+            ++offset;
+            // Count the number of required delimiters
+            for (var i = 0; i < mode.ExtendedDelims; ++i)
+            {
+                if (this.Peek(offset + i) != '#') goto not_escape_sequence;
+            }
+            offset += mode.ExtendedDelims;
+            // Try to parse an escape
+            var escaped = this.ParseEscapeSequence(ref offset);
+            // Append to result
+            this.valueBuilder.Append(escaped);
+            goto start;
         }
 
+    not_escape_sequence:
         // Check for newline
         if (this.TryParseNewline(offset, out var newlineLength))
         {
-            // TODO: handle for single-line vs multi-line
-            throw new NotImplementedException();
+            if (mode.Kind == ModeKind.LineString)
+            {
+                // TODO: Report error, pop mode, return the last bits of content, if any
+                // DO NOT CONSUME THIS NEWLINE
+                throw new NotImplementedException();
+            }
+            else
+            {
+                // Newlines are completely valid in multiline stirngs
+                for (var i = 0; i < newlineLength; ++i) this.valueBuilder.Append(this.Peek(offset + i));
+                offset += newlineLength;
+                goto start;
+            }
         }
 
         // Just consume as a content character

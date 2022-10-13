@@ -77,11 +77,6 @@ internal enum TokenType
     StringContent,
 
     /// <summary>
-    /// A newline inside a string.
-    /// </summary>
-    StringNewline,
-
-    /// <summary>
     /// The start of string interpolation.
     /// </summary>
     InterpolationStart,

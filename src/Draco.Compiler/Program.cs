@@ -12,7 +12,10 @@ internal class Program
 from System.Console import { WriteLine };
 
 func main(): int32 {
-    WriteLine(""Hello, World!"");
+    WriteLine(""""""
+    Hello, \tWorld\u{41}!
+    Bye, World!
+"""""");
 }
 ";
         var srcReader = SourceReader.From(src);

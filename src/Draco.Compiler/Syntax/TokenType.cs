@@ -326,6 +326,7 @@ internal static class TokenTypeExtensions
     public static string GetTokenText(this TokenType tokenType) => tokenType switch
     {
         TokenType.EndOfInput => string.Empty,
+        TokenType.InterpolationEnd => "}",
         TokenType.KeywordAnd => "and",
         TokenType.KeywordElse => "else",
         TokenType.KeywordFalse => "false",

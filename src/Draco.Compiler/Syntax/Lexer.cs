@@ -64,6 +64,9 @@ internal sealed class Lexer
     private readonly ImmutableArray<IToken>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<IToken>();
     private readonly ImmutableArray<IToken>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<IToken>();
 
+    //in string mode indicates if the next token is indentation start
+    private bool IsNextTokenIndentation = false;
+
     public Lexer(ISourceReader sourceReader)
     {
         this.SourceReader = sourceReader;
@@ -89,6 +92,8 @@ internal sealed class Lexer
             // If there was any leading or trailing trivia, we have to re-map
             if (this.leadingTriviaList.Count > 0 || this.trailingTriviaList.Count > 0)
             {
+                    if (token.Type == TokenType.InterpolationEnd)
+                        return token.AddTrivia(new(this.leadingTriviaList.ToImmutable()), new(ImmutableArray.CreateBuilder<IToken>().ToImmutable()));
                 // Add trivia around
                 return token.AddTrivia(
                     new(this.leadingTriviaList.ToImmutable()),
@@ -303,6 +308,14 @@ internal sealed class Lexer
         var mode = this.CurrentMode;
         var offset = 0;
 
+        //if this is interpolation, push interpolation and return interpolation start token
+        if (this.IsNextTokenIndentation)
+        {
+            int count = 1 + mode.ExtendedDelims;
+            this.IsNextTokenIndentation = false;
+            this.PushMode(ModeKind.Interpolation, 0);
+            return IToken.From(TokenType.InterpolationStart, this.AdvanceWithText(count + 1));
+        }
     start:
         var ch = this.Peek(offset);
 
@@ -324,7 +337,7 @@ internal sealed class Lexer
             // Count the number of required closing delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
-                if (this.Peek(offset + i) != '#') goto not_string_end;
+                if (this.Peek(offset + endLength + i) != '#') goto not_string_end;
             }
             endLength += mode.ExtendedDelims;
             // Hit the end of the string
@@ -356,7 +369,19 @@ internal sealed class Lexer
             // Count the number of required delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
-                if (this.Peek(offset + i) != '#') goto not_escape_sequence;
+                if (this.Peek(offset + i) != '#')
+                {
+                    offset--;
+                    goto not_escape_sequence;
+                }
+            }
+
+            //interpolation
+            if (this.Peek(offset + mode.ExtendedDelims)=='{')
+            {
+                this.IsNextTokenIndentation = true;
+                offset--;
+                return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
             }
             offset += mode.ExtendedDelims;
             // Try to parse an escape
@@ -385,6 +410,8 @@ internal sealed class Lexer
             }
         }
 
+        
+
         // Just consume as a content character
         this.valueBuilder.Append(ch);
         ++offset;
@@ -403,6 +430,7 @@ internal sealed class Lexer
     private char ParseEscapeSequence(ref int offset)
     {
         var esc = this.Peek(offset);
+        int delims = this.CurrentMode.ExtendedDelims;
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')
         {

@@ -11,8 +11,8 @@ internal class Program
 // Simple hello world
 from System.Console import { WriteLine };
 
-func main(): int32 {
-    'a
+func main() {
+    WriteLine(""Hello, World!"");
 }
 ";
         var srcReader = SourceReader.From(src);
@@ -20,7 +20,7 @@ func main(): int32 {
         while (true)
         {
             var token = lexer.Lex();
-            //Console.WriteLine(token);
+            Console.WriteLine(token);
             foreach (var d in token.Diagnostics) Console.WriteLine(d);
             if (token.Type == TokenType.EndOfInput) break;
         }

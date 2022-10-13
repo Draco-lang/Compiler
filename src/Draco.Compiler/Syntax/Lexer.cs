@@ -332,7 +332,7 @@ internal sealed class Lexer
             // quotes.
             if (offset == 0)
             {
-                // Nothing lexed yet,we can return the end of string token
+                // Nothing lexed yet, we can return the end of string token
                 this.PopMode();
                 var tokenType = mode.Kind == ModeKind.LineString
                     ? TokenType.LineStringEnd

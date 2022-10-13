@@ -375,9 +375,9 @@ internal sealed class Lexer
             }
             offset += mode.ExtendedDelims + 1;
             // Line continuation           
-            if (IsSpace(this.Peek(offset)) && mode.Kind == ModeKind.MultiLineString)
+            if (mode.Kind == ModeKind.MultiLineString && IsSpace(this.Peek(offset)))
             {
-                var whiteCharOffset = 0;
+                var whiteCharOffset = 1;
                 while (IsSpace(this.Peek(offset + whiteCharOffset))) whiteCharOffset++;
                 if (this.TryParseNewline(offset + whiteCharOffset, out var length))
                 {

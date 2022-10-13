@@ -477,14 +477,16 @@ internal sealed class Lexer
         // Any single-character escape, find the escaped equivalent
         char? escaped = esc switch
         {
-            '0' => '\0',
-            'a' => '\a',
-            'b' => '\b',
-            'f' => '\f',
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
-            'v' => '\v',
+            '0'  => '\0',
+            'a'  => '\a',
+            'b'  => '\b',
+            'f'  => '\f',
+            'n'  => '\n',
+            'r'  => '\r',
+            't'  => '\t',
+            'v'  => '\v',
+            '\'' => '\'',
+            '\"' => '\"',
             _ => null,
         };
         if (escaped is not null)

@@ -64,8 +64,6 @@ internal sealed class Lexer
     private readonly ImmutableArray<IToken>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<IToken>();
     private readonly ImmutableArray<IToken>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<IToken>();
 
-    //in string mode indicates if the next token is indentation start
-    private bool IsNextTokenInterpolation = false;
 
     public Lexer(ISourceReader sourceReader)
     {
@@ -306,14 +304,6 @@ internal sealed class Lexer
         var mode = this.CurrentMode;
         var offset = 0;
 
-        //if this is interpolation, push interpolation and return interpolation start token
-        if (this.IsNextTokenInterpolation)
-        {
-            int count = 1 + mode.ExtendedDelims;
-            this.IsNextTokenInterpolation = false;
-            this.PushMode(ModeKind.Interpolation, 0);
-            return IToken.From(TokenType.InterpolationStart, this.AdvanceWithText(count + 1));
-        }
     start:
         var ch = this.Peek(offset);
 
@@ -377,9 +367,21 @@ internal sealed class Lexer
             //interpolation
             if (this.Peek(offset + mode.ExtendedDelims)=='{')
             {
-                this.IsNextTokenInterpolation = true;
-                offset--;
-                return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
+                // Nothing lexed yet,we can return the end of string token
+                if (offset == 1)
+                {
+                    int count = mode.ExtendedDelims + 1;
+                    this.PushMode(ModeKind.Interpolation, 0);
+                    return IToken.From(TokenType.InterpolationStart, this.AdvanceWithText(count + 1));
+                }
+                else
+                {
+                    // This will only be interpolation in the next iteration, we just return what we have
+                    // consumed so far
+                    offset--;
+                    return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
+                }
+                
             }
             offset += mode.ExtendedDelims;
             // Try to parse an escape
@@ -408,7 +410,6 @@ internal sealed class Lexer
             }
         }
 
-        
 
         // Just consume as a content character
         this.valueBuilder.Append(ch);

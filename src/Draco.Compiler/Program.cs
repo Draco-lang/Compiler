@@ -12,12 +12,7 @@ internal class Program
 from System.Console import { WriteLine };
 
 func main(): int32 {
-    WriteLine(""""""
-    Hello, \tWorld\u{41}! \' \""
-    Hello, Interpolation \{1 + 3}
-    Bye, Interpolation \   
-    Bye, World!
-"""""");
+    'a
 }
 ";
         var srcReader = SourceReader.From(src);

@@ -247,13 +247,15 @@ internal sealed class Lexer
             else if (!char.IsControl(ch2))
             {
                 // Regular character
-                resultChar = ch2;
                 ++offset;
+                resultChar = ch2;
             }
             else
             {
-                // TODO: Error, invalid in character literal
-                throw new NotImplementedException();
+                // Error, illegal character
+                this.AddError(offset, SyntaxErrors.IllegalCharacterLiteral, (int)ch2);
+                ++offset;
+                resultChar = ' ';
             }
             // Expect closing quote
             if (this.Peek(offset) == '\'')
@@ -262,8 +264,7 @@ internal sealed class Lexer
             }
             else
             {
-                // TODO: Error, unclosed character literal
-                throw new NotImplementedException();
+                this.AddError(offset, SyntaxErrors.UnclosedCharacterLiteral);
             }
             // Done
             var text = this.AdvanceWithText(offset);
@@ -399,9 +400,9 @@ internal sealed class Lexer
         {
             if (mode.Kind == ModeKind.LineString)
             {
-                // TODO: Report error, pop mode, return the last bits of content, if any
-                // DO NOT CONSUME THIS NEWLINE
-                throw new NotImplementedException();
+                // A newline is illegal in a line string literal
+                this.AddError(offset, SyntaxErrors.UnclosedLineStringLiteral);
+                return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
             }
             else
             {
@@ -455,14 +456,12 @@ internal sealed class Lexer
                 }
                 else
                 {
-                    // TODO: Error, zero-length unicode codepoint
-                    throw new NotImplementedException();
+                    this.AddError(offset, SyntaxErrors.ZeroLengthUnicodeCodepoint);
                 }
             }
             else
             {
-                // TODO: Error, expected closing brace
-                throw new NotImplementedException();
+                this.AddError(offset, SyntaxErrors.UnclosedUnicodeCodepoint);
             }
         }
         // Any single-character escape, find the escaped equivalent
@@ -487,8 +486,8 @@ internal sealed class Lexer
         }
         else
         {
-            // TODO: Error, unknown escape
-            throw new NotImplementedException();
+            this.AddError(offset, SyntaxErrors.IllegalEscapeCharacter, esc);
+            return ' ';
         }
     }
 
@@ -586,6 +585,13 @@ internal sealed class Lexer
         // Not a newline
         length = 0;
         return false;
+    }
+
+    // Errors
+    private void AddError(int offset, string message, params object[] args)
+    {
+        // TODO: Attach to token instead
+        Console.WriteLine($"{string.Format(message, args)} at {offset}");
     }
 
     // Mode stack

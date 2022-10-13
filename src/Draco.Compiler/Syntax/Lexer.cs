@@ -88,13 +88,11 @@ internal sealed class Lexer
             // Normal tokens can have trivia
             this.ParseLeadingTriviaList();
             var token = this.LexNormal();
-            this.ParseTrailingTriviaList();
+            if(token.Type != TokenType.InterpolationEnd)
+                this.ParseTrailingTriviaList();
             // If there was any leading or trailing trivia, we have to re-map
             if (this.leadingTriviaList.Count > 0 || this.trailingTriviaList.Count > 0)
             {
-                    if (token.Type == TokenType.InterpolationEnd)
-                        return token.AddTrivia(new(this.leadingTriviaList.ToImmutable()), new(ImmutableArray.CreateBuilder<IToken>().ToImmutable()));
-                // Add trivia around
                 return token.AddTrivia(
                     new(this.leadingTriviaList.ToImmutable()),
                     new(this.trailingTriviaList.ToImmutable()));

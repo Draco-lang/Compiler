@@ -324,7 +324,7 @@ internal sealed class Lexer
             // Count the number of required closing delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
-                if (this.Peek(offset + i) != '#') goto not_string_end;
+                if (this.Peek(offset + endLength + i) != '#') goto not_string_end;
             }
             endLength += mode.ExtendedDelims;
             // Hit the end of the string

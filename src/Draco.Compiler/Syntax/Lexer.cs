@@ -374,6 +374,18 @@ internal sealed class Lexer
                 }
             }
             offset += mode.ExtendedDelims + 1;
+            // Line continuation           
+            if (IsSpace(this.Peek(offset)) && mode.Kind == ModeKind.MultiLineString)
+            {
+                var whiteCharOffset = 0;
+                while (IsSpace(this.Peek(offset + whiteCharOffset))) whiteCharOffset++;
+                if (this.TryParseNewline(offset + whiteCharOffset, out var length))
+                {
+                    //TODO: decide what to do if there are whitespaces after line continuation
+                    offset += whiteCharOffset + length;
+                    goto start;
+                }
+            }
             // Try to parse an escape
             var escaped = this.ParseEscapeSequence(ref offset);
             // Append to result
@@ -456,14 +468,16 @@ internal sealed class Lexer
         // Any single-character escape, find the escaped equivalent
         char? escaped = esc switch
         {
-            '0' => '\0',
-            'a' => '\a',
-            'b' => '\b',
-            'f' => '\f',
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
-            'v' => '\v',
+            '0'  => '\0',
+            'a'  => '\a',
+            'b'  => '\b',
+            'f'  => '\f',
+            'n'  => '\n',
+            'r'  => '\r',
+            't'  => '\t',
+            'v'  => '\v',
+            '\'' => '\'',
+            '\"' => '\"',
             _ => null,
         };
         if (escaped is not null)

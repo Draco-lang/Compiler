@@ -20,7 +20,8 @@ func main(): int32 {
         while (true)
         {
             var token = lexer.Lex();
-            Console.WriteLine(token);
+            //Console.WriteLine(token);
+            foreach (var d in token.Diagnostics) Console.WriteLine(d);
             if (token.Type == TokenType.EndOfInput) break;
         }
     }

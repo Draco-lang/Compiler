@@ -63,6 +63,7 @@ internal sealed class Lexer
     private readonly StringBuilder valueBuilder = new();
     private readonly ImmutableArray<IToken>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<IToken>();
     private readonly ImmutableArray<IToken>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<IToken>();
+    private readonly ImmutableArray<Diagnostic>.Builder diagnosticList = ImmutableArray.CreateBuilder<Diagnostic>();
 
     public Lexer(ISourceReader sourceReader)
     {
@@ -77,6 +78,11 @@ internal sealed class Lexer
     public IToken Lex()
     {
         this.valueBuilder.Clear();
+        this.leadingTriviaList.Clear();
+        this.trailingTriviaList.Clear();
+        this.diagnosticList.Clear();
+
+        IToken token;
         switch (this.CurrentMode.Kind)
         {
         case ModeKind.Normal:
@@ -84,29 +90,34 @@ internal sealed class Lexer
         {
             // Normal tokens can have trivia
             this.ParseLeadingTriviaList();
-            var token = this.LexNormal();
+            token = this.LexNormal();
             if (token.Type != TokenType.InterpolationEnd) this.ParseTrailingTriviaList();
             // If there was any leading or trailing trivia, we have to re-map
             if (this.leadingTriviaList.Count > 0 || this.trailingTriviaList.Count > 0)
             {
-                return token.AddTrivia(
+                token = token.AddTrivia(
                     new(this.leadingTriviaList.ToImmutable()),
                     new(this.trailingTriviaList.ToImmutable()));
             }
-            else
-            {
-                // Nothing to do
-                return token;
-            }
+            break;
         }
 
         case ModeKind.LineString:
         case ModeKind.MultiLineString:
-            return this.LexString();
+            token = this.LexString();
+            break;
 
         default:
             throw new InvalidOperationException("unsupported lexer mode");
         }
+
+        // Attach diagnostics, if any
+        if (this.diagnosticList.Count > 0)
+        {
+            token = token.AddDiagnostics(new(this.diagnosticList.ToImmutable()));
+        }
+
+        return token;
     }
 
     private IToken LexNormal()
@@ -497,7 +508,6 @@ internal sealed class Lexer
     /// </summary>
     private void ParseLeadingTriviaList()
     {
-        this.leadingTriviaList.Clear();
         while (this.TryParseTrivia(out var trivia)) this.leadingTriviaList.Add(trivia);
     }
 
@@ -507,7 +517,6 @@ internal sealed class Lexer
     /// </summary>
     private void ParseTrailingTriviaList()
     {
-        this.trailingTriviaList.Clear();
         while (this.TryParseTrivia(out var trivia))
         {
             this.trailingTriviaList.Add(trivia);
@@ -590,8 +599,9 @@ internal sealed class Lexer
     // Errors
     private void AddError(int offset, string message, params object[] args)
     {
-        // TODO: Attach to token instead
-        Console.WriteLine($"{string.Format(message, args)} at {offset}");
+        // We need to account for leading trivia
+        var leadingTriviaWidth = this.leadingTriviaList.Sum(t => t.Width);
+        this.diagnosticList.Add(new(DiagnosticSeverity.Error, string.Format(message, args), leadingTriviaWidth + offset));
     }
 
     // Mode stack

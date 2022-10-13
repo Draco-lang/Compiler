@@ -375,25 +375,15 @@ internal sealed class Lexer
             }
             offset += mode.ExtendedDelims + 1;
             // Line continuation           
-            ch = this.Peek(offset);
-            if (char.IsWhiteSpace(ch))
+            if (IsSpace(this.Peek(offset)) && mode.Kind == ModeKind.MultiLineString)
             {
                 var whiteCharOffset = 0;
-                while (char.IsWhiteSpace(ch) && ch != '\n')
-                {
-                    whiteCharOffset++;
-                    ch = this.Peek(offset + whiteCharOffset);
-                }
-                if (this.TryParseNewline(offset + whiteCharOffset, out int length))
+                while (IsSpace(this.Peek(offset + whiteCharOffset))) whiteCharOffset++;
+                if (this.TryParseNewline(offset + whiteCharOffset, out var length))
                 {
                     //TODO: decide what to do if there are whitespaces after line continuation
                     offset += whiteCharOffset + length;
                     goto start;
-                }
-                else
-                {
-                    // TODO: Error, there is not newline directly after line continuation
-                    throw new NotImplementedException();
                 }
             }
             // Try to parse an escape

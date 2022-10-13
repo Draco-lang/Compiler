@@ -15,7 +15,7 @@ func main(): int32 {
     WriteLine(""""""
     Hello, \tWorld\u{41}! \' \""
     Hello, Interpolation \{1 + 3}
-    Bye, Interpolation \  
+    Bye, Interpolation \   
     Bye, World!
 """""");
 }

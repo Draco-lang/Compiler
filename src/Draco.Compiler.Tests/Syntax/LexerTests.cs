@@ -29,6 +29,14 @@ public sealed class LexerTests
     [Trait("Feature", "Comments")]
     public void TestLineComment()
     {
+        var text = "// Hello, comments";
+        var tokens = LexToArray(text);
 
+        Assert.Single(tokens);
+        Assert.Equal(TokenType.EndOfInput, tokens[0].Type);
+        Assert.Single(tokens[0].LeadingTrivia);
+        Assert.Empty(tokens[0].TrailingTrivia);
+        Assert.Empty(tokens[0].Diagnostics);
+        Assert.Equal(18, tokens[0].Width);
     }
 }

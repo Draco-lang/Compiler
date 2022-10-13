@@ -332,7 +332,7 @@ internal sealed class Lexer
             // quotes.
             if (offset == 0)
             {
-                // Nothing lexed yet,we can return the end of string token
+                // Nothing lexed yet, we can return the end of string token
                 this.PopMode();
                 var tokenType = mode.Kind == ModeKind.LineString
                     ? TokenType.LineStringEnd
@@ -374,6 +374,27 @@ internal sealed class Lexer
                 }
             }
             offset += mode.ExtendedDelims + 1;
+            // Line continuation
+            var whiteCharOffset = 0;
+            ch = this.Peek(offset);
+            if (char.IsWhiteSpace(ch))
+            {
+                while (char.IsWhiteSpace((ch = this.Peek(offset + whiteCharOffset))) && (ch != '\n')) whiteCharOffset++;
+                if (ch == '\n')
+                {
+                    for (int i = 0; i < whiteCharOffset; i++)
+                    {
+                        this.valueBuilder.Append(' ');
+                    }
+                    offset += whiteCharOffset + 1;
+                    goto start;
+                }
+                else
+                {
+                    // TODO: Error, there is not newline directly after line continuation
+                    throw new NotImplementedException();
+                }
+            }
             // Try to parse an escape
             var escaped = this.ParseEscapeSequence(ref offset);
             // Append to result

@@ -248,7 +248,7 @@ internal sealed class Lexer
         {
             var offset = 1;
             var ch2 = this.Peek(offset);
-            var resultChar = '\0';
+            var resultChar = string.Empty;
             if (ch2 == '\\')
             {
                 // Escape-sequence
@@ -259,14 +259,14 @@ internal sealed class Lexer
             {
                 // Regular character
                 ++offset;
-                resultChar = ch2;
+                resultChar = ch2.ToString();
             }
             else
             {
                 // Error, illegal character
                 this.AddError(offset, SyntaxErrors.IllegalCharacterLiteral, (int)ch2);
                 ++offset;
-                resultChar = ' ';
+                resultChar = " ";
             }
             // Expect closing quote
             if (this.Peek(offset) == '\'')
@@ -430,6 +430,8 @@ internal sealed class Lexer
         goto start;
     }
 
+    // NOTE: We are returning a string here because UTF32 > UTF16...
+    // We might want to switch to something more efficient later for performance reasons
     /// <summary>
     /// Parses an escape sequence for strings and character literals.
     /// Reports an error, if the escape sequence is illegal.
@@ -439,7 +441,7 @@ internal sealed class Lexer
     /// <param name="result">The resulting character value gets written here, if the escape was parsed
     /// successfully.</param>
     /// <returns>True, if an escape was successfully parsed.</returns>
-    private char ParseEscapeSequence(ref int offset)
+    private string ParseEscapeSequence(ref int offset)
     {
         var esc = this.Peek(offset);
         // Valid in any string
@@ -461,44 +463,44 @@ internal sealed class Lexer
                 ++offset;
                 if (length > 0)
                 {
-                    // TODO: This doesn't exactly look efficient or fool-proof
-                    // Find out why this returns a string
-                    return char.ConvertFromUtf32(unicodeValue)[0];
+                    return char.ConvertFromUtf32(unicodeValue);
                 }
                 else
                 {
+                    // TODO: Assign some default here or return early?
                     this.AddError(offset, SyntaxErrors.ZeroLengthUnicodeCodepoint);
                 }
             }
             else
             {
+                // TODO: Assign some default here or return early?
                 this.AddError(offset, SyntaxErrors.UnclosedUnicodeCodepoint);
             }
         }
         // Any single-character escape, find the escaped equivalent
-        char? escaped = esc switch
+        var escaped = esc switch
         {
-            '0'  => '\0',
-            'a'  => '\a',
-            'b'  => '\b',
-            'f'  => '\f',
-            'n'  => '\n',
-            'r'  => '\r',
-            't'  => '\t',
-            'v'  => '\v',
-            '\'' => '\'',
-            '\"' => '\"',
+            '0'  => "\0",
+            'a'  => "\a",
+            'b'  => "\b",
+            'f'  => "\f",
+            'n'  => "\n",
+            'r'  => "\r",
+            't'  => "\t",
+            'v'  => "\v",
+            '\'' => "\'",
+            '\"' => "\"",
             _ => null,
         };
         if (escaped is not null)
         {
             ++offset;
-            return escaped.Value;
+            return escaped;
         }
         else
         {
             this.AddError(offset, SyntaxErrors.IllegalEscapeCharacter, esc);
-            return ' ';
+            return " ";
         }
     }
 

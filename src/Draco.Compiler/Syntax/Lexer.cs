@@ -85,8 +85,7 @@ internal sealed class Lexer
             // Normal tokens can have trivia
             this.ParseLeadingTriviaList();
             var token = this.LexNormal();
-            if (token.Type != TokenType.InterpolationEnd)
-                this.ParseTrailingTriviaList();
+            if (token.Type != TokenType.InterpolationEnd) this.ParseTrailingTriviaList();
             // If there was any leading or trailing trivia, we have to re-map
             if (this.leadingTriviaList.Count > 0 || this.trailingTriviaList.Count > 0)
             {
@@ -355,21 +354,17 @@ internal sealed class Lexer
             // Count the number of required delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
-                if (this.Peek(offset + i + 1) != '#')
-                {
-                    goto not_escape_sequence;
-                }
+                if (this.Peek(offset + i + 1) != '#') goto not_escape_sequence;
             }
 
             // Interpolation
-            if (this.Peek(offset + mode.ExtendedDelims + 1)=='{')
+            if (this.Peek(offset + mode.ExtendedDelims + 1) == '{')
             {
                 // Nothing lexed yet,we can return the start of interpolation token
                 if (offset == 0)
                 {
-                    var count = mode.ExtendedDelims + 1;
                     this.PushMode(ModeKind.Interpolation, 0);
-                    return IToken.From(TokenType.InterpolationStart, this.AdvanceWithText(count + 1));
+                    return IToken.From(TokenType.InterpolationStart, this.AdvanceWithText(mode.ExtendedDelims + 2));
                 }
                 else
                 {
@@ -423,7 +418,6 @@ internal sealed class Lexer
     private char ParseEscapeSequence(ref int offset)
     {
         var esc = this.Peek(offset);
-        var delims = this.CurrentMode.ExtendedDelims;
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')
         {

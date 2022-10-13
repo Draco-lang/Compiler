@@ -85,11 +85,10 @@ internal sealed class Lexer
             // Normal tokens can have trivia
             this.ParseLeadingTriviaList();
             var token = this.LexNormal();
-            this.ParseTrailingTriviaList();
+            if (token.Type != TokenType.InterpolationEnd) this.ParseTrailingTriviaList();
             // If there was any leading or trailing trivia, we have to re-map
             if (this.leadingTriviaList.Count > 0 || this.trailingTriviaList.Count > 0)
             {
-                // Add trivia around
                 return token.AddTrivia(
                     new(this.leadingTriviaList.ToImmutable()),
                     new(this.trailingTriviaList.ToImmutable()));
@@ -352,13 +351,29 @@ internal sealed class Lexer
         // Check for escape sequence
         if (ch == '\\')
         {
-            ++offset;
             // Count the number of required delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
-                if (this.Peek(offset + i) != '#') goto not_escape_sequence;
+                if (this.Peek(offset + i + 1) != '#') goto not_escape_sequence;
             }
-            offset += mode.ExtendedDelims;
+
+            // Interpolation
+            if (this.Peek(offset + mode.ExtendedDelims + 1) == '{')
+            {
+                // Nothing lexed yet,we can return the start of interpolation token
+                if (offset == 0)
+                {
+                    this.PushMode(ModeKind.Interpolation, 0);
+                    return IToken.From(TokenType.InterpolationStart, this.AdvanceWithText(mode.ExtendedDelims + 2));
+                }
+                else
+                {
+                    // This will only be interpolation in the next iteration, we just return what we have
+                    // consumed so far
+                    return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
+                }
+            }
+            offset += mode.ExtendedDelims + 1;
             // Try to parse an escape
             var escaped = this.ParseEscapeSequence(ref offset);
             // Append to result

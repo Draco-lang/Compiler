@@ -79,7 +79,7 @@ internal abstract record class ParseTree
             Enclosed<(
                 ValueArray<Stmt> Statements,
                 Expr? Value
-            )> Value) : Expr;
+            )> Enclosed) : Expr;
 
         public sealed record class If(
             IToken IfKeyword,

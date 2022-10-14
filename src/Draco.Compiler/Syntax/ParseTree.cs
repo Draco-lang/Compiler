@@ -194,6 +194,12 @@ internal abstract record class ParseTree
             Enclosed<Expr> IndexExpression) : Expr;
 
         /// <summary>
+        /// A variable expression, or more correctly an identifier reference expression.
+        /// </summary>
+        public sealed record class Variable(
+            IToken Identifier) : Expr;
+
+        /// <summary>
         /// A member access expression.
         /// </summary>
         public sealed record class MemberAccess(
@@ -215,5 +221,11 @@ internal abstract record class ParseTree
             Expr Left,
             IToken Operator,
             Expr Right) : Expr;
+
+        /// <summary>
+        /// A grouping expression, enclosing a sub-expression.
+        /// </summary>
+        public sealed record class Grouping(
+            Enclosed<Expr> Expression);
     }
 }

@@ -98,5 +98,42 @@ internal abstract record class ParseTree
         public sealed record class Return(
             IToken ReturnKeyword,
             Expr? Expression) : Expr;
+
+        public sealed record class Literal(
+            IToken Value) : Expr;
+
+        public sealed record class FuncCall(
+            Expr Expression,
+            IToken OpenParenToken,
+            ValueArray<(
+                Expr Expression,
+                IToken CommaToken
+            )> Args,
+            IToken CloseParenToken) : Expr;
+
+        public sealed record class Index(
+            Expr Expression,
+            IToken OpenSquareToken,
+            Expr IndexExpression,
+            IToken CloseSquareToken) : Expr;
+
+        public sealed record class MemberAccess(
+            Expr Expression,
+            IToken PeriodToken,
+            IToken MemberName) : Expr;
+
+        public sealed record class Unary(
+            IToken Operator,
+            Expr Operand) : Expr;
+
+        public sealed record class Binary(
+            Expr Left,
+            IToken Operator,
+            Expr Right) : Expr;
+
+        public sealed record class Assign(
+            IToken Identifier,
+            IToken EqualsToken, // Or any compound assignment token
+            Expr Value) : Expr;
     }
 }

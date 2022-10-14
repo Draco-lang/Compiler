@@ -307,15 +307,25 @@ internal sealed class Lexer
 
     private IToken LexString()
     {
-        // First check for end of source here
-        if (this.SourceReader.IsEnd) return IToken.From(TokenType.EndOfInput);
-
         // Get the largest continuous sequence without linebreaks or interpolation
         var mode = this.CurrentMode;
         var offset = 0;
 
     start:
+        // First check for end of source here
+        if (this.SourceReader.IsEnd) return IToken.From(TokenType.EndOfInput);
+
         var ch = this.Peek(offset);
+
+        // NOTE: We are checking end of input differently here, because SourceReader.IsEnd is based on its
+        // current position, but we are peeking in this input way ahead
+        // End of input
+        if (ch == '\0' && offset > 0)
+        {
+            // NOTE: Not a nice assumption to rely on '\0', but let's assume the input could end here,
+            // return the section we have consumed so far
+            return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
+        }
 
         // Check for closing quotes
         if (ch == '"')
@@ -413,6 +423,7 @@ internal sealed class Lexer
             {
                 // A newline is illegal in a line string literal
                 this.AddError(offset, SyntaxErrors.UnclosedLineStringLiteral);
+                this.PopMode();
                 return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
             }
             else

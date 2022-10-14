@@ -85,6 +85,31 @@ public sealed class LexerTests
 
     [Fact]
     [Trait("Feature", "Strings")]
+    public void TestUnclosedLineString()
+    {
+        var text = """
+            "Hello, line strings!
+            """;
+        var tokens = LexToArray(text);
+
+        Assert.Equal(3, tokens.Length);
+
+        Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
+        Assert.Equal(1, tokens[0].Width);
+        AssertNoTriviaOrDiagnostics(tokens[0]);
+
+        Assert.Equal(TokenType.StringContent, tokens[1].Type);
+        Assert.Equal(20, tokens[1].Width);
+        Assert.Equal("Hello, line strings!", ValueText(tokens[1]));
+        AssertNoTriviaOrDiagnostics(tokens[1]);
+
+        Assert.Equal(TokenType.EndOfInput, tokens[2].Type);
+        Assert.Equal(0, tokens[2].Width);
+        AssertNoTriviaOrDiagnostics(tokens[2]);
+    }
+
+    [Fact]
+    [Trait("Feature", "Strings")]
     public void TestLineStringEscapes()
     {
         var text = """

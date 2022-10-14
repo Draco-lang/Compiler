@@ -76,8 +76,10 @@ internal abstract record class ParseTree
     public abstract record class Expr : ParseTree
     {
         public sealed record class Block(
-            ValueArray<Stmt> Statements,
-            Expr? Value) : Expr;
+            Parenthesized<(
+                ValueArray<Stmt> Statements,
+                Expr? Value
+            )> Value) : Expr;
 
         public sealed record class If(
             IToken IfKeyword,

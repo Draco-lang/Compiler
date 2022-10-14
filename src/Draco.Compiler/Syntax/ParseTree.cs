@@ -10,19 +10,23 @@ internal abstract record class ParseTree
     /// <summary>
     /// A node enclosed by two tokens.
     /// </summary>
-    public sealed record class Enclosed<T>(
+    public readonly record struct Enclosed<T>(
         IToken OpenToken,
         T Value,
-        IToken CloseToken) : ParseTree;
+        IToken CloseToken);
+
+    /// <summary>
+    /// A single punctuated element.
+    /// </summary>
+    public readonly record struct Punctuated<T>(
+        T Value,
+        IToken? Punctuation);
 
     /// <summary>
     /// A list of nodes with a token separating each element.
     /// </summary>
-    public sealed record class PunctuatedList<T>(
-        ValueArray<(
-            T Value,
-            IToken? Punctuation
-        )> Elements) : ParseTree;
+    public readonly record struct PunctuatedList<T>(
+        ValueArray<Punctuated<T>> Elements);
 
     /// <summary>
     /// A compilation unit, the top-most node in the parse tree.
@@ -59,9 +63,7 @@ internal abstract record class ParseTree
             IToken Keyword, // Either var or val
             IToken Identifier,
             TypeSpecifier? Type,
-            (   IToken EqualsToken,
-                Expr Expression
-            )? Initializer) : Decl;
+            (IToken EqualsToken, Expr Expression)? Initializer) : Decl;
     }
 
     /// <summary>
@@ -135,10 +137,7 @@ internal abstract record class ParseTree
         /// A block of statements and an optional value.
         /// </summary>
         public sealed record class Block(
-            Enclosed<(
-                ValueArray<Stmt> Statements,
-                Expr? Value
-            )> Enclosed) : Expr;
+            Enclosed<(ValueArray<Stmt> Statements, Expr? Value)> Enclosed) : Expr;
 
         /// <summary>
         /// An if-expression with an option else clause.
@@ -147,9 +146,7 @@ internal abstract record class ParseTree
             IToken IfKeyword,
             Enclosed<Expr> Condition,
             Expr Expression,
-            (   IToken ElseToken,
-                Expr Expression
-            )? Else) : Expr;
+            (IToken ElseToken, Expr Expression)? Else) : Expr;
 
         /// <summary>
         /// A while-expression.
@@ -226,6 +223,6 @@ internal abstract record class ParseTree
         /// A grouping expression, enclosing a sub-expression.
         /// </summary>
         public sealed record class Grouping(
-            Enclosed<Expr> Expression);
+            Enclosed<Expr> Expression) : Expr;
     }
 }

@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
@@ -12,6 +14,9 @@ internal abstract record class ParseTree
         T Value,
         IToken CloseToken) : ParseTree;
 
+    public sealed record class PunctuatedList<T>(
+        ValueArray<(T Value, IToken? Punctuation)> Elements) : ParseTree;
+
     public sealed record class CompilationUnit(
         ValueArray<Decl> Declarations) : ParseTree;
 
@@ -20,12 +25,7 @@ internal abstract record class ParseTree
         public sealed record class Func(
             IToken FuncKeyword,
             IToken Identifier,
-            Enclosed<ValueArray<(
-                (   IToken Identifier,
-                    TypeSpecifier Type
-                ) Param,
-                IToken CommaToken
-            )>> Params,
+            Enclosed<PunctuatedList<FuncParam>> Params,
             TypeSpecifier? Type,
             FuncBody Body) : Decl;
 
@@ -41,6 +41,10 @@ internal abstract record class ParseTree
                 Expr Expression
             )? Initializer) : Decl;
     }
+
+    public sealed record class FuncParam(
+        IToken Identifier,
+        TypeSpecifier Type) : ParseTree;
 
     public abstract record class FuncBody
     {
@@ -107,11 +111,7 @@ internal abstract record class ParseTree
 
         public sealed record class FuncCall(
             Expr Expression,
-            Enclosed<
-            ValueArray<(
-                Expr Expression,
-                IToken CommaToken
-            )>> Args) : Expr;
+            Enclosed<PunctuatedList<Expr>> Args) : Expr;
 
         public sealed record class Index(
             Expr Expression,

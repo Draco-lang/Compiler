@@ -10,9 +10,9 @@ namespace Draco.Compiler.Tests.Syntax;
 
 public sealed class LexerTests
 {
-    private static IEnumerator<IToken> Lex(string text) => LexImpl(text).GetEnumerator();
+    private static IEnumerator<Token> Lex(string text) => LexImpl(text).GetEnumerator();
 
-    private static IEnumerable<IToken> LexImpl(string text)
+    private static IEnumerable<Token> LexImpl(string text)
     {
         var reader = SourceReader.From(text);
         var lexer = new Lexer(reader);
@@ -24,37 +24,35 @@ public sealed class LexerTests
         }
     }
 
-    private static string ValueText(IToken token) => ((IToken.IWithValue<string>)token).Value;
-
     private static string NormalizeNewliens(string text) => text
         .Replace("\r\n", "\n")
         .Replace("\r", "\n");
 
-    private static void AssertNextToken(IEnumerator<IToken> enumerator, out IToken result)
+    private static void AssertNextToken(IEnumerator<Token> enumerator, out Token result)
     {
         Assert.True(enumerator.MoveNext());
         result = enumerator.Current;
     }
 
-    private static void AssertNoTrivia(IToken token)
+    private static void AssertNoTrivia(Token token)
     {
         Assert.Empty(token.LeadingTrivia);
         Assert.Empty(token.TrailingTrivia);
     }
 
-    private static void AssertNoTriviaOrDiagnostics(IToken token)
+    private static void AssertNoTriviaOrDiagnostics(Token token)
     {
         AssertNoTrivia(token);
         Assert.Empty(token.Diagnostics);
     }
 
-    private static void AssertLeadingTrivia(IToken token, params string[] trivia)
+    private static void AssertLeadingTrivia(Token token, params string[] trivia)
     {
         Assert.Equal(trivia.Length, token.LeadingTrivia.Count);
         Assert.True(trivia.SequenceEqual(token.LeadingTrivia.Select(t => t.Text)));
     }
 
-    private static void AssertTrailingTrivia(IToken token, params string[] trivia)
+    private static void AssertTrailingTrivia(Token token, params string[] trivia)
     {
         Assert.Equal(trivia.Length, token.TrailingTrivia.Count);
         Assert.True(trivia.SequenceEqual(token.TrailingTrivia.Select(t => t.Text)));
@@ -93,7 +91,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("Hello, line strings!", token.Text);
-        Assert.Equal("Hello, line strings!", ValueText(token));
+        Assert.Equal("Hello, line strings!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -124,7 +122,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("Hello, line strings!", token.Text);
-        Assert.Equal("Hello, line strings!", ValueText(token));
+        Assert.Equal("Hello, line strings!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -151,7 +149,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("Hello, line strings!", token.Text);
-        Assert.Equal("Hello, line strings!", ValueText(token));
+        Assert.Equal("Hello, line strings!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -185,7 +183,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal(@$"\{ext}""\{ext}n\{ext}'\{ext}u{{1F47D}}", token.Text);
-        Assert.Equal("\"\n'👽", ValueText(token));
+        Assert.Equal("\"\n'👽", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -216,7 +214,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal(@"\a\#n\#u{123}\##t", token.Text);
-        Assert.Equal("\\a\\#n\\#u{123}\t", ValueText(token));
+        Assert.Equal("\\a\\#n\\#u{123}\t", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -251,7 +249,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal(@$"\{ext}y", token.Text);
-        Assert.Equal("y", ValueText(token));
+        Assert.Equal("y", token.ValueText);
         AssertNoTrivia(token);
         Assert.Single(token.Diagnostics);
 
@@ -294,19 +292,19 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("    Hello!", token.Text);
-        Assert.Equal("    Hello!", ValueText(token));
+        Assert.Equal("    Hello!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringNewline, token.Type);
         Assert.Equal("\n", token.Text);
-        Assert.Equal("\n", ValueText(token));
+        Assert.Equal("\n", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("    Bye!", token.Text);
-        Assert.Equal("    Bye!", ValueText(token));
+        Assert.Equal("    Bye!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -350,19 +348,19 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("    Hello!", token.Text);
-        Assert.Equal("    Hello!", ValueText(token));
+        Assert.Equal("    Hello!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringNewline, token.Type);
         Assert.Equal($"\\{ext}\n", token.Text);
-        Assert.Equal(string.Empty, ValueText(token));
+        Assert.Equal(string.Empty, token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("    Bye!", token.Text);
-        Assert.Equal("    Bye!", ValueText(token));
+        Assert.Equal("    Bye!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -406,19 +404,19 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("    Hello!", token.Text);
-        Assert.Equal("    Hello!", ValueText(token));
+        Assert.Equal("    Hello!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringNewline, token.Type);
         Assert.Equal($"\\{ext}  \n", token.Text);
-        Assert.Equal(string.Empty, ValueText(token));
+        Assert.Equal(string.Empty, token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("    Bye!", token.Text);
-        Assert.Equal("    Bye!", ValueText(token));
+        Assert.Equal("    Bye!", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -455,7 +453,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("x = ", token.Text);
-        Assert.Equal("x = ", ValueText(token));
+        Assert.Equal("x = ", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -466,7 +464,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.Identifier, token.Type);
         Assert.Equal("x", token.Text);
-        Assert.Equal("x", ValueText(token));
+        Assert.Equal("x", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -477,7 +475,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal(", x + y = ", token.Text);
-        Assert.Equal(", x + y = ", ValueText(token));
+        Assert.Equal(", x + y = ", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -490,7 +488,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.Identifier, token.Type);
         Assert.Equal("x", token.Text);
-        Assert.Equal("x", ValueText(token));
+        Assert.Equal("x", token.ValueText);
         Assert.Empty(token.LeadingTrivia);
         AssertTrailingTrivia(token, " ");
         Assert.Empty(token.Diagnostics);
@@ -505,7 +503,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.Identifier, token.Type);
         Assert.Equal("y", token.Text);
-        Assert.Equal("y", ValueText(token));
+        Assert.Equal("y", token.ValueText);
         Assert.Empty(token.LeadingTrivia);
         AssertTrailingTrivia(token, " ");
         Assert.Empty(token.Diagnostics);
@@ -638,7 +636,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out var token);
         Assert.Equal(TokenType.LiteralCharacter, token.Type);
         Assert.Equal(text, token.Text);
-        Assert.Equal(charValue, ValueText(token));
+        Assert.Equal(charValue, token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -716,7 +714,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal("Hello, World!", token.Text);
-        Assert.Equal("Hello, World!", ValueText(token));
+        Assert.Equal("Hello, World!", token.ValueText);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);

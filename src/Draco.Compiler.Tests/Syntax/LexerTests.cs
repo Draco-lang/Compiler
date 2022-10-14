@@ -48,6 +48,18 @@ public sealed class LexerTests
         Assert.Empty(token.Diagnostics);
     }
 
+    private static void AssertLeadingTrivia(IToken token, params string[] trivia)
+    {
+        Assert.Equal(trivia.Length, token.LeadingTrivia.Count);
+        Assert.True(trivia.SequenceEqual(token.LeadingTrivia.Select(t => t.Text)));
+    }
+
+    private static void AssertTrailingTrivia(IToken token, params string[] trivia)
+    {
+        Assert.Equal(trivia.Length, token.TrailingTrivia.Count);
+        Assert.True(trivia.SequenceEqual(token.TrailingTrivia.Select(t => t.Text)));
+    }
+
     [Fact]
     [Trait("Feature", "Comments")]
     public void TestLineComment()
@@ -269,9 +281,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
         Assert.Equal($"{quotes}{ext}", token.Text);
-        Assert.Equal(2, token.LeadingTrivia.Count);
-        Assert.Equal("\n", token.LeadingTrivia[0].Text);
-        Assert.Equal("    ", token.LeadingTrivia[1].Text);
+        AssertLeadingTrivia(token, "\n", "    ");
         Assert.Empty(token.TrailingTrivia);
         Assert.Empty(token.Diagnostics);
 
@@ -327,9 +337,7 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
         Assert.Equal($"{quotes}{ext}", token.Text);
-        Assert.Equal(2, token.LeadingTrivia.Count);
-        Assert.Equal("\n", token.LeadingTrivia[0].Text);
-        Assert.Equal("    ", token.LeadingTrivia[1].Text);
+        AssertLeadingTrivia(token, "\n", "    ");
         Assert.Empty(token.TrailingTrivia);
         Assert.Empty(token.Diagnostics);
 
@@ -385,11 +393,101 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
         Assert.Equal($"{quotes}{ext}", token.Text);
-        Assert.Equal(2, token.LeadingTrivia.Count);
-        Assert.Equal("\n", token.LeadingTrivia[0].Text);
-        Assert.Equal("    ", token.LeadingTrivia[1].Text);
+        AssertLeadingTrivia(token, "\n", "    ");
         Assert.Empty(token.TrailingTrivia);
         Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestLineStringInterpolation(string ext)
+    {
+        var text = $$"""
+            {{ext}}"x = \{{ext}}{x}, x + y = \{{ext}}{ x + y }"{{ext}}
+            """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal($"{ext}\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("x = ", token.Text);
+        Assert.Equal("x = ", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationStart, token.Type);
+        Assert.Equal($@"\{ext}{{", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("x", token.Text);
+        Assert.Equal("x", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationEnd, token.Type);
+        Assert.Equal("}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal(", x + y = ", token.Text);
+        Assert.Equal(", x + y = ", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationStart, token.Type);
+        Assert.Equal($@"\{ext}{{", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, " ");
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("x", token.Text);
+        Assert.Equal("x", ValueText(token));
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, " ");
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Plus, token.Type);
+        Assert.Equal("+", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, " ");
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("y", token.Text);
+        Assert.Equal("y", ValueText(token));
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, " ");
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationEnd, token.Type);
+        Assert.Equal("}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+        Assert.Equal($"\"{ext}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.EndOfInput, token.Type);

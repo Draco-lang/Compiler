@@ -92,24 +92,28 @@ internal sealed class Lexer
             // Normal tokens can have trivia
             this.ParseLeadingTriviaList();
             token = this.LexNormal();
+            // If we just ended interpolation, we are within a string, don't consume
             if (token.Type != TokenType.InterpolationEnd) this.ParseTrailingTriviaList();
-            // If there was any leading or trailing trivia, we have to re-map
-            if (this.leadingTriviaList.Count > 0 || this.trailingTriviaList.Count > 0)
-            {
-                token = token.AddTrivia(
-                    new(this.leadingTriviaList.ToImmutable()),
-                    new(this.trailingTriviaList.ToImmutable()));
-            }
             break;
         }
 
         case ModeKind.LineString:
         case ModeKind.MultiLineString:
             token = this.LexString();
+            // If we are starting interpolation, we can consume trailing trivia
+            if (token.Type == TokenType.InterpolationStart) this.ParseTrailingTriviaList();
             break;
 
         default:
             throw new InvalidOperationException("unsupported lexer mode");
+        }
+
+        // If there was any leading or trailing trivia, we have to re-map
+        if (this.leadingTriviaList.Count > 0 || this.trailingTriviaList.Count > 0)
+        {
+            token = token.AddTrivia(
+                new(this.leadingTriviaList.ToImmutable()),
+                new(this.trailingTriviaList.ToImmutable()));
         }
 
         // Attach diagnostics, if any
@@ -467,7 +471,7 @@ internal sealed class Lexer
                         Debug.Assert(this.leadingTriviaList.Count == 2);
                         var token = IToken.From(TokenType.MultiLineStringEnd, this.AdvanceWithText(3 + mode.ExtendedDelims));
                         this.ParseTrailingTriviaList();
-                        return token.AddTrivia(new(this.leadingTriviaList.ToImmutable()), new(this.trailingTriviaList.ToImmutable()));
+                        return token;
                     }
                 not_string_end2:
                     // Just a regular newline, more content to follow

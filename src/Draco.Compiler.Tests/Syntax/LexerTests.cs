@@ -199,6 +199,37 @@ public sealed class LexerTests
         AssertNoTriviaOrDiagnostics(token);
     }
 
+    [Fact]
+    [Trait("Feature", "Strings")]
+    public void TestLineStringMixedEscapes()
+    {
+        var text = $$"""
+            ##"\a\#n\#u{123}\##t"##
+            """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal("##\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal(@"\a\#n\#u{123}\##t", token.Text);
+        Assert.Equal("\\a\\#n\\#u{123}\t", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+        Assert.Equal($"\"##", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("#")]

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Utilities;
+using static Draco.Compiler.Syntax.ParseTree;
 
 namespace Draco.Compiler.Syntax;
 
@@ -24,16 +25,16 @@ internal sealed class Parser
     /// <summary>
     /// Constructs a <see cref="ParseTree"/> from tokens
     /// </summary>
-    /// <returns>The <see cref="ParseTree.CompilationUnit"/> constructed</returns>
+    /// <returns>The <see cref="CompilationUnit"/> constructed</returns>
     public ParseTree Parse()
     {
-        ValueArray<ParseTree.Decl> declarations = new ValueArray<ParseTree.Decl>();
+        ValueArray<Decl> declarations = new ValueArray<Decl>();
         while (true)
         {
             var token = this.Lexer.Lex();
             if(token.Type == TokenType.EndOfInput)
                 break;
         }
-        return new ParseTree.CompilationUnit(declarations);
+        return new CompilationUnit(declarations);
     }
 }

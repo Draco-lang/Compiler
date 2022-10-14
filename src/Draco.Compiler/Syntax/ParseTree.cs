@@ -2,6 +2,9 @@ using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
 
+/// <summary>
+/// An immutable structure representing a parsed source text with information about concrete syntax.
+/// </summary>
 internal abstract record class ParseTree
 {
     public abstract record class Decl : ParseTree

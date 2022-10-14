@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;

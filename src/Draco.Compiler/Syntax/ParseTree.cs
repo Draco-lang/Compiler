@@ -42,42 +42,39 @@ internal abstract record class ParseTree
     public abstract record class FuncBody
     {
         public sealed record class BlockBody(
-            Block Block) : FuncBody;
+            Expr.Block Block) : FuncBody;
 
         public sealed record class InlineBody(
             IToken EqualsToken,
             Expr Expression) : FuncBody;
     }
 
-    public abstract record class TypeName : ParseTree
+    public abstract record class TypeExpr : ParseTree
     {
-        // This is the only kind of type name for now
-        public sealed record class Simple(
-            IToken Identifier) : TypeName;
+        // This is the only kind of type expression for now
+        public sealed record class Name(
+            IToken Identifier) : TypeExpr;
     }
 
     public sealed record class TypeSpecifier(
         IToken ColonToken,
-        TypeName Type) : ParseTree;
-
-    public sealed record class Block(
-        ValueArray<Stmt> Statements,
-        Expr? Expression) : ParseTree;
+        TypeExpr Type) : ParseTree;
 
     public abstract record class Stmt : ParseTree
     {
-        public sealed record class DeclStmt(
-            Decl Declaration) : Stmt;
+        public new sealed record class Decl(
+            ParseTree.Decl Declaration) : Stmt;
 
-        public sealed record class ExprStmt(
-            Expr Expression,
+        public new sealed record class Expr(
+            ParseTree.Expr Expression,
             IToken Semicolon) : Stmt;
     }
 
     public abstract record class Expr : ParseTree
     {
-        public sealed record class BlockExpr(
-            Block Expression) : Expr;
+        public sealed record class Block(
+            ValueArray<Stmt> Statements,
+            Expr? Value) : Expr;
 
         public sealed record class If(
             IToken IfKeyword,
@@ -118,9 +115,9 @@ internal abstract record class ParseTree
 
         public sealed record class Index(
             Expr Expression,
-            IToken OpenSquareToken,
+            IToken OpenBracketToken,
             Expr IndexExpression,
-            IToken CloseSquareToken) : Expr;
+            IToken CloseBracketToken) : Expr;
 
         public sealed record class MemberAccess(
             Expr Expression,
@@ -131,14 +128,10 @@ internal abstract record class ParseTree
             IToken Operator,
             Expr Operand) : Expr;
 
+        // Binary includes assignment
         public sealed record class Binary(
             Expr Left,
             IToken Operator,
             Expr Right) : Expr;
-
-        public sealed record class Assign(
-            IToken Identifier,
-            IToken EqualsToken, // Or any compound assignment token
-            Expr Value) : Expr;
     }
 }

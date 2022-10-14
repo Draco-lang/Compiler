@@ -152,29 +152,33 @@ public sealed class LexerTests
         Assert.Empty(token.Diagnostics);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
     [Trait("Feature", "Strings")]
-    public void TestLineStringEscapes()
+    public void TestLineStringEscapes(string ext)
     {
-        var text = """
-            "\"\n\'\u{1F47D}"
+        var text = $$"""
+            {{ext}}"\{{ext}}"\{{ext}}n\{{ext}}'\{{ext}}u{1F47D}"{{ext}}
             """;
         var tokens = Lex(text);
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(TokenType.LineStringStart, token.Type);
-        Assert.Equal("\"", token.Text);
+        Assert.Equal($"{ext}\"", token.Text);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
-        Assert.Equal(@"\""\n\'\u{1F47D}", token.Text);
+        Assert.Equal(@$"\{ext}""\{ext}n\{ext}'\{ext}u{{1F47D}}", token.Text);
         Assert.Equal("\"\n'👽", ValueText(token));
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);
-        Assert.Equal("\"", token.Text);
+        Assert.Equal($"\"{ext}", token.Text);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -183,30 +187,34 @@ public sealed class LexerTests
         AssertNoTriviaOrDiagnostics(token);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
     [Trait("Feature", "Strings")]
-    public void TestIllegalEscapeCharacterInLineString()
+    public void TestIllegalEscapeCharacterInLineString(string ext)
     {
-        var text = """
-            "\y"
+        var text = $"""
+            {ext}"\{ext}y"{ext}
             """;
         var tokens = Lex(text);
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(TokenType.LineStringStart, token.Type);
-        Assert.Equal("\"", token.Text);
+        Assert.Equal($"{ext}\"", token.Text);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
-        Assert.Equal(@"\y", token.Text);
+        Assert.Equal(@$"\{ext}y", token.Text);
         Assert.Equal("y", ValueText(token));
         AssertNoTrivia(token);
         Assert.Single(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);
-        Assert.Equal("\"", token.Text);
+        Assert.Equal($"\"{ext}", token.Text);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -215,22 +223,26 @@ public sealed class LexerTests
         AssertNoTriviaOrDiagnostics(token);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
     [Trait("Feature", "Strings")]
-    public void TestMultilineString()
+    public void TestMultilineString(string ext)
     {
         const string quotes = "\"\"\"";
         var text = $"""
-        {quotes}
+        {ext}{quotes}
             Hello!
             Bye!
-            {quotes}
+            {quotes}{ext}
         """;
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(TokenType.MultiLineStringStart, token.Type);
-        Assert.Equal(quotes, token.Text);
+        Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         Assert.Single(token.TrailingTrivia);
         Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
@@ -256,7 +268,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
-        Assert.Equal(quotes, token.Text);
+        Assert.Equal($"{quotes}{ext}", token.Text);
         Assert.Equal(2, token.LeadingTrivia.Count);
         Assert.Equal("\n", token.LeadingTrivia[0].Text);
         Assert.Equal("    ", token.LeadingTrivia[1].Text);
@@ -269,22 +281,26 @@ public sealed class LexerTests
         AssertNoTriviaOrDiagnostics(token);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
     [Trait("Feature", "Strings")]
-    public void TestMultilineStringWithLineContinuation()
+    public void TestMultilineStringWithLineContinuation(string ext)
     {
         const string quotes = "\"\"\"";
         var text = $"""
-        {quotes}
-            Hello!\
+        {ext}{quotes}
+            Hello!\{ext}
             Bye!
-            {quotes}
+            {quotes}{ext}
         """;
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(TokenType.MultiLineStringStart, token.Type);
-        Assert.Equal(quotes, token.Text);
+        Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         Assert.Single(token.TrailingTrivia);
         Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
@@ -298,7 +314,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringNewline, token.Type);
-        Assert.Equal("\\\n", token.Text);
+        Assert.Equal($"\\{ext}\n", token.Text);
         Assert.Equal(string.Empty, ValueText(token));
         AssertNoTriviaOrDiagnostics(token);
 
@@ -310,7 +326,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
-        Assert.Equal(quotes, token.Text);
+        Assert.Equal($"{quotes}{ext}", token.Text);
         Assert.Equal(2, token.LeadingTrivia.Count);
         Assert.Equal("\n", token.LeadingTrivia[0].Text);
         Assert.Equal("    ", token.LeadingTrivia[1].Text);
@@ -323,22 +339,26 @@ public sealed class LexerTests
         AssertNoTriviaOrDiagnostics(token);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
     [Trait("Feature", "Strings")]
-    public void TestMultilineStringWithLineContinuationWithWhitespaceAfter()
+    public void TestMultilineStringWithLineContinuationWithWhitespaceAfter(string ext)
     {
         const string quotes = "\"\"\"";
         var text = $"""
-        {quotes}
-            Hello!\  
+        {ext}{quotes}
+            Hello!\{ext}  
             Bye!
-            {quotes}
+            {quotes}{ext}
         """;
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(TokenType.MultiLineStringStart, token.Type);
-        Assert.Equal(quotes, token.Text);
+        Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         Assert.Single(token.TrailingTrivia);
         Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
@@ -352,7 +372,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringNewline, token.Type);
-        Assert.Equal("\\  \n", token.Text);
+        Assert.Equal($"\\{ext}  \n", token.Text);
         Assert.Equal(string.Empty, ValueText(token));
         AssertNoTriviaOrDiagnostics(token);
 
@@ -364,7 +384,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
-        Assert.Equal(quotes, token.Text);
+        Assert.Equal($"{quotes}{ext}", token.Text);
         Assert.Equal(2, token.LeadingTrivia.Count);
         Assert.Equal("\n", token.LeadingTrivia[0].Text);
         Assert.Equal("    ", token.LeadingTrivia[1].Text);

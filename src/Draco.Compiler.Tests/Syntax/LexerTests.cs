@@ -525,4 +525,81 @@ public sealed class LexerTests
         Assert.Equal(string.Empty, token.Text);
         AssertNoTriviaOrDiagnostics(token);
     }
+
+    [Theory]
+    [InlineData("if", TokenType.KeywordIf)]
+    [InlineData("else", TokenType.KeywordElse)]
+    [InlineData("while", TokenType.KeywordWhile)]
+    [InlineData("if_", TokenType.Identifier)]
+    [InlineData("ifa", TokenType.Identifier)]
+    [InlineData("if0", TokenType.Identifier)]
+    [InlineData("_if", TokenType.Identifier)]
+    [InlineData("hello", TokenType.Identifier)]
+    [InlineData("hello123", TokenType.Identifier)]
+    [InlineData("hello_123", TokenType.Identifier)]
+    [InlineData("_hello_123", TokenType.Identifier)]
+    [Trait("Feature", "Words")]
+    internal void TestKeyword(string text, TokenType tokenType)
+    {
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(tokenType, token.Type);
+        Assert.Equal(text, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("(", TokenType.ParenOpen)]
+    [InlineData("[", TokenType.BracketOpen)]
+    [InlineData("{", TokenType.CurlyOpen)]
+    [InlineData(".", TokenType.Dot)]
+    [InlineData(":", TokenType.Colon)]
+    [InlineData(";", TokenType.Semicolon)]
+    [Trait("Feature", "Punctuations")]
+    internal void TestPunctuation(string text, TokenType tokenType)
+    {
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(tokenType, token.Type);
+        Assert.Equal(text, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("+", TokenType.Plus)]
+    [InlineData("-", TokenType.Minus)]
+    [InlineData("*", TokenType.Star)]
+    [InlineData("+=", TokenType.PlusAssign)]
+    [InlineData("!=", TokenType.NotEqual)]
+    [InlineData("==", TokenType.Equal)]
+    [InlineData("mod", TokenType.KeywordMod)]
+    [InlineData("and", TokenType.KeywordAnd)]
+    [InlineData("not", TokenType.KeywordNot)]
+    [Trait("Feature", "Punctuations")]
+    internal void TestOperator(string text, TokenType tokenType)
+    {
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(tokenType, token.Type);
+        Assert.Equal(text, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
 }

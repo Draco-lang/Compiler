@@ -583,11 +583,12 @@ public sealed class LexerTests
     [InlineData("*", TokenType.Star)]
     [InlineData("+=", TokenType.PlusAssign)]
     [InlineData("!=", TokenType.NotEqual)]
+    [InlineData("=", TokenType.Assign)]
     [InlineData("==", TokenType.Equal)]
     [InlineData("mod", TokenType.KeywordMod)]
     [InlineData("and", TokenType.KeywordAnd)]
     [InlineData("not", TokenType.KeywordNot)]
-    [Trait("Feature", "Punctuations")]
+    [Trait("Feature", "Operators")]
     internal void TestOperator(string text, TokenType tokenType)
     {
         var tokens = Lex(text);
@@ -601,5 +602,132 @@ public sealed class LexerTests
         Assert.Equal(TokenType.EndOfInput, token.Type);
         Assert.Equal(string.Empty, token.Text);
         AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("0", TokenType.LiteralInteger)]
+    [InlineData("123", TokenType.LiteralInteger)]
+    [InlineData("true", TokenType.KeywordTrue)]
+    [Trait("Feature", "Literals")]
+    internal void TestLiteral(string text, TokenType tokenType)
+    {
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(tokenType, token.Type);
+        Assert.Equal(text, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("'a'", "a")]
+    [InlineData(@"'\''", "'")]
+    [InlineData(@"'\""'", "\"")]
+    [InlineData(@"'\n'", "\n")]
+    [InlineData(@"'\u{41}'", "A")]
+    [Trait("Feature", "Literals")]
+    internal void TestCharLiteral(string text, string charValue)
+    {
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LiteralCharacter, token.Type);
+        Assert.Equal(text, token.Text);
+        Assert.Equal(charValue, ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Fact]
+    public void TestHelloWorld()
+    {
+        var text = """
+            from System.Console import { WriteLine };
+
+            func main() = WriteLine("Hello, World!");
+            """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.KeywordFrom, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("System", token.Text);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Dot, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("Console", token.Text);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.KeywordImport, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.CurlyOpen, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("WriteLine", token.Text);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.CurlyClose, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Semicolon, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.KeywordFunc, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("main", token.Text);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.ParenOpen, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.ParenClose, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Assign, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("WriteLine", token.Text);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.ParenOpen, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("Hello, World!", token.Text);
+        Assert.Equal("Hello, World!", ValueText(token));
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.ParenClose, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Semicolon, token.Type);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
     }
 }

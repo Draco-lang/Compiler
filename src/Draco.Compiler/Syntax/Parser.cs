@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,32 +10,27 @@ using static Draco.Compiler.Syntax.ParseTree;
 namespace Draco.Compiler.Syntax;
 
 /// <summary>
-/// Constructs a <see cref="ParseTree"/>
+/// Parses a sequence of <see cref="Token"/>s into a <see cref="ParseTree"/>.
 /// </summary>
 internal sealed class Parser
 {
-    /// <summary>
-    /// The lexer we read token from
-    /// </summary>
-    public Lexer Lexer { get; set; }
-    public Parser(Lexer lexer)
+    private readonly ITokenSource tokenSource;
+
+    public Parser(ITokenSource tokenSource)
     {
-        this.Lexer = lexer;
+        this.tokenSource = tokenSource;
     }
 
     /// <summary>
-    /// Constructs a <see cref="ParseTree"/> from tokens
+    /// Parses a <see cref="CompilationUnit"/> until the end of input.
     /// </summary>
-    /// <returns>The <see cref="CompilationUnit"/> constructed</returns>
-    public ParseTree Parse()
+    /// <returns>The parsed <see cref="CompilationUnit"/>.</returns>
+    public CompilationUnit ParseCompilationUnit()
     {
-        ValueArray<Decl> declarations = new ValueArray<Decl>();
-        while (true)
-        {
-            var token = this.Lexer.Lex();
-            if(token.Type == TokenType.EndOfInput)
-                break;
-        }
-        return new CompilationUnit(declarations);
+        var decls = ImmutableArray.CreateBuilder<Decl>();
+        while (this.tokenSource.Peek().Type != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
+        return new(new(decls.ToImmutable()));
     }
+
+    private Decl ParseDeclaration() => throw new NotImplementedException();
 }

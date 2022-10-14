@@ -7,6 +7,11 @@ namespace Draco.Compiler.Syntax;
 /// </summary>
 internal abstract record class ParseTree
 {
+    public sealed record class Parenthesized<T>(
+        IToken OpenParenToken,
+        T Value,
+        IToken CloseParenToken) : ParseTree;
+
     public sealed record class CompilationUnit(
         ValueArray<Decl> Declarations) : ParseTree;
 
@@ -15,14 +20,12 @@ internal abstract record class ParseTree
         public sealed record class Func(
             IToken FuncKeyword,
             IToken Identifier,
-            IToken OpenParenToken,
-            ValueArray<(
+            Parenthesized<ValueArray<(
                 (   IToken Identifier,
                     TypeSpecifier Type
                 ) Param,
                 IToken CommaToken
-            )> Params,
-            IToken CloseParenToken,
+            )>> Params,
             TypeSpecifier? Type,
             FuncBody Body) : Decl;
 
@@ -78,9 +81,7 @@ internal abstract record class ParseTree
 
         public sealed record class If(
             IToken IfKeyword,
-            IToken OpenParenToken,
-            Expr Condition,
-            IToken CloseParenToken,
+            Parenthesized<Expr> Condition,
             Expr Expression,
             (   IToken ElseToken,
                 Expr Expression
@@ -88,9 +89,7 @@ internal abstract record class ParseTree
 
         public sealed record class While(
             IToken Token,
-            IToken OpenParenToken,
-            Expr Condition,
-            IToken CloseParenToken,
+            Parenthesized<Expr> Condition,
             Expr Expression) : Expr;
 
         public sealed record class Goto(
@@ -106,18 +105,15 @@ internal abstract record class ParseTree
 
         public sealed record class FuncCall(
             Expr Expression,
-            IToken OpenParenToken,
+            Parenthesized<
             ValueArray<(
                 Expr Expression,
                 IToken CommaToken
-            )> Args,
-            IToken CloseParenToken) : Expr;
+            )>> Args) : Expr;
 
         public sealed record class Index(
             Expr Expression,
-            IToken OpenBracketToken,
-            Expr IndexExpression,
-            IToken CloseBracketToken) : Expr;
+            Parenthesized<Expr> IndexExpression) : Expr;
 
         public sealed record class MemberAccess(
             Expr Expression,

@@ -22,11 +22,6 @@ internal static class SyntaxErrors
     public static readonly string UnclosedCharacterLiteral = "unclosed character literal";
 
     /// <summary>
-    /// A single-line string literal was unclosed.
-    /// </summary>
-    public static readonly string UnclosedLineStringLiteral = "unclosed single-line string literal";
-
-    /// <summary>
     /// A \u{...} construct was left empty.
     /// </summary>
     public static readonly string ZeroLengthUnicodeCodepoint = "zero length unicode codepoint";

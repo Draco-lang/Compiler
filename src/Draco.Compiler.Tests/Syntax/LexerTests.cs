@@ -10,7 +10,9 @@ namespace Draco.Compiler.Tests.Syntax;
 
 public sealed class LexerTests
 {
-    private static IEnumerable<IToken> Lex(string text)
+    private static IEnumerator<IToken> Lex(string text) => LexImpl(text).GetEnumerator();
+
+    private static IEnumerable<IToken> LexImpl(string text)
     {
         var reader = SourceReader.From(text);
         var lexer = new Lexer(reader);
@@ -22,14 +24,17 @@ public sealed class LexerTests
         }
     }
 
-    private static ImmutableArray<IToken> LexToArray(string text) =>
-        Lex(text).ToImmutableArray();
-
     private static string ValueText(IToken token) => ((IToken.IWithValue<string>)token).Value;
 
     private static string NormalizeNewliens(string text) => text
         .Replace("\r\n", "\n")
         .Replace("\r", "\n");
+
+    private static void AssertNextToken(IEnumerator<IToken> enumerator, out IToken result)
+    {
+        Assert.True(enumerator.MoveNext());
+        result = enumerator.Current;
+    }
 
     private static void AssertNoTrivia(IToken token)
     {
@@ -48,15 +53,15 @@ public sealed class LexerTests
     public void TestLineComment()
     {
         var text = "// Hello, comments";
-        var tokens = LexToArray(text);
+        var tokens = Lex(text);
 
-        Assert.Single(tokens);
-        Assert.Equal(TokenType.EndOfInput, tokens[0].Type);
-        Assert.Single(tokens[0].LeadingTrivia);
-        Assert.Empty(tokens[0].TrailingTrivia);
-        Assert.Empty(tokens[0].Diagnostics);
-        Assert.Equal(string.Empty, tokens[0].Text);
-        Assert.Equal("// Hello, comments", tokens[0].LeadingTrivia[0].Text);
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Single(token.LeadingTrivia);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+        Assert.Equal(string.Empty, token.Text);
+        Assert.Equal("// Hello, comments", token.LeadingTrivia[0].Text);
     }
 
     [Fact]
@@ -66,26 +71,28 @@ public sealed class LexerTests
         var text = """
             "Hello, line strings!"
             """;
-        var tokens = LexToArray(text);
+        var tokens = Lex(text);
 
-        Assert.Equal(4, tokens.Length);
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
-        Assert.Equal("\"", tokens[0].Text);
-        AssertNoTriviaOrDiagnostics(tokens[0]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("Hello, line strings!", token.Text);
+        Assert.Equal("Hello, line strings!", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal("Hello, line strings!", tokens[1].Text);
-        Assert.Equal("Hello, line strings!", ValueText(tokens[1]));
-        AssertNoTriviaOrDiagnostics(tokens[1]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.LineStringEnd, tokens[2].Type);
-        Assert.Equal("\"", tokens[2].Text);
-        AssertNoTriviaOrDiagnostics(tokens[2]);
-
-        Assert.Equal(TokenType.EndOfInput, tokens[3].Type);
-        Assert.Equal(string.Empty, tokens[3].Text);
-        AssertNoTriviaOrDiagnostics(tokens[3]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
     }
 
     [Fact]
@@ -95,22 +102,23 @@ public sealed class LexerTests
         var text = """
             "Hello, line strings!
             """;
-        var tokens = LexToArray(text);
+        var tokens = Lex(text);
 
-        Assert.Equal(3, tokens.Length);
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
-        Assert.Equal("\"", tokens[0].Text);
-        AssertNoTriviaOrDiagnostics(tokens[0]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("Hello, line strings!", token.Text);
+        Assert.Equal("Hello, line strings!", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal("Hello, line strings!", tokens[1].Text);
-        Assert.Equal("Hello, line strings!", ValueText(tokens[1]));
-        AssertNoTriviaOrDiagnostics(tokens[1]);
-
-        Assert.Equal(TokenType.EndOfInput, tokens[2].Type);
-        Assert.Equal(string.Empty, tokens[2].Text);
-        AssertNoTriviaOrDiagnostics(tokens[2]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
     }
 
     [Fact]
@@ -121,26 +129,27 @@ public sealed class LexerTests
         "Hello, line strings!
 
         """;
-        var tokens = LexToArray(NormalizeNewliens(text));
+        var tokens = Lex(NormalizeNewliens(text));
 
-        Assert.Equal(3, tokens.Length);
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
-        Assert.Equal("\"", tokens[0].Text);
-        AssertNoTriviaOrDiagnostics(tokens[0]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("Hello, line strings!", token.Text);
+        Assert.Equal("Hello, line strings!", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal("Hello, line strings!", tokens[1].Text);
-        Assert.Equal("Hello, line strings!", ValueText(tokens[1]));
-        AssertNoTriviaOrDiagnostics(tokens[1]);
-
-        Assert.Equal(TokenType.EndOfInput, tokens[2].Type);
-        Assert.Equal(string.Empty, tokens[2].Text);
-        Assert.Single(tokens[2].LeadingTrivia);
-        Assert.Equal(TokenType.Newline, tokens[2].LeadingTrivia[0].Type);
-        Assert.Equal("\n", tokens[2].LeadingTrivia[0].Text);
-        Assert.Empty(tokens[2].TrailingTrivia);
-        Assert.Empty(tokens[2].Diagnostics);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        Assert.Single(token.LeadingTrivia);
+        Assert.Equal(TokenType.Newline, token.LeadingTrivia[0].Type);
+        Assert.Equal("\n", token.LeadingTrivia[0].Text);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
     }
 
     [Fact]
@@ -150,26 +159,28 @@ public sealed class LexerTests
         var text = """
             "\"\n\'\u{1F47D}"
             """;
-        var tokens = LexToArray(text);
+        var tokens = Lex(text);
 
-        Assert.Equal(4, tokens.Length);
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
-        Assert.Equal("\"", tokens[0].Text);
-        AssertNoTriviaOrDiagnostics(tokens[0]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal(@"\""\n\'\u{1F47D}", token.Text);
+        Assert.Equal("\"\n'👽", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal(@"\""\n\'\u{1F47D}", tokens[1].Text);
-        Assert.Equal("\"\n'👽", ValueText(tokens[1]));
-        AssertNoTriviaOrDiagnostics(tokens[1]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.LineStringEnd, tokens[2].Type);
-        Assert.Equal("\"", tokens[2].Text);
-        AssertNoTriviaOrDiagnostics(tokens[2]);
-
-        Assert.Equal(TokenType.EndOfInput, tokens[3].Type);
-        Assert.Equal(string.Empty, tokens[3].Text);
-        AssertNoTriviaOrDiagnostics(tokens[3]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
     }
 
     [Fact]
@@ -179,27 +190,29 @@ public sealed class LexerTests
         var text = """
             "\y"
             """;
-        var tokens = LexToArray(text);
+        var tokens = Lex(text);
 
-        Assert.Equal(4, tokens.Length);
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
-        Assert.Equal("\"", tokens[0].Text);
-        AssertNoTriviaOrDiagnostics(tokens[0]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal(@"\y", token.Text);
+        Assert.Equal("y", ValueText(token));
+        AssertNoTrivia(token);
+        Assert.Single(token.Diagnostics);
 
-        Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal(@"\y", tokens[1].Text);
-        Assert.Equal("y", ValueText(tokens[1]));
-        AssertNoTrivia(tokens[1]);
-        Assert.Single(tokens[1].Diagnostics);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.LineStringEnd, tokens[2].Type);
-        Assert.Equal("\"", tokens[2].Text);
-        AssertNoTriviaOrDiagnostics(tokens[2]);
-
-        Assert.Equal(TokenType.EndOfInput, tokens[3].Type);
-        Assert.Equal(string.Empty, tokens[3].Text);
-        AssertNoTriviaOrDiagnostics(tokens[3]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
     }
 
     [Fact]
@@ -213,43 +226,47 @@ public sealed class LexerTests
             Bye!
             {quotes}
         """;
-        var tokens = LexToArray(NormalizeNewliens(text));
+        var tokens = Lex(NormalizeNewliens(text));
 
-        Assert.Equal(6, tokens.Length);
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal(quotes, token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        Assert.Single(token.TrailingTrivia);
+        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Empty(token.Diagnostics);
 
-        Assert.Equal(TokenType.MultiLineStringStart, tokens[0].Type);
-        Assert.Equal(quotes, tokens[0].Text);
-        Assert.Empty(tokens[0].LeadingTrivia);
-        Assert.Single(tokens[0].TrailingTrivia);
-        Assert.Equal(TokenType.Newline, tokens[0].TrailingTrivia[0].Type);
-        Assert.Empty(tokens[0].Diagnostics);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("    Hello!", token.Text);
+        Assert.Equal("    Hello!", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal("    Hello!", tokens[1].Text);
-        Assert.Equal("    Hello!", ValueText(tokens[1]));
-        AssertNoTriviaOrDiagnostics(tokens[1]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringNewline, token.Type);
+        Assert.Equal("\n", token.Text);
+        Assert.Equal("\n", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringNewline, tokens[2].Type);
-        Assert.Equal("\n", tokens[2].Text);
-        Assert.Equal("\n", ValueText(tokens[2]));
-        AssertNoTriviaOrDiagnostics(tokens[2]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("    Bye!", token.Text);
+        Assert.Equal("    Bye!", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringContent, tokens[3].Type);
-        Assert.Equal("    Bye!", tokens[3].Text);
-        Assert.Equal("    Bye!", ValueText(tokens[3]));
-        AssertNoTriviaOrDiagnostics(tokens[3]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal(quotes, token.Text);
+        Assert.Equal(2, token.LeadingTrivia.Count);
+        Assert.Equal("\n", token.LeadingTrivia[0].Text);
+        Assert.Equal("    ", token.LeadingTrivia[1].Text);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
 
-        Assert.Equal(TokenType.MultiLineStringEnd, tokens[4].Type);
-        Assert.Equal(quotes, tokens[4].Text);
-        Assert.Equal(2, tokens[4].LeadingTrivia.Count);
-        Assert.Equal("\n", tokens[4].LeadingTrivia[0].Text);
-        Assert.Equal("    ", tokens[4].LeadingTrivia[1].Text);
-        Assert.Empty(tokens[4].TrailingTrivia);
-        Assert.Empty(tokens[4].Diagnostics);
-
-        Assert.Equal(TokenType.EndOfInput, tokens[5].Type);
-        Assert.Equal(string.Empty, tokens[5].Text);
-        AssertNoTriviaOrDiagnostics(tokens[5]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
     }
 
     [Fact]
@@ -263,42 +280,46 @@ public sealed class LexerTests
             Bye!
             {quotes}
         """;
-        var tokens = LexToArray(NormalizeNewliens(text));
+        var tokens = Lex(NormalizeNewliens(text));
 
-        Assert.Equal(6, tokens.Length);
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal(quotes, token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        Assert.Single(token.TrailingTrivia);
+        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Empty(token.Diagnostics);
 
-        Assert.Equal(TokenType.MultiLineStringStart, tokens[0].Type);
-        Assert.Equal(quotes, tokens[0].Text);
-        Assert.Empty(tokens[0].LeadingTrivia);
-        Assert.Single(tokens[0].TrailingTrivia);
-        Assert.Equal(TokenType.Newline, tokens[0].TrailingTrivia[0].Type);
-        Assert.Empty(tokens[0].Diagnostics);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("    Hello!", token.Text);
+        Assert.Equal("    Hello!", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal("    Hello!", tokens[1].Text);
-        Assert.Equal("    Hello!", ValueText(tokens[1]));
-        AssertNoTriviaOrDiagnostics(tokens[1]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringNewline, token.Type);
+        Assert.Equal("\\\n", token.Text);
+        Assert.Equal(string.Empty, ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringNewline, tokens[2].Type);
-        Assert.Equal("\\\n", tokens[2].Text);
-        Assert.Equal(string.Empty, ValueText(tokens[2]));
-        AssertNoTriviaOrDiagnostics(tokens[2]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("    Bye!", token.Text);
+        Assert.Equal("    Bye!", ValueText(token));
+        AssertNoTriviaOrDiagnostics(token);
 
-        Assert.Equal(TokenType.StringContent, tokens[3].Type);
-        Assert.Equal("    Bye!", tokens[3].Text);
-        Assert.Equal("    Bye!", ValueText(tokens[3]));
-        AssertNoTriviaOrDiagnostics(tokens[3]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal(quotes, token.Text);
+        Assert.Equal(2, token.LeadingTrivia.Count);
+        Assert.Equal("\n", token.LeadingTrivia[0].Text);
+        Assert.Equal("    ", token.LeadingTrivia[1].Text);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
 
-        Assert.Equal(TokenType.MultiLineStringEnd, tokens[4].Type);
-        Assert.Equal(quotes, tokens[4].Text);
-        Assert.Equal(2, tokens[4].LeadingTrivia.Count);
-        Assert.Equal("\n", tokens[4].LeadingTrivia[0].Text);
-        Assert.Equal("    ", tokens[4].LeadingTrivia[1].Text);
-        Assert.Empty(tokens[4].TrailingTrivia);
-        Assert.Empty(tokens[4].Diagnostics);
-
-        Assert.Equal(TokenType.EndOfInput, tokens[5].Type);
-        Assert.Equal(string.Empty, tokens[5].Text);
-        AssertNoTriviaOrDiagnostics(tokens[5]);
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
     }
 }

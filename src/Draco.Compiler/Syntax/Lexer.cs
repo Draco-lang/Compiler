@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -431,10 +432,40 @@ internal sealed class Lexer
             }
             else
             {
-                // Newlines are completely valid in multiline stirngs
-                for (var i = 0; i < newlineLength; ++i) this.valueBuilder.Append(this.Peek(offset + i));
-                offset += newlineLength;
-                goto start;
+                // Newlines are completely valid in multiline strings
+                if (offset == 0)
+                {
+                    // We are fine to return this newline, if it is indeed a newline
+                    // If after this newline it's only whitespace and then the end quotes, we simply don't
+                    // need to include this as a string newline
+                    var whiteOffset = 0;
+                    while (IsSpace(this.Peek(newlineLength + whiteOffset))) ++whiteOffset;
+                    var endOffset = newlineLength + whiteOffset;
+                    if (this.Peek(endOffset) == '"' && this.Peek(endOffset + 1) == '"' && this.Peek(endOffset + 2) == '"')
+                    {
+                        // The last check we need to do is to make sure we have enough delimiters
+                        for (var i = 0; i < mode.ExtendedDelims; ++i)
+                        {
+                            if (this.Peek(endOffset + 3 + i) != '#') goto not_string_end2;
+                        }
+                        // This is the last newline and we have no other content to consume
+                        // We build the end token with trivia
+                        this.PopMode();
+                        this.ParseLeadingTriviaList();
+                        Debug.Assert(this.leadingTriviaList.Count == 2);
+                        var token = IToken.From(TokenType.MultiLineStringEnd, this.AdvanceWithText(3 + mode.ExtendedDelims));
+                        this.ParseTrailingTriviaList();
+                        return token.AddTrivia(new(this.leadingTriviaList.ToImmutable()), new(this.trailingTriviaList.ToImmutable()));
+                    }
+                not_string_end2:
+                    // Just a regular newline, more content to follow
+                    return IToken.From(TokenType.StringNewline, this.AdvanceWithText(newlineLength));
+                }
+                else
+                {
+                    // We need to return the content fist
+                    return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
+                }
             }
         }
 

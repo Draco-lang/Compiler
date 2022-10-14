@@ -51,7 +51,8 @@ public sealed class LexerTests
         Assert.Single(tokens[0].LeadingTrivia);
         Assert.Empty(tokens[0].TrailingTrivia);
         Assert.Empty(tokens[0].Diagnostics);
-        Assert.Equal(18, tokens[0].Width);
+        Assert.Equal(string.Empty, tokens[0].Text);
+        Assert.Equal("// Hello, comments", tokens[0].LeadingTrivia[0].Text);
     }
 
     [Fact]
@@ -66,20 +67,20 @@ public sealed class LexerTests
         Assert.Equal(4, tokens.Length);
 
         Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
-        Assert.Equal(1, tokens[0].Width);
+        Assert.Equal("\"", tokens[0].Text);
         AssertNoTriviaOrDiagnostics(tokens[0]);
 
         Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal(20, tokens[1].Width);
+        Assert.Equal("Hello, line strings!", tokens[1].Text);
         Assert.Equal("Hello, line strings!", ValueText(tokens[1]));
         AssertNoTriviaOrDiagnostics(tokens[1]);
 
         Assert.Equal(TokenType.LineStringEnd, tokens[2].Type);
-        Assert.Equal(1, tokens[2].Width);
+        Assert.Equal("\"", tokens[2].Text);
         AssertNoTriviaOrDiagnostics(tokens[2]);
 
         Assert.Equal(TokenType.EndOfInput, tokens[3].Type);
-        Assert.Equal(0, tokens[3].Width);
+        Assert.Equal(string.Empty, tokens[3].Text);
         AssertNoTriviaOrDiagnostics(tokens[3]);
     }
 
@@ -95,17 +96,44 @@ public sealed class LexerTests
         Assert.Equal(3, tokens.Length);
 
         Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
-        Assert.Equal(1, tokens[0].Width);
+        Assert.Equal("\"", tokens[0].Text);
         AssertNoTriviaOrDiagnostics(tokens[0]);
 
         Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal(20, tokens[1].Width);
+        Assert.Equal("Hello, line strings!", tokens[1].Text);
         Assert.Equal("Hello, line strings!", ValueText(tokens[1]));
         AssertNoTriviaOrDiagnostics(tokens[1]);
 
         Assert.Equal(TokenType.EndOfInput, tokens[2].Type);
-        Assert.Equal(0, tokens[2].Width);
+        Assert.Equal(string.Empty, tokens[2].Text);
         AssertNoTriviaOrDiagnostics(tokens[2]);
+    }
+
+    [Fact]
+    [Trait("Feature", "Strings")]
+    public void TestUnclosedLineStringWithNewlineAfter()
+    {
+        var text = "\"Hello, line strings!\n";
+        var tokens = LexToArray(text);
+
+        Assert.Equal(3, tokens.Length);
+
+        Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
+        Assert.Equal("\"", tokens[0].Text);
+        AssertNoTriviaOrDiagnostics(tokens[0]);
+
+        Assert.Equal(TokenType.StringContent, tokens[1].Type);
+        Assert.Equal("Hello, line strings!", tokens[1].Text);
+        Assert.Equal("Hello, line strings!", ValueText(tokens[1]));
+        AssertNoTriviaOrDiagnostics(tokens[1]);
+
+        Assert.Equal(TokenType.EndOfInput, tokens[2].Type);
+        Assert.Equal(string.Empty, tokens[2].Text);
+        Assert.Single(tokens[2].LeadingTrivia);
+        Assert.Equal(TokenType.Newline, tokens[2].LeadingTrivia[0].Type);
+        Assert.Equal("\n", tokens[2].LeadingTrivia[0].Text);
+        Assert.Empty(tokens[2].TrailingTrivia);
+        Assert.Empty(tokens[2].Diagnostics);
     }
 
     [Fact]
@@ -120,20 +148,50 @@ public sealed class LexerTests
         Assert.Equal(4, tokens.Length);
 
         Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
-        Assert.Equal(1, tokens[0].Width);
+        Assert.Equal("\"", tokens[0].Text);
         AssertNoTriviaOrDiagnostics(tokens[0]);
 
         Assert.Equal(TokenType.StringContent, tokens[1].Type);
-        Assert.Equal(15, tokens[1].Width);
+        Assert.Equal(@"\""\n\'\u{1F47D}", tokens[1].Text);
         Assert.Equal("\"\n'👽", ValueText(tokens[1]));
         AssertNoTriviaOrDiagnostics(tokens[1]);
 
         Assert.Equal(TokenType.LineStringEnd, tokens[2].Type);
-        Assert.Equal(1, tokens[2].Width);
+        Assert.Equal("\"", tokens[2].Text);
         AssertNoTriviaOrDiagnostics(tokens[2]);
 
         Assert.Equal(TokenType.EndOfInput, tokens[3].Type);
-        Assert.Equal(0, tokens[3].Width);
+        Assert.Equal(string.Empty, tokens[3].Text);
+        AssertNoTriviaOrDiagnostics(tokens[3]);
+    }
+
+    [Fact]
+    [Trait("Feature", "Strings")]
+    public void TestIllegalEscapeCharacterInLineString()
+    {
+        var text = """
+            "\y"
+            """;
+        var tokens = LexToArray(text);
+
+        Assert.Equal(4, tokens.Length);
+
+        Assert.Equal(TokenType.LineStringStart, tokens[0].Type);
+        Assert.Equal("\"", tokens[0].Text);
+        AssertNoTriviaOrDiagnostics(tokens[0]);
+
+        Assert.Equal(TokenType.StringContent, tokens[1].Type);
+        Assert.Equal(@"\y", tokens[1].Text);
+        Assert.Equal("y", ValueText(tokens[1]));
+        AssertNoTrivia(tokens[1]);
+        Assert.Single(tokens[1].Diagnostics);
+
+        Assert.Equal(TokenType.LineStringEnd, tokens[2].Type);
+        Assert.Equal("\"", tokens[2].Text);
+        AssertNoTriviaOrDiagnostics(tokens[2]);
+
+        Assert.Equal(TokenType.EndOfInput, tokens[3].Type);
+        Assert.Equal(string.Empty, tokens[3].Text);
         AssertNoTriviaOrDiagnostics(tokens[3]);
     }
 }

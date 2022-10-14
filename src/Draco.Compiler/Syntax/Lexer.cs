@@ -422,7 +422,10 @@ internal sealed class Lexer
             if (mode.Kind == ModeKind.LineString)
             {
                 // A newline is illegal in a line string literal
-                this.AddError(offset, SyntaxErrors.UnclosedLineStringLiteral);
+                // NOTE: While we end the string mode, we DO NOT REPORT THE ERROR HERE
+                // To be consistent about responsibility, matching up token pairs will be the job of the parser
+                // It would be really messy to be able to report this same error for multiline strings
+                // Also, this is only triggered if a newline is met, but not on the end of file
                 this.PopMode();
                 return IToken.From(TokenType.StringContent, this.AdvanceWithText(offset), this.valueBuilder.ToString());
             }
@@ -511,7 +514,9 @@ internal sealed class Lexer
         else
         {
             this.AddError(offset, SyntaxErrors.IllegalEscapeCharacter, esc);
-            return " ";
+            ++offset;
+            // We return the escaped character literally as a substitute
+            return esc.ToString();
         }
     }
 

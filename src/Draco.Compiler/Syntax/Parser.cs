@@ -27,9 +27,9 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="CompilationUnit"/>.</returns>
     public CompilationUnit ParseCompilationUnit()
     {
-        var decls = ImmutableArray.CreateBuilder<Decl>();
+        var decls = ValueArray.CreateBuilder<Decl>();
         while (this.tokenSource.Peek().Type != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
-        return new(new(decls.ToImmutable()));
+        return new(decls.ToValue());
     }
 
     private Decl ParseDeclaration() => throw new NotImplementedException();

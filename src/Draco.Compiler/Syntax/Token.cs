@@ -136,9 +136,9 @@ internal partial record class Token
         public TokenType? Type { get; private set; }
         public string? Text { get; private set; }
         public object? Value { get; private set; }
-        public IImmutableList<Token>? LeadingTrivia { get; private set; }
-        public IImmutableList<Token>? TrailingTrivia { get; private set; }
-        public IImmutableList<Diagnostic>? Diagnostics { get; private set; }
+        public ValueArray<Token>? LeadingTrivia { get; private set; }
+        public ValueArray<Token>? TrailingTrivia { get; private set; }
+        public ValueArray<Diagnostic>? Diagnostics { get; private set; }
 
         /// <summary>
         /// Clears this builder.
@@ -162,15 +162,9 @@ internal partial record class Token
         {
             var tt = this.Type ?? throw new InvalidOperationException("specifying token type is required");
             var text = this.Text ?? tt.GetTokenText();
-            var leadingTriv = this.LeadingTrivia is null
-                ? ValueArray<Token>.Empty
-                : new ValueArray<Token>(this.LeadingTrivia);
-            var trailingTriv = this.TrailingTrivia is null
-                ? ValueArray<Token>.Empty
-                : new ValueArray<Token>(this.TrailingTrivia);
-            var diags = this.Diagnostics is null
-                ? ValueArray<Diagnostic>.Empty
-                : new ValueArray<Diagnostic>(this.Diagnostics);
+            var leadingTriv = this.LeadingTrivia ?? ValueArray<Token>.Empty;
+            var trailingTriv = this.TrailingTrivia ?? ValueArray<Token>.Empty;
+            var diags = this.Diagnostics ?? ValueArray<Diagnostic>.Empty;
             return new(
                 type: tt,
                 text: text,
@@ -201,21 +195,21 @@ internal partial record class Token
             return this;
         }
 
-        public Builder SetLeadingTrivia(IImmutableList<Token> trivia)
+        public Builder SetLeadingTrivia(ValueArray<Token> trivia)
         {
             if (this.LeadingTrivia is not null) throw new InvalidOperationException("leading trivia already set");
             this.LeadingTrivia = trivia;
             return this;
         }
 
-        public Builder SetTrailingTrivia(IImmutableList<Token> trivia)
+        public Builder SetTrailingTrivia(ValueArray<Token> trivia)
         {
             if (this.TrailingTrivia is not null) throw new InvalidOperationException("trailing trivia already set");
             this.TrailingTrivia = trivia;
             return this;
         }
 
-        public Builder SetDiagnostics(IImmutableList<Diagnostic> diagnostics)
+        public Builder SetDiagnostics(ValueArray<Diagnostic> diagnostics)
         {
             if (this.Diagnostics is not null) throw new InvalidOperationException("diagnostics already set");
             this.Diagnostics = diagnostics;

@@ -7,6 +7,9 @@ namespace Draco.Compiler.Syntax;
 /// </summary>
 internal abstract record class ParseTree
 {
+    public sealed record class CompilationUnit(
+        ValueArray<Decl> Declarations) : ParseTree;
+
     public abstract record class Decl : ParseTree
     {
         public sealed record class Func(

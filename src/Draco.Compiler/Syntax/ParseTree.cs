@@ -10,19 +10,23 @@ internal abstract record class ParseTree
     /// <summary>
     /// A node enclosed by two tokens.
     /// </summary>
-    public sealed record class Enclosed<T>(
-        IToken OpenToken,
+    public readonly record struct Enclosed<T>(
+        Token OpenToken,
         T Value,
-        IToken CloseToken) : ParseTree;
+        Token CloseToken);
+
+    /// <summary>
+    /// A single punctuated element.
+    /// </summary>
+    public readonly record struct Punctuated<T>(
+        T Value,
+        Token? Punctuation);
 
     /// <summary>
     /// A list of nodes with a token separating each element.
     /// </summary>
-    public sealed record class PunctuatedList<T>(
-        ValueArray<(
-            T Value,
-            IToken? Punctuation
-        )> Elements) : ParseTree;
+    public readonly record struct PunctuatedList<T>(
+        ValueArray<Punctuated<T>> Elements);
 
     /// <summary>
     /// A compilation unit, the top-most node in the parse tree.
@@ -39,8 +43,8 @@ internal abstract record class ParseTree
         /// A function declaration.
         /// </summary>
         public sealed record class Func(
-            IToken FuncKeyword,
-            IToken Identifier,
+            Token FuncKeyword,
+            Token Identifier,
             Enclosed<PunctuatedList<FuncParam>> Params,
             TypeSpecifier? Type,
             FuncBody Body) : Decl;
@@ -49,26 +53,24 @@ internal abstract record class ParseTree
         /// A label declaration.
         /// </summary>
         public sealed record class Label(
-            IToken Identifier,
-            IToken ColonToken) : Decl;
+            Token Identifier,
+            Token ColonToken) : Decl;
 
         /// <summary>
         /// A variable declaration.
         /// </summary>
         public sealed record class Variable(
-            IToken Keyword, // Either var or val
-            IToken Identifier,
+            Token Keyword, // Either var or val
+            Token Identifier,
             TypeSpecifier? Type,
-            (   IToken EqualsToken,
-                Expr Expression
-            )? Initializer) : Decl;
+            (Token EqualsToken, Expr Expression)? Initializer) : Decl;
     }
 
     /// <summary>
     /// A function parameter.
     /// </summary>
     public sealed record class FuncParam(
-        IToken Identifier,
+        Token Identifier,
         TypeSpecifier Type) : ParseTree;
 
     /// <summary>
@@ -86,7 +88,7 @@ internal abstract record class ParseTree
         /// An in-line function body.
         /// </summary>
         public sealed record class InlineBody(
-            IToken EqualsToken,
+            Token EqualsToken,
             Expr Expression) : FuncBody;
     }
 
@@ -97,14 +99,14 @@ internal abstract record class ParseTree
     {
         // This is the only kind of type expression for now
         public sealed record class Name(
-            IToken Identifier) : TypeExpr;
+            Token Identifier) : TypeExpr;
     }
 
     /// <summary>
     /// A type specifier for functions, variables, expressions, etc.
     /// </summary>
     public sealed record class TypeSpecifier(
-        IToken ColonToken,
+        Token ColonToken,
         TypeExpr Type) : ParseTree;
 
     /// <summary>
@@ -123,7 +125,7 @@ internal abstract record class ParseTree
         /// </summary>
         public new sealed record class Expr(
             ParseTree.Expr Expression,
-            IToken Semicolon) : Stmt;
+            Token Semicolon) : Stmt;
     }
 
     /// <summary>
@@ -135,27 +137,22 @@ internal abstract record class ParseTree
         /// A block of statements and an optional value.
         /// </summary>
         public sealed record class Block(
-            Enclosed<(
-                ValueArray<Stmt> Statements,
-                Expr? Value
-            )> Enclosed) : Expr;
+            Enclosed<(ValueArray<Stmt> Statements, Expr? Value)> Enclosed) : Expr;
 
         /// <summary>
         /// An if-expression with an option else clause.
         /// </summary>
         public sealed record class If(
-            IToken IfKeyword,
+            Token IfKeyword,
             Enclosed<Expr> Condition,
             Expr Expression,
-            (   IToken ElseToken,
-                Expr Expression
-            )? Else) : Expr;
+            (Token ElseToken, Expr Expression)? Else) : Expr;
 
         /// <summary>
         /// A while-expression.
         /// </summary>
         public sealed record class While(
-            IToken Token,
+            Token Token,
             Enclosed<Expr> Condition,
             Expr Expression) : Expr;
 
@@ -163,21 +160,21 @@ internal abstract record class ParseTree
         /// A goto-expression.
         /// </summary>
         public sealed record class Goto(
-            IToken GotoKeyword,
-            IToken Identifier) : Expr;
+            Token GotoKeyword,
+            Token Identifier) : Expr;
 
         /// <summary>
         /// A return-expression.
         /// </summary>
         public sealed record class Return(
-            IToken ReturnKeyword,
+            Token ReturnKeyword,
             Expr? Expression) : Expr;
 
         /// <summary>
         /// A literal expression, i.e. a number, string, boolean value, etc.
         /// </summary>
         public sealed record class Literal(
-            IToken Value) : Expr;
+            Token Value) : Expr;
 
         /// <summary>
         /// A function call expression.
@@ -197,21 +194,21 @@ internal abstract record class ParseTree
         /// A variable expression, or more correctly an identifier reference expression.
         /// </summary>
         public sealed record class Variable(
-            IToken Identifier) : Expr;
+            Token Identifier) : Expr;
 
         /// <summary>
         /// A member access expression.
         /// </summary>
         public sealed record class MemberAccess(
             Expr Expression,
-            IToken PeriodToken,
-            IToken MemberName) : Expr;
+            Token PeriodToken,
+            Token MemberName) : Expr;
 
         /// <summary>
         /// A unary expression.
         /// </summary>
         public sealed record class Unary(
-            IToken Operator,
+            Token Operator,
             Expr Operand) : Expr;
 
         /// <summary>
@@ -219,13 +216,13 @@ internal abstract record class ParseTree
         /// </summary>
         public sealed record class Binary(
             Expr Left,
-            IToken Operator,
+            Token Operator,
             Expr Right) : Expr;
 
         /// <summary>
         /// A grouping expression, enclosing a sub-expression.
         /// </summary>
         public sealed record class Grouping(
-            Enclosed<Expr> Expression);
+            Enclosed<Expr> Expression) : Expr;
     }
 }

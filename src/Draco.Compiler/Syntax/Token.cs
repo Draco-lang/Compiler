@@ -8,129 +8,71 @@ using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
 
-// Factory functions
-internal partial interface IToken
-{
-    /// <summary>
-    /// Constructs an <see cref="IToken"/> from <paramref name="tokenType"/>.
-    /// </summary>
-    /// <param name="tokenType">The type of the token.</param>
-    /// <returns>The constructed <see cref="Basic"/>.</returns>
-    public static Basic From(TokenType tokenType) => new(tokenType, ValueArray<Diagnostic>.Empty);
-
-    /// <summary>
-    /// Constructs an <see cref="IToken"/> from <paramref name="tokenType"/> and the corresponding
-    /// <paramref name="text"/> it was lexed from.
-    /// </summary>
-    /// <param name="tokenType">The type of the token.</param>
-    /// <param name="text">The text the token was lexed from.</param>
-    /// <returns>The constructed <see cref="WithValue{string}"/>.</returns>
-    public static WithValue<string> From(TokenType tokenType, string text) =>
-        new(tokenType, text, text, ValueArray<Diagnostic>.Empty);
-
-    /// <summary>
-    /// Constructs an <see cref="IToken"/> from <paramref name="tokenType"/>, the corresponding
-    /// <paramref name="text"/> it was lexed from and the associated <paramref name="value"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the associated value.</typeparam>
-    /// <param name="tokenType">The type of the token.</param>
-    /// <param name="text">The text the token was lexed from.</param>
-    /// <param name="value">The associated value.</param>
-    /// <returns>The constructed <see cref="WithValue{T}"/>.</returns>
-    public static WithValue<T> From<T>(TokenType tokenType, string text, T value) =>
-        new(tokenType, text, value, ValueArray<Diagnostic>.Empty);
-}
-
 /// <summary>
-/// Interface for all different kinds of tokens.
+/// Represents a piece of source code that has an associated category and can be considered atomic during parsing.
+/// Stores surrounding trivia and lexical errors.
 /// </summary>
-internal partial interface IToken
+internal sealed partial record class Token
 {
     /// <summary>
-    /// The <see cref="TokenType"/> of this <see cref="IToken"/>.
+    /// The <see cref="TokenType"/> of this <see cref="Token"/>.
     /// </summary>
     public TokenType Type { get; }
 
     /// <summary>
-    /// The textual representation of this <see cref="IToken"/>.
+    /// The textual representation of this <see cref="Token"/>.
     /// </summary>
     public string Text { get; }
 
     /// <summary>
-    /// The width of this <see cref="IToken"/> in characters.
+    /// An optional associated value to this <see cref="Token"/>.
+    /// </summary>
+    public object? Value { get; }
+
+    /// <summary>
+    /// The <see cref="Value"/> in string representation.
+    /// </summary>
+    public string? ValueText => this.Value?.ToString();
+
+    /// <summary>
+    /// The width of this <see cref="Token"/> in characters.
     /// </summary>
     public int Width { get; }
 
     /// <summary>
-    /// The leading trivia for this <see cref="IToken"/>.
+    /// The leading trivia for this <see cref="Token"/>.
     /// </summary>
-    public ValueArray<IToken> LeadingTrivia { get; }
+    public ValueArray<Token> LeadingTrivia { get; }
 
     /// <summary>
-    /// The trailing trivia for this <see cref="IToken"/>.
+    /// The trailing trivia for this <see cref="Token"/>.
     /// </summary>
-    public ValueArray<IToken> TrailingTrivia { get; }
+    public ValueArray<Token> TrailingTrivia { get; }
 
     /// <summary>
-    /// The <see cref="Diagnostic"/> messages attached to this <see cref="IToken"/>.
+    /// The <see cref="Diagnostic"/> messages attached to this <see cref="Token"/>.
     /// </summary>
     public ValueArray<Diagnostic> Diagnostics { get; }
 
-    /// <summary>
-    /// Adds trivia around this token. It's illegal to call this on tokens that already have trivia.
-    /// Note, that this function returns a new <see cref="IToken"/>, does not modify the original.
-    /// </summary>
-    /// <param name="leadingTrivia">The leading trivia to attach.</param>
-    /// <param name="trailingTrivia">The trailing trivia to attach.</param>
-    /// <returns>A new <see cref="IToken"/> that has <paramref name="leadingTrivia"/> as
-    /// leading trivia and <paramref name="trailingTrivia"/> as trailing trivia.</returns>
-    IToken AddTrivia(ValueArray<IToken> leadingTrivia, ValueArray<IToken> trailingTrivia);
-
-    /// <summary>
-    /// Adds diagnostics for this token. It's illegal to call this on tokens that already have diagnostics
-    /// attached.
-    /// Note, that this function returns a new <see cref="IToken"/>, does not modify the original.
-    /// </summary>
-    /// <param name="diagnostics">The array of <see cref="Diagnostic"/> messages to attach.</param>
-    /// <returns>A new <see cref="IToken"/> that has <paramref name="diagnostics"/> attached.</returns>
-    IToken AddDiagnostics(ValueArray<Diagnostic> diagnostics);
-}
-
-internal partial interface IToken
-{
-    /// <summary>
-    /// Represents any <see cref="IToken"/> that has an associated value.
-    /// </summary>
-    public interface IWithValue : IToken
+    private Token(
+        TokenType type,
+        string text,
+        object? value,
+        ValueArray<Token> leadingTrivia,
+        ValueArray<Token> trailingTrivia,
+        ValueArray<Diagnostic> diagnostics)
     {
-        /// <summary>
-        /// The associated value.
-        /// </summary>
-        public object? Value { get; }
+        this.Type = type;
+        this.Text = text;
+        this.Value = value;
+        this.Width = leadingTrivia.Sum(t => t.Width) + text.Length + trailingTrivia.Sum(t => t.Width);
+        this.LeadingTrivia = leadingTrivia;
+        this.TrailingTrivia = trailingTrivia;
+        this.Diagnostics = diagnostics;
     }
 
-    /// <summary>
-    /// Represents any <see cref="IToken"/> that has an associated value.
-    /// </summary>
-    /// <typeparam name="T">The type of the associated value.</typeparam>
-    public interface IWithValue<T> : IWithValue
-    {
-        /// <summary>
-        /// The associated value.
-        /// </summary>
-        public new T Value { get; }
-    }
-}
-
-// Private utilities
-internal partial interface IToken
-{
-    /// <summary>
-    /// Implements stringification of <see cref="IToken"/>s.
-    /// </summary>
-    /// <param name="token">The token to stringify.</param>
-    /// <returns>The user-friendly string representation of <paramref name="token"/>.</returns>
-    private static string ToStringImpl(IToken token)
+    /// <inheritdoc/>
+    public override string ToString()
     {
         static string Unescape(string text) => text
             .Replace("\n", @"\n")
@@ -138,170 +80,146 @@ internal partial interface IToken
             .Replace("\t", @"\t");
 
         var result = new StringBuilder();
-        result.Append($"\"{Unescape(token.Text)}\": {token.Type}");
-        if (token is IWithValue withVal)
+        result.Append($"\"{Unescape(this.Text)}\": {this.Type}");
+        if (this.Value is not null)
         {
-            var valueText = withVal.Value?.ToString() ?? "null";
-            if (withVal.Value is not string || valueText != token.Text) result.Append($" [value={withVal.Value}]");
+            var valueText = this.Value.ToString() ?? "null";
+            if (this.Value is not string || valueText != this.Text) result.Append($" [value={this.Value}]");
         }
         result.AppendLine();
-        if (token.LeadingTrivia.Count > 0) result.AppendLine($"  leading trivia: {token.LeadingTrivia}");
-        if (token.TrailingTrivia.Count > 0) result.AppendLine($"  trailing trivia: {token.TrailingTrivia}");
+        if (this.LeadingTrivia.Count > 0) result.AppendLine($"  leading trivia: {this.LeadingTrivia}");
+        if (this.TrailingTrivia.Count > 0) result.AppendLine($"  trailing trivia: {this.TrailingTrivia}");
         return result.ToString().TrimEnd();
     }
 }
 
-internal partial interface IToken
+// Factory functions
+internal partial record class Token
 {
     /// <summary>
-    /// The most basic kind of token with only a <see cref="TokenType"/>.
+    /// Constructs a <see cref="Token"/> from <paramref name="type"/>.
     /// </summary>
-    /// <param name="Type">The type of this token.</param>
-    public sealed record class Basic(TokenType Type, ValueArray<Diagnostic> Diagnostics) : IToken
-    {
-        /// <inheritdoc/>
-        public string Text => this.Type.GetTokenText();
+    /// <param name="type">The <see cref="TokenType"/> of the token to be constructed.</param>
+    /// <returns>The constructed <see cref="Token"/> with type <paramref name="type"/>.</returns>
+    public static Token From(TokenType type) => new(
+        type: type,
+        text: type.GetTokenText(),
+        value: null,
+        leadingTrivia: ValueArray<Token>.Empty,
+        trailingTrivia: ValueArray<Token>.Empty,
+        diagnostics: ValueArray<Diagnostic>.Empty);
 
-        /// <inheritdoc/>
-        public int Width => this.Text.Length;
-
-        /// <inheritdoc/>
-        public ValueArray<IToken> LeadingTrivia => ValueArray<IToken>.Empty;
-
-        /// <inheritdoc/>
-        public ValueArray<IToken> TrailingTrivia => ValueArray<IToken>.Empty;
-
-        /// <inheritdoc/>
-        public IToken AddTrivia(ValueArray<IToken> leadingTrivia, ValueArray<IToken> trailingTrivia) =>
-            new WithTrivia(this.Type, leadingTrivia, trailingTrivia, this.Diagnostics);
-
-        /// <inheritdoc/>
-        public IToken AddDiagnostics(ValueArray<Diagnostic> diagnostics) => new Basic(this.Type, diagnostics);
-
-        /// <inheritdoc/>
-        public override string ToString() => ToStringImpl(this);
-    }
+    /// <summary>
+    /// Constructs a <see cref="Token"/> from <paramref name="type"/> and <paramref name="text"/>.
+    /// </summary>
+    /// <param name="type">The <see cref="TokenType"/> of the token to be constructed.</param>
+    /// <param name="text">The text the <see cref="Token"/> is produced from.</param>
+    /// <returns>The constructed <see cref="Token"/> with type <paramref name="type"/>
+    /// and text <paramref name="text"/>.</returns>
+    public static Token From(TokenType type, string text) => new(
+        type: type,
+        text: text,
+        value: null,
+        leadingTrivia: ValueArray<Token>.Empty,
+        trailingTrivia: ValueArray<Token>.Empty,
+        diagnostics: ValueArray<Diagnostic>.Empty);
 }
 
-internal partial interface IToken
+// Builder type
+internal partial record class Token
 {
     /// <summary>
-    /// A token with a lexed value.
+    /// A builder type for <see cref="Token"/>.
     /// </summary>
-    /// <typeparam name="T">The type of the lexed value.</typeparam>
-    /// <param name="Type">The type of this token.</param>
-    /// <param name="Text">The text the token was lexed from.</param>
-    /// <param name="Value">The interpreted value of the token.</param>
-    public sealed record class WithValue<T>(
-        TokenType Type,
-        string Text,
-        T Value,
-        ValueArray<Diagnostic> Diagnostics) : IWithValue<T>
+    public sealed class Builder
     {
-        /// <inheritdoc/>
-        object? IWithValue.Value => this.Value;
+        public TokenType? Type { get; private set; }
+        public string? Text { get; private set; }
+        public object? Value { get; private set; }
+        public IImmutableList<Token>? LeadingTrivia { get; private set; }
+        public IImmutableList<Token>? TrailingTrivia { get; private set; }
+        public IImmutableList<Diagnostic>? Diagnostics { get; private set; }
 
-        /// <inheritdoc/>
-        public int Width => this.Text.Length;
+        /// <summary>
+        /// Clears this builder.
+        /// </summary>
+        public void Clear()
+        {
+            this.Type = null;
+            this.Text = null;
+            this.Value = null;
+            this.LeadingTrivia = null;
+            this.TrailingTrivia = null;
+            this.Diagnostics = null;
+        }
 
-        /// <inheritdoc/>
-        public ValueArray<IToken> LeadingTrivia => ValueArray<IToken>.Empty;
+        /// <summary>
+        /// Builds a <see cref="Token"/> from the set data.
+        /// Can throw <see cref="InvalidOperationException"/> on invalid configuration.
+        /// </summary>
+        /// <returns>The constructed <see cref="Token"/>.</returns>
+        public Token Build()
+        {
+            var tt = this.Type ?? throw new InvalidOperationException("specifying token type is required");
+            var text = this.Text ?? tt.GetTokenText();
+            var leadingTriv = this.LeadingTrivia is null
+                ? ValueArray<Token>.Empty
+                : new ValueArray<Token>(this.LeadingTrivia);
+            var trailingTriv = this.TrailingTrivia is null
+                ? ValueArray<Token>.Empty
+                : new ValueArray<Token>(this.TrailingTrivia);
+            var diags = this.Diagnostics is null
+                ? ValueArray<Diagnostic>.Empty
+                : new ValueArray<Diagnostic>(this.Diagnostics);
+            return new(
+                type: tt,
+                text: text,
+                value: this.Value,
+                leadingTrivia: leadingTriv,
+                trailingTrivia: trailingTriv,
+                diagnostics: diags);
+        }
 
-        /// <inheritdoc/>
-        public ValueArray<IToken> TrailingTrivia => ValueArray<IToken>.Empty;
+        public Builder SetType(TokenType tokenType)
+        {
+            if (this.Type is not null) throw new InvalidOperationException("token type already set");
+            this.Type = tokenType;
+            return this;
+        }
 
-        /// <inheritdoc/>
-        public IToken AddTrivia(ValueArray<IToken> leadingTrivia, ValueArray<IToken> trailingTrivia) =>
-            new WithTriviaAndValue<T>(this.Type, this.Text, this.Value, leadingTrivia, trailingTrivia, this.Diagnostics);
+        public Builder SetText(string text)
+        {
+            if (this.Text is not null) throw new InvalidOperationException("text already set");
+            this.Text = text;
+            return this;
+        }
 
-        /// <inheritdoc/>
-        public IToken AddDiagnostics(ValueArray<Diagnostic> diagnostics) => new WithValue<T>(
-            this.Type,
-            this.Text,
-            this.Value,
-            diagnostics);
-        
-        /// <inheritdoc/>
-        public override string ToString() => ToStringImpl(this);
-    }
-}
+        public Builder SetValue<T>(T value)
+        {
+            if (this.Value is not null) throw new InvalidOperationException("value already set");
+            this.Value = value;
+            return this;
+        }
 
-internal partial interface IToken
-{
-    /// <summary>
-    /// A basic token with <see cref="TokenType"/> and trivia.
-    /// </summary>
-    /// <param name="Type">The type of this token.</param>
-    /// <param name="LeadingTrivia">The leading trivia of this token.</param>
-    /// <param name="TrailingTrivia">The trailing trivia of this token.</param>
-    public sealed record class WithTrivia(
-        TokenType Type,
-        ValueArray<IToken> LeadingTrivia,
-        ValueArray<IToken> TrailingTrivia,
-        ValueArray<Diagnostic> Diagnostics) : IToken
-    {
-        /// <inheritdoc/>
-        public string Text => this.Type.GetTokenText();
+        public Builder SetLeadingTrivia(IImmutableList<Token> trivia)
+        {
+            if (this.LeadingTrivia is not null) throw new InvalidOperationException("leading trivia already set");
+            this.LeadingTrivia = trivia;
+            return this;
+        }
 
-        /// <inheritdoc/>
-        public int Width { get; } = LeadingTrivia.Sum(t => t.Width)
-                                  + Type.GetTokenText().Length
-                                  + TrailingTrivia.Sum(t => t.Width);
+        public Builder SetTrailingTrivia(IImmutableList<Token> trivia)
+        {
+            if (this.TrailingTrivia is not null) throw new InvalidOperationException("trailing trivia already set");
+            this.TrailingTrivia = trivia;
+            return this;
+        }
 
-        /// <inheritdoc/>
-        public IToken AddTrivia(ValueArray<IToken> leadingTrivia, ValueArray<IToken> trailingTrivia) =>
-            throw new InvalidOperationException("can not attach trivia to a token that already has trivia");
-
-        /// <inheritdoc/>
-        public IToken AddDiagnostics(ValueArray<Diagnostic> diagnostics) =>
-            new WithTrivia(this.Type, this.LeadingTrivia, this.TrailingTrivia, diagnostics);
-
-        /// <inheritdoc/>
-        public override string ToString() => ToStringImpl(this);
-    }
-}
-
-internal partial interface IToken
-{
-    /// <summary>
-    /// A token with associated value and trivia.
-    /// </summary>
-    /// <typeparam name="T">The type of the lexed value.</typeparam>
-    /// <param name="Type">The type of this token.</param>
-    /// <param name="Text">The text the token was lexed from.</param>
-    /// <param name="Value">The interpreted value of the token.</param>
-    /// <param name="LeadingTrivia">The leading trivia of this token.</param>
-    /// <param name="TrailingTrivia">The trailing trivia of this token.</param>
-    public sealed record class WithTriviaAndValue<T>(
-        TokenType Type,
-        string Text,
-        T Value,
-        ValueArray<IToken> LeadingTrivia,
-        ValueArray<IToken> TrailingTrivia,
-        ValueArray<Diagnostic> Diagnostics) : IWithValue<T>
-    {
-        /// <inheritdoc/>
-        object? IWithValue.Value => this.Value;
-
-        /// <inheritdoc/>
-        public int Width { get; } = LeadingTrivia.Sum(t => t.Width)
-                                  + Text.Length
-                                  + TrailingTrivia.Sum(t => t.Width);
-
-        /// <inheritdoc/>
-        public IToken AddTrivia(ValueArray<IToken> leadingTrivia, ValueArray<IToken> trailingTrivia) =>
-            throw new InvalidOperationException("can not attach trivia to a token that already has trivia");
-
-        /// <inheritdoc/>
-        public IToken AddDiagnostics(ValueArray<Diagnostic> diagnostics) => new WithTriviaAndValue<T>(
-            this.Type,
-            this.Text,
-            this.Value,
-            this.LeadingTrivia,
-            this.TrailingTrivia,
-            diagnostics);
-
-        /// <inheritdoc/>
-        public override string ToString() => ToStringImpl(this);
+        public Builder SetDiagnostics(IImmutableList<Diagnostic> diagnostics)
+        {
+            if (this.Diagnostics is not null) throw new InvalidOperationException("diagnostics already set");
+            this.Diagnostics = diagnostics;
+            return this;
+        }
     }
 }

@@ -13,6 +13,15 @@ indent_size = 2
 [*.cs]
 indent_size = 4
 
+# Formatting errors
+dotnet_diagnostic.IDE0055.severity = warning
+
+# Bracing and newline preferences
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_prefer_braces = false:suggestion
+
 # this. qualification
 dotnet_style_qualification_for_field = true:warning
 dotnet_style_qualification_for_method = true:warning

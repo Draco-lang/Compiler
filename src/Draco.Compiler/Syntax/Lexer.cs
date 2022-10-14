@@ -444,17 +444,16 @@ internal sealed class Lexer
                 }
             }
 
-            offset += mode.ExtendedDelims + 1;
-
             // Line continuation
             if (mode.Kind == ModeKind.MultiLineString)
             {
+                var offset2 = offset + mode.ExtendedDelims + 1;
                 var whiteCharOffset = 0;
-                while (IsSpace(this.Peek(offset + whiteCharOffset))) whiteCharOffset++;
-                if (this.TryParseNewline(offset + whiteCharOffset, out var length))
+                while (IsSpace(this.Peek(offset2 + whiteCharOffset))) whiteCharOffset++;
+                if (this.TryParseNewline(offset2 + whiteCharOffset, out var length))
                 {
                     //TODO: decide what to do if there are whitespaces after line continuation
-                    if (offset == mode.ExtendedDelims + 1)
+                    if (offset == 0)
                     {
                         // We can return this line-continuation
                         // The important thing is that the value is an empty string
@@ -467,7 +466,6 @@ internal sealed class Lexer
                     else
                     {
                         // There is content before that we need to deal with
-                        offset -= mode.ExtendedDelims + 1;
                         this.tokenBuilder
                             .SetType(TokenType.StringContent)
                             .SetText(this.AdvanceWithText(offset))
@@ -476,6 +474,8 @@ internal sealed class Lexer
                     }
                 }
             }
+
+            offset += mode.ExtendedDelims + 1;
             // Try to parse an escape
             var escaped = this.ParseEscapeSequence(ref offset);
             // Append to result

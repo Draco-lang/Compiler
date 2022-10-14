@@ -411,7 +411,7 @@ internal sealed class Lexer
                     {
                         // We can return this line-continuation
                         // The important thing is that the value is an empty string
-                        return IToken.From(TokenType.StringNewline, this.AdvanceWithText(mode.ExtendedDelims + 1 + length), string.Empty);
+                        return IToken.From(TokenType.StringNewline, this.AdvanceWithText(mode.ExtendedDelims + 1 + whiteCharOffset + length), string.Empty);
                     }
                     else
                     {

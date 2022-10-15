@@ -8,18 +8,24 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = @"
-// Simple hello world
+func abs(n: int32): int32 =
+    if (n < 0) -n
+    else n;
 
-var x;
-val y: int32;
 func main() {
-
+    if (x > 0) {
+        Console.WriteLine(1);
+    }
+    else {
+        Console.WriteLine(0);
+    }
 }
 ";
         var srcReader = SourceReader.From(src);
         var lexer = new Lexer(srcReader);
         var tokenSource = TokenSource.From(lexer);
         var parser = new Parser(tokenSource);
-        parser.ParseCompilationUnit();
+        var cu = parser.ParseCompilationUnit();
+        Console.WriteLine(cu.PrettyPrint());
     }
 }

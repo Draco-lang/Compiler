@@ -8,7 +8,14 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = @"
-var x = y + z * 4 + foo(1, 2) - bar[1];
+func main() {
+    if (x > 0) {
+        Console.WriteLine(1);
+    }
+    else {
+        Console.WriteLine(0);
+    }
+}
 ";
         var srcReader = SourceReader.From(src);
         var lexer = new Lexer(srcReader);

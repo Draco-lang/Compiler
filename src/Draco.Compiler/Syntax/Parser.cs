@@ -16,6 +16,115 @@ namespace Draco.Compiler.Syntax;
 /// </summary>
 internal sealed class Parser
 {
+    /// <summary>
+    /// Describes a precedence level.
+    /// </summary>
+    private enum PrecLevelKind
+    {
+        /// <summary>
+        /// The level is for unary prefix operators.
+        /// </summary>
+        Prefix,
+
+        /// <summary>
+        /// The level is for binary left-associative operators.
+        /// </summary>
+        BinaryLeft,
+
+        /// <summary>
+        /// The level is for binary right-associative operators.
+        /// </summary>
+        BinaryRight,
+
+        /// <summary>
+        /// The level is completely custom with a custom parser function.
+        /// </summary>
+        Custom,
+    }
+
+    /// <summary>
+    /// Describes a single precedence level for expressions.
+    /// </summary>
+    /// <param name="Kind">The kind of the precedence level.</param>
+    /// <param name="Operators">The operator tokens for this level.</param>
+    /// <param name="CustomParser">The custom parser for the level, if any.</param>
+    private readonly record struct PrecLevel(
+        PrecLevelKind Kind,
+        TokenType[] Operators,
+        Func<Parser, Func<Expr>, Expr> CustomParser)
+    {
+        /// <summary>
+        /// Constructs a precedence level for prefix operators.
+        /// </summary>
+        /// <param name="ops">The valid prefix unary operator token types.</param>
+        /// <returns>A precedence level descriptor.</returns>
+        public static PrecLevel Prefix(params TokenType[] ops) => new(
+            Kind: PrecLevelKind.Prefix,
+            Operators: ops,
+            CustomParser: (_1, _2) => throw new InvalidOperationException());
+
+        /// <summary>
+        /// Constructs a precedence level for binary left-associative operators.
+        /// </summary>
+        /// <param name="ops">The valid binary operator token types.</param>
+        /// <returns>A precedence level descriptor.</returns>
+        public static PrecLevel BinaryLeft(params TokenType[] ops) => new(
+            Kind: PrecLevelKind.BinaryLeft,
+            Operators: ops,
+            CustomParser: (_1, _2) => throw new InvalidOperationException());
+
+        /// <summary>
+        /// Constructs a precedence level for binary right-associative operators.
+        /// </summary>
+        /// <param name="ops">The valid binary operator token types.</param>
+        /// <returns>A precedence level descriptor.</returns>
+        public static PrecLevel BinaryRight(params TokenType[] ops) => new(
+            Kind: PrecLevelKind.BinaryRight,
+            Operators: ops,
+            CustomParser: (_1, _2) => throw new InvalidOperationException());
+
+        /// <summary>
+        /// Constructs a precedence level for a custom parser function.
+        /// </summary>
+        /// <param name="parserFunc">The parser function for the level.</param>
+        /// <returns>A precedence level descriptor.</returns>
+        public static PrecLevel Custom(Func<Parser, Func<Expr>, Expr> parserFunc) => new(
+            Kind: PrecLevelKind.Custom,
+            Operators: Array.Empty<TokenType>(),
+            CustomParser: parserFunc);
+    }
+
+    /// <summary>
+    /// The precedence table for the parser.
+    /// Goes from highest precedence first, lowest precedence last.
+    /// </summary>
+    private static readonly PrecLevel[] precedenceTable = new[]
+    {
+        // Max precedence is atom
+        PrecLevel.Custom((parser, _) => parser.ParseAtomExpr()),
+        // Then comes call, indexing and member access
+        PrecLevel.Custom((parser, subexprParser) => parser.ParseCallLevelExpr(subexprParser)),
+        // Then prefix unary + and -
+        PrecLevel.Prefix(TokenType.Plus, TokenType.Minus),
+        // Then binary *, /, mod, rem
+        PrecLevel.BinaryLeft(TokenType.Star, TokenType.Slash, TokenType.KeywordMod, TokenType.KeywordRem),
+        // Then binary +, -
+        PrecLevel.BinaryLeft(TokenType.Plus, TokenType.Minus),
+        // Then relational operators
+        PrecLevel.Custom((parser, subexprParser) => parser.ParseRelationalLevelExpr(subexprParser)),
+        // Then unary not
+        PrecLevel.Prefix(TokenType.KeywordNot),
+        // Then binary and
+        PrecLevel.BinaryLeft(TokenType.KeywordAnd),
+        // Then binary or
+        PrecLevel.BinaryLeft(TokenType.KeywordOr),
+        // Then assignment and compound assignment, which are **RIGHT ASSOCIATIVE**
+        PrecLevel.BinaryRight(
+            TokenType.Assign,
+            TokenType.PlusAssign, TokenType.MinusAssign,
+            TokenType.StarAssign, TokenType.SlashAssign),
+    };
+
     private readonly ITokenSource tokenSource;
 
     public Parser(ITokenSource tokenSource)
@@ -30,7 +139,7 @@ internal sealed class Parser
     public CompilationUnit ParseCompilationUnit()
     {
         var decls = ValueArray.CreateBuilder<Decl>();
-        while (this.tokenSource.Peek().Type != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
+        while (this.Peek().Type != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
         return new(decls.ToValue());
     }
 
@@ -40,7 +149,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="Decl"/>.</returns>
     private Decl ParseDeclaration()
     {
-        var keyword = this.tokenSource.Peek();
+        var keyword = this.Peek();
         if (keyword.Type == TokenType.KeywordFunc)
         {
             return this.ParseFuncDeclaration();
@@ -61,15 +170,15 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="Variable"/>.</returns>
     private Decl.Variable ParseVariableDeclaration()
     {
-        var keyword = this.tokenSource.Peek();
+        var keyword = this.Peek();
         if (keyword.Type == TokenType.KeywordVal || keyword.Type == TokenType.KeywordVar)
         {
-            this.tokenSource.Advance();
+            this.Advance();
         }
         var identifier = this.Expect(TokenType.Identifier);
         // We don't necessarily have type specifier
         TypeSpecifier? type = null;
-        if (this.tokenSource.Peek().Type == TokenType.Colon)
+        if (this.Peek().Type == TokenType.Colon)
         {
             var colon = this.Expect(TokenType.Colon);
             var typeIdentifier = this.Expect(TokenType.Identifier);
@@ -77,7 +186,7 @@ internal sealed class Parser
         }
         // We don't necessarily have value assigned to the variable
         (Token Assign, Expr Value)? assignment = null;
-        if (this.tokenSource.Peek().Type == TokenType.Assign)
+        if (this.Peek().Type == TokenType.Assign)
         {
             var assign = this.Expect(TokenType.Assign);
             var value = this.ParseExpr();
@@ -103,7 +212,7 @@ internal sealed class Parser
         ValueArray<Punctuated<FuncParam>>.Builder funcParams = ValueArray.CreateBuilder<Punctuated<FuncParam>>();
         while (true)
         {
-            var token = this.tokenSource.Peek();
+            var token = this.Peek();
             if (token.Type == TokenType.ParenClose) break;
             var paramID = this.Expect(TokenType.Identifier);
             var colon = this.Expect(TokenType.Colon);
@@ -119,7 +228,7 @@ internal sealed class Parser
 
         // We don't necessarily have type specifier
         TypeSpecifier? typeSpecifier = null;
-        if (this.tokenSource.Peek().Type == TokenType.Colon)
+        if (this.Peek().Type == TokenType.Colon)
         {
             var colon = this.Expect(TokenType.Colon);
             var typeName = this.Expect(TokenType.Identifier);
@@ -127,12 +236,12 @@ internal sealed class Parser
         }
         FuncBody? body = null;
         // Inline function body
-        if (this.tokenSource.Peek().Type == TokenType.Assign)
+        if (this.Peek().Type == TokenType.Assign)
         {
             body = new FuncBody.InlineBody(this.Expect(TokenType.Assign), this.ParseExpr());
         }
         // Block function body
-        else if (this.tokenSource.Peek().Type == TokenType.CurlyOpen)
+        else if (this.Peek().Type == TokenType.CurlyOpen)
         {
             body = new FuncBody.BlockBody(this.ParseBlock());
         }
@@ -150,14 +259,97 @@ internal sealed class Parser
 
     private Expr ParseExpr()
     {
+        // The function that is driven by the precedence table
+        Expr ParsePrecedenceLevel(int level)
+        {
+            var desc = precedenceTable[level];
+            switch (desc.Kind)
+            {
+            case PrecLevelKind.Prefix:
+            {
+                var op = this.Peek();
+                if (desc.Operators.Contains(op.Type))
+                {
+                    // There is such operator on this level
+                    op = this.Advance();
+                    var subexpr = ParsePrecedenceLevel(level);
+                    return new Unary(op, subexpr);
+                }
+                // Just descent to next level
+                return ParsePrecedenceLevel(level + 1);
+            }
+
+            case PrecLevelKind.BinaryLeft:
+            {
+                // We unroll left-associativity into a loop
+                var result = ParsePrecedenceLevel(level + 1);
+                while (true)
+                {
+                    var op = this.Peek();
+                    if (!desc.Operators.Contains(op.Type)) break;
+                    op = this.Advance();
+                    var right = ParsePrecedenceLevel(level + 1);
+                    result = new Binary(result, op, right);
+                }
+                return result;
+            }
+
+            case PrecLevelKind.BinaryRight:
+            {
+                // Right-associativity is simply right-recursion
+                var result = ParsePrecedenceLevel(level + 1);
+                var op = this.Peek();
+                if (desc.Operators.Contains(op.Type))
+                {
+                    op = this.Advance();
+                    var right = ParsePrecedenceLevel(level);
+                    result = new Binary(result, op, right);
+                }
+                return result;
+            }
+
+            case PrecLevelKind.Custom:
+                // Just call the custom parser
+                return desc.CustomParser(this, () => ParsePrecedenceLevel(level + 1));
+
+            default:
+                throw new InvalidOperationException("no such precedence level kind");
+            }
+        }
+
+        return ParsePrecedenceLevel(0);
+    }
+
+    private Expr ParseCallLevelExpr(Func<Expr> elementParser)
+    {
         throw new NotImplementedException();
     }
+
+    private Expr ParseRelationalLevelExpr(Func<Expr> elementParser)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Expr ParseAtomExpr()
+    {
+        throw new NotImplementedException();
+    }
+
+    // Token-level operators
 
     private Token Expect(TokenType type)
     {
         var token = this.tokenSource.Peek();
         if (token.Type != type) throw new NotImplementedException();
 
+        return this.Advance();
+    }
+
+    private Token Peek(int offset = 0) => this.tokenSource.Peek(offset);
+
+    private Token Advance()
+    {
+        var token = this.Peek();
         this.tokenSource.Advance();
         return token;
     }

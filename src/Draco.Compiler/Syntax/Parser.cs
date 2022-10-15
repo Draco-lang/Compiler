@@ -404,6 +404,15 @@ internal sealed class Parser
 
     // General utilities
 
+    /// <summary>
+    /// Parses a punctuated list.
+    /// </summary>
+    /// <typeparam name="T">The element type of the punctuated list.</typeparam>
+    /// <param name="elementParser">The parser function that parses a single element.</param>
+    /// <param name="punctType">The type of the punctuation token.</param>
+    /// <param name="stopType">The type of the token that definitely ends this construct.</param>
+    /// <param name="allowEmpty">True, if an empty list is allowed.</param>
+    /// <returns>The parsed <see cref="PunctuatedList{T}"/>.</returns>
     private PunctuatedList<T> ParsePunctuatedListAllowTrailing<T>(
         Func<T> elementParser,
         TokenType punctType,
@@ -436,6 +445,14 @@ internal sealed class Parser
         return new(elements.ToValue());
     }
 
+    /// <summary>
+    /// Parses an enclosed construct.
+    /// </summary>
+    /// <typeparam name="T">The type of the enclosed value.</typeparam>
+    /// <param name="openType">The type of the token that starts this construct.</param>
+    /// <param name="valueParser">The parser that parses the enclosed element.</param>
+    /// <param name="closeType">The type of the token that closes the construct.</param>
+    /// <returns>The parsed <see cref="Enclosed{T}"/>.</returns>
     private Enclosed<T> ParseEnclosed<T>(TokenType openType, Func<T> valueParser, TokenType closeType)
     {
         var openToken = this.Expect(openType);
@@ -446,6 +463,12 @@ internal sealed class Parser
 
     // Token-level operators
 
+    /// <summary>
+    /// Expects a certain kind of token to be at the current position.
+    /// If it is, the token is consumed.
+    /// </summary>
+    /// <param name="type">The expected token type.</param>
+    /// <returns>The consumed <see cref="Token"/>.</returns>
     private Token Expect(TokenType type)
     {
         var token = this.tokenSource.Peek();
@@ -454,8 +477,17 @@ internal sealed class Parser
         return this.Advance();
     }
 
+    /// <summary>
+    /// Peeks ahead in the token source.
+    /// </summary>
+    /// <param name="offset">The amount to peek ahead.</param>
+    /// <returns>The <see cref="Token"/> that is <paramref name="offset"/> ahead.</returns>
     private Token Peek(int offset = 0) => this.tokenSource.Peek(offset);
 
+    /// <summary>
+    /// Advances the parser in the token source with one token.
+    /// </summary>
+    /// <returns>The consumed <see cref="Token"/>.</returns>
     private Token Advance()
     {
         var token = this.Peek();

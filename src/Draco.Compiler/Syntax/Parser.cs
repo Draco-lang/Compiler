@@ -43,6 +43,23 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// Control flow statements parse sligtly differently in expression and statement contexts.
+    /// This is the discriminating enum for them to avoid duplicating parser code.
+    /// </summary>
+    private enum ControlFlowContext
+    {
+        /// <summary>
+        /// Control flow for an expression.
+        /// </summary>
+        Expr,
+
+        /// <summary>
+        /// Control flow for a statement.
+        /// </summary>
+        Stmt,
+    }
+
+    /// <summary>
     /// Describes a single precedence level for expressions.
     /// </summary>
     /// <param name="Kind">The kind of the precedence level.</param>
@@ -159,18 +176,55 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="Decl"/>.</returns>
     private Decl ParseDeclaration()
     {
-        var keyword = this.Peek();
-        if (keyword.Type == TokenType.KeywordFunc)
+        switch (this.Peek().Type)
         {
+        case TokenType.KeywordFunc:
             return this.ParseFuncDeclaration();
-        }
-        else if (keyword.Type == TokenType.KeywordVar || keyword.Type == TokenType.KeywordVal)
-        {
+
+        case TokenType.KeywordVar:
+        case TokenType.KeywordVal:
             return this.ParseVariableDeclaration();
-        }
-        else
-        {
+
+        default:
+            // TODO: Error handling
             throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Parses a statement.
+    /// </summary>
+    /// <returns>The parsed <see cref="Stmt"/>.</returns>
+    private Stmt ParseStatement(bool allowDecl)
+    {
+        switch (this.Peek().Type)
+        {
+        // Declarations
+        case TokenType.KeywordFunc when allowDecl:
+        case TokenType.KeywordVar when allowDecl:
+        case TokenType.KeywordVal when allowDecl:
+        {
+            var decl = this.ParseDeclaration();
+            return new Stmt.Decl(decl);
+        }
+
+        // Expressions that can appear without braces
+        case TokenType.CurlyOpen:
+        case TokenType.KeywordIf:
+        case TokenType.KeywordWhile:
+        {
+            var expr = this.ParseControlFlowExpr(ControlFlowContext.Stmt);
+            return new Stmt.Expr(expr, null);
+        }
+
+        // Assume expression
+        default:
+        {
+            // TODO: This assumption might not be the best
+            var expr = this.ParseExpr();
+            var semicolon = this.Expect(TokenType.Semicolon);
+            return new Stmt.Expr(expr, semicolon);
+        }
         }
     }
 
@@ -246,7 +300,7 @@ internal sealed class Parser
         }
         else if (this.Peek().Type == TokenType.CurlyOpen)
         {
-            var block = this.ParseBlockExpr();
+            var block = this.ParseBlockExpr(ControlFlowContext.Stmt);
             return new FuncBody.BlockBody(block);
         }
         else
@@ -270,9 +324,139 @@ internal sealed class Parser
         return new TypeExpr.Name(typeName);
     }
 
-    private Expr.Block ParseBlockExpr()
+    private Expr ParseControlFlowExpr(ControlFlowContext ctx)
     {
-        throw new NotImplementedException();
+        switch (this.Peek().Type)
+        {
+        case TokenType.CurlyOpen:
+            return this.ParseBlockExpr(ctx);
+
+        case TokenType.KeywordIf:
+            return this.ParseIfExpr(ctx);
+
+        case TokenType.KeywordWhile:
+            return this.ParseWhileExpr(ctx);
+
+        default:
+            // TODO: error handling
+            throw new InvalidOperationException();
+        }
+    }
+
+    private Expr ParseControlFlowBody(ControlFlowContext ctx)
+    {
+        if (ctx == ControlFlowContext.Expr)
+        {
+            // Only expressions, no semicolon needed
+            return this.ParseExpr();
+        }
+        else
+        {
+            // Just a statement
+            // Since this is a one-liner, we don't allow declarations as for example
+            // if (x) var y = z;
+            // makes no sense!
+            var stmt = this.ParseStatement(allowDecl: false);
+            return new Expr.UnitStmt(stmt);
+        }
+    }
+
+    private Expr.Block ParseBlockExpr(ControlFlowContext ctx)
+    {
+        var enclosed = this.ParseEnclosed(
+            openType: TokenType.CurlyOpen,
+            valueParser: () =>
+            {
+                var stmts = ValueArray.CreateBuilder<Stmt>();
+                Expr? value = null;
+                while (true)
+                {
+                    switch (this.Peek().Type)
+                    {
+                    case TokenType.CurlyClose:
+                        // On a close curly we can immediately exit
+                        goto end_of_block;
+
+                    case TokenType.KeywordFunc:
+                    case TokenType.KeywordVar:
+                    case TokenType.KeywordVal:
+                    {
+                        var decl = this.ParseDeclaration();
+                        stmts.Add(new Stmt.Decl(decl));
+                        break;
+                    }
+
+                    case TokenType.CurlyOpen:
+                    case TokenType.KeywordIf:
+                    case TokenType.KeywordWhile:
+                    {
+                        var expr = this.ParseControlFlowExpr(ctx);
+                        if (this.Peek().Type == TokenType.CurlyClose)
+                        {
+                            // Treat as expression
+                            value = expr;
+                            goto end_of_block;
+                        }
+                        // Just a statement
+                        stmts.Add(new Stmt.Expr(expr, null));
+                        break;
+                    }
+
+                    default:
+                    {
+                        // Assume any other expression
+                        // TODO: Might not be the best assumption
+                        var expr = this.ParseExpr();
+                        if (this.Matches(TokenType.Semicolon, out var semicolon))
+                        {
+                            // Just a statement, can continue
+                            stmts.Add(new Stmt.Expr(expr, null));
+                        }
+                        else
+                        {
+                            // This is the value of the block
+                            value = expr;
+                            goto end_of_block;
+                        }
+                        break;
+                    }
+                    }
+                }
+            end_of_block:
+                return (stmts.ToValue(), value);
+            },
+            closeType: TokenType.CurlyClose);
+        return new(enclosed);
+    }
+
+    private Expr.If ParseIfExpr(ControlFlowContext ctx)
+    {
+        var ifKeyword = this.Expect(TokenType.KeywordIf);
+        var condition = this.ParseEnclosed(
+            openType: TokenType.ParenOpen,
+            valueParser: this.ParseExpr,
+            closeType: TokenType.ParenClose);
+        var thenBody = this.ParseControlFlowBody(ctx);
+
+        (Token ElseKeyword, Expr Value)? elsePart = null;
+        if (this.Matches(TokenType.KeywordElse, out var elseKeyword))
+        {
+            var elseBody = this.ParseControlFlowBody(ctx);
+            elsePart = (elseKeyword, elseBody);
+        }
+
+        return new(ifKeyword, condition, thenBody, elsePart);
+    }
+
+    private Expr.While ParseWhileExpr(ControlFlowContext ctx)
+    {
+        var whileKeyword = this.Expect(TokenType.KeywordWhile);
+        var condition = this.ParseEnclosed(
+            openType: TokenType.ParenOpen,
+            valueParser: this.ParseExpr,
+            closeType: TokenType.ParenClose);
+        var body = this.ParseControlFlowBody(ctx);
+        return new(whileKeyword, condition, body);
     }
 
     private Expr ParseExpr()
@@ -381,6 +565,11 @@ internal sealed class Parser
                     closeType: TokenType.BracketClose);
                 result = new Expr.Call(result, args);
             }
+            else if (this.Matches(TokenType.Dot, out var dot))
+            {
+                var name = this.Expect(TokenType.Identifier);
+                result = new Expr.MemberAccess(result, dot, name);
+            }
             else
             {
                 break;
@@ -409,6 +598,10 @@ internal sealed class Parser
             var content = this.ParseEnclosed(TokenType.ParenOpen, this.ParseExpr, TokenType.ParenClose);
             return new Expr.Grouping(content);
         }
+        case TokenType.CurlyOpen:
+        case TokenType.KeywordIf:
+        case TokenType.KeywordWhile:
+            return this.ParseControlFlowExpr(ControlFlowContext.Expr);
         default:
             // TODO: Error handling
             throw new NotImplementedException();

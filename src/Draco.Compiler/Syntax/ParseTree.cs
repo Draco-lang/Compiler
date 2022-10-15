@@ -63,7 +63,7 @@ internal abstract record class ParseTree
             Token Keyword, // Either var or val
             Token Identifier,
             TypeSpecifier? Type,
-            (Token EqualsToken, Expr Expression)? Initializer) : Decl;
+            (Token AssignToken, Expr Expression)? Initializer) : Decl;
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ internal abstract record class ParseTree
         /// An in-line function body.
         /// </summary>
         public sealed record class InlineBody(
-            Token EqualsToken,
+            Token AssignToken,
             Expr Expression) : FuncBody;
     }
 
@@ -125,7 +125,7 @@ internal abstract record class ParseTree
         /// </summary>
         public new sealed record class Expr(
             ParseTree.Expr Expression,
-            Token Semicolon) : Stmt;
+            Token? Semicolon) : Stmt;
     }
 
     /// <summary>
@@ -145,14 +145,14 @@ internal abstract record class ParseTree
         public sealed record class If(
             Token IfKeyword,
             Enclosed<Expr> Condition,
-            Expr Expression,
+            Expr Then,
             (Token ElseToken, Expr Expression)? Else) : Expr;
 
         /// <summary>
         /// A while-expression.
         /// </summary>
         public sealed record class While(
-            Token Token,
+            Token WhileKeyword,
             Enclosed<Expr> Condition,
             Expr Expression) : Expr;
 
@@ -177,31 +177,24 @@ internal abstract record class ParseTree
             Token Value) : Expr;
 
         /// <summary>
-        /// A function call expression.
+        /// Any call-like expression.
         /// </summary>
-        public sealed record class FuncCall(
-            Expr Expression,
+        public sealed record class Call(
+            Expr Called,
             Enclosed<PunctuatedList<Expr>> Args) : Expr;
 
         /// <summary>
-        /// An indexer expression.
+        /// A name reference expression.
         /// </summary>
-        public sealed record class Index(
-            Expr Expression,
-            Enclosed<Expr> IndexExpression) : Expr;
-
-        /// <summary>
-        /// A variable expression, or more correctly an identifier reference expression.
-        /// </summary>
-        public sealed record class Variable(
+        public sealed record class Name(
             Token Identifier) : Expr;
 
         /// <summary>
         /// A member access expression.
         /// </summary>
         public sealed record class MemberAccess(
-            Expr Expression,
-            Token PeriodToken,
+            Expr Object,
+            Token DotToken,
             Token MemberName) : Expr;
 
         /// <summary>

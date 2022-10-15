@@ -34,14 +34,31 @@ internal sealed class Parser
         return new(decls.ToValue());
     }
 
+    /// <summary>
+    /// Function for parsing <see cref="Decl"/>aration
+    /// </summary>
+    /// <returns>Parsed <see cref="Decl"/>aration</returns>
     private Decl ParseDeclaration()
     {
         var keyword = this.tokenSource.Peek();
         if (keyword.Type == TokenType.KeywordFunc)
         {
-            return this.ParseFunction();
+            return this.ParseFuncDeclaration();
         }
-        else if (keyword.Type == TokenType.KeywordVal)
+        else
+        {
+            return this.ParseVariableDeclaration();
+        }
+    }
+
+    /// <summary>
+    /// Function for parsing variable declarations
+    /// </summary>
+    /// <returns>Parsed <see cref="Variable"/></returns>
+    private Decl.Variable ParseVariableDeclaration()
+    {
+        var keyword = this.tokenSource.Peek();
+        if (keyword.Type == TokenType.KeywordVal)
         {
             keyword = this.Expect(TokenType.KeywordVal);
         }
@@ -50,6 +67,7 @@ internal sealed class Parser
             keyword = this.Expect(TokenType.KeywordVar);
         }
         var identifier = this.Expect(TokenType.Identifier);
+        // We don't necessarily have type specifier
         TypeSpecifier? type = null;
         if (this.tokenSource.Peek().Type == TokenType.Colon)
         {
@@ -57,24 +75,31 @@ internal sealed class Parser
             var typeIdentifier = this.Expect(TokenType.Identifier);
             type = new TypeSpecifier(colon, new TypeExpr.Name(typeIdentifier));
         }
-        if (this.tokenSource.Peek().Type == TokenType.Equal)
+
+        // We don't necessarily have value assigned to the variable
+        (Token Assign, Expr Value)? assignment = null;
+        if (this.tokenSource.Peek().Type == TokenType.Assign)
         {
-            var equal = this.Expect(TokenType.Equal);
+            var assign = this.Expect(TokenType.Assign);
             var value = this.ParseExpr();
-            this.Expect(TokenType.Semicolon);
-            return new Decl.Variable(keyword, identifier, type, (equal, value));
+            assignment = (assign, value);
         }
-        else
-        {
-            this.Expect(TokenType.Semicolon);
-            return new Decl.Variable(keyword, identifier, type, null);
-        }
+        // Eat semicolon at the end of declaration
+        this.Expect(TokenType.Semicolon);
+        return new Decl.Variable(keyword, identifier, type, assignment);
     }
 
-    private Func ParseFunction()
+    /// <summary>
+    /// Function for parsing <see cref="Func"/>tion declarations
+    /// </summary>
+    /// <returns>Parsed <see cref="Func"/>tion declaration</returns>
+    private Func ParseFuncDeclaration()
     {
+        // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenType.KeywordFunc);
         var name = this.Expect(TokenType.Identifier);
+
+        // Parameters
         var openParen = this.Expect(TokenType.ParenOpen);
         ValueArray<Punctuated<FuncParam>>.Builder funcParams = ValueArray.CreateBuilder<Punctuated<FuncParam>>();
         while (true)
@@ -94,6 +119,8 @@ internal sealed class Parser
         }
         var closeParen = this.Expect(TokenType.ParenClose);
         var funcParameters = new Enclosed<PunctuatedList<FuncParam>>(openParen, new PunctuatedList<FuncParam>(funcParams.ToValue()), closeParen);
+
+        // We don't necessarily have type specifier
         TypeSpecifier? typeSpecifier = null;
         if (this.tokenSource.Peek().Type == TokenType.Colon)
         {
@@ -103,9 +130,9 @@ internal sealed class Parser
         }
         FuncBody? body = null;
         // Inline function body
-        if (this.tokenSource.Peek().Type == TokenType.Equal)
+        if (this.tokenSource.Peek().Type == TokenType.Assign)
         {
-            body = new FuncBody.InlineBody(this.Expect(TokenType.Equal), this.ParseExpr());
+            body = new FuncBody.InlineBody(this.Expect(TokenType.Assign), this.ParseExpr());
         }
         // Block function body
         else
@@ -128,8 +155,7 @@ internal sealed class Parser
     private Token Expect(TokenType type)
     {
         var token = this.tokenSource.Peek();
-        if (token.Type != type)
-            throw new NotImplementedException();
+        if (token.Type != type) throw new NotImplementedException();
 
         this.tokenSource.Advance();
         return token;

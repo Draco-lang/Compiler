@@ -19,14 +19,7 @@ func main() {
         var srcReader = SourceReader.From(src);
         var lexer = new Lexer(srcReader);
         var tokenSource = TokenSource.From(lexer);
-        Parser parser = new Parser(tokenSource);
+        var parser = new Parser(tokenSource);
         parser.ParseCompilationUnit();
-        //while (true)
-        //{
-        //    var token = lexer.Lex();
-        //    Console.WriteLine(token);
-        //    foreach (var d in token.Diagnostics) Console.WriteLine(d);
-        //    if (token.Type == TokenType.EndOfInput) break;
-        //}
     }
 }

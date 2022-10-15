@@ -159,18 +159,63 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="Decl"/>.</returns>
     private Decl ParseDeclaration()
     {
-        var keyword = this.Peek();
-        if (keyword.Type == TokenType.KeywordFunc)
+        switch (this.Peek().Type)
         {
+        case TokenType.KeywordFunc:
             return this.ParseFuncDeclaration();
-        }
-        else if (keyword.Type == TokenType.KeywordVar || keyword.Type == TokenType.KeywordVal)
-        {
+
+        case TokenType.KeywordVar:
+        case TokenType.KeywordVal:
             return this.ParseVariableDeclaration();
-        }
-        else
-        {
+
+        default:
+            // TODO: Error handling
             throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Parses a statement.
+    /// </summary>
+    /// <returns>The parsed <see cref="Stmt"/>.</returns>
+    private Stmt ParseStatement()
+    {
+        switch (this.Peek().Type)
+        {
+        // Declarations
+        case TokenType.KeywordFunc:
+        case TokenType.KeywordVar:
+        case TokenType.KeywordVal:
+        {
+            var decl = this.ParseDeclaration();
+            return new Stmt.Decl(decl);
+        }
+
+        // Expressions that can appear without braces
+        case TokenType.CurlyOpen:
+        {
+            var expr = this.ParseBlockExpr(asStmt: true);
+            return new Stmt.Expr(expr, null);
+        }
+        case TokenType.KeywordIf:
+        {
+            var expr = this.ParseIfExpr();
+            return new Stmt.Expr(expr, null);
+        }
+        case TokenType.KeywordWhile:
+        {
+            var expr = this.ParseWhileExpr();
+            return new Stmt.Expr(expr, null);
+        }
+
+        // Assume expression
+        default:
+        {
+            // TODO: This assumption might not be the best
+            var expr = this.ParseExpr();
+            var semicolon = this.Expect(TokenType.Semicolon);
+            return new Stmt.Expr(expr, semicolon);
+        }
         }
     }
 
@@ -246,7 +291,7 @@ internal sealed class Parser
         }
         else if (this.Peek().Type == TokenType.CurlyOpen)
         {
-            var block = this.ParseBlockExpr();
+            var block = this.ParseBlockExpr(asStmt: true);
             return new FuncBody.BlockBody(block);
         }
         else
@@ -270,8 +315,47 @@ internal sealed class Parser
         return new TypeExpr.Name(typeName);
     }
 
-    private Expr.Block ParseBlockExpr()
+    private Expr.Block ParseBlockExpr(bool asStmt)
     {
+        var enclosed = this.ParseEnclosed(
+            openType: TokenType.CurlyOpen,
+            valueParser: () =>
+            {
+                var stmts = ValueArray.CreateBuilder<Stmt>();
+                Expr? value = null;
+                while (true)
+                {
+                    // On a close curly we can immediately exit
+                    if (this.Peek().Type == TokenType.CurlyClose) break;
+
+                    // TODO
+                    throw new NotImplementedException();
+                }
+                return (stmts.ToValue(), value);
+            },
+            closeType: TokenType.CurlyClose);
+        return new(enclosed);
+    }
+
+    private Expr.If ParseIfExpr(bool asStmt)
+    {
+        var ifKeyword = this.Expect(TokenType.KeywordIf);
+        var condition = this.ParseEnclosed(
+            openType: TokenType.ParenOpen,
+            valueParser: this.ParseExpr,
+            closeType: TokenType.ParenClose);
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    private Expr.While ParseWhileExpr(bool asStmt)
+    {
+        var ifKeyword = this.Expect(TokenType.KeywordWhile);
+        var condition = this.ParseEnclosed(
+            openType: TokenType.ParenOpen,
+            valueParser: this.ParseExpr,
+            closeType: TokenType.ParenClose);
+        // TODO
         throw new NotImplementedException();
     }
 

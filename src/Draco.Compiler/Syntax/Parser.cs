@@ -35,9 +35,9 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Function for parsing Declaration.
+    /// Parses a declaration.
     /// </summary>
-    /// <returns>Parsed Declaration.</returns>
+    /// <returns>The parsed <see cref="Decl"/>.</returns>
     private Decl ParseDeclaration()
     {
         var keyword = this.tokenSource.Peek();
@@ -56,9 +56,9 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Function for parsing <see cref="Variable"/> declarations.
+    /// Parses a <see cref="Variable"/> declaration.
     /// </summary>
-    /// <returns>Parsed <see cref="Variable"/>.</returns>
+    /// <returns>The parsed <see cref="Variable"/>.</returns>
     private Decl.Variable ParseVariableDeclaration()
     {
         var keyword = this.tokenSource.Peek();
@@ -89,9 +89,9 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Function for parsing Function declarations.
+    /// Parsed a function declaration.
     /// </summary>
-    /// <returns>Parsed Function declaration.</returns>
+    /// <returns>The parsed <see cref="Func"/>.</returns>
     private Func ParseFuncDeclaration()
     {
         // Func keyword and name of the function

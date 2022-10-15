@@ -8,7 +8,7 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = @"
-var x = 0;
+var x = y + z * 4;
 ";
         var srcReader = SourceReader.From(src);
         var lexer = new Lexer(srcReader);

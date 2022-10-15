@@ -276,28 +276,26 @@ internal sealed class Parser
                     return new Unary(op, subexpr);
                 }
                 // Just descent to next level
-                return ParsePrecedenceLevel(level + 1);
+                return ParsePrecedenceLevel(level - 1);
             }
-
             case PrecLevelKind.BinaryLeft:
             {
                 // We unroll left-associativity into a loop
-                var result = ParsePrecedenceLevel(level + 1);
+                var result = ParsePrecedenceLevel(level - 1);
                 while (true)
                 {
                     var op = this.Peek();
                     if (!desc.Operators.Contains(op.Type)) break;
                     op = this.Advance();
-                    var right = ParsePrecedenceLevel(level + 1);
+                    var right = ParsePrecedenceLevel(level - 1);
                     result = new Binary(result, op, right);
                 }
                 return result;
             }
-
             case PrecLevelKind.BinaryRight:
             {
                 // Right-associativity is simply right-recursion
-                var result = ParsePrecedenceLevel(level + 1);
+                var result = ParsePrecedenceLevel(level - 1);
                 var op = this.Peek();
                 if (desc.Operators.Contains(op.Type))
                 {
@@ -307,32 +305,48 @@ internal sealed class Parser
                 }
                 return result;
             }
-
             case PrecLevelKind.Custom:
                 // Just call the custom parser
-                return desc.CustomParser(this, () => ParsePrecedenceLevel(level + 1));
-
+                return desc.CustomParser(this, () => ParsePrecedenceLevel(level - 1));
             default:
                 throw new InvalidOperationException("no such precedence level kind");
             }
         }
 
-        return ParsePrecedenceLevel(0);
-    }
-
-    private Expr ParseCallLevelExpr(Func<Expr> elementParser)
-    {
-        throw new NotImplementedException();
+        return ParsePrecedenceLevel(precedenceTable.Length - 1);
     }
 
     private Expr ParseRelationalLevelExpr(Func<Expr> elementParser)
     {
-        throw new NotImplementedException();
+        // TODO: Implement properly
+        return elementParser();
+    }
+
+    private Expr ParseCallLevelExpr(Func<Expr> elementParser)
+    {
+        // TODO: Implement properly
+        return elementParser();
     }
 
     private Expr ParseAtomExpr()
     {
-        throw new NotImplementedException();
+        var peek = this.Peek();
+        switch (peek.Type)
+        {
+        case TokenType.LiteralInteger:
+        {
+            var value = this.Advance();
+            return new Literal(value);
+        }
+        case TokenType.Identifier:
+        {
+            var name = this.Advance();
+            return new Name(name);
+        }
+        default:
+            // TODO
+            throw new NotImplementedException();
+        }
     }
 
     // Token-level operators

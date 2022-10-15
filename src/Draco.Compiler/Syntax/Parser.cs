@@ -35,9 +35,9 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Function for parsing <see cref="Decl"/>aration
+    /// Function for parsing Declaration.
     /// </summary>
-    /// <returns>Parsed <see cref="Decl"/>aration</returns>
+    /// <returns>Parsed Declaration.</returns>
     private Decl ParseDeclaration()
     {
         var keyword = this.tokenSource.Peek();
@@ -104,8 +104,7 @@ internal sealed class Parser
         while (true)
         {
             var token = this.tokenSource.Peek();
-            if (token.Type == TokenType.ParenClose)
-                break;
+            if (token.Type == TokenType.ParenClose) break;
             var paramID = this.Expect(TokenType.Identifier);
             var colon = this.Expect(TokenType.Colon);
             var paramType = this.Expect(TokenType.Identifier);
@@ -113,7 +112,7 @@ internal sealed class Parser
             var punctation = this.Expect(TokenType.Comma);
             funcParams.Add(new(new FuncParam(
                 paramID,
-                new TypeSpecifier(colon,new TypeExpr.Name(paramType))), punctation));
+                new TypeSpecifier(colon, new TypeExpr.Name(paramType))), punctation));
         }
         var closeParen = this.Expect(TokenType.ParenClose);
         var funcParameters = new Enclosed<PunctuatedList<FuncParam>>(openParen, new PunctuatedList<FuncParam>(funcParams.ToValue()), closeParen);

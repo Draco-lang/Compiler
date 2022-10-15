@@ -111,10 +111,9 @@ internal sealed class Parser
             var paramType = this.Expect(TokenType.Identifier);
             // TODO: trailing comma is optional!
             var punctation = this.Expect(TokenType.Comma);
-            funcParams.Add(new(
-                new FuncParam(paramID,
-                new TypeSpecifier(colon,
-                new TypeExpr.Name(paramType))), punctation));
+            funcParams.Add(new(new FuncParam(
+                paramID,
+                new TypeSpecifier(colon,new TypeExpr.Name(paramType))), punctation));
         }
         var closeParen = this.Expect(TokenType.ParenClose);
         var funcParameters = new Enclosed<PunctuatedList<FuncParam>>(openParen, new PunctuatedList<FuncParam>(funcParams.ToValue()), closeParen);

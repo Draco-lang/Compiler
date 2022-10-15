@@ -195,14 +195,14 @@ internal sealed class Parser
     /// Parses a statement.
     /// </summary>
     /// <returns>The parsed <see cref="Stmt"/>.</returns>
-    private Stmt ParseStatement()
+    private Stmt ParseStatement(bool allowDecl)
     {
         switch (this.Peek().Type)
         {
         // Declarations
-        case TokenType.KeywordFunc:
-        case TokenType.KeywordVar:
-        case TokenType.KeywordVal:
+        case TokenType.KeywordFunc when allowDecl:
+        case TokenType.KeywordVar when allowDecl:
+        case TokenType.KeywordVal when allowDecl:
         {
             var decl = this.ParseDeclaration();
             return new Stmt.Decl(decl);
@@ -347,13 +347,17 @@ internal sealed class Parser
     {
         if (ctx == ControlFlowContext.Expr)
         {
-            // Simple, only expressions, no semicolon needed
+            // Only expressions, no semicolon needed
             return this.ParseExpr();
         }
         else
         {
-            // TODO
-            throw new NotImplementedException();
+            // Just a statement
+            // Since this is a one-liner, we don't allow declarations as for example
+            // if (x) var y = z;
+            // makes no sense!
+            var stmt = this.ParseStatement(allowDecl: false);
+            return new Expr.UnitStmt(stmt);
         }
     }
 
@@ -560,6 +564,11 @@ internal sealed class Parser
                         allowEmpty: false),
                     closeType: TokenType.BracketClose);
                 result = new Expr.Call(result, args);
+            }
+            else if (this.Matches(TokenType.Dot, out var dot))
+            {
+                var name = this.Expect(TokenType.Identifier);
+                result = new Expr.MemberAccess(result, dot, name);
             }
             else
             {

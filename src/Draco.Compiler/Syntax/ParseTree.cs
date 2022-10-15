@@ -82,7 +82,7 @@ internal abstract partial record class ParseTree
     /// <summary>
     /// A function body, either a block or in-line.
     /// </summary>
-    public abstract record class FuncBody
+    public abstract record class FuncBody : ParseTree
     {
         /// <summary>
         /// A block function body.
@@ -140,6 +140,12 @@ internal abstract partial record class ParseTree
     /// </summary>
     public abstract record class Expr : ParseTree
     {
+        /// <summary>
+        /// An expression that results in unit type and only executes a statement.
+        /// </summary>
+        public new sealed record class UnitStmt(
+            Stmt Statement) : Expr;
+
         /// <summary>
         /// A block of statements and an optional value.
         /// </summary>
@@ -281,6 +287,7 @@ internal partial record class ParseTree
                        && type.IsGenericType
                        && type.GetGenericTypeDefinition() == typeof(Punctuated<>) =>
                 this.PrintSubtree("Punctuated", o, depth),
+            IEnumerable collection => this.PrintCollection(collection, depth),
             // TODO
             _ => throw new System.NotImplementedException(),
         };
@@ -300,7 +307,7 @@ internal partial record class ParseTree
 
         private Unit PrintTuple(ITuple tuple, int depth) => this.PrintRecursive(
             Enumerable.Range(0, tuple.Length).Select(i => ((string?)$"Item{i + 1}", tuple[i])),
-            depth + 1, open: '(', close: ')');
+            depth, open: '(', close: ')');
 
         private Unit PrintToken(Token token)
         {

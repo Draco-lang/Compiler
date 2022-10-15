@@ -404,6 +404,11 @@ internal sealed class Parser
             var name = this.Advance();
             return new Expr.Name(name);
         }
+        case TokenType.ParenOpen:
+        {
+            var content = this.ParseEnclosed(TokenType.ParenOpen, this.ParseExpr, TokenType.ParenClose);
+            return new Expr.Grouping(content);
+        }
         default:
             // TODO: Error handling
             throw new NotImplementedException();

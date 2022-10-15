@@ -45,7 +45,7 @@ internal static class TokenSource
 
         public Token Peek(int offset = 0)
         {
-            while (offset <= this.lookahead.Count) this.lookahead.AddBack(this.lexer.Lex());
+            while (offset >= this.lookahead.Count) this.lookahead.AddBack(this.lexer.Lex());
             return this.lookahead[offset];
         }
 

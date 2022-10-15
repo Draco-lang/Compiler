@@ -34,7 +34,40 @@ internal sealed class Parser
         return new(decls.ToValue());
     }
 
-    private Decl ParseDeclaration() => throw new NotImplementedException();
+    private Decl ParseDeclaration()
+    {
+        var keyword = this.tokenSource.Peek();
+        if (keyword.Type == TokenType.KeywordFunc)
+        {
+            return this.ParseFunction();
+        }
+        else if (keyword.Type == TokenType.KeywordVal)
+        {
+            keyword = this.Expect(TokenType.KeywordVal);
+        }
+        else if (keyword.Type == TokenType.KeywordVar)
+        {
+            keyword = this.Expect(TokenType.KeywordVar);
+        }
+        var identifier = this.Expect(TokenType.Identifier);
+        TypeSpecifier? type = null;
+        if (this.tokenSource.Peek().Type == TokenType.Colon)
+        {
+            var colon = this.Expect(TokenType.Colon);
+            var typeIdentifier = this.Expect(TokenType.Identifier);
+            type = new TypeSpecifier(colon, new TypeExpr.Name(typeIdentifier));
+        }
+        if (this.tokenSource.Peek().Type == TokenType.Equal)
+        {
+            var equal = this.Expect(TokenType.Equal);
+            var value = this.ParseExpr();
+            return new Decl.Variable(keyword, identifier, type, (equal, value));
+        }
+        else
+        {
+            return new Decl.Variable(keyword, identifier, type, null);
+        }
+    }
 
     private Func ParseFunction()
     {
@@ -66,7 +99,7 @@ internal sealed class Parser
             var typeName = this.Expect(TokenType.Identifier);
             typeSpecifier = new TypeSpecifier(colon, new TypeExpr.Name(typeName));
         }
-        FuncBody body = null!;
+        FuncBody? body = null;
         // Inline function body
         if (this.tokenSource.Peek().Type == TokenType.Equal)
         {

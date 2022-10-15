@@ -345,8 +345,40 @@ internal sealed class Parser
 
     private Expr ParseCallLevelExpr(Func<Expr> elementParser)
     {
-        // TODO: Implement properly
-        return elementParser();
+        var result = elementParser();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.ParenOpen)
+            {
+                var args = this.ParseEnclosed(
+                    openType: TokenType.ParenOpen,
+                    valueParser: () => this.ParsePunctuatedListAllowTrailing(
+                        elementParser: this.ParseExpr,
+                        punctType: TokenType.Comma,
+                        stopType: TokenType.ParenClose,
+                        allowEmpty: true),
+                    closeType: TokenType.ParenClose);
+                result = new Call(result, args);
+            }
+            else if (peek.Type == TokenType.BracketClose)
+            {
+                var args = this.ParseEnclosed(
+                    openType: TokenType.ParenOpen,
+                    valueParser: () => this.ParsePunctuatedListAllowTrailing(
+                        elementParser: this.ParseExpr,
+                        punctType: TokenType.Comma,
+                        stopType: TokenType.ParenClose,
+                        allowEmpty: false),
+                    closeType: TokenType.ParenClose);
+                result = new Call(result, args);
+            }
+            else
+            {
+                break;
+            }
+        }
+        return result;
     }
 
     private Expr ParseAtomExpr()
@@ -368,6 +400,48 @@ internal sealed class Parser
             // TODO
             throw new NotImplementedException();
         }
+    }
+
+    // General utilities
+
+    private PunctuatedList<T> ParsePunctuatedListAllowTrailing<T>(
+        Func<T> elementParser,
+        TokenType punctType,
+        TokenType stopType,
+        bool allowEmpty)
+    {
+        var elements = ValueArray.CreateBuilder<Punctuated<T>>();
+        while (true)
+        {
+            // Stop token met, don't go further
+            if (this.Peek().Type == stopType) break;
+            // Parse an element
+            var element = elementParser();
+            // If the next token is not a punctuation, we are done
+            var punct = this.Peek();
+            if (punct.Type == punctType)
+            {
+                // Punctuation, add with element
+                punct = this.Advance();
+                elements.Add(new(element, punct));
+            }
+            else
+            {
+                // Not punctuation, we are done
+                elements.Add(new(element, null));
+                break;
+            }
+        }
+        if (!allowEmpty && elements.Count == 0) throw new NotImplementedException();
+        return new(elements.ToValue());
+    }
+
+    private Enclosed<T> ParseEnclosed<T>(TokenType openType, Func<T> valueParser, TokenType closeType)
+    {
+        var openToken = this.Expect(openType);
+        var value = valueParser();
+        var closeToken = this.Expect(closeType);
+        return new(openToken, value, closeToken);
     }
 
     // Token-level operators

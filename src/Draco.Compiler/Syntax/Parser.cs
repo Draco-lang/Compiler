@@ -45,26 +45,26 @@ internal sealed class Parser
         {
             return this.ParseFuncDeclaration();
         }
-        else
+        else if (keyword.Type == TokenType.KeywordVar || keyword.Type == TokenType.KeywordVal)
         {
             return this.ParseVariableDeclaration();
+        }
+        else
+        {
+            throw new NotImplementedException();
         }
     }
 
     /// <summary>
-    /// Function for parsing variable declarations
+    /// Function for parsing <see cref="Variable"/> declarations.
     /// </summary>
-    /// <returns>Parsed <see cref="Variable"/></returns>
+    /// <returns>Parsed <see cref="Variable"/>.</returns>
     private Decl.Variable ParseVariableDeclaration()
     {
         var keyword = this.tokenSource.Peek();
-        if (keyword.Type == TokenType.KeywordVal)
+        if (keyword.Type == TokenType.KeywordVal || keyword.Type == TokenType.KeywordVar)
         {
-            keyword = this.Expect(TokenType.KeywordVal);
-        }
-        else if (keyword.Type == TokenType.KeywordVar)
-        {
-            keyword = this.Expect(TokenType.KeywordVar);
+            this.tokenSource.Advance();
         }
         var identifier = this.Expect(TokenType.Identifier);
         // We don't necessarily have type specifier
@@ -75,7 +75,6 @@ internal sealed class Parser
             var typeIdentifier = this.Expect(TokenType.Identifier);
             type = new TypeSpecifier(colon, new TypeExpr.Name(typeIdentifier));
         }
-
         // We don't necessarily have value assigned to the variable
         (Token Assign, Expr Value)? assignment = null;
         if (this.tokenSource.Peek().Type == TokenType.Assign)
@@ -90,9 +89,9 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Function for parsing <see cref="Func"/>tion declarations
+    /// Function for parsing Function declarations.
     /// </summary>
-    /// <returns>Parsed <see cref="Func"/>tion declaration</returns>
+    /// <returns>Parsed Function declaration.</returns>
     private Func ParseFuncDeclaration()
     {
         // Func keyword and name of the function
@@ -110,12 +109,12 @@ internal sealed class Parser
             var paramID = this.Expect(TokenType.Identifier);
             var colon = this.Expect(TokenType.Colon);
             var paramType = this.Expect(TokenType.Identifier);
-            //TODO: trailing comma is optional!
+            // TODO: trailing comma is optional!
             var punctation = this.Expect(TokenType.Comma);
-            funcParams.Add(new(new FuncParam
-                (paramID, new TypeSpecifier(colon, new TypeExpr.Name
-                (paramType))),
-                punctation));
+            funcParams.Add(new(
+                new FuncParam(paramID,
+                new TypeSpecifier(colon,
+                new TypeExpr.Name(paramType))), punctation));
         }
         var closeParen = this.Expect(TokenType.ParenClose);
         var funcParameters = new Enclosed<PunctuatedList<FuncParam>>(openParen, new PunctuatedList<FuncParam>(funcParams.ToValue()), closeParen);
@@ -135,9 +134,13 @@ internal sealed class Parser
             body = new FuncBody.InlineBody(this.Expect(TokenType.Assign), this.ParseExpr());
         }
         // Block function body
-        else
+        else if (this.tokenSource.Peek().Type == TokenType.CurlyOpen)
         {
             body = new FuncBody.BlockBody(this.ParseBlock());
+        }
+        else
+        {
+            throw new NotImplementedException();
         }
         return new Func(funcKeyword, name, funcParameters, typeSpecifier, body);
     }

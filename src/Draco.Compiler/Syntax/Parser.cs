@@ -410,7 +410,7 @@ internal sealed class Parser
                         if (this.Matches(TokenType.Semicolon, out var semicolon))
                         {
                             // Just a statement, can continue
-                            stmts.Add(new Stmt.Expr(expr, null));
+                            stmts.Add(new Stmt.Expr(expr, semicolon));
                         }
                         else
                         {

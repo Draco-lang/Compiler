@@ -125,6 +125,16 @@ internal sealed class Parser
             TokenType.StarAssign, TokenType.SlashAssign),
     };
 
+    /// <summary>
+    /// The list of all relational operators.
+    /// </summary>
+    private static readonly TokenType[] relationalOps = new[]
+    {
+        TokenType.Equal, TokenType.NotEqual,
+        TokenType.GreaterThan, TokenType.LessThan,
+        TokenType.GreaterEqual, TokenType.LessEqual,
+    };
+
     private readonly ITokenSource tokenSource;
 
     public Parser(ITokenSource tokenSource)
@@ -168,7 +178,7 @@ internal sealed class Parser
     /// Parses a <see cref="Variable"/> declaration.
     /// </summary>
     /// <returns>The parsed <see cref="Variable"/>.</returns>
-    private Decl.Variable ParseVariableDeclaration()
+    private Variable ParseVariableDeclaration()
     {
         var keyword = this.Peek();
         if (keyword.Type == TokenType.KeywordVal || keyword.Type == TokenType.KeywordVar)
@@ -318,8 +328,19 @@ internal sealed class Parser
 
     private Expr ParseRelationalLevelExpr(Func<Expr> elementParser)
     {
-        // TODO: Implement properly
-        return elementParser();
+        var left = elementParser();
+        var comparisons = ValueArray.CreateBuilder<(Token Operator, Expr Right)>();
+        while (true)
+        {
+            var op = this.Peek();
+            if (!relationalOps.Contains(op.Type)) break;
+            op = this.Advance();
+            var right = elementParser();
+            comparisons.Add((op, right));
+        }
+        return comparisons.Count == 0
+            ? left
+            : new Relational(left, comparisons.ToValue());
     }
 
     private Expr ParseCallLevelExpr(Func<Expr> elementParser)

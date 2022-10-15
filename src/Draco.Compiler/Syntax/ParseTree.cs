@@ -213,6 +213,13 @@ internal abstract record class ParseTree
             Expr Right) : Expr;
 
         /// <summary>
+        /// A relational expression chain.
+        /// </summary>
+        public sealed record class Relational(
+            Expr Left,
+            ValueArray<(Token Operator, Expr Right)> Comparisons) : Expr;
+
+        /// <summary>
         /// A grouping expression, enclosing a sub-expression.
         /// </summary>
         public sealed record class Grouping(

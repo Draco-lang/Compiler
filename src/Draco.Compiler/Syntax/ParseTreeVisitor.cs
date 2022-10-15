@@ -67,7 +67,15 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         _ => throw new InvalidOperationException()
     };
 
-    public abstract T VisitCompilationUnit(CompilationUnit compilationUnit);
+    public virtual T VisitCompilationUnit(CompilationUnit compilationUnit)
+    {
+        foreach (var decl in compilationUnit.Declarations)
+        {
+            this.VisitDecl(decl);
+        }
+
+        return default!;
+    }
 
     public virtual T VisitDecl(Decl decl) => decl switch
     {
@@ -77,11 +85,40 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
-    public abstract T VisitFuncDecl(Decl.Func decl);
-    public abstract T VisitLabelDecl(Decl.Label decl);
-    public abstract T VisitVariableDecl(Decl.Variable decl);
+    public virtual T VisitFuncDecl(Decl.Func decl)
+    {
+        foreach (var param in decl.Params.Value.Elements)
+        {
+            this.VisitFuncParam(param.Value);
+        }
 
-    public abstract T VisitFuncParam(FuncParam param);
+        if (decl.Type is not null)
+        {
+            this.VisitTypeSpecifier(decl.Type);
+        }
+
+        this.VisitFuncBody(decl.Body);
+
+        return default!;
+    }
+    public abstract T VisitLabelDecl(Decl.Label decl);
+    public virtual T VisitVariableDecl(Decl.Variable decl)
+    {
+        if (decl.Type is not null)
+        {
+            this.VisitTypeSpecifier(decl.Type);
+        }
+
+        if (decl.Initializer is not null)
+        {
+            this.VisitExpr(decl.Initializer.Value.Expression);
+        }
+
+        return default!;
+    }
+
+    public virtual T VisitFuncParam(FuncParam param) =>
+        this.VisitTypeSpecifier(param.Type);
 
     public virtual T VisitFuncBody(FuncBody body) => body switch
     {
@@ -90,8 +127,10 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
-    public abstract T VisitBlockFuncBody(FuncBody.BlockBody body);
-    public abstract T VisitInlineFuncBody(FuncBody.InlineBody body);
+    public virtual T VisitBlockFuncBody(FuncBody.BlockBody body) =>
+        this.VisitBlockExpr(body.Block);
+    public virtual T VisitInlineFuncBody(FuncBody.InlineBody body) =>
+        this.VisitExpr(body.Expression);
 
     public virtual T VisitTypeExpr(TypeExpr typeExpr) => typeExpr switch
     {
@@ -101,7 +140,12 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     };
     public abstract T VisitNameTypeExpr(TypeExpr.Name typeExpr);
 
-    public abstract T VisitTypeSpecifier(TypeSpecifier specifier);
+    public virtual T VisitTypeSpecifier(TypeSpecifier specifier)
+    {
+        this.VisitTypeExpr(specifier.Type);
+
+        return default!;
+    }
 
     public virtual T VisitStmt(Stmt stmt) => stmt switch
     {
@@ -110,8 +154,10 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
-    public abstract T VisitDeclStmt(Stmt.Decl stmt);
-    public abstract T VisitExprStmt(Stmt.Expr stmt);
+    public virtual T VisitDeclStmt(Stmt.Decl stmt) =>
+        this.VisitDecl(stmt.Declaration);
+    public virtual T VisitExprStmt(Stmt.Expr stmt) =>
+        this.VisitExpr(stmt.Expression);
 
     public virtual T VisitExpr(Expr expr) => expr switch
     {
@@ -131,17 +177,84 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
-    public abstract T VisitBlockExpr(Expr.Block expr);
-    public abstract T VisitIfExpr(Expr.If expr);
-    public abstract T VisitWhileExpr(Expr.While expr);
-    public abstract T VisitGotoExpr(Expr.Goto expr);
-    public abstract T VisitReturnExpr(Expr.Return expr);
-    public abstract T VisitLiteralExpr(Expr.Literal expr);
-    public abstract T VisitFuncCallExpr(Expr.FuncCall expr);
-    public abstract T VisitIndexExpr(Expr.Index expr);
-    public abstract T VisitVariableExpr(Expr.Variable expr);
-    public abstract T VisitMemberAccessExpr(Expr.MemberAccess expr);
-    public abstract T VisitUnaryExpr(Expr.Unary expr);
-    public abstract T VisitBinaryExpr(Expr.Binary expr);
-    public abstract T VisitGroupingExpr(Expr.Grouping expr);
+    public virtual T VisitBlockExpr(Expr.Block expr)
+    {
+        var (stmts, value) = expr.Enclosed.Value;
+
+        foreach (var stmt in stmts)
+        {
+            this.VisitStmt(stmt);
+        }
+
+        if (value is not null)
+        {
+            return this.VisitExpr(value);
+        }
+
+        return default!;
+    }
+    public virtual T VisitIfExpr(Expr.If expr)
+    {
+        this.VisitExpr(expr.Condition.Value);
+
+        this.VisitExpr(expr.Expression);
+
+        if (expr.Else is not null)
+        {
+            this.VisitExpr(expr.Else.Value.Expression);
+        }
+
+        return default!;
+    }
+    public virtual T VisitWhileExpr(Expr.While expr)
+    {
+        this.VisitExpr(expr.Condition.Value);
+
+        this.VisitExpr(expr.Expression);
+
+        return default!;
+    }
+    public virtual T VisitGotoExpr(Expr.Goto expr) =>
+        default!;
+    public virtual T VisitReturnExpr(Expr.Return expr) =>
+        expr.Expression is not null
+            ? this.VisitExpr(expr.Expression)
+            : default!;
+    public virtual T VisitLiteralExpr(Expr.Literal expr) =>
+        default!;
+    public virtual T VisitFuncCallExpr(Expr.FuncCall expr)
+    {
+        this.VisitExpr(expr.Expression);
+
+        foreach (var arg in expr.Args.Value.Elements)
+        {
+            this.VisitExpr(arg.Value);
+        }
+
+        return default!;
+    }
+    public virtual T VisitIndexExpr(Expr.Index expr)
+    {
+        this.VisitExpr(expr.Expression);
+
+        this.VisitExpr(expr.IndexExpression.Value);
+
+        return default!;
+    }
+    public virtual T VisitVariableExpr(Expr.Variable expr) =>
+        default!;
+    public virtual T VisitMemberAccessExpr(Expr.MemberAccess expr) =>
+        this.VisitExpr(expr.Expression);
+    public virtual T VisitUnaryExpr(Expr.Unary expr) =>
+        this.VisitExpr(expr.Operand);
+    public virtual T VisitBinaryExpr(Expr.Binary expr)
+    {
+        this.VisitExpr(expr.Left);
+
+        this.VisitExpr(expr.Right);
+
+        return default!;
+    }
+    public virtual T VisitGroupingExpr(Expr.Grouping expr) =>
+        this.VisitExpr(expr.Expression.Value);
 }

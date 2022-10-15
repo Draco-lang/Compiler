@@ -55,16 +55,19 @@ internal sealed class Parser
         {
             var colon = this.Expect(TokenType.Colon);
             var typeIdentifier = this.Expect(TokenType.Identifier);
+            this.Expect(TokenType.Semicolon);
             type = new TypeSpecifier(colon, new TypeExpr.Name(typeIdentifier));
         }
         if (this.tokenSource.Peek().Type == TokenType.Equal)
         {
             var equal = this.Expect(TokenType.Equal);
             var value = this.ParseExpr();
+            this.Expect(TokenType.Semicolon);
             return new Decl.Variable(keyword, identifier, type, (equal, value));
         }
         else
         {
+            this.Expect(TokenType.Semicolon);
             return new Decl.Variable(keyword, identifier, type, null);
         }
     }

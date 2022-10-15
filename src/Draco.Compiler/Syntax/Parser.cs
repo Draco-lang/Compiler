@@ -361,16 +361,16 @@ internal sealed class Parser
                     closeType: TokenType.ParenClose);
                 result = new Call(result, args);
             }
-            else if (peek.Type == TokenType.BracketClose)
+            else if (peek.Type == TokenType.BracketOpen)
             {
                 var args = this.ParseEnclosed(
-                    openType: TokenType.ParenOpen,
+                    openType: TokenType.BracketOpen,
                     valueParser: () => this.ParsePunctuatedListAllowTrailing(
                         elementParser: this.ParseExpr,
                         punctType: TokenType.Comma,
-                        stopType: TokenType.ParenClose,
+                        stopType: TokenType.BracketClose,
                         allowEmpty: false),
-                    closeType: TokenType.ParenClose);
+                    closeType: TokenType.BracketClose);
                 result = new Call(result, args);
             }
             else

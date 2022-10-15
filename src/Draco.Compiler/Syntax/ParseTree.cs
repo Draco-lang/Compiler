@@ -1,3 +1,9 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
 using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
@@ -5,7 +11,7 @@ namespace Draco.Compiler.Syntax;
 /// <summary>
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
-internal abstract record class ParseTree
+internal abstract partial record class ParseTree
 {
     /// <summary>
     /// A node enclosed by two tokens.
@@ -225,5 +231,119 @@ internal abstract record class ParseTree
         /// </summary>
         public sealed record class Grouping(
             Enclosed<Expr> Expression) : Expr;
+    }
+}
+
+// Pretty printer
+internal partial record class ParseTree
+{
+    /// <summary>
+    /// Prints this <see cref="ParseTree"/> in a debuggable form.
+    /// </summary>
+    /// <returns>The pretty-printed <see cref="ParseTree"/> text.</returns>
+    public string PrettyPrint()
+    {
+        var builder = new StringBuilder();
+        var printer = new PrettyPrinter(builder);
+        printer.Print(this, 0);
+        return builder.ToString();
+    }
+
+    private sealed class PrettyPrinter
+    {
+        public StringBuilder Builder { get; init; }
+        public string Indentation { get; init; } = "  ";
+
+        public PrettyPrinter(StringBuilder builder)
+        {
+            this.Builder = builder;
+        }
+
+        public Unit Print(object? obj, int depth) => obj switch
+        {
+            ParseTree parseTree => this.PrintSubtree(parseTree.GetType().Name, parseTree, depth),
+            Token token => this.PrintToken(token),
+            IEnumerable<object> collection => this.PrintCollection(collection, depth),
+            ITuple tuple => this.PrintTuple(tuple, depth),
+            string str => this.PrintText(str),
+            null => this.PrintText("null"),
+            object o when o.GetType() is var type
+                       && type.IsGenericType
+                       && type.GetGenericTypeDefinition() == typeof(Enclosed<>) =>
+                this.PrintSubtree("Enclosed", o, depth),
+            object o when o.GetType() is var type
+                       && type.IsGenericType
+                       && type.GetGenericTypeDefinition() == typeof(PunctuatedList<>) =>
+                this.PrintCollection(
+                    (IEnumerable)type.GetProperty(nameof(PunctuatedList<int>.Elements))!.GetValue(o)!,
+                    depth),
+            object o when o.GetType() is var type
+                       && type.IsGenericType
+                       && type.GetGenericTypeDefinition() == typeof(Punctuated<>) =>
+                this.PrintSubtree("Punctuated", o, depth),
+            // TODO
+            _ => throw new System.NotImplementedException(),
+        };
+
+        private Unit PrintSubtree(string name, object tree, int depth)
+        {
+            this.Builder.Append(name).Append(' ');
+            return this.PrintRecursive(
+                tree.GetType().GetProperties().Select(p => ((string?)p.Name, p.GetValue(tree))),
+                depth,
+                open: '{',
+                close: '}');
+        }
+
+        private Unit PrintCollection(IEnumerable collection, int depth) =>
+            this.PrintRecursive(collection.Cast<object?>().Select(v => ((string?)null, v)), depth, open: '[', close: ']');
+
+        private Unit PrintTuple(ITuple tuple, int depth) => this.PrintRecursive(
+            Enumerable.Range(0, tuple.Length).Select(i => ((string?)$"Item{i + 1}", tuple[i])),
+            depth + 1, open: '(', close: ')');
+
+        private Unit PrintToken(Token token)
+        {
+            this.Builder.Append('\'').Append(token.Text).Append('\'');
+            var valueText = token.ValueText;
+            if (valueText is not null && valueText != token.Text)
+            {
+                this.Builder.Append(" (value=").Append(valueText).Append(')');
+            }
+            return default;
+        }
+
+        private Unit PrintText(string text)
+        {
+            this.Builder.Append(text);
+            return default;
+        }
+
+        private Unit PrintRecursive(IEnumerable<(string? Key, object? Value)> values, int depth, char open, char close)
+        {
+            if (!values.Any())
+            {
+                this.Builder.Append(open).Append(close);
+                return default;
+            }
+
+            this.Builder.AppendLine(open.ToString());
+            foreach (var (key, item) in values)
+            {
+                this.Indent(depth + 1);
+                if (key is not null) this.Builder.Append(key).Append(": ");
+                this.Print(item, depth + 1);
+                this.Builder.AppendLine(", ");
+            }
+            this.Indent(depth);
+            this.Builder.Append(close);
+
+            return default;
+        }
+
+        private void Indent(int depth)
+        {
+            for (var i = 0; i < depth; ++i) this.Builder.Append(this.Indentation);
+        }
     }
 }

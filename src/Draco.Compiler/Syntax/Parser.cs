@@ -443,7 +443,6 @@ internal sealed class Parser
             if (this.Matches(punctType, out var punct))
             {
                 // Punctuation, add with element
-                punct = this.Advance();
                 elements.Add(new(element, punct));
             }
             else

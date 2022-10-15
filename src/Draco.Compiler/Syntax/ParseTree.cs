@@ -46,7 +46,7 @@ internal abstract record class ParseTree
             Token FuncKeyword,
             Token Identifier,
             Enclosed<PunctuatedList<FuncParam>> Params,
-            TypeSpecifier? Type,
+            TypeSpecifier? ReturnType,
             FuncBody Body) : Decl;
 
         /// <summary>
@@ -89,7 +89,8 @@ internal abstract record class ParseTree
         /// </summary>
         public sealed record class InlineBody(
             Token AssignToken,
-            Expr Expression) : FuncBody;
+            Expr Expression,
+            Token Semicolon) : FuncBody;
     }
 
     /// <summary>

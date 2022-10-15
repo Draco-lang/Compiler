@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Utilities;
 using static Draco.Compiler.Syntax.ParseTree;
-using static Draco.Compiler.Syntax.ParseTree.Expr;
-using static Draco.Compiler.Syntax.ParseTree.Decl;
 
 namespace Draco.Compiler.Syntax;
 
@@ -175,30 +175,23 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Parses a <see cref="Variable"/> declaration.
+    /// Parses a <see cref="Decl.Variable"/>.
     /// </summary>
-    /// <returns>The parsed <see cref="Variable"/>.</returns>
-    private Variable ParseVariableDeclaration()
+    /// <returns>The parsed <see cref="Decl.Variable"/>.</returns>
+    private Decl.Variable ParseVariableDeclaration()
     {
         var keyword = this.Peek();
-        if (keyword.Type == TokenType.KeywordVal || keyword.Type == TokenType.KeywordVar)
-        {
-            this.Advance();
-        }
+        // NOTE: We will always call this function by checking the leading keyword
+        Debug.Assert(keyword.Type == TokenType.KeywordVal || keyword.Type == TokenType.KeywordVar);
+        keyword = this.Advance();
         var identifier = this.Expect(TokenType.Identifier);
         // We don't necessarily have type specifier
         TypeSpecifier? type = null;
-        if (this.Peek().Type == TokenType.Colon)
-        {
-            var colon = this.Expect(TokenType.Colon);
-            var typeIdentifier = this.Expect(TokenType.Identifier);
-            type = new TypeSpecifier(colon, new TypeExpr.Name(typeIdentifier));
-        }
+        if (this.Peek().Type == TokenType.Colon) type = this.ParseTypeSpecifier();
         // We don't necessarily have value assigned to the variable
         (Token Assign, Expr Value)? assignment = null;
-        if (this.Peek().Type == TokenType.Assign)
+        if (this.Matches(TokenType.Assign, out var assign))
         {
-            var assign = this.Expect(TokenType.Assign);
             var value = this.ParseExpr();
             assignment = (assign, value);
         }
@@ -211,58 +204,73 @@ internal sealed class Parser
     /// Parsed a function declaration.
     /// </summary>
     /// <returns>The parsed <see cref="Func"/>.</returns>
-    private Func ParseFuncDeclaration()
+    private Decl.Func ParseFuncDeclaration()
     {
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenType.KeywordFunc);
         var name = this.Expect(TokenType.Identifier);
 
         // Parameters
-        var openParen = this.Expect(TokenType.ParenOpen);
-        ValueArray<Punctuated<FuncParam>>.Builder funcParams = ValueArray.CreateBuilder<Punctuated<FuncParam>>();
-        while (true)
-        {
-            var token = this.Peek();
-            if (token.Type == TokenType.ParenClose) break;
-            var paramID = this.Expect(TokenType.Identifier);
-            var colon = this.Expect(TokenType.Colon);
-            var paramType = this.Expect(TokenType.Identifier);
-            // TODO: trailing comma is optional!
-            var punctation = this.Expect(TokenType.Comma);
-            funcParams.Add(new(new FuncParam(
-                paramID,
-                new TypeSpecifier(colon, new TypeExpr.Name(paramType))), punctation));
-        }
-        var closeParen = this.Expect(TokenType.ParenClose);
-        var funcParameters = new Enclosed<PunctuatedList<FuncParam>>(openParen, new PunctuatedList<FuncParam>(funcParams.ToValue()), closeParen);
+        var funcParameters = this.ParseEnclosed(
+            openType: TokenType.ParenOpen,
+            valueParser: () => this.ParsePunctuatedListAllowTrailing(
+                elementParser: this.ParseFuncParam,
+                punctType: TokenType.Comma,
+                stopType: TokenType.ParenClose,
+                allowEmpty: true),
+            closeType: TokenType.ParenClose);
 
         // We don't necessarily have type specifier
-        TypeSpecifier? typeSpecifier = null;
-        if (this.Peek().Type == TokenType.Colon)
+        TypeSpecifier? returnType = null;
+        if (this.Peek().Type == TokenType.Colon) returnType = this.ParseTypeSpecifier();
+
+        var body = this.ParseFuncBody();
+
+        return new Decl.Func(funcKeyword, name, funcParameters, returnType, body);
+    }
+
+    private FuncParam ParseFuncParam()
+    {
+        var name = this.Expect(TokenType.Identifier);
+        var typeSpec = this.ParseTypeSpecifier();
+        return new(name, typeSpec);
+    }
+
+    private FuncBody ParseFuncBody()
+    {
+        if (this.Matches(TokenType.Assign, out var assign))
         {
-            var colon = this.Expect(TokenType.Colon);
-            var typeName = this.Expect(TokenType.Identifier);
-            typeSpecifier = new TypeSpecifier(colon, new TypeExpr.Name(typeName));
+            var expr = this.ParseExpr();
+            var semicolon = this.Expect(TokenType.Semicolon);
+            return new FuncBody.InlineBody(assign, expr, semicolon);
         }
-        FuncBody? body = null;
-        // Inline function body
-        if (this.Peek().Type == TokenType.Assign)
-        {
-            body = new FuncBody.InlineBody(this.Expect(TokenType.Assign), this.ParseExpr());
-        }
-        // Block function body
         else if (this.Peek().Type == TokenType.CurlyOpen)
         {
-            body = new FuncBody.BlockBody(this.ParseBlock());
+            var block = this.ParseBlockExpr();
+            return new FuncBody.BlockBody(block);
         }
         else
         {
+            // TODO: Error handling
             throw new NotImplementedException();
         }
-        return new Func(funcKeyword, name, funcParameters, typeSpecifier, body);
     }
 
-    private Block ParseBlock()
+    private TypeSpecifier ParseTypeSpecifier()
+    {
+        var colon = this.Expect(TokenType.Colon);
+        var type = this.ParseTypeExpr();
+        return new(colon, type);
+    }
+
+    private TypeExpr ParseTypeExpr()
+    {
+        // For now we only allow identifiers
+        var typeName = this.Expect(TokenType.Identifier);
+        return new TypeExpr.Name(typeName);
+    }
+
+    private Expr.Block ParseBlockExpr()
     {
         throw new NotImplementedException();
     }
@@ -283,7 +291,7 @@ internal sealed class Parser
                     // There is such operator on this level
                     op = this.Advance();
                     var subexpr = ParsePrecedenceLevel(level);
-                    return new Unary(op, subexpr);
+                    return new Expr.Unary(op, subexpr);
                 }
                 // Just descent to next level
                 return ParsePrecedenceLevel(level - 1);
@@ -298,7 +306,7 @@ internal sealed class Parser
                     if (!desc.Operators.Contains(op.Type)) break;
                     op = this.Advance();
                     var right = ParsePrecedenceLevel(level - 1);
-                    result = new Binary(result, op, right);
+                    result = new Expr.Binary(result, op, right);
                 }
                 return result;
             }
@@ -311,7 +319,7 @@ internal sealed class Parser
                 {
                     op = this.Advance();
                     var right = ParsePrecedenceLevel(level);
-                    result = new Binary(result, op, right);
+                    result = new Expr.Binary(result, op, right);
                 }
                 return result;
             }
@@ -340,7 +348,7 @@ internal sealed class Parser
         }
         return comparisons.Count == 0
             ? left
-            : new Relational(left, comparisons.ToValue());
+            : new Expr.Relational(left, comparisons.ToValue());
     }
 
     private Expr ParseCallLevelExpr(Func<Expr> elementParser)
@@ -359,7 +367,7 @@ internal sealed class Parser
                         stopType: TokenType.ParenClose,
                         allowEmpty: true),
                     closeType: TokenType.ParenClose);
-                result = new Call(result, args);
+                result = new Expr.Call(result, args);
             }
             else if (peek.Type == TokenType.BracketOpen)
             {
@@ -371,7 +379,7 @@ internal sealed class Parser
                         stopType: TokenType.BracketClose,
                         allowEmpty: false),
                     closeType: TokenType.BracketClose);
-                result = new Call(result, args);
+                result = new Expr.Call(result, args);
             }
             else
             {
@@ -389,15 +397,15 @@ internal sealed class Parser
         case TokenType.LiteralInteger:
         {
             var value = this.Advance();
-            return new Literal(value);
+            return new Expr.Literal(value);
         }
         case TokenType.Identifier:
         {
             var name = this.Advance();
-            return new Name(name);
+            return new Expr.Name(name);
         }
         default:
-            // TODO
+            // TODO: Error handling
             throw new NotImplementedException();
         }
     }
@@ -427,8 +435,7 @@ internal sealed class Parser
             // Parse an element
             var element = elementParser();
             // If the next token is not a punctuation, we are done
-            var punct = this.Peek();
-            if (punct.Type == punctType)
+            if (this.Matches(punctType, out var punct))
             {
                 // Punctuation, add with element
                 punct = this.Advance();
@@ -441,6 +448,7 @@ internal sealed class Parser
                 break;
             }
         }
+        // TODO: Error handling
         if (!allowEmpty && elements.Count == 0) throw new NotImplementedException();
         return new(elements.ToValue());
     }
@@ -471,10 +479,30 @@ internal sealed class Parser
     /// <returns>The consumed <see cref="Token"/>.</returns>
     private Token Expect(TokenType type)
     {
-        var token = this.tokenSource.Peek();
-        if (token.Type != type) throw new NotImplementedException();
+        // TODO: Error handling
+        if (!this.Matches(type, out var token)) throw new NotImplementedException();
+        return token;
+    }
 
-        return this.Advance();
+    /// <summary>
+    /// Checks if the upcoming token has type <paramref name="type"/>.
+    /// If it is, the token is consumed.
+    /// </summary>
+    /// <param name="type">The token type to match.</param>
+    /// <param name="token">The matched token is written here.</param>
+    /// <returns>True, if the upcoming token is of type <paramref name="type"/>.</returns>
+    private bool Matches(TokenType type, [MaybeNullWhen(false)] out Token token)
+    {
+        if (this.Peek().Type == type)
+        {
+            token = this.Advance();
+            return true;
+        }
+        else
+        {
+            token = null;
+            return false;
+        }
     }
 
     /// <summary>

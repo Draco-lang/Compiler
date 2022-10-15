@@ -187,7 +187,8 @@ internal sealed class Parser
 
         default:
             // TODO: Error handling
-            throw new NotImplementedException();
+            // Expected declaration, starting with func, var, val, ...
+            throw new NotImplementedException("expected declaration");
         }
     }
 
@@ -306,7 +307,8 @@ internal sealed class Parser
         else
         {
             // TODO: Error handling
-            throw new NotImplementedException();
+            // Expected a function body staring with '=' or '{'
+            throw new NotImplementedException("expected function body");
         }
     }
 
@@ -326,21 +328,17 @@ internal sealed class Parser
 
     private Expr ParseControlFlowExpr(ControlFlowContext ctx)
     {
-        switch (this.Peek().Type)
+        var peekType = this.Peek().Type;
+        Debug.Assert(peekType == TokenType.CurlyOpen
+                  || peekType == TokenType.KeywordIf
+                  || peekType == TokenType.KeywordWhile);
+        return peekType switch
         {
-        case TokenType.CurlyOpen:
-            return this.ParseBlockExpr(ctx);
-
-        case TokenType.KeywordIf:
-            return this.ParseIfExpr(ctx);
-
-        case TokenType.KeywordWhile:
-            return this.ParseWhileExpr(ctx);
-
-        default:
-            // TODO: error handling
-            throw new InvalidOperationException();
-        }
+            TokenType.CurlyOpen => this.ParseBlockExpr(ctx),
+            TokenType.KeywordIf => this.ParseIfExpr(ctx),
+            TokenType.KeywordWhile => this.ParseWhileExpr(ctx),
+            _ => throw new InvalidOperationException(),
+        };
     }
 
     private Expr ParseControlFlowBody(ControlFlowContext ctx)
@@ -604,6 +602,7 @@ internal sealed class Parser
             return this.ParseControlFlowExpr(ControlFlowContext.Expr);
         default:
             // TODO: Error handling
+            // Expected an expression
             throw new NotImplementedException();
         }
     }

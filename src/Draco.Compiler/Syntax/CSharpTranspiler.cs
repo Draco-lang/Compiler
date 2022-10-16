@@ -9,10 +9,11 @@ using Draco.Compiler.Utilities;
 using static Draco.Compiler.Syntax.ParseTree;
 
 namespace Draco.Compiler.Syntax;
+
 internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
 {
-    public override Unit Default => new Unit();
-    public StringBuilder output = new StringBuilder();
+    private readonly StringBuilder output = new StringBuilder();
+    public string GeneratedCode => this.output.ToString();
 
     public override Unit VisitStmt(Stmt stmt)
     {
@@ -20,25 +21,30 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.output.AppendLine();
         return this.Default;
     }
+
     public override Unit VisitFuncDecl(Decl.Func decl)
     {
         this.output.Append($"dynamic {decl.Identifier.Text}(");
-        base.VisitPunctuatedList(decl.Params.Value);
-        if (decl.Params.Value.Elements.Count > 0)
-            this.output.Remove(this.output.Length - 1, 1);
+        for (int i = 0; i < decl.Params.Value.Elements.Count; i++)
+        {
+            this.VisitFuncParam(decl.Params.Value.Elements[i].Value);
+            if (i != decl.Params.Value.Elements.Count - 1) this.output.Append(", ");
+        }
         this.output.Append(')');
         base.VisitFuncBody(decl.Body);
         return this.Default;
     }
+
     public override Unit VisitLabelDecl(Decl.Label decl)
     {
         this.output.Append($"{decl.Identifier.Text}:;");
         return this.Default;
     }
+
     public override Unit VisitVariableDecl(Decl.Variable decl)
     {
         this.output.Append($"dynamic {decl.Identifier.Text}");
-        if (decl.Initializer != null)
+        if (decl.Initializer is not null)
         {
             this.output.Append(" = ");
             base.VisitNullable(decl.Initializer?.Expression);
@@ -46,11 +52,13 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.output.Append(';');
         return this.Default;
     }
+
     public override Unit VisitFuncParam(FuncParam param)
     {
-        this.output.Append($"{param.Identifier.Text},");
+        this.output.Append($"dynamic {param.Identifier.Text}");
         return this.Default;
     }
+
     public override Unit VisitInlineFuncBody(FuncBody.InlineBody body)
     {
         this.output.Append("=>");
@@ -58,6 +66,7 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.output.Append(";");
         return this.Default;
     }
+
     public override Unit VisitCallExpr(Expr.Call expr)
     {
         base.VisitExpr(expr.Called);
@@ -66,6 +75,7 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.output.Append(')');
         return this.Default;
     }
+
     public override Unit VisitBlockExpr(Expr.Block expr)
     {
         this.output.AppendLine("{");
@@ -74,27 +84,32 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.output.Append('}');
         return this.Default;
     }
+
     public override Unit VisitGotoExpr(Expr.Goto expr)
     {
         this.output.Append($"goto {expr.Identifier.Text};");
         return this.Default;
     }
+
     public override Unit VisitReturnExpr(Expr.Return expr)
     {
         this.output.Append($"return ");
         base.VisitNullable(expr.Expression);
         return this.Default;
     }
+
     public override Unit VisitLiteralExpr(Expr.Literal expr)
     {
         this.output.Append(expr.Value.Text);
         return this.Default;
     }
+
     public override Unit VisitNameExpr(Expr.Name expr)
     {
         this.output.Append(expr.Identifier.Text);
         return this.Default;
     }
+
     public override Unit VisitRelationalExpr(Expr.Relational expr)
     {
         base.VisitExpr(expr.Left);
@@ -105,20 +120,21 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         }
         return this.Default;
     }
+
     public override Unit VisitIfExpr(Expr.If expr)
     {
         this.output.Append("if (");
         base.VisitExpr(expr.Condition.Value);
         this.output.Append(')');
         this.VisitExpr(expr.Then);
-        if (expr.Else != null)
+        if (expr.Else is not null)
         {
             this.output.Append("else ");
             this.VisitNullable(expr.Else?.Expression);
         }
-        
         return this.Default;
     }
+
     public override Unit VisitWhileExpr(Expr.While expr)
     {
         this.output.Append("while (");
@@ -127,6 +143,7 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.VisitExpr(expr.Expression);
         return this.Default;
     }
+
     public override Unit VisitBinaryExpr(Expr.Binary expr)
     {
         base.VisitExpr(expr.Left);
@@ -134,6 +151,7 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         base.VisitExpr(expr.Right);
         return this.Default;
     }
+
     public override Unit VisitExprStmt(Stmt.Expr stmt)
     {
         base.VisitExprStmt(stmt);

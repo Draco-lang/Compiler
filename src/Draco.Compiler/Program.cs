@@ -8,7 +8,7 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = @"
-func main() {
+func main(x: int32, y: int32) {
     val input = ReadLine();
     if (input == 0) {
         Write(0);
@@ -26,6 +26,6 @@ func main() {
         var cu = parser.ParseCompilationUnit();
         var transpiler = new CSharpTranspiler();
         transpiler.VisitNode(cu);
-        Console.WriteLine(transpiler.output.ToString());
+        Console.WriteLine(transpiler.GeneratedCode);
     }
 }

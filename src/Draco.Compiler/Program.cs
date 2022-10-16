@@ -10,7 +10,7 @@ internal class Program
         var src = @"
 func main() {
 start:
-    goto start;
+    var x = 0
 }
 ";
         var srcReader = SourceReader.From(src);

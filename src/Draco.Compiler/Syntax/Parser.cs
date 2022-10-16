@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Diagnostics;
 using Draco.Compiler.Utilities;
 using static Draco.Compiler.Syntax.ParseTree;
 
@@ -745,8 +746,14 @@ internal sealed class Parser
     /// <returns>The consumed <see cref="Token"/>.</returns>
     private Token Expect(TokenType type)
     {
-        // TODO: Error handling
-        if (!this.Matches(type, out var token)) throw new NotImplementedException();
+        if (!this.Matches(type, out var token))
+        {
+            // We construct an empty token that signals that this is missing from the tree
+            // The attached diagnostic message describes what is missing
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: type);
+            return Token.From(type, string.Empty, ValueArray.Create(diag));
+        }
         return token;
     }
 

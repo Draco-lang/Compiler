@@ -42,13 +42,21 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate UnclosedUnicodeCodepoint = DiagnosticTemplate.Create(
         title: "unclosed unicode codepoint escape sequence",
         severity: DiagnosticSeverity.Error,
-        format: "unclosed character literal");
+        format: "unclosed unicode codepoint escape sequence");
 
     /// <summary>
     /// An illegal escape character after '\'.
     /// </summary>
     public static readonly DiagnosticTemplate IllegalEscapeCharacter = DiagnosticTemplate.Create(
-        title: "illegal escape character '{0}'",
+        title: "illegal escape character",
         severity: DiagnosticSeverity.Error,
-        format: "unclosed character literal");
+        format: "illegal escape character '{0}'");
+
+    /// <summary>
+    /// A certain kind of token was expected.
+    /// </summary>
+    public static readonly DiagnosticTemplate ExpectedToken = DiagnosticTemplate.Create(
+        title: "expected token",
+        severity: DiagnosticSeverity.Error,
+        format: "expected token {0}");
 }

@@ -93,7 +93,7 @@ internal sealed record class Diagnostic
     public static Diagnostic Create(
         DiagnosticTemplate template,
         Location location,
-        params object?[] formatArgs) => Create(template, location, formatArgs);
+        params object?[] formatArgs) => new(template: template, location: location, formatArgs: formatArgs);
 
     /// <summary>
     /// The template for this message.

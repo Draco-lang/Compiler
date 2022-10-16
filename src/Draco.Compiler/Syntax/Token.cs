@@ -124,6 +124,24 @@ internal partial record class Token
         leadingTrivia: ValueArray<Token>.Empty,
         trailingTrivia: ValueArray<Token>.Empty,
         diagnostics: ValueArray<Diagnostic>.Empty);
+
+    /// <summary>
+    /// Constructs a <see cref="Token"/> from <paramref name="type"/>, <paramref name="text"/> and
+    /// <paramref name="diagnostics"/>.
+    /// </summary>
+    /// <param name="type">The <see cref="TokenType"/> of the token to be constructed.</param>
+    /// <param name="text">The text the <see cref="Token"/> is produced from.</param>
+    /// <param name="diagnostics">The list of <see cref="Diagnostic"/> messages associated with this
+    /// <see cref="Token"/>.</param>
+    /// <returns>The constructed <see cref="Token"/> with type <paramref name="type"/>,
+    /// text <paramref name="text"/> and diagnostic list <paramref name="diagnostics"/>.</returns>
+    public static Token From(TokenType type, string text, ValueArray<Diagnostic> diagnostics) => new(
+        type: type,
+        text: text,
+        value: null,
+        leadingTrivia: ValueArray<Token>.Empty,
+        trailingTrivia: ValueArray<Token>.Empty,
+        diagnostics: diagnostics);
 }
 
 // Builder type

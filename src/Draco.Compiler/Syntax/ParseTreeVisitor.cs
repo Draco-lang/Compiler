@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using static Draco.Compiler.Syntax.ParseTree;
 
 namespace Draco.Compiler.Syntax;
@@ -51,8 +52,11 @@ internal interface IParseTreeVisitor<out T>
 /// Provides a base implementation of <see cref="IParseTreeVisitor{T}"/>.
 /// </summary>
 /// <typeparam name="T">The return type of the visitor.</typeparam>
-internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
+internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 {
+    /// <summary>
+    /// The default value returned by every non-overwritten visit method.
+    /// </summary>
     public abstract T Default { get; }
 
     public virtual T VisitNode(ParseTree node) => node switch
@@ -71,10 +75,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
     public virtual T VisitCompilationUnit(CompilationUnit compilationUnit)
     {
-        foreach (var decl in compilationUnit.Declarations)
-        {
-            this.VisitDecl(decl);
-        }
+        this.VisitEnumerable(compilationUnit.Declarations);
 
         return this.Default;
     }
@@ -90,15 +91,9 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
     public virtual T VisitFuncDecl(Decl.Func decl)
     {
-        foreach (var param in decl.Params.Value.Elements)
-        {
-            this.VisitFuncParam(param.Value);
-        }
+        this.VisitPunctuatedList(decl.Params.Value);
 
-        if (decl.Type is not null)
-        {
-            this.VisitTypeSpecifier(decl.Type);
-        }
+        this.VisitNullable(decl.Type);
 
         this.VisitFuncBody(decl.Body);
 
@@ -110,15 +105,9 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
     public virtual T VisitVariableDecl(Decl.Variable decl)
     {
-        if (decl.Type is not null)
-        {
-            this.VisitTypeSpecifier(decl.Type);
-        }
+        this.VisitNullable(decl.Type);
 
-        if (decl.Initializer is not null)
-        {
-            this.VisitExpr(decl.Initializer.Value.Expression);
-        }
+        this.VisitNullable(decl.Initializer?.Expression);
 
         return this.Default;
     }
@@ -194,15 +183,9 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     {
         var (stmts, value) = expr.Enclosed.Value;
 
-        foreach (var stmt in stmts)
-        {
-            this.VisitStmt(stmt);
-        }
+        this.VisitEnumerable(stmts);
 
-        if (value is not null)
-        {
-            return this.VisitExpr(value);
-        }
+        this.VisitNullable(value);
 
         return this.Default;
     }
@@ -213,10 +196,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         this.VisitExpr(expr.Expression);
 
-        if (expr.Else is not null)
-        {
-            this.VisitExpr(expr.Else.Value.Expression);
-        }
+        this.VisitNullable(expr.Else?.Expression);
 
         return this.Default;
     }
@@ -234,9 +214,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         this.Default;
 
     public virtual T VisitReturnExpr(Expr.Return expr) =>
-        expr.Expression is not null
-            ? this.VisitExpr(expr.Expression)
-            : this.Default;
+        this.VisitNullable(expr.Expression);
 
     public virtual T VisitLiteralExpr(Expr.Literal expr) =>
         this.Default;
@@ -245,10 +223,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     {
         this.VisitExpr(expr.Expression);
 
-        foreach (var arg in expr.Args.Value.Elements)
-        {
-            this.VisitExpr(arg.Value);
-        }
+        this.VisitPunctuatedList(expr.Args.Value);
 
         return this.Default;
     }
@@ -282,4 +257,43 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
     public virtual T VisitGroupingExpr(Expr.Grouping expr) =>
         this.VisitExpr(expr.Expression.Value);
+}
+
+internal abstract partial class BaseParseTreeVisitor<T>
+{
+    /// <summary>
+    /// Visits every element in an enumerable of nodes.
+    /// </summary>
+    protected void VisitEnumerable(IEnumerable<ParseTree> elements)
+    {
+        foreach (var element in elements)
+        {
+            this.VisitNode(element);
+        }
+    }
+
+    /// <summary>
+    /// Visits every element of a punctuated list of nodes.
+    /// </summary>
+    protected void VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
+        where TElement : ParseTree
+    {
+        foreach (var element in list.Elements)
+        {
+            this.VisitNode(element.Value);
+        }
+    }
+
+    /// <summary>
+    /// Visits a node if it's not <see langword="null"/>.
+    /// </summary>
+    protected T VisitNullable(ParseTree? element)
+    {
+        if (element is not null)
+        {
+            return this.VisitNode(element);
+        }
+
+        return this.Default;
+    }
 }

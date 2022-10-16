@@ -39,7 +39,7 @@ internal sealed record class DiagnosticTemplate
     /// <param name="severity">The severity of the message.</param>
     /// <param name="format">The format string that describes the diagnostic in detail.</param>
     /// <returns>The constructed <see cref="DiagnosticTemplate"/>.</returns>
-    public DiagnosticTemplate Create(string title, DiagnosticSeverity severity, string format) =>
+    public static DiagnosticTemplate Create(string title, DiagnosticSeverity severity, string format) =>
         new(title: title, severity: severity, format: format);
 
     /// <summary>
@@ -77,13 +77,11 @@ internal sealed record class Diagnostic
     /// Constructs a <see cref="Diagnostic"/> message.
     /// </summary>
     /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
-    /// <param name="formatArgs">The format arguments of the message.</param>
     /// <param name="location">The location the diagnostic was produced at.</param>
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
-        object[]? formatArgs,
-        Location location) => new(template: template, formatArgs: formatArgs, location: location);
+        Location location) => new(template: template, formatArgs: Array.Empty<object?>(), location: location);
 
     /// <summary>
     /// Constructs a <see cref="Diagnostic"/> message.
@@ -95,7 +93,7 @@ internal sealed record class Diagnostic
     public static Diagnostic Create(
         DiagnosticTemplate template,
         Location location,
-        params object[]? formatArgs) => Create(template, location, formatArgs);
+        params object?[] formatArgs) => Create(template, location, formatArgs);
 
     /// <summary>
     /// The template for this message.
@@ -120,7 +118,7 @@ internal sealed record class Diagnostic
     /// <summary>
     /// The format arguments to apply to the message.
     /// </summary>
-    public object[]? FormatArgs { get; }
+    public object?[] FormatArgs { get; }
 
     /// <summary>
     /// The assoicated location of the message.
@@ -129,11 +127,28 @@ internal sealed record class Diagnostic
 
     private Diagnostic(
         DiagnosticTemplate template,
-        object[]? formatArgs,
+        object?[] formatArgs,
         Location location)
     {
         this.Template = template;
         this.FormatArgs = formatArgs;
         this.Location = location;
+    }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        var severity = this.Severity switch
+        {
+            DiagnosticSeverity.Info => "info",
+            DiagnosticSeverity.Warning => "warning",
+            DiagnosticSeverity.Error => "error",
+            _ => throw new InvalidOperationException(),
+        };
+        sb.AppendLine($"{severity}: {this.Title}");
+        var desc = string.Format(this.Format, this.FormatArgs);
+        sb.Append(desc);
+        return sb.ToString();
     }
 }

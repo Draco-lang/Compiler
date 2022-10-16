@@ -287,7 +287,7 @@ internal sealed class Lexer
             else
             {
                 // Error, illegal character
-                this.AddError(offset, SyntaxErrors.IllegalCharacterLiteral, (int)ch2);
+                this.AddError(SyntaxErrors.IllegalCharacterLiteral, offset, args: (int)ch2);
                 ++offset;
                 resultChar = " ";
             }
@@ -298,7 +298,7 @@ internal sealed class Lexer
             }
             else
             {
-                this.AddError(offset, SyntaxErrors.UnclosedCharacterLiteral);
+                this.AddError(SyntaxErrors.UnclosedCharacterLiteral, offset);
             }
             // Done
             var text = this.AdvanceWithText(offset);
@@ -596,13 +596,13 @@ internal sealed class Lexer
                 else
                 {
                     // TODO: Assign some default here or return early?
-                    this.AddError(offset, SyntaxErrors.ZeroLengthUnicodeCodepoint);
+                    this.AddError(SyntaxErrors.ZeroLengthUnicodeCodepoint, offset);
                 }
             }
             else
             {
                 // TODO: Assign some default here or return early?
-                this.AddError(offset, SyntaxErrors.UnclosedUnicodeCodepoint);
+                this.AddError(SyntaxErrors.UnclosedUnicodeCodepoint, offset);
             }
         }
         // Any single-character escape, find the escaped equivalent
@@ -627,7 +627,7 @@ internal sealed class Lexer
         }
         else
         {
-            this.AddError(offset, SyntaxErrors.IllegalEscapeCharacter, esc);
+            this.AddError(SyntaxErrors.IllegalEscapeCharacter, offset, args: esc);
             ++offset;
             // We return the escaped character literally as a substitute
             return esc.ToString();
@@ -729,11 +729,16 @@ internal sealed class Lexer
     }
 
     // Errors
-    private void AddError(int offset, string message, params object[] args)
+    private void AddError(DiagnosticTemplate template, int offset, params object?[] args)
     {
         // We need to account for leading trivia
         var leadingTriviaWidth = this.leadingTriviaList.Sum(t => t.Width);
-        this.diagnosticList.Add(new(DiagnosticSeverity.Error, string.Format(message, args), leadingTriviaWidth + offset));
+        var location = new Location(leadingTriviaWidth + offset);
+        var diag = Diagnostic.Create(
+            template: template,
+            location: location,
+            formatArgs: args);
+        this.diagnosticList.Add(diag);
     }
 
     // Mode stack

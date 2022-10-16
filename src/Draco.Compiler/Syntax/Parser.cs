@@ -354,9 +354,17 @@ internal sealed class Parser
         }
         else
         {
-            // TODO: Error handling
-            // Expected a function body staring with '=' or '{'
-            throw new NotImplementedException("expected function body");
+            // NOTE: I'm not sure what's the best strategy here
+            // Maybe if we get to a '=' or '{' we could actually try to re-parse and prepend with the bogus input
+            var input = this.Synchronize(t => t.Type switch
+            {
+                TokenType.Semicolon or TokenType.CurlyClose
+                or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
+                _ => true,
+            });
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
+            return new FuncBody.Unexpected(input, ValueArray.Create(diag));
         }
     }
 
@@ -758,6 +766,7 @@ internal sealed class Parser
     /// <returns>The consumed list of <see cref="Token"/>s.</returns>
     private ValueArray<Token> Synchronize(Func<Token, bool> keepGoing)
     {
+        // NOTE: A possible improvement could be to track opening and closing token pairs optionally
         var input = ValueArray.CreateBuilder<Token>();
         while (true)
         {

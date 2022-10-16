@@ -117,6 +117,26 @@ internal partial record class ParseTree
     public abstract record class FuncBody : ParseTree
     {
         /// <summary>
+        /// Unexpected input in function body context.
+        /// </summary>
+        public sealed record class Unexpected : FuncBody
+        {
+            /// <summary>
+            /// The sequence of tokens that were unexpected.
+            /// </summary>
+            public ValueArray<Token> Tokens { get; }
+
+            /// <inheritdoc/>
+            public override ValueArray<Diagnostic> Diagnostics { get; }
+
+            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
+            {
+                this.Tokens = tokens;
+                this.Diagnostics = diagnostics;
+            }
+        }
+
+        /// <summary>
         /// A block function body.
         /// </summary>
         public sealed record class BlockBody(

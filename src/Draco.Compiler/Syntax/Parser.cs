@@ -737,7 +737,32 @@ internal sealed class Parser
 
     private Expr.String ParseMultiLineString()
     {
-        throw new NotImplementedException();
+        var openQuote = this.Expect(TokenType.MultiLineStringStart);
+        var content = ValueArray.CreateBuilder<StringPart>();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.StringContent || peek.Type == TokenType.StringNewline)
+            {
+                var part = this.Advance();
+                content.Add(new StringPart.Content(part));
+            }
+            else if (peek.Type == TokenType.InterpolationStart)
+            {
+                var start = this.Advance();
+                var expr = this.ParseExpr();
+                var end = this.Expect(TokenType.InterpolationEnd);
+                content.Add(new StringPart.Interpolation(start, expr, end));
+            }
+            else
+            {
+                // We need a close quote for line strings then
+                break;
+            }
+        }
+        var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
+        // TODO: Check whitespace situation with the closing quotes
+        return new(openQuote, content.ToValue(), closeQuote);
     }
 
     // General utilities

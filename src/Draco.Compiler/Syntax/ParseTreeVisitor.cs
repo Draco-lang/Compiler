@@ -6,9 +6,10 @@ using static Draco.Compiler.Syntax.ParseTree;
 namespace Draco.Compiler.Syntax;
 
 /// <summary>
-/// Defines a visitor of a <see cref="ParseTree"/>.
+/// Defines a visitor for <see cref="ParseTree"/>s.
+/// A visitor recursively visits all tree elements.
 /// </summary>
-/// <typeparam name="T">The return type of the visitor.</typeparam>
+/// <typeparam name="T">The return type of the visitor methods.</typeparam>
 internal interface IParseTreeVisitor<out T>
 {
     T VisitCompilationUnit(CompilationUnit compilationUnit);
@@ -34,6 +35,7 @@ internal interface IParseTreeVisitor<out T>
     T VisitExprStmt(Stmt.Expr stmt);
 
     T VisitExpr(Expr expr);
+    T VisitUnitStmtExpr(Expr.UnitStmt expr);
     T VisitBlockExpr(Expr.Block expr);
     T VisitIfExpr(Expr.If expr);
     T VisitWhileExpr(Expr.While expr);
@@ -45,14 +47,18 @@ internal interface IParseTreeVisitor<out T>
     T VisitMemberAccessExpr(Expr.MemberAccess expr);
     T VisitUnaryExpr(Expr.Unary expr);
     T VisitBinaryExpr(Expr.Binary expr);
+    T VisitRelationalExpr(Expr.Relational expr);
     T VisitGroupingExpr(Expr.Grouping expr);
 }
 
 /// <summary>
-/// Provides a base implementation of <see cref="IParseTreeVisitor{T}"/>.
+/// Provides a base implementation of <see cref="IParseTreeVisitor{T}"/> that
+/// visits each child of the tree.
+/// When overriding a method, make sure to call the base method or explicitly visit children
+/// to recurse in the tree.
 /// </summary>
 /// <typeparam name="T">The return type of the visitor.</typeparam>
-internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
+internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 {
     /// <summary>
     /// The default value returned by every non-overwritten visit method.
@@ -125,8 +131,7 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         _ => throw new InvalidOperationException(),
     };
 
-    public virtual T VisitNameTypeExpr(TypeExpr.Name typeExpr) =>
-        this.Default;
+    public virtual T VisitNameTypeExpr(TypeExpr.Name typeExpr) => this.Default;
 
     public virtual T VisitTypeSpecifier(TypeSpecifier specifier)
     {
@@ -149,6 +154,7 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
     public virtual T VisitExpr(Expr expr) => expr switch
     {
+        Expr.UnitStmt unitStmt => this.VisitUnitStmtExpr(unitStmt),
         Expr.Block block => this.VisitBlockExpr(block),
         Expr.If @if => this.VisitIfExpr(@if),
         Expr.While @while => this.VisitWhileExpr(@while),
@@ -160,9 +166,13 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         Expr.MemberAccess memberAccess => this.VisitMemberAccessExpr(memberAccess),
         Expr.Unary unary => this.VisitUnaryExpr(unary),
         Expr.Binary binary => this.VisitBinaryExpr(binary),
+        Expr.Relational relational => this.VisitRelationalExpr(relational),
         Expr.Grouping grouping => this.VisitGroupingExpr(grouping),
         _ => throw new InvalidOperationException(),
     };
+
+    public virtual T VisitUnitStmtExpr(Expr.UnitStmt expr) =>
+        this.VisitStmt(expr.Statement);
 
     public virtual T VisitBlockExpr(Expr.Block expr)
     {
@@ -216,12 +226,19 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         return this.Default;
     }
 
+    public virtual T VisitRelationalExpr(Expr.Relational expr)
+    {
+        this.VisitExpr(expr.Left);
+        this.VisitEnumerable(expr.Comparisons.Select(c => c.Right));
+        return this.Default;
+    }
+
     public virtual T VisitGroupingExpr(Expr.Grouping expr) =>
         this.VisitExpr(expr.Expression.Value);
 }
 
 // Utility functions
-internal abstract partial class BaseParseTreeVisitor<T>
+internal abstract partial class ParseTreeVisitorBase<T>
 {
     /// <summary>
     /// Visits every element in an enumerable of nodes.

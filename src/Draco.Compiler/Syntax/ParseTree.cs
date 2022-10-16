@@ -309,6 +309,33 @@ internal partial record class ParseTree
         /// </summary>
         public sealed record class Grouping(
             Enclosed<Expr> Expression) : Expr;
+
+        /// <summary>
+        /// A string expression composing string content and interpolation.
+        /// </summary>
+        public sealed record class String(
+            Token OpenQuotes,
+            ValueArray<StringPart> Parts,
+            Token CloseQuotes) : Expr;
+    }
+
+    /// <summary>
+    /// Part of a string literal/expression.
+    /// </summary>
+    public abstract record class StringPart : ParseTree
+    {
+        /// <summary>
+        /// Content part of a string literal.
+        /// </summary>
+        public sealed record class Content(Token Token) : StringPart;
+
+        /// <summary>
+        /// An interpolation hole.
+        /// </summary>
+        public sealed record class Interpolation(
+            Token OpenToken,
+            Expr Expression,
+            Token CloseToken) : StringPart;
     }
 }
 

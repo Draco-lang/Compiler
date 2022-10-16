@@ -661,6 +661,7 @@ internal sealed class Parser
         switch (peek.Type)
         {
         case TokenType.LiteralInteger:
+        case TokenType.LiteralCharacter:
         {
             var value = this.Advance();
             return new Expr.Literal(value);
@@ -671,6 +672,10 @@ internal sealed class Parser
             var value = this.Advance();
             return new Expr.Literal(value);
         }
+        case TokenType.LineStringStart:
+            return this.ParseLineString();
+        case TokenType.MultiLineStringStart:
+            return this.ParseMultiLineString();
         case TokenType.Identifier:
         {
             var name = this.Advance();
@@ -699,6 +704,16 @@ internal sealed class Parser
             return new Expr.Unexpected(input, ValueArray.Create(diag));
         }
         }
+    }
+
+    private Expr.String ParseLineString()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Expr.String ParseMultiLineString()
+    {
+        throw new NotImplementedException();
     }
 
     // General utilities

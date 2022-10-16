@@ -652,6 +652,12 @@ internal sealed class Parser
             var value = this.Advance();
             return new Expr.Literal(value);
         }
+        case TokenType.KeywordTrue:
+        case TokenType.KeywordFalse:
+        {
+            var value = this.Advance();
+            return new Expr.Literal(value);
+        }
         case TokenType.Identifier:
         {
             var name = this.Advance();

@@ -220,13 +220,14 @@ internal sealed class Parser
         default:
         {
             // We consume as much bogus input as it makes sense
+            // NOTE: We don't advance here in case the upcoming token should not be consumed for synchronization
             var input = ValueArray.CreateBuilder<Token>();
-            input.Add(this.Advance());
             while (true)
             {
                 switch (this.Peek().Type)
                 {
                 case TokenType.EndOfInput:
+                case TokenType.Semicolon:
                 case TokenType.CurlyClose:
                 case TokenType.KeywordFunc:
                 case TokenType.KeywordVar:
@@ -307,8 +308,8 @@ internal sealed class Parser
             assignment = (assign, value);
         }
         // Eat semicolon at the end of declaration
-        this.Expect(TokenType.Semicolon);
-        return new Decl.Variable(keyword, identifier, type, assignment);
+        var semicolon = this.Expect(TokenType.Semicolon);
+        return new Decl.Variable(keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
@@ -695,9 +696,32 @@ internal sealed class Parser
         case TokenType.KeywordWhile:
             return this.ParseControlFlowExpr(ControlFlowContext.Expr);
         default:
-            // TODO: Error handling
-            // Expected an expression
-            throw new NotImplementedException();
+        {
+            // NOTE: We don't advance here in case the upcoming token should not be consumed for synchronization
+            // We consume as much bogus input as it makes sense
+            var input = ValueArray.CreateBuilder<Token>();
+            while (true)
+            {
+                switch (this.Peek().Type)
+                {
+                case TokenType.EndOfInput:
+                case TokenType.CurlyClose:
+                case TokenType.BracketClose:
+                case TokenType.ParenClose:
+                case TokenType.Semicolon:
+                case var type when expressionStarters.Contains(type):
+                    goto end_of_error;
+
+                default:
+                    input.Add(this.Advance());
+                    break;
+                }
+            }
+        end_of_error:
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
+            return new Expr.Unexpected(input.ToValue(), ValueArray.Create(diag));
+        }
         }
     }
 

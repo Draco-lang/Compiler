@@ -11,6 +11,7 @@ internal class Program
 wer, nice
 
 func main() {
+    var x = ;
 }
 ";
         var srcReader = SourceReader.From(src);

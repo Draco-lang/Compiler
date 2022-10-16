@@ -100,7 +100,8 @@ internal partial record class ParseTree
             Token Keyword, // Either var or val
             Token Identifier,
             TypeSpecifier? Type,
-            (Token AssignToken, Expr Expression)? Initializer) : Decl;
+            (Token AssignToken, Expr Expression)? Initializer,
+            Token Semicolon) : Decl;
     }
 
     /// <summary>
@@ -171,6 +172,26 @@ internal partial record class ParseTree
     /// </summary>
     public abstract record class Expr : ParseTree
     {
+        /// <summary>
+        /// Unexpected input in expression context.
+        /// </summary>
+        public sealed record class Unexpected : Expr
+        {
+            /// <summary>
+            /// The sequence of tokens that were unexpected.
+            /// </summary>
+            public ValueArray<Token> Tokens { get; }
+
+            /// <inheritdoc/>
+            public override ValueArray<Diagnostic> Diagnostics { get; }
+
+            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
+            {
+                this.Tokens = tokens;
+                this.Diagnostics = diagnostics;
+            }
+        }
+
         /// <summary>
         /// An expression that results in unit type and only executes a statement.
         /// </summary>

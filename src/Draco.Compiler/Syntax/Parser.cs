@@ -328,8 +328,7 @@ internal sealed class Parser
             valueParser: () => this.ParsePunctuatedListAllowTrailing(
                 elementParser: this.ParseFuncParam,
                 punctType: TokenType.Comma,
-                stopType: TokenType.ParenClose,
-                allowEmpty: true),
+                stopType: TokenType.ParenClose),
             closeType: TokenType.ParenClose);
 
         // We don't necessarily have type specifier
@@ -635,8 +634,7 @@ internal sealed class Parser
                     valueParser: () => this.ParsePunctuatedListAllowTrailing(
                         elementParser: this.ParseExpr,
                         punctType: TokenType.Comma,
-                        stopType: TokenType.ParenClose,
-                        allowEmpty: true),
+                        stopType: TokenType.ParenClose),
                     closeType: TokenType.ParenClose);
                 result = new Expr.Call(result, args);
             }
@@ -647,8 +645,7 @@ internal sealed class Parser
                     valueParser: () => this.ParsePunctuatedListAllowTrailing(
                         elementParser: this.ParseExpr,
                         punctType: TokenType.Comma,
-                        stopType: TokenType.BracketClose,
-                        allowEmpty: false),
+                        stopType: TokenType.BracketClose),
                     closeType: TokenType.BracketClose);
                 result = new Expr.Call(result, args);
             }
@@ -739,8 +736,7 @@ internal sealed class Parser
     private PunctuatedList<T> ParsePunctuatedListAllowTrailing<T>(
         Func<T> elementParser,
         TokenType punctType,
-        TokenType stopType,
-        bool allowEmpty)
+        TokenType stopType)
     {
         var elements = ValueArray.CreateBuilder<Punctuated<T>>();
         while (true)
@@ -762,8 +758,6 @@ internal sealed class Parser
                 break;
             }
         }
-        // TODO: Error handling
-        if (!allowEmpty && elements.Count == 0) throw new NotImplementedException();
         return new(elements.ToValue());
     }
 

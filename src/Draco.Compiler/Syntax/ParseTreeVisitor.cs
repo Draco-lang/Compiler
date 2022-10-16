@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static Draco.Compiler.Syntax.ParseTree;
 
 namespace Draco.Compiler.Syntax;
@@ -264,25 +265,15 @@ internal abstract partial class BaseParseTreeVisitor<T>
     /// <summary>
     /// Visits every element in an enumerable of nodes.
     /// </summary>
-    protected void VisitEnumerable(IEnumerable<ParseTree> elements)
-    {
-        foreach (var element in elements)
-        {
-            this.VisitNode(element);
-        }
-    }
+    protected IEnumerable<T> VisitEnumerable(IEnumerable<ParseTree> elements) =>
+        elements.Select(x => this.VisitNode(x));
 
     /// <summary>
     /// Visits every element of a punctuated list of nodes.
     /// </summary>
-    protected void VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
-        where TElement : ParseTree
-    {
-        foreach (var element in list.Elements)
-        {
-            this.VisitNode(element.Value);
-        }
-    }
+    protected IEnumerable<T> VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
+        where TElement : ParseTree =>
+        list.Elements.Select(x => this.VisitNode(x.Value));
 
     /// <summary>
     /// Visits a node if it's not <see langword="null"/>.

@@ -13,7 +13,7 @@ namespace Draco.Compiler.Syntax;
 /// Represents a piece of source code that has an associated category and can be considered atomic during parsing.
 /// Stores surrounding trivia and lexical errors.
 /// </summary>
-internal sealed partial record class Token
+internal sealed partial record class Token : ParseTree
 {
     /// <summary>
     /// The <see cref="TokenType"/> of this <see cref="Token"/>.
@@ -53,7 +53,7 @@ internal sealed partial record class Token
     /// <summary>
     /// The <see cref="Diagnostic"/> messages attached to this <see cref="Token"/>.
     /// </summary>
-    public ValueArray<Diagnostic> Diagnostics { get; }
+    public override ValueArray<Diagnostic> Diagnostics { get; }
 
     private Token(
         TokenType type,

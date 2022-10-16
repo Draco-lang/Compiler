@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Draco.Compiler.Diagnostics;
 using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
@@ -12,6 +14,15 @@ namespace Draco.Compiler.Syntax;
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
 internal abstract partial record class ParseTree
+{
+    /// <summary>
+    /// The diagnostics attached to this tree node.
+    /// </summary>
+    public virtual ValueArray<Diagnostic> Diagnostics => ValueArray<Diagnostic>.Empty;
+}
+
+// Nodes
+internal partial record class ParseTree
 {
     /// <summary>
     /// A node enclosed by two tokens.
@@ -267,8 +278,8 @@ internal partial record class ParseTree
 
         public Unit Print(object? obj, int depth) => obj switch
         {
-            ParseTree parseTree => this.PrintSubtree(parseTree.GetType().Name, parseTree, depth),
             Token token => this.PrintToken(token),
+            ParseTree parseTree => this.PrintSubtree(parseTree.GetType().Name, parseTree, depth),
             IEnumerable<object> collection => this.PrintCollection(collection, depth),
             ITuple tuple => this.PrintTuple(tuple, depth),
             string str => this.PrintText(str),

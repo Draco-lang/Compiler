@@ -140,6 +140,8 @@ internal sealed class Parser
             TokenType.Assign,
             TokenType.PlusAssign, TokenType.MinusAssign,
             TokenType.StarAssign, TokenType.SlashAssign),
+        // Finally the pseudo-statement-like constructs
+        PrecLevel.Custom((parser, subexprParser) => parser.ParsePseudoStmtLevelExpr(subexprParser)),
     };
 
     /// <summary>
@@ -150,6 +152,32 @@ internal sealed class Parser
         TokenType.Equal, TokenType.NotEqual,
         TokenType.GreaterThan, TokenType.LessThan,
         TokenType.GreaterEqual, TokenType.LessEqual,
+    };
+
+    /// <summary>
+    /// The list of all tokens that can start an expression.
+    /// </summary>
+    private static readonly TokenType[] expressionStarters = new[]
+    {
+        TokenType.Identifier,
+        TokenType.LiteralInteger,
+        TokenType.LiteralCharacter,
+        TokenType.LineStringStart,
+        TokenType.MultiLineStringStart,
+        TokenType.KeywordFalse,
+        TokenType.KeywordFunc,
+        TokenType.KeywordGoto,
+        TokenType.KeywordIf,
+        TokenType.KeywordNot,
+        TokenType.KeywordReturn,
+        TokenType.KeywordTrue,
+        TokenType.KeywordWhile,
+        TokenType.ParenOpen,
+        TokenType.CurlyOpen,
+        TokenType.BracketOpen,
+        TokenType.Plus,
+        TokenType.Minus,
+        TokenType.Star,
     };
 
     private readonly ITokenSource tokenSource;
@@ -185,6 +213,9 @@ internal sealed class Parser
         case TokenType.KeywordVal:
             return this.ParseVariableDeclaration();
 
+        case TokenType.Identifier when this.Peek(1).Type == TokenType.Colon:
+            return this.ParseLabelDeclaration();
+
         default:
             // TODO: Error handling
             throw new NotImplementedException();
@@ -203,6 +234,7 @@ internal sealed class Parser
         case TokenType.KeywordFunc when allowDecl:
         case TokenType.KeywordVar when allowDecl:
         case TokenType.KeywordVal when allowDecl:
+        case TokenType.Identifier when allowDecl && this.Peek(1).Type == TokenType.Colon:
         {
             var decl = this.ParseDeclaration();
             return new Stmt.Decl(decl);
@@ -281,6 +313,13 @@ internal sealed class Parser
         var body = this.ParseFuncBody();
 
         return new Decl.Func(funcKeyword, name, funcParameters, returnType, body);
+    }
+
+    private Decl.Label ParseLabelDeclaration()
+    {
+        var labelName = this.Expect(TokenType.Identifier);
+        var colon = this.Expect(TokenType.Colon);
+        return new(labelName, colon);
     }
 
     private FuncParam ParseFuncParam()
@@ -380,6 +419,7 @@ internal sealed class Parser
                     case TokenType.KeywordFunc:
                     case TokenType.KeywordVar:
                     case TokenType.KeywordVal:
+                    case TokenType.Identifier when this.Peek(1).Type == TokenType.Colon:
                     {
                         var decl = this.ParseDeclaration();
                         stmts.Add(new Stmt.Decl(decl));
@@ -410,7 +450,7 @@ internal sealed class Parser
                         if (this.Matches(TokenType.Semicolon, out var semicolon))
                         {
                             // Just a statement, can continue
-                            stmts.Add(new Stmt.Expr(expr, null));
+                            stmts.Add(new Stmt.Expr(expr, semicolon));
                         }
                         else
                         {
@@ -518,6 +558,30 @@ internal sealed class Parser
         return ParsePrecedenceLevel(precedenceTable.Length - 1);
     }
 
+    private Expr ParsePseudoStmtLevelExpr(Func<Expr> elementParser)
+    {
+        switch (this.Peek().Type)
+        {
+        case TokenType.KeywordReturn:
+        {
+            var returnKeyword = this.Advance();
+            Expr? value = null;
+            if (expressionStarters.Contains(this.Peek().Type)) value = this.ParseExpr();
+            return new Expr.Return(returnKeyword, value);
+        }
+
+        case TokenType.KeywordGoto:
+        {
+            var gotoKeyword = this.Advance();
+            var labelName = this.Expect(TokenType.Identifier);
+            return new Expr.Goto(gotoKeyword, labelName);
+        }
+
+        default:
+            return elementParser();
+        }
+    }
+
     private Expr ParseRelationalLevelExpr(Func<Expr> elementParser)
     {
         var left = elementParser();
@@ -584,6 +648,12 @@ internal sealed class Parser
         switch (peek.Type)
         {
         case TokenType.LiteralInteger:
+        {
+            var value = this.Advance();
+            return new Expr.Literal(value);
+        }
+        case TokenType.KeywordTrue:
+        case TokenType.KeywordFalse:
         {
             var value = this.Advance();
             return new Expr.Literal(value);

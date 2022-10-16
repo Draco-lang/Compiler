@@ -143,7 +143,7 @@ internal abstract partial record class ParseTree
         /// <summary>
         /// An expression that results in unit type and only executes a statement.
         /// </summary>
-        public new sealed record class UnitStmt(
+        public sealed record class UnitStmt(
             Stmt Statement) : Expr;
 
         /// <summary>

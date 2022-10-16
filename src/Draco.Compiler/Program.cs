@@ -9,8 +9,14 @@ internal class Program
     {
         var src = @"
 func main() {
-start:
-    goto start;
+    val input = ReadLine();
+    if (input == 0) {
+        Write(0);
+    }
+    else {
+        // We just assume 1 for anything non-0
+        while (true) Write(1);
+    }
 }
 ";
         var srcReader = SourceReader.From(src);
@@ -18,6 +24,8 @@ start:
         var tokenSource = TokenSource.From(lexer);
         var parser = new Parser(tokenSource);
         var cu = parser.ParseCompilationUnit();
-        Console.WriteLine(cu.PrettyPrint());
+        var transpiler = new CSharpTranspiler();
+        transpiler.VisitNode(cu);
+        Console.WriteLine(transpiler.output.ToString());
     }
 }

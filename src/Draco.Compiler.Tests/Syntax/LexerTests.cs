@@ -326,6 +326,62 @@ public sealed class LexerTests
     [InlineData("##")]
     [InlineData("###")]
     [Trait("Feature", "Strings")]
+    public void TestMultilineStringWithUnindentedClosingQuotes(string ext)
+    {
+        const string quotes = "\"\"\"";
+        var text = $"""
+        {ext}{quotes}
+            Hello!
+            Bye!
+        {quotes}{ext}
+        """;
+        var tokens = Lex(NormalizeNewliens(text));
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal($"{ext}{quotes}", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        Assert.Single(token.TrailingTrivia);
+        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("    Hello!", token.Text);
+        Assert.Equal("    Hello!", token.ValueText);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringNewline, token.Type);
+        Assert.Equal("\n", token.Text);
+        Assert.Equal("\n", token.ValueText);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("    Bye!", token.Text);
+        Assert.Equal("    Bye!", token.ValueText);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal($"{quotes}{ext}", token.Text);
+        AssertLeadingTrivia(token, "\n");
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
     public void TestMultilineStringWithLineContinuation(string ext)
     {
         const string quotes = "\"\"\"";

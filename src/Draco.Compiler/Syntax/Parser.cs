@@ -761,7 +761,52 @@ internal sealed class Parser
             }
         }
         var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
-        // TODO: Check whitespace situation with the closing quotes
+        // We need to check if the close quote is on a newline
+        if (closeQuote.LeadingTrivia.Count > 0)
+        {
+            Debug.Assert(closeQuote.LeadingTrivia.Count <= 2);
+            Debug.Assert(closeQuote.LeadingTrivia[0].Type == TokenType.Newline);
+            if (closeQuote.LeadingTrivia.Count == 2)
+            {
+                // The first trivia was newline, the second must be spaces
+                Debug.Assert(closeQuote.LeadingTrivia[1].Type == TokenType.Whitespace);
+                // We take the whitespace text and check if every line in the string obeys that
+                // as a prefix
+                var prefix = closeQuote.LeadingTrivia[1].Text;
+                var nextIsNewline = true;
+                foreach (var part in content)
+                {
+                    if (part is StringPart.Content contentPart)
+                    {
+                        if (contentPart.Token.Type == TokenType.StringNewline)
+                        {
+                            // Also a newline, don't care, even an empty line is fine
+                            nextIsNewline = true;
+                            continue;
+                        }
+                        // Actual text content
+                        if (nextIsNewline && !contentPart.Token.Text.StartsWith(prefix))
+                        {
+                            // We are in a newline, and the prefixes don't match
+                            // TODO
+                            throw new NotImplementedException();
+                        }
+                        nextIsNewline = false;
+                    }
+                    else
+                    {
+                        // Interpolation, don't care
+                        nextIsNewline = false;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // TODO
+            // Error, the closing quotes are not on a newline
+            throw new NotImplementedException();
+        }
         return new(openQuote, content.ToValue(), closeQuote);
     }
 

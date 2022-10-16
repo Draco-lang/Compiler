@@ -8,17 +8,9 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = @"
-func abs(n: int32): int32 =
-    if (n < 0) -n
-    else n;
-
 func main() {
-    if (x > 0) {
-        Console.WriteLine(1);
-    }
-    else {
-        Console.WriteLine(0);
-    }
+start:
+    goto start;
 }
 ";
         var srcReader = SourceReader.From(src);

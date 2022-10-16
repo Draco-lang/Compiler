@@ -218,9 +218,32 @@ internal sealed class Parser
             return this.ParseLabelDeclaration();
 
         default:
-            // TODO: Error handling
-            // Expected declaration, starting with func, var, val, ...
-            throw new NotImplementedException("expected declaration");
+        {
+            // We consume as much bogus input as it makes sense
+            var input = ValueArray.CreateBuilder<Token>();
+            input.Add(this.Advance());
+            while (true)
+            {
+                switch (this.Peek().Type)
+                {
+                case TokenType.EndOfInput:
+                case TokenType.CurlyClose:
+                case TokenType.KeywordFunc:
+                case TokenType.KeywordVar:
+                case TokenType.KeywordVal:
+                case TokenType.Identifier when this.Peek(1).Type == TokenType.Colon:
+                    goto end_of_error;
+
+                default:
+                    input.Add(this.Advance());
+                    break;
+                }
+            }
+        end_of_error:
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
+            return new Decl.Unexpected(input.ToValue(), ValueArray.Create(diag));
+        }
         }
     }
 

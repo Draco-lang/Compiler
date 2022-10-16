@@ -57,6 +57,26 @@ internal partial record class ParseTree
     public abstract record class Decl : ParseTree
     {
         /// <summary>
+        /// Unexpected input in declaration context.
+        /// </summary>
+        public sealed record class Unexpected : Decl
+        {
+            /// <summary>
+            /// The sequence of tokens that were unexpected.
+            /// </summary>
+            public ValueArray<Token> Tokens { get; }
+
+            /// <inheritdoc/>
+            public override ValueArray<Diagnostic> Diagnostics { get; }
+
+            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
+            {
+                this.Tokens = tokens;
+                this.Diagnostics = diagnostics;
+            }
+        }
+
+        /// <summary>
         /// A function declaration.
         /// </summary>
         public sealed record class Func(
@@ -282,6 +302,7 @@ internal partial record class ParseTree
             ParseTree parseTree => this.PrintSubtree(parseTree.GetType().Name, parseTree, depth),
             IEnumerable<object> collection => this.PrintCollection(collection, depth),
             ITuple tuple => this.PrintTuple(tuple, depth),
+            Diagnostic diagnostic => this.PrintText(string.Format(diagnostic.Format, diagnostic.FormatArgs)),
             string str => this.PrintText(str),
             null => this.PrintText("null"),
             object o when o.GetType() is var type

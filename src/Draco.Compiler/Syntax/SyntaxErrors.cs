@@ -53,10 +53,18 @@ internal static class SyntaxErrors
         format: "illegal escape character '{0}'");
 
     /// <summary>
-    /// A certain kind of token was expected.
+    /// A certain kind of token was expected while parsing.
     /// </summary>
     public static readonly DiagnosticTemplate ExpectedToken = DiagnosticTemplate.Create(
         title: "expected token",
         severity: DiagnosticSeverity.Error,
         format: "expected token {0}");
+
+    /// <summary>
+    /// Some kind of unexpected input while parsing.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedInput = DiagnosticTemplate.Create(
+        title: "unexpected input",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected input while parsing {0}");
 }

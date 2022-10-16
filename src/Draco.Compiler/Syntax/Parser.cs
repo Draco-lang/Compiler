@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Diagnostics;
 using Draco.Compiler.Utilities;
 using static Draco.Compiler.Syntax.ParseTree;
 
@@ -217,8 +218,18 @@ internal sealed class Parser
             return this.ParseLabelDeclaration();
 
         default:
-            // TODO: Error handling
-            throw new NotImplementedException();
+        {
+            var input = this.Synchronize(t => t.Type switch
+            {
+                TokenType.Semicolon or TokenType.CurlyClose
+                or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
+                TokenType.Identifier when this.Peek(1).Type == TokenType.Colon => false,
+                _ => true,
+            });
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
+            return new Decl.Unexpected(input, ValueArray.Create(diag));
+        }
         }
     }
 
@@ -282,8 +293,8 @@ internal sealed class Parser
             assignment = (assign, value);
         }
         // Eat semicolon at the end of declaration
-        this.Expect(TokenType.Semicolon);
-        return new Decl.Variable(keyword, identifier, type, assignment);
+        var semicolon = this.Expect(TokenType.Semicolon);
+        return new Decl.Variable(keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
@@ -302,8 +313,7 @@ internal sealed class Parser
             valueParser: () => this.ParsePunctuatedListAllowTrailing(
                 elementParser: this.ParseFuncParam,
                 punctType: TokenType.Comma,
-                stopType: TokenType.ParenClose,
-                allowEmpty: true),
+                stopType: TokenType.ParenClose),
             closeType: TokenType.ParenClose);
 
         // We don't necessarily have type specifier
@@ -344,8 +354,17 @@ internal sealed class Parser
         }
         else
         {
-            // TODO: Error handling
-            throw new NotImplementedException();
+            // NOTE: I'm not sure what's the best strategy here
+            // Maybe if we get to a '=' or '{' we could actually try to re-parse and prepend with the bogus input
+            var input = this.Synchronize(t => t.Type switch
+            {
+                TokenType.Semicolon or TokenType.CurlyClose
+                or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
+                _ => true,
+            });
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
+            return new FuncBody.Unexpected(input, ValueArray.Create(diag));
         }
     }
 
@@ -365,21 +384,17 @@ internal sealed class Parser
 
     private Expr ParseControlFlowExpr(ControlFlowContext ctx)
     {
-        switch (this.Peek().Type)
+        var peekType = this.Peek().Type;
+        Debug.Assert(peekType == TokenType.CurlyOpen
+                  || peekType == TokenType.KeywordIf
+                  || peekType == TokenType.KeywordWhile);
+        return peekType switch
         {
-        case TokenType.CurlyOpen:
-            return this.ParseBlockExpr(ctx);
-
-        case TokenType.KeywordIf:
-            return this.ParseIfExpr(ctx);
-
-        case TokenType.KeywordWhile:
-            return this.ParseWhileExpr(ctx);
-
-        default:
-            // TODO: error handling
-            throw new InvalidOperationException();
-        }
+            TokenType.CurlyOpen => this.ParseBlockExpr(ctx),
+            TokenType.KeywordIf => this.ParseIfExpr(ctx),
+            TokenType.KeywordWhile => this.ParseWhileExpr(ctx),
+            _ => throw new InvalidOperationException(),
+        };
     }
 
     private Expr ParseControlFlowBody(ControlFlowContext ctx)
@@ -612,8 +627,7 @@ internal sealed class Parser
                     valueParser: () => this.ParsePunctuatedListAllowTrailing(
                         elementParser: this.ParseExpr,
                         punctType: TokenType.Comma,
-                        stopType: TokenType.ParenClose,
-                        allowEmpty: true),
+                        stopType: TokenType.ParenClose),
                     closeType: TokenType.ParenClose);
                 result = new Expr.Call(result, args);
             }
@@ -624,8 +638,7 @@ internal sealed class Parser
                     valueParser: () => this.ParsePunctuatedListAllowTrailing(
                         elementParser: this.ParseExpr,
                         punctType: TokenType.Comma,
-                        stopType: TokenType.BracketClose,
-                        allowEmpty: false),
+                        stopType: TokenType.BracketClose),
                     closeType: TokenType.BracketClose);
                 result = new Expr.Call(result, args);
             }
@@ -673,8 +686,18 @@ internal sealed class Parser
         case TokenType.KeywordWhile:
             return this.ParseControlFlowExpr(ControlFlowContext.Expr);
         default:
-            // TODO: Error handling
-            throw new NotImplementedException();
+        {
+            var input = this.Synchronize(t => t.Type switch
+            {
+                TokenType.Semicolon
+                or TokenType.ParenClose or TokenType.BracketClose or TokenType.CurlyClose => false,
+                var type when expressionStarters.Contains(type) => false,
+                _ => true,
+            });
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
+            return new Expr.Unexpected(input, ValueArray.Create(diag));
+        }
         }
     }
 
@@ -692,8 +715,7 @@ internal sealed class Parser
     private PunctuatedList<T> ParsePunctuatedListAllowTrailing<T>(
         Func<T> elementParser,
         TokenType punctType,
-        TokenType stopType,
-        bool allowEmpty)
+        TokenType stopType)
     {
         var elements = ValueArray.CreateBuilder<Punctuated<T>>();
         while (true)
@@ -715,8 +737,6 @@ internal sealed class Parser
                 break;
             }
         }
-        // TODO: Error handling
-        if (!allowEmpty && elements.Count == 0) throw new NotImplementedException();
         return new(elements.ToValue());
     }
 
@@ -739,6 +759,26 @@ internal sealed class Parser
     // Token-level operators
 
     /// <summary>
+    /// Performs synchronization, meaning it consumes <see cref="Token"/>s from the input
+    /// while a given condition is met.
+    /// </summary>
+    /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
+    /// <returns>The consumed list of <see cref="Token"/>s.</returns>
+    private ValueArray<Token> Synchronize(Func<Token, bool> keepGoing)
+    {
+        // NOTE: A possible improvement could be to track opening and closing token pairs optionally
+        var input = ValueArray.CreateBuilder<Token>();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.EndOfInput) break;
+            if (!keepGoing(peek)) break;
+            input.Add(this.Advance());
+        }
+        return input.ToValue();
+    }
+
+    /// <summary>
     /// Expects a certain kind of token to be at the current position.
     /// If it is, the token is consumed.
     /// </summary>
@@ -746,8 +786,14 @@ internal sealed class Parser
     /// <returns>The consumed <see cref="Token"/>.</returns>
     private Token Expect(TokenType type)
     {
-        // TODO: Error handling
-        if (!this.Matches(type, out var token)) throw new NotImplementedException();
+        if (!this.Matches(type, out var token))
+        {
+            // We construct an empty token that signals that this is missing from the tree
+            // The attached diagnostic message describes what is missing
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: type);
+            return Token.From(type, string.Empty, ValueArray.Create(diag));
+        }
         return token;
     }
 

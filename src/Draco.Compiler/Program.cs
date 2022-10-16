@@ -8,9 +8,12 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = @"
+wer, nice
+
 func main() {
-start:
-    goto start;
+    var x = ;
+    var y = 0
+    var z = 0;
 }
 ";
         var srcReader = SourceReader.From(src);

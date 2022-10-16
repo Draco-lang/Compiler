@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Draco.Compiler.Diagnostics;
 using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
@@ -12,6 +14,15 @@ namespace Draco.Compiler.Syntax;
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
 internal abstract partial record class ParseTree
+{
+    /// <summary>
+    /// The diagnostics attached to this tree node.
+    /// </summary>
+    public virtual ValueArray<Diagnostic> Diagnostics => ValueArray<Diagnostic>.Empty;
+}
+
+// Nodes
+internal partial record class ParseTree
 {
     /// <summary>
     /// A node enclosed by two tokens.
@@ -46,6 +57,26 @@ internal abstract partial record class ParseTree
     public abstract record class Decl : ParseTree
     {
         /// <summary>
+        /// Unexpected input in declaration context.
+        /// </summary>
+        public sealed record class Unexpected : Decl
+        {
+            /// <summary>
+            /// The sequence of tokens that were unexpected.
+            /// </summary>
+            public ValueArray<Token> Tokens { get; }
+
+            /// <inheritdoc/>
+            public override ValueArray<Diagnostic> Diagnostics { get; }
+
+            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
+            {
+                this.Tokens = tokens;
+                this.Diagnostics = diagnostics;
+            }
+        }
+
+        /// <summary>
         /// A function declaration.
         /// </summary>
         public sealed record class Func(
@@ -69,7 +100,8 @@ internal abstract partial record class ParseTree
             Token Keyword, // Either var or val
             Token Identifier,
             TypeSpecifier? Type,
-            (Token AssignToken, Expr Expression)? Initializer) : Decl;
+            (Token AssignToken, Expr Expression)? Initializer,
+            Token Semicolon) : Decl;
     }
 
     /// <summary>
@@ -84,6 +116,26 @@ internal abstract partial record class ParseTree
     /// </summary>
     public abstract record class FuncBody : ParseTree
     {
+        /// <summary>
+        /// Unexpected input in function body context.
+        /// </summary>
+        public sealed record class Unexpected : FuncBody
+        {
+            /// <summary>
+            /// The sequence of tokens that were unexpected.
+            /// </summary>
+            public ValueArray<Token> Tokens { get; }
+
+            /// <inheritdoc/>
+            public override ValueArray<Diagnostic> Diagnostics { get; }
+
+            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
+            {
+                this.Tokens = tokens;
+                this.Diagnostics = diagnostics;
+            }
+        }
+
         /// <summary>
         /// A block function body.
         /// </summary>
@@ -140,6 +192,26 @@ internal abstract partial record class ParseTree
     /// </summary>
     public abstract record class Expr : ParseTree
     {
+        /// <summary>
+        /// Unexpected input in expression context.
+        /// </summary>
+        public sealed record class Unexpected : Expr
+        {
+            /// <summary>
+            /// The sequence of tokens that were unexpected.
+            /// </summary>
+            public ValueArray<Token> Tokens { get; }
+
+            /// <inheritdoc/>
+            public override ValueArray<Diagnostic> Diagnostics { get; }
+
+            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
+            {
+                this.Tokens = tokens;
+                this.Diagnostics = diagnostics;
+            }
+        }
+
         /// <summary>
         /// An expression that results in unit type and only executes a statement.
         /// </summary>
@@ -267,10 +339,11 @@ internal partial record class ParseTree
 
         public Unit Print(object? obj, int depth) => obj switch
         {
-            ParseTree parseTree => this.PrintSubtree(parseTree.GetType().Name, parseTree, depth),
             Token token => this.PrintToken(token),
+            ParseTree parseTree => this.PrintSubtree(parseTree.GetType().Name, parseTree, depth),
             IEnumerable<object> collection => this.PrintCollection(collection, depth),
             ITuple tuple => this.PrintTuple(tuple, depth),
+            Diagnostic diagnostic => this.PrintText(DiagnosticToString(diagnostic)),
             string str => this.PrintText(str),
             null => this.PrintText("null"),
             object o when o.GetType() is var type
@@ -288,7 +361,6 @@ internal partial record class ParseTree
                        && type.GetGenericTypeDefinition() == typeof(Punctuated<>) =>
                 this.PrintSubtree("Punctuated", o, depth),
             IEnumerable collection => this.PrintCollection(collection, depth),
-            // TODO
             _ => throw new System.NotImplementedException(),
         };
 
@@ -316,6 +388,12 @@ internal partial record class ParseTree
             if (valueText is not null && valueText != token.Text)
             {
                 this.Builder.Append(" (value=").Append(valueText).Append(')');
+            }
+            if (token.Diagnostics.Count > 0)
+            {
+                this.Builder.Append(" [");
+                this.Builder.AppendJoin(", ", token.Diagnostics.Select(DiagnosticToString));
+                this.Builder.Append(']');
             }
             return default;
         }
@@ -352,5 +430,8 @@ internal partial record class ParseTree
         {
             for (var i = 0; i < depth; ++i) this.Builder.Append(this.Indentation);
         }
+
+        private static string DiagnosticToString(Diagnostic diagnostic) =>
+            string.Format(diagnostic.Format, diagnostic.FormatArgs);
     }
 }

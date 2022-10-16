@@ -12,6 +12,7 @@ namespace Draco.Compiler.Syntax;
 /// <typeparam name="T">The return type of the visitor methods.</typeparam>
 internal interface IParseTreeVisitor<out T>
 {
+    T VisitToken(Token token);
     T VisitCompilationUnit(CompilationUnit compilationUnit);
 
     T VisitDecl(Decl decl);
@@ -67,6 +68,7 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 
     public virtual T VisitNode(ParseTree node) => node switch
     {
+        Token token => this.VisitToken(token),
         CompilationUnit compilationUnit => this.VisitCompilationUnit(compilationUnit),
         Decl decl => this.VisitDecl(decl),
         FuncParam param => this.VisitFuncParam(param),
@@ -77,6 +79,8 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
         Expr expr => this.VisitExpr(expr),
         _ => throw new InvalidOperationException(),
     };
+
+    public virtual T VisitToken(Token token) => this.Default;
 
     public virtual T VisitCompilationUnit(CompilationUnit compilationUnit)
     {

@@ -87,6 +87,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
+
     public virtual T VisitFuncDecl(Decl.Func decl)
     {
         foreach (var param in decl.Params.Value.Elements)
@@ -103,8 +104,10 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         return this.Default;
     }
+
     public virtual T VisitLabelDecl(Decl.Label decl) =>
         this.Default;
+
     public virtual T VisitVariableDecl(Decl.Variable decl)
     {
         if (decl.Type is not null)
@@ -130,8 +133,10 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
+
     public virtual T VisitBlockFuncBody(FuncBody.BlockBody body) =>
         this.VisitBlockExpr(body.Block);
+
     public virtual T VisitInlineFuncBody(FuncBody.InlineBody body) =>
         this.VisitExpr(body.Expression);
 
@@ -141,6 +146,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
+
     public virtual T VisitNameTypeExpr(TypeExpr.Name typeExpr) =>
         this.Default;
 
@@ -158,8 +164,10 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
+
     public virtual T VisitDeclStmt(Stmt.Decl stmt) =>
         this.VisitDecl(stmt.Declaration);
+
     public virtual T VisitExprStmt(Stmt.Expr stmt) =>
         this.VisitExpr(stmt.Expression);
 
@@ -181,6 +189,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
+
     public virtual T VisitBlockExpr(Expr.Block expr)
     {
         var (stmts, value) = expr.Enclosed.Value;
@@ -197,6 +206,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         return this.Default;
     }
+
     public virtual T VisitIfExpr(Expr.If expr)
     {
         this.VisitExpr(expr.Condition.Value);
@@ -210,6 +220,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         return this.Default;
     }
+
     public virtual T VisitWhileExpr(Expr.While expr)
     {
         this.VisitExpr(expr.Condition.Value);
@@ -218,14 +229,18 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         return this.Default;
     }
+
     public virtual T VisitGotoExpr(Expr.Goto expr) =>
         this.Default;
+
     public virtual T VisitReturnExpr(Expr.Return expr) =>
         expr.Expression is not null
             ? this.VisitExpr(expr.Expression)
             : this.Default;
+
     public virtual T VisitLiteralExpr(Expr.Literal expr) =>
         this.Default;
+
     public virtual T VisitFuncCallExpr(Expr.FuncCall expr)
     {
         this.VisitExpr(expr.Expression);
@@ -237,6 +252,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         return this.Default;
     }
+
     public virtual T VisitIndexExpr(Expr.Index expr)
     {
         this.VisitExpr(expr.Expression);
@@ -245,12 +261,16 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         return this.Default;
     }
+
     public virtual T VisitVariableExpr(Expr.Variable expr) =>
         this.Default;
+
     public virtual T VisitMemberAccessExpr(Expr.MemberAccess expr) =>
         this.VisitExpr(expr.Expression);
+
     public virtual T VisitUnaryExpr(Expr.Unary expr) =>
         this.VisitExpr(expr.Operand);
+
     public virtual T VisitBinaryExpr(Expr.Binary expr)
     {
         this.VisitExpr(expr.Left);
@@ -259,6 +279,7 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         return this.Default;
     }
+
     public virtual T VisitGroupingExpr(Expr.Grouping expr) =>
         this.VisitExpr(expr.Expression.Value);
 }

@@ -103,7 +103,8 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         return this.Default;
     }
-    public abstract T VisitLabelDecl(Decl.Label decl);
+    public virtual T VisitLabelDecl(Decl.Label decl) =>
+        this.Default;
     public virtual T VisitVariableDecl(Decl.Variable decl)
     {
         if (decl.Type is not null)
@@ -140,7 +141,8 @@ internal abstract class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
 
         _ => throw new InvalidOperationException()
     };
-    public abstract T VisitNameTypeExpr(TypeExpr.Name typeExpr);
+    public virtual T VisitNameTypeExpr(TypeExpr.Name typeExpr) =>
+        this.Default;
 
     public virtual T VisitTypeSpecifier(TypeSpecifier specifier)
     {

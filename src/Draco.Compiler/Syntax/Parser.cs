@@ -219,31 +219,16 @@ internal sealed class Parser
 
         default:
         {
-            // We consume as much bogus input as it makes sense
-            // NOTE: We don't advance here in case the upcoming token should not be consumed for synchronization
-            var input = ValueArray.CreateBuilder<Token>();
-            while (true)
+            var input = this.Synchronize(t => t.Type switch
             {
-                switch (this.Peek().Type)
-                {
-                case TokenType.EndOfInput:
-                case TokenType.Semicolon:
-                case TokenType.CurlyClose:
-                case TokenType.KeywordFunc:
-                case TokenType.KeywordVar:
-                case TokenType.KeywordVal:
-                case TokenType.Identifier when this.Peek(1).Type == TokenType.Colon:
-                    goto end_of_error;
-
-                default:
-                    input.Add(this.Advance());
-                    break;
-                }
-            }
-        end_of_error:
+                TokenType.Semicolon or TokenType.CurlyClose
+                or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
+                TokenType.Identifier when this.Peek(1).Type == TokenType.Colon => false,
+                _ => true,
+            });
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
-            return new Decl.Unexpected(input.ToValue(), ValueArray.Create(diag));
+            return new Decl.Unexpected(input, ValueArray.Create(diag));
         }
         }
     }
@@ -694,30 +679,16 @@ internal sealed class Parser
             return this.ParseControlFlowExpr(ControlFlowContext.Expr);
         default:
         {
-            // NOTE: We don't advance here in case the upcoming token should not be consumed for synchronization
-            // We consume as much bogus input as it makes sense
-            var input = ValueArray.CreateBuilder<Token>();
-            while (true)
+            var input = this.Synchronize(t => t.Type switch
             {
-                switch (this.Peek().Type)
-                {
-                case TokenType.EndOfInput:
-                case TokenType.CurlyClose:
-                case TokenType.BracketClose:
-                case TokenType.ParenClose:
-                case TokenType.Semicolon:
-                case var type when expressionStarters.Contains(type):
-                    goto end_of_error;
-
-                default:
-                    input.Add(this.Advance());
-                    break;
-                }
-            }
-        end_of_error:
+                TokenType.Semicolon
+                or TokenType.ParenClose or TokenType.BracketClose or TokenType.CurlyClose => false,
+                var type when expressionStarters.Contains(type) => false,
+                _ => true,
+            });
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
-            return new Expr.Unexpected(input.ToValue(), ValueArray.Create(diag));
+            return new Expr.Unexpected(input, ValueArray.Create(diag));
         }
         }
     }
@@ -778,6 +749,25 @@ internal sealed class Parser
     }
 
     // Token-level operators
+
+    /// <summary>
+    /// Performs synchronization, meaning it consumes <see cref="Token"/>s from the input
+    /// while a given condition is met.
+    /// </summary>
+    /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
+    /// <returns>The consumed list of <see cref="Token"/>s.</returns>
+    private ValueArray<Token> Synchronize(Func<Token, bool> keepGoing)
+    {
+        var input = ValueArray.CreateBuilder<Token>();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.EndOfInput) break;
+            if (!keepGoing(peek)) break;
+            input.Add(this.Advance());
+        }
+        return input.ToValue();
+    }
 
     /// <summary>
     /// Expects a certain kind of token to be at the current position.

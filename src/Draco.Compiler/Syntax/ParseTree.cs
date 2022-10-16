@@ -323,7 +323,7 @@ internal partial record class ParseTree
             ParseTree parseTree => this.PrintSubtree(parseTree.GetType().Name, parseTree, depth),
             IEnumerable<object> collection => this.PrintCollection(collection, depth),
             ITuple tuple => this.PrintTuple(tuple, depth),
-            Diagnostic diagnostic => this.PrintText(string.Format(diagnostic.Format, diagnostic.FormatArgs)),
+            Diagnostic diagnostic => this.PrintText(DiagnosticToString(diagnostic)),
             string str => this.PrintText(str),
             null => this.PrintText("null"),
             object o when o.GetType() is var type
@@ -341,7 +341,6 @@ internal partial record class ParseTree
                        && type.GetGenericTypeDefinition() == typeof(Punctuated<>) =>
                 this.PrintSubtree("Punctuated", o, depth),
             IEnumerable collection => this.PrintCollection(collection, depth),
-            // TODO
             _ => throw new System.NotImplementedException(),
         };
 
@@ -369,6 +368,12 @@ internal partial record class ParseTree
             if (valueText is not null && valueText != token.Text)
             {
                 this.Builder.Append(" (value=").Append(valueText).Append(')');
+            }
+            if (token.Diagnostics.Count > 0)
+            {
+                this.Builder.Append(" [");
+                this.Builder.AppendJoin(", ", token.Diagnostics.Select(DiagnosticToString));
+                this.Builder.Append(']');
             }
             return default;
         }
@@ -405,5 +410,8 @@ internal partial record class ParseTree
         {
             for (var i = 0; i < depth; ++i) this.Builder.Append(this.Indentation);
         }
+
+        private static string DiagnosticToString(Diagnostic diagnostic) =>
+            string.Format(diagnostic.Format, diagnostic.FormatArgs);
     }
 }

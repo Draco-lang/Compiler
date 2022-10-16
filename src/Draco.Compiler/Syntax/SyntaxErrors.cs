@@ -67,4 +67,12 @@ internal static class SyntaxErrors
         title: "unexpected input",
         severity: DiagnosticSeverity.Error,
         format: "unexpected input while parsing {0}");
+
+    /// <summary>
+    /// Insufficient indentation in a multiline string.
+    /// </summary>
+    public static readonly DiagnosticTemplate InsufficientIndentationInMultiLinString = DiagnosticTemplate.Create(
+        title: "insufficient indentation",
+        severity: DiagnosticSeverity.Error,
+        format: "insufficient indentation in multiline string");
 }

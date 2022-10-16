@@ -716,7 +716,7 @@ internal sealed class Parser
             if (peek.Type == TokenType.StringContent)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part));
+                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
             }
             else if (peek.Type == TokenType.InterpolationStart)
             {
@@ -745,7 +745,7 @@ internal sealed class Parser
             if (peek.Type == TokenType.StringContent || peek.Type == TokenType.StringNewline)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part));
+                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
             }
             else if (peek.Type == TokenType.InterpolationStart)
             {
@@ -770,8 +770,9 @@ internal sealed class Parser
             {
                 // The first trivia was newline, the second must be spaces
                 Debug.Assert(closeQuote.LeadingTrivia[1].Type == TokenType.Whitespace);
-                // We take the whitespace text and check if every line in the string obeys that
-                // as a prefix
+                // For simplicity we rebuild the contents to be able to append diagnostics
+                var newContent = ValueArray.CreateBuilder<StringPart>();
+                // We take the whitespace text and check if every line in the string obeys that as a prefix
                 var prefix = closeQuote.LeadingTrivia[1].Text;
                 var nextIsNewline = true;
                 foreach (var part in content)
@@ -781,30 +782,42 @@ internal sealed class Parser
                         if (contentPart.Token.Type == TokenType.StringNewline)
                         {
                             // Also a newline, don't care, even an empty line is fine
+                            newContent.Add(part);
                             nextIsNewline = true;
                             continue;
                         }
                         // Actual text content
                         if (nextIsNewline && !contentPart.Token.Text.StartsWith(prefix))
                         {
-                            // We are in a newline, and the prefixes don't match
-                            // TODO
-                            throw new NotImplementedException();
+                            // We are in a newline and the prefixes don't match, that's an error
+                            var location = new Location(0);
+                            var diag = Diagnostic.Create(
+                                SyntaxErrors.InsufficientIndentationInMultiLinString,
+                                location);
+                            var allDiags = contentPart.Diagnostics.Append(diag).ToValueArray();
+                            newContent.Add(new StringPart.Content(contentPart.Token, allDiags));
+                        }
+                        else
+                        {
+                            // Indentation was ok
+                            newContent.Add(part);
                         }
                         nextIsNewline = false;
                     }
                     else
                     {
                         // Interpolation, don't care
+                        newContent.Add(part);
                         nextIsNewline = false;
                     }
                 }
+                content = newContent;
             }
         }
         else
         {
-            // TODO
             // Error, the closing quotes are not on a newline
+            // TODO
             throw new NotImplementedException();
         }
         return new(openQuote, content.ToValue(), closeQuote);

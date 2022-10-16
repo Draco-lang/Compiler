@@ -11,7 +11,7 @@ internal class Program
 func main() {
     WriteLine(""""""
         \{capitalize(bottles(i))} of beer on the wall, \{bottles(i)} of beer.
-        Take one down, pass it around, \{bottles(i - 1)} of beer on the wall.
+     Take one down, pass it around, \{bottles(i - 1)} of beer on the wall.
         """""");
 }
 ";

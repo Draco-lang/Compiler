@@ -92,11 +92,6 @@ internal enum TokenType
     InterpolationEnd,
 
     /// <summary>
-    /// An escape sequence inside the string literal.
-    /// </summary>
-    EscapeSequence,
-
-    /// <summary>
     /// The keyword 'and'.
     /// </summary>
     KeywordAnd,

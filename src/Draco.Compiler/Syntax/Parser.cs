@@ -661,6 +661,7 @@ internal sealed class Parser
         switch (peek.Type)
         {
         case TokenType.LiteralInteger:
+        case TokenType.LiteralCharacter:
         {
             var value = this.Advance();
             return new Expr.Literal(value);
@@ -671,6 +672,10 @@ internal sealed class Parser
             var value = this.Advance();
             return new Expr.Literal(value);
         }
+        case TokenType.LineStringStart:
+            return this.ParseLineString();
+        case TokenType.MultiLineStringStart:
+            return this.ParseMultiLineString();
         case TokenType.Identifier:
         {
             var name = this.Advance();
@@ -699,6 +704,126 @@ internal sealed class Parser
             return new Expr.Unexpected(input, ValueArray.Create(diag));
         }
         }
+    }
+
+    private Expr.String ParseLineString()
+    {
+        var openQuote = this.Expect(TokenType.LineStringStart);
+        var content = ValueArray.CreateBuilder<StringPart>();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.StringContent)
+            {
+                var part = this.Advance();
+                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
+            }
+            else if (peek.Type == TokenType.InterpolationStart)
+            {
+                var start = this.Advance();
+                var expr = this.ParseExpr();
+                var end = this.Expect(TokenType.InterpolationEnd);
+                content.Add(new StringPart.Interpolation(start, expr, end));
+            }
+            else
+            {
+                // We need a close quote for line strings then
+                break;
+            }
+        }
+        var closeQuote = this.Expect(TokenType.LineStringEnd);
+        return new(openQuote, content.ToValue(), closeQuote);
+    }
+
+    private Expr.String ParseMultiLineString()
+    {
+        var openQuote = this.Expect(TokenType.MultiLineStringStart);
+        var content = ValueArray.CreateBuilder<StringPart>();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.StringContent || peek.Type == TokenType.StringNewline)
+            {
+                var part = this.Advance();
+                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
+            }
+            else if (peek.Type == TokenType.InterpolationStart)
+            {
+                var start = this.Advance();
+                var expr = this.ParseExpr();
+                var end = this.Expect(TokenType.InterpolationEnd);
+                content.Add(new StringPart.Interpolation(start, expr, end));
+            }
+            else
+            {
+                // We need a close quote for line strings then
+                break;
+            }
+        }
+        var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
+        // We need to check if the close quote is on a newline
+        if (closeQuote.LeadingTrivia.Count > 0)
+        {
+            Debug.Assert(closeQuote.LeadingTrivia.Count <= 2);
+            Debug.Assert(closeQuote.LeadingTrivia[0].Type == TokenType.Newline);
+            if (closeQuote.LeadingTrivia.Count == 2)
+            {
+                // The first trivia was newline, the second must be spaces
+                Debug.Assert(closeQuote.LeadingTrivia[1].Type == TokenType.Whitespace);
+                // For simplicity we rebuild the contents to be able to append diagnostics
+                var newContent = ValueArray.CreateBuilder<StringPart>();
+                // We take the whitespace text and check if every line in the string obeys that as a prefix
+                var prefix = closeQuote.LeadingTrivia[1].Text;
+                var nextIsNewline = true;
+                foreach (var part in content)
+                {
+                    if (part is StringPart.Content contentPart)
+                    {
+                        if (contentPart.Token.Type == TokenType.StringNewline)
+                        {
+                            // Also a newline, don't care, even an empty line is fine
+                            newContent.Add(part);
+                            nextIsNewline = true;
+                            continue;
+                        }
+                        // Actual text content
+                        if (nextIsNewline && !contentPart.Token.Text.StartsWith(prefix))
+                        {
+                            // We are in a newline and the prefixes don't match, that's an error
+                            var location = new Location(0);
+                            var diag = Diagnostic.Create(
+                                SyntaxErrors.InsufficientIndentationInMultiLinString,
+                                location);
+                            var allDiags = contentPart.Diagnostics.Append(diag).ToValueArray();
+                            newContent.Add(new StringPart.Content(contentPart.Token, allDiags));
+                        }
+                        else
+                        {
+                            // Indentation was ok
+                            newContent.Add(part);
+                        }
+                        nextIsNewline = false;
+                    }
+                    else
+                    {
+                        // Interpolation, don't care
+                        newContent.Add(part);
+                        nextIsNewline = false;
+                    }
+                }
+                content = newContent;
+            }
+        }
+        else
+        {
+            // Error, the closing quotes are not on a newline
+            var location = new Location(0);
+            var diag = Diagnostic.Create(
+                SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
+                location);
+            closeQuote = closeQuote.AddDiagnostic(diag);
+        }
+        return new(openQuote, content.ToValue(), closeQuote);
     }
 
     // General utilities

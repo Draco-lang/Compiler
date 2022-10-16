@@ -67,4 +67,20 @@ internal static class SyntaxErrors
         title: "unexpected input",
         severity: DiagnosticSeverity.Error,
         format: "unexpected input while parsing {0}");
+
+    /// <summary>
+    /// Insufficient indentation in a multiline string.
+    /// </summary>
+    public static readonly DiagnosticTemplate InsufficientIndentationInMultiLinString = DiagnosticTemplate.Create(
+        title: "insufficient indentation",
+        severity: DiagnosticSeverity.Error,
+        format: "insufficient indentation in multiline string");
+
+    /// <summary>
+    /// The closing quotes of a multiline string are not on a new line.
+    /// </summary>
+    public static readonly DiagnosticTemplate ClosingQuotesOfMultiLineStringNotOnNewLine = DiagnosticTemplate.Create(
+        title: "closing quotes are not on a new line",
+        severity: DiagnosticSeverity.Error,
+        format: "closing quotes are not on a new line of multiline string");
 }

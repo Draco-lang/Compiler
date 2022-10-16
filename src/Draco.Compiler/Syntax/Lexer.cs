@@ -524,7 +524,7 @@ internal sealed class Lexer
                         // We build the end token with trivia
                         this.PopMode();
                         this.ParseLeadingTriviaList();
-                        Debug.Assert(this.leadingTriviaList.Count == 2);
+                        Debug.Assert(this.leadingTriviaList.Count is 1 or 2);
                         this.tokenBuilder
                             .SetType(TokenType.MultiLineStringEnd)
                             .SetText(this.AdvanceWithText(3 + mode.ExtendedDelims));

@@ -59,21 +59,12 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in declaration context.
         /// </summary>
-        public sealed record class Unexpected : Decl
+        public sealed record class Unexpected(
+            ValueArray<Token> Tokens,
+            ValueArray<Diagnostic> Diagnostics) : Decl
         {
-            /// <summary>
-            /// The sequence of tokens that were unexpected.
-            /// </summary>
-            public ValueArray<Token> Tokens { get; }
-
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; }
-
-            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
-            {
-                this.Tokens = tokens;
-                this.Diagnostics = diagnostics;
-            }
+            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -119,21 +110,12 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in function body context.
         /// </summary>
-        public sealed record class Unexpected : FuncBody
+        public sealed record class Unexpected(
+            ValueArray<Token> Tokens,
+            ValueArray<Diagnostic> Diagnostics) : FuncBody
         {
-            /// <summary>
-            /// The sequence of tokens that were unexpected.
-            /// </summary>
-            public ValueArray<Token> Tokens { get; }
-
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; }
-
-            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
-            {
-                this.Tokens = tokens;
-                this.Diagnostics = diagnostics;
-            }
+            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -195,21 +177,12 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in expression context.
         /// </summary>
-        public sealed record class Unexpected : Expr
+        public sealed record class Unexpected(
+            ValueArray<Token> Tokens,
+            ValueArray<Diagnostic> Diagnostics) : Expr
         {
-            /// <summary>
-            /// The sequence of tokens that were unexpected.
-            /// </summary>
-            public ValueArray<Token> Tokens { get; }
-
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; }
-
-            public Unexpected(ValueArray<Token> tokens, ValueArray<Diagnostic> diagnostics)
-            {
-                this.Tokens = tokens;
-                this.Diagnostics = diagnostics;
-            }
+            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -309,6 +282,39 @@ internal partial record class ParseTree
         /// </summary>
         public sealed record class Grouping(
             Enclosed<Expr> Expression) : Expr;
+
+        /// <summary>
+        /// A string expression composing string content and interpolation.
+        /// </summary>
+        public sealed record class String(
+            Token OpenQuotes,
+            ValueArray<StringPart> Parts,
+            Token CloseQuotes) : Expr;
+    }
+
+    /// <summary>
+    /// Part of a string literal/expression.
+    /// </summary>
+    public abstract record class StringPart : ParseTree
+    {
+        /// <summary>
+        /// Content part of a string literal.
+        /// </summary>
+        public sealed record class Content(
+            Token Token,
+            ValueArray<Diagnostic> Diagnostics) : StringPart
+        {
+            /// <inheritdoc/>
+            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+        }
+
+        /// <summary>
+        /// An interpolation hole.
+        /// </summary>
+        public sealed record class Interpolation(
+            Token OpenToken,
+            Expr Expression,
+            Token CloseToken) : StringPart;
     }
 }
 

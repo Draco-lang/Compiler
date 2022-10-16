@@ -8,12 +8,10 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = @"
-wer, nice
-
 func main() {
-    var x = ;
-    var y = 0
-    var z = 0;
+    WriteLine(""""""
+        \{capitalize(bottles(i))} of beer on the wall, \{bottles(i)} of beer.
+     Take one down, pass it around, \{bottles(i - 1)} of beer on the wall."""""");
 }
 ";
         var srcReader = SourceReader.From(src);

@@ -12,44 +12,52 @@ namespace Draco.Compiler.Syntax;
 /// <typeparam name="T">The return type of the visitor methods.</typeparam>
 internal interface IParseTreeVisitor<out T>
 {
-    T VisitToken(Token token);
-    T VisitCompilationUnit(CompilationUnit compilationUnit);
+    public T VisitToken(Token token);
+    public T VisitCompilationUnit(CompilationUnit compilationUnit);
 
-    T VisitDecl(Decl decl);
-    T VisitFuncDecl(Decl.Func decl);
-    T VisitLabelDecl(Decl.Label decl);
-    T VisitVariableDecl(Decl.Variable decl);
+    public T VisitDecl(Decl decl);
+    public T VisitUnexpectedDecl(Decl.Unexpected decl);
+    public T VisitFuncDecl(Decl.Func decl);
+    public T VisitLabelDecl(Decl.Label decl);
+    public T VisitVariableDecl(Decl.Variable decl);
 
-    T VisitFuncParam(FuncParam param);
+    public T VisitFuncParam(FuncParam param);
 
-    T VisitFuncBody(FuncBody body);
-    T VisitBlockFuncBody(FuncBody.BlockBody body);
-    T VisitInlineFuncBody(FuncBody.InlineBody body);
+    public T VisitFuncBody(FuncBody body);
+    public T VisitUnexpectedFuncBody(FuncBody.Unexpected body);
+    public T VisitBlockFuncBody(FuncBody.BlockBody body);
+    public T VisitInlineFuncBody(FuncBody.InlineBody body);
 
-    T VisitTypeExpr(TypeExpr typeExpr);
-    T VisitNameTypeExpr(TypeExpr.Name typeExpr);
+    public T VisitTypeExpr(TypeExpr typeExpr);
+    public T VisitNameTypeExpr(TypeExpr.Name typeExpr);
 
-    T VisitTypeSpecifier(TypeSpecifier specifier);
+    public T VisitTypeSpecifier(TypeSpecifier specifier);
 
-    T VisitStmt(Stmt stmt);
-    T VisitDeclStmt(Stmt.Decl stmt);
-    T VisitExprStmt(Stmt.Expr stmt);
+    public T VisitStmt(Stmt stmt);
+    public T VisitDeclStmt(Stmt.Decl stmt);
+    public T VisitExprStmt(Stmt.Expr stmt);
 
-    T VisitExpr(Expr expr);
-    T VisitUnitStmtExpr(Expr.UnitStmt expr);
-    T VisitBlockExpr(Expr.Block expr);
-    T VisitIfExpr(Expr.If expr);
-    T VisitWhileExpr(Expr.While expr);
-    T VisitGotoExpr(Expr.Goto expr);
-    T VisitReturnExpr(Expr.Return expr);
-    T VisitLiteralExpr(Expr.Literal expr);
-    T VisitCallExpr(Expr.Call expr);
-    T VisitNameExpr(Expr.Name expr);
-    T VisitMemberAccessExpr(Expr.MemberAccess expr);
-    T VisitUnaryExpr(Expr.Unary expr);
-    T VisitBinaryExpr(Expr.Binary expr);
-    T VisitRelationalExpr(Expr.Relational expr);
-    T VisitGroupingExpr(Expr.Grouping expr);
+    public T VisitExpr(Expr expr);
+    public T VisitUnexpectedExpr(Expr.Unexpected expr);
+    public T VisitUnitStmtExpr(Expr.UnitStmt expr);
+    public T VisitBlockExpr(Expr.Block expr);
+    public T VisitIfExpr(Expr.If expr);
+    public T VisitWhileExpr(Expr.While expr);
+    public T VisitGotoExpr(Expr.Goto expr);
+    public T VisitReturnExpr(Expr.Return expr);
+    public T VisitLiteralExpr(Expr.Literal expr);
+    public T VisitCallExpr(Expr.Call expr);
+    public T VisitNameExpr(Expr.Name expr);
+    public T VisitMemberAccessExpr(Expr.MemberAccess expr);
+    public T VisitUnaryExpr(Expr.Unary expr);
+    public T VisitBinaryExpr(Expr.Binary expr);
+    public T VisitRelationalExpr(Expr.Relational expr);
+    public T VisitGroupingExpr(Expr.Grouping expr);
+    public T VisitStringExpr(Expr.String expr);
+
+    public T VisitStringPart(StringPart stringPart);
+    public T VisitContentStringPart(StringPart.Content stringPart);
+    public T VisitInterpolationStringPart(StringPart.Interpolation stringPart);
 }
 
 /// <summary>
@@ -77,6 +85,7 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
         TypeSpecifier specifier => this.VisitTypeSpecifier(specifier),
         Stmt stmt => this.VisitStmt(stmt),
         Expr expr => this.VisitExpr(expr),
+        StringPart stringPart => this.VisitStringPart(stringPart),
         _ => throw new InvalidOperationException(),
     };
 
@@ -90,11 +99,14 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 
     public virtual T VisitDecl(Decl decl) => decl switch
     {
+        Decl.Unexpected unexpected => this.VisitUnexpectedDecl(unexpected),
         Decl.Func func => this.VisitFuncDecl(func),
         Decl.Label label => this.VisitLabelDecl(label),
         Decl.Variable variable => this.VisitVariableDecl(variable),
         _ => throw new InvalidOperationException(),
     };
+
+    public virtual T VisitUnexpectedDecl(Decl.Unexpected decl) => this.Default;
 
     public virtual T VisitFuncDecl(Decl.Func decl)
     {
@@ -118,10 +130,13 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 
     public virtual T VisitFuncBody(FuncBody body) => body switch
     {
+        FuncBody.Unexpected unexpected => this.VisitUnexpectedFuncBody(unexpected),
         FuncBody.BlockBody block => this.VisitBlockFuncBody(block),
         FuncBody.InlineBody inline => this.VisitInlineFuncBody(inline),
         _ => throw new InvalidOperationException(),
     };
+
+    public virtual T VisitUnexpectedFuncBody(FuncBody.Unexpected body) => this.Default;
 
     public virtual T VisitBlockFuncBody(FuncBody.BlockBody body) =>
         this.VisitBlockExpr(body.Block);
@@ -158,6 +173,7 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 
     public virtual T VisitExpr(Expr expr) => expr switch
     {
+        Expr.Unexpected unexpected => this.VisitUnexpectedExpr(unexpected),
         Expr.UnitStmt unitStmt => this.VisitUnitStmtExpr(unitStmt),
         Expr.Block block => this.VisitBlockExpr(block),
         Expr.If @if => this.VisitIfExpr(@if),
@@ -172,8 +188,11 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
         Expr.Binary binary => this.VisitBinaryExpr(binary),
         Expr.Relational relational => this.VisitRelationalExpr(relational),
         Expr.Grouping grouping => this.VisitGroupingExpr(grouping),
+        Expr.String @string => this.VisitStringExpr(@string),
         _ => throw new InvalidOperationException(),
     };
+
+    public virtual T VisitUnexpectedExpr(Expr.Unexpected expr) => this.Default;
 
     public virtual T VisitUnitStmtExpr(Expr.UnitStmt expr) =>
         this.VisitStmt(expr.Statement);
@@ -239,6 +258,21 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 
     public virtual T VisitGroupingExpr(Expr.Grouping expr) =>
         this.VisitExpr(expr.Expression.Value);
+
+    public virtual T VisitStringExpr(Expr.String expr) =>
+        this.VisitEnumerable(expr.Parts);
+
+    public virtual T VisitStringPart(StringPart stringPart) => stringPart switch
+    {
+        StringPart.Content content => this.VisitContentStringPart(content),
+        StringPart.Interpolation interpolation => this.VisitInterpolationStringPart(interpolation),
+        _ => throw new InvalidOperationException(),
+    };
+
+    public virtual T VisitContentStringPart(StringPart.Content stringPart) => this.Default;
+
+    public virtual T VisitInterpolationStringPart(StringPart.Interpolation stringPart) =>
+        this.VisitExpr(stringPart.Expression);
 }
 
 // Utility functions

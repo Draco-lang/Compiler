@@ -40,9 +40,8 @@ internal interface IParseTreeVisitor<out T>
     T VisitGotoExpr(Expr.Goto expr);
     T VisitReturnExpr(Expr.Return expr);
     T VisitLiteralExpr(Expr.Literal expr);
-    T VisitFuncCallExpr(Expr.FuncCall expr);
-    T VisitIndexExpr(Expr.Index expr);
-    T VisitVariableExpr(Expr.Variable expr);
+    T VisitCallExpr(Expr.Call expr);
+    T VisitNameExpr(Expr.Name expr);
     T VisitMemberAccessExpr(Expr.MemberAccess expr);
     T VisitUnaryExpr(Expr.Unary expr);
     T VisitBinaryExpr(Expr.Binary expr);
@@ -58,7 +57,7 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     /// <summary>
     /// The default value returned by every non-overwritten visit method.
     /// </summary>
-    public abstract T Default { get; }
+    public virtual T Default => default!;
 
     public virtual T VisitNode(ParseTree node) => node switch
     {
@@ -70,14 +69,12 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         TypeSpecifier specifier => this.VisitTypeSpecifier(specifier),
         Stmt stmt => this.VisitStmt(stmt),
         Expr expr => this.VisitExpr(expr),
-
-        _ => throw new InvalidOperationException()
+        _ => throw new InvalidOperationException(),
     };
 
     public virtual T VisitCompilationUnit(CompilationUnit compilationUnit)
     {
         this.VisitEnumerable(compilationUnit.Declarations);
-
         return this.Default;
     }
 
@@ -86,30 +83,23 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         Decl.Func func => this.VisitFuncDecl(func),
         Decl.Label label => this.VisitLabelDecl(label),
         Decl.Variable variable => this.VisitVariableDecl(variable),
-
-        _ => throw new InvalidOperationException()
+        _ => throw new InvalidOperationException(),
     };
 
     public virtual T VisitFuncDecl(Decl.Func decl)
     {
         this.VisitPunctuatedList(decl.Params.Value);
-
-        this.VisitNullable(decl.Type);
-
+        this.VisitNullable(decl.ReturnType);
         this.VisitFuncBody(decl.Body);
-
         return this.Default;
     }
 
-    public virtual T VisitLabelDecl(Decl.Label decl) =>
-        this.Default;
+    public virtual T VisitLabelDecl(Decl.Label decl) => this.Default;
 
     public virtual T VisitVariableDecl(Decl.Variable decl)
     {
         this.VisitNullable(decl.Type);
-
         this.VisitNullable(decl.Initializer?.Expression);
-
         return this.Default;
     }
 
@@ -120,8 +110,7 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     {
         FuncBody.BlockBody block => this.VisitBlockFuncBody(block),
         FuncBody.InlineBody inline => this.VisitInlineFuncBody(inline),
-
-        _ => throw new InvalidOperationException()
+        _ => throw new InvalidOperationException(),
     };
 
     public virtual T VisitBlockFuncBody(FuncBody.BlockBody body) =>
@@ -133,8 +122,7 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     public virtual T VisitTypeExpr(TypeExpr typeExpr) => typeExpr switch
     {
         TypeExpr.Name name => this.VisitNameTypeExpr(name),
-
-        _ => throw new InvalidOperationException()
+        _ => throw new InvalidOperationException(),
     };
 
     public virtual T VisitNameTypeExpr(TypeExpr.Name typeExpr) =>
@@ -143,7 +131,6 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     public virtual T VisitTypeSpecifier(TypeSpecifier specifier)
     {
         this.VisitTypeExpr(specifier.Type);
-
         return this.Default;
     }
 
@@ -151,8 +138,7 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     {
         Stmt.Decl decl => this.VisitDeclStmt(decl),
         Stmt.Expr expr => this.VisitExprStmt(expr),
-
-        _ => throw new InvalidOperationException()
+        _ => throw new InvalidOperationException(),
     };
 
     public virtual T VisitDeclStmt(Stmt.Decl stmt) =>
@@ -169,80 +155,56 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         Expr.Goto @goto => this.VisitGotoExpr(@goto),
         Expr.Return @return => this.VisitReturnExpr(@return),
         Expr.Literal literal => this.VisitLiteralExpr(literal),
-        Expr.FuncCall funcCall => this.VisitFuncCallExpr(funcCall),
-        Expr.Index index => this.VisitIndexExpr(index),
-        Expr.Variable variable => this.VisitVariableExpr(variable),
+        Expr.Call call => this.VisitCallExpr(call),
+        Expr.Name name => this.VisitNameExpr(name),
         Expr.MemberAccess memberAccess => this.VisitMemberAccessExpr(memberAccess),
         Expr.Unary unary => this.VisitUnaryExpr(unary),
         Expr.Binary binary => this.VisitBinaryExpr(binary),
         Expr.Grouping grouping => this.VisitGroupingExpr(grouping),
-
-        _ => throw new InvalidOperationException()
+        _ => throw new InvalidOperationException(),
     };
 
     public virtual T VisitBlockExpr(Expr.Block expr)
     {
         var (stmts, value) = expr.Enclosed.Value;
-
         this.VisitEnumerable(stmts);
-
         this.VisitNullable(value);
-
         return this.Default;
     }
 
     public virtual T VisitIfExpr(Expr.If expr)
     {
         this.VisitExpr(expr.Condition.Value);
-
-        this.VisitExpr(expr.Expression);
-
+        this.VisitExpr(expr.Then);
         this.VisitNullable(expr.Else?.Expression);
-
         return this.Default;
     }
 
     public virtual T VisitWhileExpr(Expr.While expr)
     {
         this.VisitExpr(expr.Condition.Value);
-
         this.VisitExpr(expr.Expression);
-
         return this.Default;
     }
 
-    public virtual T VisitGotoExpr(Expr.Goto expr) =>
-        this.Default;
+    public virtual T VisitGotoExpr(Expr.Goto expr) => this.Default;
 
     public virtual T VisitReturnExpr(Expr.Return expr) =>
         this.VisitNullable(expr.Expression);
 
-    public virtual T VisitLiteralExpr(Expr.Literal expr) =>
-        this.Default;
+    public virtual T VisitLiteralExpr(Expr.Literal expr) => this.Default;
 
-    public virtual T VisitFuncCallExpr(Expr.FuncCall expr)
+    public virtual T VisitCallExpr(Expr.Call expr)
     {
-        this.VisitExpr(expr.Expression);
-
+        this.VisitExpr(expr.Called);
         this.VisitPunctuatedList(expr.Args.Value);
-
         return this.Default;
     }
 
-    public virtual T VisitIndexExpr(Expr.Index expr)
-    {
-        this.VisitExpr(expr.Expression);
-
-        this.VisitExpr(expr.IndexExpression.Value);
-
-        return this.Default;
-    }
-
-    public virtual T VisitVariableExpr(Expr.Variable expr) =>
-        this.Default;
+    public virtual T VisitNameExpr(Expr.Name expr) => this.Default;
 
     public virtual T VisitMemberAccessExpr(Expr.MemberAccess expr) =>
-        this.VisitExpr(expr.Expression);
+        this.VisitExpr(expr.Object);
 
     public virtual T VisitUnaryExpr(Expr.Unary expr) =>
         this.VisitExpr(expr.Operand);
@@ -250,9 +212,7 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
     public virtual T VisitBinaryExpr(Expr.Binary expr)
     {
         this.VisitExpr(expr.Left);
-
         this.VisitExpr(expr.Right);
-
         return this.Default;
     }
 
@@ -260,31 +220,32 @@ internal abstract partial class BaseParseTreeVisitor<T> : IParseTreeVisitor<T>
         this.VisitExpr(expr.Expression.Value);
 }
 
+// Utility functions
 internal abstract partial class BaseParseTreeVisitor<T>
 {
     /// <summary>
     /// Visits every element in an enumerable of nodes.
     /// </summary>
-    protected IEnumerable<T> VisitEnumerable(IEnumerable<ParseTree> elements) =>
-        elements.Select(x => this.VisitNode(x));
+    protected T VisitEnumerable(IEnumerable<ParseTree> elements)
+    {
+        foreach (var item in elements) this.VisitNode(item);
+        return this.Default;
+    }
 
     /// <summary>
     /// Visits every element of a punctuated list of nodes.
     /// </summary>
-    protected IEnumerable<T> VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
-        where TElement : ParseTree =>
-        list.Elements.Select(x => this.VisitNode(x.Value));
+    protected T VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
+        where TElement : ParseTree
+    {
+        foreach (var (item, _) in list.Elements) this.VisitNode(item);
+        return this.Default;
+    }
 
     /// <summary>
     /// Visits a node if it's not <see langword="null"/>.
     /// </summary>
-    protected T VisitNullable(ParseTree? element)
-    {
-        if (element is not null)
-        {
-            return this.VisitNode(element);
-        }
-
-        return this.Default;
-    }
+    protected T VisitNullable(ParseTree? element) => element is null
+        ? this.Default
+        : this.VisitNode(element);
 }

@@ -72,6 +72,20 @@ internal sealed partial record class Token : ParseTree
         this.Diagnostics = diagnostics;
     }
 
+    /// <summary>
+    /// Appends a <see cref="Diagnostic"/> to this <see cref="Token"/>.
+    /// </summary>
+    /// <param name="diagnostic">The <see cref="Diagnostic"/> to append.</param>
+    /// <returns>A new <see cref="Token"/> with all information as this one plus the appended
+    /// <paramref name="diagnostic"/>.</returns>
+    public Token AddDiagnostic(Diagnostic diagnostic) => new(
+        type: this.Type,
+        text: this.Text,
+        value: this.Value,
+        leadingTrivia: this.LeadingTrivia,
+        trailingTrivia: this.TrailingTrivia,
+        diagnostics: this.Diagnostics.Append(diagnostic).ToValueArray());
+
     /// <inheritdoc/>
     public override string ToString()
     {

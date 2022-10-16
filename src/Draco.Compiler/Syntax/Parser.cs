@@ -817,8 +817,11 @@ internal sealed class Parser
         else
         {
             // Error, the closing quotes are not on a newline
-            // TODO
-            throw new NotImplementedException();
+            var location = new Location(0);
+            var diag = Diagnostic.Create(
+                SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
+                location);
+            closeQuote = closeQuote.AddDiagnostic(diag);
         }
         return new(openQuote, content.ToValue(), closeQuote);
     }

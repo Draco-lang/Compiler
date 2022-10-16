@@ -75,4 +75,12 @@ internal static class SyntaxErrors
         title: "insufficient indentation",
         severity: DiagnosticSeverity.Error,
         format: "insufficient indentation in multiline string");
+
+    /// <summary>
+    /// The closing quotes of a multiline string are not on a new line.
+    /// </summary>
+    public static readonly DiagnosticTemplate ClosingQuotesOfMultiLineStringNotOnNewLine = DiagnosticTemplate.Create(
+        title: "closing quotes are not on a new line",
+        severity: DiagnosticSeverity.Error,
+        format: "closing quotes are not on a new line of multiline string");
 }

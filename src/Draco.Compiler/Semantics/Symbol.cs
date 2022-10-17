@@ -27,10 +27,11 @@ public static class Symbol
         /// The type of the variable.
         /// </summary>
         IType Type { get; }
+
         /// <summary>
         /// The kind of variable.
         /// </summary>
-        VariableKind Kind { get; }
+        Mutability Mutability { get; }
     }
 
     /// <summary>
@@ -68,9 +69,9 @@ public static class Symbol
     }
 
     /// <summary>
-    /// The kind of a variable.
+    /// The mutability of a variable.
     /// </summary>
-    public enum VariableKind
+    public enum Mutability
     {
         /// <summary>
         /// The variable is mutable (<c>var</c>).

@@ -54,6 +54,7 @@ public static class Symbol
         /// The parameters to the function.
         /// </summary>
         IReadOnlyList<IParameter> Parameters { get; }
+
         /// <summary>
         /// The return type of the function.
         /// </summary>
@@ -77,6 +78,7 @@ public static class Symbol
         /// The variable is mutable (<c>var</c>).
         /// </summary>
         Mutable,
+
         /// <summary>
         /// The variable is immutable (<c>val</c>).
         /// </summary>

@@ -158,4 +158,50 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.output.Append(';');
         return this.Default;
     }
+
+    public override Unit VisitStringExpr(Expr.String expr)
+    {
+        for (int i = 0; i < expr.Parts.Count; i++)
+        {
+            base.VisitNode(expr.Parts[i]);
+            if (i != expr.Parts.Count - 1) this.output.Append(" + ");
+        }
+        return this.Default;
+    }
+
+    public override Unit VisitContentStringPart(StringPart.Content stringPart)
+    {
+        this.output.Append($"\"{this.escapeString(stringPart.Token.ValueText!)}\"");
+        return this.Default;
+    }
+
+    public override Unit VisitMemberAccessExpr(Expr.MemberAccess expr)
+    {
+        base.VisitExpr(expr.Object);
+        this.output.Append('.');
+        this.output.Append(expr.MemberName.Text);
+        return this.Default;
+    }
+
+    private string escapeString(string original)
+    {
+        Dictionary<string, string> escapeMapping = new Dictionary<string, string>()
+        {
+            {"\"", @"\\\"""},
+            {"\\\\", @"\\"},
+            {"\a", @"\a"},
+            {"\b", @"\b"},
+            {"\f", @"\f"},
+            {"\n", @"\n"},
+            {"\r", @"\r"},
+            {"\t", @"\t"},
+            {"\v", @"\v"},
+            {"\0", @"\0"},
+        };
+        foreach (var item in escapeMapping)
+        {
+            original = original.Replace(item.Key, item.Value);
+        }
+        return original;
+    }
 }

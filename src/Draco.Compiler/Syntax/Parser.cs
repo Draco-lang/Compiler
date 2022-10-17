@@ -395,7 +395,6 @@ internal sealed class Parser
             _ => throw new InvalidOperationException(),
         };
     }
-    }
 
     private Expr ParseControlFlowBody(ControlFlowContext ctx)
     {
@@ -863,8 +862,6 @@ internal sealed class Parser
                 break;
             }
         }
-        // TODO: Error handling
-        if (!allowEmpty && elements.Count == 0) throw new NotImplementedException();
         return new(elements.ToValue());
     }
 

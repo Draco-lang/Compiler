@@ -221,7 +221,7 @@ internal sealed class Parser
         {
             var input = this.Synchronize(t => t.Type switch
             {
-                TokenType.Semicolon or TokenType.CurlyClose
+                TokenType.CurlyClose
                 or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
                 TokenType.Identifier when this.Peek(1).Type == TokenType.Colon => false,
                 _ => true,

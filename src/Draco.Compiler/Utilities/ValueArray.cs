@@ -10,25 +10,10 @@ using System.Threading.Tasks;
 namespace Draco.Compiler.Utilities;
 
 /// <summary>
-/// Factory methods for <see cref="ValueArray{T}"/>.
-/// </summary>
-internal static class ValueArray
-{
-    /// <summary>
-    /// Builds a <see cref="ValueArray{T}"/> from <paramref name="items"/>.
-    /// </summary>
-    /// <typeparam name="T">The item type.</typeparam>
-    /// <param name="items">The items to create the array from.</param>
-    /// <returns>The constructed array containing <paramref name="items"/>.</returns>
-    public static ValueArray<T> Create<T>(params T[] items) =>
-        new(ImmutableArray.Create(items));
-}
-
-/// <summary>
 /// Represents an immutable array that is compared element-wise instead of by reference.
 /// </summary>
 /// <typeparam name="T">The element type of the array.</typeparam>
-internal readonly struct ValueArray<T> : IEquatable<ValueArray<T>>, IImmutableList<T>
+internal readonly partial struct ValueArray<T> : IEquatable<ValueArray<T>>, IImmutableList<T>
 {
     /// <summary>
     /// An empty <see cref="ValueArray{T}"/>.
@@ -122,4 +107,103 @@ internal readonly struct ValueArray<T> : IEquatable<ValueArray<T>>, IImmutableLi
 
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)this.values).GetEnumerator();
+}
+
+// Builder
+internal partial struct ValueArray<T>
+{
+    /// <summary>
+    /// The builder type for <see cref="ValueArray{T}"/>.
+    /// </summary>
+    public sealed class Builder : IList<T>, IReadOnlyList<T>
+    {
+        /// <inheritdoc/>
+        public int Count => this.underlyingBuilder.Count;
+
+        /// <inheritdoc/>
+        bool ICollection<T>.IsReadOnly => ((ICollection<T>)this.underlyingBuilder).IsReadOnly;
+
+        /// <inheritdoc/>
+        public T this[int index] => ((IReadOnlyList<T>)this.underlyingBuilder)[index];
+
+        /// <inheritdoc/>
+        T IList<T>.this[int index]
+        {
+            get => ((IList<T>)this.underlyingBuilder)[index];
+            set => ((IList<T>)this.underlyingBuilder)[index] = value;
+        }
+
+        private readonly ImmutableArray<T>.Builder underlyingBuilder = ImmutableArray.CreateBuilder<T>();
+
+        public Builder()
+        {
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="ValueArray{T}"/> that contains the contents of this <see cref="Builder"/>.
+        /// </summary>
+        /// <returns>A <see cref="ValueArray{T}"/> with the contents of this <see cref="Builder"/> instance.</returns>
+        public ValueArray<T> ToValue() => new(this.underlyingBuilder.ToImmutable());
+
+        /// <inheritdoc/>
+        public void Add(T item) => this.underlyingBuilder.Add(item);
+
+        /// <inheritdoc/>
+        public void Clear() => this.underlyingBuilder.Clear();
+
+        /// <inheritdoc/>
+        public bool Contains(T item) => this.underlyingBuilder.Contains(item);
+
+        /// <inheritdoc/>
+        public void CopyTo(T[] array, int arrayIndex) => this.underlyingBuilder.CopyTo(array, arrayIndex);
+
+        /// <inheritdoc/>
+        public int IndexOf(T item) => this.underlyingBuilder.IndexOf(item);
+
+        /// <inheritdoc/>
+        public void Insert(int index, T item) => this.underlyingBuilder.Insert(index, item);
+
+        /// <inheritdoc/>
+        public bool Remove(T item) => this.underlyingBuilder.Remove(item);
+
+        /// <inheritdoc/>
+        public void RemoveAt(int index) => this.underlyingBuilder.RemoveAt(index);
+
+        /// <inheritdoc/>
+        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)this.underlyingBuilder).GetEnumerator();
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)this.underlyingBuilder).GetEnumerator();
+    }
+}
+
+/// <summary>
+/// Factory methods for <see cref="ValueArray{T}"/>.
+/// </summary>
+internal static class ValueArray
+{
+    /// <summary>
+    /// Constructs a builder for a <see cref="ValueArray{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <returns>The constructed builder.</returns>
+    public static ValueArray<T>.Builder CreateBuilder<T>() => new();
+
+    /// <summary>
+    /// Builds a <see cref="ValueArray{T}"/> from <paramref name="items"/>.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="items">The items to create the array from.</param>
+    /// <returns>The constructed array containing <paramref name="items"/>.</returns>
+    public static ValueArray<T> Create<T>(params T[] items) =>
+        new(ImmutableArray.Create(items));
+
+    /// <summary>
+    /// Constructs a new <see cref="ValueArray{T}"/> from an <see cref="IEnumerable{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="items">The enumerable of items to construct the array from.</param>
+    /// <returns>The constructed <see cref="ValueArray{T}"/> that contains <paramref name="items"/>.</returns>
+    public static ValueArray<T> ToValueArray<T>(this IEnumerable<T> items) =>
+        new(items.ToImmutableArray());
 }

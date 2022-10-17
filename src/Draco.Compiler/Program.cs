@@ -8,21 +8,13 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = @"
-// Simple hello world
-from System.Console import { WriteLine };
-
-func main() {
-    WriteLine(""Hello, World!"");
-}
+hello();
 ";
         var srcReader = SourceReader.From(src);
         var lexer = new Lexer(srcReader);
-        while (true)
-        {
-            var token = lexer.Lex();
-            Console.WriteLine(token);
-            foreach (var d in token.Diagnostics) Console.WriteLine(d);
-            if (token.Type == TokenType.EndOfInput) break;
-        }
+        var tokenSource = TokenSource.From(lexer);
+        var parser = new Parser(tokenSource);
+        var cu = parser.ParseCompilationUnit();
+        Console.WriteLine(cu.PrettyPrint());
     }
 }

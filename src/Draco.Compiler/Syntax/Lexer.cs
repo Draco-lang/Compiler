@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Diagnostics;
 using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
@@ -64,9 +65,9 @@ internal sealed class Lexer
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
     private readonly Token.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly ImmutableArray<Token>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<Token>();
-    private readonly ImmutableArray<Token>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<Token>();
-    private readonly ImmutableArray<Diagnostic>.Builder diagnosticList = ImmutableArray.CreateBuilder<Diagnostic>();
+    private readonly ValueArray<Token>.Builder leadingTriviaList = ValueArray.CreateBuilder<Token>();
+    private readonly ValueArray<Token>.Builder trailingTriviaList = ValueArray.CreateBuilder<Token>();
+    private readonly ValueArray<Diagnostic>.Builder diagnosticList = ValueArray.CreateBuilder<Diagnostic>();
 
     public Lexer(ISourceReader sourceReader)
     {
@@ -111,11 +112,11 @@ internal sealed class Lexer
         }
 
         // If there was any leading or trailing trivia, we have to add them
-        if (this.leadingTriviaList.Count > 0) this.tokenBuilder.SetLeadingTrivia(this.leadingTriviaList.ToImmutable());
-        if (this.trailingTriviaList.Count > 0) this.tokenBuilder.SetTrailingTrivia(this.trailingTriviaList.ToImmutable());
+        if (this.leadingTriviaList.Count > 0) this.tokenBuilder.SetLeadingTrivia(this.leadingTriviaList.ToValue());
+        if (this.trailingTriviaList.Count > 0) this.tokenBuilder.SetTrailingTrivia(this.trailingTriviaList.ToValue());
 
         // Attach diagnostics, if any
-        if (this.diagnosticList.Count > 0) this.tokenBuilder.SetDiagnostics(this.diagnosticList.ToImmutable());
+        if (this.diagnosticList.Count > 0) this.tokenBuilder.SetDiagnostics(this.diagnosticList.ToValue());
 
         return this.tokenBuilder.Build();
     }
@@ -286,7 +287,7 @@ internal sealed class Lexer
             else
             {
                 // Error, illegal character
-                this.AddError(offset, SyntaxErrors.IllegalCharacterLiteral, (int)ch2);
+                this.AddError(SyntaxErrors.IllegalCharacterLiteral, offset, args: (int)ch2);
                 ++offset;
                 resultChar = " ";
             }
@@ -297,7 +298,7 @@ internal sealed class Lexer
             }
             else
             {
-                this.AddError(offset, SyntaxErrors.UnclosedCharacterLiteral);
+                this.AddError(SyntaxErrors.UnclosedCharacterLiteral, offset);
             }
             // Done
             var text = this.AdvanceWithText(offset);
@@ -523,7 +524,7 @@ internal sealed class Lexer
                         // We build the end token with trivia
                         this.PopMode();
                         this.ParseLeadingTriviaList();
-                        Debug.Assert(this.leadingTriviaList.Count == 2);
+                        Debug.Assert(this.leadingTriviaList.Count is 1 or 2);
                         this.tokenBuilder
                             .SetType(TokenType.MultiLineStringEnd)
                             .SetText(this.AdvanceWithText(3 + mode.ExtendedDelims));
@@ -595,13 +596,13 @@ internal sealed class Lexer
                 else
                 {
                     // TODO: Assign some default here or return early?
-                    this.AddError(offset, SyntaxErrors.ZeroLengthUnicodeCodepoint);
+                    this.AddError(SyntaxErrors.ZeroLengthUnicodeCodepoint, offset);
                 }
             }
             else
             {
                 // TODO: Assign some default here or return early?
-                this.AddError(offset, SyntaxErrors.UnclosedUnicodeCodepoint);
+                this.AddError(SyntaxErrors.UnclosedUnicodeCodepoint, offset);
             }
         }
         // Any single-character escape, find the escaped equivalent
@@ -626,7 +627,7 @@ internal sealed class Lexer
         }
         else
         {
-            this.AddError(offset, SyntaxErrors.IllegalEscapeCharacter, esc);
+            this.AddError(SyntaxErrors.IllegalEscapeCharacter, offset, args: esc);
             ++offset;
             // We return the escaped character literally as a substitute
             return esc.ToString();
@@ -728,11 +729,16 @@ internal sealed class Lexer
     }
 
     // Errors
-    private void AddError(int offset, string message, params object[] args)
+    private void AddError(DiagnosticTemplate template, int offset, params object?[] args)
     {
         // We need to account for leading trivia
         var leadingTriviaWidth = this.leadingTriviaList.Sum(t => t.Width);
-        this.diagnosticList.Add(new(DiagnosticSeverity.Error, string.Format(message, args), leadingTriviaWidth + offset));
+        var location = new Location(leadingTriviaWidth + offset);
+        var diag = Diagnostic.Create(
+            template: template,
+            location: location,
+            formatArgs: args);
+        this.diagnosticList.Add(diag);
     }
 
     // Mode stack

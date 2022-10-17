@@ -9,9 +9,9 @@ internal class Program
     {
         var src = @"
 func main() {
-    WriteLine(""""""
-        \{capitalize(bottles(i))} of beer on the wall, \{bottles(i)} of beer.
-     Take one down, pass it around, \{bottles(i - 1)} of beer on the wall."""""");
+    var a = ;
+    x = 0
+    y = 1
 }
 ";
         var srcReader = SourceReader.From(src);

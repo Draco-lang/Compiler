@@ -462,9 +462,10 @@ internal sealed class Parser
                         // Assume any other expression
                         // TODO: Might not be the best assumption
                         var expr = this.ParseExpr();
-                        if (this.Matches(TokenType.Semicolon, out var semicolon))
+                        if (this.Peek().Type != TokenType.CurlyClose)
                         {
-                            // Just a statement, can continue
+                            // Likely just a statement, can continue
+                            var semicolon = this.Expect(TokenType.Semicolon);
                             stmts.Add(new Stmt.Expr(expr, semicolon));
                         }
                         else

@@ -197,4 +197,13 @@ internal static class ValueArray
     /// <returns>The constructed array containing <paramref name="items"/>.</returns>
     public static ValueArray<T> Create<T>(params T[] items) =>
         new(ImmutableArray.Create(items));
+
+    /// <summary>
+    /// Constructs a new <see cref="ValueArray{T}"/> from an <see cref="IEnumerable{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="items">The enumerable of items to construct the array from.</param>
+    /// <returns>The constructed <see cref="ValueArray{T}"/> that contains <paramref name="items"/>.</returns>
+    public static ValueArray<T> ToValueArray<T>(this IEnumerable<T> items) =>
+        new(items.ToImmutableArray());
 }

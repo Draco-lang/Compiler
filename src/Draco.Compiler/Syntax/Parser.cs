@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Diagnostics;
 using Draco.Compiler.Utilities;
 using static Draco.Compiler.Syntax.ParseTree;
 
@@ -217,8 +218,17 @@ internal sealed class Parser
             return this.ParseLabelDeclaration();
 
         default:
-            // TODO: Error handling
-            throw new NotImplementedException();
+        {
+            var input = this.Synchronize(t => t.Type switch
+            {
+                TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
+                TokenType.Identifier when this.Peek(1).Type == TokenType.Colon => false,
+                _ => true,
+            });
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
+            return new Decl.Unexpected(input, ValueArray.Create(diag));
+        }
         }
     }
 
@@ -282,8 +292,8 @@ internal sealed class Parser
             assignment = (assign, value);
         }
         // Eat semicolon at the end of declaration
-        this.Expect(TokenType.Semicolon);
-        return new Decl.Variable(keyword, identifier, type, assignment);
+        var semicolon = this.Expect(TokenType.Semicolon);
+        return new Decl.Variable(keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
@@ -302,8 +312,7 @@ internal sealed class Parser
             valueParser: () => this.ParsePunctuatedListAllowTrailing(
                 elementParser: this.ParseFuncParam,
                 punctType: TokenType.Comma,
-                stopType: TokenType.ParenClose,
-                allowEmpty: true),
+                stopType: TokenType.ParenClose),
             closeType: TokenType.ParenClose);
 
         // We don't necessarily have type specifier
@@ -344,8 +353,17 @@ internal sealed class Parser
         }
         else
         {
-            // TODO: Error handling
-            throw new NotImplementedException();
+            // NOTE: I'm not sure what's the best strategy here
+            // Maybe if we get to a '=' or '{' we could actually try to re-parse and prepend with the bogus input
+            var input = this.Synchronize(t => t.Type switch
+            {
+                TokenType.Semicolon or TokenType.CurlyClose
+                or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
+                _ => true,
+            });
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
+            return new FuncBody.Unexpected(input, ValueArray.Create(diag));
         }
     }
 
@@ -365,21 +383,18 @@ internal sealed class Parser
 
     private Expr ParseControlFlowExpr(ControlFlowContext ctx)
     {
-        switch (this.Peek().Type)
+        var peekType = this.Peek().Type;
+        Debug.Assert(peekType == TokenType.CurlyOpen
+                  || peekType == TokenType.KeywordIf
+                  || peekType == TokenType.KeywordWhile);
+        return peekType switch
         {
-        case TokenType.CurlyOpen:
-            return this.ParseBlockExpr(ctx);
-
-        case TokenType.KeywordIf:
-            return this.ParseIfExpr(ctx);
-
-        case TokenType.KeywordWhile:
-            return this.ParseWhileExpr(ctx);
-
-        default:
-            // TODO: error handling
-            throw new InvalidOperationException();
-        }
+            TokenType.CurlyOpen => this.ParseBlockExpr(ctx),
+            TokenType.KeywordIf => this.ParseIfExpr(ctx),
+            TokenType.KeywordWhile => this.ParseWhileExpr(ctx),
+            _ => throw new InvalidOperationException(),
+        };
+    }
     }
 
     private Expr ParseControlFlowBody(ControlFlowContext ctx)
@@ -447,9 +462,10 @@ internal sealed class Parser
                         // Assume any other expression
                         // TODO: Might not be the best assumption
                         var expr = this.ParseExpr();
-                        if (this.Matches(TokenType.Semicolon, out var semicolon))
+                        if (this.Peek().Type != TokenType.CurlyClose)
                         {
-                            // Just a statement, can continue
+                            // Likely just a statement, can continue
+                            var semicolon = this.Expect(TokenType.Semicolon);
                             stmts.Add(new Stmt.Expr(expr, semicolon));
                         }
                         else
@@ -612,8 +628,7 @@ internal sealed class Parser
                     valueParser: () => this.ParsePunctuatedListAllowTrailing(
                         elementParser: this.ParseExpr,
                         punctType: TokenType.Comma,
-                        stopType: TokenType.ParenClose,
-                        allowEmpty: true),
+                        stopType: TokenType.ParenClose),
                     closeType: TokenType.ParenClose);
                 result = new Expr.Call(result, args);
             }
@@ -624,8 +639,7 @@ internal sealed class Parser
                     valueParser: () => this.ParsePunctuatedListAllowTrailing(
                         elementParser: this.ParseExpr,
                         punctType: TokenType.Comma,
-                        stopType: TokenType.BracketClose,
-                        allowEmpty: false),
+                        stopType: TokenType.BracketClose),
                     closeType: TokenType.BracketClose);
                 result = new Expr.Call(result, args);
             }
@@ -648,6 +662,7 @@ internal sealed class Parser
         switch (peek.Type)
         {
         case TokenType.LiteralInteger:
+        case TokenType.LiteralCharacter:
         {
             var value = this.Advance();
             return new Expr.Literal(value);
@@ -658,6 +673,10 @@ internal sealed class Parser
             var value = this.Advance();
             return new Expr.Literal(value);
         }
+        case TokenType.LineStringStart:
+            return this.ParseLineString();
+        case TokenType.MultiLineStringStart:
+            return this.ParseMultiLineString();
         case TokenType.Identifier:
         {
             var name = this.Advance();
@@ -673,9 +692,139 @@ internal sealed class Parser
         case TokenType.KeywordWhile:
             return this.ParseControlFlowExpr(ControlFlowContext.Expr);
         default:
-            // TODO: Error handling
-            throw new NotImplementedException();
+        {
+            var input = this.Synchronize(t => t.Type switch
+            {
+                TokenType.Semicolon
+                or TokenType.ParenClose or TokenType.BracketClose or TokenType.CurlyClose => false,
+                var type when expressionStarters.Contains(type) => false,
+                _ => true,
+            });
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
+            return new Expr.Unexpected(input, ValueArray.Create(diag));
         }
+        }
+    }
+
+    private Expr.String ParseLineString()
+    {
+        var openQuote = this.Expect(TokenType.LineStringStart);
+        var content = ValueArray.CreateBuilder<StringPart>();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.StringContent)
+            {
+                var part = this.Advance();
+                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
+            }
+            else if (peek.Type == TokenType.InterpolationStart)
+            {
+                var start = this.Advance();
+                var expr = this.ParseExpr();
+                var end = this.Expect(TokenType.InterpolationEnd);
+                content.Add(new StringPart.Interpolation(start, expr, end));
+            }
+            else
+            {
+                // We need a close quote for line strings then
+                break;
+            }
+        }
+        var closeQuote = this.Expect(TokenType.LineStringEnd);
+        return new(openQuote, content.ToValue(), closeQuote);
+    }
+
+    private Expr.String ParseMultiLineString()
+    {
+        var openQuote = this.Expect(TokenType.MultiLineStringStart);
+        var content = ValueArray.CreateBuilder<StringPart>();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.StringContent || peek.Type == TokenType.StringNewline)
+            {
+                var part = this.Advance();
+                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
+            }
+            else if (peek.Type == TokenType.InterpolationStart)
+            {
+                var start = this.Advance();
+                var expr = this.ParseExpr();
+                var end = this.Expect(TokenType.InterpolationEnd);
+                content.Add(new StringPart.Interpolation(start, expr, end));
+            }
+            else
+            {
+                // We need a close quote for line strings then
+                break;
+            }
+        }
+        var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
+        // We need to check if the close quote is on a newline
+        if (closeQuote.LeadingTrivia.Count > 0)
+        {
+            Debug.Assert(closeQuote.LeadingTrivia.Count <= 2);
+            Debug.Assert(closeQuote.LeadingTrivia[0].Type == TokenType.Newline);
+            if (closeQuote.LeadingTrivia.Count == 2)
+            {
+                // The first trivia was newline, the second must be spaces
+                Debug.Assert(closeQuote.LeadingTrivia[1].Type == TokenType.Whitespace);
+                // For simplicity we rebuild the contents to be able to append diagnostics
+                var newContent = ValueArray.CreateBuilder<StringPart>();
+                // We take the whitespace text and check if every line in the string obeys that as a prefix
+                var prefix = closeQuote.LeadingTrivia[1].Text;
+                var nextIsNewline = true;
+                foreach (var part in content)
+                {
+                    if (part is StringPart.Content contentPart)
+                    {
+                        if (contentPart.Token.Type == TokenType.StringNewline)
+                        {
+                            // Also a newline, don't care, even an empty line is fine
+                            newContent.Add(part);
+                            nextIsNewline = true;
+                            continue;
+                        }
+                        // Actual text content
+                        if (nextIsNewline && !contentPart.Token.Text.StartsWith(prefix))
+                        {
+                            // We are in a newline and the prefixes don't match, that's an error
+                            var location = new Location(0);
+                            var diag = Diagnostic.Create(
+                                SyntaxErrors.InsufficientIndentationInMultiLinString,
+                                location);
+                            var allDiags = contentPart.Diagnostics.Append(diag).ToValueArray();
+                            newContent.Add(new StringPart.Content(contentPart.Token, allDiags));
+                        }
+                        else
+                        {
+                            // Indentation was ok
+                            newContent.Add(part);
+                        }
+                        nextIsNewline = false;
+                    }
+                    else
+                    {
+                        // Interpolation, don't care
+                        newContent.Add(part);
+                        nextIsNewline = false;
+                    }
+                }
+                content = newContent;
+            }
+        }
+        else
+        {
+            // Error, the closing quotes are not on a newline
+            var location = new Location(0);
+            var diag = Diagnostic.Create(
+                SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
+                location);
+            closeQuote = closeQuote.AddDiagnostic(diag);
+        }
+        return new(openQuote, content.ToValue(), closeQuote);
     }
 
     // General utilities
@@ -692,8 +841,7 @@ internal sealed class Parser
     private PunctuatedList<T> ParsePunctuatedListAllowTrailing<T>(
         Func<T> elementParser,
         TokenType punctType,
-        TokenType stopType,
-        bool allowEmpty)
+        TokenType stopType)
     {
         var elements = ValueArray.CreateBuilder<Punctuated<T>>();
         while (true)
@@ -739,6 +887,26 @@ internal sealed class Parser
     // Token-level operators
 
     /// <summary>
+    /// Performs synchronization, meaning it consumes <see cref="Token"/>s from the input
+    /// while a given condition is met.
+    /// </summary>
+    /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
+    /// <returns>The consumed list of <see cref="Token"/>s.</returns>
+    private ValueArray<Token> Synchronize(Func<Token, bool> keepGoing)
+    {
+        // NOTE: A possible improvement could be to track opening and closing token pairs optionally
+        var input = ValueArray.CreateBuilder<Token>();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek.Type == TokenType.EndOfInput) break;
+            if (!keepGoing(peek)) break;
+            input.Add(this.Advance());
+        }
+        return input.ToValue();
+    }
+
+    /// <summary>
     /// Expects a certain kind of token to be at the current position.
     /// If it is, the token is consumed.
     /// </summary>
@@ -746,8 +914,14 @@ internal sealed class Parser
     /// <returns>The consumed <see cref="Token"/>.</returns>
     private Token Expect(TokenType type)
     {
-        // TODO: Error handling
-        if (!this.Matches(type, out var token)) throw new NotImplementedException();
+        if (!this.Matches(type, out var token))
+        {
+            // We construct an empty token that signals that this is missing from the tree
+            // The attached diagnostic message describes what is missing
+            var location = new Location(0);
+            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: type);
+            return Token.From(type, string.Empty, ValueArray.Create(diag));
+        }
         return token;
     }
 

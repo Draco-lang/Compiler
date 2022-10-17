@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Diagnostics;
 using Draco.Compiler.Utilities;
 
 namespace Draco.Compiler.Syntax;
@@ -12,7 +13,7 @@ namespace Draco.Compiler.Syntax;
 /// Represents a piece of source code that has an associated category and can be considered atomic during parsing.
 /// Stores surrounding trivia and lexical errors.
 /// </summary>
-internal sealed partial record class Token
+internal sealed partial record class Token : ParseTree
 {
     /// <summary>
     /// The <see cref="TokenType"/> of this <see cref="Token"/>.
@@ -52,7 +53,7 @@ internal sealed partial record class Token
     /// <summary>
     /// The <see cref="Diagnostic"/> messages attached to this <see cref="Token"/>.
     /// </summary>
-    public ValueArray<Diagnostic> Diagnostics { get; }
+    public override ValueArray<Diagnostic> Diagnostics { get; }
 
     private Token(
         TokenType type,
@@ -70,6 +71,20 @@ internal sealed partial record class Token
         this.TrailingTrivia = trailingTrivia;
         this.Diagnostics = diagnostics;
     }
+
+    /// <summary>
+    /// Appends a <see cref="Diagnostic"/> to this <see cref="Token"/>.
+    /// </summary>
+    /// <param name="diagnostic">The <see cref="Diagnostic"/> to append.</param>
+    /// <returns>A new <see cref="Token"/> with all information as this one plus the appended
+    /// <paramref name="diagnostic"/>.</returns>
+    public Token AddDiagnostic(Diagnostic diagnostic) => new(
+        type: this.Type,
+        text: this.Text,
+        value: this.Value,
+        leadingTrivia: this.LeadingTrivia,
+        trailingTrivia: this.TrailingTrivia,
+        diagnostics: this.Diagnostics.Append(diagnostic).ToValueArray());
 
     /// <inheritdoc/>
     public override string ToString()
@@ -123,6 +138,24 @@ internal partial record class Token
         leadingTrivia: ValueArray<Token>.Empty,
         trailingTrivia: ValueArray<Token>.Empty,
         diagnostics: ValueArray<Diagnostic>.Empty);
+
+    /// <summary>
+    /// Constructs a <see cref="Token"/> from <paramref name="type"/>, <paramref name="text"/> and
+    /// <paramref name="diagnostics"/>.
+    /// </summary>
+    /// <param name="type">The <see cref="TokenType"/> of the token to be constructed.</param>
+    /// <param name="text">The text the <see cref="Token"/> is produced from.</param>
+    /// <param name="diagnostics">The list of <see cref="Diagnostic"/> messages associated with this
+    /// <see cref="Token"/>.</param>
+    /// <returns>The constructed <see cref="Token"/> with type <paramref name="type"/>,
+    /// text <paramref name="text"/> and diagnostic list <paramref name="diagnostics"/>.</returns>
+    public static Token From(TokenType type, string text, ValueArray<Diagnostic> diagnostics) => new(
+        type: type,
+        text: text,
+        value: null,
+        leadingTrivia: ValueArray<Token>.Empty,
+        trailingTrivia: ValueArray<Token>.Empty,
+        diagnostics: diagnostics);
 }
 
 // Builder type

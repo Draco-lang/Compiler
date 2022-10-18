@@ -171,7 +171,28 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
 
     public override Unit VisitContentStringPart(StringPart.Content stringPart)
     {
-        this.output.Append($"\"{this.escapeString(stringPart.Token.ValueText!)}\"");
+        
+        this.output.Append('\"');
+        // Escaping chars
+        foreach (char c in stringPart.Token.ValueText!)
+        {
+            this.output.Append(c switch
+            {
+                '\"' => @"\\\""",
+                '\'' => @"\\\'",
+                '\\' => @"\\",
+                '\a' => @"\a",
+                '\b' => @"\b",
+                '\f' => @"\f",
+                '\n' => @"\n",
+                '\r' => @"\r",
+                '\t' => @"\t",
+                '\v' => @"\v",
+                '\0' => @"\0",
+                _ => c
+            });
+        }
+        this.output.Append('\"');
         return this.Default;
     }
 
@@ -183,25 +204,4 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    private string escapeString(string original)
-    {
-        Dictionary<string, string> escapeMapping = new Dictionary<string, string>()
-        {
-            {"\"", @"\\\"""},
-            {"\\\\", @"\\"},
-            {"\a", @"\a"},
-            {"\b", @"\b"},
-            {"\f", @"\f"},
-            {"\n", @"\n"},
-            {"\r", @"\r"},
-            {"\t", @"\t"},
-            {"\v", @"\v"},
-            {"\0", @"\0"},
-        };
-        foreach (var item in escapeMapping)
-        {
-            original = original.Replace(item.Key, item.Value);
-        }
-        return original;
-    }
 }

@@ -64,7 +64,7 @@ public sealed class TreeGenerator
             this.writer
                 .Write("private").Separate()
                 .Write("readonly").Separate()
-                .Write(this.root.ToDisplayString()).Separate()
+                .Write(this.root).Separate()
                 .Write(this.settings.GreenName)
                 .WriteLine(";");
         }
@@ -108,7 +108,9 @@ public sealed class TreeGenerator
                     .Write($"(({greenType.ToDisplayString()}){this.settings.GreenName}).{prop.Name}")
                     .WriteLine(");");
                 this.writer.CloseBrace();
-                this.writer.WriteLine($"return this.{UnCapitalize(prop.Name)};");
+                this.writer.Write($"return this.{UnCapitalize(prop.Name)}");
+                if (prop.Type.IsValueType) this.writer.Write(".Value");
+                this.writer.WriteLine(";");
                 this.writer
                     .CloseBrace()
                     .CloseBrace();
@@ -121,19 +123,19 @@ public sealed class TreeGenerator
                     .Write(redType).Separate()
                     .Write(prop.Name).Separate()
                     .Write("=>").Separate()
-                    .WriteLine($"this.{this.settings.GreenName}.{prop.Name};");
+                    .WriteLine($"(({greenType.ToDisplayString()})this.{this.settings.GreenName}).{prop.Name};");
             }
         }
 
         // Constructor
         this.writer
             .Write("public").Separate()
-            .Write(greenType.Name).Write('(')
+            .Write(this.ToRedClassName(greenType)).Write('(')
             // Parent
             .Write(this.ToRedClassName(this.root)).Write('?')
             .Write($" {UnCapitalize(this.settings.ParentName)}, ")
             // Green
-            .Write(this.root.ToDisplayString()).Write(' ').Write(this.settings.GreenName)
+            .Write(this.root).Write(' ').Write(this.settings.GreenName)
             .Write(')');
         if (SymbolEqualityComparer.Default.Equals(this.root, greenType))
         {

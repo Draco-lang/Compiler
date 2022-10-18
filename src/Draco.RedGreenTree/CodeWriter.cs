@@ -35,6 +35,9 @@ internal sealed class CodeWriter
     public CodeWriter Write(Accessibility accessibility) =>
         this.Separate().Write(accessibility.ToString().ToLower());
 
+    public CodeWriter Write(INamedTypeSymbol type) =>
+        this.Separate().Write(type.ToDisplayString());
+
     public CodeWriter BlankLine()
     {
         if (!this.IsBlankLine) this.WriteLine();

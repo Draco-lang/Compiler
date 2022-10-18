@@ -106,8 +106,11 @@ public sealed class TreeGenerator
                     .Write($"if (this.{UnCapitalize(prop.Name)} is null)")
                     .OpenBrace();
                 this.writer
-                    .Write($"this.{UnCapitalize(prop.Name)} = {this.settings.ToRedMethodName}")
+                    .Write($"this.{UnCapitalize(prop.Name)} = ({redType})")
+                    .Write(this.settings.ToRedMethodName)
                     .Write('(')
+                    .Write("this, ")
+                    .Write($"(({greenType.ToDisplayString()}){this.settings.GreenName}).{prop.Name}")
                     .WriteLine(");");
                 this.writer.CloseBrace();
                 this.writer.WriteLine($"return this.{UnCapitalize(prop.Name)};");

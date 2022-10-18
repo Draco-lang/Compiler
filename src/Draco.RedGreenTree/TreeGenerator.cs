@@ -50,29 +50,24 @@ public sealed class TreeGenerator
 
         this.writer.OpenBrace();
 
-#if false
         // Data members
         // First off, the parent node and a green node, in case this is the root
         if (SymbolEqualityComparer.Default.Equals(this.root, greenType))
         {
             // Parent
-            this.Indent();
-            this.builder
-                .Append("public ")
-                .Append(this.settings.GreenToRedName(this.root.Name))
-                .Append("? ")
-                .Append(this.settings.ParentName)
-                .AppendLine(" { get; }");
+            this.writer
+                .Write("public").Separate()
+                .Write(this.ToRedClassName(this.root)).Write('?').Separate()
+                .Write(this.settings.ParentName)
+                .WriteLine(" { get; }");
             // Green node
-            this.Indent();
-            this.builder
-                .Append("private readonly ")
-                .Append(this.root.ToDisplayString())
-                .Append(' ')
-                .Append(this.settings.GreenName)
-                .AppendLine(";");
+            this.writer
+                .Write("private").Separate()
+                .Write("readonly").Separate()
+                .Write(this.root.ToDisplayString()).Separate()
+                .Write(this.settings.GreenName)
+                .WriteLine(";");
         }
-#endif
         // Other members
         foreach (var member in greenType.GetMembers())
         {
@@ -128,6 +123,32 @@ public sealed class TreeGenerator
                     .Write("=>").Separate()
                     .WriteLine($"this.{this.settings.GreenName}.{prop.Name};");
             }
+        }
+
+        // Constructor
+        this.writer
+            .Write("public").Separate()
+            .Write(greenType.Name).Write('(')
+            // Parent
+            .Write(this.ToRedClassName(this.root)).Write('?')
+            .Write($" {UnCapitalize(this.settings.ParentName)}, ")
+            // Green
+            .Write(this.root.ToDisplayString()).Write(' ').Write(this.settings.GreenName)
+            .Write(')');
+        if (SymbolEqualityComparer.Default.Equals(this.root, greenType))
+        {
+            this.writer.OpenBrace();
+            this.writer
+                .WriteLine($"this.{this.settings.ParentName} = {UnCapitalize(this.settings.ParentName)};")
+                .WriteLine($"this.{this.settings.GreenName} = {this.settings.GreenName};");
+            this.writer.CloseBrace();
+        }
+        else
+        {
+            // Call to base
+            this.writer
+                .Write($" : base({UnCapitalize(this.settings.ParentName)}, {this.settings.GreenName})");
+            this.writer.OpenBrace().CloseBrace();
         }
 
         // Nested types

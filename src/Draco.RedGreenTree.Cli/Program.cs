@@ -318,6 +318,8 @@ internal partial record class ParseTree
             Token CloseToken) : StringPart;
     }
 }
+
+record struct ValueArray<T>;
 """;
         var parseTree = CSharpSyntaxTree.ParseText(source);
         var compilation = CSharpCompilation.Create("MyCompilation", new[] { parseTree }, new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) });

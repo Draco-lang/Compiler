@@ -28,6 +28,15 @@ public sealed class TreeGenerator
     private string ToRedClassName(INamedTypeSymbol greenNode) =>
         this.settings.GreenToRedName(greenNode.Name);
 
+    private string ToFullRedClassName(INamedTypeSymbol greenNode)
+    {
+        if (greenNode.BaseType is not null && IsBaseOf(this.root, greenNode.BaseType))
+        {
+            return $"{this.ToFullRedClassName(greenNode.BaseType)}.{this.ToRedClassName(greenNode)}";
+        }
+        return this.ToRedClassName(greenNode);
+    }
+
     public void GenerateClass(INamedTypeSymbol greenType)
     {
         // Check if part of the tree
@@ -35,10 +44,11 @@ public sealed class TreeGenerator
 
         // Class header
         this.writer.Write(this.settings.RedAccessibility);
+        if (HidesInherited(greenType)) this.writer.Separate().Write("new");
         if (greenType.IsAbstract) this.writer.Separate().Write("abstract");
         if (greenType.IsSealed) this.writer.Separate().Write("sealed");
         if (greenType.IsReadOnly) this.writer.Separate().Write("readonly");
-        if (this.settings.RedIsPartial) this.writer.Separate().Write("partial");
+        this.writer.Separate().Write("partial");
         if (greenType.IsRecord) this.writer.Separate().Write("record");
         this.writer.Separate().Write(greenType.IsValueType ? "struct" : "class");
         this.writer.Separate().Write(this.ToRedClassName(greenType));
@@ -57,7 +67,7 @@ public sealed class TreeGenerator
             // Parent
             this.writer
                 .Write("public").Separate()
-                .Write(this.ToRedClassName(this.root)).Write('?').Separate()
+                .Write(this.ToFullRedClassName(this.root)).Write('?').Separate()
                 .Write(this.settings.ParentName)
                 .WriteLine(" { get; }");
             // Green node
@@ -71,18 +81,20 @@ public sealed class TreeGenerator
         // Other members
         foreach (var member in greenType.GetMembers())
         {
-            // We only consider properties
+            // We only consider public properties
             if (member is not IPropertySymbol prop) continue;
+            if (prop.DeclaredAccessibility != Accessibility.Public) continue;
+            // Already implemented in base
+            if (prop.IsOverride) continue;
             // Record-stuff
-            if (greenType.IsRecord && member.Name == "EqualityContract") continue;
+            if (greenType.IsRecord && prop.Name == "EqualityContract") continue;
             // Cached field
             var (redType, hasGreen) = this.TranslareToRedType(prop.Type);
             if (hasGreen)
             {
-                this.writer
-                    .Write("private").Separate()
-                    .Write(redType);
-                if (prop.Type.NullableAnnotation != NullableAnnotation.Annotated) this.writer.Write('?');
+                this.writer.Write("private").Separate();
+                this.writer.Write(redType);
+                if (!redType.EndsWith("?")) this.writer.Write('?');
                 this.writer.Separate()
                     .Write(UnCapitalize(prop.Name)).WriteLine(";");
             }
@@ -106,7 +118,7 @@ public sealed class TreeGenerator
                     .Write('(')
                     .Write("this, ")
                     .Write($"(({greenType.ToDisplayString()}){this.settings.GreenName}).{prop.Name}")
-                    .WriteLine(");");
+                    .WriteLine(")!;");
                 this.writer.CloseBrace();
                 this.writer.Write($"return this.{UnCapitalize(prop.Name)}");
                 if (prop.Type.IsValueType) this.writer.Write(".Value");
@@ -190,13 +202,40 @@ public sealed class TreeGenerator
             return ($"{nameRoot}<{string.Join(", ", typeArgs.Select(e => e.Text))}>", typeArgs.Any(e => e.HasGreen));
         }
         // Green subclasses
-        if (IsBaseOf(this.root, namedSymbol)) return (this.ToRedClassName(namedSymbol), true);
+        if (IsBaseOf(this.root, namedSymbol)) return (this.ToFullRedClassName(namedSymbol), true);
         // Anything else
         return (symbol.ToDisplayString(), false);
     }
 
-    private static string UnCapitalize(string name) =>
-        $"{char.ToLower(name[0])}{name.Substring(1)}";
+    private static string UnCapitalize(string name)
+    {
+        var result = $"{char.ToLower(name[0])}{name.Substring(1)}";
+        return EscapeKeyword(result);
+    }
+
+    private static readonly string[] keywords = new[]
+    {
+        "else", "object", "params"
+    };
+
+    private static string EscapeKeyword(string name)
+    {
+        if (keywords.Contains(name)) return $"@{name}";
+        return name;
+    }
+
+    private static bool HidesInherited(ITypeSymbol what)
+    {
+        bool Impl(ITypeSymbol? context)
+        {
+            if (context is null) return false;
+            if (context.ToDisplayString() == "object") return false;
+            if (context.Name == what.Name) return true;
+            if (context.GetMembers(what.Name).Any(s => !SymbolEqualityComparer.Default.Equals(s, what))) return true;
+            return Impl(context.BaseType);
+        }
+        return Impl(what.BaseType);
+    }
 
     private static bool IsBaseOf(INamedTypeSymbol? @base, INamedTypeSymbol derived)
     {

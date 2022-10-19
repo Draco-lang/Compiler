@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -29,6 +30,18 @@ internal sealed class CodeWriter
         --this.indentation;
         this.BlankLine();
         this.WriteLine("}");
+        return this;
+    }
+
+    public CodeWriter WriteDocs(string doc)
+    {
+        using var reader = new StringReader(doc);
+        while (true)
+        {
+            var line = reader.ReadLine();
+            if (line is null) break;
+            this.Write("/// ").WriteLine(line);
+        }
         return this;
     }
 

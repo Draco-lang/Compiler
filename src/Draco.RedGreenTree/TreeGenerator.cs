@@ -66,6 +66,12 @@ public sealed class TreeGenerator
         {
             // Parent
             this.writer
+                .WriteDocs("""
+                <summary>
+                The parent of this tree node.
+                </summary>
+                """);
+            this.writer
                 .Write("public").Separate()
                 .Write(this.ToFullRedClassName(this.root)).Write('?').Separate()
                 .Write(this.settings.ParentName)

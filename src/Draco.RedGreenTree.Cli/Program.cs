@@ -328,7 +328,7 @@ record struct ValueArray<T>;
         var semanticModel = compilation.GetSemanticModel(parseTree);
         var rootType = semanticModel.GetDeclaredSymbol(parseTree.GetRoot().DescendantNodes().OfType<RecordDeclarationSyntax>().First());
 
-        var generatedCode = GreenTreeGenerator.Generate(rootType!);
+        var generatedCode = RedTreeGenerator.Generate(rootType!);
         Console.WriteLine(generatedCode);
     }
 }

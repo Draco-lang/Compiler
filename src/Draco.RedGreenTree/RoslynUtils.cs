@@ -52,6 +52,7 @@ internal static class RoslynUtils
     public static string GetTypeKind(this ITypeSymbol type, bool partial = false)
     {
         var result = new StringBuilder();
+        if (type.HidesInherited()) result.Append("new ");
         if (type.IsAbstract) result.Append("abstract ");
         if (type.IsSealed) result.Append("sealed ");
         if (type.IsReadOnly) result.Append("readonly ");

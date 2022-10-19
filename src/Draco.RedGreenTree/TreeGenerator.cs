@@ -12,6 +12,7 @@ public sealed class TreeGenerator
     {
         var generator = new TreeGenerator(settings, rootType);
         generator.GenerateClass(rootType);
+        generator.GenerateMappingFunction();
         return generator.writer.Code;
     }
 
@@ -37,10 +38,74 @@ public sealed class TreeGenerator
         return this.ToRedClassName(greenNode);
     }
 
+    private IEnumerable<INamedTypeSymbol> EnumerateAllNestedTypes(INamedTypeSymbol symbol)
+    {
+        yield return symbol;
+        foreach (var item in symbol.GetTypeMembers())
+        {
+            if (!IsBaseOf(this.root, item)) continue;
+            foreach (var subElement in this.EnumerateAllNestedTypes(item)) yield return subElement;
+        }
+    }
+
+    public void GenerateMappingFunction()
+    {
+        this.writer.Write(this.settings.RedAccessibility);
+        if (this.root.IsAbstract) this.writer.Separate().Write("abstract");
+        if (this.root.IsSealed) this.writer.Separate().Write("sealed");
+        if (this.root.IsReadOnly) this.writer.Separate().Write("readonly");
+        this.writer.Separate().Write("partial");
+        if (this.root.IsRecord) this.writer.Separate().Write("record");
+        this.writer.Separate().Write(this.root.IsValueType ? "struct" : "class");
+        this.writer.Separate().Write(this.ToRedClassName(this.root));
+
+        this.writer.OpenBrace();
+
+        this.writer
+            .Write("internal").Separate()
+            .Write("static").Separate()
+            .Write(this.ToRedClassName(this.root)).Separate()
+            .Write(this.settings.ToRedMethodName)
+            .Write('(')
+            .Write(this.ToRedClassName(this.root))
+            .Write(' ')
+            .Write("parent")
+            .Write(", ")
+            .Write(this.root.ToDisplayString())
+            .Write(' ')
+            .Write("green")
+            .WriteLine(")")
+            .OpenBrace();
+
+        this.writer
+            .WriteLine("switch (node)")
+            .OpenBrace();
+
+        foreach (var type in this.EnumerateAllNestedTypes(this.root))
+        {
+            if (type.IsAbstract) continue;
+            this.writer.WriteLine($"case {type.ToDisplayString()} sub:");
+            this.writer.OpenBrace();
+            this.writer.WriteLine($"return new {this.ToFullRedClassName(type)}(parent, green);");
+            this.writer.CloseBrace();
+        }
+
+        this.writer.Write($"default:");
+        this.writer.OpenBrace();
+        this.writer.WriteLine("throw new System.InvalidOperationException();");
+        this.writer.CloseBrace();
+
+        this.writer.CloseBrace();
+        this.writer.CloseBrace();
+        this.writer.CloseBrace();
+    }
+
     public void GenerateClass(INamedTypeSymbol greenType)
     {
         // Check if part of the tree
         if (!IsBaseOf(this.root, greenType)) return;
+
+        var isRoot = SymbolEqualityComparer.Default.Equals(this.root, greenType);
 
         // Class header
         this.writer.Write(this.settings.RedAccessibility);
@@ -62,7 +127,7 @@ public sealed class TreeGenerator
 
         // Data members
         // First off, the parent node and a green node, in case this is the root
-        if (SymbolEqualityComparer.Default.Equals(this.root, greenType))
+        if (isRoot)
         {
             // Parent
             this.writer
@@ -155,7 +220,7 @@ public sealed class TreeGenerator
             // Green
             .Write(this.root).Write(' ').Write(this.settings.GreenName)
             .Write(')');
-        if (SymbolEqualityComparer.Default.Equals(this.root, greenType))
+        if (isRoot)
         {
             this.writer.OpenBrace();
             this.writer

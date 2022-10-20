@@ -121,8 +121,12 @@ public sealed class VisitorGenerator
                 if (!this.treeNodes.Contains(prop.Type)) continue;
 #pragma warning restore RS1024 // Symbols should be compared for equality
 
-                var methodName = this.GetVisitorMethodName((INamedTypeSymbol)prop.Type);
-                this.writer.Write($"this.{methodName}(node.{prop.Name});");
+                var propType = (INamedTypeSymbol)prop.Type;
+                if (propType.NullableAnnotation == NullableAnnotation.Annotated)
+                {
+                    this.writer.Write($"if (node.{prop.Name} is not null)");
+                }
+                this.writer.Write($"this.{this.GetVisitorMethodName(propType)}(node.{prop.Name});");
             }
             this.writer
                 .Write("}");

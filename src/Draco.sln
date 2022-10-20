@@ -7,9 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler", "Draco.Com
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Tests", "Draco.Compiler.Tests\Draco.Compiler.Tests.csproj", "{3732FD91-27D9-478F-B5B3-38D3C10B40C8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.RedGreenTree", "Draco.RedGreenTree\Draco.RedGreenTree.csproj", "{4C08CDD1-8B9B-49C3-9372-3919020E6B64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree", "Draco.RedGreenTree\Draco.RedGreenTree.csproj", "{4C08CDD1-8B9B-49C3-9372-3919020E6B64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.RedGreenTree.Cli", "Draco.RedGreenTree.Cli\Draco.RedGreenTree.Cli.csproj", "{6429EFEC-EA0B-4B38-9D21-04220D977841}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.Cli", "Draco.RedGreenTree.Cli\Draco.RedGreenTree.Cli.csproj", "{6429EFEC-EA0B-4B38-9D21-04220D977841}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.RedGreenTree.SourceGeneration", "Draco.RedGreenTree.SourceGeneration\Draco.RedGreenTree.SourceGeneration.csproj", "{870FB370-834F-43B6-91AC-E56791014490}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Release|Any CPU.Build.0 = Release|Any CPU
+		{870FB370-834F-43B6-91AC-E56791014490}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{870FB370-834F-43B6-91AC-E56791014490}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{870FB370-834F-43B6-91AC-E56791014490}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{870FB370-834F-43B6-91AC-E56791014490}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

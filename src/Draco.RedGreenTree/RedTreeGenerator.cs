@@ -28,8 +28,8 @@ public sealed class RedTreeGenerator
     }
 
     private static string ToCamelCase(string text) => $"{char.ToLower(text[0])}{text.Substring(1)}";
-    private static string GetRedClassName(INamedTypeSymbol type) => $"Red{type.Name}";
-    private static string GetFullRedClassName(INamedTypeSymbol type) =>
+    public static string GetRedClassName(INamedTypeSymbol type) => $"Red{type.Name}";
+    public static string GetFullRedClassName(INamedTypeSymbol type) =>
         string.Join(".", type.EnumerateNestingChain().Select(GetRedClassName));
 
     private void GenerateClasses()

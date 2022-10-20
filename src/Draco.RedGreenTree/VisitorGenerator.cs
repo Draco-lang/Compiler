@@ -22,6 +22,7 @@ public sealed class VisitorGenerator
 
     private readonly INamedTypeSymbol root;
     private readonly HashSet<INamedTypeSymbol> treeNodes;
+    private readonly Dictionary<INamedTypeSymbol, string> visitorNames;
     private readonly CodeWriter writer = new();
 
     private VisitorGenerator(INamedTypeSymbol root)
@@ -31,16 +32,41 @@ public sealed class VisitorGenerator
         var relevantNodes = root
             .EnumerateContainedTypeTree()
             .Where(n => n.DeclaredAccessibility == Accessibility.Public);
+        this.visitorNames = new(SymbolEqualityComparer.Default);
         foreach (var n in relevantNodes) this.treeNodes.Add(n);
+    }
+
+    private void ExtractCustomVisitorMethods(INamedTypeSymbol visitorType)
+    {
+        var result = new Dictionary<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
+        var methods = visitorType
+            .GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(m => m.DeclaredAccessibility == Accessibility.Public)
+            .Where(m => !m.IsStatic)
+            .Where(m => m.Parameters.Length == 1)
+            .Where(m => m.Parameters[0] is INamedTypeSymbol)
+            .Where(m => m.Name.StartsWith("Visit"));
+        foreach (var m in methods) this.visitorNames.Add((INamedTypeSymbol)m.Parameters[0].Type, m.Name);
     }
 
     private string GetVisitorMethodName(INamedTypeSymbol symbol)
     {
-        // For anything not part of the tree, we just generate a VisitNAME
-        if (!symbol.IsSubtypeOf(this.root)) return $"Visit{symbol.Name}";
-        // For anything else, we read up the names in reverse order, excluding the root
-        var parts = symbol.EnumerateNestingChain().Skip(1).Reverse().Select(n => n.Name);
-        return $"Visit{string.Join("", parts)}";
+        string GenerateVisitorMethodName()
+        {
+            // For anything not part of the tree, we just generate a VisitNAME
+            if (!symbol.IsSubtypeOf(this.root)) return $"Visit{symbol.Name}";
+            // For anything else, we read up the names in reverse order, excluding the root
+            var parts = symbol.EnumerateNestingChain().Skip(1).Reverse().Select(n => n.Name);
+            return $"Visit{string.Join("", parts)}";
+        }
+
+        if (!this.visitorNames.TryGetValue(symbol, out var visitorName))
+        {
+            visitorName = GenerateVisitorMethodName();
+            this.visitorNames.Add(symbol, visitorName);
+        }
+        return visitorName;
     }
 
     private void GenerateVisitorInterface()
@@ -116,17 +142,18 @@ public sealed class VisitorGenerator
                 .Write("{");
             foreach (var prop in type.GetSanitizedProperties())
             {
-                // NOTE: The set receives the appropriate comparer
-#pragma warning disable RS1024 // Symbols should be compared for equality
-                if (!this.treeNodes.Contains(prop.Type)) continue;
-#pragma warning restore RS1024 // Symbols should be compared for equality
+                if (prop.Type is not INamedTypeSymbol propType) continue;
+                // We check in the visitorNames dictionary because that contains the custom visitors too
+                if (!this.visitorNames.ContainsKey(propType)
+                 && !this.treeNodes.Contains(propType)) continue;
 
-                var propType = (INamedTypeSymbol)prop.Type;
+                var accessor = string.Empty;
                 if (propType.NullableAnnotation == NullableAnnotation.Annotated)
                 {
+                    if (propType.IsValueType) accessor = ".Value";
                     this.writer.Write($"if (node.{prop.Name} is not null)");
                 }
-                this.writer.Write($"this.{this.GetVisitorMethodName(propType)}(node.{prop.Name});");
+                this.writer.Write($"this.{this.GetVisitorMethodName(propType)}(node.{prop.Name}{accessor});");
             }
             this.writer
                 .Write("}");

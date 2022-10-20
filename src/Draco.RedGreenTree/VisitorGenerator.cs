@@ -101,7 +101,7 @@ public sealed class VisitorGenerator
                     .Write(subtype.ToDisplayString())
                     .Write("n")
                     .Write("=>")
-                    .Write($"{this.GetVisitorMethodName(subtype)}(n),");
+                    .Write($"this.{this.GetVisitorMethodName(subtype)}(n),");
             }
             this.writer
                 .Write("_ => throw new System.ArgumentOutOfRangeException(nameof(node)),")

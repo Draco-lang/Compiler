@@ -83,6 +83,7 @@ public sealed class VisitorGenerator
         {
             var methodName = this.GenerateVisitorMethodName(node);
             if (this.customMethodNames.Contains(methodName)) continue;
+            if (!node.IsSubtypeOf(this.rootType)) continue;
             this.writer
                 .Write("public")
                 .Write("T")

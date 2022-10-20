@@ -65,6 +65,13 @@ public sealed class VisitorGenerator
 
     private string GenerateVisitorMethodName(INamedTypeSymbol symbol)
     {
+        // Nullable value types are unwrapped
+        if (symbol.IsValueType
+         && symbol.NullableAnnotation == NullableAnnotation.Annotated
+         && symbol.TypeArguments[0] is INamedTypeSymbol namedTypeArg)
+        {
+            symbol = namedTypeArg;
+        }
         // For anything not part of the tree, we just generate a VisitNAME
         if (!symbol.IsSubtypeOf(this.rootType)) return $"Visit{symbol.Name}";
         // For anything else, we read up the names in reverse order, excluding the root

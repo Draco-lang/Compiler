@@ -2,6 +2,7 @@ namespace Draco.Compiler.Syntax;
 
 internal partial interface IParseTreeVisitor<out T>
 {
+    public T Visit(Draco.Compiler.Syntax.ParseTree node);
     public T VisitCompilationUnit(Draco.Compiler.Syntax.ParseTree.CompilationUnit node);
     public T VisitDecl(Draco.Compiler.Syntax.ParseTree.Decl node);
     public T VisitUnexpectedDecl(Draco.Compiler.Syntax.ParseTree.Decl.Unexpected node);

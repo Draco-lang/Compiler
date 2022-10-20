@@ -47,8 +47,7 @@ public sealed class VisitorGenerator
     private void ExtractTreeNodes()
     {
         var relevantNodes = this.rootType
-            .EnumerateContainedTypeTree()
-            .Where(n => n.DeclaredAccessibility == Accessibility.Public);
+            .EnumerateContainedTypeTree();
         foreach (var n in relevantNodes) this.treeNodes.Add(n);
     }
 
@@ -121,6 +120,7 @@ public sealed class VisitorGenerator
             .EnumerateContainedTypeTree()
             .Where(n => !SymbolEqualityComparer.Default.Equals(n, type))
             .Where(this.treeNodes.Contains)
+            .Where(n => SymbolEqualityComparer.Default.Equals(n.BaseType, type))
             .OrderBy(x => x, Comparer<INamedTypeSymbol>.Create((a, b) => AbstractFirst(a) - AbstractFirst(b)))
             .ToList();
 

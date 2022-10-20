@@ -27,7 +27,10 @@ public sealed class RedTreeGenerator
         this.greenRoot = root;
     }
 
+    private static string ToCamelCase(string text) => $"{char.ToLower(text[0])}{text.Substring(1)}";
     private static string GetRedClassName(INamedTypeSymbol type) => $"Red{type.Name}";
+    private static string GetFullRedClassName(INamedTypeSymbol type) =>
+        string.Join(".", type.EnumerateNestingChain().Select(GetRedClassName));
 
     private void GenerateClasses()
     {
@@ -59,10 +62,60 @@ public sealed class RedTreeGenerator
         }
 
         this.GenerateGreenPropertyForType(type);
+        this.GenerateProjectedPropertiesForType(type);
         this.GenerateConstructorForType(type);
 
         // Close braces
         foreach (var _ in type.EnumerateNestingChain()) this.writer.Write("}");
+    }
+
+    private void GenerateProjectedPropertiesForType(INamedTypeSymbol type)
+    {
+        var relevantProps = type
+            .GetSanitizedProperties()
+            // Only care about public
+            .Where(p => p.DeclaredAccessibility == Accessibility.Public)
+            // Overriden ones are implemented in base already
+            .Where(p => !p.IsOverride);
+        foreach (var prop in relevantProps)
+        {
+            this.GenerateProjectedProperty(prop);
+        }
+    }
+
+    private void GenerateProjectedProperty(IPropertySymbol prop)
+    {
+        var (redType, hasGreen) = this.TranslareToRedType(prop.Type);
+        if (hasGreen)
+        {
+            // We need a cache property
+            var cachedRedType = redType.EndsWith("?") ? redType : $"{redType}?";
+            var cachedRedName = RoslynUtils.EscapeKeyword(ToCamelCase(prop.Name));
+            this.writer
+                .Write("private")
+                .Write(cachedRedType)
+                .Write(cachedRedName)
+                .Write(";");
+
+            // Write the cached projection
+            var accessorSuffix = prop.Type.IsValueType ? ".Value" : string.Empty;
+            this.writer
+                .Write(prop.DeclaredAccessibility)
+                .Write(redType)
+                .Write(prop.Name)
+                .Write("=>")
+                .Write($"this.{cachedRedName} ??= ({redType})ToRedNode(this, this.Green.{prop.Name});");
+        }
+        else
+        {
+            // Just map one-to-one from the green node
+            this.writer
+                .Write(prop.DeclaredAccessibility)
+                .Write(redType)
+                .Write(prop.Name)
+                .Write("=>")
+                .Write($"this.Green.{prop.Name};");
+        }
     }
 
     private void GenerateGreenPropertyForType(INamedTypeSymbol type)
@@ -84,10 +137,12 @@ public sealed class RedTreeGenerator
         if (SymbolEqualityComparer.Default.Equals(type, this.greenRoot))
         {
             this.writer
-                .Write("{")
-                .Write("this.Parent = parent;")
-                .Write("this.green = green;")
-                .Write("}");
+                .Write("""
+                {
+                    this.Parent = parent;
+                    this.green = green;
+                }
+                """);
         }
         else
         {
@@ -107,25 +162,65 @@ public sealed class RedTreeGenerator
             .Write("{");
 
         this.writer
+            .Write("[return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(green))]")
             .Write("internal")
-            .Write(redRoot)
-            .Write($"ToRedNode({redRoot}? parent, {this.greenRoot.ToDisplayString()} green) => green switch")
+            .Write($"{redRoot}?")
+            .Write($"ToRedNode({redRoot}? parent, {this.greenRoot.ToDisplayString()}? green) => green switch")
             .Write("{");
 
         foreach (var greenType in this.greenRoot.EnumerateContainedTypeTree())
         {
             if (!greenType.IsSubtypeOf(this.greenRoot)) continue;
             if (greenType.IsAbstract) continue;
-            var redFullName = string.Join(".", greenType.EnumerateNestingChain().Select(GetRedClassName));
             this.writer
                 .Write(greenType.ToDisplayString())
                 .Write("=>")
-                .Write($"new {redFullName}(parent, green),");
+                .Write($"new {GetFullRedClassName(greenType)}(parent, green),");
         }
 
         this.writer
+            .Write("null => null,")
             .Write("_ => throw new System.ArgumentOutOfRangeException(nameof(green)),")
             .Write("};")
             .Write("}");
+    }
+
+    private (string Text, bool HasGreen) TranslareToRedType(ITypeSymbol symbol)
+    {
+        // Not named, we don't deal with it
+        if (symbol is not INamedTypeSymbol namedSymbol) return (symbol.ToDisplayString(), false);
+
+        var isNullable = namedSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+        var nullableSuffix = isNullable ? "?" : string.Empty;
+        // Any nullable value type, special case
+        if (namedSymbol.IsValueType && isNullable)
+        {
+            var (subtype, hasGreen) = this.TranslareToRedType(namedSymbol.TypeArguments[0]);
+            return ($"{subtype}?", hasGreen);
+        }
+        // Tuple types
+        if (namedSymbol.IsTupleType)
+        {
+            var elements = namedSymbol
+                .TupleElements
+                .Select(e =>
+                {
+                    var (type, hasGreen) = this.TranslareToRedType(e.Type);
+                    return (Text: $"{type} {e.Name}", HasGreen: hasGreen);
+                }).ToList();
+            return ($"({string.Join(", ", elements.Select(e => e.Text))})", elements.Any(e => e.HasGreen));
+        }
+        // Generic types
+        if (namedSymbol.IsGenericType)
+        {
+            var name = symbol.ToDisplayString();
+            var nameRoot = name.Substring(0, name.IndexOf('<'));
+            var typeArgs = namedSymbol.TypeArguments.Select(this.TranslareToRedType).ToList();
+            return ($"{nameRoot}<{string.Join(", ", typeArgs.Select(e => e.Text))}>{nullableSuffix}", typeArgs.Any(e => e.HasGreen));
+        }
+        // Green subclasses
+        if (namedSymbol.IsSubtypeOf(this.greenRoot)) return ($"{GetFullRedClassName(namedSymbol)}{nullableSuffix}", true);
+        // Anything else
+        return (symbol.ToDisplayString(), false);
     }
 }

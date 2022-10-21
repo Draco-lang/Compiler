@@ -98,7 +98,6 @@ public sealed class RedTreeGenerator
                 .Write(";");
 
             // Write the cached projection
-            var accessorSuffix = prop.Type.IsValueType ? ".Value" : string.Empty;
             this.writer
                 .Write(prop.DeclaredAccessibility)
                 .Write(redType)

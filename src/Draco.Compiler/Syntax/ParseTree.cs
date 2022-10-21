@@ -91,7 +91,7 @@ internal partial record class ParseTree
             Token Keyword, // Either var or val
             Token Identifier,
             TypeSpecifier? Type,
-            (Token AssignToken, Expr Expression)? Initializer,
+            ValueInitializer? Initializer,
             Token Semicolon) : Decl;
     }
 
@@ -101,6 +101,13 @@ internal partial record class ParseTree
     public sealed record class FuncParam(
         Token Identifier,
         TypeSpecifier Type) : ParseTree;
+
+    /// <summary>
+    /// A value initializer construct.
+    /// </summary>
+    public sealed record class ValueInitializer(
+        Token AssignToken,
+        Expr Value) : ParseTree;
 
     /// <summary>
     /// A function body, either a block or in-line.
@@ -204,7 +211,7 @@ internal partial record class ParseTree
             Token IfKeyword,
             Enclosed<Expr> Condition,
             Expr Then,
-            (Token ElseToken, Expr Expression)? Else) : Expr;
+            ElseClause? Else) : Expr;
 
         /// <summary>
         /// A while-expression.
@@ -291,6 +298,13 @@ internal partial record class ParseTree
             ValueArray<StringPart> Parts,
             Token CloseQuotes) : Expr;
     }
+
+    /// <summary>
+    /// The else clause of an if-expression.
+    /// </summary>
+    public sealed record class ElseClause(
+        Token ElseToken,
+        Expr Expression) : ParseTree;
 
     /// <summary>
     /// Part of a string literal/expression.

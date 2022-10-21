@@ -67,6 +67,8 @@ public sealed class VisitorGenerator
 
     private void AppendSkippedProperties()
     {
+        if (this.skippedProperties.Count == 0) return;
+        this.writer.Write("//");
         this.writer.Write("// Skipped properties:");
         foreach (var prop in this.skippedProperties) this.writer.Write($"// - {prop}");
     }

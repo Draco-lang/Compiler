@@ -122,7 +122,7 @@ internal class Program
                     Console.Error.WriteLine($"Could not load {opts.Visitor} from {opts.Project}");
                     return 1;
                 }
-                var code = VisitorGenerator.GenerateInterface(rootType, visitorType);
+                var code = VisitorInterfaceGenerator.Generate(new(rootType: rootType, visitorType: visitorType));
                 Console.WriteLine(code);
                 return 0;
             },
@@ -142,7 +142,7 @@ internal class Program
                     Console.Error.WriteLine($"Could not load {opts.Visitor} from {opts.Project}");
                     return 1;
                 }
-                var code = VisitorGenerator.GenerateBase(rootType, visitorType);
+                var code = VisitorBaseGenerator.Generate(new(rootType: rootType, visitorType: visitorType));
                 Console.WriteLine(code);
                 return 0;
             },

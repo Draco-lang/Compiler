@@ -37,6 +37,6 @@ public abstract class GeneratorBase
         return result.ToString();
     }
 
-    protected static bool SymbolEquals(ISymbol a, ISymbol b) =>
+    protected static bool SymbolEquals(ISymbol? a, ISymbol? b) =>
         SymbolEqualityComparer.Default.Equals(a, b);
 }

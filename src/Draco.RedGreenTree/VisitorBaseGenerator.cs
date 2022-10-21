@@ -10,36 +10,41 @@ namespace Draco.RedGreenTree;
 /// <summary>
 /// Generates the visitor interface and base class.
 /// </summary>
-public sealed class VisitorGenerator
+public sealed class VisitorBaseGenerator : GeneratorBase
 {
-    public static string GenerateInterface(INamedTypeSymbol rootType, INamedTypeSymbol visitorType)
+    public sealed class Settings
     {
-        var generator = new VisitorGenerator(rootType, visitorType);
-        generator.GenerateNamespace();
-        generator.GenerateVisitorInterface();
-        return generator.writer.Code;
+        public INamedTypeSymbol RootType { get; set; }
+        public INamedTypeSymbol VisitorType { get; set; }
+        public string DefaultPropertyName { get; set; } = "Default";
+
+        public Settings(INamedTypeSymbol rootType, INamedTypeSymbol visitorType)
+        {
+            this.RootType = rootType;
+            this.VisitorType = visitorType;
+        }
     }
 
-    public static string GenerateBase(INamedTypeSymbol rootType, INamedTypeSymbol visitorType)
+    public static string Generate(Settings settings)
     {
-        var generator = new VisitorGenerator(rootType, visitorType);
-        generator.GenerateNamespace();
-        generator.GenerateVisitorBaseClass();
-        generator.AppendSkippedProperties();
-        return generator.writer.Code;
+        var generator = new VisitorBaseGenerator(settings);
+        return generator.Generate();
     }
 
-    private readonly INamedTypeSymbol rootType;
-    private readonly INamedTypeSymbol visitorType;
+    private readonly Settings settings;
     private readonly HashSet<INamedTypeSymbol> treeNodes;
     private readonly HashSet<string> customMethodNames;
     private readonly List<string> skippedProperties = new();
-    private readonly CodeWriter writer = new();
+    private readonly CodeWriter headerWriter = new();
+    private readonly CodeWriter contentWriter = new();
 
-    private VisitorGenerator(INamedTypeSymbol root, INamedTypeSymbol visitor)
+    private INamedTypeSymbol RootType => this.settings.RootType;
+    private INamedTypeSymbol VisitorType => this.settings.VisitorType;
+    private string DefaultPropertyName => this.settings.DefaultPropertyName;
+
+    private VisitorBaseGenerator(Settings settings)
     {
-        this.rootType = root;
-        this.visitorType = visitor;
+        this.settings = settings;
 
         this.treeNodes = new(SymbolEqualityComparer.Default);
         this.ExtractTreeNodes();
@@ -48,15 +53,9 @@ public sealed class VisitorGenerator
         this.ExtractCustomVisitorMethods();
     }
 
-    private void GenerateNamespace()
-    {
-        // TODO: We need the red root
-        throw new NotImplementedException();
-    }
-
     private void ExtractTreeNodes()
     {
-        var relevantNodes = this.rootType
+        var relevantNodes = this.RootType
             .EnumerateContainedTypeTree();
         foreach (var n in relevantNodes) this.treeNodes.Add(n);
     }
@@ -64,7 +63,7 @@ public sealed class VisitorGenerator
     private void ExtractCustomVisitorMethods()
     {
         var result = new Dictionary<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
-        var methods = this.visitorType
+        var methods = this.VisitorType
             .GetMembers()
             .OfType<IMethodSymbol>()
             .Where(m => !m.IsStatic)
@@ -73,12 +72,42 @@ public sealed class VisitorGenerator
         foreach (var m in methods) this.customMethodNames.Add(m.Name);
     }
 
-    private void AppendSkippedProperties()
+    protected override string Generate()
+    {
+        this.GenerateHeader();
+        this.GenerateNamespace();
+        this.GenerateBaseClass();
+        this.GenerateSkippedProperties();
+
+        return new CodeWriter()
+            .Write(this.headerWriter)
+            .Write(this.contentWriter)
+            .ToString();
+    }
+
+    private void GenerateHeader()
+    {
+        this.headerWriter
+            .Write(this.HeaderComment)
+            .Write("//")
+            .Write(SettingsToHeaderComment(this.settings));
+    }
+
+    private void GenerateNamespace()
+    {
+        if (this.VisitorType.ContainingNamespace is null) return;
+        this.contentWriter
+            .Write("namespace ")
+            .Write(this.VisitorType.ContainingNamespace)
+            .Write(";");
+    }
+
+    private void GenerateSkippedProperties()
     {
         if (this.skippedProperties.Count == 0) return;
-        this.writer.Write("//");
-        this.writer.Write("// Skipped properties:");
-        foreach (var prop in this.skippedProperties) this.writer.Write($"// - {prop}");
+        this.headerWriter.Write("//");
+        this.headerWriter.Write("// Skipped properties:");
+        foreach (var prop in this.skippedProperties) this.headerWriter.Write($"// - {prop}");
     }
 
     private string GenerateVisitorMethodName(INamedTypeSymbol symbol)
@@ -97,43 +126,21 @@ public sealed class VisitorGenerator
         return $"Visit{string.Join("", parts)}";
     }
 
-    private void GenerateVisitorInterface()
+    private void GenerateBaseClass()
     {
-        this.writer
-            .Write($"internal partial interface {this.visitorType.Name}<out T>")
-            .Write("{");
-
-        foreach (var node in this.treeNodes)
-        {
-            var methodName = this.GenerateVisitorMethodName(node);
-            if (this.customMethodNames.Contains(methodName)) continue;
-            if (!node.IsSubtypeOf(this.rootType)) continue;
-            this.writer
-                .Write("public")
-                .Write("T")
-                .Write(methodName)
-                .Write($"({node.ToDisplayString()} node);");
-        }
-
-        this.writer
-            .Write("}");
-    }
-
-    private void GenerateVisitorBaseClass()
-    {
-        this.writer
-            .Write($"internal abstract partial class {this.visitorType.Name}<T>")
+        this.contentWriter
+            .Write(this.VisitorType.DeclaredAccessibility)
+            .Write($"abstract partial class {this.VisitorType.Name}<T>")
             .Write("{")
-            .Write("protected virtual T Default => default!;");
+            .Write($"protected virtual T {this.DefaultPropertyName} => default!;");
         foreach (var node in this.treeNodes)
         {
             var methodName = this.GenerateVisitorMethodName(node);
             if (this.customMethodNames.Contains(methodName)) continue;
-            if (!node.IsSubtypeOf(this.rootType)) continue;
+            if (!node.IsSubtypeOf(this.RootType)) continue;
             this.GenerateVisitorMethodForType(node);
         }
-        this.writer
-            .Write("}");
+        this.contentWriter.Write("}");
     }
 
     private void GenerateVisitorMethodForType(INamedTypeSymbol type)
@@ -143,31 +150,31 @@ public sealed class VisitorGenerator
         // NOTE: We order the subtypes abstract first, not to hide any members
         var subtypes = type
             .EnumerateContainedTypeTree()
-            .Where(n => !SymbolEqualityComparer.Default.Equals(n, type))
+            .Where(n => !SymbolEquals(n, type))
             .Where(this.treeNodes.Contains)
-            .Where(n => SymbolEqualityComparer.Default.Equals(n.BaseType, type))
+            .Where(n => SymbolEquals(n.BaseType, type))
             .OrderBy(x => x, Comparer<INamedTypeSymbol>.Create((a, b) => AbstractFirst(a) - AbstractFirst(b)))
             .ToList();
 
-        this.writer
+        this.contentWriter
             .Write("public virtual T")
             .Write(this.GenerateVisitorMethodName(type))
             .Write($"({type.ToDisplayString()} node)");
         if (type.IsAbstract)
         {
-            this.writer
+            this.contentWriter
                 .Write("=>")
                 .Write("node switch")
                 .Write("{");
             foreach (var subtype in subtypes)
             {
-                this.writer
+                this.contentWriter
                     .Write(subtype.ToDisplayString())
                     .Write("n")
                     .Write("=>")
                     .Write($"this.{this.GenerateVisitorMethodName(subtype)}(n),");
             }
-            this.writer
+            this.contentWriter
                 .Write("_ => throw new System.ArgumentOutOfRangeException(nameof(node)),")
                 .Write("};");
         }
@@ -176,8 +183,7 @@ public sealed class VisitorGenerator
             // NOTE: For now we don't handle this
             Debug.Assert(subtypes.Count == 0);
 
-            this.writer
-                .Write("{");
+            this.contentWriter.Write("{");
             foreach (var prop in type.GetSanitizedProperties())
             {
                 if (prop.Type is not INamedTypeSymbol propType) continue;
@@ -193,12 +199,12 @@ public sealed class VisitorGenerator
                 if (propType.NullableAnnotation == NullableAnnotation.Annotated)
                 {
                     if (propType.IsValueType) accessor = ".Value";
-                    this.writer.Write($"if (node.{prop.Name} is not null)");
+                    this.contentWriter.Write($"if (node.{prop.Name} is not null)");
                 }
-                this.writer.Write($"this.{methodName}(node.{prop.Name}{accessor});");
+                this.contentWriter.Write($"this.{methodName}(node.{prop.Name}{accessor});");
             }
-            this.writer
-                .Write("return this.Default;")
+            this.contentWriter
+                .Write($"return this.{this.DefaultPropertyName};")
                 .Write("}");
         }
     }

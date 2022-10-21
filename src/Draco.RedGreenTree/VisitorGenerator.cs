@@ -81,7 +81,7 @@ public sealed class VisitorGenerator
             symbol = namedTypeArg;
         }
         // For anything not part of the tree, we just generate a VisitNAME
-        if (!symbol.IsSubtypeOf(this.rootType)) return $"Visit{symbol.Name}";
+        if (!this.treeNodes.Contains(symbol)) return $"Visit{symbol.Name}";
         // For anything else, we read up the names in reverse order, excluding the root
         var parts = symbol.EnumerateNestingChain().Skip(1).Reverse().Select(n => n.Name);
         return $"Visit{string.Join("", parts)}";

@@ -25,7 +25,8 @@ internal partial interface IParseTreeVisitor<out T>
 /// <typeparam name="T">The return type of the visitor.</typeparam>
 internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 {
-    protected T VisitValueArray(ValueArray<ParseTree> elements)
+    protected T VisitValueArray<TElement>(ValueArray<TElement> elements)
+        where TElement : ParseTree
     {
         throw new NotImplementedException();
     }
@@ -38,6 +39,11 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 
     protected T VisitEnclosed<TElement>(Enclosed<TElement> enclosed)
         where TElement : ParseTree
+    {
+        throw new NotImplementedException();
+    }
+
+    protected T VisitToken(Token token)
     {
         throw new NotImplementedException();
     }

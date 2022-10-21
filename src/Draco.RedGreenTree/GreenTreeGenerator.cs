@@ -7,82 +7,125 @@ using Microsoft.CodeAnalysis;
 namespace Draco.RedGreenTree;
 
 /// <summary>
-/// Implements the width property for green nodes.
+/// Implements boilerplate code for green nodes.
 /// </summary>
-public sealed class GreenTreeGenerator
+public sealed class GreenTreeGenerator : GeneratorBase
 {
-    public static string Generate(INamedTypeSymbol rootType)
+    public sealed class Settings
     {
-        var generator = new GreenTreeGenerator(rootType);
-        generator.GenerateNamespace();
-        generator.GenerateTree();
-        return generator.writer.Code;
+        public INamedTypeSymbol RootType { get; set; }
+        public bool GenerateWidth { get; set; } = true;
+        public bool GenerateCtor { get; set; } = true;
+        public string GetWidthMethodName { get; set; } = "GetWidth";
+        public string WidthPropertyName { get; set; } = "Width";
+        public string WidthFieldName { get; set; } = "width";
+
+        public Settings(INamedTypeSymbol rootType)
+        {
+            this.RootType = rootType;
+        }
     }
 
-    private readonly INamedTypeSymbol root;
-    private readonly CodeWriter writer = new();
-
-    private GreenTreeGenerator(INamedTypeSymbol root)
+    public static string Generate(Settings settings)
     {
-        this.root = root;
+        var generator = new GreenTreeGenerator(settings);
+        return generator.Generate();
+    }
+
+    private readonly Settings settings;
+    private readonly CodeWriter headerWriter = new();
+    private readonly CodeWriter contentWriter = new();
+
+    private INamedTypeSymbol RootType => this.settings.RootType;
+    private bool GenerateWidth => this.settings.GenerateWidth;
+    private bool GenerateCtor => this.settings.GenerateCtor;
+    private string GetWidthMethodName => this.settings.GetWidthMethodName;
+    private string WidthPropertyName => this.settings.WidthPropertyName;
+    private string WidthFieldName => this.settings.WidthFieldName;
+
+    private GreenTreeGenerator(Settings settings)
+    {
+        this.settings = settings;
+    }
+
+    protected override string Generate()
+    {
+        this.GenerateHeader();
+        this.GenerateNamespace();
+        this.GenerateTree();
+
+        return new CodeWriter()
+            .Write(this.headerWriter)
+            .Write(this.contentWriter)
+            .ToString();
+    }
+
+    private void GenerateHeader()
+    {
+        this.headerWriter
+            .Write(this.HeaderComment)
+            .Write("//")
+            .Write(SettingsToHeaderComment(this.settings));
     }
 
     private void GenerateNamespace()
     {
-        if (this.root.ContainingNamespace is null) return;
-        this.writer.Write($"namespace {this.root.ContainingNamespace.ToDisplayString()};");
+        if (this.RootType.ContainingNamespace is null) return;
+        this.contentWriter
+            .Write("namespace ")
+            .Write(this.RootType.ContainingNamespace)
+            .Write(";");
     }
 
     private void GenerateTree()
     {
-        foreach (var type in this.root.EnumerateContainedTypeTree())
+        foreach (var type in this.RootType.EnumerateContainedTypeTree())
         {
-            if (!type.IsSubtypeOf(this.root)) continue;
-            this.GenerateForType(type);
+            if (!type.IsSubtypeOf(this.RootType)) continue;
+            this.GenerateGreenNode(type);
         }
     }
 
-    private void GenerateForType(INamedTypeSymbol type)
+    private void GenerateGreenNode(INamedTypeSymbol type)
     {
         // Wrapping types
         foreach (var nest in type.EnumerateNestingChain())
         {
-            this.writer
+            this.contentWriter
                 .Write(nest.DeclaredAccessibility)
                 .Write(nest.GetTypeKind(partial: true))
                 .Write(nest.Name)
                 .Write("{");
         }
 
-        if (!type.IsAbstract) this.GenerateWidthForType(type);
+        if (this.GenerateWidth) this.GenerateWidthProperty(type);
+        if (this.GenerateCtor) this.GenerateCtorMethod(type);
 
         // Close braces
-        foreach (var _ in type.EnumerateNestingChain()) this.writer.Write("}");
+        foreach (var _ in type.EnumerateNestingChain()) this.contentWriter.Write("}");
     }
 
-    private void GenerateWidthForType(INamedTypeSymbol type)
+    private void GenerateWidthProperty(INamedTypeSymbol type)
     {
+        if (type.IsAbstract) return;
+
         // Sum up each member that has a Width attribute
         // For simplicity, we call a GetWidth that the user can roll themselves
         var memberWidths = type
             .GetSanitizedProperties()
-            .Select(m => $"GetWidth(this.{m.Name})");
-        this.writer
-            .Write("private int? width;")
-            .Write($$"""
-            public override int Width
-            {
-                get
-                {
-                    if (this.width is null)
-                    {
-                        var acc = 0;
-                        {{string.Join("", memberWidths.Select(w => $"acc += {w};"))}}
-                        this.width = acc;
-                    }
-                    return this.width.Value;
-                }
-            }
+            .Select(m => $"{this.GetWidthMethodName}(this.{m.Name})");
+        this.contentWriter
+            .Write($"private int? {this.WidthFieldName};")
+            .Write($"""
+            public override int {this.WidthPropertyName} =>
+                this.{this.WidthFieldName} ??= {string.Join("+", memberWidths)};
             """);
+    }
+
+    private void GenerateCtorMethod(INamedTypeSymbol type)
+    {
+        if (type.IsAbstract) return;
+
+        // TODO
     }
 }

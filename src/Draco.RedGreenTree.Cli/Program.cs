@@ -79,7 +79,7 @@ internal class Program
                     Console.Error.WriteLine($"Could not load {opts.TreeRoot} from {opts.Project}");
                     return 1;
                 }
-                var code = GreenTreeGenerator.Generate(rootType);
+                var code = GreenTreeGenerator.Generate(new(rootType));
                 Console.WriteLine(code);
                 return 0;
             },

@@ -15,6 +15,7 @@ public sealed class VisitorGenerator
     public static string GenerateInterface(INamedTypeSymbol rootType, INamedTypeSymbol visitorType)
     {
         var generator = new VisitorGenerator(rootType, visitorType);
+        generator.GenerateNamespace();
         generator.GenerateVisitorInterface();
         return generator.writer.Code;
     }
@@ -22,6 +23,7 @@ public sealed class VisitorGenerator
     public static string GenerateBase(INamedTypeSymbol rootType, INamedTypeSymbol visitorType)
     {
         var generator = new VisitorGenerator(rootType, visitorType);
+        generator.GenerateNamespace();
         generator.GenerateVisitorBaseClass();
         generator.AppendSkippedProperties();
         return generator.writer.Code;
@@ -44,6 +46,12 @@ public sealed class VisitorGenerator
 
         this.customMethodNames = new();
         this.ExtractCustomVisitorMethods();
+    }
+
+    private void GenerateNamespace()
+    {
+        // TODO: We need the red root
+        throw new NotImplementedException();
     }
 
     private void ExtractTreeNodes()

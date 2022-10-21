@@ -14,7 +14,8 @@ public sealed class GreenTreeGenerator
     public static string Generate(INamedTypeSymbol rootType)
     {
         var generator = new GreenTreeGenerator(rootType);
-        generator.Generate();
+        generator.GenerateNamespace();
+        generator.GenerateTree();
         return generator.writer.Code;
     }
 
@@ -26,7 +27,13 @@ public sealed class GreenTreeGenerator
         this.root = root;
     }
 
-    private void Generate()
+    private void GenerateNamespace()
+    {
+        if (this.root.ContainingNamespace is null) return;
+        this.writer.Write($"namespace {this.root.ContainingNamespace.ToDisplayString()};");
+    }
+
+    private void GenerateTree()
     {
         foreach (var type in this.root.EnumerateContainedTypeTree())
         {

@@ -14,6 +14,7 @@ public sealed class RedTreeGenerator
     public static string Generate(INamedTypeSymbol rootType)
     {
         var generator = new RedTreeGenerator(rootType);
+        generator.GenerateNamespace();
         generator.GenerateClasses();
         generator.GenerateToRedMethod();
         return generator.writer.Code;
@@ -31,6 +32,12 @@ public sealed class RedTreeGenerator
     private static string GetRedClassName(INamedTypeSymbol type) => $"Red{type.Name}";
     private static string GetFullRedClassName(INamedTypeSymbol type) =>
         string.Join(".", type.EnumerateNestingChain().Select(GetRedClassName));
+
+    private void GenerateNamespace()
+    {
+        // TODO: We need the red root
+        throw new NotImplementedException();
+    }
 
     private void GenerateClasses()
     {

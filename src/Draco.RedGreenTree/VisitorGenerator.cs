@@ -23,6 +23,7 @@ public sealed class VisitorGenerator
     {
         var generator = new VisitorGenerator(rootType, visitorType);
         generator.GenerateVisitorBaseClass();
+        generator.AppendSkippedProperties();
         return generator.writer.Code;
     }
 
@@ -30,6 +31,7 @@ public sealed class VisitorGenerator
     private readonly INamedTypeSymbol visitorType;
     private readonly HashSet<INamedTypeSymbol> treeNodes;
     private readonly HashSet<string> customMethodNames;
+    private readonly List<string> skippedProperties = new();
     private readonly CodeWriter writer = new();
 
     private VisitorGenerator(INamedTypeSymbol root, INamedTypeSymbol visitor)
@@ -61,6 +63,12 @@ public sealed class VisitorGenerator
             .Where(m => m.Parameters.Length == 1)
             .Where(m => m.Name.StartsWith("Visit"));
         foreach (var m in methods) this.customMethodNames.Add(m.Name);
+    }
+
+    private void AppendSkippedProperties()
+    {
+        this.writer.Write("// Skipped properties:");
+        foreach (var prop in this.skippedProperties) this.writer.Write($"// - {prop}");
     }
 
     private string GenerateVisitorMethodName(INamedTypeSymbol symbol)
@@ -165,8 +173,11 @@ public sealed class VisitorGenerator
                 if (prop.Type is not INamedTypeSymbol propType) continue;
 
                 var methodName = this.GenerateVisitorMethodName(propType);
-                if (!this.customMethodNames.Contains(methodName)
-                 && !this.treeNodes.Contains(propType)) continue;
+                if (!this.customMethodNames.Contains(methodName) && !this.treeNodes.Contains(propType))
+                {
+                    this.skippedProperties.Add($"{type.ToDisplayString()}.{prop.Name}");
+                    continue;
+                }
 
                 var accessor = string.Empty;
                 if (propType.NullableAnnotation == NullableAnnotation.Annotated)

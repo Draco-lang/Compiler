@@ -455,3 +455,9 @@ internal partial record class ParseTree
             string.Format(diagnostic.Format, diagnostic.FormatArgs);
     }
 }
+
+public abstract partial class RedParseTree
+{
+    private readonly ParseTree green;
+    public int Width { get; set; }
+}

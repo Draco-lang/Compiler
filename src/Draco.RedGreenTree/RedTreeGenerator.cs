@@ -9,85 +9,144 @@ namespace Draco.RedGreenTree;
 /// <summary>
 /// Generates the entire red tree hierarchy.
 /// </summary>
-public sealed class RedTreeGenerator
+public sealed class RedTreeGenerator : GeneratorBase
 {
-    public static string Generate(INamedTypeSymbol rootType)
+    public sealed class Settings
     {
-        var generator = new RedTreeGenerator(rootType);
-        generator.GenerateNamespace();
-        generator.GenerateClasses();
-        generator.GenerateToRedMethod();
-        return generator.writer.Code;
+        public INamedTypeSymbol GreenRootType { get; set; }
+        public INamedTypeSymbol RedRootType { get; set; }
+        public bool GenerateGreenProperty { get; set; } = true;
+        public bool GenerateProjectedProperties { get; set; } = true;
+        public bool GenerateConstructor { get; set; } = true;
+        public bool GenerateToRedMethod { get; set; } = true;
+        public Func<INamedTypeSymbol, string> GetRedName { get; set; } = x => x.Name;
+        public string GreenPropertyName { get; set; } = "Green";
+        public string ParentPropertyName { get; set; } = "Parent";
+        public string ToRedMethodName { get; set; } = "ToRed";
+
+        public Settings(INamedTypeSymbol greenRootType, INamedTypeSymbol redRootType)
+        {
+            this.GreenRootType = greenRootType;
+            this.RedRootType = redRootType;
+        }
     }
 
-    private readonly INamedTypeSymbol greenRoot;
-    private readonly CodeWriter writer = new();
-
-    private RedTreeGenerator(INamedTypeSymbol root)
+    public static string Generate(Settings settings)
     {
-        this.greenRoot = root;
+        var generator = new RedTreeGenerator(settings);
+        return generator.Generate();
     }
 
-    private static string ToCamelCase(string text) => $"{char.ToLower(text[0])}{text.Substring(1)}";
-    private static string GetRedClassName(INamedTypeSymbol type) => $"Red{type.Name}";
-    private static string GetFullRedClassName(INamedTypeSymbol type) =>
-        string.Join(".", type.EnumerateNestingChain().Select(GetRedClassName));
+    private readonly Settings settings;
+    private readonly CodeWriter headerWriter = new();
+    private readonly CodeWriter contentWriter = new();
+
+    private INamedTypeSymbol GreenRootType => this.settings.GreenRootType;
+    private INamedTypeSymbol RedRootType => this.settings.RedRootType;
+    private bool DoGenerateGreenProperty => this.settings.GenerateGreenProperty;
+    private bool DoGenerateProjectedProperties => this.settings.GenerateProjectedProperties;
+    private bool DoGenerateConstructor => this.settings.GenerateConstructor;
+    private bool DoGenerateToRedMethod => this.settings.GenerateToRedMethod;
+    private string GreenPropertyName => this.settings.GreenPropertyName;
+    private string GreenFieldName => ToCamelCase(this.GreenPropertyName);
+    private string ParentPropertyName => this.settings.ParentPropertyName;
+    private string ToRedMethodName => this.settings.ToRedMethodName;
+    private string GetRedClassName(INamedTypeSymbol type) => SymbolEquals(type, this.GreenRootType)
+        ? this.RedRootType.Name
+        : this.settings.GetRedName(type);
+    private string GetFullRedClassName(INamedTypeSymbol type) =>
+        string.Join(".", type.EnumerateNestingChain().Select(this.GetRedClassName));
+
+    private RedTreeGenerator(Settings settings)
+    {
+        this.settings = settings;
+    }
+
+    protected override string Generate()
+    {
+        this.GenerateHeader();
+        this.GenerateNamespace();
+        this.GenerateTree();
+        if (this.DoGenerateToRedMethod) this.GenerateToRedMethod();
+
+        return new CodeWriter()
+            .Write(this.headerWriter)
+            .Write(this.contentWriter)
+            .ToString();
+    }
+
+    private void GenerateHeader()
+    {
+        this.headerWriter
+            .Write(this.HeaderComment)
+            .Write("//")
+            .Write(SettingsToHeaderComment(this.settings));
+    }
 
     private void GenerateNamespace()
     {
-        // TODO: We need the red root
-        throw new NotImplementedException();
+        if (this.RedRootType.ContainingNamespace is null) return;
+        this.contentWriter
+            .Write("namespace ")
+            .Write(this.RedRootType.ContainingNamespace)
+            .Write(";");
     }
 
-    private void GenerateClasses()
+    private void GenerateTree()
     {
-        foreach (var type in this.greenRoot.EnumerateContainedTypeTree())
+        foreach (var type in this.GreenRootType.EnumerateContainedTypeTree())
         {
-            if (!type.IsSubtypeOf(this.greenRoot)) continue;
-            this.GenerateForType(type);
+            if (!type.IsSubtypeOf(this.GreenRootType)) continue;
+            this.GenerateRedNode(type);
         }
     }
 
-    private void GenerateForType(INamedTypeSymbol type)
+    private void GenerateRedNode(INamedTypeSymbol greenType)
     {
         // Wrapping types
-        foreach (var nest in type.EnumerateNestingChain())
+        foreach (var nest in greenType.EnumerateNestingChain())
         {
-            this.writer
-                .Write(nest.DeclaredAccessibility)
+            if (SymbolEquals(nest, greenType)) this.contentWriter.Write(this.GeneratedAttribute);
+            this.contentWriter
+                .Write(this.RedRootType.DeclaredAccessibility)
                 .Write(nest.GetTypeKind(partial: true))
-                .Write(GetRedClassName(nest));
+                .Write(this.GetRedClassName(nest));
             // Inheritance
-            if (SymbolEqualityComparer.Default.Equals(nest, type) && (type.BaseType?.IsSubtypeOf(this.greenRoot) ?? false))
+            if (SymbolEquals(nest, greenType) && (greenType.BaseType?.IsSubtypeOf(this.GreenRootType) ?? false))
             {
-                this.writer
+                this.contentWriter
                     .Write(":")
-                    .Write(GetRedClassName(type.BaseType));
+                    .Write(this.GetRedClassName(greenType.BaseType));
             }
-            this.writer
-                .Write("{");
+            this.contentWriter.Write("{");
         }
 
-        this.GenerateGreenPropertyForType(type);
-        this.GenerateProjectedPropertiesForType(type);
-        this.GenerateConstructorForType(type);
+        if (this.DoGenerateGreenProperty) this.GenerateGreenProperty(greenType);
+        if (this.DoGenerateProjectedProperties) this.GenerateProjectedProperties(greenType);
+        if (this.DoGenerateConstructor) this.GenerateConstructor(greenType);
 
         // Close braces
-        foreach (var _ in type.EnumerateNestingChain()) this.writer.Write("}");
+        foreach (var _ in greenType.EnumerateNestingChain()) this.contentWriter.Write("}");
     }
 
-    private void GenerateProjectedPropertiesForType(INamedTypeSymbol type)
+    private void GenerateGreenProperty(INamedTypeSymbol greenType)
     {
-        var relevantProps = type
+        this.contentWriter.Write(this.GreenRootType.DeclaredAccessibility);
+        if (!SymbolEquals(this.GreenRootType, greenType)) this.contentWriter.Write("new");
+        this.contentWriter
+            .Write(greenType.ToDisplayString())
+            .Write($"{this.GreenPropertyName} => ({greenType.ToDisplayString()})this.{this.GreenFieldName};");
+    }
+
+    private void GenerateProjectedProperties(INamedTypeSymbol greenType)
+    {
+        var relevantProps = greenType
             .GetSanitizedProperties()
             // Only care about public
             .Where(p => p.DeclaredAccessibility == Accessibility.Public)
             // Overriden ones are implemented in base already
             .Where(p => !p.IsOverride);
-        foreach (var prop in relevantProps)
-        {
-            this.GenerateProjectedProperty(prop);
-        }
+        foreach (var prop in relevantProps) this.GenerateProjectedProperty(prop);
     }
 
     private void GenerateProjectedProperty(IPropertySymbol prop)
@@ -98,93 +157,93 @@ public sealed class RedTreeGenerator
             // We need a cache property
             var cachedRedType = redType.EndsWith("?") ? redType : $"{redType}?";
             var cachedRedName = RoslynUtils.EscapeKeyword(ToCamelCase(prop.Name));
-            this.writer
+            this.contentWriter
                 .Write("private")
                 .Write(cachedRedType)
                 .Write(cachedRedName)
                 .Write(";");
 
             // Write the cached projection
-            this.writer
+            this.contentWriter
                 .Write(prop.DeclaredAccessibility)
                 .Write(redType)
                 .Write(prop.Name)
                 .Write("=>")
-                .Write($"this.{cachedRedName} ??= ({redType})ToRedNode(this, this.Green.{prop.Name});");
+                .Write($"this.{cachedRedName}")
+                .Write("??=")
+                .Write($"({redType}){this.ToRedMethodName}(this, this.{this.GreenPropertyName}.{prop.Name});");
         }
         else
         {
             // Just map one-to-one from the green node
-            this.writer
+            this.contentWriter
                 .Write(prop.DeclaredAccessibility)
                 .Write(redType)
                 .Write(prop.Name)
                 .Write("=>")
-                .Write($"this.Green.{prop.Name};");
+                .Write($"this.{this.GreenPropertyName}.{prop.Name};");
         }
     }
 
-    private void GenerateGreenPropertyForType(INamedTypeSymbol type)
+    private void GenerateConstructor(INamedTypeSymbol greenType)
     {
-        this.writer
-            .Write("internal");
-        if (!SymbolEqualityComparer.Default.Equals(this.greenRoot, type)) this.writer.Write("new");
-        this.writer
-            .Write(type.ToDisplayString())
-            .Write($"Green => ({type.ToDisplayString()})this.green;");
-    }
-
-    private void GenerateConstructorForType(INamedTypeSymbol type)
-    {
-        this.writer
+        this.contentWriter
             .Write("internal")
-            .Write(GetRedClassName(type))
-            .Write($"({GetRedClassName(this.greenRoot)}? parent, {this.greenRoot.ToDisplayString()} green)");
-        if (SymbolEqualityComparer.Default.Equals(type, this.greenRoot))
+            .Write(this.GetRedClassName(greenType))
+            .Write("(")
+            .Write($"{this.GetRedClassName(this.GreenRootType)}? parent")
+            .Write(", ")
+            .Write($"{this.GreenRootType.ToDisplayString()} green")
+            .Write(")");
+        if (SymbolEquals(greenType, this.GreenRootType))
         {
-            this.writer
-                .Write("""
+            this.contentWriter
+                .Write($$"""
                 {
-                    this.Parent = parent;
-                    this.green = green;
+                    this.{{this.ParentPropertyName}} = parent;
+                    this.{{this.GreenFieldName}} = green;
                 }
                 """);
         }
         else
         {
-            this.writer
-                .Write(": base(parent, green) {}");
+            this.contentWriter.Write(": base(parent, green) {}");
         }
     }
 
     private void GenerateToRedMethod()
     {
-        var redRoot = GetRedClassName(this.greenRoot);
+        var redRoot = this.GetRedClassName(this.GreenRootType);
 
-        this.writer
-            .Write(this.greenRoot.DeclaredAccessibility)
-            .Write(this.greenRoot.GetTypeKind(partial: true))
+        this.contentWriter
+            .Write(this.GreenRootType.DeclaredAccessibility)
+            .Write(this.GreenRootType.GetTypeKind(partial: true))
             .Write(redRoot)
             .Write("{");
 
-        this.writer
+        this.contentWriter
             .Write("[return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(green))]")
             .Write("internal")
             .Write($"{redRoot}?")
-            .Write($"ToRedNode({redRoot}? parent, {this.greenRoot.ToDisplayString()}? green) => green switch")
+            .Write(this.ToRedMethodName)
+            .Write("(")
+            .Write($"{redRoot}? parent")
+            .Write(", ")
+            .Write($"{this.GreenRootType.ToDisplayString()}? green")
+            .Write(") => green switch")
             .Write("{");
 
-        foreach (var greenType in this.greenRoot.EnumerateContainedTypeTree())
+        foreach (var greenType in this.GreenRootType.EnumerateContainedTypeTree())
         {
-            if (!greenType.IsSubtypeOf(this.greenRoot)) continue;
+            if (!greenType.IsSubtypeOf(this.GreenRootType)) continue;
             if (greenType.IsAbstract) continue;
-            this.writer
+            this.contentWriter
                 .Write(greenType.ToDisplayString())
                 .Write("=>")
-                .Write($"new {GetFullRedClassName(greenType)}(parent, green),");
+                .Write($"new {this.GetFullRedClassName(greenType)}(parent, green),");
         }
 
-        this.writer
+        this.contentWriter
             .Write("null => null,")
             .Write("_ => throw new System.ArgumentOutOfRangeException(nameof(green)),")
             .Write("};")
@@ -222,10 +281,16 @@ public sealed class RedTreeGenerator
             var name = symbol.ToDisplayString();
             var nameRoot = name.Substring(0, name.IndexOf('<'));
             var typeArgs = namedSymbol.TypeArguments.Select(this.TranslareToRedType).ToList();
-            return ($"{nameRoot}<{string.Join(", ", typeArgs.Select(e => e.Text))}>{nullableSuffix}", typeArgs.Any(e => e.HasGreen));
+            return (
+                $"{nameRoot}<{string.Join(", ", typeArgs.Select(e => e.Text))}>{nullableSuffix}",
+                typeArgs.Any(e => e.HasGreen)
+            );
         }
         // Green subclasses
-        if (namedSymbol.IsSubtypeOf(this.greenRoot)) return ($"{GetFullRedClassName(namedSymbol)}{nullableSuffix}", true);
+        if (namedSymbol.IsSubtypeOf(this.GreenRootType))
+        {
+            return ($"{this.GetFullRedClassName(namedSymbol)}{nullableSuffix}", true);
+        }
         // Anything else
         return (symbol.ToDisplayString(), false);
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Microsoft.CodeAnalysis;
 
 namespace Draco.RedGreenTree;
 
@@ -35,4 +36,7 @@ public abstract class GeneratorBase
         }
         return result.ToString();
     }
+
+    protected static bool SymbolEquals(ISymbol a, ISymbol b) =>
+        SymbolEqualityComparer.Default.Equals(a, b);
 }

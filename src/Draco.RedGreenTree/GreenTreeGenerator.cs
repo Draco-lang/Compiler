@@ -14,11 +14,9 @@ public sealed class GreenTreeGenerator : GeneratorBase
     public sealed class Settings
     {
         public INamedTypeSymbol RootType { get; set; }
-        public bool GenerateWidth { get; set; } = true;
-        public bool GenerateCtor { get; set; } = true;
+        public bool GenerateWidthProperty { get; set; } = true;
         public string GetWidthMethodName { get; set; } = "GetWidth";
         public string WidthPropertyName { get; set; } = "Width";
-        public string WidthFieldName { get; set; } = "width";
 
         public Settings(INamedTypeSymbol rootType)
         {
@@ -37,11 +35,10 @@ public sealed class GreenTreeGenerator : GeneratorBase
     private readonly CodeWriter contentWriter = new();
 
     private INamedTypeSymbol RootType => this.settings.RootType;
-    private bool GenerateWidth => this.settings.GenerateWidth;
-    private bool GenerateCtor => this.settings.GenerateCtor;
+    private bool DoGenerateWidthProperty => this.settings.GenerateWidthProperty;
     private string GetWidthMethodName => this.settings.GetWidthMethodName;
     private string WidthPropertyName => this.settings.WidthPropertyName;
-    private string WidthFieldName => this.settings.WidthFieldName;
+    private string WidthFieldName => ToCamelCase(this.WidthPropertyName);
 
     private GreenTreeGenerator(Settings settings)
     {
@@ -91,6 +88,7 @@ public sealed class GreenTreeGenerator : GeneratorBase
         // Wrapping types
         foreach (var nest in type.EnumerateNestingChain())
         {
+            if (SymbolEquals(nest, type)) this.contentWriter.Write(this.GeneratedAttribute);
             this.contentWriter
                 .Write(nest.DeclaredAccessibility)
                 .Write(nest.GetTypeKind(partial: true))
@@ -98,8 +96,7 @@ public sealed class GreenTreeGenerator : GeneratorBase
                 .Write("{");
         }
 
-        if (this.GenerateWidth) this.GenerateWidthProperty(type);
-        if (this.GenerateCtor) this.GenerateCtorMethod(type);
+        if (this.DoGenerateWidthProperty) this.GenerateWidthProperty(type);
 
         // Close braces
         foreach (var _ in type.EnumerateNestingChain()) this.contentWriter.Write("}");
@@ -120,12 +117,5 @@ public sealed class GreenTreeGenerator : GeneratorBase
             public override int {this.WidthPropertyName} =>
                 this.{this.WidthFieldName} ??= {string.Join("+", memberWidths)};
             """);
-    }
-
-    private void GenerateCtorMethod(INamedTypeSymbol type)
-    {
-        if (type.IsAbstract) return;
-
-        // TODO
     }
 }

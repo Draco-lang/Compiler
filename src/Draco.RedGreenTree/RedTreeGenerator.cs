@@ -225,7 +225,7 @@ public sealed class RedTreeGenerator : GeneratorBase
 
         this.contentWriter
             .Write("[return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(green))]")
-            .Write("internal")
+            .Write("internal static")
             .Write($"{redRoot}?")
             .Write(this.ToRedMethodName)
             .Write("(")

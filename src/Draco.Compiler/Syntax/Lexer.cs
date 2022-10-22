@@ -27,9 +27,14 @@ internal sealed class Lexer
         Normal,
 
         /// <summary>
-        /// Normal source code within string interpolation.
+        /// Normal source code within line string interpolation.
         /// </summary>
-        Interpolation,
+        LineInterpolation,
+
+        /// <summary>
+        /// Normal source code within multi-line string interpolation.
+        /// </summary>
+        MultiLineInterpolation,
 
         /// <summary>
         /// Line string lexing.
@@ -48,7 +53,34 @@ internal sealed class Lexer
     /// <param name="Kind">The kind of the mode.</param>
     /// <param name="ExtendedDelims">The number of extended delimiter characters needed for the current mode,
     /// in case it's a string lexing mode.</param>
-    internal readonly record struct Mode(ModeKind Kind, int ExtendedDelims);
+    internal readonly record struct Mode(ModeKind Kind, int ExtendedDelims)
+    {
+        /// <summary>
+        /// True, if the mode is some kind of interpolation mode.
+        /// </summary>
+        public bool IsInterpolation => this.Kind
+            is ModeKind.LineInterpolation
+            or ModeKind.MultiLineInterpolation;
+
+        /// <summary>
+        /// True, if this mode is some kind of string lexing mode.
+        /// </summary>
+        public bool IsString => this.Kind
+            is ModeKind.LineString
+            or ModeKind.MultiLineString;
+
+        /// <summary>
+        /// True, if this is some code lexing mode, either regular or interpolation.
+        /// </summary>
+        public bool IsCode => this.Kind == ModeKind.Normal || this.IsInterpolation;
+
+        /// <summary>
+        /// True, if the current mode must not hold a newline.
+        /// </summary>
+        public bool IsLine => this.Kind
+            is ModeKind.LineString
+            or ModeKind.LineInterpolation;
+    }
 
     /// <summary>
     /// The reader the source text is read from.
@@ -90,7 +122,8 @@ internal sealed class Lexer
         switch (this.CurrentMode.Kind)
         {
         case ModeKind.Normal:
-        case ModeKind.Interpolation:
+        case ModeKind.LineInterpolation:
+        case ModeKind.MultiLineInterpolation:
         {
             // Normal tokens can have trivia
             this.ParseLeadingTriviaList();
@@ -145,7 +178,7 @@ internal sealed class Lexer
             return default;
         }
 
-        var modeKind = this.CurrentMode.Kind;
+        var mode = this.CurrentMode;
         var ch = this.Peek();
 
         // Punctuation
@@ -154,14 +187,14 @@ internal sealed class Lexer
         case '(': return TakeBasic(TokenType.ParenOpen, 1);
         case ')': return TakeBasic(TokenType.ParenClose, 1);
         case '{':
-            if (modeKind == ModeKind.Interpolation) this.PushMode(ModeKind.Interpolation, 0);
+            if (mode.IsInterpolation) this.PushMode(mode.Kind, 0);
             return TakeBasic(TokenType.CurlyOpen, 1);
         case '}':
-            if (modeKind == ModeKind.Interpolation)
+            if (mode.IsInterpolation)
             {
                 this.PopMode();
                 // If we are not in interpolation anymore, this is an interpolation end token
-                if (this.CurrentMode.Kind != ModeKind.Interpolation) return TakeBasic(TokenType.InterpolationEnd, 1);
+                if (!this.CurrentMode.IsInterpolation) return TakeBasic(TokenType.InterpolationEnd, 1);
             }
             return TakeBasic(TokenType.CurlyClose, 1);
         case '[': return TakeBasic(TokenType.BracketOpen, 1);
@@ -427,7 +460,10 @@ internal sealed class Lexer
                 // Nothing lexed yet,we can return the start of interpolation token
                 if (offset == 0)
                 {
-                    this.PushMode(ModeKind.Interpolation, 0);
+                    var newMode = mode.Kind == ModeKind.LineString
+                        ? ModeKind.LineInterpolation
+                        : ModeKind.MultiLineInterpolation;
+                    this.PushMode(newMode, 0);
                     this.tokenBuilder
                         .SetType(TokenType.InterpolationStart)
                         .SetText(this.AdvanceWithText(mode.ExtendedDelims + 2));
@@ -496,6 +532,7 @@ internal sealed class Lexer
                 // It would be really messy to be able to report this same error for multiline strings
                 // Also, this is only triggered if a newline is met, but not on the end of file
                 this.PopMode();
+                while (this.CurrentMode.IsLine) this.PopMode();
                 this.tokenBuilder
                     .SetType(TokenType.StringContent)
                     .SetText(this.AdvanceWithText(offset))
@@ -667,6 +704,12 @@ internal sealed class Lexer
         // Newline
         if (this.TryParseNewline(0, out var newlineLength))
         {
+            if (this.CurrentMode.Kind == ModeKind.LineInterpolation)
+            {
+                // Illegal newline, we have to stop any nested interpolation and string lexing
+                this.modeStack.Pop();
+                while (this.CurrentMode.Kind != ModeKind.Normal) this.modeStack.Pop();
+            }
             result = Token.From(TokenType.Newline, this.AdvanceWithText(newlineLength));
             return true;
         }

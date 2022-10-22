@@ -49,7 +49,7 @@ internal sealed class RedTreeAttribute : global::System.Attribute
                 if (attribute.ConstructorArguments.Length != 1) return null;
                 var arg = attribute.ConstructorArguments[0];
                 if (arg.Kind != TypedConstantKind.Type) return null;
-                if (arg.Type is not INamedTypeSymbol greenType) return null;
+                if (arg.Value is not INamedTypeSymbol greenType) return null;
 
                 return new(redType, greenType);
             })

@@ -12,10 +12,8 @@ func main(x: int32, y: int32) {
     Console.WriteLine("""
     Hello, " \n world! \{3 * 3}
 """);
-    var z = {
-        val t = 5;
-        t + 3
-    };
+    var z = if(3 == 5) 3 else 5;
+    x = if(z == 3) 8 else 5;
 }
 """";
         var srcReader = SourceReader.From(src);

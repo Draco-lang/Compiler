@@ -15,6 +15,26 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
     private readonly StringBuilder output = new StringBuilder();
     public string GeneratedCode => this.output.ToString();
 
+    public CSharpTranspiler()
+    {
+        this.output.AppendLine("record struct Unit");
+        this.output.AppendLine("Unit Valueify(Action action) { action(); return new Unit(); }");
+        this.output.AppendLine("dynamic Valueify(Func<dynamic> func) => func();");
+    }
+
+    private void CreateTernary(Expr.If expr)
+    {
+        // We must have else branch
+        if (expr.Else is null) throw new NotImplementedException();
+        this.output.Append("((");
+        base.VisitExpr(expr.Condition.Value);
+        this.output.Append(") ? ");
+        base.VisitExpr(expr.Then);
+        this.output.Append(" : ");
+        base.VisitExpr(expr.Else.Value.Expression);
+        this.output.Append(')');
+    }
+
     public override Unit VisitStmt(Stmt stmt)
     {
         base.VisitStmt(stmt);
@@ -47,7 +67,14 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         if (decl.Initializer is not null)
         {
             this.output.Append(" = ");
-            base.VisitNullable(decl.Initializer?.Expression);
+            if (decl.Initializer.Value.Expression is Expr.If ifExpr)
+            {
+                CreateTernary(ifExpr);
+            }
+            else
+            {
+                base.VisitNullable(decl.Initializer?.Expression);
+            }
         }
         this.output.Append(';');
         return this.Default;
@@ -72,6 +99,12 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.output.AppendLine("{");
         var (stmts, value) = body.Block.Enclosed.Value;
         this.VisitEnumerable(stmts);
+        if (body.Block.Enclosed.Value.Value is not null)
+        {
+            this.output.Append("return Valueify(() => {");
+            base.VisitExpr(body.Block.Enclosed.Value.Value);
+            this.output.Append("})");
+        }
         this.output.AppendLine("}");
         return this.Default;
     }
@@ -163,8 +196,15 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
     public override Unit VisitBinaryExpr(Expr.Binary expr)
     {
         base.VisitExpr(expr.Left);
-        this.output.Append(expr.Operator.Text);
-        base.VisitExpr(expr.Right);
+        this.output.Append($" {expr.Operator.Text} ");
+        if (expr.Right is Expr.If ifExpr)
+        {
+            this.CreateTernary(ifExpr);
+        }
+        else
+        {
+            base.VisitExpr(expr.Right);
+        }
         return this.Default;
     }
 

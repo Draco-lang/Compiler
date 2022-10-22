@@ -586,7 +586,7 @@ public sealed class LexerTests
     {
         // "hello\{
         // var\}bye"
-        var text = "\"hello\\{\nvar\\}bye\"";
+        var text = "\"hello\\{\nvar}bye\"";
         var tokens = Lex(text);
 
         AssertNextToken(tokens, out var token);
@@ -612,11 +612,6 @@ public sealed class LexerTests
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.Unknown, token.Type);
-        Assert.Equal("\\", token.Text);
-        AssertNoTriviaOrDiagnostics(token);
-
-        AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.CurlyClose, token.Type);
         Assert.Equal("}", token.Text);
         AssertNoTriviaOrDiagnostics(token);
@@ -630,6 +625,11 @@ public sealed class LexerTests
         Assert.Equal(TokenType.LineStringStart, token.Type);
         Assert.Equal("\"", token.Text);
         AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
     }
 
     [Fact]
@@ -638,7 +638,7 @@ public sealed class LexerTests
     {
         // "hello\{"bye
         // var\}baz"
-        var text = "\"hello\\{\"bye\nvar\\}baz\"";
+        var text = "\"hello\\{\"bye\nvar}baz\"";
         var tokens = Lex(text);
 
         AssertNextToken(tokens, out var token);
@@ -675,11 +675,6 @@ public sealed class LexerTests
         Assert.Empty(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.Unknown, token.Type);
-        Assert.Equal("\\", token.Text);
-        AssertNoTriviaOrDiagnostics(token);
-
-        AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.CurlyClose, token.Type);
         Assert.Equal("}", token.Text);
         AssertNoTriviaOrDiagnostics(token);
@@ -692,6 +687,145 @@ public sealed class LexerTests
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringStart, token.Type);
         Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Fact]
+    [Trait("Feature", "Strings")]
+    public void TestNewlineInMultilineStringInterpolation()
+    {
+        // """
+        // foo\{
+        // x}bar
+        // """
+        var quotes = "\"\"\"";
+        var text = $"{quotes}\nfoo\\{{\nx}}bar\n{quotes}";
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal(quotes, token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        Assert.Single(token.TrailingTrivia);
+        Assert.Equal("\n", token.TrailingTrivia[0].Text);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("foo", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationStart, token.Type);
+        Assert.Equal(@"\{", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        Assert.Single(token.TrailingTrivia);
+        Assert.Equal("\n", token.TrailingTrivia[0].Text);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("x", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationEnd, token.Type);
+        Assert.Equal("}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("bar", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal(quotes, token.Text);
+        Assert.Single(token.LeadingTrivia);
+        Assert.Equal("\n", token.LeadingTrivia[0].Text);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Fact]
+    [Trait("Feature", "Strings")]
+    public void TestNewlineInMultilineStringInterpolationNestedString()
+    {
+        // """
+        // foo\{"bar
+        // x}baz
+        // """
+        var quotes = "\"\"\"";
+        var text = $"{quotes}\nfoo\\{{\"bar\nx}}baz\n{quotes}";
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal(quotes, token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        Assert.Single(token.TrailingTrivia);
+        Assert.Equal("\n", token.TrailingTrivia[0].Text);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("foo", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationStart, token.Type);
+        Assert.Equal(@"\{", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal("\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("bar", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("x", token.Text);
+        Assert.Single(token.LeadingTrivia);
+        Assert.Equal("\n", token.LeadingTrivia[0].Text);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationEnd, token.Type);
+        Assert.Equal("}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal("baz", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal(quotes, token.Text);
+        Assert.Single(token.LeadingTrivia);
+        Assert.Equal("\n", token.LeadingTrivia[0].Text);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
         AssertNoTriviaOrDiagnostics(token);
     }
 

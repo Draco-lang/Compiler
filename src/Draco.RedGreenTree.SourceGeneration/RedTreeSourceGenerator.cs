@@ -60,13 +60,8 @@ internal sealed class RedTreeAttribute : global::System.Attribute
             var greenType = types.Green;
             var redType = types.Red;
 
-            if (greenType.Name != redType.Name)
-            {
-                ctx.ReportRedTypeNameDoesNotMatchGreen(redType, greenType);
-                return;
-            }
-
-            var source = RedTreeGenerator.Generate(greenType);
+            RedTreeGenerator.Settings settings = new(greenType, redType);
+            var source = RedTreeGenerator.Generate(settings);
 
             var name = $"{redType.Name}.g.cs";
 

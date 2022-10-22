@@ -13,6 +13,7 @@ namespace Draco.Compiler.Syntax;
 /// <summary>
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
+[Draco.RedGreenTree.GreenTree]
 internal abstract partial record class ParseTree
 {
     /// <summary>

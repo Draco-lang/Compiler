@@ -53,7 +53,9 @@ public sealed class GreenTreeGenerator : GeneratorBase
 
         return new CodeWriter()
             .Write(this.headerWriter)
+            .Write("#nullable enable")
             .Write(this.contentWriter)
+            .Write("#nullable restore")
             .ToString();
     }
 

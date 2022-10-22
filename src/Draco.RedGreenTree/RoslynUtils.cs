@@ -32,7 +32,7 @@ internal static class RoslynUtils
     private static readonly string[] keywords = new[]
     {
         "if", "else", "while", "for", "foreach",
-        "params", "ref", "out",
+        "params", "ref", "out", "operator",
         "object",
     };
     public static string EscapeKeyword(string name)

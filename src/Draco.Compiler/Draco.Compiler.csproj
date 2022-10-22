@@ -4,6 +4,11 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Draco.RedGreenTree.SourceGenerator\Draco.RedGreenTree.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
+  </ItemGroup>
 
 </Project>

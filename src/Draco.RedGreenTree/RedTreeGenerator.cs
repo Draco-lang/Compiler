@@ -71,7 +71,9 @@ public sealed class RedTreeGenerator : GeneratorBase
 
         return new CodeWriter()
             .Write(this.headerWriter)
+            .Write("#nullable enable")
             .Write(this.contentWriter)
+            .Write("#nullable restore")
             .ToString();
     }
 
@@ -223,7 +225,7 @@ public sealed class RedTreeGenerator : GeneratorBase
 
         this.contentWriter
             .Write("[return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(green))]")
-            .Write("internal")
+            .Write("internal static")
             .Write($"{redRoot}?")
             .Write(this.ToRedMethodName)
             .Write("(")

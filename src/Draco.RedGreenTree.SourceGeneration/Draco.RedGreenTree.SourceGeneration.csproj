@@ -18,9 +18,9 @@
   <ItemGroup>
     <!-- Generator dependencies -->
     <Compile Include="../Draco.RedGreenTree/**/*.cs"
-             Remove="../Draco.RedGreenTree/obj/**/*.cs"
              Link="../Draco.RedGreenTree"
              Visible="False" />
+	<Compile Remove="../Draco.RedGreenTree/obj/**/*.cs"/>
   </ItemGroup>
 
 </Project>

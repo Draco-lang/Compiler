@@ -8,6 +8,13 @@ public sealed class RedTreeSourceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+#if DEBUG
+        if (!System.Diagnostics.Debugger.IsAttached)
+        {
+            System.Diagnostics.Debugger.Launch();
+        }
+#endif
+
         const string attributeName = "Draco.RedGreenTree.RedTreeAttribute";
 
         var trees = context.ForTypesWithAttribute(attributeName)

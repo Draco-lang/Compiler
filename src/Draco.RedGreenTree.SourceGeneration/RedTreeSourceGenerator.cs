@@ -30,6 +30,12 @@ public sealed class RedTreeSourceGenerator : IIncrementalGenerator
             var greenType = types.Green;
             var redType = types.Red;
 
+            if (greenType.Name != redType.Name)
+            {
+                ctx.ReportRedTypeNameDoesNotMatchGreen(redType, greenType);
+                return;
+            }
+
             var source = RedTreeGenerator.Generate(greenType);
 
             var name = $"{redType.Name}.g.cs";

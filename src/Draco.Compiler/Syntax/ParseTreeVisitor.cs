@@ -12,6 +12,7 @@ namespace Draco.Compiler.Syntax;
 /// A visitor recursively visits all tree elements.
 /// </summary>
 /// <typeparam name="T">The return type of the visitor methods.</typeparam>
+[Draco.RedGreenTree.VisitorInterface(typeof(ParseTree))]
 internal partial interface IParseTreeVisitor<out T>
 {
     public T VisitToken(Token token);

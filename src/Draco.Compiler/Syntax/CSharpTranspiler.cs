@@ -67,6 +67,15 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
+    public override Unit VisitBlockFuncBody(FuncBody.BlockBody body)
+    {
+        this.output.AppendLine("{");
+        var (stmts, value) = body.Block.Enclosed.Value;
+        this.VisitEnumerable(stmts);
+        this.output.AppendLine("}");
+        return this.Default;
+    }
+
     public override Unit VisitCallExpr(Expr.Call expr)
     {
         base.VisitExpr(expr.Called);
@@ -78,10 +87,17 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
 
     public override Unit VisitBlockExpr(Expr.Block expr)
     {
-        this.output.AppendLine("{");
-        base.VisitBlockExpr(expr);
+        this.output.AppendLine("(() =>\n{");
+        var (stmts, value) = expr.Enclosed.Value;
+        this.VisitEnumerable(stmts);
+        if (value != null)
+        {
+            this.output.Append("return ");
+            this.VisitNullable(value);
+            this.output.Append(';');
+        }
         this.output.AppendLine();
-        this.output.Append('}');
+        this.output.Append("})()");
         return this.Default;
     }
 
@@ -171,7 +187,6 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
 
     public override Unit VisitContentStringPart(StringPart.Content stringPart)
     {
-        
         this.output.Append('\"');
         // Escaping chars
         foreach (char c in stringPart.Token.ValueText!)

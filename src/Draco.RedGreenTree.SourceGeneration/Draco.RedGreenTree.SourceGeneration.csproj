@@ -17,7 +17,10 @@
 
   <ItemGroup>
     <!-- Generator dependencies -->
-    <ProjectReference Include="..\Draco.RedGreenTree\Draco.RedGreenTree.csproj" GeneratePathProperty="true" PrivateAssets="all" />
+    <Compile Include="../Draco.RedGreenTree/**/*.cs"
+             Remove="../Draco.RedGreenTree/obj/**/*.cs"
+             Link="../Draco.RedGreenTree"
+             Visible="False" />
   </ItemGroup>
 
 </Project>

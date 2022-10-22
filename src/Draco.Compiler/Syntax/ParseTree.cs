@@ -202,7 +202,7 @@ internal partial record class ParseTree
         /// A block of statements and an optional value.
         /// </summary>
         public sealed record class Block(
-            Enclosed<(ValueArray<Stmt> Statements, Expr? Value)> Enclosed) : Expr;
+            Enclosed<BlockContents> Enclosed) : Expr;
 
         /// <summary>
         /// An if-expression with an option else clause.
@@ -282,7 +282,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed record class Relational(
             Expr Left,
-            ValueArray<(Token Operator, Expr Right)> Comparisons) : Expr;
+            ValueArray<ComparisonElement> Comparisons) : Expr;
 
         /// <summary>
         /// A grouping expression, enclosing a sub-expression.
@@ -305,6 +305,20 @@ internal partial record class ParseTree
     public sealed record class ElseClause(
         Token ElseToken,
         Expr Expression) : ParseTree;
+
+    /// <summary>
+    /// The contents of a block.
+    /// </summary>
+    public sealed record class BlockContents(
+        ValueArray<Stmt> Statements,
+        Expr? Value) : ParseTree;
+
+    /// <summary>
+    /// A single comparison element in a comparison chain.
+    /// </summary>
+    public sealed record class ComparisonElement(
+        Token Operator,
+        Expr Right) : ParseTree;
 
     /// <summary>
     /// Part of a string literal/expression.
@@ -454,10 +468,4 @@ internal partial record class ParseTree
         private static string DiagnosticToString(Diagnostic diagnostic) =>
             string.Format(diagnostic.Format, diagnostic.FormatArgs);
     }
-}
-
-public abstract partial class RedParseTree
-{
-    private readonly ParseTree green;
-    public int Width { get; set; }
 }

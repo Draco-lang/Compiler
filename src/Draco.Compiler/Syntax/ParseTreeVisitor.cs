@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Diagnostics;
 using Draco.Compiler.Utilities;
 using static Draco.Compiler.Syntax.ParseTree;
 
@@ -31,6 +32,11 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
         throw new NotImplementedException();
     }
 
+    protected T VisitValueArray(ValueArray<Diagnostic> diags)
+    {
+        throw new NotImplementedException();
+    }
+
     protected T VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
         where TElement : ParseTree
     {
@@ -43,7 +49,13 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
         throw new NotImplementedException();
     }
 
-    protected T VisitToken(Token token)
+    protected T VisitEnclosed<TElement>(Enclosed<PunctuatedList<TElement>> enclosed)
+        where TElement : ParseTree
+    {
+        throw new NotImplementedException();
+    }
+
+    public T VisitToken(Token token)
     {
         throw new NotImplementedException();
     }

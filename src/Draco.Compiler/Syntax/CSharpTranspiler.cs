@@ -22,19 +22,6 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         this.output.AppendLine("dynamic Valueify(Func<dynamic> func) => func();");
     }
 
-    private void CreateTernary(Expr.If expr)
-    {
-        // We must have else branch
-        if (expr.Else is null) throw new NotImplementedException();
-        this.output.Append("((");
-        base.VisitExpr(expr.Condition.Value);
-        this.output.Append(") ? ");
-        base.VisitExpr(expr.Then);
-        this.output.Append(" : ");
-        base.VisitExpr(expr.Else.Value.Expression);
-        this.output.Append(')');
-    }
-
     public override Unit VisitStmt(Stmt stmt)
     {
         base.VisitStmt(stmt);
@@ -44,7 +31,7 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
 
     public override Unit VisitFuncDecl(Decl.Func decl)
     {
-        this.output.Append($"dynamic {decl.Identifier.Text}(");
+        this.output.Append($"dynamic {(decl.Identifier.Text == "main" ? "Main" : decl.Identifier.Text)}(");
         for (int i = 0; i < decl.Params.Value.Elements.Count; i++)
         {
             this.VisitFuncParam(decl.Params.Value.Elements[i].Value);
@@ -67,14 +54,7 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         if (decl.Initializer is not null)
         {
             this.output.Append(" = ");
-            if (decl.Initializer.Value.Expression is Expr.If ifExpr)
-            {
-                CreateTernary(ifExpr);
-            }
-            else
-            {
-                base.VisitNullable(decl.Initializer?.Expression);
-            }
+            base.VisitNullable(decl.Initializer?.Expression);
         }
         this.output.Append(';');
         return this.Default;
@@ -103,7 +83,7 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
         {
             this.output.Append("return Valueify(() => {");
             base.VisitExpr(body.Block.Enclosed.Value.Value);
-            this.output.Append("})");
+            this.output.Append("});");
         }
         this.output.AppendLine("}");
         return this.Default;
@@ -172,15 +152,29 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
 
     public override Unit VisitIfExpr(Expr.If expr)
     {
-        this.output.Append("if (");
+
+        //this.output.Append("if (");
+        //base.VisitExpr(expr.Condition.Value);
+        //this.output.Append(')');
+        //this.VisitExpr(expr.Then);
+        //if (expr.Else is not null)
+        //{
+        //    this.output.Append("else ");
+        //    this.VisitNullable(expr.Else?.Expression);
+        //}
+        this.output.Append("Valueify(()=>(");
         base.VisitExpr(expr.Condition.Value);
-        this.output.Append(')');
-        this.VisitExpr(expr.Then);
-        if (expr.Else is not null)
+        this.output.Append(") ? Valueify(()=>");
+        base.VisitExpr(expr.Then);
+        this.output.Append(") : ");
+        if (expr.Else is null) this.output.Append("new Unit()");
+        else
         {
-            this.output.Append("else ");
-            this.VisitNullable(expr.Else?.Expression);
+            this.output.Append("Valueify(()=>");
+            base.VisitExpr(expr.Else.Value.Expression);
+            this.output.Append(')');
         }
+        this.output.Append(')');
         return this.Default;
     }
 
@@ -197,14 +191,15 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
     {
         base.VisitExpr(expr.Left);
         this.output.Append($" {expr.Operator.Text} ");
-        if (expr.Right is Expr.If ifExpr)
-        {
-            this.CreateTernary(ifExpr);
-        }
-        else
-        {
-            base.VisitExpr(expr.Right);
-        }
+        //if (expr.Right is Expr.If ifExpr)
+        //{
+        //    this.CreateTernary(ifExpr);
+        //}
+        //else
+        //{
+        //    base.VisitExpr(expr.Right);
+        //}
+        base.VisitExpr(expr.Right);
         return this.Default;
     }
 

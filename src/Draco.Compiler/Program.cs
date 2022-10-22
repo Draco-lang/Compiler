@@ -13,7 +13,10 @@ func main(x: int32, y: int32) {
     Hello, " \n world! \{3 * 3}
 """);
     var z = if(3 == 5) 3 else 5;
-    x = if(z == 3) 8 else 5;
+    x = if(z == 3) 8;
+    if(z = 3){
+        y = 5;
+    }
 }
 """";
         var srcReader = SourceReader.From(src);

@@ -31,34 +31,44 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
     protected T VisitValueArray<TElement>(ValueArray<TElement> elements)
         where TElement : ParseTree
     {
-        throw new NotImplementedException();
+        foreach (var item in elements) this.Visit(item);
+        return this.Default;
     }
 
-    protected T VisitValueArray(ValueArray<Diagnostic> diags)
-    {
-        throw new NotImplementedException();
-    }
+    protected virtual T VisitValueArray(ValueArray<Diagnostic> diags) => this.Default;
 
     protected T VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
         where TElement : ParseTree
     {
-        throw new NotImplementedException();
+        foreach (var item in list.Elements) this.VisitPunctuated(item);
+        return this.Default;
+    }
+
+    protected T VisitPunctuated<TElement>(Punctuated<TElement> punctuated)
+        where TElement : ParseTree
+    {
+        this.Visit(punctuated.Value);
+        if (punctuated.Punctuation is not null) this.VisitToken(punctuated.Punctuation);
+        return this.Default;
     }
 
     protected T VisitEnclosed<TElement>(Enclosed<TElement> enclosed)
         where TElement : ParseTree
     {
-        throw new NotImplementedException();
+        this.VisitToken(enclosed.OpenToken);
+        this.Visit(enclosed.Value);
+        this.VisitToken(enclosed.CloseToken);
+        return this.Default;
     }
 
     protected T VisitEnclosed<TElement>(Enclosed<PunctuatedList<TElement>> enclosed)
         where TElement : ParseTree
     {
-        throw new NotImplementedException();
+        this.VisitToken(enclosed.OpenToken);
+        this.VisitPunctuatedList(enclosed.Value);
+        this.VisitToken(enclosed.CloseToken);
+        return this.Default;
     }
 
-    public T VisitToken(Token token)
-    {
-        throw new NotImplementedException();
-    }
+    public virtual T VisitToken(Token token) => this.Default;
 }

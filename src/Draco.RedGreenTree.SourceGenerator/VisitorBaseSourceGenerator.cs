@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
@@ -9,53 +10,33 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Draco.RedGreenTree.SourceGenerator;
 
 [Generator]
-public sealed class VisitorBaseSourceGenerator : IIncrementalGenerator
+public sealed class VisitorBaseSourceGenerator : SourceGeneratorBase<VisitorBaseGenerator.Settings>
 {
-    public void Initialize(IncrementalGeneratorInitializationContext context)
+    public override string TopLevelAttributeName => "VisitorBaseAttribute";
+
+    public override string TopLevelAttributeSource => """
+        [global::System.AttributeUsage(global::System.AttributeTargets.Class)]
+        public sealed class VisitorBaseAttribute : global::System.Attribute
+        {
+            public global::System.Type RootType { get; }
+        
+            public VisitorBaseAttribute(global::System.Type rootType)
+            {
+                this.RootType = rootType;
+            }
+        }
+        """;
+
+    protected override VisitorBaseGenerator.Settings? ReadSettings(
+        INamedTypeSymbol targetType,
+        AttributeData attributeData)
     {
-        const string attributeName = "Draco.RedGreenTree.VisitorBaseAttribute";
-
-        context.RegisterPostInitializationOutput(ctx =>
-        {
-            ctx.AddSource(
-                "VisitorBaseAttribute.g.cs",
-                """
-                namespace Draco.RedGreenTree;
-
-                [global::System.AttributeUsage(global::System.AttributeTargets.Class)]
-                public sealed class VisitorBaseAttribute : global::System.Attribute
-                {
-                    public global::System.Type RootType { get; }
-
-                    public VisitorBaseAttribute(global::System.Type rootType)
-                    {
-                        this.RootType = rootType;
-                    }
-                }
-                """);
-        });
-
-        var visitors = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                fullyQualifiedMetadataName: attributeName,
-                predicate: (node, ct) => node is TypeDeclarationSyntax,
-                transform: (ctx, ct) =>
-                {
-                    if (ctx.TargetSymbol is not INamedTypeSymbol visitorType) return null;
-                    var attribute = ctx.Attributes
-                        .First(a => a.AttributeClass?.ToDisplayString() == attributeName);
-                    if (attribute.ConstructorArguments.Length != 1) return null;
-                    var arg = attribute.ConstructorArguments[0];
-                    if (arg.Value is not INamedTypeSymbol rootType) return null;
-                    return new VisitorBaseGenerator.Settings(rootType, visitorType);
-                })
-                .Where(n => n is not null)
-                .Select((n, _) => n!);
-
-        context.RegisterSourceOutput(visitors, (ctx, settings) =>
-        {
-            var source = VisitorBaseGenerator.Generate(settings);
-            ctx.AddSource($"{settings.VisitorType.Name}.g.cs", source);
-        });
+        if (attributeData.ConstructorArguments.Length != 1) return null;
+        var arg = attributeData.ConstructorArguments[0];
+        if (arg.Value is not INamedTypeSymbol rootType) return null;
+        return new VisitorBaseGenerator.Settings(rootType, targetType);
     }
+
+    protected override string GenerateCode(VisitorBaseGenerator.Settings settings) =>
+        VisitorBaseGenerator.Generate(settings);
 }

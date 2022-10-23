@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
@@ -29,14 +30,14 @@ internal partial interface IParseTreeVisitor<out T>
 [VisitorBase(typeof(ParseTree))]
 internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 {
-    protected T VisitValueArray<TElement>(ValueArray<TElement> elements)
+    protected T VisitImmutableArray<TElement>(ImmutableArray<TElement> elements)
         where TElement : ParseTree
     {
         foreach (var item in elements) this.Visit(item);
         return this.Default;
     }
 
-    protected virtual T VisitValueArray(ValueArray<Diagnostic> diags) => this.Default;
+    protected virtual T VisitImmutableArray(ImmutableArray<Diagnostic> diags) => this.Default;
 
     protected T VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
         where TElement : ParseTree
@@ -73,7 +74,7 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 
     public virtual T VisitToken(Token token)
     {
-        this.VisitValueArray(token.Diagnostics);
+        this.VisitImmutableArray(token.Diagnostics);
         return this.Default;
     }
 }

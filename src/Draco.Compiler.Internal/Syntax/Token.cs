@@ -43,25 +43,25 @@ internal sealed partial record class Token : ParseTree
     /// <summary>
     /// The leading trivia for this <see cref="Token"/>.
     /// </summary>
-    public ValueArray<Token> LeadingTrivia { get; }
+    public ImmutableArray<Token> LeadingTrivia { get; }
 
     /// <summary>
     /// The trailing trivia for this <see cref="Token"/>.
     /// </summary>
-    public ValueArray<Token> TrailingTrivia { get; }
+    public ImmutableArray<Token> TrailingTrivia { get; }
 
     /// <summary>
     /// The <see cref="Diagnostic"/> messages attached to this <see cref="Token"/>.
     /// </summary>
-    public override ValueArray<Diagnostic> Diagnostics { get; }
+    public override ImmutableArray<Diagnostic> Diagnostics { get; }
 
     private Token(
         TokenType type,
         string text,
         object? value,
-        ValueArray<Token> leadingTrivia,
-        ValueArray<Token> trailingTrivia,
-        ValueArray<Diagnostic> diagnostics)
+        ImmutableArray<Token> leadingTrivia,
+        ImmutableArray<Token> trailingTrivia,
+        ImmutableArray<Diagnostic> diagnostics)
     {
         this.Type = type;
         this.Text = text;
@@ -84,7 +84,7 @@ internal sealed partial record class Token : ParseTree
         value: this.Value,
         leadingTrivia: this.LeadingTrivia,
         trailingTrivia: this.TrailingTrivia,
-        diagnostics: this.Diagnostics.Append(diagnostic).ToValueArray());
+        diagnostics: this.Diagnostics.Append(diagnostic).ToImmutableArray());
 
     /// <inheritdoc/>
     public override string ToString()
@@ -102,8 +102,8 @@ internal sealed partial record class Token : ParseTree
             if (this.Value is not string || valueText != this.Text) result.Append($" [value={this.Value}]");
         }
         result.AppendLine();
-        if (this.LeadingTrivia.Count > 0) result.AppendLine($"  leading trivia: {this.LeadingTrivia}");
-        if (this.TrailingTrivia.Count > 0) result.AppendLine($"  trailing trivia: {this.TrailingTrivia}");
+        if (this.LeadingTrivia.Length > 0) result.AppendLine($"  leading trivia: {this.LeadingTrivia}");
+        if (this.TrailingTrivia.Length > 0) result.AppendLine($"  trailing trivia: {this.TrailingTrivia}");
         return result.ToString().TrimEnd();
     }
 }
@@ -120,9 +120,9 @@ internal partial record class Token
         type: type,
         text: type.GetTokenText(),
         value: null,
-        leadingTrivia: ValueArray<Token>.Empty,
-        trailingTrivia: ValueArray<Token>.Empty,
-        diagnostics: ValueArray<Diagnostic>.Empty);
+        leadingTrivia: ImmutableArray<Token>.Empty,
+        trailingTrivia: ImmutableArray<Token>.Empty,
+        diagnostics: ImmutableArray<Diagnostic>.Empty);
 
     /// <summary>
     /// Constructs a <see cref="Token"/> from <paramref name="type"/> and <paramref name="text"/>.
@@ -135,9 +135,9 @@ internal partial record class Token
         type: type,
         text: text,
         value: null,
-        leadingTrivia: ValueArray<Token>.Empty,
-        trailingTrivia: ValueArray<Token>.Empty,
-        diagnostics: ValueArray<Diagnostic>.Empty);
+        leadingTrivia: ImmutableArray<Token>.Empty,
+        trailingTrivia: ImmutableArray<Token>.Empty,
+        diagnostics: ImmutableArray<Diagnostic>.Empty);
 
     /// <summary>
     /// Constructs a <see cref="Token"/> from <paramref name="type"/>, <paramref name="text"/> and
@@ -149,12 +149,12 @@ internal partial record class Token
     /// <see cref="Token"/>.</param>
     /// <returns>The constructed <see cref="Token"/> with type <paramref name="type"/>,
     /// text <paramref name="text"/> and diagnostic list <paramref name="diagnostics"/>.</returns>
-    public static Token From(TokenType type, string text, ValueArray<Diagnostic> diagnostics) => new(
+    public static Token From(TokenType type, string text, ImmutableArray<Diagnostic> diagnostics) => new(
         type: type,
         text: text,
         value: null,
-        leadingTrivia: ValueArray<Token>.Empty,
-        trailingTrivia: ValueArray<Token>.Empty,
+        leadingTrivia: ImmutableArray<Token>.Empty,
+        trailingTrivia: ImmutableArray<Token>.Empty,
         diagnostics: diagnostics);
 }
 
@@ -169,9 +169,9 @@ internal partial record class Token
         public TokenType? Type { get; private set; }
         public string? Text { get; private set; }
         public object? Value { get; private set; }
-        public ValueArray<Token>? LeadingTrivia { get; private set; }
-        public ValueArray<Token>? TrailingTrivia { get; private set; }
-        public ValueArray<Diagnostic>? Diagnostics { get; private set; }
+        public ImmutableArray<Token>? LeadingTrivia { get; private set; }
+        public ImmutableArray<Token>? TrailingTrivia { get; private set; }
+        public ImmutableArray<Diagnostic>? Diagnostics { get; private set; }
 
         /// <summary>
         /// Clears this builder.
@@ -195,9 +195,9 @@ internal partial record class Token
         {
             var tt = this.Type ?? throw new InvalidOperationException("specifying token type is required");
             var text = this.Text ?? tt.GetTokenText();
-            var leadingTriv = this.LeadingTrivia ?? ValueArray<Token>.Empty;
-            var trailingTriv = this.TrailingTrivia ?? ValueArray<Token>.Empty;
-            var diags = this.Diagnostics ?? ValueArray<Diagnostic>.Empty;
+            var leadingTriv = this.LeadingTrivia ?? ImmutableArray<Token>.Empty;
+            var trailingTriv = this.TrailingTrivia ?? ImmutableArray<Token>.Empty;
+            var diags = this.Diagnostics ?? ImmutableArray<Diagnostic>.Empty;
             return new(
                 type: tt,
                 text: text,
@@ -228,21 +228,21 @@ internal partial record class Token
             return this;
         }
 
-        public Builder SetLeadingTrivia(ValueArray<Token> trivia)
+        public Builder SetLeadingTrivia(ImmutableArray<Token> trivia)
         {
             if (this.LeadingTrivia is not null) throw new InvalidOperationException("leading trivia already set");
             this.LeadingTrivia = trivia;
             return this;
         }
 
-        public Builder SetTrailingTrivia(ValueArray<Token> trivia)
+        public Builder SetTrailingTrivia(ImmutableArray<Token> trivia)
         {
             if (this.TrailingTrivia is not null) throw new InvalidOperationException("trailing trivia already set");
             this.TrailingTrivia = trivia;
             return this;
         }
 
-        public Builder SetDiagnostics(ValueArray<Diagnostic> diagnostics)
+        public Builder SetDiagnostics(ImmutableArray<Diagnostic> diagnostics)
         {
             if (this.Diagnostics is not null) throw new InvalidOperationException("diagnostics already set");
             this.Diagnostics = diagnostics;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
@@ -8,11 +9,11 @@ namespace Draco.Compiler.Internal;
 
 internal sealed class DiagnosticCollectorVisitor : ParseTreeVisitorBase<Unit>
 {
-    public ValueArray<Diagnostic> Diagnostics => this.diagnostics.ToValue();
+    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics.ToImmutable();
 
-    private readonly ValueArray<Diagnostic>.Builder diagnostics = ValueArray.CreateBuilder<Diagnostic>();
+    private readonly ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
-    protected override Unit VisitValueArray(ValueArray<Diagnostic> diags)
+    protected override Unit VisitImmutableArray(ImmutableArray<Diagnostic> diags)
     {
         foreach (var item in diags) this.diagnostics.Add(item);
         return default;

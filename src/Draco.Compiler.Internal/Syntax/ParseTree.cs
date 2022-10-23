@@ -22,12 +22,12 @@ internal abstract partial record class ParseTree
     /// <summary>
     /// The diagnostics attached to this tree node.
     /// </summary>
-    public virtual ValueArray<Diagnostic> Diagnostics => ValueArray<Diagnostic>.Empty;
+    public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
 
     // Plumbing code for width generation
-    private static int GetWidth(ValueArray<Diagnostic> diags) => 0;
+    private static int GetWidth(ImmutableArray<Diagnostic> diags) => 0;
     private static int GetWidth(ParseTree? tree) => tree?.Width ?? 0;
-    private static int GetWidth<TElement>(ValueArray<TElement> elements)
+    private static int GetWidth<TElement>(ImmutableArray<TElement> elements)
         where TElement : ParseTree => elements.Sum(e => e.Width);
     private static int GetWidth<TElement>(Enclosed<TElement> element)
         where TElement : ParseTree =>
@@ -63,13 +63,13 @@ internal partial record class ParseTree
     /// A list of nodes with a token separating each element.
     /// </summary>
     public readonly record struct PunctuatedList<T>(
-        ValueArray<Punctuated<T>> Elements);
+        ImmutableArray<Punctuated<T>> Elements);
 
     /// <summary>
     /// A compilation unit, the top-most node in the parse tree.
     /// </summary>
     public sealed partial record class CompilationUnit(
-        ValueArray<Decl> Declarations) : ParseTree;
+        ImmutableArray<Decl> Declarations) : ParseTree;
 
     /// <summary>
     /// A declaration, either top-level or as a statement.
@@ -80,11 +80,11 @@ internal partial record class ParseTree
         /// Unexpected input in declaration context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ValueArray<Token> Tokens,
-            ValueArray<Diagnostic> Diagnostics) : Decl
+            ImmutableArray<Token> Tokens,
+            ImmutableArray<Diagnostic> Diagnostics) : Decl
         {
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -138,11 +138,11 @@ internal partial record class ParseTree
         /// Unexpected input in function body context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ValueArray<Token> Tokens,
-            ValueArray<Diagnostic> Diagnostics) : FuncBody
+            ImmutableArray<Token> Tokens,
+            ImmutableArray<Diagnostic> Diagnostics) : FuncBody
         {
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -205,11 +205,11 @@ internal partial record class ParseTree
         /// Unexpected input in expression context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ValueArray<Token> Tokens,
-            ValueArray<Diagnostic> Diagnostics) : Expr
+            ImmutableArray<Token> Tokens,
+            ImmutableArray<Diagnostic> Diagnostics) : Expr
         {
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -302,7 +302,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class Relational(
             Expr Left,
-            ValueArray<ComparisonElement> Comparisons) : Expr;
+            ImmutableArray<ComparisonElement> Comparisons) : Expr;
 
         /// <summary>
         /// A grouping expression, enclosing a sub-expression.
@@ -315,7 +315,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class String(
             Token OpenQuotes,
-            ValueArray<StringPart> Parts,
+            ImmutableArray<StringPart> Parts,
             Token CloseQuotes) : Expr;
     }
 
@@ -330,7 +330,7 @@ internal partial record class ParseTree
     /// The contents of a block.
     /// </summary>
     public sealed partial record class BlockContents(
-        ValueArray<Stmt> Statements,
+        ImmutableArray<Stmt> Statements,
         Expr? Value) : ParseTree;
 
     /// <summary>
@@ -350,10 +350,10 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class Content(
             Token Token,
-            ValueArray<Diagnostic> Diagnostics) : StringPart
+            ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -443,7 +443,7 @@ internal partial record class ParseTree
             {
                 this.Builder.Append(" (value=").Append(valueText).Append(')');
             }
-            if (token.Diagnostics.Count > 0)
+            if (token.Diagnostics.Length > 0)
             {
                 this.Builder.Append(" [");
                 this.Builder.AppendJoin(", ", token.Diagnostics.Select(DiagnosticToString));

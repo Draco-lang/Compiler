@@ -194,9 +194,9 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="CompilationUnit"/>.</returns>
     public CompilationUnit ParseCompilationUnit()
     {
-        var decls = ValueArray.CreateBuilder<Decl>();
+        var decls = ImmutableArray.CreateBuilder<Decl>();
         while (this.Peek().Type != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
-        return new(decls.ToValue());
+        return new(decls.ToImmutable());
     }
 
     /// <summary>
@@ -227,7 +227,7 @@ internal sealed class Parser
             });
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
-            return new Decl.Unexpected(input, ValueArray.Create(diag));
+            return new Decl.Unexpected(input, ImmutableArray.Create(diag));
         }
         }
     }
@@ -363,7 +363,7 @@ internal sealed class Parser
             });
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
-            return new FuncBody.Unexpected(input, ValueArray.Create(diag));
+            return new FuncBody.Unexpected(input, ImmutableArray.Create(diag));
         }
     }
 
@@ -420,7 +420,7 @@ internal sealed class Parser
             openType: TokenType.CurlyOpen,
             valueParser: () =>
             {
-                var stmts = ValueArray.CreateBuilder<Stmt>();
+                var stmts = ImmutableArray.CreateBuilder<Stmt>();
                 Expr? value = null;
                 while (true)
                 {
@@ -478,7 +478,7 @@ internal sealed class Parser
                     }
                 }
             end_of_block:
-                return new BlockContents(stmts.ToValue(), value);
+                return new BlockContents(stmts.ToImmutable(), value);
             },
             closeType: TokenType.CurlyClose);
         return new(enclosed);
@@ -600,7 +600,7 @@ internal sealed class Parser
     private Expr ParseRelationalLevelExpr(Func<Expr> elementParser)
     {
         var left = elementParser();
-        var comparisons = ValueArray.CreateBuilder<ComparisonElement>();
+        var comparisons = ImmutableArray.CreateBuilder<ComparisonElement>();
         while (true)
         {
             var op = this.Peek();
@@ -611,7 +611,7 @@ internal sealed class Parser
         }
         return comparisons.Count == 0
             ? left
-            : new Expr.Relational(left, comparisons.ToValue());
+            : new Expr.Relational(left, comparisons.ToImmutable());
     }
 
     private Expr ParseCallLevelExpr(Func<Expr> elementParser)
@@ -701,7 +701,7 @@ internal sealed class Parser
             });
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
-            return new Expr.Unexpected(input, ValueArray.Create(diag));
+            return new Expr.Unexpected(input, ImmutableArray.Create(diag));
         }
         }
     }
@@ -709,14 +709,14 @@ internal sealed class Parser
     private Expr.String ParseLineString()
     {
         var openQuote = this.Expect(TokenType.LineStringStart);
-        var content = ValueArray.CreateBuilder<StringPart>();
+        var content = ImmutableArray.CreateBuilder<StringPart>();
         while (true)
         {
             var peek = this.Peek();
             if (peek.Type == TokenType.StringContent)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek.Type == TokenType.InterpolationStart)
             {
@@ -732,20 +732,20 @@ internal sealed class Parser
             }
         }
         var closeQuote = this.Expect(TokenType.LineStringEnd);
-        return new(openQuote, content.ToValue(), closeQuote);
+        return new(openQuote, content.ToImmutable(), closeQuote);
     }
 
     private Expr.String ParseMultiLineString()
     {
         var openQuote = this.Expect(TokenType.MultiLineStringStart);
-        var content = ValueArray.CreateBuilder<StringPart>();
+        var content = ImmutableArray.CreateBuilder<StringPart>();
         while (true)
         {
             var peek = this.Peek();
             if (peek.Type == TokenType.StringContent || peek.Type == TokenType.StringNewline)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek.Type == TokenType.InterpolationStart)
             {
@@ -762,16 +762,16 @@ internal sealed class Parser
         }
         var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
         // We need to check if the close quote is on a newline
-        if (closeQuote.LeadingTrivia.Count > 0)
+        if (closeQuote.LeadingTrivia.Length > 0)
         {
-            Debug.Assert(closeQuote.LeadingTrivia.Count <= 2);
+            Debug.Assert(closeQuote.LeadingTrivia.Length <= 2);
             Debug.Assert(closeQuote.LeadingTrivia[0].Type == TokenType.Newline);
-            if (closeQuote.LeadingTrivia.Count == 2)
+            if (closeQuote.LeadingTrivia.Length == 2)
             {
                 // The first trivia was newline, the second must be spaces
                 Debug.Assert(closeQuote.LeadingTrivia[1].Type == TokenType.Whitespace);
                 // For simplicity we rebuild the contents to be able to append diagnostics
-                var newContent = ValueArray.CreateBuilder<StringPart>();
+                var newContent = ImmutableArray.CreateBuilder<StringPart>();
                 // We take the whitespace text and check if every line in the string obeys that as a prefix
                 var prefix = closeQuote.LeadingTrivia[1].Text;
                 var nextIsNewline = true;
@@ -794,7 +794,7 @@ internal sealed class Parser
                             var diag = Diagnostic.Create(
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
-                            var allDiags = contentPart.Diagnostics.Append(diag).ToValueArray();
+                            var allDiags = contentPart.Diagnostics.Append(diag).ToImmutableArray();
                             newContent.Add(new StringPart.Content(contentPart.Token, allDiags));
                         }
                         else
@@ -823,7 +823,7 @@ internal sealed class Parser
                 location);
             closeQuote = closeQuote.AddDiagnostic(diag);
         }
-        return new(openQuote, content.ToValue(), closeQuote);
+        return new(openQuote, content.ToImmutable(), closeQuote);
     }
 
     // General utilities
@@ -842,7 +842,7 @@ internal sealed class Parser
         TokenType punctType,
         TokenType stopType)
     {
-        var elements = ValueArray.CreateBuilder<Punctuated<T>>();
+        var elements = ImmutableArray.CreateBuilder<Punctuated<T>>();
         while (true)
         {
             // Stop token met, don't go further
@@ -862,7 +862,7 @@ internal sealed class Parser
                 break;
             }
         }
-        return new(elements.ToValue());
+        return new(elements.ToImmutable());
     }
 
     /// <summary>
@@ -889,10 +889,10 @@ internal sealed class Parser
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
     /// <returns>The consumed list of <see cref="Token"/>s.</returns>
-    private ValueArray<Token> Synchronize(Func<Token, bool> keepGoing)
+    private ImmutableArray<Token> Synchronize(Func<Token, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
-        var input = ValueArray.CreateBuilder<Token>();
+        var input = ImmutableArray.CreateBuilder<Token>();
         while (true)
         {
             var peek = this.Peek();
@@ -900,7 +900,7 @@ internal sealed class Parser
             if (!keepGoing(peek)) break;
             input.Add(this.Advance());
         }
-        return input.ToValue();
+        return input.ToImmutable();
     }
 
     /// <summary>
@@ -917,7 +917,7 @@ internal sealed class Parser
             // The attached diagnostic message describes what is missing
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: type);
-            return Token.From(type, string.Empty, ValueArray.Create(diag));
+            return Token.From(type, string.Empty, ImmutableArray.Create(diag));
         }
         return token;
     }

@@ -97,9 +97,9 @@ internal sealed class Lexer
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
     private readonly Token.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly ValueArray<Token>.Builder leadingTriviaList = ValueArray.CreateBuilder<Token>();
-    private readonly ValueArray<Token>.Builder trailingTriviaList = ValueArray.CreateBuilder<Token>();
-    private readonly ValueArray<Diagnostic>.Builder diagnosticList = ValueArray.CreateBuilder<Diagnostic>();
+    private readonly ImmutableArray<Token>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<Token>();
+    private readonly ImmutableArray<Token>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<Token>();
+    private readonly ImmutableArray<Diagnostic>.Builder diagnosticList = ImmutableArray.CreateBuilder<Diagnostic>();
 
     public Lexer(ISourceReader sourceReader)
     {
@@ -145,11 +145,11 @@ internal sealed class Lexer
         }
 
         // If there was any leading or trailing trivia, we have to add them
-        if (this.leadingTriviaList.Count > 0) this.tokenBuilder.SetLeadingTrivia(this.leadingTriviaList.ToValue());
-        if (this.trailingTriviaList.Count > 0) this.tokenBuilder.SetTrailingTrivia(this.trailingTriviaList.ToValue());
+        if (this.leadingTriviaList.Count > 0) this.tokenBuilder.SetLeadingTrivia(this.leadingTriviaList.ToImmutable());
+        if (this.trailingTriviaList.Count > 0) this.tokenBuilder.SetTrailingTrivia(this.trailingTriviaList.ToImmutable());
 
         // Attach diagnostics, if any
-        if (this.diagnosticList.Count > 0) this.tokenBuilder.SetDiagnostics(this.diagnosticList.ToValue());
+        if (this.diagnosticList.Count > 0) this.tokenBuilder.SetDiagnostics(this.diagnosticList.ToImmutable());
 
         return this.tokenBuilder.Build();
     }

@@ -17,7 +17,12 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
 
     public CSharpTranspiler()
     {
-        this.output.AppendLine("record struct Unit");
+        this.AppendPrelude();
+    }
+
+    private void AppendPrelude()
+    {
+        this.output.AppendLine("record struct Unit;");
         this.output.AppendLine("Unit Valueify(Action action) { action(); return new Unit(); }");
         this.output.AppendLine("dynamic Valueify(Func<dynamic> func) => func();");
     }

@@ -13,12 +13,31 @@ namespace Draco.Compiler.Syntax;
 /// <summary>
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
+[Draco.RedGreenTree.GreenTree]
 internal abstract partial record class ParseTree
 {
+    public abstract int Width { get; }
+
     /// <summary>
     /// The diagnostics attached to this tree node.
     /// </summary>
     public virtual ValueArray<Diagnostic> Diagnostics => ValueArray<Diagnostic>.Empty;
+
+    // Plumbing code for width generation
+    private static int GetWidth(ValueArray<Diagnostic> diags) => 0;
+    private static int GetWidth(ParseTree? tree) => tree?.Width ?? 0;
+    private static int GetWidth<TElement>(ValueArray<TElement> elements)
+        where TElement : ParseTree => elements.Sum(e => e.Width);
+    private static int GetWidth<TElement>(Enclosed<TElement> element)
+        where TElement : ParseTree =>
+        element.OpenToken.Width + element.Value.Width + element.CloseToken.Width;
+    private static int GetWidth<TElement>(Enclosed<PunctuatedList<TElement>> element)
+        where TElement : ParseTree =>
+        element.OpenToken.Width + GetWidth(element.Value) + element.CloseToken.Width;
+    private static int GetWidth<TElement>(PunctuatedList<TElement> elements)
+        where TElement : ParseTree => elements.Elements.Sum(GetWidth);
+    private static int GetWidth<TElement>(Punctuated<TElement> element)
+        where TElement : ParseTree => element.Value.Width + (element.Punctuation?.Width ?? 0);
 }
 
 // Nodes
@@ -48,18 +67,18 @@ internal partial record class ParseTree
     /// <summary>
     /// A compilation unit, the top-most node in the parse tree.
     /// </summary>
-    public sealed record class CompilationUnit(
+    public sealed partial record class CompilationUnit(
         ValueArray<Decl> Declarations) : ParseTree;
 
     /// <summary>
     /// A declaration, either top-level or as a statement.
     /// </summary>
-    public abstract record class Decl : ParseTree
+    public abstract partial record class Decl : ParseTree
     {
         /// <summary>
         /// Unexpected input in declaration context.
         /// </summary>
-        public sealed record class Unexpected(
+        public sealed partial record class Unexpected(
             ValueArray<Token> Tokens,
             ValueArray<Diagnostic> Diagnostics) : Decl
         {
@@ -70,7 +89,7 @@ internal partial record class ParseTree
         /// <summary>
         /// A function declaration.
         /// </summary>
-        public sealed record class Func(
+        public sealed partial record class Func(
             Token FuncKeyword,
             Token Identifier,
             Enclosed<PunctuatedList<FuncParam>> Params,
@@ -80,37 +99,44 @@ internal partial record class ParseTree
         /// <summary>
         /// A label declaration.
         /// </summary>
-        public sealed record class Label(
+        public sealed partial record class Label(
             Token Identifier,
             Token ColonToken) : Decl;
 
         /// <summary>
         /// A variable declaration.
         /// </summary>
-        public sealed record class Variable(
+        public sealed partial record class Variable(
             Token Keyword, // Either var or val
             Token Identifier,
             TypeSpecifier? Type,
-            (Token AssignToken, Expr Expression)? Initializer,
+            ValueInitializer? Initializer,
             Token Semicolon) : Decl;
     }
 
     /// <summary>
     /// A function parameter.
     /// </summary>
-    public sealed record class FuncParam(
+    public sealed partial record class FuncParam(
         Token Identifier,
         TypeSpecifier Type) : ParseTree;
 
     /// <summary>
+    /// A value initializer construct.
+    /// </summary>
+    public sealed partial record class ValueInitializer(
+        Token AssignToken,
+        Expr Value) : ParseTree;
+
+    /// <summary>
     /// A function body, either a block or in-line.
     /// </summary>
-    public abstract record class FuncBody : ParseTree
+    public abstract partial record class FuncBody : ParseTree
     {
         /// <summary>
         /// Unexpected input in function body context.
         /// </summary>
-        public sealed record class Unexpected(
+        public sealed partial record class Unexpected(
             ValueArray<Token> Tokens,
             ValueArray<Diagnostic> Diagnostics) : FuncBody
         {
@@ -121,13 +147,13 @@ internal partial record class ParseTree
         /// <summary>
         /// A block function body.
         /// </summary>
-        public sealed record class BlockBody(
+        public sealed partial record class BlockBody(
             Expr.Block Block) : FuncBody;
 
         /// <summary>
         /// An in-line function body.
         /// </summary>
-        public sealed record class InlineBody(
+        public sealed partial record class InlineBody(
             Token AssignToken,
             Expr Expression,
             Token Semicolon) : FuncBody;
@@ -136,35 +162,35 @@ internal partial record class ParseTree
     /// <summary>
     /// A type expression, i.e. a reference to a type.
     /// </summary>
-    public abstract record class TypeExpr : ParseTree
+    public abstract partial record class TypeExpr : ParseTree
     {
         // This is the only kind of type expression for now
-        public sealed record class Name(
+        public sealed partial record class Name(
             Token Identifier) : TypeExpr;
     }
 
     /// <summary>
     /// A type specifier for functions, variables, expressions, etc.
     /// </summary>
-    public sealed record class TypeSpecifier(
+    public sealed partial record class TypeSpecifier(
         Token ColonToken,
         TypeExpr Type) : ParseTree;
 
     /// <summary>
     /// A statement in a block.
     /// </summary>
-    public abstract record class Stmt : ParseTree
+    public abstract partial record class Stmt : ParseTree
     {
         /// <summary>
         /// A declaration statement.
         /// </summary>
-        public new sealed record class Decl(
+        public new sealed partial record class Decl(
             ParseTree.Decl Declaration) : Stmt;
 
         /// <summary>
         /// An expression statement.
         /// </summary>
-        public new sealed record class Expr(
+        public new sealed partial record class Expr(
             ParseTree.Expr Expression,
             Token? Semicolon) : Stmt;
     }
@@ -172,12 +198,12 @@ internal partial record class ParseTree
     /// <summary>
     /// An expression.
     /// </summary>
-    public abstract record class Expr : ParseTree
+    public abstract partial record class Expr : ParseTree
     {
         /// <summary>
         /// Unexpected input in expression context.
         /// </summary>
-        public sealed record class Unexpected(
+        public sealed partial record class Unexpected(
             ValueArray<Token> Tokens,
             ValueArray<Diagnostic> Diagnostics) : Expr
         {
@@ -188,28 +214,28 @@ internal partial record class ParseTree
         /// <summary>
         /// An expression that results in unit type and only executes a statement.
         /// </summary>
-        public sealed record class UnitStmt(
+        public sealed partial record class UnitStmt(
             Stmt Statement) : Expr;
 
         /// <summary>
         /// A block of statements and an optional value.
         /// </summary>
-        public sealed record class Block(
-            Enclosed<(ValueArray<Stmt> Statements, Expr? Value)> Enclosed) : Expr;
+        public sealed partial record class Block(
+            Enclosed<BlockContents> Enclosed) : Expr;
 
         /// <summary>
         /// An if-expression with an option else clause.
         /// </summary>
-        public sealed record class If(
+        public sealed partial record class If(
             Token IfKeyword,
             Enclosed<Expr> Condition,
             Expr Then,
-            (Token ElseToken, Expr Expression)? Else) : Expr;
+            ElseClause? Else) : Expr;
 
         /// <summary>
         /// A while-expression.
         /// </summary>
-        public sealed record class While(
+        public sealed partial record class While(
             Token WhileKeyword,
             Enclosed<Expr> Condition,
             Expr Expression) : Expr;
@@ -217,40 +243,40 @@ internal partial record class ParseTree
         /// <summary>
         /// A goto-expression.
         /// </summary>
-        public sealed record class Goto(
+        public sealed partial record class Goto(
             Token GotoKeyword,
             Token Identifier) : Expr;
 
         /// <summary>
         /// A return-expression.
         /// </summary>
-        public sealed record class Return(
+        public sealed partial record class Return(
             Token ReturnKeyword,
             Expr? Expression) : Expr;
 
         /// <summary>
         /// A literal expression, i.e. a number, string, boolean value, etc.
         /// </summary>
-        public sealed record class Literal(
+        public sealed partial record class Literal(
             Token Value) : Expr;
 
         /// <summary>
         /// Any call-like expression.
         /// </summary>
-        public sealed record class Call(
+        public sealed partial record class Call(
             Expr Called,
             Enclosed<PunctuatedList<Expr>> Args) : Expr;
 
         /// <summary>
         /// A name reference expression.
         /// </summary>
-        public sealed record class Name(
+        public sealed partial record class Name(
             Token Identifier) : Expr;
 
         /// <summary>
         /// A member access expression.
         /// </summary>
-        public sealed record class MemberAccess(
+        public sealed partial record class MemberAccess(
             Expr Object,
             Token DotToken,
             Token MemberName) : Expr;
@@ -258,14 +284,14 @@ internal partial record class ParseTree
         /// <summary>
         /// A unary expression.
         /// </summary>
-        public sealed record class Unary(
+        public sealed partial record class Unary(
             Token Operator,
             Expr Operand) : Expr;
 
         /// <summary>
         /// A binary expression, including assignment and compound assignment.
         /// </summary>
-        public sealed record class Binary(
+        public sealed partial record class Binary(
             Expr Left,
             Token Operator,
             Expr Right) : Expr;
@@ -273,34 +299,55 @@ internal partial record class ParseTree
         /// <summary>
         /// A relational expression chain.
         /// </summary>
-        public sealed record class Relational(
+        public sealed partial record class Relational(
             Expr Left,
-            ValueArray<(Token Operator, Expr Right)> Comparisons) : Expr;
+            ValueArray<ComparisonElement> Comparisons) : Expr;
 
         /// <summary>
         /// A grouping expression, enclosing a sub-expression.
         /// </summary>
-        public sealed record class Grouping(
+        public sealed partial record class Grouping(
             Enclosed<Expr> Expression) : Expr;
 
         /// <summary>
         /// A string expression composing string content and interpolation.
         /// </summary>
-        public sealed record class String(
+        public sealed partial record class String(
             Token OpenQuotes,
             ValueArray<StringPart> Parts,
             Token CloseQuotes) : Expr;
     }
 
     /// <summary>
+    /// The else clause of an if-expression.
+    /// </summary>
+    public sealed partial record class ElseClause(
+        Token ElseToken,
+        Expr Expression) : ParseTree;
+
+    /// <summary>
+    /// The contents of a block.
+    /// </summary>
+    public sealed partial record class BlockContents(
+        ValueArray<Stmt> Statements,
+        Expr? Value) : ParseTree;
+
+    /// <summary>
+    /// A single comparison element in a comparison chain.
+    /// </summary>
+    public sealed partial record class ComparisonElement(
+        Token Operator,
+        Expr Right) : ParseTree;
+
+    /// <summary>
     /// Part of a string literal/expression.
     /// </summary>
-    public abstract record class StringPart : ParseTree
+    public abstract partial record class StringPart : ParseTree
     {
         /// <summary>
         /// Content part of a string literal.
         /// </summary>
-        public sealed record class Content(
+        public sealed partial record class Content(
             Token Token,
             ValueArray<Diagnostic> Diagnostics) : StringPart
         {
@@ -311,7 +358,7 @@ internal partial record class ParseTree
         /// <summary>
         /// An interpolation hole.
         /// </summary>
-        public sealed record class Interpolation(
+        public sealed partial record class Interpolation(
             Token OpenToken,
             Expr Expression,
             Token CloseToken) : StringPart;

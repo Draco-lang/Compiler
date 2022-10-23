@@ -38,7 +38,7 @@ internal sealed partial record class Token : ParseTree
     /// <summary>
     /// The width of this <see cref="Token"/> in characters.
     /// </summary>
-    public int Width { get; }
+    public override int Width { get; }
 
     /// <summary>
     /// The leading trivia for this <see cref="Token"/>.

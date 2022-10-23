@@ -285,11 +285,11 @@ internal sealed class Parser
         TypeSpecifier? type = null;
         if (this.Peek().Type == TokenType.Colon) type = this.ParseTypeSpecifier();
         // We don't necessarily have value assigned to the variable
-        (Token Assign, Expr Value)? assignment = null;
+        ValueInitializer? assignment = null;
         if (this.Matches(TokenType.Assign, out var assign))
         {
             var value = this.ParseExpr();
-            assignment = (assign, value);
+            assignment = new(assign, value);
         }
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenType.Semicolon);
@@ -478,7 +478,7 @@ internal sealed class Parser
                     }
                 }
             end_of_block:
-                return (stmts.ToValue(), value);
+                return new BlockContents(stmts.ToValue(), value);
             },
             closeType: TokenType.CurlyClose);
         return new(enclosed);
@@ -493,11 +493,11 @@ internal sealed class Parser
             closeType: TokenType.ParenClose);
         var thenBody = this.ParseControlFlowBody(ctx);
 
-        (Token ElseKeyword, Expr Value)? elsePart = null;
+        ElseClause? elsePart = null;
         if (this.Matches(TokenType.KeywordElse, out var elseKeyword))
         {
             var elseBody = this.ParseControlFlowBody(ctx);
-            elsePart = (elseKeyword, elseBody);
+            elsePart = new(elseKeyword, elseBody);
         }
 
         return new(ifKeyword, condition, thenBody, elsePart);
@@ -600,14 +600,14 @@ internal sealed class Parser
     private Expr ParseRelationalLevelExpr(Func<Expr> elementParser)
     {
         var left = elementParser();
-        var comparisons = ValueArray.CreateBuilder<(Token Operator, Expr Right)>();
+        var comparisons = ValueArray.CreateBuilder<ComparisonElement>();
         while (true)
         {
             var op = this.Peek();
             if (!relationalOps.Contains(op.Type)) break;
             op = this.Advance();
             var right = elementParser();
-            comparisons.Add((op, right));
+            comparisons.Add(new(op, right));
         }
         return comparisons.Count == 0
             ? left

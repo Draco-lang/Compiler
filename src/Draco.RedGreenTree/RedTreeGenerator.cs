@@ -229,8 +229,8 @@ public sealed class RedTreeGenerator : GeneratorBase
         var redRoot = this.GetRedClassName(this.GreenRootType);
 
         this.contentWriter
-            .Write(this.GreenRootType.DeclaredAccessibility)
-            .Write(this.GreenRootType.GetTypeKind(partial: true))
+            .Write(this.RedRootType.DeclaredAccessibility)
+            .Write(this.RedRootType.GetTypeKind(partial: true))
             .Write(redRoot)
             .Write("{");
 

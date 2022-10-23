@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Compiler.Diagnostics;
+namespace Draco.Compiler.Internal.Diagnostics;
 
 /// <summary>
 /// Represents a location in source code.

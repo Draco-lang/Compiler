@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler", "Draco.Compiler\Draco.Compiler.csproj", "{10775033-4501-45B9-A284-61F1BBC92765}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Internal", "Draco.Compiler.Internal\Draco.Compiler.Internal.csproj", "{10775033-4501-45B9-A284-61F1BBC92765}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Tests", "Draco.Compiler.Tests\Draco.Compiler.Tests.csproj", "{3732FD91-27D9-478F-B5B3-38D3C10B40C8}"
 EndProject
@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree", "Draco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.Cli", "Draco.RedGreenTree.Cli\Draco.RedGreenTree.Cli.csproj", "{6429EFEC-EA0B-4B38-9D21-04220D977841}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.RedGreenTree.SourceGenerator", "Draco.RedGreenTree.SourceGenerator\Draco.RedGreenTree.SourceGenerator.csproj", "{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.SourceGenerator", "Draco.RedGreenTree.SourceGenerator\Draco.RedGreenTree.SourceGenerator.csproj", "{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

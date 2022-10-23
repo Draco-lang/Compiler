@@ -5,10 +5,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Utilities;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// An immutable structure representing a parsed source text with information about concrete syntax.

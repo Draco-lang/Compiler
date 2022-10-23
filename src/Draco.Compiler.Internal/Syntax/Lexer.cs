@@ -6,10 +6,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Utilities;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// Breaks up source code into a sequence of <see cref="IToken"/>s.

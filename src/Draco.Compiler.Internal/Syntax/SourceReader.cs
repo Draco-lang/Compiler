@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// Represents a type that can be used to read source text.

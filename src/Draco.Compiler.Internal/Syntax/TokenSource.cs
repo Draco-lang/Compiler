@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Utilities;
+using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// A source of <see cref="Token"/>s.

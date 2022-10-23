@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// Holds constants for syntax errors.

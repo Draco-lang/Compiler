@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Compiler.Utilities;
+namespace Draco.Compiler.Internal.Utilities;
 
 /// <summary>
 /// Represents an immutable array that is compared element-wise instead of by reference.

@@ -54,8 +54,12 @@ public sealed class RedTreeGenerator : GeneratorBase
     private string GetRedClassName(INamedTypeSymbol type) => SymbolEquals(type, this.GreenRootType)
         ? this.RedRootType.Name
         : this.settings.GetRedName(type);
-    private string GetFullRedClassName(INamedTypeSymbol type) =>
-        string.Join(".", type.EnumerateNestingChain().Select(this.GetRedClassName));
+    private string GetFullRedClassName(INamedTypeSymbol type)
+    {
+        var typeName = string.Join(".", type.EnumerateNestingChain().Select(this.GetRedClassName));
+        if (this.RedRootType.ContainingNamespace is null) return typeName;
+        return $"{this.RedRootType.ContainingNamespace.ToDisplayString()}.{typeName}";
+    }
 
     private RedTreeGenerator(Settings settings)
     {

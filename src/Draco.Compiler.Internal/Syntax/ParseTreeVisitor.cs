@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Utilities;
-using static Draco.Compiler.Syntax.ParseTree;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
+using static Draco.Compiler.Internal.Syntax.ParseTree;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// Defines a visitor for <see cref="ParseTree"/>s.

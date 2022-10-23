@@ -4,10 +4,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Utilities;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// Represents a piece of source code that has an associated category and can be considered atomic during parsing.

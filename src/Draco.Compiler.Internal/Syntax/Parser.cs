@@ -6,11 +6,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Utilities;
-using static Draco.Compiler.Syntax.ParseTree;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
+using static Draco.Compiler.Internal.Syntax.ParseTree;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// Parses a sequence of <see cref="Token"/>s into a <see cref="ParseTree"/>.

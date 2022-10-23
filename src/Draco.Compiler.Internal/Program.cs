@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Syntax;
-using Draco.Compiler.Utilities;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler;
+namespace Draco.Compiler.Internal;
 
 internal sealed class DiagnosticCollectorVisitor : ParseTreeVisitorBase<Unit>
 {
@@ -34,7 +34,6 @@ func main() {
         var tokenSource = TokenSource.From(lexer);
         var parser = new Parser(tokenSource);
         var cu = parser.ParseCompilationUnit();
-        var cuRed = (Syntax.Public.ParseTree.CompilationUnit)Syntax.Public.ParseTree.ToRed(null, cu);
         var collector = new DiagnosticCollectorVisitor();
         collector.Visit(cu);
         var diags = collector.Diagnostics;

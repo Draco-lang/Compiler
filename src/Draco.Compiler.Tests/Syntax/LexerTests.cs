@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Syntax;
+using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Tests.Syntax;
 

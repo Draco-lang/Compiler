@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
+using Draco.RedGreenTree.Attributes;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -12,7 +13,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// A visitor recursively visits all tree elements.
 /// </summary>
 /// <typeparam name="T">The return type of the visitor methods.</typeparam>
-[Draco.RedGreenTree.VisitorInterface(typeof(ParseTree))]
+[VisitorInterface(typeof(ParseTree))]
 internal partial interface IParseTreeVisitor<out T>
 {
     public T VisitToken(Token token);
@@ -25,7 +26,7 @@ internal partial interface IParseTreeVisitor<out T>
 /// to recurse in the tree.
 /// </summary>
 /// <typeparam name="T">The return type of the visitor.</typeparam>
-[Draco.RedGreenTree.VisitorBase(typeof(ParseTree))]
+[VisitorBase(typeof(ParseTree))]
 internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
 {
     protected T VisitValueArray<TElement>(ValueArray<TElement> elements)

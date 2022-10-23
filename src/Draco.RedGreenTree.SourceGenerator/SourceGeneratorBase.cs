@@ -13,41 +13,21 @@ namespace Draco.RedGreenTree.SourceGenerator;
 /// <typeparam name="TSettings">The settings type the generator reads up from source.</typeparam>
 public abstract class SourceGeneratorBase<TSettings> : IIncrementalGenerator
 {
-    public static readonly string AttributeNamespace = "Draco.RedGreenTree";
-
     /// <summary>
-    /// The attribute name (without the namespace) that initiates this source generator.
+    /// The fully qualified name of the attribute that initiates this source generator.
     /// </summary>
-    public abstract string TopLevelAttributeName { get; }
-
-    /// <summary>
-    /// The source (without the namespace declaration) of the attribute named <see cref="TopLevelAttributeName"/>.
-    /// </summary>
-    public abstract string TopLevelAttributeSource { get; }
+    public abstract string TopLevelAttributeFullName { get; }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var fullyQualifiedAttributeName = $"{AttributeNamespace}.{this.TopLevelAttributeName}";
-
-        context.RegisterPostInitializationOutput(ctx =>
-        {
-            ctx.AddSource(
-                $"{this.TopLevelAttributeName}.g.cs",
-                $$"""
-                namespace {{AttributeNamespace}};
-
-                {{this.TopLevelAttributeSource}}
-                """);
-        });
-
         var settingsProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
-            fullyQualifiedMetadataName: fullyQualifiedAttributeName,
+            fullyQualifiedMetadataName: this.TopLevelAttributeFullName,
             predicate: (node, ct) => node is TypeDeclarationSyntax,
             transform: (ctx, ct) =>
             {
                 if (ctx.TargetSymbol is not INamedTypeSymbol targetType) return default;
                 var attribute = ctx.Attributes
-                    .First(a => a.AttributeClass?.ToDisplayString() == fullyQualifiedAttributeName);
+                    .First(a => a.AttributeClass?.ToDisplayString() == this.TopLevelAttributeFullName);
                 return (TargetType: targetType, Settings: this.ReadSettings(targetType, attribute));
             })
             .Where(pair => pair.Settings is not null)
@@ -60,7 +40,18 @@ public abstract class SourceGeneratorBase<TSettings> : IIncrementalGenerator
         });
     }
 
+    /// <summary>
+    /// From the matched type and top-level attribute data constructs the settings for code generation.
+    /// </summary>
+    /// <param name="targetType">The type that had the attribute.</param>
+    /// <param name="attributeData">The attribute data that was attached.</param>
+    /// <returns>The settings for code generation, or null if the settings are invalid.</returns>
     protected abstract TSettings? ReadSettings(INamedTypeSymbol targetType, AttributeData attributeData);
 
+    /// <summary>
+    /// Generates code from the read up settings.
+    /// </summary>
+    /// <param name="settings">The read settings.</param>
+    /// <returns>The generated C# code.</returns>
     protected abstract string GenerateCode(TSettings settings);
 }

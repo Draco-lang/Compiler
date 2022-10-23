@@ -7,13 +7,14 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
+using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
-[Draco.RedGreenTree.GreenTree]
+[GreenTree]
 internal abstract partial record class ParseTree
 {
     public abstract int Width { get; }

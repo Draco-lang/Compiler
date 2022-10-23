@@ -12,20 +12,7 @@ namespace Draco.RedGreenTree.SourceGenerator;
 [Generator]
 public sealed class VisitorInterfaceSourceGenerator : SourceGeneratorBase<VisitorInterfaceGenerator.Settings>
 {
-    public override string TopLevelAttributeName => "VisitorInterfaceAttribute";
-
-    public override string TopLevelAttributeSource => """
-        [global::System.AttributeUsage(global::System.AttributeTargets.Interface)]
-        public sealed class VisitorInterfaceAttribute : global::System.Attribute
-        {
-            public global::System.Type RootType { get; }
-        
-            public VisitorInterfaceAttribute(global::System.Type rootType)
-            {
-                this.RootType = rootType;
-            }
-        }
-        """;
+    public override string TopLevelAttributeFullName => "Draco.RedGreenTree.Attributes.VisitorInterfaceAttribute";
 
     protected override VisitorInterfaceGenerator.Settings? ReadSettings(
         INamedTypeSymbol targetType,

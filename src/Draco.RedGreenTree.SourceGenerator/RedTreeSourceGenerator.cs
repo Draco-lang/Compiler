@@ -12,20 +12,7 @@ namespace Draco.RedGreenTree.SourceGenerator;
 [Generator]
 public sealed class RedTreeSourceGenerator : SourceGeneratorBase<RedTreeGenerator.Settings>
 {
-    public override string TopLevelAttributeName => "RedTreeAttribute";
-
-    public override string TopLevelAttributeSource => """
-        [global::System.AttributeUsage(global::System.AttributeTargets.Class)]
-        public sealed class RedTreeAttribute : global::System.Attribute
-        {
-            public global::System.Type RootType { get; }
-        
-            public RedTreeAttribute(global::System.Type rootType)
-            {
-                this.RootType = rootType;
-            }
-        }
-        """;
+    public override string TopLevelAttributeFullName => "Draco.RedGreenTree.Attributes.RedTreeAttribute";
 
     protected override RedTreeGenerator.Settings? ReadSettings(
         INamedTypeSymbol targetType,

@@ -12,14 +12,7 @@ namespace Draco.RedGreenTree.SourceGenerator;
 [Generator]
 public sealed class GreenTreeSourceGenerator : SourceGeneratorBase<GreenTreeGenerator.Settings>
 {
-    public override string TopLevelAttributeName => "GreenTreeAttribute";
-
-    public override string TopLevelAttributeSource => """
-        [global::System.AttributeUsage(global::System.AttributeTargets.Class)]
-        public sealed class GreenTreeAttribute : global::System.Attribute
-        {
-        }
-        """;
+    public override string TopLevelAttributeFullName => "Draco.RedGreenTree.Attributes.GreenTreeAttribute";
 
     protected override GreenTreeGenerator.Settings? ReadSettings(
         INamedTypeSymbol targetType,

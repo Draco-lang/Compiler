@@ -1,4 +1,5 @@
 using System;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Cli;
 
@@ -6,6 +7,11 @@ internal class Program
 {
     internal static void Main(string[] args)
     {
-        Console.WriteLine("Hello, World!");
+        var ast = ParseTree.Parse("""
+            func main() {
+                print("Hello!");
+            }
+            """);
+        Console.WriteLine(ast);
     }
 }

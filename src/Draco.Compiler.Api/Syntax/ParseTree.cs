@@ -10,6 +10,19 @@ using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Api.Syntax;
 
+public abstract partial record class ParseTree
+{
+    public static ParseTree Parse(string source)
+    {
+        var srcReader = Internal.Syntax.SourceReader.From(source);
+        var lexer = new Internal.Syntax.Lexer(srcReader);
+        var tokenSource = Internal.Syntax.TokenSource.From(lexer);
+        var parser = new Internal.Syntax.Parser(tokenSource);
+        var cu = parser.ParseCompilationUnit();
+        return ToRed(null, cu);
+    }
+}
+
 [RedTree(typeof(Internal.Syntax.ParseTree))]
 public abstract partial record class ParseTree
 {

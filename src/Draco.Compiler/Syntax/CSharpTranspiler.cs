@@ -152,16 +152,6 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
 
     public override Unit VisitIfExpr(Expr.If expr)
     {
-
-        //this.output.Append("if (");
-        //base.VisitExpr(expr.Condition.Value);
-        //this.output.Append(')');
-        //this.VisitExpr(expr.Then);
-        //if (expr.Else is not null)
-        //{
-        //    this.output.Append("else ");
-        //    this.VisitNullable(expr.Else?.Expression);
-        //}
         this.output.Append("Valueify(()=>(");
         base.VisitExpr(expr.Condition.Value);
         this.output.Append(") ? Valueify(()=>");
@@ -191,14 +181,6 @@ internal sealed class CSharpTranspiler : ParseTreeVisitorBase<Unit>
     {
         base.VisitExpr(expr.Left);
         this.output.Append($" {expr.Operator.Text} ");
-        //if (expr.Right is Expr.If ifExpr)
-        //{
-        //    this.CreateTernary(ifExpr);
-        //}
-        //else
-        //{
-        //    base.VisitExpr(expr.Right);
-        //}
         base.VisitExpr(expr.Right);
         return this.Default;
     }

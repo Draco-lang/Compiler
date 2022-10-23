@@ -70,5 +70,9 @@ internal abstract partial class ParseTreeVisitorBase<T> : IParseTreeVisitor<T>
         return this.Default;
     }
 
-    public virtual T VisitToken(Token token) => this.Default;
+    public virtual T VisitToken(Token token)
+    {
+        this.VisitValueArray(token.Diagnostics);
+        return this.Default;
+    }
 }

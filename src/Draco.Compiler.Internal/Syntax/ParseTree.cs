@@ -22,7 +22,7 @@ internal abstract partial record class ParseTree
     /// <summary>
     /// The diagnostics attached to this tree node.
     /// </summary>
-    public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+    internal virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
 
     // Plumbing code for width generation
     private static int GetWidth(ImmutableArray<Diagnostic> diags) => 0;
@@ -84,7 +84,7 @@ internal partial record class ParseTree
             ImmutableArray<Diagnostic> Diagnostics) : Decl
         {
             /// <inheritdoc/>
-            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ internal partial record class ParseTree
             ImmutableArray<Diagnostic> Diagnostics) : FuncBody
         {
             /// <inheritdoc/>
-            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -209,7 +209,7 @@ internal partial record class ParseTree
             ImmutableArray<Diagnostic> Diagnostics) : Expr
         {
             /// <inheritdoc/>
-            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -353,7 +353,7 @@ internal partial record class ParseTree
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>
-            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>

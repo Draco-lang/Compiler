@@ -31,19 +31,65 @@ public abstract partial record class ParseTree
     public readonly record struct PunctuatedList<T>(
         ImmutableArray<Punctuated<T>> Elements);
 
+    // Plumbing code for green-red conversion
+    // TODO: Can we reduce boilerplate?
+
     [return: NotNullIfNotNull(nameof(token))]
-    private static Token? ToRed(ParseTree? parent, Internal.Syntax.Token? token) => token is null
-        ? null
-        : new();
+    private static Token? ToRed(ParseTree? parent, Internal.Syntax.Token? token) =>
+        token is null ? null : new(parent, token);
 
     private static ImmutableArray<Token> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.Token> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
+    private static ImmutableArray<Decl> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Decl> elements) =>
+        elements.Select(e => (Decl)ToRed(parent, e)).ToImmutableArray();
+
+    private static ImmutableArray<Stmt> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Stmt> elements) =>
+        elements.Select(e => (Stmt)ToRed(parent, e)).ToImmutableArray();
+
+    private static ImmutableArray<ComparisonElement> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.ComparisonElement> elements) =>
+        elements.Select(e => (ComparisonElement)ToRed(parent, e)).ToImmutableArray();
+
     private static ImmutableArray<StringPart> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.StringPart> elements) =>
         elements.Select(e => (StringPart)ToRed(parent, e)).ToImmutableArray();
 
-#if false
-    private static ImmutableArray<TElement> ToRed<TElement>(ParseTree? parent, TElement? element)
-        where TElement : Internal.Syntax.ParseTree => throw new NotImplementedException();
-#endif
+    private static Enclosed<PunctuatedList<FuncParam>> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.FuncParam>> enclosed) =>
+        new(
+            ToRed(parent, enclosed.OpenToken),
+            ToRed(parent, enclosed.Value),
+            ToRed(parent, enclosed.CloseToken));
+
+    private static PunctuatedList<FuncParam> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.FuncParam> elements) =>
+        new(elements.Elements.Select(e => ToRed(parent, e)).ToImmutableArray());
+
+    private static Punctuated<FuncParam> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Punctuated<Internal.Syntax.ParseTree.FuncParam> punctuated) =>
+        new(
+            (FuncParam)ToRed(parent, punctuated.Value),
+            ToRed(parent, punctuated.Punctuation));
+
+    private static Enclosed<BlockContents> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.BlockContents> enclosed) =>
+        new(
+            ToRed(parent, enclosed.OpenToken),
+            (BlockContents)ToRed(parent, enclosed.Value),
+            ToRed(parent, enclosed.CloseToken));
+
+    private static Enclosed<Expr> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.Expr> enclosed) =>
+        new(
+            ToRed(parent, enclosed.OpenToken),
+            (Expr)ToRed(parent, enclosed.Value),
+            ToRed(parent, enclosed.CloseToken));
+
+    private static Enclosed<PunctuatedList<Expr>> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.Expr>> enclosed) =>
+        new(
+            ToRed(parent, enclosed.OpenToken),
+            ToRed(parent, enclosed.Value),
+            ToRed(parent, enclosed.CloseToken));
+
+    private static PunctuatedList<Expr> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.Expr> elements) =>
+        new(elements.Elements.Select(e => ToRed(parent, e)).ToImmutableArray());
+
+    private static Punctuated<Expr> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Punctuated<Internal.Syntax.ParseTree.Expr> punctuated) =>
+        new(
+            (Expr)ToRed(parent, punctuated.Value),
+            ToRed(parent, punctuated.Punctuation));
 }

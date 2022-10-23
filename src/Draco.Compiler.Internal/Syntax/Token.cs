@@ -53,7 +53,7 @@ internal sealed partial record class Token : ParseTree
     /// <summary>
     /// The <see cref="Diagnostic"/> messages attached to this <see cref="Token"/>.
     /// </summary>
-    public override ImmutableArray<Diagnostic> Diagnostics { get; }
+    internal override ImmutableArray<Diagnostic> Diagnostics { get; }
 
     private Token(
         TokenType type,

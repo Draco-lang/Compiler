@@ -1,3 +1,5 @@
+using System;
+
 namespace Draco.Compiler.Cli;
 
 internal class Program

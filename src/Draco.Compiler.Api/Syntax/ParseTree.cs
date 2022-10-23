@@ -15,3 +15,19 @@ public abstract partial record class ParseTree
     private readonly Internal.Syntax.ParseTree green;
     public ParseTree? Parent { get; }
 }
+
+public abstract partial record class ParseTree
+{
+    public readonly record struct Enclosed<T>(
+        Token OpenToken,
+        T Value,
+        Token CloseToken);
+
+    public readonly record struct Punctuated<T>(
+        T Value,
+        Token? Punctuation);
+
+    public readonly record struct PunctuatedList<T>(
+        ValueArray<Punctuated<T>> Elements);
+
+}

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.RedGreenTree;
 
@@ -38,6 +39,7 @@ public sealed class RedTreeGenerator : GeneratorBase
     }
 
     private readonly Settings settings;
+    private readonly HashSet<INamedTypeSymbol> typesInParseTree = new(SymbolEqualityComparer.Default);
     private readonly CodeWriter headerWriter = new();
     private readonly CodeWriter contentWriter = new();
 
@@ -56,6 +58,10 @@ public sealed class RedTreeGenerator : GeneratorBase
         : this.settings.GetRedName(type);
     private string GetFullRedClassName(INamedTypeSymbol type)
     {
+        if (!this.typesInParseTree.Contains(type) && !type.IsSubtypeOf(this.settings.GreenRootType))
+        {
+            return type.ToDisplayString();
+        }
         var typeName = string.Join(".", type.EnumerateNestingChain().Select(this.GetRedClassName));
         if (this.RedRootType.ContainingNamespace is null) return typeName;
         return $"{this.RedRootType.ContainingNamespace.ToDisplayString()}.{typeName}";
@@ -64,6 +70,7 @@ public sealed class RedTreeGenerator : GeneratorBase
     private RedTreeGenerator(Settings settings)
     {
         this.settings = settings;
+        foreach (var item in settings.GreenRootType.EnumerateContainedTypeTree()) this.typesInParseTree.Add(item);
     }
 
     protected override string Generate()
@@ -284,11 +291,13 @@ public sealed class RedTreeGenerator : GeneratorBase
         // Generic types
         if (namedSymbol.IsGenericType)
         {
-            var name = symbol.ToDisplayString();
-            var nameRoot = name.Substring(0, name.IndexOf('<'));
+            var originalDef = namedSymbol.OriginalDefinition;
+            var name = this.GetFullRedClassName(originalDef);
+            var genericsStart = name.IndexOf('<');
+            if (genericsStart >= 0) name = name.Substring(0, genericsStart);
             var typeArgs = namedSymbol.TypeArguments.Select(this.TranslareToRedType).ToList();
             return (
-                $"{nameRoot}<{string.Join(", ", typeArgs.Select(e => e.Text))}>{nullableSuffix}",
+                $"{name}<{string.Join(", ", typeArgs.Select(e => e.Text))}>{nullableSuffix}",
                 typeArgs.Any(e => e.HasGreen)
             );
         }

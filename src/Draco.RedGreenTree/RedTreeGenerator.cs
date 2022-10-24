@@ -122,7 +122,7 @@ public sealed class RedTreeGenerator : GeneratorBase
             if (SymbolEquals(nest, greenType)) this.contentWriter.Write(this.GeneratedAttribute);
             this.contentWriter
                 .Write(this.RedRootType.DeclaredAccessibility)
-                .Write(nest.GetTypeKind(partial: true))
+                .Write(this.RedRootType.GetTypeKind(partial: true, copyAttributesFrom: nest))
                 .Write(this.GetRedClassName(nest));
             // Inheritance
             if (SymbolEquals(nest, greenType) && (greenType.BaseType?.IsSubtypeOf(this.GreenRootType) ?? false))

@@ -10,7 +10,7 @@ using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Api.Syntax;
 
-public abstract partial record class ParseTree
+public abstract partial class ParseTree
 {
     public static ParseTree Parse(string source)
     {
@@ -24,13 +24,15 @@ public abstract partial record class ParseTree
 }
 
 [RedTree(typeof(Internal.Syntax.ParseTree))]
-public abstract partial record class ParseTree
+public abstract partial class ParseTree
 {
     private readonly Internal.Syntax.ParseTree green;
     public ParseTree? Parent { get; }
+
+    public override string ToString() => Internal.Syntax.ParseTreePrinter.Print(this.Green);
 }
 
-public abstract partial record class ParseTree
+public abstract partial class ParseTree
 {
     public readonly record struct Enclosed<T>(
         Token OpenToken,

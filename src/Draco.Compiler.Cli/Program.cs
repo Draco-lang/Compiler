@@ -12,6 +12,6 @@ internal class Program
                 print("Hello!");
             }
             """);
-        Console.WriteLine(ast);
+        Console.WriteLine(ast.ToDebugString());
     }
 }

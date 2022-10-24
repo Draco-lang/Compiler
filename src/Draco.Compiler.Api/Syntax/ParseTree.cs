@@ -29,7 +29,8 @@ public abstract partial class ParseTree
     private readonly Internal.Syntax.ParseTree green;
     public ParseTree? Parent { get; }
 
-    public override string ToString() => Internal.Syntax.ParseTreePrinter.Print(this.Green);
+    public override string ToString() => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
+    public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
 }
 
 public abstract partial class ParseTree

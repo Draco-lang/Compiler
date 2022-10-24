@@ -10,8 +10,16 @@ using static Draco.Compiler.Internal.Syntax.ParseTree;
 
 namespace Draco.Compiler.Internal.Syntax;
 
+/// <summary>
+/// Prints the <see cref="ParseTree"/> as the text it was parsed from.
+/// </summary>
 internal sealed class CodeParseTreePrinter : ParseTreeVisitorBase<Unit>
 {
+    /// <summary>
+    /// Prints the <see cref="ParseTree"/> as the text it was parsed from.
+    /// </summary>
+    /// <param name="tree">The tree to print.</param>
+    /// <returns>The <paramref name="tree"/> printed to text, identical to the text it was parsed from.</returns>
     public static string Print(ParseTree tree)
     {
         var printer = new CodeParseTreePrinter();
@@ -34,8 +42,16 @@ internal sealed class CodeParseTreePrinter : ParseTreeVisitorBase<Unit>
     }
 }
 
+/// <summary>
+/// Prints the parse-tree in a debuggable form with type names and explicit hierarchy.
+/// </summary>
 internal sealed class DebugParseTreePrinter
 {
+    /// <summary>
+    /// Prints the parse-tree in a debuggable form with type names and explicit hierarchy.
+    /// </summary>
+    /// <param name="tree">The tree to print.</param>
+    /// <returns>The <paramref name="tree"/> printed in a debuggable form.</returns>
     public static string Print(ParseTree tree)
     {
         var printer = new DebugParseTreePrinter();

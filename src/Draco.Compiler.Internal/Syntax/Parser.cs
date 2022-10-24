@@ -299,7 +299,7 @@ internal sealed class Parser
     /// <summary>
     /// Parsed a function declaration.
     /// </summary>
-    /// <returns>The parsed <see cref="Func"/>.</returns>
+    /// <returns>The parsed <see cref="Decl.Func"/>.</returns>
     private Decl.Func ParseFuncDeclaration()
     {
         // Func keyword and name of the function
@@ -324,6 +324,10 @@ internal sealed class Parser
         return new Decl.Func(funcKeyword, name, funcParameters, returnType, body);
     }
 
+    /// <summary>
+    /// Parses a label declaration.
+    /// </summary>
+    /// <returns>The parsed <see cref="Decl.Label"/>.</returns>
     private Decl.Label ParseLabelDeclaration()
     {
         var labelName = this.Expect(TokenType.Identifier);
@@ -331,6 +335,10 @@ internal sealed class Parser
         return new(labelName, colon);
     }
 
+    /// <summary>
+    /// Parses a function parameter.
+    /// </summary>
+    /// <returns>The parsed <see cref="FuncParam"/>.</returns>
     private FuncParam ParseFuncParam()
     {
         var name = this.Expect(TokenType.Identifier);
@@ -338,6 +346,10 @@ internal sealed class Parser
         return new(name, typeSpec);
     }
 
+    /// <summary>
+    /// Parses a function body.
+    /// </summary>
+    /// <returns>The parsed <see cref="FuncBody"/>.</returns>
     private FuncBody ParseFuncBody()
     {
         if (this.Matches(TokenType.Assign, out var assign))
@@ -367,6 +379,10 @@ internal sealed class Parser
         }
     }
 
+    /// <summary>
+    /// Parses a type specifier.
+    /// </summary>
+    /// <returns>The parsed <see cref="TypeSpecifier"/>.</returns>
     private TypeSpecifier ParseTypeSpecifier()
     {
         var colon = this.Expect(TokenType.Colon);
@@ -374,6 +390,10 @@ internal sealed class Parser
         return new(colon, type);
     }
 
+    /// <summary>
+    /// Parses a type expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="TypeExpr"/>.</returns>
     private TypeExpr ParseTypeExpr()
     {
         // For now we only allow identifiers
@@ -381,6 +401,11 @@ internal sealed class Parser
         return new TypeExpr.Name(typeName);
     }
 
+    /// <summary>
+    /// Parses any kind of control-flow expression, like a block, if or while expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr"/>.</returns>
     private Expr ParseControlFlowExpr(ControlFlowContext ctx)
     {
         var peekType = this.Peek().Type;
@@ -396,6 +421,11 @@ internal sealed class Parser
         };
     }
 
+    /// <summary>
+    /// Parses the body of a control-flow expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr"/>.</returns>
     private Expr ParseControlFlowBody(ControlFlowContext ctx)
     {
         if (ctx == ControlFlowContext.Expr)
@@ -414,6 +444,11 @@ internal sealed class Parser
         }
     }
 
+    /// <summary>
+    /// Parses a code-block.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr.Block"/>.</returns>
     private Expr.Block ParseBlockExpr(ControlFlowContext ctx)
     {
         var enclosed = this.ParseEnclosed(
@@ -484,6 +519,11 @@ internal sealed class Parser
         return new(enclosed);
     }
 
+    /// <summary>
+    /// Parses an if-expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr.If"/>.</returns>
     private Expr.If ParseIfExpr(ControlFlowContext ctx)
     {
         var ifKeyword = this.Expect(TokenType.KeywordIf);
@@ -503,6 +543,11 @@ internal sealed class Parser
         return new(ifKeyword, condition, thenBody, elsePart);
     }
 
+    /// <summary>
+    /// Parses a while-expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr.While"/>.</returns>
     private Expr.While ParseWhileExpr(ControlFlowContext ctx)
     {
         var whileKeyword = this.Expect(TokenType.KeywordWhile);
@@ -514,6 +559,10 @@ internal sealed class Parser
         return new(whileKeyword, condition, body);
     }
 
+    /// <summary>
+    /// Parses an expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="Expr"/>.</returns>
     private Expr ParseExpr()
     {
         // The function that is driven by the precedence table
@@ -572,6 +621,8 @@ internal sealed class Parser
 
         return ParsePrecedenceLevel(precedenceTable.Length - 1);
     }
+
+    // Plumbing code for precedence parsing
 
     private Expr ParsePseudoStmtLevelExpr(Func<Expr> elementParser)
     {
@@ -706,6 +757,10 @@ internal sealed class Parser
         }
     }
 
+    /// <summary>
+    /// Parses a line string expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="Expr.String"/></returns>
     private Expr.String ParseLineString()
     {
         var openQuote = this.Expect(TokenType.LineStringStart);
@@ -735,6 +790,10 @@ internal sealed class Parser
         return new(openQuote, content.ToImmutable(), closeQuote);
     }
 
+    /// <summary>
+    /// Parses a multi-line string expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="Expr.String"/></returns>
     private Expr.String ParseMultiLineString()
     {
         var openQuote = this.Expect(TokenType.MultiLineStringStart);
@@ -835,7 +894,6 @@ internal sealed class Parser
     /// <param name="elementParser">The parser function that parses a single element.</param>
     /// <param name="punctType">The type of the punctuation token.</param>
     /// <param name="stopType">The type of the token that definitely ends this construct.</param>
-    /// <param name="allowEmpty">True, if an empty list is allowed.</param>
     /// <returns>The parsed <see cref="PunctuatedList{T}"/>.</returns>
     private PunctuatedList<T> ParsePunctuatedListAllowTrailing<T>(
         Func<T> elementParser,

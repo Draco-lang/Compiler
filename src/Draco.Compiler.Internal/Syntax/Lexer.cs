@@ -12,7 +12,7 @@ using Draco.Compiler.Internal.Utilities;
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Breaks up source code into a sequence of <see cref="IToken"/>s.
+/// Breaks up source code into a sequence of <see cref="Token"/>s.
 /// </summary>
 internal sealed class Lexer
 {
@@ -108,9 +108,9 @@ internal sealed class Lexer
     }
 
     /// <summary>
-    /// Reads the next <see cref="IToken"/> from the input.
+    /// Reads the next <see cref="Token"/> from the input.
     /// </summary>
-    /// <returns>The <see cref="IToken"/> read.</returns>
+    /// <returns>The <see cref="Token"/> read.</returns>
     public Token Lex()
     {
         this.tokenBuilder.Clear();
@@ -154,6 +154,10 @@ internal sealed class Lexer
         return this.tokenBuilder.Build();
     }
 
+    /// <summary>
+    /// Lexes tokens that can be found in regular code.
+    /// </summary>
+    /// <returns>The lexed <see cref="Token"/>.</returns>
     private Unit LexNormal()
     {
         Unit TakeBasic(TokenType tokenType, int length)
@@ -365,6 +369,10 @@ internal sealed class Lexer
         return TakeWithText(TokenType.Unknown, 1);
     }
 
+    /// <summary>
+    /// Lexes a token that can be part of a string.
+    /// </summary>
+    /// <returns>The lexed string <see cref="Token"/>.</returns>
     private Unit LexString()
     {
         // Get the largest continuous sequence without linebreaks or interpolation

@@ -10,8 +10,14 @@ using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Api.Syntax;
 
+// Utilities for public API
 public abstract partial class ParseTree
 {
+    /// <summary>
+    /// Parses the given tree into a <see cref="ParseTree"/>.
+    /// </summary>
+    /// <param name="source">The source to parse.</param>
+    /// <returns>The parsed tree.</returns>
     public static ParseTree Parse(string source)
     {
         var srcReader = Internal.Syntax.SourceReader.From(source);
@@ -23,10 +29,17 @@ public abstract partial class ParseTree
     }
 }
 
+/// <summary>
+/// The base class for all nodes in the Draco parse-tree.
+/// </summary>
 [RedTree(typeof(Internal.Syntax.ParseTree))]
 public abstract partial class ParseTree
 {
     private readonly Internal.Syntax.ParseTree green;
+
+    /// <summary>
+    /// The parent of this node, if any.
+    /// </summary>
     public ParseTree? Parent { get; }
 
     public override string ToString() => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);

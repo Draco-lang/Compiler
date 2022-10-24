@@ -6,11 +6,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Utilities;
-using static Draco.Compiler.Syntax.ParseTree;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
+using static Draco.Compiler.Internal.Syntax.ParseTree;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// Parses a sequence of <see cref="Token"/>s into a <see cref="ParseTree"/>.
@@ -194,9 +194,9 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="CompilationUnit"/>.</returns>
     public CompilationUnit ParseCompilationUnit()
     {
-        var decls = ValueArray.CreateBuilder<Decl>();
+        var decls = ImmutableArray.CreateBuilder<Decl>();
         while (this.Peek().Type != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
-        return new(decls.ToValue());
+        return new(decls.ToImmutable());
     }
 
     /// <summary>
@@ -227,7 +227,7 @@ internal sealed class Parser
             });
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
-            return new Decl.Unexpected(input, ValueArray.Create(diag));
+            return new Decl.Unexpected(input, ImmutableArray.Create(diag));
         }
         }
     }
@@ -299,7 +299,7 @@ internal sealed class Parser
     /// <summary>
     /// Parsed a function declaration.
     /// </summary>
-    /// <returns>The parsed <see cref="Func"/>.</returns>
+    /// <returns>The parsed <see cref="Decl.Func"/>.</returns>
     private Decl.Func ParseFuncDeclaration()
     {
         // Func keyword and name of the function
@@ -324,6 +324,10 @@ internal sealed class Parser
         return new Decl.Func(funcKeyword, name, funcParameters, returnType, body);
     }
 
+    /// <summary>
+    /// Parses a label declaration.
+    /// </summary>
+    /// <returns>The parsed <see cref="Decl.Label"/>.</returns>
     private Decl.Label ParseLabelDeclaration()
     {
         var labelName = this.Expect(TokenType.Identifier);
@@ -331,6 +335,10 @@ internal sealed class Parser
         return new(labelName, colon);
     }
 
+    /// <summary>
+    /// Parses a function parameter.
+    /// </summary>
+    /// <returns>The parsed <see cref="FuncParam"/>.</returns>
     private FuncParam ParseFuncParam()
     {
         var name = this.Expect(TokenType.Identifier);
@@ -338,6 +346,10 @@ internal sealed class Parser
         return new(name, typeSpec);
     }
 
+    /// <summary>
+    /// Parses a function body.
+    /// </summary>
+    /// <returns>The parsed <see cref="FuncBody"/>.</returns>
     private FuncBody ParseFuncBody()
     {
         if (this.Matches(TokenType.Assign, out var assign))
@@ -363,10 +375,14 @@ internal sealed class Parser
             });
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
-            return new FuncBody.Unexpected(input, ValueArray.Create(diag));
+            return new FuncBody.Unexpected(input, ImmutableArray.Create(diag));
         }
     }
 
+    /// <summary>
+    /// Parses a type specifier.
+    /// </summary>
+    /// <returns>The parsed <see cref="TypeSpecifier"/>.</returns>
     private TypeSpecifier ParseTypeSpecifier()
     {
         var colon = this.Expect(TokenType.Colon);
@@ -374,6 +390,10 @@ internal sealed class Parser
         return new(colon, type);
     }
 
+    /// <summary>
+    /// Parses a type expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="TypeExpr"/>.</returns>
     private TypeExpr ParseTypeExpr()
     {
         // For now we only allow identifiers
@@ -381,6 +401,11 @@ internal sealed class Parser
         return new TypeExpr.Name(typeName);
     }
 
+    /// <summary>
+    /// Parses any kind of control-flow expression, like a block, if or while expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr"/>.</returns>
     private Expr ParseControlFlowExpr(ControlFlowContext ctx)
     {
         var peekType = this.Peek().Type;
@@ -396,6 +421,11 @@ internal sealed class Parser
         };
     }
 
+    /// <summary>
+    /// Parses the body of a control-flow expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr"/>.</returns>
     private Expr ParseControlFlowBody(ControlFlowContext ctx)
     {
         if (ctx == ControlFlowContext.Expr)
@@ -414,13 +444,18 @@ internal sealed class Parser
         }
     }
 
+    /// <summary>
+    /// Parses a code-block.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr.Block"/>.</returns>
     private Expr.Block ParseBlockExpr(ControlFlowContext ctx)
     {
         var enclosed = this.ParseEnclosed(
             openType: TokenType.CurlyOpen,
             valueParser: () =>
             {
-                var stmts = ValueArray.CreateBuilder<Stmt>();
+                var stmts = ImmutableArray.CreateBuilder<Stmt>();
                 Expr? value = null;
                 while (true)
                 {
@@ -478,12 +513,17 @@ internal sealed class Parser
                     }
                 }
             end_of_block:
-                return new BlockContents(stmts.ToValue(), value);
+                return new BlockContents(stmts.ToImmutable(), value);
             },
             closeType: TokenType.CurlyClose);
         return new(enclosed);
     }
 
+    /// <summary>
+    /// Parses an if-expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr.If"/>.</returns>
     private Expr.If ParseIfExpr(ControlFlowContext ctx)
     {
         var ifKeyword = this.Expect(TokenType.KeywordIf);
@@ -503,6 +543,11 @@ internal sealed class Parser
         return new(ifKeyword, condition, thenBody, elsePart);
     }
 
+    /// <summary>
+    /// Parses a while-expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="Expr.While"/>.</returns>
     private Expr.While ParseWhileExpr(ControlFlowContext ctx)
     {
         var whileKeyword = this.Expect(TokenType.KeywordWhile);
@@ -514,6 +559,10 @@ internal sealed class Parser
         return new(whileKeyword, condition, body);
     }
 
+    /// <summary>
+    /// Parses an expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="Expr"/>.</returns>
     private Expr ParseExpr()
     {
         // The function that is driven by the precedence table
@@ -573,6 +622,8 @@ internal sealed class Parser
         return ParsePrecedenceLevel(precedenceTable.Length - 1);
     }
 
+    // Plumbing code for precedence parsing
+
     private Expr ParsePseudoStmtLevelExpr(Func<Expr> elementParser)
     {
         switch (this.Peek().Type)
@@ -600,7 +651,7 @@ internal sealed class Parser
     private Expr ParseRelationalLevelExpr(Func<Expr> elementParser)
     {
         var left = elementParser();
-        var comparisons = ValueArray.CreateBuilder<ComparisonElement>();
+        var comparisons = ImmutableArray.CreateBuilder<ComparisonElement>();
         while (true)
         {
             var op = this.Peek();
@@ -611,7 +662,7 @@ internal sealed class Parser
         }
         return comparisons.Count == 0
             ? left
-            : new Expr.Relational(left, comparisons.ToValue());
+            : new Expr.Relational(left, comparisons.ToImmutable());
     }
 
     private Expr ParseCallLevelExpr(Func<Expr> elementParser)
@@ -701,22 +752,26 @@ internal sealed class Parser
             });
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
-            return new Expr.Unexpected(input, ValueArray.Create(diag));
+            return new Expr.Unexpected(input, ImmutableArray.Create(diag));
         }
         }
     }
 
+    /// <summary>
+    /// Parses a line string expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="Expr.String"/></returns>
     private Expr.String ParseLineString()
     {
         var openQuote = this.Expect(TokenType.LineStringStart);
-        var content = ValueArray.CreateBuilder<StringPart>();
+        var content = ImmutableArray.CreateBuilder<StringPart>();
         while (true)
         {
             var peek = this.Peek();
             if (peek.Type == TokenType.StringContent)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek.Type == TokenType.InterpolationStart)
             {
@@ -732,20 +787,24 @@ internal sealed class Parser
             }
         }
         var closeQuote = this.Expect(TokenType.LineStringEnd);
-        return new(openQuote, content.ToValue(), closeQuote);
+        return new(openQuote, content.ToImmutable(), closeQuote);
     }
 
+    /// <summary>
+    /// Parses a multi-line string expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="Expr.String"/></returns>
     private Expr.String ParseMultiLineString()
     {
         var openQuote = this.Expect(TokenType.MultiLineStringStart);
-        var content = ValueArray.CreateBuilder<StringPart>();
+        var content = ImmutableArray.CreateBuilder<StringPart>();
         while (true)
         {
             var peek = this.Peek();
             if (peek.Type == TokenType.StringContent || peek.Type == TokenType.StringNewline)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ValueArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek.Type == TokenType.InterpolationStart)
             {
@@ -762,16 +821,16 @@ internal sealed class Parser
         }
         var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
         // We need to check if the close quote is on a newline
-        if (closeQuote.LeadingTrivia.Count > 0)
+        if (closeQuote.LeadingTrivia.Length > 0)
         {
-            Debug.Assert(closeQuote.LeadingTrivia.Count <= 2);
+            Debug.Assert(closeQuote.LeadingTrivia.Length <= 2);
             Debug.Assert(closeQuote.LeadingTrivia[0].Type == TokenType.Newline);
-            if (closeQuote.LeadingTrivia.Count == 2)
+            if (closeQuote.LeadingTrivia.Length == 2)
             {
                 // The first trivia was newline, the second must be spaces
                 Debug.Assert(closeQuote.LeadingTrivia[1].Type == TokenType.Whitespace);
                 // For simplicity we rebuild the contents to be able to append diagnostics
-                var newContent = ValueArray.CreateBuilder<StringPart>();
+                var newContent = ImmutableArray.CreateBuilder<StringPart>();
                 // We take the whitespace text and check if every line in the string obeys that as a prefix
                 var prefix = closeQuote.LeadingTrivia[1].Text;
                 var nextIsNewline = true;
@@ -794,7 +853,7 @@ internal sealed class Parser
                             var diag = Diagnostic.Create(
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
-                            var allDiags = contentPart.Diagnostics.Append(diag).ToValueArray();
+                            var allDiags = contentPart.Diagnostics.Append(diag).ToImmutableArray();
                             newContent.Add(new StringPart.Content(contentPart.Token, allDiags));
                         }
                         else
@@ -823,7 +882,7 @@ internal sealed class Parser
                 location);
             closeQuote = closeQuote.AddDiagnostic(diag);
         }
-        return new(openQuote, content.ToValue(), closeQuote);
+        return new(openQuote, content.ToImmutable(), closeQuote);
     }
 
     // General utilities
@@ -835,14 +894,13 @@ internal sealed class Parser
     /// <param name="elementParser">The parser function that parses a single element.</param>
     /// <param name="punctType">The type of the punctuation token.</param>
     /// <param name="stopType">The type of the token that definitely ends this construct.</param>
-    /// <param name="allowEmpty">True, if an empty list is allowed.</param>
     /// <returns>The parsed <see cref="PunctuatedList{T}"/>.</returns>
     private PunctuatedList<T> ParsePunctuatedListAllowTrailing<T>(
         Func<T> elementParser,
         TokenType punctType,
         TokenType stopType)
     {
-        var elements = ValueArray.CreateBuilder<Punctuated<T>>();
+        var elements = ImmutableArray.CreateBuilder<Punctuated<T>>();
         while (true)
         {
             // Stop token met, don't go further
@@ -862,7 +920,7 @@ internal sealed class Parser
                 break;
             }
         }
-        return new(elements.ToValue());
+        return new(elements.ToImmutable());
     }
 
     /// <summary>
@@ -889,10 +947,10 @@ internal sealed class Parser
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
     /// <returns>The consumed list of <see cref="Token"/>s.</returns>
-    private ValueArray<Token> Synchronize(Func<Token, bool> keepGoing)
+    private ImmutableArray<Token> Synchronize(Func<Token, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
-        var input = ValueArray.CreateBuilder<Token>();
+        var input = ImmutableArray.CreateBuilder<Token>();
         while (true)
         {
             var peek = this.Peek();
@@ -900,7 +958,7 @@ internal sealed class Parser
             if (!keepGoing(peek)) break;
             input.Add(this.Advance());
         }
-        return input.ToValue();
+        return input.ToImmutable();
     }
 
     /// <summary>
@@ -917,7 +975,7 @@ internal sealed class Parser
             // The attached diagnostic message describes what is missing
             var location = new Location(0);
             var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: type);
-            return Token.From(type, string.Empty, ValueArray.Create(diag));
+            return Token.From(type, string.Empty, ImmutableArray.Create(diag));
         }
         return token;
     }

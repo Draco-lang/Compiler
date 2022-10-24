@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Compiler.Utilities;
+namespace Draco.Compiler.Internal.Utilities;
 
 /// <summary>
 /// Utility type for returning nothing as an expression.

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Compiler.Utilities;
+namespace Draco.Compiler.Internal.Utilities;
 
 /// <summary>
 /// A collection that supports fast inserting and removal at both ends.

@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Syntax;
+using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Tests.Syntax;
 
@@ -48,13 +48,13 @@ public sealed class LexerTests
 
     private static void AssertLeadingTrivia(Token token, params string[] trivia)
     {
-        Assert.Equal(trivia.Length, token.LeadingTrivia.Count);
+        Assert.Equal(trivia.Length, token.LeadingTrivia.Length);
         Assert.True(trivia.SequenceEqual(token.LeadingTrivia.Select(t => t.Text)));
     }
 
     private static void AssertTrailingTrivia(Token token, params string[] trivia)
     {
-        Assert.Equal(trivia.Length, token.TrailingTrivia.Count);
+        Assert.Equal(trivia.Length, token.TrailingTrivia.Length);
         Assert.True(trivia.SequenceEqual(token.TrailingTrivia.Select(t => t.Text)));
     }
 

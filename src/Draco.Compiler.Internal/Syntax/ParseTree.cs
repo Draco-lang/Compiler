@@ -5,15 +5,16 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Utilities;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
+using Draco.RedGreenTree.Attributes;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
-[Draco.RedGreenTree.GreenTree]
+[GreenTree]
 internal abstract partial record class ParseTree
 {
     public abstract int Width { get; }
@@ -21,12 +22,12 @@ internal abstract partial record class ParseTree
     /// <summary>
     /// The diagnostics attached to this tree node.
     /// </summary>
-    public virtual ValueArray<Diagnostic> Diagnostics => ValueArray<Diagnostic>.Empty;
+    internal virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
 
     // Plumbing code for width generation
-    private static int GetWidth(ValueArray<Diagnostic> diags) => 0;
+    private static int GetWidth(ImmutableArray<Diagnostic> diags) => 0;
     private static int GetWidth(ParseTree? tree) => tree?.Width ?? 0;
-    private static int GetWidth<TElement>(ValueArray<TElement> elements)
+    private static int GetWidth<TElement>(ImmutableArray<TElement> elements)
         where TElement : ParseTree => elements.Sum(e => e.Width);
     private static int GetWidth<TElement>(Enclosed<TElement> element)
         where TElement : ParseTree =>
@@ -62,13 +63,13 @@ internal partial record class ParseTree
     /// A list of nodes with a token separating each element.
     /// </summary>
     public readonly record struct PunctuatedList<T>(
-        ValueArray<Punctuated<T>> Elements);
+        ImmutableArray<Punctuated<T>> Elements);
 
     /// <summary>
     /// A compilation unit, the top-most node in the parse tree.
     /// </summary>
     public sealed partial record class CompilationUnit(
-        ValueArray<Decl> Declarations) : ParseTree;
+        ImmutableArray<Decl> Declarations) : ParseTree;
 
     /// <summary>
     /// A declaration, either top-level or as a statement.
@@ -79,11 +80,11 @@ internal partial record class ParseTree
         /// Unexpected input in declaration context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ValueArray<Token> Tokens,
-            ValueArray<Diagnostic> Diagnostics) : Decl
+            ImmutableArray<Token> Tokens,
+            ImmutableArray<Diagnostic> Diagnostics) : Decl
         {
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -137,11 +138,11 @@ internal partial record class ParseTree
         /// Unexpected input in function body context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ValueArray<Token> Tokens,
-            ValueArray<Diagnostic> Diagnostics) : FuncBody
+            ImmutableArray<Token> Tokens,
+            ImmutableArray<Diagnostic> Diagnostics) : FuncBody
         {
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -204,11 +205,11 @@ internal partial record class ParseTree
         /// Unexpected input in expression context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ValueArray<Token> Tokens,
-            ValueArray<Diagnostic> Diagnostics) : Expr
+            ImmutableArray<Token> Tokens,
+            ImmutableArray<Diagnostic> Diagnostics) : Expr
         {
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -301,7 +302,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class Relational(
             Expr Left,
-            ValueArray<ComparisonElement> Comparisons) : Expr;
+            ImmutableArray<ComparisonElement> Comparisons) : Expr;
 
         /// <summary>
         /// A grouping expression, enclosing a sub-expression.
@@ -314,7 +315,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class String(
             Token OpenQuotes,
-            ValueArray<StringPart> Parts,
+            ImmutableArray<StringPart> Parts,
             Token CloseQuotes) : Expr;
     }
 
@@ -329,7 +330,7 @@ internal partial record class ParseTree
     /// The contents of a block.
     /// </summary>
     public sealed partial record class BlockContents(
-        ValueArray<Stmt> Statements,
+        ImmutableArray<Stmt> Statements,
         Expr? Value) : ParseTree;
 
     /// <summary>
@@ -349,10 +350,10 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class Content(
             Token Token,
-            ValueArray<Diagnostic> Diagnostics) : StringPart
+            ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>
-            public override ValueArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
         /// <summary>
@@ -362,129 +363,5 @@ internal partial record class ParseTree
             Token OpenToken,
             Expr Expression,
             Token CloseToken) : StringPart;
-    }
-}
-
-// Pretty printer
-internal partial record class ParseTree
-{
-    /// <summary>
-    /// Prints this <see cref="ParseTree"/> in a debuggable form.
-    /// </summary>
-    /// <returns>The pretty-printed <see cref="ParseTree"/> text.</returns>
-    public string PrettyPrint()
-    {
-        var builder = new StringBuilder();
-        var printer = new PrettyPrinter(builder);
-        printer.Print(this, 0);
-        return builder.ToString();
-    }
-
-    private sealed class PrettyPrinter
-    {
-        public StringBuilder Builder { get; init; }
-        public string Indentation { get; init; } = "  ";
-
-        public PrettyPrinter(StringBuilder builder)
-        {
-            this.Builder = builder;
-        }
-
-        public Unit Print(object? obj, int depth) => obj switch
-        {
-            Token token => this.PrintToken(token),
-            ParseTree parseTree => this.PrintSubtree(parseTree.GetType().Name, parseTree, depth),
-            IEnumerable<object> collection => this.PrintCollection(collection, depth),
-            ITuple tuple => this.PrintTuple(tuple, depth),
-            Diagnostic diagnostic => this.PrintText(DiagnosticToString(diagnostic)),
-            string str => this.PrintText(str),
-            null => this.PrintText("null"),
-            object o when o.GetType() is var type
-                       && type.IsGenericType
-                       && type.GetGenericTypeDefinition() == typeof(Enclosed<>) =>
-                this.PrintSubtree("Enclosed", o, depth),
-            object o when o.GetType() is var type
-                       && type.IsGenericType
-                       && type.GetGenericTypeDefinition() == typeof(PunctuatedList<>) =>
-                this.PrintCollection(
-                    (IEnumerable)type.GetProperty(nameof(PunctuatedList<int>.Elements))!.GetValue(o)!,
-                    depth),
-            object o when o.GetType() is var type
-                       && type.IsGenericType
-                       && type.GetGenericTypeDefinition() == typeof(Punctuated<>) =>
-                this.PrintSubtree("Punctuated", o, depth),
-            IEnumerable collection => this.PrintCollection(collection, depth),
-            _ => throw new System.NotImplementedException(),
-        };
-
-        private Unit PrintSubtree(string name, object tree, int depth)
-        {
-            this.Builder.Append(name).Append(' ');
-            return this.PrintRecursive(
-                tree.GetType().GetProperties().Select(p => ((string?)p.Name, p.GetValue(tree))),
-                depth,
-                open: '{',
-                close: '}');
-        }
-
-        private Unit PrintCollection(IEnumerable collection, int depth) =>
-            this.PrintRecursive(collection.Cast<object?>().Select(v => ((string?)null, v)), depth, open: '[', close: ']');
-
-        private Unit PrintTuple(ITuple tuple, int depth) => this.PrintRecursive(
-            Enumerable.Range(0, tuple.Length).Select(i => ((string?)$"Item{i + 1}", tuple[i])),
-            depth, open: '(', close: ')');
-
-        private Unit PrintToken(Token token)
-        {
-            this.Builder.Append('\'').Append(token.Text).Append('\'');
-            var valueText = token.ValueText;
-            if (valueText is not null && valueText != token.Text)
-            {
-                this.Builder.Append(" (value=").Append(valueText).Append(')');
-            }
-            if (token.Diagnostics.Count > 0)
-            {
-                this.Builder.Append(" [");
-                this.Builder.AppendJoin(", ", token.Diagnostics.Select(DiagnosticToString));
-                this.Builder.Append(']');
-            }
-            return default;
-        }
-
-        private Unit PrintText(string text)
-        {
-            this.Builder.Append(text);
-            return default;
-        }
-
-        private Unit PrintRecursive(IEnumerable<(string? Key, object? Value)> values, int depth, char open, char close)
-        {
-            if (!values.Any())
-            {
-                this.Builder.Append(open).Append(close);
-                return default;
-            }
-
-            this.Builder.AppendLine(open.ToString());
-            foreach (var (key, item) in values)
-            {
-                this.Indent(depth + 1);
-                if (key is not null) this.Builder.Append(key).Append(": ");
-                this.Print(item, depth + 1);
-                this.Builder.AppendLine(", ");
-            }
-            this.Indent(depth);
-            this.Builder.Append(close);
-
-            return default;
-        }
-
-        private void Indent(int depth)
-        {
-            for (var i = 0; i < depth; ++i) this.Builder.Append(this.Indentation);
-        }
-
-        private static string DiagnosticToString(Diagnostic diagnostic) =>
-            string.Format(diagnostic.Format, diagnostic.FormatArgs);
     }
 }

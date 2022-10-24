@@ -49,13 +49,17 @@ internal static class RoslynUtils
 
     public static bool HasMember(this ITypeSymbol type, string name) => type.GetMembers(name).Length > 0;
 
-    public static string GetTypeKind(this ITypeSymbol type, bool partial = false)
+    public static string GetTypeKind(
+        this ITypeSymbol type,
+        bool partial = false,
+        ITypeSymbol? copyAttributesFrom = null)
     {
+        var attribsSource = copyAttributesFrom ?? type;
         var result = new StringBuilder();
-        if (type.HidesInherited()) result.Append("new ");
-        if (type.IsAbstract) result.Append("abstract ");
-        if (type.IsSealed) result.Append("sealed ");
-        if (type.IsReadOnly) result.Append("readonly ");
+        if (attribsSource.HidesInherited()) result.Append("new ");
+        if (attribsSource.IsAbstract) result.Append("abstract ");
+        if (attribsSource.IsSealed) result.Append("sealed ");
+        if (attribsSource.IsReadOnly) result.Append("readonly ");
         if (partial) result.Append("partial ");
         if (type.IsRecord) result.Append("record ");
         result.Append(type.IsValueType ? "struct" : "class");

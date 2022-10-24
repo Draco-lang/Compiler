@@ -6,13 +6,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Diagnostics;
-using Draco.Compiler.Utilities;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Syntax;
+namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Breaks up source code into a sequence of <see cref="IToken"/>s.
+/// Breaks up source code into a sequence of <see cref="Token"/>s.
 /// </summary>
 internal sealed class Lexer
 {
@@ -97,9 +97,9 @@ internal sealed class Lexer
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
     private readonly Token.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly ValueArray<Token>.Builder leadingTriviaList = ValueArray.CreateBuilder<Token>();
-    private readonly ValueArray<Token>.Builder trailingTriviaList = ValueArray.CreateBuilder<Token>();
-    private readonly ValueArray<Diagnostic>.Builder diagnosticList = ValueArray.CreateBuilder<Diagnostic>();
+    private readonly ImmutableArray<Token>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<Token>();
+    private readonly ImmutableArray<Token>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<Token>();
+    private readonly ImmutableArray<Diagnostic>.Builder diagnosticList = ImmutableArray.CreateBuilder<Diagnostic>();
 
     public Lexer(ISourceReader sourceReader)
     {
@@ -108,9 +108,9 @@ internal sealed class Lexer
     }
 
     /// <summary>
-    /// Reads the next <see cref="IToken"/> from the input.
+    /// Reads the next <see cref="Token"/> from the input.
     /// </summary>
-    /// <returns>The <see cref="IToken"/> read.</returns>
+    /// <returns>The <see cref="Token"/> read.</returns>
     public Token Lex()
     {
         this.tokenBuilder.Clear();
@@ -145,15 +145,19 @@ internal sealed class Lexer
         }
 
         // If there was any leading or trailing trivia, we have to add them
-        if (this.leadingTriviaList.Count > 0) this.tokenBuilder.SetLeadingTrivia(this.leadingTriviaList.ToValue());
-        if (this.trailingTriviaList.Count > 0) this.tokenBuilder.SetTrailingTrivia(this.trailingTriviaList.ToValue());
+        if (this.leadingTriviaList.Count > 0) this.tokenBuilder.SetLeadingTrivia(this.leadingTriviaList.ToImmutable());
+        if (this.trailingTriviaList.Count > 0) this.tokenBuilder.SetTrailingTrivia(this.trailingTriviaList.ToImmutable());
 
         // Attach diagnostics, if any
-        if (this.diagnosticList.Count > 0) this.tokenBuilder.SetDiagnostics(this.diagnosticList.ToValue());
+        if (this.diagnosticList.Count > 0) this.tokenBuilder.SetDiagnostics(this.diagnosticList.ToImmutable());
 
         return this.tokenBuilder.Build();
     }
 
+    /// <summary>
+    /// Lexes tokens that can be found in regular code.
+    /// </summary>
+    /// <returns>The lexed <see cref="Token"/>.</returns>
     private Unit LexNormal()
     {
         Unit TakeBasic(TokenType tokenType, int length)
@@ -365,6 +369,10 @@ internal sealed class Lexer
         return TakeWithText(TokenType.Unknown, 1);
     }
 
+    /// <summary>
+    /// Lexes a token that can be part of a string.
+    /// </summary>
+    /// <returns>The lexed string <see cref="Token"/>.</returns>
     private Unit LexString()
     {
         // Get the largest continuous sequence without linebreaks or interpolation

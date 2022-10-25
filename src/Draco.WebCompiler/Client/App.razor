@@ -1,0 +1,222 @@
+@using System.IO.Compression;
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Basic.Reference.Assemblies;
+@using Draco.Compiler.Api.Syntax;
+@using ICSharpCode.Decompiler.Disassembler;
+@using ICSharpCode.Decompiler;
+@using ICSharpCode.Decompiler.Metadata;
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.CodeAnalysis.CSharp;
+@using Microsoft.CodeAnalysis;
+@using Microsoft.CodeAnalysis.Emit;
+@using Microsoft.JSInterop
+@using Draco.WebCompiler.Client
+@using BlazorMonaco
+@using System.Text;
+@using Draco.Compiler.Api.Scripting;
+@using System.Diagnostics.CodeAnalysis;
+@using Draco.Compiler.Internal.Codegen;
+@using System.Reflection.PortableExecutable;
+
+
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<div class="settings">
+    <select @onchange="OnOutputTypeChange">
+        <option value="Run">Run</option>
+        <option value="CSharp">C#</option>
+        <option value="IL">IL</option>
+    </select>
+</div>
+<div class="editors-container">
+    <MonacoEditor Id="draco-editor" @ref="_dracoEditor" ConstructionOptions="DracoMonacoOptions" OnDidChangeModelContent="CodeChange" OnDidInit="OnInit" />
+    <MonacoEditor Id="output-viewer" @ref="_outputViewer" ConstructionOptions="OutputMonacoOptions" />
+</div>
+
+@code {
+    MonacoEditor? _dracoEditor { get; set; }
+    MonacoEditor? _outputViewer { get; set; }
+    string? _selectedOutputType { get; set; } = "Run";
+    StandaloneEditorConstructionOptions _dracoEditorOptions = new StandaloneEditorConstructionOptions
+        {
+            AutomaticLayout = true,
+            Language = "rust",
+            Value = "foobar"
+        };
+
+    StandaloneEditorConstructionOptions _outputEditorOptions = new StandaloneEditorConstructionOptions
+        {
+            AutomaticLayout = true,
+            Language = "",
+            Value = "",
+            ReadOnly = true
+        };
+
+    StandaloneEditorConstructionOptions DracoMonacoOptions(MonacoEditor editor)
+         => _dracoEditorOptions;
+
+    StandaloneEditorConstructionOptions OutputMonacoOptions(MonacoEditor editor)
+        => _outputEditorOptions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        bool isDarkMode = await JS.InvokeAsync<bool>("isDarkMode");
+        await MonacoEditor.SetTheme(isDarkMode ? "vs-dark" : "vs");
+
+    }
+
+    async Task OnInit(MonacoEditorBase editor)
+    {
+        string uriString = NavigationManager.Uri;
+        Uri uri = new Uri(uriString);
+        if (!string.IsNullOrWhiteSpace(uri.Fragment))
+        {
+            string strBuffer = new string(uri.Fragment.Skip(1).ToArray());
+            strBuffer = Uri.UnescapeDataString(strBuffer)
+            .Replace('_', '/')
+            .Replace('-', '+')
+            .PadRight(4 * ((strBuffer.Length + 3) / 4), '=');
+            var buffer = Convert.FromBase64String(strBuffer);
+            using (MemoryStream inBuffer = new MemoryStream(buffer))
+            using (DeflateStream gzipStream = new DeflateStream(inBuffer, CompressionMode.Decompress))
+            using (StreamReader outReader = new StreamReader(gzipStream, Encoding.UTF8))
+            {
+                byte[] num = new byte[4];
+                gzipStream.Read(num);
+                int amount = BitConverter.ToInt32(num);
+                char[] sql = new char[amount];
+                outReader.ReadBlock(sql, 0, amount);
+                string sqlString = new string(sql);
+                string tql = outReader.ReadToEnd();
+                await _dracoEditor!.SetValue(sqlString);
+            }
+        }
+
+
+        await UpdateOutput();
+    }
+
+    public void OnOutputTypeChange(ChangeEventArgs e)
+    {
+        _selectedOutputType = e.Value.ToString();
+        _ = UpdateOutput(); // awaiting will block UI thread
+    }
+
+    public void CodeChange()
+    {
+        _ = UpdateOutput(); // awaiting will block UI thread.
+    }
+
+    public async Task UpdateOutput()
+    {
+        string code = await _dracoEditor!.GetValue();
+        using (MemoryStream inBuffer = new MemoryStream())
+        using (DeflateStream outStream = new DeflateStream(inBuffer, CompressionLevel.Optimal, true))
+        using (StreamWriter writer = new StreamWriter(outStream, Encoding.UTF8, leaveOpen: true))
+        {
+            outStream.Write(BitConverter.GetBytes(code.Length));
+            writer.Write(code);
+            writer.Flush();
+            inBuffer.Position = 0;
+            byte[] buffer = inBuffer.ToArray();
+            var hash = Convert.ToBase64String(buffer).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            await JS.InvokeVoidAsync("setHash", new object[] { hash });
+        }
+        var oldOut = Console.Out;
+
+        try
+        {
+            
+            switch (_selectedOutputType)
+            {
+                case "Run":
+                    await Run();
+                    break;
+                case "CSharp":
+                    await CSharp();
+                    break;
+                case "IL":
+                    await IL();
+                    break;
+                default:
+                    throw new InvalidOperationException();
+            }
+            
+        }
+        catch (Exception e)
+        {
+            await _outputViewer!.SetValue(e.ToString());
+        }
+
+        async Task IL()
+        {
+            _outputEditorOptions.Language = "IL";
+            await _outputViewer!.UpdateOptions(_outputEditorOptions);
+
+            using MemoryStream? inlineDllStream = new MemoryStream();
+            if (!ScriptingEngine.CompileToAssembly(code, inlineDllStream)) return;
+            inlineDllStream.Position = 0;
+            var text = new PlainTextOutput();
+            var disassembler = new ReflectionDisassembler(text, default);
+            using (var pe = new PEFile("_", inlineDllStream))
+            {
+                disassembler.WriteAssemblyHeader(pe);
+                text.WriteLine();
+                disassembler.WriteModuleContents(pe);
+            }
+            await _outputViewer.SetValue(text.ToString());
+
+        }
+
+
+        async Task CSharp()
+        {
+            _outputEditorOptions.Language = "C#";
+            await _outputViewer!.UpdateOptions(_outputEditorOptions);
+            var cSharpCode = ScriptingEngine.CompileToCSharpCode(code);
+            await _outputViewer.SetValue(cSharpCode);
+        }
+
+        async Task Run()
+        {
+            var cts = new CancellationTokenSource();
+            var consoleStream = new StringWriter();
+            Task consoleLoop = BackgroundLoop(consoleStream, cts.Token);
+            Console.SetOut(consoleStream);
+            _outputEditorOptions.Language = "";
+            await _outputViewer!.UpdateOptions(_outputEditorOptions);
+            try
+            {
+                ScriptingEngine.InlineExecute(code);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            cts.Cancel();
+            await consoleLoop;
+            await _outputViewer!.SetValue(consoleStream.ToString());
+            Console.SetOut(oldOut);
+        }
+    }
+
+    async Task BackgroundLoop(StringWriter stringWriter, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await _outputViewer!.SetValue(stringWriter.ToString());
+            try
+            {
+                await Task.Delay(50, cancellationToken);
+            }
+            catch (TaskCanceledException) { }
+        }
+    }
+}

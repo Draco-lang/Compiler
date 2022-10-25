@@ -494,6 +494,8 @@ internal sealed class Parser
 
                     default:
                     {
+                        // TODO: Just check the valid expression starter tokens and only call then
+                        // Otherwise just eat tokens and return unexpected
                         // Assume any other expression
                         // TODO: Might not be the best assumption
                         var expr = this.ParseExpr();

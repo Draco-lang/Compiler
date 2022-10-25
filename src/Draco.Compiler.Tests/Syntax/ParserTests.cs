@@ -51,4 +51,35 @@ public sealed class ParserTests
             this.T(TokenType.EndOfInput);
         }
     }
+
+    [Fact]
+    public void TestEmptyFunc()
+    {
+        this.ParseCompilationUnit("""
+            func main() {
+            }
+            """);
+
+        this.N<CompilationUnit>();
+        {
+            this.N<Decl.Func>();
+            {
+                this.T(TokenType.KeywordFunc);
+                this.T(TokenType.Identifier);
+
+                this.T(TokenType.ParenOpen);
+                this.T(TokenType.ParenClose);
+
+                this.N<FuncBody.BlockBody>();
+                {
+                    this.N<Expr.Block>();
+                    {
+                        this.T(TokenType.CurlyOpen);
+                        this.N<BlockContents>();
+                        this.T(TokenType.CurlyClose);
+                    }
+                }
+            }
+        }
+    }
 }

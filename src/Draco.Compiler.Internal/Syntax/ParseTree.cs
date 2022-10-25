@@ -186,6 +186,17 @@ internal partial record class ParseTree
     public abstract partial record class Stmt : ParseTree
     {
         /// <summary>
+        /// Unexpected input in statement context.
+        /// </summary>
+        public sealed partial record class Unexpected(
+            ImmutableArray<Token> Tokens,
+            ImmutableArray<Diagnostic> Diagnostics) : Stmt
+        {
+            /// <inheritdoc/>
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+        }
+
+        /// <summary>
         /// A declaration statement.
         /// </summary>
         public new sealed partial record class Decl(

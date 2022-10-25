@@ -115,6 +115,7 @@ internal sealed class DebugParseTreePrinter
         .AppendIndented(tree
             .GetType()
             .GetProperties()
+            .Where(p => tree is not ParseTree || p.Name != "Children")
             .Select(p => new KeyValuePair<string?, object?>(p.Name, p.GetValue(tree))),
             open: '{',
             close: '}');

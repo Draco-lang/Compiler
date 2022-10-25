@@ -494,20 +494,37 @@ internal sealed class Parser
 
                     default:
                     {
-                        // Assume any other expression
-                        // TODO: Might not be the best assumption
-                        var expr = this.ParseExpr();
-                        if (this.Peek() != TokenType.CurlyClose)
+                        if (expressionStarters.Contains(this.Peek()))
                         {
-                            // Likely just a statement, can continue
-                            var semicolon = this.Expect(TokenType.Semicolon);
-                            stmts.Add(new Stmt.Expr(expr, semicolon));
+                            // Some expression
+                            var expr = this.ParseExpr();
+                            if (this.Peek() != TokenType.CurlyClose)
+                            {
+                                // Likely just a statement, can continue
+                                var semicolon = this.Expect(TokenType.Semicolon);
+                                stmts.Add(new Stmt.Expr(expr, semicolon));
+                            }
+                            else
+                            {
+                                // This is the value of the block
+                                value = expr;
+                                goto end_of_block;
+                            }
                         }
                         else
                         {
-                            // This is the value of the block
-                            value = expr;
-                            goto end_of_block;
+                            // Error, synchronize
+                            var tokens = this.Synchronize(type => type switch
+                            {
+                                TokenType.CurlyClose
+                                or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal
+                                or TokenType.Identifier when this.Peek(1) == TokenType.Colon => false,
+                                var tt when expressionStarters.Contains(tt) => false,
+                                _ => true,
+                            });
+                            var location = new Location(0);
+                            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "statement");
+                            stmts.Add(new Stmt.Unexpected(tokens, ImmutableArray.Create(diag)));
                         }
                         break;
                     }

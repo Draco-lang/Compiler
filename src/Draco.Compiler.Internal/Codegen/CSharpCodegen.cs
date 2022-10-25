@@ -39,6 +39,18 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         internal static class Prelude
         {
             public record struct Unit;
+
+            public static Unit print(dynamic value)
+            {
+                Console.Write(value);
+                return default;
+            }
+
+            public static Unit println(dynamic value)
+            {
+                Console.WriteLine(value);
+                return default;
+            }
         }
         """);
 
@@ -80,21 +92,25 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
                     .Select(e => e.Value.Identifier.Text)
                     .Select(n => $"dynamic {this.AllocateVariable(n)}"))
             .AppendLine(")");
-
         this
             .Indent1()
             .AppendLine("{");
-
-        this.Visit(node.Body);
-
+        this.VisitFuncBody(node.Body);
         this
             .Indent2()
             .AppendLine("return default(Unit);");
-
         this
             .Indent1()
             .AppendLine("}");
+        return this.Default;
+    }
 
+    public override string VisitInlineBodyFuncBody(FuncBody.InlineBody node)
+    {
+        var value = this.VisitExpr(node.Expression);
+        this
+            .Indent2()
+            .AppendLine($"return {value};");
         return this.Default;
     }
 
@@ -120,10 +136,29 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         return this.Default;
     }
 
+    public override string VisitGotoExpr(Expr.Goto node)
+    {
+        var label = this.AllocateLabel(node.Identifier.Text);
+        this
+            .Indent2()
+            .AppendLine($"goto {label};");
+        return this.Default;
+    }
+
+    public override string VisitReturnExpr(Expr.Return node)
+    {
+        var result = "default(Unit)";
+        if (node.Expression is not null) result = this.VisitExpr(node.Expression);
+        this
+            .Indent2()
+            .AppendLine($"return {result};");
+        return this.Default;
+    }
+
     public override string VisitCallExpr(Expr.Call node)
     {
-        var func = this.Visit(node.Called);
-        var args = node.Args.Value.Elements.Select(a => this.Visit(a.Value)).ToList();
+        var func = this.VisitExpr(node.Called);
+        var args = node.Args.Value.Elements.Select(a => this.VisitExpr(a.Value)).ToList();
         var resultReg = this.AllocateRegister();
         this
             .Indent2()
@@ -131,6 +166,119 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         return resultReg;
     }
 
+    public override string VisitMemberAccessExpr(Expr.MemberAccess node)
+    {
+        var left = this.VisitExpr(node.Object);
+        return $"{left}.{node.MemberName.Text}";
+    }
+
+    public override string VisitUnaryExpr(Expr.Unary node)
+    {
+        var result = this.AllocateRegister();
+        var op = node.Operator.Text;
+        var subexpr = this.VisitExpr(node.Operand);
+        this
+            .Indent2()
+            .AppendLine($"dynamic {result} = {op} {subexpr};");
+        return subexpr;
+    }
+
+    public override string VisitBinaryExpr(Expr.Binary node)
+    {
+        // NOTE: Incomplete, mod and rem don't work
+        var result = this.AllocateRegister();
+        var left = this.VisitExpr(node.Left);
+        var right = this.VisitExpr(node.Right);
+        var op = node.Operator.Text;
+        this
+            .Indent2()
+            .AppendLine($"dynamic {result} = {left} {op} {right};");
+        return result;
+    }
+
+    public override string VisitRelationalExpr(Expr.Relational node)
+    {
+        var result = this.AllocateRegister();
+        this
+            .Indent2()
+            .AppendLine($"dynamic {result} = false;");
+        var last = this.VisitExpr(node.Left);
+        foreach (var cmp in node.Comparisons)
+        {
+            var op = cmp.Operator.Text;
+            var right = this.VisitExpr(cmp.Right);
+            this
+                .Indent2()
+                .AppendLine($"if ({last} {op} {right}) {{");
+            last = right;
+        }
+        this
+            .Indent2()
+            .AppendLine($"{result} = true;");
+        foreach (var _ in node.Comparisons)
+        {
+            this
+                .Indent2()
+                .AppendLine("}");
+        }
+        return result;
+    }
+
+    public override string VisitBlockExpr(Expr.Block node)
+    {
+        var result = "default(Unit)";
+        var content = node.Enclosed.Value;
+        foreach (var stmt in content.Statements) this.VisitStmt(stmt);
+        if (content.Value is not null) result = this.VisitExpr(content.Value);
+        return result;
+    }
+
+    public override string VisitIfExpr(Expr.If node)
+    {
+        var result = this.AllocateRegister();
+        this
+            .Indent2()
+            .AppendLine($"dynamic {result} = default(Unit);");
+        var elseLabel = this.AllocateLabel();
+        var endLabel = this.AllocateLabel();
+        var condition = this.VisitExpr(node.Condition.Value);
+        this
+            .Indent2()
+            .AppendLine($"if (!{condition}) goto {elseLabel};");
+        var thenValue = this.VisitExpr(node.Then);
+        this.Indent2().AppendLine($"{result} = {thenValue ?? "default(Unit)"};");
+        this.Indent2().AppendLine($"goto {endLabel};");
+        this
+            .Indent1()
+            .AppendLine($"{elseLabel}:;");
+        if (node.Else is not null)
+        {
+            var elseValue = this.VisitExpr(node.Else.Expression);
+            this.Indent2().AppendLine($"{result} = {elseValue ?? "default(Unit)"};");
+        }
+        this
+            .Indent1()
+            .AppendLine($"{endLabel}:;");
+        return result;
+    }
+
+    public override string VisitWhileExpr(Expr.While node)
+    {
+        var startLabel = this.AllocateLabel();
+        var endLabel = this.AllocateLabel();
+        this.Indent1().AppendLine($"{startLabel}:;");
+        var cond = this.VisitExpr(node.Condition.Value);
+        this
+            .Indent2()
+            .AppendLine($"if (!{cond}) goto {endLabel};");
+        this.VisitExpr(node.Expression);
+        this.Indent2().AppendLine($"goto {startLabel};");
+        this.Indent1().AppendLine($"{endLabel}:;");
+        return "default(Unit)";
+    }
+
+    // TODO: Not 100% correct, some escapes are actually illegal in C# that Draco has
+    public override string VisitLiteralExpr(Expr.Literal node) => node.Value.Text;
+
     public override string VisitNameExpr(Expr.Name node) => this.AllocateVariable(node.Identifier.Text);
-    public override string VisitNameTypeExpr(TypeExpr.Name node) => this.AllocateVariable(node.Identifier.Text);
 }

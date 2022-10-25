@@ -9,8 +9,12 @@ internal class Program
     internal static void Main(string[] args)
     {
         ScriptingEngine.Execute("""
+            func abs(n: int32) =
+                if (n < 0) -n
+                else n;
+
             func main() {
-                hehe();
+                println(abs(123));
             }
             """);
     }

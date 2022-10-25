@@ -9,8 +9,6 @@ internal class Program
     {
         var ast = ParseTree.Parse("""
             func main() {
-                print("Hello!");
-            }
             """);
         Console.WriteLine(ast.ToDebugString());
     }

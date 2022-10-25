@@ -34,7 +34,6 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     private int labelCount = 0;
 
     private void AppendPrelude() => this.output.AppendLine("""
-        using System;
         using static Prelude;
         internal static class Prelude
         {
@@ -42,13 +41,13 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
             public static Unit print(dynamic value)
             {
-                Console.Write(value);
+                System.Console.Write(value);
                 return default;
             }
 
             public static Unit println(dynamic value)
             {
-                Console.WriteLine(value);
+                System.Console.WriteLine(value);
                 return default;
             }
         }

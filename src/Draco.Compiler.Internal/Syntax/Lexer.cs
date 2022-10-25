@@ -325,7 +325,6 @@ internal sealed class Lexer
             {
                 // Error, illegal character
                 this.AddError(SyntaxErrors.IllegalCharacterLiteral, offset, args: (int)ch2);
-                ++offset;
                 resultChar = " ";
             }
             // Expect closing quote
@@ -335,6 +334,7 @@ internal sealed class Lexer
             }
             else
             {
+                // NOTE: We could have some strategy to try to look for closing quotes to try to sync the lexer
                 this.AddError(SyntaxErrors.UnclosedCharacterLiteral, offset);
             }
             // Done

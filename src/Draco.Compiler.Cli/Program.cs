@@ -8,7 +8,7 @@ internal class Program
     internal static void Main(string[] args)
     {
         var ast = ParseTree.Parse("""
-            func main() {
+            'foobar'
             """);
         Console.WriteLine(ast.ToDebugString());
     }

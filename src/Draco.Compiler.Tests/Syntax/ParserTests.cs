@@ -41,6 +41,8 @@ public sealed class ParserTests
 
     private void T(TokenType type) => this.N<Token>(t => t.Type == type);
 
+    private void MissingT(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length > 0);
+
     [Fact]
     public void TestEmpty()
     {
@@ -77,6 +79,36 @@ public sealed class ParserTests
                         this.T(TokenType.CurlyOpen);
                         this.N<BlockContents>();
                         this.T(TokenType.CurlyClose);
+                    }
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void TestEmptyFuncWithoutClosingCurly()
+    {
+        this.ParseCompilationUnit("""
+            func main() {
+            """);
+
+        this.N<CompilationUnit>();
+        {
+            this.N<Decl.Func>();
+            {
+                this.T(TokenType.KeywordFunc);
+                this.T(TokenType.Identifier);
+
+                this.T(TokenType.ParenOpen);
+                this.T(TokenType.ParenClose);
+
+                this.N<FuncBody.BlockBody>();
+                {
+                    this.N<Expr.Block>();
+                    {
+                        this.T(TokenType.CurlyOpen);
+                        this.N<BlockContents>();
+                        this.MissingT(TokenType.CurlyClose);
                     }
                 }
             }

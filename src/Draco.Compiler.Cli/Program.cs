@@ -14,7 +14,8 @@ internal class Program
                 else n;
 
             func main() {
-                println(abs(123));
+                println("Hello, \{1} + \{2} is \{1 + 2}");
+                println("|-12| = \{abs(-12)}");
             }
             """);
     }

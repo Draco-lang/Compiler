@@ -277,8 +277,38 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         return "default(Unit)";
     }
 
+    public override string VisitStringExpr(Expr.String node)
+    {
+        var result = this.AllocateRegister();
+        this
+            .Indent2()
+            .AppendLine($"dynamic {result} = new System.Text.StringBuilder();");
+        foreach (var part in node.Parts)
+        {
+            if (part is StringPart.Interpolation i)
+            {
+                var subexpr = this.VisitExpr(i.Expression);
+                this
+                    .Indent2()
+                    .AppendLine($"{result}.Append({subexpr}.ToString());");
+            }
+            else
+            {
+                var c = (StringPart.Content)part;
+                this
+                    .Indent2()
+                    .AppendLine($"{result}.Append(\"{Unescape(c.Value.ValueText!)}\");");
+            }
+        }
+        return $"{result}.ToString()";
+    }
+
     // TODO: Not 100% correct, some escapes are actually illegal in C# that Draco has
     public override string VisitLiteralExpr(Expr.Literal node) => node.Value.Text;
 
     public override string VisitNameExpr(Expr.Name node) => this.AllocateVariable(node.Identifier.Text);
+
+    private static string Unescape(string text) => text
+        .Replace("\n", @"\n")
+        .Replace("\r", @"\r");
 }

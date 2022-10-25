@@ -692,7 +692,7 @@ internal sealed class Parser
                         punctType: TokenType.Comma,
                         stopType: TokenType.BracketClose),
                     closeType: TokenType.BracketClose);
-                result = new Expr.Call(result, args);
+                result = new Expr.Index(result, args);
             }
             else if (this.Matches(TokenType.Dot, out var dot))
             {

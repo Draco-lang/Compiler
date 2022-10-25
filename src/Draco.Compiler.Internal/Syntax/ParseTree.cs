@@ -265,9 +265,16 @@ internal partial record class ParseTree
             Token Value) : Expr;
 
         /// <summary>
-        /// Any call-like expression.
+        /// Any call expression.
         /// </summary>
         public sealed partial record class Call(
+            Expr Called,
+            Enclosed<PunctuatedList<Expr>> Args) : Expr;
+
+        /// <summary>
+        /// Any index expression.
+        /// </summary>
+        public sealed partial record class Index(
             Expr Called,
             Enclosed<PunctuatedList<Expr>> Args) : Expr;
 

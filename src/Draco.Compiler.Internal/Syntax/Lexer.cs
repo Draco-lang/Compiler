@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
+using static Draco.Compiler.Internal.Syntax.ParseTree;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -325,7 +326,6 @@ internal sealed class Lexer
             {
                 // Error, illegal character
                 this.AddError(SyntaxErrors.IllegalCharacterLiteral, offset, args: (int)ch2);
-                ++offset;
                 resultChar = " ";
             }
             // Expect closing quote
@@ -335,6 +335,7 @@ internal sealed class Lexer
             }
             else
             {
+                // NOTE: We could have some strategy to try to look for closing quotes to try to sync the lexer
                 this.AddError(SyntaxErrors.UnclosedCharacterLiteral, offset);
             }
             // Done

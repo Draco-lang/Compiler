@@ -837,7 +837,7 @@ internal sealed class Parser
                 {
                     if (part is StringPart.Content contentPart)
                     {
-                        if (contentPart.Token.Type == TokenType.StringNewline)
+                        if (contentPart.Value.Type == TokenType.StringNewline)
                         {
                             // Also a newline, don't care, even an empty line is fine
                             newContent.Add(part);
@@ -845,7 +845,7 @@ internal sealed class Parser
                             continue;
                         }
                         // Actual text content
-                        if (nextIsNewline && !contentPart.Token.Text.StartsWith(prefix))
+                        if (nextIsNewline && !contentPart.Value.Text.StartsWith(prefix))
                         {
                             // We are in a newline and the prefixes don't match, that's an error
                             var location = new Location(0);
@@ -853,7 +853,7 @@ internal sealed class Parser
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
                             var allDiags = contentPart.Diagnostics.Append(diag).ToImmutableArray();
-                            newContent.Add(new StringPart.Content(contentPart.Token, allDiags));
+                            newContent.Add(new StringPart.Content(contentPart.Value, allDiags));
                         }
                         else
                         {

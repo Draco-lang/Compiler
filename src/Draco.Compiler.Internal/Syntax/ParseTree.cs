@@ -18,27 +18,29 @@ namespace Draco.Compiler.Internal.Syntax;
 internal abstract partial record class ParseTree
 {
     public abstract int Width { get; }
+    public abstract IEnumerable<ParseTree> Children { get; }
 
     /// <summary>
     /// The diagnostics attached to this tree node.
     /// </summary>
     internal virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+}
 
-    // Plumbing code for width generation
-    private static int GetWidth(ImmutableArray<Diagnostic> diags) => 0;
-    private static int GetWidth(ParseTree? tree) => tree?.Width ?? 0;
-    private static int GetWidth<TElement>(ImmutableArray<TElement> elements)
-        where TElement : ParseTree => elements.Sum(e => e.Width);
-    private static int GetWidth<TElement>(Enclosed<TElement> element)
-        where TElement : ParseTree =>
-        element.OpenToken.Width + element.Value.Width + element.CloseToken.Width;
-    private static int GetWidth<TElement>(Enclosed<PunctuatedList<TElement>> element)
-        where TElement : ParseTree =>
-        element.OpenToken.Width + GetWidth(element.Value) + element.CloseToken.Width;
-    private static int GetWidth<TElement>(PunctuatedList<TElement> elements)
-        where TElement : ParseTree => elements.Elements.Sum(GetWidth);
-    private static int GetWidth<TElement>(Punctuated<TElement> element)
-        where TElement : ParseTree => element.Value.Width + (element.Punctuation?.Width ?? 0);
+// Traverasal
+internal abstract partial record class ParseTree
+{
+    /// <summary>
+    /// Traverses this subtree in an in-order fashion, meaning that the order is root, left, right recursively.
+    /// </summary>
+    /// <returns>The <see cref="IEnumerable{ParseTree}"/> that gives back nodes in order.</returns>
+    public IEnumerable<ParseTree> InOrderTraverse()
+    {
+        yield return this;
+        foreach (var child in this.Children)
+        {
+            foreach (var e in child.InOrderTraverse()) yield return e;
+        }
+    }
 }
 
 // Nodes
@@ -349,7 +351,7 @@ internal partial record class ParseTree
         /// Content part of a string literal.
         /// </summary>
         public sealed partial record class Content(
-            Token Token,
+            Token Value,
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>
@@ -363,5 +365,60 @@ internal partial record class ParseTree
             Token OpenToken,
             Expr Expression,
             Token CloseToken) : StringPart;
+    }
+}
+
+internal abstract partial record class ParseTree
+{
+    // Plumbing code for width generation
+    private static int GetWidth(ImmutableArray<Diagnostic> diags) => 0;
+    private static int GetWidth(ParseTree? tree) => tree?.Width ?? 0;
+    private static int GetWidth<TElement>(ImmutableArray<TElement> elements)
+        where TElement : ParseTree => elements.Sum(e => e.Width);
+    private static int GetWidth<TElement>(Enclosed<TElement> element)
+        where TElement : ParseTree =>
+        element.OpenToken.Width + element.Value.Width + element.CloseToken.Width;
+    private static int GetWidth<TElement>(Enclosed<PunctuatedList<TElement>> element)
+        where TElement : ParseTree =>
+        element.OpenToken.Width + GetWidth(element.Value) + element.CloseToken.Width;
+    private static int GetWidth<TElement>(PunctuatedList<TElement> elements)
+        where TElement : ParseTree => elements.Elements.Sum(GetWidth);
+    private static int GetWidth<TElement>(Punctuated<TElement> element)
+        where TElement : ParseTree => element.Value.Width + (element.Punctuation?.Width ?? 0);
+
+    // Plumbing code for children
+    private static IEnumerable<ParseTree> GetChildren(ImmutableArray<Diagnostic> diags) => Enumerable.Empty<ParseTree>();
+    private static IEnumerable<ParseTree> GetChildren(ParseTree? tree)
+    {
+        if (tree is not null) yield return tree;
+    }
+    private static IEnumerable<ParseTree> GetChildren<TElement>(ImmutableArray<TElement> elements)
+        where TElement : ParseTree => elements.Cast<ParseTree>();
+    private static IEnumerable<ParseTree> GetChildren<TElement>(Enclosed<TElement> element)
+        where TElement : ParseTree
+    {
+        yield return element.OpenToken;
+        yield return element.Value;
+        yield return element.CloseToken;
+    }
+    private static IEnumerable<ParseTree> GetChildren<TElement>(PunctuatedList<TElement> elements)
+        where TElement : ParseTree
+    {
+        foreach (var p in elements.Elements)
+        {
+            yield return p.Value;
+            if (p.Punctuation is not null) yield return p.Punctuation;
+        }
+    }
+    private static IEnumerable<ParseTree> GetChildren<TElement>(Enclosed<PunctuatedList<TElement>> enclosed)
+        where TElement : ParseTree
+    {
+        yield return enclosed.OpenToken;
+        foreach (var p in enclosed.Value.Elements)
+        {
+            yield return p.Value;
+            if (p.Punctuation is not null) yield return p.Punctuation;
+        }
+        yield return enclosed.CloseToken;
     }
 }

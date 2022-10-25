@@ -10,6 +10,5 @@ internal class Program
         var ast = ParseTree.Parse("""
             'foobar'
             """);
-        Console.WriteLine(ast.ToDebugString());
     }
 }

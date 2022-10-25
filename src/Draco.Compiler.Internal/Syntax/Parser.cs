@@ -196,7 +196,8 @@ internal sealed class Parser
     {
         var decls = ImmutableArray.CreateBuilder<Decl>();
         while (this.Peek() != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
-        return new(decls.ToImmutable());
+        var end = this.Expect(TokenType.EndOfInput);
+        return new(decls.ToImmutable(), end);
     }
 
     /// <summary>

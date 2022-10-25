@@ -71,7 +71,8 @@ internal partial record class ParseTree
     /// A compilation unit, the top-most node in the parse tree.
     /// </summary>
     public sealed partial record class CompilationUnit(
-        ImmutableArray<Decl> Declarations) : ParseTree;
+        ImmutableArray<Decl> Declarations,
+        Token End) : ParseTree;
 
     /// <summary>
     /// A declaration, either top-level or as a statement.

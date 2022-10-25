@@ -22,7 +22,6 @@ public static class ScriptingEngine
 
         // NOTE: This is temporary, we shouldn't rely on compiling to C#
         // and then letting Roslyn do the work
-        Console.WriteLine(cSharpCode);
 
         // Compile
         var compilation = CSharpCompilation.Create(

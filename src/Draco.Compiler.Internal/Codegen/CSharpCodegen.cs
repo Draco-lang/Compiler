@@ -171,6 +171,13 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         return resultReg;
     }
 
+    public override string VisitIndexExpr(Expr.Index node)
+    {
+        var indexed = this.VisitExpr(node.Called);
+        var args = node.Args.Value.Elements.Select(a => this.VisitExpr(a.Value)).ToList();
+        return $"{indexed}[{string.Join(", ", args)}];";
+    }
+
     public override string VisitMemberAccessExpr(Expr.MemberAccess node)
     {
         var left = this.VisitExpr(node.Object);

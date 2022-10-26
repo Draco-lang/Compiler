@@ -93,13 +93,8 @@ internal abstract partial record class ParseTree
         /// <inheritdoc/>
         public override string ToString()
         {
-            static string Unescape(string text) => text
-                .Replace("\n", @"\n")
-                .Replace("\r", @"\r")
-                .Replace("\t", @"\t");
-
             var result = new StringBuilder();
-            result.Append($"\"{Unescape(this.Text)}\": {this.Type}");
+            result.Append($"\"{StringUtils.Unescape(this.Text)}\": {this.Type}");
             if (this.Value is not null)
             {
                 var valueText = this.Value.ToString() ?? "null";

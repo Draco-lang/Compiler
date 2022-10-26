@@ -27,6 +27,7 @@ internal class Program
                     I hope this works!
                     {{quotes}});
                 println('\u{1F47D}');
+                println("Hello,\nNewlines!");
             }
             """);
     }

@@ -310,7 +310,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
                 var text = c.Value.ValueText!.Substring(c.Cutoff);
                 this
                     .Indent2()
-                    .AppendLine($"{result}.Append(\"{Unescape(text)}\");");
+                    .AppendLine($"{result}.Append(\"{StringUtils.Unescape(text)}\");");
             }
         }
         return $"{result}.ToString()";
@@ -332,8 +332,4 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     }
 
     public override string VisitNameExpr(Expr.Name node) => this.AllocateVariable(node.Identifier.Text);
-
-    private static string Unescape(string text) => text
-        .Replace("\n", @"\n")
-        .Replace("\r", @"\r");
 }

@@ -8,6 +8,7 @@ internal class Program
 {
     internal static void Main(string[] args)
     {
+        var quotes = "\"\"\"";
         ScriptingEngine.Execute($$"""
             func abs(n: int32): int32 =
                 if (n < 0) -n
@@ -21,6 +22,10 @@ internal class Program
                 println("Hello, \{1} + \{2} is \{1 + 2}");
                 println("|-12| = \{abs(-12)}");
                 println("fib(5) = \{fib(5)}");
+                println({{quotes}}
+                    Hello, Multi line strings!
+                    I hope this works!
+                    {{quotes}});
             }
             """);
     }

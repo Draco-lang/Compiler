@@ -294,9 +294,10 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
             else
             {
                 var c = (StringPart.Content)part;
+                var text = c.Value.ValueText!.Substring(c.Cutoff);
                 this
                     .Indent2()
-                    .AppendLine($"{result}.Append(\"{Unescape(c.Value.ValueText!)}\");");
+                    .AppendLine($"{result}.Append(\"{Unescape(text)}\");");
             }
         }
         return $"{result}.ToString()";

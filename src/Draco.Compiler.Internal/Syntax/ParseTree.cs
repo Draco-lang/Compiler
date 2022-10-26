@@ -371,6 +371,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class Content(
             Token Value,
+            int Cutoff,
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>
@@ -390,6 +391,7 @@ internal partial record class ParseTree
 internal abstract partial record class ParseTree
 {
     // Plumbing code for width generation
+    private static int GetWidth(int x) => 0;
     private static int GetWidth(ImmutableArray<Diagnostic> diags) => 0;
     private static int GetWidth(ParseTree? tree) => tree?.Width ?? 0;
     private static int GetWidth<TElement>(ImmutableArray<TElement> elements)
@@ -406,6 +408,7 @@ internal abstract partial record class ParseTree
         where TElement : ParseTree => element.Value.Width + (element.Punctuation?.Width ?? 0);
 
     // Plumbing code for children
+    private static IEnumerable<ParseTree> GetChildren(int x) => Enumerable.Empty<ParseTree>();
     private static IEnumerable<ParseTree> GetChildren(ImmutableArray<Diagnostic> diags) => Enumerable.Empty<ParseTree>();
     private static IEnumerable<ParseTree> GetChildren(ParseTree? tree)
     {

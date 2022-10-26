@@ -494,20 +494,37 @@ internal sealed class Parser
 
                     default:
                     {
-                        // Assume any other expression
-                        // TODO: Might not be the best assumption
-                        var expr = this.ParseExpr();
-                        if (this.Peek() != TokenType.CurlyClose)
+                        if (expressionStarters.Contains(this.Peek()))
                         {
-                            // Likely just a statement, can continue
-                            var semicolon = this.Expect(TokenType.Semicolon);
-                            stmts.Add(new Stmt.Expr(expr, semicolon));
+                            // Some expression
+                            var expr = this.ParseExpr();
+                            if (this.Peek() != TokenType.CurlyClose)
+                            {
+                                // Likely just a statement, can continue
+                                var semicolon = this.Expect(TokenType.Semicolon);
+                                stmts.Add(new Stmt.Expr(expr, semicolon));
+                            }
+                            else
+                            {
+                                // This is the value of the block
+                                value = expr;
+                                goto end_of_block;
+                            }
                         }
                         else
                         {
-                            // This is the value of the block
-                            value = expr;
-                            goto end_of_block;
+                            // Error, synchronize
+                            var tokens = this.Synchronize(type => type switch
+                            {
+                                TokenType.CurlyClose
+                                or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal
+                                or TokenType.Identifier when this.Peek(1) == TokenType.Colon => false,
+                                var tt when expressionStarters.Contains(tt) => false,
+                                _ => true,
+                            });
+                            var location = new Location(0);
+                            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "statement");
+                            stmts.Add(new Stmt.Unexpected(tokens, ImmutableArray.Create(diag)));
                         }
                         break;
                     }
@@ -692,7 +709,7 @@ internal sealed class Parser
                         punctType: TokenType.Comma,
                         stopType: TokenType.BracketClose),
                     closeType: TokenType.BracketClose);
-                result = new Expr.Call(result, args);
+                result = new Expr.Index(result, args);
             }
             else if (this.Matches(TokenType.Dot, out var dot))
             {
@@ -771,7 +788,7 @@ internal sealed class Parser
             if (peek == TokenType.StringContent)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, 0, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek == TokenType.InterpolationStart)
             {
@@ -804,7 +821,7 @@ internal sealed class Parser
             if (peek == TokenType.StringContent || peek == TokenType.StringNewline)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, 0, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek == TokenType.InterpolationStart)
             {
@@ -854,12 +871,12 @@ internal sealed class Parser
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
                             var allDiags = contentPart.Diagnostics.Append(diag).ToImmutableArray();
-                            newContent.Add(new StringPart.Content(contentPart.Value, allDiags));
+                            newContent.Add(new StringPart.Content(contentPart.Value, 0, allDiags));
                         }
                         else
                         {
-                            // Indentation was ok
-                            newContent.Add(part);
+                            // Indentation was ok, reinstantiate to add cutoff
+                            newContent.Add(new StringPart.Content(contentPart.Value, prefix.Length, contentPart.Diagnostics));
                         }
                         nextIsNewline = false;
                     }

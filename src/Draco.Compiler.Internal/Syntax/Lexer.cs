@@ -664,6 +664,7 @@ internal sealed class Lexer
             'v' => "\v",
             '\'' => "\'",
             '\"' => "\"",
+            '\\' => "\\",
             _ => null,
         };
         if (escaped is not null)

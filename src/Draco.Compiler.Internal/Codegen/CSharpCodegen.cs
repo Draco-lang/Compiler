@@ -39,6 +39,12 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         {
             public record struct Unit;
 
+            public record struct Char32(int Codepoint)
+            {
+                public override string ToString() =>
+                    char.ConvertFromUtf32(this.Codepoint);
+            }
+
             public static Unit print(dynamic value)
             {
                 System.Console.Write(value);
@@ -304,7 +310,19 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     }
 
     // TODO: Not 100% correct, some escapes are actually illegal in C# that Draco has
-    public override string VisitLiteralExpr(Expr.Literal node) => node.Value.Text;
+    public override string VisitLiteralExpr(Expr.Literal node)
+    {
+        var token = node.Value;
+        if (token.Type == TokenType.LiteralCharacter)
+        {
+            var codepoint = char.ConvertToUtf32(token.ValueText!, 0);
+            return $"new Char32({codepoint})";
+        }
+        else
+        {
+            return token.Text;
+        }
+    }
 
     public override string VisitNameExpr(Expr.Name node) => this.AllocateVariable(node.Identifier.Text);
 

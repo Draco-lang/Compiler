@@ -26,6 +26,7 @@ internal class Program
                     Hello, Multi line strings!
                     I hope this works!
                     {{quotes}});
+                println('\u{1F47D}');
             }
             """);
     }

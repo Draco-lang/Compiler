@@ -336,6 +336,7 @@ internal sealed class Lexer
             else
             {
                 // NOTE: We could have some strategy to try to look for closing quotes to try to sync the lexer
+                // Maybe we could search for the next quotes as long as we are in-line?
                 this.AddError(SyntaxErrors.UnclosedCharacterLiteral, offset);
             }
             // Done

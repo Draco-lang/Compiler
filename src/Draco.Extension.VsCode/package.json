@@ -1,0 +1,29 @@
+{
+  "name": "draco-language-support",
+  "displayName": "Draco Language Support",
+  "description": "Visual Studio Language support for the Draco programming language.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.72.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "scripts": {
+    "copy-grammar": "(mkdir syntaxes || true) && cp ../Draco.SyntaxHighlighting/draco.tmLanguage.json ./syntaxes/draco.tmLanguage.json",
+    "vscode:prepublish": "npm run copy-grammar"
+  },
+  "contributes": {
+    "languages": [{
+      "id": "draco",
+      "aliases": ["Draco", "draco"],
+      "extensions": [".draco"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "draco",
+      "scopeName": "source.draco",
+      "path": "./syntaxes/draco.tmLanguage.json"
+    }]
+  }
+}

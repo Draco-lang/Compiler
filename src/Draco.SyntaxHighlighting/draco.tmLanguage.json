@@ -150,6 +150,20 @@
           ]
         },
         {
+          "begin": ":",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.colon.draco"
+            }
+          },
+          "end": "(?=[={])",
+          "patterns": [
+            {
+              "include": "#type-specifiers"
+            }
+          ]
+        },
+        {
           "begin": "=",
           "beginCaptures": {
             "0": {

@@ -75,6 +75,13 @@ repository:
           end: (?=[,)])
           patterns:
           - include: '#type-specifiers'
+      # Return type specifier
+    - begin: ':'
+      beginCaptures:
+        '0': { name: punctuation.colon.draco }
+      end: '(?=[={])'
+      patterns:
+      - include: '#type-specifiers'
       # Inline function body
     - begin: '='
       beginCaptures:

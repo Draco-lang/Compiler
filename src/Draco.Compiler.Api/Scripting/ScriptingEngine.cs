@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Basic.Reference.Assemblies;
@@ -100,9 +101,7 @@ public static class ScriptingEngine
             references: ReferenceAssemblies.Net60,
             options: options);
         {
-            EmitResult emitResult;
-
-            emitResult = compilation.Emit(stream);
+            var emitResult = compilation.Emit(stream);
             // See if we succeeded
             if (emitResult.Success) return true;
             Console.WriteLine("Failed to compile transpiled C# code");

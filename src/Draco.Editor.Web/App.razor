@@ -33,128 +33,123 @@
     </select>
 </div>
 <div class="editors-container">
-    <MonacoEditor Id="draco-editor" @ref="_dracoEditor" ConstructionOptions="DracoMonacoOptions" OnDidChangeModelContent="CodeChange" OnDidInit="OnInit" />
-    <MonacoEditor Id="output-viewer" @ref="_outputViewer" ConstructionOptions="OutputMonacoOptions" />
+    <MonacoEditor Id="draco-editor" @ref="DracoEditor" ConstructionOptions="DracoMonacoOptions" OnDidChangeModelContent="CodeChange" />
+    <MonacoEditor Id="output-viewer" @ref="OutputViewer" ConstructionOptions="OutputMonacoOptions" />
 </div>
 
 @code {
-    MonacoEditor? _dracoEditor { get; set; }
-    MonacoEditor? _outputViewer { get; set; }
-    string? _selectedOutputType { get; set; } = "Run";
-    StandaloneEditorConstructionOptions _dracoEditorOptions = new StandaloneEditorConstructionOptions
-        {
-            AutomaticLayout = true,
-            Language = "rust",
-            Value = @"func main() {
-    println(""Hello!"");
+    private MonacoEditor? DracoEditor { get; set; }
+    private MonacoEditor? OutputViewer { get; set; }
+    private string? SelectedOutputType { get; set; } = "Run";
+    private StandaloneEditorConstructionOptions dracoEditorOptions = new StandaloneEditorConstructionOptions
+    {
+        AutomaticLayout = true,
+        Language = "rust",
+        Value = @"func main() {
+println(""Hello!"");
 }"
-        };
+    };
 
-    StandaloneEditorConstructionOptions _outputEditorOptions = new StandaloneEditorConstructionOptions
-        {
-            AutomaticLayout = true,
-            Language = "",
-            Value = "",
-            ReadOnly = true
-        };
+    private StandaloneEditorConstructionOptions outputEditorOptions = new StandaloneEditorConstructionOptions
+    {
+        AutomaticLayout = true,
+        Language = string.Empty,
+        Value = string.Empty,
+        ReadOnly = true
+    };
 
-    StandaloneEditorConstructionOptions DracoMonacoOptions(MonacoEditor editor)
-         => _dracoEditorOptions;
+    private StandaloneEditorConstructionOptions DracoMonacoOptions(MonacoEditor editor) =>
+        dracoEditorOptions;
 
-    StandaloneEditorConstructionOptions OutputMonacoOptions(MonacoEditor editor)
-        => _outputEditorOptions;
+    private StandaloneEditorConstructionOptions OutputMonacoOptions(MonacoEditor editor) =>
+        outputEditorOptions;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        bool isDarkMode = await JS.InvokeAsync<bool>("isDarkMode");
+        var isDarkMode = await JS.InvokeAsync<bool>("isDarkMode");
         await MonacoEditor.SetTheme(isDarkMode ? "vs-dark" : "vs");
-    }
-
-    async Task OnInit(MonacoEditorBase editor)
-    {
         string uriString = NavigationManager.Uri;
         Uri uri = new Uri(uriString);
         if (!string.IsNullOrWhiteSpace(uri.Fragment))
         {
             string strBuffer = new string(uri.Fragment.Skip(1).ToArray());
-            strBuffer = Uri.UnescapeDataString(strBuffer)
-            .Replace('_', '/')
-            .Replace('-', '+')
-            .PadRight(4 * ((strBuffer.Length + 3) / 4), '=');
-            var buffer = Convert.FromBase64String(strBuffer);
-            using (MemoryStream inBuffer = new MemoryStream(buffer))
-            using (DeflateStream gzipStream = new DeflateStream(inBuffer, CompressionMode.Decompress))
-            using (StreamReader outReader = new StreamReader(gzipStream, Encoding.UTF8))
-            {
-                _selectedOutputType = outReader.ReadLine();
-                string code = outReader.ReadToEnd();
-                await _dracoEditor!.SetValue(code);
-            }
+            // Convert base64URL to Base64.
+            // To be replaced with .NET implementation in .NET 8: https://github.com/dotnet/runtime/issues/1658
+            strBuffer = Uri
+                .UnescapeDataString(strBuffer)
+                .Replace('_', '/')
+                .Replace('-', '+')
+                .PadRight(4 * ((strBuffer.Length + 3) / 4), '='); // Add Base64 padding.
+            var buffer = Convert.FromBase64String(strBuffer); // FromBase64 throws when padding is missing.
+            using MemoryStream inBuffer = new MemoryStream(buffer);
+            using DeflateStream gzipStream = new DeflateStream(inBuffer, CompressionMode.Decompress);
+            using StreamReader outReader = new StreamReader(gzipStream, Encoding.UTF8);
+            SelectedOutputType = outReader.ReadLine();
+            string code = outReader.ReadToEnd();
+            await DracoEditor!.SetValue(code);
         }
-
-
         await UpdateOutput();
     }
 
-    public void OnOutputTypeChange(ChangeEventArgs e)
+    private void OnOutputTypeChange(ChangeEventArgs e)
     {
-        _selectedOutputType = e.Value.ToString();
+        SelectedOutputType = e.Value!.ToString();
         _ = UpdateOutput(); // awaiting will block UI thread
     }
 
-    public void CodeChange()
+    private void CodeChange()
     {
         _ = UpdateOutput(); // awaiting will block UI thread.
     }
 
-    string _codeCache = "";
-
-    public async Task UpdateOutput()
+    private async Task UpdateOutput()
     {
-        string code = await _dracoEditor!.GetValue();
+        string code = await DracoEditor!.GetValue();
         using (MemoryStream inBuffer = new MemoryStream())
         using (DeflateStream outStream = new DeflateStream(inBuffer, CompressionLevel.Optimal, true))
         using (StreamWriter writer = new StreamWriter(outStream, Encoding.UTF8, leaveOpen: true))
         {
-            writer.WriteLine(_selectedOutputType);
+            writer.WriteLine(SelectedOutputType);
             writer.Write(code);
             writer.Flush();
             inBuffer.Position = 0;
             byte[] buffer = inBuffer.ToArray();
-            var hash = Convert.ToBase64String(buffer).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            // Convert base64 to base64URL.
+            var hash = Convert.ToBase64String(buffer) 
+                .TrimEnd('=')
+                .Replace('+', '-')
+                .Replace('/', '_');
             await JS.InvokeVoidAsync("setHash", new object[] { hash });
         }
-        var oldOut = Console.Out;
+        
 
         try
         {
-
-            switch (_selectedOutputType)
+            switch (SelectedOutputType)
             {
                 case "Run":
-                    await Run();
+                    await ShowRun();
                     break;
                 case "CSharp":
-                    await CSharp();
+                    await ShowCSharp();
                     break;
                 case "IL":
-                    await IL();
+                    await ShowIL();
                     break;
                 default:
                     throw new InvalidOperationException();
             }
-
         }
         catch (Exception e)
         {
-            await _outputViewer!.SetValue(e.ToString());
+            await OutputViewer!.SetValue(e.ToString());
         }
 
-        async Task IL()
+        async Task ShowIL()
         {
-            _outputEditorOptions.Language = "IL";
-            await _outputViewer!.UpdateOptions(_outputEditorOptions);
+            outputEditorOptions.Language = "IL";
+            await OutputViewer!.UpdateOptions(outputEditorOptions);
 
             using MemoryStream? inlineDllStream = new MemoryStream();
             if (!ScriptingEngine.CompileToAssembly(code, inlineDllStream)) return;
@@ -167,27 +162,27 @@
                 text.WriteLine();
                 disassembler.WriteModuleContents(pe);
             }
-            await _outputViewer.SetValue(text.ToString());
+            await OutputViewer.SetValue(text.ToString());
 
         }
 
-
-        async Task CSharp()
+        async Task ShowCSharp()
         {
-            _outputEditorOptions.Language = "csharp";
-            await _outputViewer!.UpdateOptions(_outputEditorOptions);
+            outputEditorOptions.Language = "csharp";
+            await OutputViewer!.UpdateOptions(outputEditorOptions);
             var cSharpCode = ScriptingEngine.CompileToCSharpCode(code);
-            await _outputViewer.SetValue(cSharpCode);
+            await OutputViewer.SetValue(cSharpCode);
         }
 
-        async Task Run()
+        async Task ShowRun()
         {
+            var oldOut = Console.Out;
             var cts = new CancellationTokenSource();
             var consoleStream = new StringWriter();
             Task consoleLoop = BackgroundLoop(consoleStream, cts.Token);
             Console.SetOut(consoleStream);
-            _outputEditorOptions.Language = "";
-            await _outputViewer!.UpdateOptions(_outputEditorOptions);
+            outputEditorOptions.Language = string.Empty;
+            await OutputViewer!.UpdateOptions(outputEditorOptions);
             try
             {
                 ScriptingEngine.InlineExecute(code);
@@ -198,16 +193,16 @@
             }
             cts.Cancel();
             await consoleLoop;
-            await _outputViewer!.SetValue(consoleStream.ToString());
+            await OutputViewer!.SetValue(consoleStream.ToString());
             Console.SetOut(oldOut);
         }
     }
 
-    async Task BackgroundLoop(StringWriter stringWriter, CancellationToken cancellationToken)
+    private async Task BackgroundLoop(StringWriter stringWriter, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            await _outputViewer!.SetValue(stringWriter.ToString());
+            await OutputViewer!.SetValue(stringWriter.ToString());
             try
             {
                 await Task.Delay(50, cancellationToken);

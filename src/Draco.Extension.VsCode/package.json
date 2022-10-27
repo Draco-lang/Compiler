@@ -10,7 +10,7 @@
     "Programming Languages"
   ],
   "scripts": {
-    "copy-grammar": "mkdir syntaxes && cp ../Draco.SyntaxHighlighting/draco.tmLanguage.json ./syntaxes/draco.tmLanguage.json",
+    "copy-grammar": "(mkdir syntaxes || true) && cp ../Draco.SyntaxHighlighting/draco.tmLanguage.json ./syntaxes/draco.tmLanguage.json",
     "vscode:prepublish": "npm run copy-grammar"
   },
   "contributes": {

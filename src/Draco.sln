@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Cli", "Draco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.Attributes", "Draco.RedGreenTree.Attributes\Draco.RedGreenTree.Attributes.csproj", "{42E11AC1-C418-4438-B873-D9CBC104F798}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.WebCompiler", "Draco.WebCompiler\Draco.WebCompiler.csproj", "{3AE74A5A-8201-4DF7-867B-AE929B8387B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Editor.Web", "Draco.Editor.Web\Draco.Editor.Web.csproj", "{3AE74A5A-8201-4DF7-867B-AE929B8387B4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

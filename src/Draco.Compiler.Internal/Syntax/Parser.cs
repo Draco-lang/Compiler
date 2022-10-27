@@ -788,7 +788,7 @@ internal sealed class Parser
             if (peek == TokenType.StringContent)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, 0, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek == TokenType.InterpolationStart)
             {
@@ -821,7 +821,7 @@ internal sealed class Parser
             if (peek == TokenType.StringContent || peek == TokenType.StringNewline)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, 0, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek == TokenType.InterpolationStart)
             {
@@ -871,12 +871,12 @@ internal sealed class Parser
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
                             var allDiags = contentPart.Diagnostics.Append(diag).ToImmutableArray();
-                            newContent.Add(new StringPart.Content(contentPart.Value, allDiags));
+                            newContent.Add(new StringPart.Content(contentPart.Value, 0, allDiags));
                         }
                         else
                         {
-                            // Indentation was ok
-                            newContent.Add(part);
+                            // Indentation was ok, reinstantiate to add cutoff
+                            newContent.Add(new StringPart.Content(contentPart.Value, prefix.Length, contentPart.Diagnostics));
                         }
                         nextIsNewline = false;
                     }

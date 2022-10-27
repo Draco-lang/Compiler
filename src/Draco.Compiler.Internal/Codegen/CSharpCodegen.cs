@@ -39,6 +39,12 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         {
             public record struct Unit;
 
+            public record struct Char32(int Codepoint)
+            {
+                public override string ToString() =>
+                    char.ConvertFromUtf32(this.Codepoint);
+            }
+
             public static Unit print(dynamic value)
             {
                 System.Console.Write(value);
@@ -163,6 +169,13 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
             .Indent2()
             .AppendLine($"dynamic {resultReg} = {func}({string.Join(", ", args)});");
         return resultReg;
+    }
+
+    public override string VisitIndexExpr(Expr.Index node)
+    {
+        var indexed = this.VisitExpr(node.Called);
+        var args = node.Args.Value.Elements.Select(a => this.VisitExpr(a.Value)).ToList();
+        return $"{indexed}[{string.Join(", ", args)}];";
     }
 
     public override string VisitMemberAccessExpr(Expr.MemberAccess node)
@@ -294,20 +307,29 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
             else
             {
                 var c = (StringPart.Content)part;
+                var text = c.Value.ValueText!.Substring(c.Cutoff);
                 this
                     .Indent2()
-                    .AppendLine($"{result}.Append(\"{Unescape(c.Value.ValueText!)}\");");
+                    .AppendLine($"{result}.Append(\"{StringUtils.Unescape(text)}\");");
             }
         }
         return $"{result}.ToString()";
     }
 
     // TODO: Not 100% correct, some escapes are actually illegal in C# that Draco has
-    public override string VisitLiteralExpr(Expr.Literal node) => node.Value.Text;
+    public override string VisitLiteralExpr(Expr.Literal node)
+    {
+        var token = node.Value;
+        if (token.Type == TokenType.LiteralCharacter)
+        {
+            var codepoint = char.ConvertToUtf32(token.ValueText!, 0);
+            return $"new Char32({codepoint})";
+        }
+        else
+        {
+            return token.Text;
+        }
+    }
 
     public override string VisitNameExpr(Expr.Name node) => this.AllocateVariable(node.Identifier.Text);
-
-    private static string Unescape(string text) => text
-        .Replace("\n", @"\n")
-        .Replace("\r", @"\r");
 }

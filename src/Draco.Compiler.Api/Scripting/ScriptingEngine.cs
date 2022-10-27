@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Security;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Basic.Reference.Assemblies;
@@ -12,8 +10,6 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Draco.Compiler.Api.Scripting;
 
@@ -28,8 +24,8 @@ public static class ScriptingEngine
 
         // Dump runtime config
         File.WriteAllText(
-                "transpiledProgram.runtimeconfig.json",
-                $$$"""
+            "transpiledProgram.runtimeconfig.json",
+            $$$"""
             {
               "runtimeOptions": {
                 "tfm": "net6.0",

@@ -30,6 +30,10 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '6.0.x'
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: src/Draco.Editor.Web/build/
     - name: Run tests
       run: dotnet test ./src
     - name: Publish with dotnet

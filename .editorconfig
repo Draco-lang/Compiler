@@ -10,7 +10,7 @@ indent_style = space
 [*.{csproj,props}]
 indent_size = 2
 
-[*.cs]
+[*.{cs,razor}]
 indent_size = 4
 
 # Formatting errors

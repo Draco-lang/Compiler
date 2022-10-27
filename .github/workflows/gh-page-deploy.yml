@@ -1,0 +1,30 @@
+# Deploy to GH pages the Blazor Web Editor.
+
+name: 'Deploy Blazor Web Editor to GH Pages'
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone the repo
+      uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.101'
+    - name: Publish with dotnet
+      working-directory: 'src\Draco.Editor.Web'
+      run: dotnet publish --configuration Release --output build
+    - name: Upload GitHub Pages artifact
+      uses: actions/upload-pages-artifact@v1.0.4
+      with:
+        path: 'src/Draco.Editor.Web/build/wwwroot'
+    - name: Deploy GitHub Pages site
+      uses: actions/deploy-pages@v1.2.2

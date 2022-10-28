@@ -21,7 +21,7 @@ public partial class App
         AutomaticLayout = true,
         Language = "rust",
         Value = @"func main() {
-println(""Hello!"");
+    println(""Hello!"");
 }"
     };
 

@@ -30,6 +30,11 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '6.0.x'
+    - name: Cache Blazor Build Output
+      uses: actions/cache@v3
+      with:
+        path: src/Draco.Editor.Web/build/
+        key: blazor # Yes the key is constant.
     - name: Run tests
       run: dotnet test ./src
     - name: Publish with dotnet

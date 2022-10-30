@@ -23,8 +23,7 @@ public readonly struct QueryValueTask<T>
         this.result = default!;
     }
 
-    public QueryValueTaskAwaiter<T> GetAwaiter()
-        => this.valueTask != default ?
-            new QueryValueTaskAwaiter<T>(this.valueTask.GetAwaiter())
-            : new QueryValueTaskAwaiter<T>(this.result);
+    public QueryValueTaskAwaiter<T> GetAwaiter() => this.valueTask != default ?
+        new QueryValueTaskAwaiter<T>(this.valueTask.GetAwaiter())
+        : new QueryValueTaskAwaiter<T>(this.result);
 }

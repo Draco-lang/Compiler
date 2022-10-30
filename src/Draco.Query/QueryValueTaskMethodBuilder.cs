@@ -66,16 +66,15 @@ public struct QueryValueTaskMethodBuilder<T>
 
     public void AwaitOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
         where TAwaiter : INotifyCompletion
-        where TStateMachine : IAsyncStateMachine
-        => this.valueTaskBuilder.AwaitOnCompleted(ref awaiter, ref stateMachine);
+        where TStateMachine : IAsyncStateMachine =>
+        this.valueTaskBuilder.AwaitOnCompleted(ref awaiter, ref stateMachine);
 
     public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
         where TAwaiter : ICriticalNotifyCompletion
         where TStateMachine : IAsyncStateMachine =>
         this.valueTaskBuilder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
 
-    public QueryValueTask<T> Task =>
-        this.stateMachine is null ?
-            new QueryValueTask<T>(this.result!)
-            : new QueryValueTask<T>(this.valueTaskBuilder.Task);
+    public QueryValueTask<T> Task => this.stateMachine is null ?
+        new QueryValueTask<T>(this.result!)
+        : new QueryValueTask<T>(this.valueTaskBuilder.Task);
 }

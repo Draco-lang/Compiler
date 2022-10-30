@@ -64,21 +64,12 @@ internal static class AsmComparerCache
     private static AsmEqualsDelegate CreateEqualsFunc(Type asmType)
     {
         var getTypeMethod = asmType.GetMethod(nameof(GetType))!;
-        var asmTypeInArray = new[] { asmType };
 
         var param1 = Expression.Parameter(typeof(IAsyncStateMachine));
         var param2 = Expression.Parameter(typeof(IAsyncStateMachine));
 
-        var unsafeAsParam1 = Expression.Call(
-            type: typeof(Unsafe),
-            methodName: nameof(Unsafe.As),
-            typeArguments: asmTypeInArray,
-            arguments: param1);
-        var unsafeAsParam2 = Expression.Call(
-            type: typeof(Unsafe),
-            methodName: nameof(Unsafe.As),
-            typeArguments: asmTypeInArray,
-            arguments: param2);
+        var unsafeAsParam1 = CastToConcreteType(param1, asmType);
+        var unsafeAsParam2 = CastToConcreteType(param2, asmType);
 
         var comparisons = GetRelevantFields(asmType)
             .Select(f => Expression.Equal(
@@ -97,7 +88,6 @@ internal static class AsmComparerCache
     private static AsmGetHashCodeDelegate CreateHashCodeFunc(Type asmType)
     {
         var getTypeMethod = asmType.GetMethod(nameof(GetType))!;
-        var asmTypeInArray = new[] { asmType };
 
         var param = Expression.Parameter(typeof(IAsyncStateMachine));
 
@@ -107,14 +97,10 @@ internal static class AsmComparerCache
         hashCombineArgs.Add(Expression.Call(param, getTypeMethod));
         hashCombineTypeArgs.Add(typeof(Type));
 
-        var unsafeAs = Expression.Call(
-            type: typeof(Unsafe),
-            methodName: nameof(Unsafe.As),
-            typeArguments: asmTypeInArray,
-            arguments: param);
+        var asmAsConcreteType = CastToConcreteType(param, asmType);
         foreach (var field in GetRelevantFields(asmType))
         {
-            hashCombineArgs.Add(Expression.MakeMemberAccess(unsafeAs, field));
+            hashCombineArgs.Add(Expression.MakeMemberAccess(asmAsConcreteType, field));
             hashCombineTypeArgs.Add(field.FieldType);
         }
 
@@ -128,6 +114,14 @@ internal static class AsmComparerCache
 
         return new((Func<IAsyncStateMachine, int>)lambda.Compile());
     }
+
+    private static Expression CastToConcreteType(Expression expr, Type asmType) => asmType.IsValueType
+        ? Expression.Convert(expr, asmType)
+        : Expression.Call(
+              type: typeof(Unsafe),
+              methodName: nameof(Unsafe.As),
+              typeArguments: new[] { asmType },
+              arguments: expr);
 
     private static IEnumerable<FieldInfo> GetRelevantFields(Type asmType) => asmType
         .GetFields()

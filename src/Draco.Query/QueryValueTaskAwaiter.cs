@@ -6,11 +6,18 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Draco.Query;
+
+/// <summary>
+/// An awaiter for <see cref="QueryValueTask{T}"/>s.
+/// </summary>
+/// <typeparam name="T">The result type of the query computation.</typeparam>
 public readonly struct QueryValueTaskAwaiter<T> : INotifyCompletion
 {
     private readonly bool isValueTask;
     private readonly T? result;
     private readonly ValueTaskAwaiter<T> awaiter;
+
+    public bool IsCompleted => !this.isValueTask || this.awaiter.IsCompleted;
 
     public QueryValueTaskAwaiter(T result)
     {
@@ -25,8 +32,6 @@ public readonly struct QueryValueTaskAwaiter<T> : INotifyCompletion
         this.awaiter = awaiter;
         this.result = default;
     }
-
-    public bool IsCompleted => !this.isValueTask || this.awaiter.IsCompleted;
 
     public void OnCompleted(Action continuation)
     {

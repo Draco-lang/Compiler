@@ -14,16 +14,18 @@ namespace Draco.Query;
 [StructLayout(LayoutKind.Auto)]
 public struct QueryValueTaskMethodBuilder<T>
 {
+    private static readonly ConcurrentDictionary<IAsyncStateMachine, T> cachedResults = new(AsmComparer.Instance);
+
+    public static QueryValueTaskMethodBuilder<T> Create() => new();
+
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
     private IAsyncStateMachine? stateMachine = null;
     private T? result = default;
+
     public QueryValueTaskMethodBuilder()
     {
         this.valueTaskBuilder = AsyncValueTaskMethodBuilder<T>.Create(); // this is in fact "default"
     }
-    public static QueryValueTaskMethodBuilder<T> Create() => new();
-
-    private static readonly ConcurrentDictionary<IAsyncStateMachine, T> _cachedResults = new(AsmComparer.Instance);
 
     public void Start<TStateMachine>(ref TStateMachine stateMachine)
         where TStateMachine : IAsyncStateMachine
@@ -35,7 +37,7 @@ public struct QueryValueTaskMethodBuilder<T>
 
         // Now we can store a copy of this state machine, and the result it produce.
 
-        if (_cachedResults.TryGetValue(stateMachine, out var val))
+        if (cachedResults.TryGetValue(stateMachine, out var val))
         {
             // In this codepath, we found a cached result.
             // When this.result is set we bypass any async code and expose a completed query with the result.
@@ -60,7 +62,7 @@ public struct QueryValueTaskMethodBuilder<T>
     public void SetResult(T result)
     {
         // We save the result to the cache for future calls.
-        _cachedResults[this.stateMachine!] = result;
+        cachedResults[this.stateMachine!] = result;
         this.valueTaskBuilder.SetResult(result);
     }
 
@@ -74,7 +76,7 @@ public struct QueryValueTaskMethodBuilder<T>
         where TStateMachine : IAsyncStateMachine =>
         this.valueTaskBuilder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
 
-    public QueryValueTask<T> Task => this.stateMachine is null ?
-        new QueryValueTask<T>(this.result!)
-        : new QueryValueTask<T>(this.valueTaskBuilder.Task);
+    public QueryValueTask<T> Task => this.stateMachine is null
+        ? new(this.result!)
+        : new(this.valueTaskBuilder.Task);
 }

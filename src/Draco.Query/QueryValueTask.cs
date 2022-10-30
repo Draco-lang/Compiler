@@ -6,6 +6,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Draco.Query;
+
+/// <summary>
+/// A task type for query computations.
+/// </summary>
+/// <typeparam name="T">The type of the query result.</typeparam>
 [AsyncMethodBuilder(typeof(QueryValueTaskMethodBuilder<>))]
 public readonly struct QueryValueTask<T>
 {
@@ -23,7 +28,7 @@ public readonly struct QueryValueTask<T>
         this.result = default!;
     }
 
-    public QueryValueTaskAwaiter<T> GetAwaiter() => this.valueTask != default ?
-        new QueryValueTaskAwaiter<T>(this.valueTask.GetAwaiter())
-        : new QueryValueTaskAwaiter<T>(this.result);
+    public QueryValueTaskAwaiter<T> GetAwaiter() => this.valueTask != default
+        ? new(this.valueTask.GetAwaiter())
+        : new(this.result);
 }

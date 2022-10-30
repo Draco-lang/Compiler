@@ -66,31 +66,30 @@ internal sealed class AsmComparerCache
         var getTypeMethod = asmType.GetMethod(nameof(GetType))!;
         var asmTypeInArray = new[] { asmType };
 
-        var arg1 = Expression.Parameter(typeof(IAsyncStateMachine));
-        var arg2 = Expression.Parameter(typeof(IAsyncStateMachine));
+        var param1 = Expression.Parameter(typeof(IAsyncStateMachine));
+        var param2 = Expression.Parameter(typeof(IAsyncStateMachine));
 
-        var unsafeAsArg1 = Expression.Call(
+        var unsafeAsParam1 = Expression.Call(
             type: typeof(Unsafe),
             methodName: nameof(Unsafe.As),
             typeArguments: asmTypeInArray,
-            arguments: arg1);
-        var unsafeAsArg2 = Expression.Call(
+            arguments: param1);
+        var unsafeAsParam2 = Expression.Call(
             type: typeof(Unsafe),
             methodName: nameof(Unsafe.As),
             typeArguments: asmTypeInArray,
-            arguments: arg2);
+            arguments: param2);
 
-        var parameters = new[] { arg1, arg2 };
         var comparisons = GetRelevantFields(asmType)
             .Select(f => Expression.Equal(
-                Expression.MakeMemberAccess(unsafeAsArg1, f),
-                Expression.MakeMemberAccess(unsafeAsArg2, f)));
+                Expression.MakeMemberAccess(unsafeAsParam1, f),
+                Expression.MakeMemberAccess(unsafeAsParam2, f)));
         var comparisonsConjuncted = comparisons
             .Cast<Expression>()
             .Prepend(Expression.Constant(true))
             .Aggregate(Expression.AndAlso);
 
-        var lambda = Expression.Lambda(comparisonsConjuncted, parameters);
+        var lambda = Expression.Lambda(comparisonsConjuncted, new[] { param1, param2 });
 
         return new((Func<IAsyncStateMachine, IAsyncStateMachine, bool>)lambda.Compile());
     }
@@ -102,11 +101,11 @@ internal sealed class AsmComparerCache
 
         var param = Expression.Parameter(typeof(IAsyncStateMachine));
 
-        var args = new List<Expression>();
-        var typeArgs = new List<Type>();
+        var hashCombineArgs = new List<Expression>();
+        var hashCombineTypeArgs = new List<Type>();
 
-        args.Add(Expression.Call(param, getTypeMethod));
-        typeArgs.Add(typeof(Type));
+        hashCombineArgs.Add(Expression.Call(param, getTypeMethod));
+        hashCombineTypeArgs.Add(typeof(Type));
 
         var unsafeAs = Expression.Call(
             type: typeof(Unsafe),
@@ -115,17 +114,17 @@ internal sealed class AsmComparerCache
             arguments: param);
         foreach (var field in GetRelevantFields(asmType))
         {
-            args.Add(Expression.MakeMemberAccess(unsafeAs, field));
-            typeArgs.Add(field.FieldType);
+            hashCombineArgs.Add(Expression.MakeMemberAccess(unsafeAs, field));
+            hashCombineTypeArgs.Add(field.FieldType);
         }
 
-        var call = Expression.Call(
+        var hashCombineCall = Expression.Call(
             type: typeof(HashCode),
             methodName: nameof(HashCode.Combine),
-            typeArguments: typeArgs.ToArray(),
-            arguments: args.ToArray());
+            typeArguments: hashCombineTypeArgs.ToArray(),
+            arguments: hashCombineArgs.ToArray());
 
-        var lambda = Expression.Lambda(call, param);
+        var lambda = Expression.Lambda(hashCombineCall, param);
 
         return new((Func<IAsyncStateMachine, int>)lambda.Compile());
     }

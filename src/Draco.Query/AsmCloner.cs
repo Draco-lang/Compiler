@@ -22,6 +22,7 @@ internal static class AsmCloner
             BindingFlags.NonPublic | BindingFlags.Instance)!;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TAsm Clone<TAsm>(TAsm asm)
         where TAsm : IAsyncStateMachine => typeof(TAsm).IsValueType
         ? asm

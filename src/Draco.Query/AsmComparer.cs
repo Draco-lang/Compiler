@@ -68,8 +68,12 @@ internal static class AsmComparerCache
         var param1 = Expression.Parameter(typeof(IAsyncStateMachine));
         var param2 = Expression.Parameter(typeof(IAsyncStateMachine));
 
-        var param1AsConcreteType = CastToConcreteType(param1, asmType);
-        var param2AsConcreteType = CastToConcreteType(param2, asmType);
+        var param1AsConcreteType = Expression.Variable(asmType);
+        var param2AsConcreteType = Expression.Variable(asmType);
+
+        var blockExprs = new List<Expression>();
+        blockExprs.Add(Expression.Assign(param1AsConcreteType, CastToConcreteType(param1, asmType)));
+        blockExprs.Add(Expression.Assign(param2AsConcreteType, CastToConcreteType(param2, asmType)));
 
         var comparisons = GetRelevantFields(asmType)
             .Select(f => Expression.Equal(
@@ -79,40 +83,56 @@ internal static class AsmComparerCache
             .Cast<Expression>()
             .Prepend(Expression.Constant(true))
             .Aggregate(Expression.AndAlso);
+        blockExprs.Add(comparisonsConjuncted);
 
-        var lambda = Expression.Lambda(comparisonsConjuncted, new[] { param1, param2 });
+        var block = Expression.Block(
+            variables: new[] { param1AsConcreteType, param2AsConcreteType },
+            expressions: blockExprs);
+        var lambda = Expression.Lambda<Func<IAsyncStateMachine, IAsyncStateMachine, bool>>(
+            block,
+            new[] { param1, param2 });
 
-        return new((Func<IAsyncStateMachine, IAsyncStateMachine, bool>)lambda.Compile());
+        return new(lambda.Compile());
     }
 
     private static AsmGetHashCodeDelegate CreateHashCodeFunc(Type asmType)
     {
         var getTypeMethod = asmType.GetMethod(nameof(GetType))!;
+        var toHashCodeMethod = typeof(HashCode).GetMethod(nameof(HashCode.ToHashCode))!;
 
         var param = Expression.Parameter(typeof(IAsyncStateMachine));
 
-        var hashCombineArgs = new List<Expression>();
-        var hashCombineTypeArgs = new List<Type>();
+        var hashCode = Expression.Variable(typeof(HashCode));
+        var asmAsConcreteType = Expression.Variable(asmType);
 
-        hashCombineArgs.Add(Expression.Call(param, getTypeMethod));
-        hashCombineTypeArgs.Add(typeof(Type));
+        var blockExprs = new List<Expression>();
+        blockExprs.Add(Expression.Assign(hashCode, Expression.Default(typeof(HashCode))));
+        blockExprs.Add(Expression.Assign(asmAsConcreteType, CastToConcreteType(param, asmType)));
+        blockExprs.Add(Expression.Call(
+            instance: hashCode,
+            methodName: nameof(HashCode.Add),
+            typeArguments: new[] { typeof(Type) },
+            arguments: Expression.Constant(asmType)));
 
-        var asmAsConcreteType = CastToConcreteType(param, asmType);
         foreach (var field in GetRelevantFields(asmType))
         {
-            hashCombineArgs.Add(Expression.MakeMemberAccess(asmAsConcreteType, field));
-            hashCombineTypeArgs.Add(field.FieldType);
+            blockExprs.Add(Expression.Call(
+                instance: hashCode,
+                methodName: nameof(HashCode.Add),
+                typeArguments: new[] { field.FieldType },
+                arguments: Expression.MakeMemberAccess(asmAsConcreteType, field)));
         }
 
-        var hashCombineCall = Expression.Call(
-            type: typeof(HashCode),
-            methodName: nameof(HashCode.Combine),
-            typeArguments: hashCombineTypeArgs.ToArray(),
-            arguments: hashCombineArgs.ToArray());
+        blockExprs.Add(Expression.Call(
+            instance: hashCode,
+            method: toHashCodeMethod));
 
-        var lambda = Expression.Lambda(hashCombineCall, param);
+        var block = Expression.Block(
+            variables: new[] { hashCode, asmAsConcreteType },
+            expressions: blockExprs);
+        var lambda = Expression.Lambda<Func<IAsyncStateMachine, int>>(block, param);
 
-        return new((Func<IAsyncStateMachine, int>)lambda.Compile());
+        return new(lambda.Compile());
     }
 
     private static Expression CastToConcreteType(Expression expr, Type asmType) => asmType.IsValueType

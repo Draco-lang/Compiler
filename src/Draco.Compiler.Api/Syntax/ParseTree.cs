@@ -59,15 +59,21 @@ public abstract partial class ParseTree
 
     public readonly record struct PunctuatedList<T>(
         ImmutableArray<Punctuated<T>> Elements);
+}
 
+public abstract partial class ParseTree
+{
     // Plumbing code for green-red conversion
     // TODO: Can we reduce boilerplate?
 
     [return: NotNullIfNotNull(nameof(token))]
-    private static Token? ToRed(ParseTree? parent, Internal.Syntax.Token? token) =>
+    private static Token? ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Token? token) =>
         token is null ? null : new(parent, token);
 
-    private static ImmutableArray<Token> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.Token> elements) =>
+    private static IEnumerable<ParseTree> ToRed(ParseTree? parent, IEnumerable<Internal.Syntax.ParseTree> elements) =>
+        elements.Select(e => ToRed(parent, e));
+
+    private static ImmutableArray<Token> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Token> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
     private static ImmutableArray<Decl> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Decl> elements) =>

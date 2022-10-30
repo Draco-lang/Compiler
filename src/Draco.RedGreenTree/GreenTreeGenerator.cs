@@ -17,6 +17,9 @@ public sealed class GreenTreeGenerator : GeneratorBase
         public bool GenerateWidthProperty { get; set; } = true;
         public string GetWidthMethodName { get; set; } = "GetWidth";
         public string WidthPropertyName { get; set; } = "Width";
+        public bool GenerateChildrenProperty { get; set; } = true;
+        public string GetChildrenMethodName { get; set; } = "GetChildren";
+        public string ChildrenPropertyName { get; set; } = "Children";
 
         public Settings(INamedTypeSymbol rootType)
         {
@@ -36,8 +39,11 @@ public sealed class GreenTreeGenerator : GeneratorBase
 
     private INamedTypeSymbol RootType => this.settings.RootType;
     private bool DoGenerateWidthProperty => this.settings.GenerateWidthProperty;
+    private bool DoGenerateChildrenProperty => this.settings.GenerateChildrenProperty;
     private string GetWidthMethodName => this.settings.GetWidthMethodName;
+    private string GetChildrenMethodName => this.settings.GetChildrenMethodName;
     private string WidthPropertyName => this.settings.WidthPropertyName;
+    private string ChildrenPropertyName => this.settings.ChildrenPropertyName;
     private string WidthFieldName => ToCamelCase(this.WidthPropertyName);
 
     private GreenTreeGenerator(Settings settings)
@@ -99,6 +105,7 @@ public sealed class GreenTreeGenerator : GeneratorBase
         }
 
         if (this.DoGenerateWidthProperty) this.GenerateWidthProperty(type);
+        if (this.DoGenerateChildrenProperty) this.GenerateChildrenProperty(type);
 
         // Close braces
         foreach (var _ in type.EnumerateNestingChain()) this.contentWriter.Write("}");
@@ -107,6 +114,7 @@ public sealed class GreenTreeGenerator : GeneratorBase
     private void GenerateWidthProperty(INamedTypeSymbol type)
     {
         if (type.IsAbstract) return;
+        if (type.GetSanitizedProperties().Where(p => p.Name == this.WidthPropertyName).FirstOrDefault()?.IsOverride == true) return;
 
         // Sum up each member that has a Width attribute
         // For simplicity, we call a GetWidth that the user can roll themselves
@@ -118,6 +126,32 @@ public sealed class GreenTreeGenerator : GeneratorBase
             .Write($"""
             public override int {this.WidthPropertyName} =>
                 this.{this.WidthFieldName} ??= {string.Join("+", memberWidths)};
+            """);
+    }
+
+    private void GenerateChildrenProperty(INamedTypeSymbol type)
+    {
+        if (type.IsAbstract) return;
+        if (type.GetSanitizedProperties().Where(p => p.Name == this.ChildrenPropertyName).FirstOrDefault()?.IsOverride == true) return;
+
+        // For simplicity, we call a GetChildren that the user can roll themselves
+        var memberChildren = type
+            .GetSanitizedProperties()
+            .Select(m => $"{this.GetChildrenMethodName}(this.{m.Name})");
+        this.contentWriter
+            .Write($$"""
+            public override System.Collections.Generic.IEnumerable<{{this.RootType.ToDisplayString()}}> {{this.ChildrenPropertyName}}
+            {
+                get
+                {
+            """);
+        foreach (var memberChild in memberChildren)
+        {
+            this.contentWriter.Write($"foreach (var c in {memberChild}) yield return c;");
+        }
+        this.contentWriter.Write("""
+                }
+            }
             """);
     }
 }

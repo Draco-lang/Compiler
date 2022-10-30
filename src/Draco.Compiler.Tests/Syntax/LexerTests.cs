@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Syntax;
+using static Draco.Compiler.Internal.Syntax.ParseTree;
 
 namespace Draco.Compiler.Tests.Syntax;
 

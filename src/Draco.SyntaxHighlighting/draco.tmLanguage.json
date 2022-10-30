@@ -1,0 +1,427 @@
+{
+  "name": "Draco",
+  "scopeName": "source.draco",
+  "patterns": [
+    {
+      "include": "#code"
+    }
+  ],
+  "repository": {
+    "code": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#statements"
+        },
+        {
+          "include": "#expressions"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.draco",
+          "begin": "//",
+          "end": "$"
+        }
+      ]
+    },
+    "statements": {
+      "patterns": [
+        {
+          "include": "#declarations"
+        }
+      ]
+    },
+    "declarations": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#variable-declaration"
+        },
+        {
+          "include": "#function-declaration"
+        }
+      ]
+    },
+    "variable-declaration": {
+      "begin": "\\b(var|val)\\b\\s*\\b([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.draco"
+        },
+        "2": {
+          "name": "entity.name.variable.draco"
+        }
+      },
+      "end": ";",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.semicolon.draco"
+        }
+      },
+      "patterns": [
+        {
+          "begin": ":",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.colon.draco"
+            }
+          },
+          "end": "(?=[;=])",
+          "patterns": [
+            {
+              "include": "#type-specifiers"
+            }
+          ]
+        },
+        {
+          "begin": "=",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.operator.assignment.draco"
+            }
+          },
+          "end": "(?=;)",
+          "patterns": [
+            {
+              "include": "#expressions"
+            }
+          ]
+        }
+      ]
+    },
+    "function-declaration": {
+      "begin": "\\b(func)\\b\\s*\\b([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.draco"
+        },
+        "2": {
+          "name": "entity.name.function.draco"
+        }
+      },
+      "end": "(?<=[;}])",
+      "patterns": [
+        {
+          "begin": "\\(",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.parenthesis.open.draco"
+            }
+          },
+          "end": "\\)",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.parenthesis.close.draco"
+            }
+          },
+          "patterns": [
+            {
+              "begin": "\\b[A-Za-z_][A-Za-z0-9_]*\\b",
+              "beginCaptures": {
+                "0": {
+                  "name": "variable.parameter.draco"
+                }
+              },
+              "end": "(?=[,)])",
+              "patterns": [
+                {
+                  "begin": ":",
+                  "beginCaptures": {
+                    "0": {
+                      "name": "punctuation.colon.draco"
+                    }
+                  },
+                  "end": "(?=[,)])",
+                  "patterns": [
+                    {
+                      "include": "#type-specifiers"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "begin": ":",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.colon.draco"
+            }
+          },
+          "end": "(?=[={])",
+          "patterns": [
+            {
+              "include": "#type-specifiers"
+            }
+          ]
+        },
+        {
+          "begin": "=",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.operator.assignment.draco"
+            }
+          },
+          "end": ";",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.semicolon.draco"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#expressions"
+            }
+          ]
+        },
+        {
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.curlybrace.open.draco"
+            }
+          },
+          "end": "\\}",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.curlybrace.close.draco"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#statements"
+            },
+            {
+              "include": "#expressions"
+            }
+          ]
+        }
+      ]
+    },
+    "expressions": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "name": "keyword.operator.draco",
+          "match": "\\b(?:and|or|not|mod|rem)\\b"
+        },
+        {
+          "name": "keyword.operator.draco",
+          "match": "[-+*/]=?"
+        },
+        {
+          "name": "keyword.operator.draco",
+          "match": "[><=!]=?"
+        },
+        {
+          "name": "keyword.control.draco",
+          "match": "\\b(if|else|while|return|goto)\\b"
+        },
+        {
+          "include": "#call-expression"
+        },
+        {
+          "name": "variable.other.draco",
+          "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+        },
+        {
+          "include": "#block"
+        },
+        {
+          "include": "#literals"
+        }
+      ]
+    },
+    "call-expression": {
+      "begin": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*([(])",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.name.function.draco"
+        },
+        "2": {
+          "name": "punctuation.parenthesis.open.draco"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.parenthesis.close.draco"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#expressions"
+        }
+      ]
+    },
+    "type-specifiers": {
+      "patterns": [
+        {
+          "name": "entity.name.type.draco",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+        }
+      ]
+    },
+    "block": {
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.curlybrace.open.draco"
+        }
+      },
+      "end": "\\}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.curlybrace.close.draco"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#statements"
+        },
+        {
+          "include": "#expressions"
+        }
+      ]
+    },
+    "literals": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.draco",
+          "match": "\\b(?:true|false)\\b"
+        },
+        {
+          "name": "constant.numeric.integer.draco",
+          "match": "\\b(?:[0-9]+)\\b"
+        },
+        {
+          "name": "constant.character.draco",
+          "begin": "'",
+          "end": "'|$",
+          "patterns": [
+            {
+              "include": "#escape-sequence"
+            }
+          ]
+        },
+        {
+          "include": "#strings"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "include": "#line-string"
+        },
+        {
+          "include": "#line-string-ext1"
+        },
+        {
+          "include": "#multi-line-string"
+        },
+        {
+          "include": "#multi-line-string-ext1"
+        }
+      ]
+    },
+    "line-string": {
+      "name": "string.quoted.double.draco",
+      "begin": "\"(?!\"\")",
+      "end": "\"|$",
+      "patterns": [
+        {
+          "include": "#escape-sequence"
+        },
+        {
+          "include": "#string-interpolation"
+        }
+      ]
+    },
+    "line-string-ext1": {
+      "name": "string.quoted.double.draco",
+      "begin": "#\"(?!\"\")",
+      "end": "\"#|$",
+      "patterns": [
+        {
+          "include": "#escape-sequence-ext1"
+        },
+        {
+          "include": "#string-interpolation-ext1"
+        }
+      ]
+    },
+    "multi-line-string": {
+      "name": "string.quoted.double.draco",
+      "begin": "\"\"\"",
+      "end": "\"\"\"",
+      "patterns": [
+        {
+          "include": "#escape-sequence"
+        },
+        {
+          "include": "#string-interpolation"
+        },
+        {
+          "name": "constant.character.escape.draco",
+          "match": "\\\\\\s*$"
+        }
+      ]
+    },
+    "multi-line-string-ext1": {
+      "name": "string.quoted.double.draco",
+      "begin": "#\"\"\"",
+      "end": "\"\"\"#",
+      "patterns": [
+        {
+          "include": "#escape-sequence-ext1"
+        },
+        {
+          "include": "#string-interpolation-ext1"
+        },
+        {
+          "name": "constant.character.escape.draco",
+          "match": "\\\\#\\s*$"
+        }
+      ]
+    },
+    "escape-sequence": {
+      "name": "constant.character.escape.draco",
+      "match": "\\\\(?:[0abfnrtv'\"\\\\]|(?:u\\{[a-fA-F0-9]*\\}))"
+    },
+    "escape-sequence-ext1": {
+      "name": "constant.character.escape.draco",
+      "match": "\\\\#(?:[0abfnrtv'\"\\\\]|(?:u\\{[a-fA-F0-9]*\\}))"
+    },
+    "string-interpolation": {
+      "name": "meta.interpolation.draco",
+      "begin": "\\\\\\{",
+      "end": "\\}",
+      "patterns": [
+        {
+          "include": "#code"
+        }
+      ]
+    },
+    "string-interpolation-ext1": {
+      "name": "meta.interpolation.draco",
+      "begin": "\\\\#\\{",
+      "end": "\\}",
+      "patterns": [
+        {
+          "include": "#code"
+        }
+      ]
+    }
+  }
+}

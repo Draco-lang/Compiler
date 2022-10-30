@@ -7,10 +7,10 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 
-[*.{csproj,props}]
+[*.{csproj,props,json}]
 indent_size = 2
 
-[*.cs]
+[*.{cs,razor}]
 indent_size = 4
 
 # Formatting errors

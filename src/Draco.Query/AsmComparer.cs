@@ -35,7 +35,7 @@ internal sealed class AsmComparer : IEqualityComparer<IAsyncStateMachine>
 /// <summary>
 /// Implements the actual comparisons for async state machines with compiled expression trees.
 /// </summary>
-internal sealed class AsmComparerCache
+internal static class AsmComparerCache
 {
     private delegate bool AsmEqualsDelegate(IAsyncStateMachine x, IAsyncStateMachine y);
     private delegate int AsmGetHashCodeDelegate(IAsyncStateMachine obj);

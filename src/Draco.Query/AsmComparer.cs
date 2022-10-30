@@ -68,13 +68,13 @@ internal static class AsmComparerCache
         var param1 = Expression.Parameter(typeof(IAsyncStateMachine));
         var param2 = Expression.Parameter(typeof(IAsyncStateMachine));
 
-        var unsafeAsParam1 = CastToConcreteType(param1, asmType);
-        var unsafeAsParam2 = CastToConcreteType(param2, asmType);
+        var param1AsConcreteType = CastToConcreteType(param1, asmType);
+        var param2AsConcreteType = CastToConcreteType(param2, asmType);
 
         var comparisons = GetRelevantFields(asmType)
             .Select(f => Expression.Equal(
-                Expression.MakeMemberAccess(unsafeAsParam1, f),
-                Expression.MakeMemberAccess(unsafeAsParam2, f)));
+                Expression.MakeMemberAccess(param1AsConcreteType, f),
+                Expression.MakeMemberAccess(param2AsConcreteType, f)));
         var comparisonsConjuncted = comparisons
             .Cast<Expression>()
             .Prepend(Expression.Constant(true))

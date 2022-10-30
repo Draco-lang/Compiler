@@ -80,9 +80,11 @@ internal static class AsmComparerCache
             .Prepend(Expression.Constant(true))
             .Aggregate(Expression.AndAlso);
 
-        var lambda = Expression.Lambda(comparisonsConjuncted, new[] { param1, param2 });
+        var lambda = Expression.Lambda<Func<IAsyncStateMachine, IAsyncStateMachine, bool>>(
+            comparisonsConjuncted,
+            new[] { param1, param2 });
 
-        return new((Func<IAsyncStateMachine, IAsyncStateMachine, bool>)lambda.Compile());
+        return new(lambda.Compile());
     }
 
     private static AsmGetHashCodeDelegate CreateHashCodeFunc(Type asmType)
@@ -110,9 +112,9 @@ internal static class AsmComparerCache
             typeArguments: hashCombineTypeArgs.ToArray(),
             arguments: hashCombineArgs.ToArray());
 
-        var lambda = Expression.Lambda(hashCombineCall, param);
+        var lambda = Expression.Lambda<Func<IAsyncStateMachine, int>>(hashCombineCall, param);
 
-        return new((Func<IAsyncStateMachine, int>)lambda.Compile());
+        return new(lambda.Compile());
     }
 
     private static Expression CastToConcreteType(Expression expr, Type asmType) => asmType.IsValueType

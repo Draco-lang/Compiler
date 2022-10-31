@@ -13,12 +13,13 @@ namespace Draco.Query;
 /// <typeparam name="T">The result type of the query computation.</typeparam>
 public struct QueryValueTaskAwaiter<T> : INotifyCompletion, IIdentifiableQueryAwaiter
 {
+    public bool IsCompleted => this.yielded || this.awaiter.IsCompleted;
+    public string Identity { get; }
+
     private readonly bool isValueTask;
     private readonly T? result;
     private readonly ValueTaskAwaiter<T> awaiter;
     private bool yielded;
-    public bool IsCompleted => this.yielded || this.awaiter.IsCompleted;
-    public string Identity { get; }
 
     internal QueryValueTaskAwaiter(T result, string queryIdentity)
     {

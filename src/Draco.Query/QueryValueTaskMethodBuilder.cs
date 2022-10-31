@@ -18,6 +18,7 @@ public struct QueryValueTaskMethodBuilder<T>
     private static readonly ConcurrentDictionary<IAsyncStateMachine, T> cachedResults = new(AsmComparer.Instance);
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
+
     public QueryValueTask<T> Task => this.stateMachine is null
         ? new(this.result!, this.identity)
         : new(this.valueTaskBuilder.Task, this.identity);

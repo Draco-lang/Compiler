@@ -15,7 +15,9 @@ namespace Draco.Query;
 [StructLayout(LayoutKind.Auto)]
 public struct QueryValueTaskMethodBuilder<T>
 {
-    private static readonly ConcurrentDictionary<IAsyncStateMachine, T> cachedResults = new(AsmComparer.Instance);
+    private record struct CachedValue(T Value, string Identity);
+
+    private static readonly ConcurrentDictionary<IAsyncStateMachine, CachedValue> cachedResults = new(AsmComparer.Instance);
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
 
@@ -24,7 +26,7 @@ public struct QueryValueTaskMethodBuilder<T>
         : new(this.valueTaskBuilder.Task, this.identity);
 
     private static int counter = 0;
-    private readonly string identity = Interlocked.Increment(ref counter).ToString();
+    private string identity = Interlocked.Increment(ref counter).ToString();
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
     private IAsyncStateMachine? stateMachine = null;
     private bool hasResult = false;
@@ -50,7 +52,8 @@ public struct QueryValueTaskMethodBuilder<T>
             // In this codepath, we found a cached result.
             // When this.result is set we bypass any async code and expose a completed query with the result.
             this.hasResult = true;
-            this.result = val;
+            this.result = val.Value;
+            this.identity = val.Identity;
             return;
         }
         // There was no cached result.
@@ -70,7 +73,7 @@ public struct QueryValueTaskMethodBuilder<T>
     public void SetResult(T result)
     {
         // We save the result to the cache for future calls.
-        cachedResults[this.stateMachine!] = result;
+        cachedResults[this.stateMachine!] = new(result, this.identity);
         this.valueTaskBuilder.SetResult(result);
     }
 
@@ -79,7 +82,7 @@ public struct QueryValueTaskMethodBuilder<T>
     {
         if (awaiter is IIdentifiableQueryAwaiter query)
         {
-            Console.WriteLine($"Query {query.Identity} is awaiting {this.identity} result.");
+            Console.WriteLine($"Query {this.identity} depends on query {query.Identity}");
         }
     }
 

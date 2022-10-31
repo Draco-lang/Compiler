@@ -23,7 +23,10 @@ internal class Program
     {
         var res1 = await AddNums("12", "23");
         var res2 = await AddNums("12", "23");
+        var res3 = await AddNums("23", "34");
+        var res4 = await ParseNum("23");
         Console.WriteLine(res1);
         Console.WriteLine(res2);
+        Console.WriteLine(res3);
     }
 }

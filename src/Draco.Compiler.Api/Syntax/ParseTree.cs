@@ -78,6 +78,7 @@ public abstract partial class ParseTree
         // last ones end that is not this node
         if (this.Parent is not null)
         {
+            offset = this.Parent.Position;
             foreach (var parentsChild in this.Parent.Children)
             {
                 if (ReferenceEquals(this.green, parentsChild.Green)) break;

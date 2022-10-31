@@ -46,7 +46,7 @@ public struct QueryValueTaskMethodBuilder<T>
             // In this codepath, we found a cached result.
             // When this.result is set we bypass any async code and expose a completed query with the result.
             this.result = val;
-            // We can later know _result is set, because _stateMachine is kept to null in this case. 
+            // We can later know result is set, because stateMachine is kept to null in this case. 
             return;
         }
         // There was no cached result.

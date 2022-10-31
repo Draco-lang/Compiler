@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Utilities;
@@ -42,8 +43,100 @@ public abstract partial class ParseTree
     /// </summary>
     public ParseTree? Parent { get; }
 
+    private string? fullText;
+    /// <summary>
+    /// The text this node was parsed from.
+    /// </summary>
+    public string FullText => this.fullText ??= this.ComputeText();
+
+    private Position? position;
+    /// <summary>
+    /// The position of the start of this node in the source text.
+    /// </summary>
+    public Position Position => this.position ??= this.ComputePosition();
+
+    private Range? range;
+    /// <summary>
+    /// The range of this node in the source text.
+    /// </summary>
+    public Range Range => this.range ??= this.ComputeRange();
+
     public override string ToString() => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
+}
+
+public abstract partial class ParseTree
+{
+    protected virtual string ComputeText() =>
+        string.Join(string.Empty, this.Children.Select(n => n.FullText));
+
+    private Position ComputePosition()
+    {
+        var offset = new Position(0, 0);
+        // If there is a parent, we offset by the previous nodes
+        // The simplest way of that is to request the range of all previous nodes and remember the
+        // last ones end that is not this node
+        if (this.Parent is not null)
+        {
+            foreach (var parentsChild in this.Parent.Children)
+            {
+                if (ReferenceEquals(this.green, parentsChild.Green)) break;
+                offset = parentsChild.Range.End;
+            }
+        }
+        return offset;
+    }
+
+    private Range ComputeRange()
+    {
+        var start = this.Position;
+        var currLine = start.Line;
+        var currCol = start.Column;
+        for (var i = 0; i < this.FullText.Length; ++i)
+        {
+            var ch = this.FullText[i];
+            if (ch == '\r')
+            {
+                // Either Windows or OS-X 9 style newlines
+                if (i + 1 < this.FullText.Length && this.FullText[i + 1] == '\n')
+                {
+                    // Windows-style, eat extra char
+                    ++i;
+                }
+                // Otherwise OS-X 9 style
+                ++currLine;
+                currCol = 0;
+            }
+            else if (ch == '\n')
+            {
+                // Unix-style newline
+                ++currLine;
+                currCol = 0;
+            }
+            else
+            {
+                // NOTE: We might not want to increment in all cases
+                ++currCol;
+            }
+        }
+        var end = new Position(Line: currLine, Column: currCol);
+        return new(start, end);
+    }
+}
+
+public abstract partial class ParseTree
+{
+    public sealed partial class Token
+    {
+        protected override string ComputeText()
+        {
+            var sb = new StringBuilder();
+            sb.AppendJoin(string.Empty, this.LeadingTrivia.Select(t => t.Text));
+            sb.Append(this.Text);
+            sb.AppendJoin(string.Empty, this.TrailingTrivia.Select(t => t.Text));
+            return sb.ToString();
+        }
+    }
 }
 
 public abstract partial class ParseTree

@@ -74,12 +74,12 @@ public struct QueryValueTaskMethodBuilder<T>
         this.valueTaskBuilder.SetResult(result);
     }
 
-    private static void CheckIsDependentQuery<TAwaiter>(ref TAwaiter awaiter)
+    private void CheckIsDependentQuery<TAwaiter>(ref TAwaiter awaiter)
         where TAwaiter : INotifyCompletion
     {
         if (awaiter is IIdentifiableQueryAwaiter query)
         {
-            Console.WriteLine($"Query {query.Identity} is awaiting {query.Identity} result.");
+            Console.WriteLine($"Query {query.Identity} is awaiting {this.identity} result.");
         }
     }
 
@@ -87,7 +87,7 @@ public struct QueryValueTaskMethodBuilder<T>
         where TAwaiter : INotifyCompletion
         where TStateMachine : IAsyncStateMachine
     {
-        CheckIsDependentQuery(ref awaiter);
+        this.CheckIsDependentQuery(ref awaiter);
         if (this.hasResult)
         {
             stateMachine.MoveNext();
@@ -100,7 +100,7 @@ public struct QueryValueTaskMethodBuilder<T>
         where TAwaiter : ICriticalNotifyCompletion
         where TStateMachine : IAsyncStateMachine
     {
-        CheckIsDependentQuery(ref awaiter);
+        this.CheckIsDependentQuery(ref awaiter);
         if (this.hasResult)
         {
             stateMachine.MoveNext();

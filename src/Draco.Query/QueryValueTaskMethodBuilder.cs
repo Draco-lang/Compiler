@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Draco.Query;
@@ -17,13 +18,15 @@ public struct QueryValueTaskMethodBuilder<T>
     private static readonly ConcurrentDictionary<IAsyncStateMachine, T> cachedResults = new(AsmComparer.Instance);
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
-
     public QueryValueTask<T> Task => this.stateMachine is null
-        ? new(this.result!)
-        : new(this.valueTaskBuilder.Task);
+        ? new(this.result!, this.identity)
+        : new(this.valueTaskBuilder.Task, this.identity);
 
+    private static int counter = 0;
+    private readonly string identity = Interlocked.Increment(ref counter).ToString();
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
     private IAsyncStateMachine? stateMachine = null;
+    private bool hasResult = false;
     private T? result = default;
 
     public QueryValueTaskMethodBuilder()
@@ -45,8 +48,8 @@ public struct QueryValueTaskMethodBuilder<T>
         {
             // In this codepath, we found a cached result.
             // When this.result is set we bypass any async code and expose a completed query with the result.
+            this.hasResult = true;
             this.result = val;
-            // We can later know result is set, because stateMachine is kept to null in this case. 
             return;
         }
         // There was no cached result.
@@ -70,13 +73,38 @@ public struct QueryValueTaskMethodBuilder<T>
         this.valueTaskBuilder.SetResult(result);
     }
 
+    private static void CheckIsDependentQuery<TAwaiter>(ref TAwaiter awaiter)
+        where TAwaiter : INotifyCompletion
+    {
+        if (awaiter is IIdentifiableQueryAwaiter query)
+        {
+            Console.WriteLine($"Query {query.Identity} is awaiting {query.Identity} result.");
+        }
+    }
+
     public void AwaitOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
         where TAwaiter : INotifyCompletion
-        where TStateMachine : IAsyncStateMachine =>
+        where TStateMachine : IAsyncStateMachine
+    {
+        CheckIsDependentQuery(ref awaiter);
+        if (this.hasResult)
+        {
+            stateMachine.MoveNext();
+            return;
+        }
         this.valueTaskBuilder.AwaitOnCompleted(ref awaiter, ref stateMachine);
+    }
 
     public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
         where TAwaiter : ICriticalNotifyCompletion
-        where TStateMachine : IAsyncStateMachine =>
+        where TStateMachine : IAsyncStateMachine
+    {
+        CheckIsDependentQuery(ref awaiter);
+        if (this.hasResult)
+        {
+            stateMachine.MoveNext();
+            return;
+        }
         this.valueTaskBuilder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
+    }
 }

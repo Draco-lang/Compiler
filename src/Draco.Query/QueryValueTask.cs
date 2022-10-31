@@ -15,20 +15,23 @@ namespace Draco.Query;
 public readonly struct QueryValueTask<T>
 {
     private readonly ValueTask<T> valueTask;
+    private readonly string queryIdentity;
     private readonly T result;
 
-    public QueryValueTask(T result)
+    internal QueryValueTask(T result, string queryIdentity)
     {
         this.valueTask = default;
         this.result = result;
+        this.queryIdentity = queryIdentity;
     }
-    public QueryValueTask(ValueTask<T> valueTask)
+    internal QueryValueTask(ValueTask<T> valueTask, string queryIdentity)
     {
         this.valueTask = valueTask;
+        this.queryIdentity = queryIdentity;
         this.result = default!;
     }
 
     public QueryValueTaskAwaiter<T> GetAwaiter() => this.valueTask != default
-        ? new(this.valueTask.GetAwaiter())
-        : new(this.result);
+        ? new(this.valueTask.GetAwaiter(), this.queryIdentity)
+        : new(this.result, this.queryIdentity);
 }

@@ -11,25 +11,28 @@ namespace Draco.Query;
 /// An awaiter for <see cref="QueryValueTask{T}"/>s.
 /// </summary>
 /// <typeparam name="T">The result type of the query computation.</typeparam>
-public readonly struct QueryValueTaskAwaiter<T> : INotifyCompletion
+public struct QueryValueTaskAwaiter<T> : INotifyCompletion, IIdentifiableQueryAwaiter
 {
     private readonly bool isValueTask;
     private readonly T? result;
     private readonly ValueTaskAwaiter<T> awaiter;
+    private bool yielded;
+    public bool IsCompleted => this.yielded || this.awaiter.IsCompleted;
+    public string Identity { get; }
 
-    public bool IsCompleted => !this.isValueTask || this.awaiter.IsCompleted;
-
-    public QueryValueTaskAwaiter(T result)
+    internal QueryValueTaskAwaiter(T result, string queryIdentity)
     {
         this.isValueTask = false;
         this.awaiter = default;
         this.result = result;
+        this.Identity = queryIdentity;
     }
 
-    public QueryValueTaskAwaiter(ValueTaskAwaiter<T> awaiter)
+    internal QueryValueTaskAwaiter(ValueTaskAwaiter<T> awaiter, string queryIdentity)
     {
         this.isValueTask = true;
         this.awaiter = awaiter;
+        this.Identity = queryIdentity;
         this.result = default;
     }
 
@@ -41,6 +44,7 @@ public readonly struct QueryValueTaskAwaiter<T> : INotifyCompletion
         }
         else
         {
+            this.yielded = true;
             continuation(); // We are wrapping a result, so we can continue immediatly.
         }
     }

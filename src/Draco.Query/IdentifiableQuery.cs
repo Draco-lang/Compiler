@@ -5,5 +5,5 @@ namespace Draco.Query;
 /// </summary>
 public interface IIdentifiableQueryAwaiter
 {
-    string Identity { get; }
+    public int Identity { get; }
 }

@@ -14,14 +14,14 @@ namespace Draco.Query;
 public struct QueryValueTaskAwaiter<T> : INotifyCompletion, IIdentifiableQueryAwaiter
 {
     public bool IsCompleted => this.yielded && (!this.isValueTask || (this.isValueTask && this.awaiter.IsCompleted));
-    public string Identity { get; }
+    public int Identity { get; }
 
     private readonly bool isValueTask;
     private readonly T? result;
     private readonly ValueTaskAwaiter<T> awaiter;
     private bool yielded;
 
-    internal QueryValueTaskAwaiter(T result, string queryIdentity)
+    internal QueryValueTaskAwaiter(T result, int queryIdentity)
     {
         this.isValueTask = false;
         this.awaiter = default;
@@ -29,7 +29,7 @@ public struct QueryValueTaskAwaiter<T> : INotifyCompletion, IIdentifiableQueryAw
         this.Identity = queryIdentity;
     }
 
-    internal QueryValueTaskAwaiter(ValueTaskAwaiter<T> awaiter, string queryIdentity)
+    internal QueryValueTaskAwaiter(ValueTaskAwaiter<T> awaiter, int queryIdentity)
     {
         this.isValueTask = true;
         this.awaiter = awaiter;

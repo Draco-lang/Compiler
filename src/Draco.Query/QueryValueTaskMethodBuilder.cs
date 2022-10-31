@@ -15,7 +15,7 @@ namespace Draco.Query;
 [StructLayout(LayoutKind.Auto)]
 public struct QueryValueTaskMethodBuilder<T>
 {
-    private record struct CachedValue(T Value, string Identity);
+    private record struct CachedValue(T Value, int Identity);
 
     private static readonly ConcurrentDictionary<IAsyncStateMachine, CachedValue> cachedResults = new(AsmComparer.Instance);
 
@@ -25,8 +25,9 @@ public struct QueryValueTaskMethodBuilder<T>
         ? new(this.result!, this.identity)
         : new(this.valueTaskBuilder.Task, this.identity);
 
-    private static int counter = 0;
-    private string identity = Interlocked.Increment(ref counter).ToString();
+    private static int identityCounter = 0;
+
+    private int identity = -1;
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
     private IAsyncStateMachine? stateMachine = null;
     private bool hasResult = false;
@@ -55,6 +56,10 @@ public struct QueryValueTaskMethodBuilder<T>
             this.result = val.Value;
             this.identity = val.Identity;
             return;
+        }
+        else
+        {
+            this.identity = Interlocked.Increment(ref identityCounter);
         }
         // There was no cached result.
 

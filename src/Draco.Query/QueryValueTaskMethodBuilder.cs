@@ -18,6 +18,10 @@ public struct QueryValueTaskMethodBuilder<T>
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
 
+    public QueryValueTask<T> Task => this.stateMachine is null
+        ? new(this.result!)
+        : new(this.valueTaskBuilder.Task);
+
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
     private IAsyncStateMachine? stateMachine = null;
     private T? result = default;
@@ -75,8 +79,4 @@ public struct QueryValueTaskMethodBuilder<T>
         where TAwaiter : ICriticalNotifyCompletion
         where TStateMachine : IAsyncStateMachine =>
         this.valueTaskBuilder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
-
-    public QueryValueTask<T> Task => this.stateMachine is null
-        ? new(this.result!)
-        : new(this.valueTaskBuilder.Task);
 }

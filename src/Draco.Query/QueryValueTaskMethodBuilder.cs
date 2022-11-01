@@ -57,11 +57,9 @@ public struct QueryValueTaskMethodBuilder<T>
             this.identity = val.Identity;
             return;
         }
-        else
-        {
-            this.identity = Interlocked.Increment(ref identityCounter);
-        }
+
         // There was no cached result.
+        this.identity = Interlocked.Increment(ref identityCounter);
 
         // In debug, the state machine is a class, so must be cloned.
         // If not, the function execution would change the state.

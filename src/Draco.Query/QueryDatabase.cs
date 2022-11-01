@@ -88,10 +88,11 @@ public static class QueryDatabase
             updateValueFactory: (_, cached) =>
             {
                 var cachedResult = (Result<TResult>)cached;
+                var changed = result!.Equals(cachedResult.Value);
                 // TODO: We might need a lock for the revision reading here?
                 return cachedResult with
                 {
-                    ChangedAt = CurrentRevision,
+                    ChangedAt = changed ? CurrentRevision : cachedResult.ChangedAt,
                     VerifiedAt = CurrentRevision,
                     Value = result,
                 };

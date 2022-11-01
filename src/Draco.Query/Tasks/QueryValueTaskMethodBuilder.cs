@@ -56,6 +56,7 @@ public struct QueryValueTaskMethodBuilder<T>
         if (!stateCache.TryGetValue(identifier, out var stateMachine)) throw new InvalidOperationException();
         var stateMachineClone = CloneAsm(ref stateMachine);
         SetBuilder(ref stateMachineClone, Create());
+        GetBuilder(ref stateMachineClone).Start(ref stateMachineClone);
         return GetBuilder(ref stateMachineClone).valueTaskBuilder.Task;
     }
 

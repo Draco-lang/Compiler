@@ -5,9 +5,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Draco.Query.Tasks;
 
 namespace Draco.Query;
+
+// TODO: Thread-safety
 
 /// <summary>
 /// The type that manages the memoization and garbage collection of query results.
@@ -33,23 +37,33 @@ public static class QueryDatabase
         /// The dependencies of this result.
         /// </summary>
         public IProducerConsumerCollection<IResult> Dependencies { get; }
+
+        /// <summary>
+        /// Refreshes this result.
+        /// </summary>
+        public Task Refresh();
     }
 
     /// <summary>
     /// Information about a computed result.
     /// </summary>
     /// <typeparam name="T">The type of the computed value.</typeparam>
-    /// <param name="ChangedAt">See <see cref="IResult"/>.</param>
-    /// <param name="VerifiedAt">See <see cref="IResult"/>.</param>
-    /// <param name="Dependencies">See <see cref="IResult"/>.</param>
-    /// <param name="Value">The computed, cached value.</param>
-    private readonly record struct Result<T>(
-        Revision ChangedAt,
-        Revision VerifiedAt,
-        ConcurrentBag<IResult> Dependencies,
-        T? Value) : IResult
+    private class ComputedResult<T> : IResult
     {
-        IProducerConsumerCollection<IResult> IResult.Dependencies => this.Dependencies;
+        public Revision ChangedAt { get; set; } = Revision.Invalid;
+        public Revision VerifiedAt { get; set; } = Revision.Invalid;
+        public IProducerConsumerCollection<IResult> Dependencies { get; } = new ConcurrentBag<IResult>();
+        public T Value { get; set; }
+
+        private readonly QueryIdentifier identifier;
+
+        public ComputedResult(QueryIdentifier identifier)
+        {
+            this.identifier = identifier;
+        }
+
+        public async Task Refresh() =>
+            await QueryValueTaskMethodBuilder<T>.RunQueryByIdentifier(this.identifier);
     }
 
     /// <summary>
@@ -66,11 +80,7 @@ public static class QueryDatabase
     /// <param name="identifier">The identifier of the query.</param>
     internal static void OnNewQuery<TResult>(QueryIdentifier identifier) =>
         // Add an empty entry
-        queries.TryAdd(identifier, new Result<TResult>(
-            ChangedAt: Revision.Invalid,
-            VerifiedAt: Revision.Invalid,
-            Dependencies: new(),
-            Value: default));
+        queries.TryAdd(identifier, new ComputedResult<TResult>(identifier));
 
     /// <summary>
     /// Called, when a query has finished its computation.
@@ -87,15 +97,12 @@ public static class QueryDatabase
             addValueFactory: _ => throw new InvalidOperationException(),
             updateValueFactory: (_, cached) =>
             {
-                var cachedResult = (Result<TResult>)cached;
+                var cachedResult = (ComputedResult<TResult>)cached;
                 var changed = result!.Equals(cachedResult.Value);
-                // TODO: We might need a lock for the revision reading here?
-                return cachedResult with
-                {
-                    ChangedAt = changed ? CurrentRevision : cachedResult.ChangedAt,
-                    VerifiedAt = CurrentRevision,
-                    Value = result,
-                };
+                if (changed) cachedResult.ChangedAt = CurrentRevision;
+                cachedResult.VerifiedAt = CurrentRevision;
+                cachedResult.Value = result;
+                return cachedResult;
             });
     }
 
@@ -127,7 +134,7 @@ public static class QueryDatabase
     {
         // NOTE: Should never happen
         if (!queries.TryGetValue(identifier, out var cached)) throw new InvalidOperationException();
-        var cachedResult = (Result<TResult>)cached;
+        var cachedResult = (ComputedResult<TResult>)cached;
         // The value has never been memoized yet
         if (cachedResult.ChangedAt == Revision.Invalid)
         {
@@ -137,13 +144,27 @@ public static class QueryDatabase
         }
         // Value is already memoized, but potentially outdated
         // If we have been verified to be valid already in the current version, we can just clone and return
-        // TODO: We might need a lock for the revision reading here?
         if (cachedResult.VerifiedAt == CurrentRevision)
         {
             result = cachedResult.Value!;
             return true;
         }
-        // TODO: Check on dependencies
-        throw new NotImplementedException();
+        // Check if the dependencies are up to date
+        // TODO: This blocks synchronously but I have no idea if we can even make this method async
+        Task.WaitAll(cachedResult.Dependencies.Select(dep => dep.Refresh()).ToArray());
+
+        // Now check wether dependencies have been updated since this one
+        if (cachedResult.Dependencies.All(dep => dep.ChangedAt <= cachedResult.VerifiedAt))
+        {
+            // All dependencies came from earlier revisions, they are safe to reuse
+            // Which means this value is also safe to reuse, update verification number
+            cachedResult.VerifiedAt = CurrentRevision;
+            result = cachedResult.Value!;
+            return true;
+        }
+
+        // Some values must have gone outdated and got recomputed, we also need to recompute, force recomputation
+        result = default;
+        return false;
     }
 }

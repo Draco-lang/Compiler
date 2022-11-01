@@ -241,18 +241,20 @@ internal static class AsmCodegen<TAsm, TBuilder>
     /// <returns>The generated delegate.</returns>
     public static AsmGetBuilderDelegate GenerateGetBuilder(Type asmType)
     {
-        if (typeof(TAsm) != asmType)
-        {
-            throw new InvalidOperationException("When getting the builder, the exact state machine type has to be known");
-        }
-
         // Extract the field info
         var builderField = asmType.GetField("<>t__builder")!;
+
+        if (builderField.FieldType != typeof(TBuilder))
+        {
+            throw new InvalidOperationException("When getting the builder, the exact builder type has to be known");
+        }
 
         var asmParam = Expression.Parameter(typeof(TAsm).MakeByRefType());
 
         // Body
-        var body = Expression.MakeMemberAccess(asmParam, builderField);
+        var body = Expression.MakeMemberAccess(
+            GenerateCastAsmToExactType(asmParam, asmType),
+            builderField);
 
         // Build up result
         var lambda = Expression.Lambda<AsmGetBuilderDelegate>(body, asmParam);
@@ -268,21 +270,23 @@ internal static class AsmCodegen<TAsm, TBuilder>
     /// <returns>The generated delegate.</returns>
     public static AsmSetBuilderDelegate GenerateSetBuilder(Type asmType)
     {
-        if (typeof(TAsm) != asmType)
-        {
-            throw new InvalidOperationException("When setting the builder, the exact state machine type has to be known");
-        }
-
         // Extract the field info
         var builderField = asmType.GetField("<>t__builder")!;
+
+        if (builderField.FieldType != typeof(TBuilder))
+        {
+            throw new InvalidOperationException("When setting the builder, the exact builder type has to be known");
+        }
 
         var asmParam = Expression.Parameter(typeof(TAsm).MakeByRefType());
         var builderParam = Expression.Parameter(typeof(TBuilder));
 
         // Body
         var body = Expression.Assign(
-            // asm.builder = 
-            Expression.MakeMemberAccess(asmParam, builderField),
+            // asm.builder =
+            Expression.MakeMemberAccess(
+                GenerateCastAsmToExactType(asmParam, asmType),
+                builderField),
             // builder
             builderParam);
 

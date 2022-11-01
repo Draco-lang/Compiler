@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -249,18 +250,18 @@ internal static class AsmCodegen<TAsm, TBuilder>
             throw new InvalidOperationException("When getting the builder, the exact builder type has to be known");
         }
 
-        var asmParam = Expression.Parameter(typeof(TAsm).MakeByRefType());
+        // Since the Expression trees API can't return field refs, we are building the IL ourselves
+        var method = new DynamicMethod(
+            name: string.Empty,
+            returnType: builderField.FieldType.MakeByRefType(),
+            parameterTypes: new[] { asmType.MakeByRefType() });
 
-        // Body
-        var body = Expression.Field(
-            GenerateCastAsmToExactType(asmParam, asmType),
-            builderField);
+        var emitter = method.GetILGenerator();
+        emitter.Emit(OpCodes.Ldarg_0);
+        emitter.Emit(OpCodes.Ldflda, builderField);
+        emitter.Emit(OpCodes.Ret);
 
-        // Build up result
-        var lambda = Expression.Lambda<AsmGetBuilderDelegate>(body, asmParam);
-
-        // Compile
-        return lambda.Compile();
+        return method.CreateDelegate<AsmGetBuilderDelegate>();
     }
 
     /// <summary>

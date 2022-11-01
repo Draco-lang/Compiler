@@ -17,7 +17,7 @@ namespace Draco.Query.Tasks;
 public struct QueryValueTaskMethodBuilder<T>
 {
     private static readonly ConcurrentDictionary<IAsyncStateMachine, QueryIdentifier> identityCache = new(AsmComparer.Instance);
-    private static readonly ConcurrentDictionary<QueryIdentifier, IAsyncStateMachine> stateCache = new();
+    private static readonly ConcurrentDictionary<QueryIdentifier, Func<ValueTask<T>>> startCloneCache = new();
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
 
@@ -38,7 +38,7 @@ public struct QueryValueTaskMethodBuilder<T>
         this.valueTaskBuilder = AsyncValueTaskMethodBuilder<T>.Create(); // this is in fact "default"
     }
 
-    private static TStateMachine CloneAsm<TStateMachine>(ref TStateMachine stateMachine)
+    private static TStateMachine CloneAsm<TStateMachine>(TStateMachine stateMachine)
         where TStateMachine : IAsyncStateMachine =>
         AsmUtils<TStateMachine, QueryValueTaskMethodBuilder<T>>.Clone(stateMachine);
 
@@ -53,11 +53,8 @@ public struct QueryValueTaskMethodBuilder<T>
     public static ValueTask<T> RunQueryByIdentifier(QueryIdentifier identifier)
     {
         // NOTE: This should never happen
-        if (!stateCache.TryGetValue(identifier, out var stateMachine)) throw new InvalidOperationException();
-        var stateMachineClone = CloneAsm(ref stateMachine);
-        SetBuilder(ref stateMachineClone, Create());
-        GetBuilder(ref stateMachineClone).Start(ref stateMachineClone);
-        return GetBuilder(ref stateMachineClone).valueTaskBuilder.Task;
+        if (!startCloneCache.TryGetValue(identifier, out var startClone)) throw new InvalidOperationException();
+        return startClone();
     }
 
     public void Start<TStateMachine>(ref TStateMachine stateMachine)
@@ -93,11 +90,18 @@ public struct QueryValueTaskMethodBuilder<T>
             // In debug, the state machine is a class, so must be cloned
             // If not, the function execution would change the state and the identity cache would
             // get into an inconsistent state
-            this.stateMachine = CloneAsm(ref stateMachine);
+            var clonedMachine = CloneAsm(stateMachine);
+            this.stateMachine = clonedMachine;
 
             // Update caches to include new entry
             identityCache[this.stateMachine] = this.identity;
-            stateCache[this.identity] = this.stateMachine;
+            startCloneCache[this.identity] = () =>
+            {
+                var clone2 = CloneAsm(clonedMachine);
+                SetBuilder(ref clone2, Create());
+                GetBuilder(ref clone2).Start(ref clone2);
+                return GetBuilder(ref clone2).valueTaskBuilder.Task;
+            };
         }
 
         // We then delegate the real work, as we have to re-execute the query

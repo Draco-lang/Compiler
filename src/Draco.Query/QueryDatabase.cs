@@ -136,6 +136,7 @@ public static class QueryDatabase
         }
         // Value is already memoized, but potentially outdated
         // If we have been verified to be valid already in the current version, we can just clone and return
+        // TODO: We might need a lock for the revision reading here?
         if (cachedResult.VerifiedAt == CurrentRevision)
         {
             result = cachedResult.Value!;

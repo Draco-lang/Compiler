@@ -50,7 +50,7 @@ public struct QueryValueTaskMethodBuilder<T>
             // exact parameters before
             // We rewrite our identity to match
             this.identity = oldIdentity;
-            if (QueryDatabase.TryGetUpToDateResult<T>(this.identity, out var oldResult))
+            if (QueryDatabase.TryGetUpToDateQueryResult<T>(this.identity, out var oldResult))
             {
                 // Yes, we found a cached result that is up to date
                 // Short-circuit the called query
@@ -94,7 +94,7 @@ public struct QueryValueTaskMethodBuilder<T>
         if (awaiter is IIdentifiableQueryAwaiter query)
         {
             // Register dependency in the system
-            QueryDatabase.OnDependency(dependent: this.identity, dependency: query.Identity);
+            QueryDatabase.OnQueryDependency(dependent: this.identity, dependency: query.Identity);
         }
     }
 

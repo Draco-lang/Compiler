@@ -34,7 +34,7 @@ public static class QueryDatabase
     /// </summary>
     /// <param name="dependent">The identifier of the query that is dependent on <paramref name="dependency"/>.</param>
     /// <param name="dependency">The query that is called by <paramref name="dependent"/>.</param>
-    internal static void OnDependency(QueryIdentifier dependent, QueryIdentifier dependency) =>
+    internal static void OnQueryDependency(QueryIdentifier dependent, QueryIdentifier dependency) =>
         throw new NotImplementedException();
 
     /// <summary>
@@ -45,7 +45,7 @@ public static class QueryDatabase
     /// <param name="result">The retrieved result, if it's up to date.</param>
     /// <returns>True, if the query named <paramref name="identifier"/> has an up to date result and the result
     /// is written to <paramref name="result"/>.</returns>
-    internal static bool TryGetUpToDateResult<TResult>(
+    internal static bool TryGetUpToDateQueryResult<TResult>(
         QueryIdentifier identifier,
         [MaybeNullWhen(false)] out TResult result) =>
         throw new NotImplementedException();

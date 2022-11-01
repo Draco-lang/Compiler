@@ -258,6 +258,7 @@ internal static class AsmCodegen<TAsm, TBuilder>
 
         var emitter = method.GetILGenerator();
         emitter.Emit(OpCodes.Ldarg_0);
+        if (!asmType.IsValueType) emitter.Emit(OpCodes.Ldind_Ref);
         emitter.Emit(OpCodes.Ldflda, builderField);
         emitter.Emit(OpCodes.Ret);
 

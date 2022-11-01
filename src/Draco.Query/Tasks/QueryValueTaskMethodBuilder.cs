@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -36,6 +37,14 @@ public struct QueryValueTaskMethodBuilder<T>
         this.valueTaskBuilder = AsyncValueTaskMethodBuilder<T>.Create(); // this is in fact "default"
     }
 
+    private static TStateMachine CloneAsm<TStateMachine>(ref TStateMachine stateMachine)
+        where TStateMachine : IAsyncStateMachine =>
+        AsmUtils<TStateMachine, QueryValueTaskMethodBuilder<T>>.Clone(stateMachine);
+
+    private static void SetBuilder<TStateMachine>(ref TStateMachine stateMachine, QueryValueTaskMethodBuilder<T> builder)
+        where TStateMachine : IAsyncStateMachine =>
+        AsmUtils<TStateMachine, QueryValueTaskMethodBuilder<T>>.SetBuilder(ref stateMachine, builder);
+
     public void Start<TStateMachine>(ref TStateMachine stateMachine)
         where TStateMachine : IAsyncStateMachine
     {
@@ -70,7 +79,7 @@ public struct QueryValueTaskMethodBuilder<T>
         // In debug, the state machine is a class, so must be cloned
         // If not, the function execution would change the state and the identity cache would
         // get into an inconsistent state
-        this.stateMachine = AsmCloner.Clone(stateMachine);
+        this.stateMachine = CloneAsm(ref stateMachine);
 
         // We then delegate the real work, as we have to re-execute the query
         this.valueTaskBuilder.Start(ref stateMachine);

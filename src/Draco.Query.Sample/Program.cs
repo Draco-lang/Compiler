@@ -6,28 +6,38 @@ namespace Draco.Query.Sample;
 
 internal class Program
 {
-    private static async QueryValueTask<int> ParseNum(string n)
+    private static QueryIdentifier xId;
+    private static QueryIdentifier yId;
+
+    private static async QueryValueTask<int> ParseVariable(string n)
     {
-        Console.WriteLine($"ParseNum({n})");
-        return int.Parse(n);
+        var nStr = QueryDatabase.GetInput<string>(n == "x" ? xId : yId);
+        Console.WriteLine($"ParseVariable({nStr})");
+        return int.Parse(nStr);
     }
 
-    private static async QueryValueTask<int> AddNums(string v1, string v2)
+    private static async QueryValueTask<int> AddVariables(string v1, string v2)
     {
-        Console.WriteLine($"AddNums({v1}, {v2})");
-        var n1 = await ParseNum(v1);
-        var n2 = await ParseNum(v2);
+        Console.WriteLine($"AddVariables({v1}, {v2})");
+        var n1 = await ParseVariable(v1);
+        var n2 = await ParseVariable(v2);
         return n1 + n2;
     }
 
     internal static async Task Main(string[] args)
     {
-        var res1 = await AddNums("12", "23");
-        var res2 = await AddNums("12", "23");
-        var res3 = await AddNums("23", "34");
-        var res4 = await ParseNum("23");
+        xId = QueryDatabase.CreateInput<string>();
+        yId = QueryDatabase.CreateInput<string>();
+
+        QueryDatabase.SetInput(xId, "1");
+        QueryDatabase.SetInput(yId, "2");
+
+        var res1 = await AddVariables("x", "y");
+
+        QueryDatabase.SetInput(yId, "2 ");
+
+        var res2 = await AddVariables("x", "y");
         Console.WriteLine(res1);
         Console.WriteLine(res2);
-        Console.WriteLine(res3);
     }
 }

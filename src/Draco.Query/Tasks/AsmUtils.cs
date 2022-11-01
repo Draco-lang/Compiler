@@ -165,8 +165,8 @@ internal static class AsmCodegen<TAsm, TBuilder>
         // Generate each individual comparison between fields
         var comparisons = GetNonSpecialFields(asmType)
             .Select(f => Expression.Equal(
-                Expression.MakeMemberAccess(param1Casted, f),
-                Expression.MakeMemberAccess(param2Casted, f)));
+                Expression.Field(param1Casted, f),
+                Expression.Field(param2Casted, f)));
         // And them together, add a constant true at the start to make 0-field ones correct code
         var comparisonsConjuncted = comparisons
            .Cast<Expression>()
@@ -216,7 +216,7 @@ internal static class AsmCodegen<TAsm, TBuilder>
                 instance: hashCode,
                 methodName: nameof(HashCode.Add),
                 typeArguments: new[] { field.FieldType },
-                arguments: Expression.MakeMemberAccess(paramCasted, field)));
+                arguments: Expression.Field(paramCasted, field)));
         }
 
         // hashCode.ToHashCode()
@@ -252,7 +252,7 @@ internal static class AsmCodegen<TAsm, TBuilder>
         var asmParam = Expression.Parameter(typeof(TAsm).MakeByRefType());
 
         // Body
-        var body = Expression.MakeMemberAccess(
+        var body = Expression.Field(
             GenerateCastAsmToExactType(asmParam, asmType),
             builderField);
 
@@ -284,7 +284,7 @@ internal static class AsmCodegen<TAsm, TBuilder>
         // Body
         var body = Expression.Assign(
             // asm.builder =
-            Expression.MakeMemberAccess(
+            Expression.Field(
                 GenerateCastAsmToExactType(asmParam, asmType),
                 builderField),
             // builder

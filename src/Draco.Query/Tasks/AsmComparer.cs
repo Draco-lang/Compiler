@@ -115,11 +115,13 @@ internal static class AsmComparerCache
             arguments: Expression.Constant(asmType)));
 
         foreach (var field in GetRelevantFields(asmType))
+        {
             blockExprs.Add(Expression.Call(
                 instance: hashCode,
                 methodName: nameof(HashCode.Add),
                 typeArguments: new[] { field.FieldType },
                 arguments: Expression.MakeMemberAccess(asmAsConcreteType, field)));
+        }
 
         blockExprs.Add(Expression.Call(
             instance: hashCode,

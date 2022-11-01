@@ -37,6 +37,9 @@ public readonly record struct Revision : IComparable<Revision>
     }
 
     /// <inheritdoc/>
+    public override string ToString() => $"v{this.version}";
+
+    /// <inheritdoc/>
     public int CompareTo(Revision other) => this.version - other.version;
 
     public static bool operator <(Revision a, Revision b) => a.CompareTo(b) < 0;

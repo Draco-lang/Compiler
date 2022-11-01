@@ -53,7 +53,7 @@ public static class QueryDatabase
         public Revision ChangedAt { get; set; } = Revision.Invalid;
         public Revision VerifiedAt { get; set; } = Revision.Invalid;
         public IProducerConsumerCollection<IResult> Dependencies { get; } = new ConcurrentBag<IResult>();
-        public T Value { get; set; }
+        public T Value { get; set; } = default!;
 
         private readonly QueryIdentifier identifier;
 
@@ -98,7 +98,7 @@ public static class QueryDatabase
             updateValueFactory: (_, cached) =>
             {
                 var cachedResult = (ComputedResult<TResult>)cached;
-                var changed = result!.Equals(cachedResult.Value);
+                var changed = !object.Equals(result, cachedResult.Value);
                 if (changed) cachedResult.ChangedAt = CurrentRevision;
                 cachedResult.VerifiedAt = CurrentRevision;
                 cachedResult.Value = result;

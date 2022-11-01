@@ -89,12 +89,16 @@ public struct QueryValueTaskMethodBuilder<T>
             // There was no cached identity, we create a new one and register it in the system
             this.identity = QueryIdentifier.New;
             QueryDatabase.OnNewQuery<T>(this.identity);
-        }
 
-        // In debug, the state machine is a class, so must be cloned
-        // If not, the function execution would change the state and the identity cache would
-        // get into an inconsistent state
-        this.stateMachine = CloneAsm(ref stateMachine);
+            // In debug, the state machine is a class, so must be cloned
+            // If not, the function execution would change the state and the identity cache would
+            // get into an inconsistent state
+            this.stateMachine = CloneAsm(ref stateMachine);
+
+            // Update caches to include new entry
+            identityCache[this.stateMachine] = this.identity;
+            stateCache[this.identity] = this.stateMachine;
+        }
 
         // We then delegate the real work, as we have to re-execute the query
         this.valueTaskBuilder.Start(ref stateMachine);

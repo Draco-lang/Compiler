@@ -30,4 +30,7 @@ public readonly record struct QueryIdentifier
     {
         this.id = id;
     }
+
+    /// <inheritdoc/>
+    public override string ToString() => $"Query[{this.id}]";
 }

@@ -33,11 +33,11 @@ internal class Program
         QueryDatabase.SetInput(yId, "2");
 
         var res1 = await AddVariables("x", "y");
+        Console.WriteLine(res1);
 
         QueryDatabase.SetInput(yId, "2 ");
 
         var res2 = await AddVariables("x", "y");
-        Console.WriteLine(res1);
         Console.WriteLine(res2);
     }
 }

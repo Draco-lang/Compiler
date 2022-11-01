@@ -17,7 +17,7 @@ namespace Draco.Query.Tasks;
 public struct QueryValueTaskMethodBuilder<T>
 {
     private static readonly ConcurrentDictionary<IAsyncStateMachine, QueryIdentifier> identityCache = new(AsmComparer.Instance);
-    private static readonly ConcurrentDictionary<QueryIdentifier, Func<ValueTask<T>>> startCloneCache = new();
+    private static readonly ConcurrentDictionary<QueryIdentifier, Func<QueryValueTask<T>>> startCloneCache = new();
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
 
@@ -50,7 +50,7 @@ public struct QueryValueTaskMethodBuilder<T>
         where TStateMachine : IAsyncStateMachine =>
         AsmUtils<TStateMachine, QueryValueTaskMethodBuilder<T>>.SetBuilder(ref stateMachine, builder);
 
-    public static ValueTask<T> RunQueryByIdentifier(QueryIdentifier identifier)
+    public static QueryValueTask<T> RunQueryByIdentifier(QueryIdentifier identifier)
     {
         // NOTE: This should never happen
         if (!startCloneCache.TryGetValue(identifier, out var startClone)) throw new InvalidOperationException();
@@ -100,7 +100,7 @@ public struct QueryValueTaskMethodBuilder<T>
                 var clone2 = CloneAsm(clonedMachine);
                 SetBuilder(ref clone2, Create());
                 GetBuilder(ref clone2).Start(ref clone2);
-                return GetBuilder(ref clone2).valueTaskBuilder.Task;
+                return GetBuilder(ref clone2).Task;
             };
         }
 

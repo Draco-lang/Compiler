@@ -19,6 +19,7 @@ internal static class AsmUtils<TAsm, TBuilder>
 {
     private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmEqualsDelegate> equalsInstances = new();
     private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmGetHashCodeDelegate> getHashCodeInstances = new();
+    private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmGetBuilderDelegate> getBuilderInstances = new();
     private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmSetBuilderDelegate> setBuilderInstances = new();
     private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmCloneDelegate> cloneInstances = new();
 
@@ -38,6 +39,13 @@ internal static class AsmUtils<TAsm, TBuilder>
         var type = obj.GetType();
         var hashCode = getHashCodeInstances.GetOrAdd(type, AsmCodegen<TAsm, TBuilder>.GenerateGetHashCode);
         return hashCode(obj);
+    }
+
+    public static ref TBuilder GetBuilder(ref TAsm obj)
+    {
+        var type = obj.GetType();
+        var getBuilder = getBuilderInstances.GetOrAdd(type, AsmCodegen<TAsm, TBuilder>.GenerateGetBuilder);
+        return ref getBuilder(ref obj);
     }
 
     public static void SetBuilder(ref TAsm obj, TBuilder builder)
@@ -99,6 +107,12 @@ internal static class AsmCodegen<TAsm, TBuilder>
     /// <param name="obj">The state machine to compute the hash of.</param>
     /// <returns>The hash value of the async state machine.</returns>
     public delegate int AsmGetHashCodeDelegate(TAsm obj);
+
+    /// <summary>
+    /// A delegate type that gets the builder for an async state machine.
+    /// </summary>
+    /// <param name="obj">The state machine to get the builder from.</param>
+    public delegate ref TBuilder AsmGetBuilderDelegate(ref TAsm obj);
 
     /// <summary>
     /// A delegate type that sets the builder for an async state machine.
@@ -215,6 +229,33 @@ internal static class AsmCodegen<TAsm, TBuilder>
             variables: new[] { hashCode, paramCasted },
             expressions: blockExprs);
         var lambda = Expression.Lambda<AsmGetHashCodeDelegate>(block, param);
+
+        // Compile
+        return lambda.Compile();
+    }
+
+    /// <summary>
+    /// Generates an <see cref="AsmGetBuilderDelegate"/>.
+    /// </summary>
+    /// <param name="asmType">The exact async state machine type to generate the getter for.</param>
+    /// <returns>The generated delegate.</returns>
+    public static AsmGetBuilderDelegate GenerateGetBuilder(Type asmType)
+    {
+        if (typeof(TAsm) != asmType)
+        {
+            throw new InvalidOperationException("When getting the builder, the exact state machine type has to be known");
+        }
+
+        // Extract the field info
+        var builderField = asmType.GetField("<>t__builder")!;
+
+        var asmParam = Expression.Parameter(typeof(TAsm).MakeByRefType());
+
+        // Body
+        var body = Expression.MakeMemberAccess(asmParam, builderField);
+
+        // Build up result
+        var lambda = Expression.Lambda<AsmGetBuilderDelegate>(body, asmParam);
 
         // Compile
         return lambda.Compile();

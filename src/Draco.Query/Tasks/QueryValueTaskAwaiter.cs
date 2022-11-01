@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Query;
+namespace Draco.Query.Tasks;
 
 /// <summary>
 /// An awaiter for <see cref="QueryValueTask{T}"/>s.
@@ -13,27 +13,27 @@ namespace Draco.Query;
 /// <typeparam name="T">The result type of the query computation.</typeparam>
 public struct QueryValueTaskAwaiter<T> : INotifyCompletion, IIdentifiableQueryAwaiter
 {
-    public bool IsCompleted => this.yielded && (!this.isValueTask || (this.isValueTask && this.awaiter.IsCompleted));
-    public int Identity { get; }
+    public bool IsCompleted => this.yielded && (!this.isValueTask || this.isValueTask && this.awaiter.IsCompleted);
+    public QueryIdentifier Identity { get; }
 
     private readonly bool isValueTask;
     private readonly T? result;
     private readonly ValueTaskAwaiter<T> awaiter;
     private bool yielded;
 
-    internal QueryValueTaskAwaiter(T result, int queryIdentity)
+    internal QueryValueTaskAwaiter(T result, QueryIdentifier identity)
     {
         this.isValueTask = false;
         this.awaiter = default;
         this.result = result;
-        this.Identity = queryIdentity;
+        this.Identity = identity;
     }
 
-    internal QueryValueTaskAwaiter(ValueTaskAwaiter<T> awaiter, int queryIdentity)
+    internal QueryValueTaskAwaiter(ValueTaskAwaiter<T> awaiter, QueryIdentifier identity)
     {
         this.isValueTask = true;
         this.awaiter = awaiter;
-        this.Identity = queryIdentity;
+        this.Identity = identity;
         this.result = default;
     }
 
@@ -46,7 +46,8 @@ public struct QueryValueTaskAwaiter<T> : INotifyCompletion, IIdentifiableQueryAw
         else
         {
             this.yielded = true;
-            continuation(); // We are wrapping a result, so we can continue immediatly.
+            // We are wrapping a result, so we can continue immediatly
+            continuation();
         }
     }
 

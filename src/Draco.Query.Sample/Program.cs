@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Draco.Query.Tasks;
 
 namespace Draco.Query.Sample;
 

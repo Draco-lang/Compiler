@@ -8,16 +8,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Draco.Query;
+namespace Draco.Query.Tasks;
 
 // Documentation about Task-Types: https://github.com/dotnet/roslyn/blob/main/docs/features/task-types.md
 
 [StructLayout(LayoutKind.Auto)]
 public struct QueryValueTaskMethodBuilder<T>
 {
-    private record struct CachedValue(T Value, int Identity);
-
-    private static readonly ConcurrentDictionary<IAsyncStateMachine, CachedValue> cachedResults = new(AsmComparer.Instance);
+    private static readonly ConcurrentDictionary<IAsyncStateMachine, QueryIdentifier> identityCache = new(AsmComparer.Instance);
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
 
@@ -27,7 +25,7 @@ public struct QueryValueTaskMethodBuilder<T>
 
     private static int identityCounter = 0;
 
-    private int identity = -1;
+    private QueryIdentifier identity = QueryIdentifier.Invalid;
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
     private IAsyncStateMachine? stateMachine = null;
     private bool hasResult = false;
@@ -41,42 +39,52 @@ public struct QueryValueTaskMethodBuilder<T>
     public void Start<TStateMachine>(ref TStateMachine stateMachine)
         where TStateMachine : IAsyncStateMachine
     {
-        // We will compare the current state machine to the one stored.
-        // The state machine contains the full state of the async method.
+        // We will compare the current state machine to the one stored
+        // The state machine contains the full state of the async method
         // In this codepath the stateMachine did not ran so the parameters captured,
-        // and the intermediates values have all a default value.
+        // and the intermediates values have all a default value
 
-        // Now we can store a copy of this state machine, and the result it produce.
-
-        if (cachedResults.TryGetValue(stateMachine, out var val))
+        if (identityCache.TryGetValue(stateMachine, out var oldIdentity))
         {
-            // In this codepath, we found a cached result.
-            // When this.result is set we bypass any async code and expose a completed query with the result.
-            this.hasResult = true;
-            this.result = val.Value;
-            this.identity = val.Identity;
-            return;
+            // In this codepath, we found a cached identity, meaning this query was ran with the
+            // exact parameters before
+            // We rewrite our identity to match
+            this.identity = oldIdentity;
+            if (QueryDatabase.TryGetUpToDateResult<T>(this.identity, out var oldResult))
+            {
+                // Yes, we found a cached result that is up to date
+                // Short-circuit the called query
+                this.hasResult = true;
+                this.result = oldResult;
+                return;
+            }
+            // No, the query is not up to date, we need to re-run it
+        }
+        else
+        {
+            // There was no cached identity, we create a new one and register it in the system
+            this.identity = QueryIdentifier.New;
+            QueryDatabase.OnNewQuery<T>(this.identity);
         }
 
-        // There was no cached result.
-        this.identity = Interlocked.Increment(ref identityCounter);
-
-        // In debug, the state machine is a class, so must be cloned.
-        // If not, the function execution would change the state.
+        // In debug, the state machine is a class, so must be cloned
+        // If not, the function execution would change the state and the identity cache would
+        // get into an inconsistent state
         this.stateMachine = AsmCloner.Clone(stateMachine);
 
-        // We then delegate the real work.
+        // We then delegate the real work, as we have to re-execute the query
         this.valueTaskBuilder.Start(ref stateMachine);
     }
 
-    // this method is deprecated and shouldn't be called. The implemention simply Debug.Fail.
+    // This method is deprecated and shouldn't be called
+    // The implemention simply Debug.Fail
     public void SetStateMachine(IAsyncStateMachine stateMachine) => this.valueTaskBuilder.SetStateMachine(stateMachine);
     public void SetException(Exception exception) => this.valueTaskBuilder.SetException(exception);
 
     public void SetResult(T result)
     {
-        // We save the result to the cache for future calls.
-        cachedResults[this.stateMachine!] = new(result, this.identity);
+        // We notify the system about the result
+        QueryDatabase.OnQueryResult(this.identity, result);
         this.valueTaskBuilder.SetResult(result);
     }
 
@@ -85,7 +93,8 @@ public struct QueryValueTaskMethodBuilder<T>
     {
         if (awaiter is IIdentifiableQueryAwaiter query)
         {
-            Console.WriteLine($"Query {this.identity} depends on query {query.Identity}");
+            // Register dependency in the system
+            QueryDatabase.OnDependency(dependent: this.identity, dependency: query.Identity);
         }
     }
 

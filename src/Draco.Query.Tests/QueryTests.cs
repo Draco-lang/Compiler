@@ -1,3 +1,5 @@
+using Draco.Query.Tasks;
+
 namespace Draco.Query.Tests;
 
 public class QueryTests

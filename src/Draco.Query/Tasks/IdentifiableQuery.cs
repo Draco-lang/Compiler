@@ -1,9 +1,9 @@
-namespace Draco.Query;
+namespace Draco.Query.Tasks;
 
 /// <summary>
 /// Marker trait for query identification.
 /// </summary>
 public interface IIdentifiableQueryAwaiter
 {
-    public int Identity { get; }
+    public QueryIdentifier Identity { get; }
 }

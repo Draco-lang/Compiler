@@ -13,6 +13,70 @@ using System.Threading.Tasks;
 namespace Draco.Query.Tasks;
 
 /// <summary>
+/// Interface for communicating with <see cref="IAsyncStateMachine"/>s.
+/// Note, that an instance can only interface with a single kind of async state machine,
+/// which the instance was created for.
+/// </summary>
+internal readonly struct AsmInterface
+{
+    public delegate bool EqualsDelegate(IAsyncStateMachine x, IAsyncStateMachine y);
+    public delegate int GetHashCodeDelegate(IAsyncStateMachine obj);
+    public delegate IAsyncStateMachine CloneDelegate(IAsyncStateMachine obj);
+    public delegate QueryDatabase GetQueryDatabaseDelegate(IAsyncStateMachine obj);
+
+    public readonly new EqualsDelegate Equals;
+    public readonly new GetHashCodeDelegate GetHashCode;
+    public readonly CloneDelegate Clone;
+    public readonly GetQueryDatabaseDelegate GetQueryDatabase;
+
+    public AsmInterface(
+        EqualsDelegate equals,
+        GetHashCodeDelegate getHashCode,
+        CloneDelegate clone,
+        GetQueryDatabaseDelegate getQueryDatabase)
+    {
+        this.Equals = equals;
+        this.GetHashCode = getHashCode;
+        this.Clone = clone;
+        this.GetQueryDatabase = getQueryDatabase;
+    }
+}
+
+/// <summary>
+/// Interface for communicating with <see cref="IAsyncStateMachine"/>s.
+/// </summary>
+/// <typeparam name="TAsm">The exact type of async state machine handled.</typeparam>
+/// <typeparam name="TBuilder">The builder type associated with the state machine.</typeparam>
+internal readonly struct AsmInterface<TAsm, TBuilder>
+{
+    public delegate bool EqualsDelegate(ref TAsm x, ref TAsm y);
+    public delegate int GetHashCodeDelegate(ref TAsm obj);
+    public delegate TAsm CloneDelegate(ref TAsm obj);
+    public delegate QueryDatabase GetQueryDatabaseDelegate(ref TAsm obj);
+    public delegate ref TBuilder GetBuilderDelegate(ref TAsm obj);
+
+    public readonly new EqualsDelegate Equals;
+    public readonly new GetHashCodeDelegate GetHashCode;
+    public readonly CloneDelegate Clone;
+    public readonly GetQueryDatabaseDelegate GetQueryDatabase;
+    public readonly GetBuilderDelegate GetBuilder;
+
+    public AsmInterface(
+        EqualsDelegate equals,
+        GetHashCodeDelegate getHashCode,
+        CloneDelegate clone,
+        GetQueryDatabaseDelegate getQueryDatabase,
+        GetBuilderDelegate getBuilder)
+    {
+        this.Equals = equals;
+        this.GetHashCode = getHashCode;
+        this.Clone = clone;
+        this.GetQueryDatabase = getQueryDatabase;
+        this.GetBuilder = getBuilder;
+    }
+}
+
+/// <summary>
 /// Utilities for async state machines.
 /// </summary>
 internal static class AsmUtils<TAsm, TBuilder>

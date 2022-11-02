@@ -18,7 +18,6 @@ public struct QueryValueTaskMethodBuilder<T>
 {
     private static readonly ConcurrentDictionary<IAsyncStateMachine, QueryIdentifier> identityCache = new(AsmComparer.Instance);
     private static readonly ConcurrentDictionary<QueryIdentifier, Func<QueryValueTask<T>>> startCloneCache = new();
-    private static readonly ConcurrentDictionary<QueryIdentifier, IAsyncStateMachine> startStateCache = new();
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
 
@@ -79,7 +78,8 @@ public struct QueryValueTaskMethodBuilder<T>
                 return;
             }
             // No, the query is not up to date, we need to re-run it
-            this.stateMachine = startStateCache[this.identity];
+            var clonedMachine = CloneAsm(stateMachine);
+            this.stateMachine = clonedMachine;
         }
         else
         {
@@ -92,7 +92,6 @@ public struct QueryValueTaskMethodBuilder<T>
             // get into an inconsistent state
             var clonedMachine = CloneAsm(stateMachine);
             this.stateMachine = clonedMachine;
-            startStateCache[this.identity] = clonedMachine;
 
             // Update caches to include new entry
             identityCache[this.stateMachine] = this.identity;

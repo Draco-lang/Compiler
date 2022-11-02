@@ -70,8 +70,10 @@ public sealed class ParserTests
                         {
                             predicate();
                         }
+                        this.T(TokenType.CurlyClose);
                     }
                 }
+
             }
         }
     }
@@ -95,7 +97,6 @@ public sealed class ParserTests
                         }
                     }
                     this.T(TokenType.Semicolon);
-                    this.T(TokenType.CurlyClose);
                 }
             }
         }
@@ -324,7 +325,6 @@ public sealed class ParserTests
                     this.MissingT(TokenType.Semicolon);
                 }
             }
-            this.T(TokenType.CurlyClose);
         }
 
         // There is semicolon at the end, because the string is put into declaration
@@ -551,5 +551,302 @@ public sealed class ParserTests
                 val y = 8;
             }
             """, OnlyElse);
+    }
+
+    [Fact]
+    public void TestIfStatementMissingClosingParen()
+    {
+        void IfMissingParan()
+        {
+            this.N<Expr.If>();
+            {
+                this.T(TokenType.KeywordIf);
+                this.T(TokenType.ParenOpen);
+                this.N<Expr.Relational>();
+                {
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger);
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.GreaterThan);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                }
+                this.MissingT(TokenType.ParenClose);
+                this.N<Expr.UnitStmt>();
+                this.N<Stmt.Expr>();
+                this.N<Expr.Block>();
+                this.T(TokenType.CurlyOpen);
+                this.N<BlockContents>();
+                {
+                    this.N<Stmt.Decl>();
+                    {
+                        this.N<Decl.Variable>();
+                        {
+                            this.T(TokenType.KeywordVal);
+                            this.T(TokenType.Identifier);
+                            this.N<ValueInitializer>();
+                            {
+                                this.T(TokenType.Assign);
+                                this.N<Expr.Literal>();
+                                {
+                                    this.T(TokenType.LiteralInteger);
+                                }
+                            }
+                            this.T(TokenType.Semicolon);
+                        }
+                    }
+                }
+                this.T(TokenType.CurlyClose);
+            }
+        }
+        this.MainFunctionPlaceHolder("""
+            if(5 > 0{
+                val x = 5;
+            }
+            """, IfMissingParan);
+    }
+
+    [Fact]
+    public void TestIfStatementMissingContents()
+    {
+        void IfMissingStatement()
+        {
+            this.N<Expr.If>();
+            {
+                this.T(TokenType.KeywordIf);
+                this.T(TokenType.ParenOpen);
+                this.N<Expr.Relational>();
+                {
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger);
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.GreaterThan);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                }
+                this.T(TokenType.ParenClose);
+                this.N<Expr.UnitStmt>();
+                this.N<Stmt.Expr>();
+                this.N<Expr.Unexpected>();
+            }
+        }
+        this.MainFunctionPlaceHolder("""
+            if(5 > 0)
+            """, IfMissingStatement);
+    }
+
+    [Fact]
+    public void TestWhileStatement()
+    {
+        void WhileStatement()
+        {
+            this.N<Stmt.Decl>();
+            {
+                this.N<Decl.Variable>();
+                {
+                    this.T(TokenType.KeywordVar);
+                    this.T(TokenType.Identifier);
+                    this.N<ValueInitializer>();
+                    {
+                        this.T(TokenType.Assign);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                    this.T(TokenType.Semicolon);
+                }
+            }
+            this.N<Expr.While>();
+            {
+                this.T(TokenType.KeywordWhile);
+                this.T(TokenType.ParenOpen);
+                this.N<Expr.Relational>();
+                {
+                    this.N<Expr.Name>();
+                    {
+                        this.T(TokenType.Identifier);
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.LessThan);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                }
+                this.T(TokenType.ParenClose);
+                this.N<Expr.UnitStmt>();
+                this.N<Stmt.Expr>();
+                this.N<Expr.Block>();
+                this.T(TokenType.CurlyOpen);
+                this.N<BlockContents>();
+                {
+                    this.N<Stmt.Expr>();
+                    {
+                        this.N<Expr.Binary>();
+                        {
+                            this.N<Expr.Name>();
+                            {
+                                this.T(TokenType.Identifier);
+                            }
+                            this.T(TokenType.Assign);
+                            this.N<Expr.Binary>();
+                            {
+                                this.N<Expr.Name>();
+                                {
+                                    this.T(TokenType.Identifier);
+                                }
+                                this.T(TokenType.Plus);
+                                this.N<Expr.Literal>();
+                                {
+                                    this.T(TokenType.LiteralInteger);
+                                }
+                            }
+                            this.T(TokenType.Semicolon);
+                        }
+                    }
+                }
+            }
+            this.T(TokenType.CurlyClose);
+        }
+        this.MainFunctionPlaceHolder("""
+            var x = 0;
+            while(x < 5){
+                x = x + 1;
+            }
+            """, WhileStatement);
+    }
+
+    [Fact]
+    public void TestWhileStatementMissingClosingParen()
+    {
+        void WhileStatement()
+        {
+            this.N<Stmt.Decl>();
+            {
+                this.N<Decl.Variable>();
+                {
+                    this.T(TokenType.KeywordVar);
+                    this.T(TokenType.Identifier);
+                    this.N<ValueInitializer>();
+                    {
+                        this.T(TokenType.Assign);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                    this.T(TokenType.Semicolon);
+                }
+            }
+            this.N<Expr.While>();
+            {
+                this.T(TokenType.KeywordWhile);
+                this.T(TokenType.ParenOpen);
+                this.N<Expr.Relational>();
+                {
+                    this.N<Expr.Name>();
+                    {
+                        this.T(TokenType.Identifier);
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.LessThan);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                }
+                this.MissingT(TokenType.ParenClose);
+                this.N<Expr.UnitStmt>();
+                this.N<Stmt.Expr>();
+                this.N<Expr.Block>();
+                this.T(TokenType.CurlyOpen);
+                this.N<BlockContents>();
+                {
+                    this.N<Stmt.Expr>();
+                    {
+                        this.N<Expr.Binary>();
+                        {
+                            this.N<Expr.Name>();
+                            {
+                                this.T(TokenType.Identifier);
+                            }
+                            this.T(TokenType.Assign);
+                            this.N<Expr.Binary>();
+                            {
+                                this.N<Expr.Name>();
+                                {
+                                    this.T(TokenType.Identifier);
+                                }
+                                this.T(TokenType.Plus);
+                                this.N<Expr.Literal>();
+                                {
+                                    this.T(TokenType.LiteralInteger);
+                                }
+                            }
+                            this.T(TokenType.Semicolon);
+                        }
+                    }
+                }
+            }
+            this.T(TokenType.CurlyClose);
+        }
+        this.MainFunctionPlaceHolder("""
+            var x = 0;
+            while(x < 5{
+                x = x + 1;
+            }
+            """, WhileStatement);
+    }
+
+    [Fact]
+    public void TestWhileStatementMissingContents()
+    {
+        void WhileStatement()
+        {
+            this.N<Expr.While>();
+            {
+                this.T(TokenType.KeywordWhile);
+                this.T(TokenType.ParenOpen);
+                this.N<Expr.Relational>();
+                {
+                    this.N<Expr.Name>();
+                    {
+                        this.T(TokenType.Identifier);
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.LessThan);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                }
+                this.T(TokenType.ParenClose);
+                this.N<Expr.UnitStmt>();
+                this.N<Stmt.Expr>();
+                this.N<Expr.Unexpected>();
+            }
+        }
+        this.MainFunctionPlaceHolder("""
+            while(x < 5)
+            """, WhileStatement);
     }
 }

@@ -849,4 +849,131 @@ public sealed class ParserTests
             while(x < 5)
             """, WhileStatement);
     }
+
+    [Fact]
+    public void TestLabelDeclaration()
+    {
+        void LabelDeclaration()
+        {
+            this.N<Stmt.Decl>();
+            this.N<Decl.Label>();
+            {
+                this.T(TokenType.Identifier, "myLabel");
+                this.T(TokenType.Colon);
+            }
+        }
+        this.MainFunctionPlaceHolder("""
+            myLabel:
+            """, LabelDeclaration);
+    }
+
+    [Fact]
+    public void TestLabelDeclarationNewlineBeforeColon()
+    {
+        void LabelDeclaration()
+        {
+            this.N<Stmt.Decl>();
+            this.N<Decl.Label>();
+            {
+                this.T(TokenType.Identifier, "myLabel");
+                this.T(TokenType.Colon);
+            }
+        }
+        this.MainFunctionPlaceHolder("""
+            myLabel
+            :
+            """, LabelDeclaration);
+    }
+
+    [Fact]
+    public void TestGoto()
+    {
+        void GotoStatement()
+        {
+            this.N<Stmt.Decl>();
+            this.N<Decl.Label>();
+            {
+                this.T(TokenType.Identifier, "myLabel");
+                this.T(TokenType.Colon);
+            }
+            this.N<Stmt.Expr>();
+            this.N<Expr.Goto>();
+            {
+                this.T(TokenType.KeywordGoto);
+                this.N<Expr.Name>();
+                {
+                    this.T(TokenType.Identifier);
+                }
+            }
+            this.T(TokenType.Semicolon);
+        }
+        this.MainFunctionPlaceHolder("""
+            myLabel:
+                goto myLabel;
+            """, GotoStatement);
+    }
+
+    [Fact]
+    public void TestGotoNoLabelSpecified()
+    {
+        void GotoStatement()
+        {
+            this.N<Stmt.Expr>();
+            this.N<Expr.Goto>();
+            {
+                this.T(TokenType.KeywordGoto);
+                this.N<Expr.Unexpected>();
+            }
+            this.T(TokenType.Semicolon);
+        }
+        this.MainFunctionPlaceHolder("""
+                goto;
+            """, GotoStatement);
+    }
+
+    [Fact]
+    public void TestReturnWithValue()
+    {
+        void ReturnStatement()
+        {
+            this.N<Stmt.Expr>();
+            this.N<Expr.Return>();
+            {
+                this.T(TokenType.KeywordReturn);
+                this.N<Expr.Binary>();
+                {
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger);
+                    }
+                    this.T(TokenType.Plus);
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger);
+                    }
+                }
+            }
+            this.T(TokenType.Semicolon);
+        }
+        this.MainFunctionPlaceHolder("""
+                return 2 + 1;
+            """, ReturnStatement);
+    }
+
+    [Fact]
+    public void TestReturnWithoutValue()
+    {
+        void ReturnStatement()
+        {
+            this.N<Stmt.Expr>();
+            this.N<Expr.Return>();
+            {
+                this.T(TokenType.KeywordReturn);
+            }
+            this.T(TokenType.Semicolon);
+        }
+        this.MainFunctionPlaceHolder("""
+                return;
+            """, ReturnStatement);
+    }
 }

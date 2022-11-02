@@ -24,6 +24,7 @@ public readonly struct QueryValueTask<T>
         this.result = result;
         this.identifier = identifier;
     }
+
     internal QueryValueTask(ValueTask<T> valueTask, QueryIdentifier identifier)
     {
         this.valueTask = valueTask;

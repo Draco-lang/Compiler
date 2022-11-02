@@ -70,7 +70,7 @@ public static class QueryDatabase
     /// <typeparam name="T">The type of the input value.</typeparam>
     private sealed class InputResult<T> : IResult
     {
-        public Revision ChangedAt => Revision.Invalid;
+        public Revision ChangedAt { get; set; } = Revision.Invalid;
         public Revision VerifiedAt => Revision.MaxValue;
         public IProducerConsumerCollection<IResult> Dependencies => EmptyConcurrentBag<IResult>.Instsance;
         public T Value { get; set; } = default!;
@@ -130,8 +130,9 @@ public static class QueryDatabase
         // NOTE: Better error
         if (!queries.TryGetValue(identifier, out var cached)) throw new InvalidOperationException();
         var cachedResult = (InputResult<TResult>)cached;
-        cachedResult.Value = value;
         CurrentRevision = Revision.New;
+        cachedResult.Value = value;
+        cachedResult.ChangedAt = CurrentRevision;
     }
 
     /// <summary>
@@ -139,13 +140,13 @@ public static class QueryDatabase
     /// </summary>
     /// <typeparam name="TResult">The type of the input value.</typeparam>
     /// <param name="identifier">The identifier for the input.</param>
-    /// <returns>The retrieved input.</returns>
-    public static TResult GetInput<TResult>(QueryIdentifier identifier)
+    /// <returns>The retrieved input as a task.</returns>
+    public static QueryValueTask<TResult> GetInput<TResult>(QueryIdentifier identifier)
     {
         // NOTE: Better error
         if (!queries.TryGetValue(identifier, out var cached)) throw new InvalidOperationException();
         var cachedResult = (InputResult<TResult>)cached;
-        return cachedResult.Value;
+        return new(cachedResult.Value, identifier);
     }
 
     /// <summary>

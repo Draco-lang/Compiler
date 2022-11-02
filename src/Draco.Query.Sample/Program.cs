@@ -11,8 +11,8 @@ internal class Program
 
     private static async QueryValueTask<int> ParseVariable(string n)
     {
-        var nStr = QueryDatabase.GetInput<string>(n == "x" ? xId : yId);
-        Console.WriteLine($"ParseVariable({nStr})");
+        var nStr = await QueryDatabase.GetInput<string>(n == "x" ? xId : yId);
+        Console.WriteLine($"ParseVariable({n} = '{nStr}')");
         return int.Parse(nStr);
     }
 
@@ -35,7 +35,7 @@ internal class Program
         var res1 = await AddVariables("x", "y");
         Console.WriteLine(res1);
 
-        QueryDatabase.SetInput(yId, "2 ");
+        QueryDatabase.SetInput(yId, "3");
 
         var res2 = await AddVariables("x", "y");
         Console.WriteLine(res2);

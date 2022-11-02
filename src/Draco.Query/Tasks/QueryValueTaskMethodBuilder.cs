@@ -44,10 +44,6 @@ public struct QueryValueTaskMethodBuilder<T>
         where TStateMachine : IAsyncStateMachine =>
         ref AsmUtils<TStateMachine, QueryValueTaskMethodBuilder<T>>.GetBuilder(ref stateMachine);
 
-    private static void SetBuilder<TStateMachine>(ref TStateMachine stateMachine, QueryValueTaskMethodBuilder<T> builder)
-        where TStateMachine : IAsyncStateMachine =>
-        AsmUtils<TStateMachine, QueryValueTaskMethodBuilder<T>>.SetBuilder(ref stateMachine, builder);
-
     public static QueryValueTask<T> RunQueryByIdentifier(QueryIdentifier identifier)
     {
         // NOTE: This should never happen
@@ -98,7 +94,7 @@ public struct QueryValueTaskMethodBuilder<T>
             startCloneCache[this.identity] = () =>
             {
                 var clone2 = CloneAsm(clonedMachine);
-                SetBuilder(ref clone2, Create());
+                GetBuilder(ref clone2) = Create();
                 GetBuilder(ref clone2).Start(ref clone2);
                 return GetBuilder(ref clone2).Task;
             };

@@ -13,32 +13,6 @@ using System.Threading.Tasks;
 namespace Draco.Query.Tasks;
 
 /// <summary>
-/// Interface for communicating with <see cref="IAsyncStateMachine"/>s.
-/// </summary>
-/// <typeparam name="TAsm">The exact type of async state machine handled.</typeparam>
-/// <typeparam name="TBuilder">The builder type associated with the state machine.</typeparam>
-internal readonly struct AsmInterface<TAsm, TBuilder>
-{
-    public delegate TAsm CloneDelegate(ref TAsm obj);
-    public delegate QueryDatabase GetQueryDatabaseDelegate(ref TAsm obj);
-    public delegate ref TBuilder GetBuilderDelegate(ref TAsm obj);
-
-    public readonly CloneDelegate Clone;
-    public readonly GetQueryDatabaseDelegate GetQueryDatabase;
-    public readonly GetBuilderDelegate GetBuilder;
-
-    public AsmInterface(
-        CloneDelegate clone,
-        GetQueryDatabaseDelegate getQueryDatabase,
-        GetBuilderDelegate getBuilder)
-    {
-        this.Clone = clone;
-        this.GetQueryDatabase = getQueryDatabase;
-        this.GetBuilder = getBuilder;
-    }
-}
-
-/// <summary>
 /// Utilities for async state machines.
 /// </summary>
 internal static class AsmUtils<TAsm, TBuilder>
@@ -47,7 +21,6 @@ internal static class AsmUtils<TAsm, TBuilder>
     private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmEqualsDelegate> equalsInstances = new();
     private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmGetHashCodeDelegate> getHashCodeInstances = new();
     private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmGetBuilderDelegate> getBuilderInstances = new();
-    private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmSetBuilderDelegate> setBuilderInstances = new();
     private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmCloneDelegate> cloneInstances = new();
 
     public static bool Equals(TAsm? x, TAsm? y)
@@ -73,13 +46,6 @@ internal static class AsmUtils<TAsm, TBuilder>
         var type = obj.GetType();
         var getBuilder = getBuilderInstances.GetOrAdd(type, AsmCodegen<TAsm, TBuilder>.GenerateGetBuilder);
         return ref getBuilder(ref obj);
-    }
-
-    public static void SetBuilder(ref TAsm obj, TBuilder builder)
-    {
-        var type = obj.GetType();
-        var setBuilder = setBuilderInstances.GetOrAdd(type, AsmCodegen<TAsm, TBuilder>.GenerateSetBuilder);
-        setBuilder(ref obj, builder);
     }
 
     public static TAsm Clone(TAsm obj)
@@ -114,46 +80,13 @@ internal sealed class AsmComparer : IEqualityComparer<IAsyncStateMachine>
 /// <summary>
 /// Generates async state machine manipulation code at runtime.
 /// </summary>
-/// <typeparam name="TAsm">The viewed async state machine type, which might be a concrete type or an abstract
-/// one.</typeparam>
-/// <typeparam name="TBuilder">The builder type of the state machine.</typeparam>
-internal static class AsmCodegen<TAsm, TBuilder>
-    where TAsm : IAsyncStateMachine
+internal static class AsmCodegen
 {
-    /// <summary>
-    /// A delegate type that checks equality between two non-null async state machines.
-    /// </summary>
-    /// <param name="x">The first state machine to compare.</param>
-    /// <param name="y">The second state machine to compare.</param>
-    /// <returns>True, if the two async state machines are equal.</returns>
-    public delegate bool AsmEqualsDelegate(TAsm x, TAsm y);
-
-    /// <summary>
-    /// A delegate type that computes the hash value of a non-null async state machine.
-    /// </summary>
-    /// <param name="obj">The state machine to compute the hash of.</param>
-    /// <returns>The hash value of the async state machine.</returns>
-    public delegate int AsmGetHashCodeDelegate(TAsm obj);
-
-    /// <summary>
-    /// A delegate type that gets the builder for an async state machine.
-    /// </summary>
-    /// <param name="obj">The state machine to get the builder from.</param>
-    public delegate ref TBuilder AsmGetBuilderDelegate(ref TAsm obj);
-
-    /// <summary>
-    /// A delegate type that sets the builder for an async state machine.
-    /// </summary>
-    /// <param name="obj">The state machine to assign the builder to.</param>
-    /// <param name="builder">The builder to assign.</param>
-    public delegate void AsmSetBuilderDelegate(ref TAsm obj, TBuilder builder);
-
-    /// <summary>
-    /// A delegate type that clones the state machine.
-    /// </summary>
-    /// <param name="obj">The state machine to clone.</param>
-    /// <returns>The cloned async state machine.</returns>
-    public delegate TAsm AsmCloneDelegate(TAsm obj);
+    public delegate bool EqualsDelegate(IAsyncStateMachine x, IAsyncStateMachine y);
+    public delegate int GetHashCodeDelegate(IAsyncStateMachine obj);
+    public delegate TAsm CloneDelegate<TAsm>(ref TAsm obj);
+    public delegate ref TBuilder GetBuilderDelegate<TAsm, TBuilder>(ref TAsm obj);
+    public delegate QueryDatabase GetQueryDatabaseDelegate<TAsm>(ref TAsm obj);
 
     private static readonly MethodInfo getTypeMethod;
     private static readonly MethodInfo toHashCodeMethod;
@@ -168,15 +101,10 @@ internal static class AsmCodegen<TAsm, TBuilder>
             BindingFlags.NonPublic | BindingFlags.Instance)!;
     }
 
-    /// <summary>
-    /// Generates an <see cref="AsmEqualsDelegate"/>.
-    /// </summary>
-    /// <param name="asmType">The exact async state machine type to generate equality for.</param>
-    /// <returns>The generated delegate.</returns>
-    public static AsmEqualsDelegate GenerateEquals(Type asmType)
+    public static EqualsDelegate GenerateEquals(Type asmType)
     {
-        var param1 = Expression.Parameter(typeof(TAsm));
-        var param2 = Expression.Parameter(typeof(TAsm));
+        var param1 = Expression.Parameter(typeof(IAsyncStateMachine));
+        var param2 = Expression.Parameter(typeof(IAsyncStateMachine));
 
         var param1Casted = Expression.Variable(asmType);
         var param2Casted = Expression.Variable(asmType);
@@ -204,20 +132,15 @@ internal static class AsmCodegen<TAsm, TBuilder>
         var block = Expression.Block(
             variables: new[] { param1Casted, param2Casted },
             expressions: blockExprs);
-        var lambda = Expression.Lambda<AsmEqualsDelegate>(block, new[] { param1, param2 });
+        var lambda = Expression.Lambda<EqualsDelegate>(block, new[] { param1, param2 });
 
         // Compile
         return lambda.Compile();
     }
 
-    /// <summary>
-    /// Generates an <see cref="AsmGetHashCodeDelegate"/>.
-    /// </summary>
-    /// <param name="asmType">The exact async state machine type to generate hashing for.</param>
-    /// <returns>The generated delegate.</returns>
-    public static AsmGetHashCodeDelegate GenerateGetHashCode(Type asmType)
+    public static GetHashCodeDelegate GenerateGetHashCode(Type asmType)
     {
-        var param = Expression.Parameter(typeof(TAsm));
+        var param = Expression.Parameter(typeof(IAsyncStateMachine));
 
         var hashCode = Expression.Variable(typeof(HashCode));
         var paramCasted = Expression.Variable(asmType);
@@ -255,25 +178,47 @@ internal static class AsmCodegen<TAsm, TBuilder>
         var block = Expression.Block(
             variables: new[] { hashCode, paramCasted },
             expressions: blockExprs);
-        var lambda = Expression.Lambda<AsmGetHashCodeDelegate>(block, param);
+        var lambda = Expression.Lambda<GetHashCodeDelegate>(block, param);
 
         // Compile
         return lambda.Compile();
     }
 
-    /// <summary>
-    /// Generates an <see cref="AsmGetBuilderDelegate"/>.
-    /// </summary>
-    /// <param name="asmType">The exact async state machine type to generate the getter for.</param>
-    /// <returns>The generated delegate.</returns>
-    public static AsmGetBuilderDelegate GenerateGetBuilder(Type asmType)
+    public static CloneDelegate<TAsm> GenerateClone<TAsm>()
+        where TAsm : IAsyncStateMachine
     {
+        var asmType = typeof(TAsm);
+
+        var param = Expression.Parameter(asmType.MakeByRefType());
+        var paramCasted = GenerateCastAsmToExactType(param, asmType);
+
+        var result = paramCasted;
+        if (!asmType.IsValueType)
+        {
+            // For ref types we need to invoke memberwise clone
+            result = Expression.Convert(
+                Expression.Call(result, memberwiseCloneMethod),
+                asmType);
+        }
+
+        // Build up result
+        var lambda = Expression.Lambda<CloneDelegate<TAsm>>(result, param);
+
+        // Compile
+        return lambda.Compile();
+    }
+
+    public static GetBuilderDelegate<TAsm, TBuilder> GenerateGetBuilder<TAsm, TBuilder>()
+        where TAsm : IAsyncStateMachine
+    {
+        var asmType = typeof(TAsm);
+
         // Extract the field info
         var builderField = asmType.GetField("<>t__builder")!;
 
         if (builderField.FieldType != typeof(TBuilder))
         {
-            throw new InvalidOperationException("When getting the builder, the exact builder type has to be known");
+            throw new InvalidOperationException("Builder field does not match the expected builder type");
         }
 
         // Since the Expression trees API can't return field refs, we are building the IL ourselves
@@ -288,82 +233,43 @@ internal static class AsmCodegen<TAsm, TBuilder>
         emitter.Emit(OpCodes.Ldflda, builderField);
         emitter.Emit(OpCodes.Ret);
 
-        return method.CreateDelegate<AsmGetBuilderDelegate>();
+        return method.CreateDelegate<GetBuilderDelegate<TAsm, TBuilder>>();
     }
 
-    /// <summary>
-    /// Generates an <see cref="AsmSetBuilderDelegate"/>.
-    /// </summary>
-    /// <param name="asmType">The exact async state machine type to generate the setter for.</param>
-    /// <returns>The generated delegate.</returns>
-    public static AsmSetBuilderDelegate GenerateSetBuilder(Type asmType)
+    public static GetQueryDatabaseDelegate<TAsm> GenerateGetQueryDatabase<TAsm>()
+        where TAsm : IAsyncStateMachine
     {
+        var asmType = typeof(TAsm);
+
         // Extract the field info
-        var builderField = asmType.GetField("<>t__builder")!;
+        var queryDbField = asmType
+            .GetFields()
+            .FirstOrDefault(field => field.FieldType == typeof(QueryDatabase));
 
-        if (builderField.FieldType != typeof(TBuilder))
+        if (queryDbField is null)
         {
-            throw new InvalidOperationException("When setting the builder, the exact builder type has to be known");
+            throw new InvalidOperationException("There is no query database taken as a parameter");
         }
 
-        var asmParam = Expression.Parameter(typeof(TAsm).MakeByRefType());
-        var builderParam = Expression.Parameter(typeof(TBuilder));
+        var param = Expression.Parameter(asmType.MakeByRefType());
 
-        // Body
-        var body = Expression.Assign(
-            // asm.builder =
-            Expression.Field(
-                GenerateCastAsmToExactType(asmParam, asmType),
-                builderField),
-            // builder
-            builderParam);
+        var body = Expression.Field(param, queryDbField);
 
         // Build up result
-        var lambda = Expression.Lambda<AsmSetBuilderDelegate>(body, new[] { asmParam, builderParam });
+        var lambda = Expression.Lambda<GetQueryDatabaseDelegate<TAsm>>(body, param);
 
         // Compile
         return lambda.Compile();
     }
 
-    /// <summary>
-    /// Generates an <see cref="AsmCloneDelegate"/>.
-    /// </summary>
-    /// <param name="asmType">The exact async state machine type to generate cloning for.</param>
-    /// <returns>The generated delegate.</returns>
-    public static AsmCloneDelegate GenerateClone(Type asmType)
-    {
-        var param = Expression.Parameter(typeof(TAsm));
-        var paramCasted = GenerateCastAsmToExactType(param, asmType);
-
-        var result = paramCasted;
-        if (!asmType.IsValueType)
-        {
-            // For ref types we need to invoke memberwise clone
-            result = Expression.Convert(
-                Expression.Call(result, memberwiseCloneMethod),
-                asmType);
-        }
-
-        // Build up result
-        var lambda = Expression.Lambda<AsmCloneDelegate>(result, param);
-
-        // Compile
-        return lambda.Compile();
-    }
-
-    private static Expression GenerateCastAsmToExactType(Expression asm, Type asmType)
-    {
-        // No need for casting
-        if (typeof(TAsm) == asmType) return asm;
+    private static Expression GenerateCastAsmToExactType(Expression asm, Type asmType) => asmType.IsValueType
         // We need to cast, Unsafe.As for ref types
-        return asmType.IsValueType
-            ? Expression.Convert(asm, asmType)
-            : Expression.Call(
-                  type: typeof(Unsafe),
-                  methodName: nameof(Unsafe.As),
-                  typeArguments: new[] { asmType },
-                  arguments: asm);
-    }
+        ? Expression.Convert(asm, asmType)
+        : Expression.Call(
+              type: typeof(Unsafe),
+              methodName: nameof(Unsafe.As),
+              typeArguments: new[] { asmType },
+              arguments: asm);
 
     private static IEnumerable<FieldInfo> GetNonSpecialFields(Type asmType) => asmType
         .GetFields()

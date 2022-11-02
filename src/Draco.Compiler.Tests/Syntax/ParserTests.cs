@@ -302,17 +302,34 @@ public sealed class ParserTests
     {
         void UnclosedString()
         {
-            this.T(TokenType.LineStringStart);
-            this.N<StringPart.Content>();
+            this.N<Stmt.Decl>();
             {
-                this.T(TokenType.StringContent, "Hello, World!;");
+                this.N<Decl.Variable>();
+                {
+                    this.T(TokenType.KeywordVal);
+                    this.T(TokenType.Identifier);
+                    this.N<ValueInitializer>();
+                    {
+                        this.T(TokenType.Assign);
+                        this.N<Expr.String>();
+                        {
+                            this.T(TokenType.LineStringStart);
+                            this.N<StringPart.Content>();
+                            {
+                                this.T(TokenType.StringContent, "Hello, World!;");
+                            }
+                            this.MissingT(TokenType.LineStringEnd);
+                        }
+                    }
+                    this.MissingT(TokenType.Semicolon);
+                }
             }
-            this.MissingT(TokenType.LineStringEnd);
+            this.T(TokenType.CurlyClose);
         }
 
         // There is semicolon at the end, because the string is put into declaration
-        this.StringTestsPlaceHolder("""
-            "Hello, World!
+        this.MainFunctionPlaceHolder("""
+            val x = "Hello, World!;
             """, UnclosedString);
     }
 
@@ -403,5 +420,136 @@ public sealed class ParserTests
             }
         }
         this.MainFunctionPlaceHolder("val x = 5", Declaration);
+    }
+
+    [Fact]
+    public void TestIfElseStatements()
+    {
+        void IfElse()
+        {
+            this.N<Expr.If>();
+            {
+                this.T(TokenType.KeywordIf);
+                this.T(TokenType.ParenOpen);
+                this.N<Expr.Relational>();
+                {
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger);
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.GreaterThan);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                }
+                this.T(TokenType.ParenClose);
+                this.N<Expr.UnitStmt>();
+                this.N<Stmt.Expr>();
+                this.N<Expr.Block>();
+                this.T(TokenType.CurlyOpen);
+                this.N<BlockContents>();
+                {
+                    this.N<Stmt.Decl>();
+                    {
+                        this.N<Decl.Variable>();
+                        {
+                            this.T(TokenType.KeywordVal);
+                            this.T(TokenType.Identifier);
+                            this.N<ValueInitializer>();
+                            {
+                                this.T(TokenType.Assign);
+                                this.N<Expr.Literal>();
+                                {
+                                    this.T(TokenType.LiteralInteger);
+                                }
+                            }
+                            this.T(TokenType.Semicolon);
+                        }
+                    }
+                }
+                this.T(TokenType.CurlyClose);
+                this.N<Expr.ElseClause>();
+                {
+                    this.T(TokenType.KeywordElse);
+                    this.N<Expr.UnitStmt>();
+                    this.N<Stmt.Expr>();
+                    this.N<Expr.Block>();
+                    this.T(TokenType.CurlyOpen);
+                    this.N<BlockContents>();
+                    {
+                        this.N<Stmt.Decl>();
+                        {
+                            this.N<Decl.Variable>();
+                            {
+                                this.T(TokenType.KeywordVal);
+                                this.T(TokenType.Identifier);
+                                this.N<ValueInitializer>();
+                                {
+                                    this.T(TokenType.Assign);
+                                    this.N<Expr.Literal>();
+                                    {
+                                        this.T(TokenType.LiteralCharacter);
+                                    }
+                                }
+                                this.T(TokenType.Semicolon);
+                            }
+                        }
+                    }
+                    this.T(TokenType.CurlyClose);
+                }
+            }
+        }
+        this.MainFunctionPlaceHolder("""
+            if(5 > 0){
+                val x = 5;
+            }
+            else{
+                val y = 'c';
+            }
+            """, IfElse);
+    }
+
+    [Fact]
+    public void TestElseStatementsMissingIf()
+    {
+        void OnlyElse()
+        {
+            this.N<Stmt.Unexpected>();
+            {
+                this.T(TokenType.KeywordElse);
+                this.N<Expr.Block>();
+                this.T(TokenType.CurlyOpen);
+                this.N<BlockContents>();
+                {
+                    this.N<Stmt.Decl>();
+                    {
+                        this.N<Decl.Variable>();
+                        {
+                            this.T(TokenType.KeywordVal);
+                            this.T(TokenType.Identifier);
+                            this.N<ValueInitializer>();
+                            {
+                                this.T(TokenType.Assign);
+                                this.N<Expr.Literal>();
+                                {
+                                    this.T(TokenType.LiteralInteger);
+                                }
+                            }
+                            this.T(TokenType.Semicolon);
+                        }
+                    }
+                }
+                this.T(TokenType.CurlyClose);
+            }
+        }
+        this.MainFunctionPlaceHolder("""
+            else{
+                val y = 8;
+            }
+            """, OnlyElse);
     }
 }

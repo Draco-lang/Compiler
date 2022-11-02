@@ -25,8 +25,6 @@ public struct QueryValueTaskMethodBuilder<T>
         ? new(this.result!, this.identity)
         : new(this.valueTaskBuilder.Task, this.identity);
 
-    private static int identityCounter = 0;
-
     private QueryIdentifier identity = QueryIdentifier.Invalid;
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
     private IAsyncStateMachine? stateMachine = null;

@@ -39,16 +39,16 @@ public sealed class ParserTests
 
     private void N<T>() => this.N<T>(_ => true);
 
-    private void T(TokenType type) => this.N<Token>(t => t.Type == type);
-    private void T(TokenType type, string value) => this.N<Token>(t => t.Type == type && t.ValueText == value);
+    private void T(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length == 0);
+    private void T(TokenType type, string value) => this.N<Token>(t => t.Type == type && t.ValueText == value && t.Diagnostics.Length == 0);
 
     private void MissingT(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length > 0);
 
-    private void StringTestsPlaceHolder(string inputString, Action predicate)
+    private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {
         this.ParseCompilationUnit($$"""
             func main(){
-                val x = {{inputString}};
+                {{inputString}}
             }
             """);
         this.N<CompilationUnit>();
@@ -68,29 +68,38 @@ public sealed class ParserTests
                         this.T(TokenType.CurlyOpen);
                         this.N<BlockContents>();
                         {
-                            this.N<Stmt.Decl>();
-                            {
-                                this.N<Decl.Variable>();
-                                {
-                                    this.T(TokenType.KeywordVal);
-                                    this.T(TokenType.Identifier);
-                                    this.N<ValueInitializer>();
-                                    {
-                                        this.T(TokenType.Assign);
-                                        this.N<Expr.String>();
-                                        {
-                                            predicate();
-                                        }
-                                    }
-                                    this.T(TokenType.Semicolon);
-                                    this.T(TokenType.CurlyClose);
-                                }
-                            }
+                            predicate();
                         }
                     }
                 }
             }
         }
+    }
+
+    private void StringTestsPlaceHolder(string inputString, Action predicate)
+    {
+        void StringPlaceholder()
+        {
+            this.N<Stmt.Decl>();
+            {
+                this.N<Decl.Variable>();
+                {
+                    this.T(TokenType.KeywordVal);
+                    this.T(TokenType.Identifier);
+                    this.N<ValueInitializer>();
+                    {
+                        this.T(TokenType.Assign);
+                        this.N<Expr.String>();
+                        {
+                            predicate();
+                        }
+                    }
+                    this.T(TokenType.Semicolon);
+                    this.T(TokenType.CurlyClose);
+                }
+            }
+        }
+        this.MainFunctionPlaceHolder($"val x = {inputString};", StringPlaceholder);
     }
 
     private void StringNewline()
@@ -220,7 +229,6 @@ public sealed class ParserTests
             {
                 this.T(TokenType.StringContent, "Hello, ");
             }
-            
             this.N<StringPart.Interpolation>();
             {
                 this.T(TokenType.InterpolationStart);
@@ -235,7 +243,6 @@ public sealed class ParserTests
                 }
                 this.T(TokenType.InterpolationEnd);
             }
-            
             this.N<StringPart.Content>();
             {
                 this.T(TokenType.StringContent, "!");
@@ -288,5 +295,113 @@ public sealed class ParserTests
             World!
             {quotes}
             """, StringContinuations);
+    }
+
+    [Fact]
+    public void TestLineStringUnclosed()
+    {
+        void UnclosedString()
+        {
+            this.T(TokenType.LineStringStart);
+            this.N<StringPart.Content>();
+            {
+                this.T(TokenType.StringContent, "Hello, World!;");
+            }
+            this.MissingT(TokenType.LineStringEnd);
+        }
+
+        // There is semicolon at the end, because the string is put into declaration
+        this.StringTestsPlaceHolder("""
+            "Hello, World!
+            """, UnclosedString);
+    }
+
+    [Fact]
+    public void TestMultilineStringUnclosedInterpolation()
+    {
+        void UnclosedString()
+        {
+            this.T(TokenType.MultiLineStringStart);
+            this.N<StringPart.Content>();
+            {
+                this.T(TokenType.StringContent, "Hello, ");
+            }
+            this.StringNewline();
+            this.N<StringPart.Interpolation>();
+            {
+                this.T(TokenType.InterpolationStart);
+                this.N<Expr.String>();
+                {
+                    this.T(TokenType.LineStringStart);
+                    this.N<StringPart.Content>();
+                    {
+                        this.T(TokenType.StringContent, "World!");
+                    }
+                    this.T(TokenType.LineStringEnd);
+                }
+            }
+            //this.StringNewline();
+            this.MissingT(TokenType.InterpolationEnd);
+            this.T(TokenType.MultiLineStringEnd);
+        }
+        var quotes = "\"\"\"";
+        this.StringTestsPlaceHolder($$"""
+            {{quotes}}
+            Hello, 
+            \{"World!"
+            {{quotes}}
+            """, UnclosedString);
+    }
+
+    [Fact]
+    public void TestDeclaration()
+    {
+        void Declaration()
+        {
+            this.N<Stmt.Decl>();
+            {
+                this.N<Decl.Variable>();
+                {
+                    this.T(TokenType.KeywordVal);
+                    this.T(TokenType.Identifier);
+                    this.N<ValueInitializer>();
+                    {
+                        this.T(TokenType.Assign);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                    this.T(TokenType.Semicolon);
+                }
+            }
+        }
+        this.MainFunctionPlaceHolder("val x = 5;", Declaration);
+    }
+
+    [Fact]
+    public void TestDeclarationMissingSemicolon()
+    {
+        void Declaration()
+        {
+            this.N<Stmt.Decl>();
+            {
+                this.N<Decl.Variable>();
+                {
+                    this.T(TokenType.KeywordVal);
+                    this.T(TokenType.Identifier);
+                    this.N<ValueInitializer>();
+                    {
+                        this.T(TokenType.Assign);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger);
+                        }
+                    }
+                    this.MissingT(TokenType.Semicolon);
+                }
+            }
+        }
+        this.MainFunctionPlaceHolder("val x = 5", Declaration);
     }
 }

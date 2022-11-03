@@ -13,15 +13,36 @@ using System.Threading.Tasks;
 namespace Draco.Query.Tasks;
 
 /// <summary>
+/// A collection of delegates for interacting with strongly typed async state machines.
+/// </summary>
+/// <typeparam name="TAsm">The exact async state machine type.</typeparam>
+/// <typeparam name="TBuilder">The builder type.</typeparam>
+internal readonly struct AsmInterface<TAsm, TBuilder>
+    where TAsm : IAsyncStateMachine
+{
+    public readonly AsmCodegen.CloneDelegate<TAsm> Clone;
+    public readonly AsmCodegen.GetBuilderDelegate<TAsm, TBuilder> GetBuilder;
+    public readonly AsmCodegen.GetQueryDatabaseDelegate<TAsm> GetQueryDatabase;
+
+    public AsmInterface(
+        AsmCodegen.CloneDelegate<TAsm> clone,
+        AsmCodegen.GetBuilderDelegate<TAsm, TBuilder> getBuilder,
+        AsmCodegen.GetQueryDatabaseDelegate<TAsm> getQueryDatabase)
+    {
+        this.Clone = clone;
+        this.GetBuilder = getBuilder;
+        this.GetQueryDatabase = getQueryDatabase;
+    }
+}
+
+/// <summary>
 /// Utilities for async state machines.
 /// </summary>
 internal static class AsmUtils
 {
     private static readonly ConcurrentDictionary<Type, AsmCodegen.EqualsDelegate> equalsInstances = new();
     private static readonly ConcurrentDictionary<Type, AsmCodegen.GetHashCodeDelegate> getHashCodeInstances = new();
-    private static readonly ConcurrentDictionary<Type, Delegate> cloneInstances = new();
-    private static readonly ConcurrentDictionary<Type, Delegate> getBuilderInstances = new();
-    private static readonly ConcurrentDictionary<Type, Delegate> getQueryDatabaseInstances = new();
+    private static readonly ConcurrentDictionary<(Type Asm, Type Builder), object> interfaceInstances = new();
 
     public static bool Equals(IAsyncStateMachine? x, IAsyncStateMachine? y)
     {
@@ -41,31 +62,21 @@ internal static class AsmUtils
         return hashCode(obj);
     }
 
-    public static TAsm Clone<TAsm>(ref TAsm obj)
+    public static AsmInterface<TAsm, TBuilder> GetInterface<TAsm, TBuilder>()
         where TAsm : IAsyncStateMachine
     {
-        var type = obj.GetType();
-        var cloneDelegate = cloneInstances.GetOrAdd(type, AsmCodegen.GenerateClone<TAsm>);
-        var clone = Unsafe.As<AsmCodegen.CloneDelegate<TAsm>>(cloneDelegate);
-        return clone(ref obj);
-    }
-
-    public static ref TBuilder GetBuilder<TAsm, TBuilder>(ref TAsm obj)
-        where TAsm : IAsyncStateMachine
-    {
-        var type = obj.GetType();
-        var getBuilderDelegate = getBuilderInstances.GetOrAdd(type, AsmCodegen.GenerateGetBuilder<TAsm, TBuilder>);
-        var getBuilder = Unsafe.As<AsmCodegen.GetBuilderDelegate<TAsm, TBuilder>>(getBuilderDelegate);
-        return ref getBuilder(ref obj);
-    }
-
-    public static QueryDatabase GetQueryDatabase<TAsm>(ref TAsm obj)
-        where TAsm : IAsyncStateMachine
-    {
-        var type = obj.GetType();
-        var getQueryDatabaseDelegate = getQueryDatabaseInstances.GetOrAdd(type, AsmCodegen.GenerateGetQueryDatabase<TAsm>);
-        var getQueryDatabase = Unsafe.As<AsmCodegen.GetQueryDatabaseDelegate<TAsm>>(getQueryDatabaseDelegate);
-        return getQueryDatabase(ref obj);
+        var key = (typeof(TAsm), typeof(TBuilder));
+        var interfaceObj = interfaceInstances.GetOrAdd(key, () =>
+        {
+            var clone = AsmCodegen.GenerateClone<TAsm>();
+            var getBuilder = AsmCodegen.GenerateGetBuilder<TAsm, TBuilder>();
+            var getQueryDatabase = AsmCodegen.GenerateGetQueryDatabase<TAsm>();
+            return new AsmInterface<TAsm, TBuilder>(
+                clone: clone,
+                getBuilder: getBuilder,
+                getQueryDatabase: getQueryDatabase);
+        });
+        return (AsmInterface<TAsm, TBuilder>)interfaceObj;
     }
 }
 

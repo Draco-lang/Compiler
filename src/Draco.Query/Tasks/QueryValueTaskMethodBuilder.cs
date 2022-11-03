@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -16,19 +17,18 @@ namespace Draco.Query.Tasks;
 [StructLayout(LayoutKind.Auto)]
 public struct QueryValueTaskMethodBuilder<T>
 {
-    private static readonly ConcurrentDictionary<IAsyncStateMachine, QueryIdentifier> identityCache = new(AsmComparer.Instance);
     private static readonly ConcurrentDictionary<QueryIdentifier, Func<QueryValueTask<T>>> startCloneCache = new();
 
     public static QueryValueTaskMethodBuilder<T> Create() => new();
 
-    public QueryValueTask<T> Task => this.stateMachine is null
-        ? new(this.result!, this.identity)
-        : new(this.valueTaskBuilder.Task, this.identity);
+    public QueryValueTask<T> Task => this.hasStateMachine
+        ? new(this.valueTaskBuilder.Task, this.identity)
+        : new(this.result!, this.identity);
 
     private QueryIdentifier identity = QueryIdentifier.Invalid;
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
-    private IAsyncStateMachine? stateMachine = null;
-    private QueryDatabase? queryDb;
+    private bool hasStateMachine = false;
+    private QueryDatabase? queryDb = null;
     private bool hasResult = false;
     private T? result = default;
 
@@ -46,16 +46,17 @@ public struct QueryValueTaskMethodBuilder<T>
     public void Start<TStateMachine>(ref TStateMachine stateMachine)
         where TStateMachine : IAsyncStateMachine
     {
-        var asmInterface = AsmUtils.GetInterface<TStateMachine, QueryValueTaskMethodBuilder<T>>();
+        var asmInterface = AsmCache<TStateMachine, QueryValueTaskMethodBuilder<T>>.Interface;
+        var identities = AsmCache<TStateMachine, QueryValueTaskMethodBuilder<T>>.Identities;
 
         this.queryDb = asmInterface.GetQueryDatabase(ref stateMachine);
 
         // We will compare the current state machine to the one stored
         // The state machine contains the full state of the async method
-        // In this codepath the stateMachine did not ran so the parameters captured,
+        // In this codepath the stateMachine did not run so the parameters captured,
         // and the intermediates values have all a default value
 
-        if (identityCache.TryGetValue(stateMachine, out var oldIdentity))
+        if (identities.TryGetValue(stateMachine, out var oldIdentity))
         {
             // In this codepath, we found a cached identity, meaning this query was ran with the
             // exact parameters before
@@ -71,7 +72,7 @@ public struct QueryValueTaskMethodBuilder<T>
             }
             // No, the query is not up to date, we need to re-run it
             var clonedMachine = asmInterface.Clone(ref stateMachine);
-            this.stateMachine = clonedMachine;
+            this.hasStateMachine = true;
         }
         else
         {
@@ -83,16 +84,16 @@ public struct QueryValueTaskMethodBuilder<T>
             // If not, the function execution would change the state and the identity cache would
             // get into an inconsistent state
             var clonedMachine = asmInterface.Clone(ref stateMachine);
-            this.stateMachine = clonedMachine;
+            this.hasStateMachine = true;
 
             // Update caches to include new entry
-            identityCache[this.stateMachine] = this.identity;
+            identities[clonedMachine] = this.identity;
             startCloneCache[this.identity] = () =>
             {
-                var clone2 = asmInterface.Clone(ref clonedMachine);
-                asmInterface.GetBuilder(ref clone2) = Create();
-                asmInterface.GetBuilder(ref clone2).Start(ref clone2);
-                return asmInterface.GetBuilder(ref clone2).Task;
+                var newMachine = asmInterface.Clone(ref clonedMachine);
+                asmInterface.GetBuilder(ref newMachine) = Create();
+                asmInterface.GetBuilder(ref newMachine).Start(ref newMachine);
+                return asmInterface.GetBuilder(ref newMachine).Task;
             };
         }
 

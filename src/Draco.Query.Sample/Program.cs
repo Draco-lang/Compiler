@@ -9,35 +9,37 @@ internal class Program
     private static QueryIdentifier xId;
     private static QueryIdentifier yId;
 
-    private static async QueryValueTask<int> ParseVariable(string n)
+    private static async QueryValueTask<int> ParseVariable(QueryDatabase db, string n)
     {
-        var nStr = await QueryDatabase.GetInput<string>(n == "x" ? xId : yId);
+        var nStr = await db.GetInput<string>(n == "x" ? xId : yId);
         Console.WriteLine($"ParseVariable({n} = '{nStr}')");
         return int.Parse(nStr);
     }
 
-    private static async QueryValueTask<int> AddVariables(string v1, string v2)
+    private static async QueryValueTask<int> AddVariables(QueryDatabase db, string v1, string v2)
     {
         Console.WriteLine($"AddVariables({v1}, {v2})");
-        var n1 = await ParseVariable(v1);
-        var n2 = await ParseVariable(v2);
+        var n1 = await ParseVariable(db, v1);
+        var n2 = await ParseVariable(db, v2);
         return n1 + n2;
     }
 
     internal static async Task Main(string[] args)
     {
-        xId = QueryDatabase.CreateInput<string>();
-        yId = QueryDatabase.CreateInput<string>();
+        var db = new QueryDatabase();
 
-        QueryDatabase.SetInput(xId, "1");
-        QueryDatabase.SetInput(yId, "2");
+        xId = db.CreateInput<string>();
+        yId = db.CreateInput<string>();
 
-        var res1 = await AddVariables("x", "y");
+        db.SetInput(xId, "1");
+        db.SetInput(yId, "2");
+
+        var res1 = await AddVariables(db, "x", "y");
         Console.WriteLine(res1);
 
-        QueryDatabase.SetInput(yId, "3");
+        db.SetInput(yId, "3");
 
-        var res2 = await AddVariables("x", "y");
+        var res2 = await AddVariables(db, "x", "y");
         Console.WriteLine(res2);
     }
 }

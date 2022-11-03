@@ -28,6 +28,7 @@ public struct QueryValueTaskMethodBuilder<T>
     private QueryIdentifier identity = QueryIdentifier.Invalid;
     private AsyncValueTaskMethodBuilder<T> valueTaskBuilder;
     private IAsyncStateMachine? stateMachine = null;
+    private QueryDatabase? queryDb;
     private bool hasResult = false;
     private T? result = default;
 
@@ -36,24 +37,19 @@ public struct QueryValueTaskMethodBuilder<T>
         this.valueTaskBuilder = AsyncValueTaskMethodBuilder<T>.Create(); // this is in fact "default"
     }
 
-    private static TStateMachine CloneAsm<TStateMachine>(TStateMachine stateMachine)
-        where TStateMachine : IAsyncStateMachine =>
-        AsmUtils<TStateMachine, QueryValueTaskMethodBuilder<T>>.Clone(stateMachine);
-
-    private static ref QueryValueTaskMethodBuilder<T> GetBuilder<TStateMachine>(ref TStateMachine stateMachine)
-        where TStateMachine : IAsyncStateMachine =>
-        ref AsmUtils<TStateMachine, QueryValueTaskMethodBuilder<T>>.GetBuilder(ref stateMachine);
-
     public static QueryValueTask<T> RunQueryByIdentifier(QueryIdentifier identifier)
     {
-        // NOTE: This should never happen
-        if (!startCloneCache.TryGetValue(identifier, out var startClone)) throw new InvalidOperationException();
+        var startClone = startCloneCache[identifier];
         return startClone();
     }
 
     public void Start<TStateMachine>(ref TStateMachine stateMachine)
         where TStateMachine : IAsyncStateMachine
     {
+        var asmInterface = AsmUtils.GetInterface<TStateMachine, QueryValueTaskMethodBuilder<T>>();
+
+        this.queryDb = asmInterface.GetQueryDatabase(ref stateMachine);
+
         // We will compare the current state machine to the one stored
         // The state machine contains the full state of the async method
         // In this codepath the stateMachine did not ran so the parameters captured,
@@ -65,7 +61,7 @@ public struct QueryValueTaskMethodBuilder<T>
             // exact parameters before
             // We rewrite our identity to match
             this.identity = oldIdentity;
-            if (QueryDatabase.TryGetUpToDateQueryResult<T>(this.identity, out var oldResult))
+            if (this.queryDb.TryGetUpToDateQueryResult<T>(this.identity, out var oldResult))
             {
                 // Yes, we found a cached result that is up to date
                 // Short-circuit the called query
@@ -74,29 +70,29 @@ public struct QueryValueTaskMethodBuilder<T>
                 return;
             }
             // No, the query is not up to date, we need to re-run it
-            var clonedMachine = CloneAsm(stateMachine);
+            var clonedMachine = asmInterface.Clone(ref stateMachine);
             this.stateMachine = clonedMachine;
         }
         else
         {
             // There was no cached identity, we create a new one and register it in the system
             this.identity = QueryIdentifier.New;
-            QueryDatabase.OnNewQuery<T>(this.identity);
+            this.queryDb.OnNewQuery<T>(this.identity);
 
             // In debug, the state machine is a class, so must be cloned
             // If not, the function execution would change the state and the identity cache would
             // get into an inconsistent state
-            var clonedMachine = CloneAsm(stateMachine);
+            var clonedMachine = asmInterface.Clone(ref stateMachine);
             this.stateMachine = clonedMachine;
 
             // Update caches to include new entry
             identityCache[this.stateMachine] = this.identity;
             startCloneCache[this.identity] = () =>
             {
-                var clone2 = CloneAsm(clonedMachine);
-                GetBuilder(ref clone2) = Create();
-                GetBuilder(ref clone2).Start(ref clone2);
-                return GetBuilder(ref clone2).Task;
+                var clone2 = asmInterface.Clone(ref clonedMachine);
+                asmInterface.GetBuilder(ref clone2) = Create();
+                asmInterface.GetBuilder(ref clone2).Start(ref clone2);
+                return asmInterface.GetBuilder(ref clone2).Task;
             };
         }
 
@@ -112,7 +108,8 @@ public struct QueryValueTaskMethodBuilder<T>
     public void SetResult(T result)
     {
         // We notify the system about the result
-        QueryDatabase.OnQueryResult(this.identity, result);
+        Debug.Assert(this.queryDb is not null);
+        this.queryDb.OnQueryResult(this.identity, result);
         this.valueTaskBuilder.SetResult(result);
     }
 
@@ -122,7 +119,8 @@ public struct QueryValueTaskMethodBuilder<T>
         if (awaiter is IIdentifiableQueryAwaiter query)
         {
             // Register dependency in the system
-            QueryDatabase.OnQueryDependency(dependent: this.identity, dependency: query.Identity);
+            Debug.Assert(this.queryDb is not null);
+            this.queryDb.OnQueryDependency(dependent: this.identity, dependency: query.Identity);
         }
     }
 

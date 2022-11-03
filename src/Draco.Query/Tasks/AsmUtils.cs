@@ -66,7 +66,7 @@ internal static class AsmUtils
         where TAsm : IAsyncStateMachine
     {
         var key = (typeof(TAsm), typeof(TBuilder));
-        var interfaceObj = interfaceInstances.GetOrAdd(key, () =>
+        var interfaceObj = interfaceInstances.GetOrAdd(key, (_) =>
         {
             var clone = AsmCodegen.GenerateClone<TAsm>();
             var getBuilder = AsmCodegen.GenerateGetBuilder<TAsm, TBuilder>();

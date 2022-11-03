@@ -16,78 +16,17 @@ namespace Draco.Query;
 // TODO: Thread-safety
 
 /// <summary>
-/// The type that manages the memoization and garbage collection of query results.
+/// The central database that manages memoization, caches results and does garbage collection.
+/// This is also the main configuration point of the system.
 /// </summary>
 public sealed class QueryDatabase
 {
-    /// <summary>
-    /// The interface of computed query results.
-    /// </summary>
-    private interface IResult
-    {
-        /// <summary>
-        /// The revision where the result has last changed.
-        /// </summary>
-        public Revision ChangedAt { get; }
-
-        /// <summary>
-        /// The revision where the result has last been verified to be reusable.
-        /// </summary>
-        public Revision VerifiedAt { get; }
-
-        /// <summary>
-        /// The dependencies of this result.
-        /// </summary>
-        public ICollection<IResult> Dependencies { get; }
-
-        /// <summary>
-        /// Refreshes this result.
-        /// </summary>
-        public Task Refresh();
-    }
-
-    /// <summary>
-    /// Information about an input result.
-    /// </summary>
-    /// <typeparam name="T">The type of the input value.</typeparam>
-    private sealed class InputResult<T> : IResult
-    {
-        public Revision ChangedAt { get; set; } = Revision.Invalid;
-        public Revision VerifiedAt => Revision.MaxValue;
-        public ICollection<IResult> Dependencies => Array.Empty<IResult>();
-        public T Value { get; set; } = default!;
-
-        public Task Refresh() => Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Information about a computed result.
-    /// </summary>
-    /// <typeparam name="T">The type of the computed value.</typeparam>
-    private sealed class ComputedResult<T> : IResult
-    {
-        public Revision ChangedAt { get; set; } = Revision.Invalid;
-        public Revision VerifiedAt { get; set; } = Revision.Invalid;
-        public ICollection<IResult> Dependencies { get; } = new List<IResult>();
-        public T Value { get; set; } = default!;
-
-        private readonly QueryIdentifier identifier;
-
-        public ComputedResult(QueryIdentifier identifier)
-        {
-            this.identifier = identifier;
-        }
-
-        public async Task Refresh() =>
-            await QueryValueTaskMethodBuilder<T>.RunQueryByIdentifier(this.identifier);
-    }
-
     /// <summary>
     /// The current revision the system is at.
     /// </summary>
     public Revision CurrentRevision { get; private set; } = Revision.New;
 
-    private readonly ConcurrentDictionary<QueryIdentifier, IResult> queries = new();
+    private readonly ConcurrentDictionary<QueryIdentifier, IQueryResult> queries = new();
 
     /// <summary>
     /// Creates an input for the system.
@@ -97,7 +36,7 @@ public sealed class QueryDatabase
     public QueryIdentifier CreateInput<TResult>()
     {
         var identifier = QueryIdentifier.New;
-        this.queries.TryAdd(identifier, new InputResult<TResult>());
+        this.queries.TryAdd(identifier, new InputQueryResult<TResult>());
         return identifier;
     }
 
@@ -109,7 +48,7 @@ public sealed class QueryDatabase
     /// <param name="value">The value to set the input to.</param>
     public void SetInput<TResult>(QueryIdentifier identifier, TResult value)
     {
-        var cachedResult = (InputResult<TResult>)this.queries[identifier];
+        var cachedResult = (InputQueryResult<TResult>)this.queries[identifier];
         this.CurrentRevision = Revision.New;
         cachedResult.Value = value;
         cachedResult.ChangedAt = this.CurrentRevision;
@@ -123,7 +62,7 @@ public sealed class QueryDatabase
     /// <returns>The retrieved input as a task.</returns>
     public QueryValueTask<TResult> GetInput<TResult>(QueryIdentifier identifier)
     {
-        var cachedResult = (InputResult<TResult>)this.queries[identifier];
+        var cachedResult = (InputQueryResult<TResult>)this.queries[identifier];
         return new(cachedResult.Value, identifier);
     }
 
@@ -134,7 +73,7 @@ public sealed class QueryDatabase
     /// <param name="identifier">The identifier of the query.</param>
     internal void OnNewQuery<TResult>(QueryIdentifier identifier) =>
         // Add an empty entry
-        this.queries.TryAdd(identifier, new ComputedResult<TResult>(identifier));
+        this.queries.TryAdd(identifier, new ComputedQueryResult<TResult>(identifier));
 
     /// <summary>
     /// Called, when a query has finished its computation.
@@ -151,7 +90,7 @@ public sealed class QueryDatabase
             addValueFactory: _ => throw new InvalidOperationException(),
             updateValueFactory: (_, cached) =>
             {
-                var cachedResult = (ComputedResult<TResult>)cached;
+                var cachedResult = (ComputedQueryResult<TResult>)cached;
                 var changed = !Equals(result, cachedResult.Value);
                 if (changed) cachedResult.ChangedAt = this.CurrentRevision;
                 cachedResult.VerifiedAt = this.CurrentRevision;
@@ -184,7 +123,7 @@ public sealed class QueryDatabase
         QueryIdentifier identifier,
         [MaybeNullWhen(false)] out TResult result)
     {
-        var cachedResult = (ComputedResult<TResult>)this.queries[identifier];
+        var cachedResult = (ComputedQueryResult<TResult>)this.queries[identifier];
         // The value has never been memoized yet
         if (cachedResult.ChangedAt == Revision.Invalid)
         {
@@ -202,7 +141,6 @@ public sealed class QueryDatabase
         // Check if the dependencies are up to date
         // TODO: This blocks synchronously but I have no idea if we can even make this method async
         Task.WaitAll(cachedResult.Dependencies.Select(dep => dep.Refresh()).ToArray());
-
         // Now check wether dependencies have been updated since this one
         if (cachedResult.Dependencies.All(dep => dep.ChangedAt <= cachedResult.VerifiedAt))
         {
@@ -212,7 +150,6 @@ public sealed class QueryDatabase
             result = cachedResult.Value!;
             return true;
         }
-
         // Some values must have gone outdated and got recomputed, we also need to recompute, force recomputation
         result = default;
         return false;

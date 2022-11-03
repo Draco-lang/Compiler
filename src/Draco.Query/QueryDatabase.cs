@@ -18,7 +18,7 @@ namespace Draco.Query;
 /// <summary>
 /// The type that manages the memoization and garbage collection of query results.
 /// </summary>
-public static class QueryDatabase
+public sealed class QueryDatabase
 {
     // NOTE: We might be able to get rid of this is we lock results as a whole
     private sealed class EmptyConcurrentBag<T> : IProducerConsumerCollection<T>

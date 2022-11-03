@@ -15,44 +15,57 @@ namespace Draco.Query.Tasks;
 /// <summary>
 /// Utilities for async state machines.
 /// </summary>
-internal static class AsmUtils<TAsm, TBuilder>
-    where TAsm : IAsyncStateMachine
+internal static class AsmUtils
 {
-    private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmEqualsDelegate> equalsInstances = new();
-    private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmGetHashCodeDelegate> getHashCodeInstances = new();
-    private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmGetBuilderDelegate> getBuilderInstances = new();
-    private static readonly ConcurrentDictionary<Type, AsmCodegen<TAsm, TBuilder>.AsmCloneDelegate> cloneInstances = new();
+    private static readonly ConcurrentDictionary<Type, AsmCodegen.EqualsDelegate> equalsInstances = new();
+    private static readonly ConcurrentDictionary<Type, AsmCodegen.GetHashCodeDelegate> getHashCodeInstances = new();
+    private static readonly ConcurrentDictionary<Type, Delegate> cloneInstances = new();
+    private static readonly ConcurrentDictionary<Type, Delegate> getBuilderInstances = new();
+    private static readonly ConcurrentDictionary<Type, Delegate> getQueryDatabaseInstances = new();
 
-    public static bool Equals(TAsm? x, TAsm? y)
+    public static bool Equals(IAsyncStateMachine? x, IAsyncStateMachine? y)
     {
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
         var t1 = x.GetType();
         var t2 = y.GetType();
         if (t1 != t2) return false;
-        var equals = equalsInstances.GetOrAdd(t1, AsmCodegen<TAsm, TBuilder>.GenerateEquals);
+        var equals = equalsInstances.GetOrAdd(t1, AsmCodegen.GenerateEquals);
         return equals(x, y);
     }
 
-    public static int GetHashCode([DisallowNull] TAsm obj)
+    public static int GetHashCode([DisallowNull] IAsyncStateMachine obj)
     {
         var type = obj.GetType();
-        var hashCode = getHashCodeInstances.GetOrAdd(type, AsmCodegen<TAsm, TBuilder>.GenerateGetHashCode);
+        var hashCode = getHashCodeInstances.GetOrAdd(type, AsmCodegen.GenerateGetHashCode);
         return hashCode(obj);
     }
 
-    public static ref TBuilder GetBuilder(ref TAsm obj)
+    public static TAsm Clone<TAsm>(ref TAsm obj)
+        where TAsm : IAsyncStateMachine
     {
         var type = obj.GetType();
-        var getBuilder = getBuilderInstances.GetOrAdd(type, AsmCodegen<TAsm, TBuilder>.GenerateGetBuilder);
+        var cloneDelegate = cloneInstances.GetOrAdd(type, AsmCodegen.GenerateClone<TAsm>);
+        var clone = Unsafe.As<AsmCodegen.CloneDelegate<TAsm>>(cloneDelegate);
+        return clone(ref obj);
+    }
+
+    public static ref TBuilder GetBuilder<TAsm, TBuilder>(ref TAsm obj)
+        where TAsm : IAsyncStateMachine
+    {
+        var type = obj.GetType();
+        var getBuilderDelegate = getBuilderInstances.GetOrAdd(type, AsmCodegen.GenerateGetBuilder<TAsm, TBuilder>);
+        var getBuilder = Unsafe.As<AsmCodegen.GetBuilderDelegate<TAsm, TBuilder>>(getBuilderDelegate);
         return ref getBuilder(ref obj);
     }
 
-    public static TAsm Clone(TAsm obj)
+    public static QueryDatabase GetQueryDatabase<TAsm>(ref TAsm obj)
+        where TAsm : IAsyncStateMachine
     {
         var type = obj.GetType();
-        var clone = cloneInstances.GetOrAdd(type, AsmCodegen<TAsm, TBuilder>.GenerateClone);
-        return clone(obj);
+        var getQueryDatabaseDelegate = getQueryDatabaseInstances.GetOrAdd(type, AsmCodegen.GenerateGetQueryDatabase<TAsm>);
+        var getQueryDatabase = Unsafe.As<AsmCodegen.GetQueryDatabaseDelegate<TAsm>>(getQueryDatabaseDelegate);
+        return getQueryDatabase(ref obj);
     }
 }
 
@@ -71,10 +84,10 @@ internal sealed class AsmComparer : IEqualityComparer<IAsyncStateMachine>
     }
 
     public bool Equals(IAsyncStateMachine? x, IAsyncStateMachine? y) =>
-        AsmUtils<IAsyncStateMachine, int>.Equals(x, y);
+        AsmUtils.Equals(x, y);
 
     public int GetHashCode([DisallowNull] IAsyncStateMachine obj) =>
-        AsmUtils<IAsyncStateMachine, int>.GetHashCode(obj);
+        AsmUtils.GetHashCode(obj);
 }
 
 /// <summary>

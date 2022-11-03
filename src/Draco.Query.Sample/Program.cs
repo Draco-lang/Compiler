@@ -6,12 +6,9 @@ namespace Draco.Query.Sample;
 
 internal class Program
 {
-    private static QueryIdentifier xId;
-    private static QueryIdentifier yId;
-
     private static async QueryValueTask<int> ParseVariable(QueryDatabase db, string n)
     {
-        var nStr = await db.GetInput<string>(n == "x" ? xId : yId);
+        var nStr = await db.GetInput<string>(n);
         Console.WriteLine($"ParseVariable({n} = '{nStr}')");
         return int.Parse(nStr);
     }
@@ -28,16 +25,13 @@ internal class Program
     {
         var db = new QueryDatabase();
 
-        xId = db.CreateInput<string>();
-        yId = db.CreateInput<string>();
-
-        db.SetInput(xId, "1");
-        db.SetInput(yId, "2");
+        db.SetInput("x", "1");
+        db.SetInput("y", "2");
 
         var res1 = await AddVariables(db, "x", "y");
         Console.WriteLine(res1);
 
-        db.SetInput(yId, "3");
+        db.SetInput("y", "2 ");
 
         var res2 = await AddVariables(db, "x", "y");
         Console.WriteLine(res2);

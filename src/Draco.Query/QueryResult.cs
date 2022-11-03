@@ -13,6 +13,11 @@ namespace Draco.Query;
 internal interface IQueryResult
 {
     /// <summary>
+    /// The identifier of this result.
+    /// </summary>
+    public QueryIdentifier Identifier { get; }
+
+    /// <summary>
     /// The revision where the result has last changed.
     /// </summary>
     public Revision ChangedAt { get; }
@@ -39,10 +44,16 @@ internal interface IQueryResult
 /// <typeparam name="T">The type of the input value.</typeparam>
 internal sealed class InputQueryResult<T> : IQueryResult
 {
+    public QueryIdentifier Identifier { get; }
     public Revision ChangedAt { get; set; } = Revision.Invalid;
     public Revision VerifiedAt => Revision.MaxValue;
     public ICollection<IQueryResult> Dependencies => Array.Empty<IQueryResult>();
     public T Value { get; set; } = default!;
+
+    public InputQueryResult(QueryIdentifier identifier)
+    {
+        this.Identifier = identifier;
+    }
 
     public Task Refresh() => Task.CompletedTask;
 }
@@ -53,18 +64,17 @@ internal sealed class InputQueryResult<T> : IQueryResult
 /// <typeparam name="T">The type of the computed value.</typeparam>
 internal sealed class ComputedQueryResult<T> : IQueryResult
 {
+    public QueryIdentifier Identifier { get; }
     public Revision ChangedAt { get; set; } = Revision.Invalid;
     public Revision VerifiedAt { get; set; } = Revision.Invalid;
     public ICollection<IQueryResult> Dependencies { get; } = new HashSet<IQueryResult>();
     public T Value { get; set; } = default!;
 
-    private readonly QueryIdentifier identifier;
-
     public ComputedQueryResult(QueryIdentifier identifier)
     {
-        this.identifier = identifier;
+        this.Identifier = identifier;
     }
 
     public async Task Refresh() =>
-        await QueryValueTaskMethodBuilder<T>.RunQueryByIdentifier(this.identifier);
+        await QueryValueTaskMethodBuilder<T>.RunQueryByIdentifier(this.Identifier);
 }

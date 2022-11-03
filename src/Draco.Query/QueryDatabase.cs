@@ -26,44 +26,42 @@ public sealed class QueryDatabase
     /// </summary>
     public Revision CurrentRevision { get; private set; } = Revision.New;
 
+    private readonly ConcurrentDictionary<object, IQueryResult> inputs = new();
     private readonly ConcurrentDictionary<QueryIdentifier, IQueryResult> queries = new();
 
     /// <summary>
-    /// Creates an input for the system.
+    /// Retrieves an input from the system.
     /// </summary>
     /// <typeparam name="TResult">The type of the input value.</typeparam>
-    /// <returns>The identifier for the input.</returns>
-    public QueryIdentifier CreateInput<TResult>()
+    /// <param name="key">The input value key.</param>
+    /// <returns>The retrieved input as a task.</returns>
+    public QueryValueTask<TResult> GetInput<TResult>(object key)
     {
-        var identifier = QueryIdentifier.New;
-        this.queries.TryAdd(identifier, new InputQueryResult<TResult>());
-        return identifier;
+        var result = (InputQueryResult<TResult>)this.inputs[key];
+        return new(result.Value, result.Identifier);
     }
 
     /// <summary>
     /// Sets an input for the system.
     /// </summary>
     /// <typeparam name="TResult">The type of the input value.</typeparam>
-    /// <param name="identifier">The identifier for the input.</param>
+    /// <param name="key">The input value key.</param>
     /// <param name="value">The value to set the input to.</param>
-    public void SetInput<TResult>(QueryIdentifier identifier, TResult value)
+    public void SetInput<TResult>(object key, TResult value)
     {
-        var cachedResult = (InputQueryResult<TResult>)this.queries[identifier];
+        if (!this.inputs.TryGetValue(key, out var result))
+        {
+            // Input does not exist yet
+            var identifier = QueryIdentifier.New;
+            result = new InputQueryResult<TResult>(identifier);
+            this.inputs[key] = result;
+            this.queries[identifier] = result;
+        }
+        // Refresh revision and value
         this.CurrentRevision = Revision.New;
-        cachedResult.Value = value;
+        var cachedResult = (InputQueryResult<TResult>)result;
         cachedResult.ChangedAt = this.CurrentRevision;
-    }
-
-    /// <summary>
-    /// Retrieves an input from the system.
-    /// </summary>
-    /// <typeparam name="TResult">The type of the input value.</typeparam>
-    /// <param name="identifier">The identifier for the input.</param>
-    /// <returns>The retrieved input as a task.</returns>
-    public QueryValueTask<TResult> GetInput<TResult>(QueryIdentifier identifier)
-    {
-        var cachedResult = (InputQueryResult<TResult>)this.queries[identifier];
-        return new(cachedResult.Value, identifier);
+        cachedResult.Value = value;
     }
 
     /// <summary>

@@ -61,6 +61,11 @@ public abstract partial class ParseTree
     /// </summary>
     public Range Range => this.range ??= this.ComputeRange();
 
+    /// <summary>
+    /// All <see cref="Token"/>s that this subtree consists of.
+    /// </summary>
+    public IEnumerable<Token> Tokens => this.GetTokens();
+
     public override string ToString() => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
 }
@@ -76,6 +81,11 @@ public abstract partial class ParseTree
     }
 
     private Range ComputeRange()
+    {
+        throw new NotImplementedException();
+    }
+
+    private IEnumerable<Token> GetTokens()
     {
         throw new NotImplementedException();
     }

@@ -66,7 +66,7 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UOk">The type of the new ok value.</typeparam>
     /// <param name="transform">A transformation function mapping the ok value.</param>
     /// <returns>A new result of either the new transformed ok value or the previous error.</returns>
-    public Result<UOk, TError> MapValue<UOk>(Func<TOk, UOk> transform) => this.isOk
+    public Result<UOk, TError> MapOk<UOk>(Func<TOk, UOk> transform) => this.isOk
         ? new(transform(this.ok))
         : new(this.error);
 
@@ -86,7 +86,7 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UOk">The type of the new ok value.</typeparam>
     /// <param name="transform">A transformation function mapping the ok value to a new result.</param>
     /// <returns>A new result of either the returned result or the previous error.</returns>
-    public Result<UOk, TError> BindValue<UOk>(Func<TOk, Result<UOk, TError>> transform) => this.isOk
+    public Result<UOk, TError> BindOk<UOk>(Func<TOk, Result<UOk, TError>> transform) => this.isOk
         ? transform(this.ok)
         : new(this.error);
 

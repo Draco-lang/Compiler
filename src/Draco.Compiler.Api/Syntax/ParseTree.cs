@@ -72,56 +72,12 @@ public abstract partial class ParseTree
 
     private Position ComputePosition()
     {
-        var offset = new Position(0, 0);
-        // If there is a parent, we offset by the previous nodes
-        // The simplest way of that is to request the range of all previous nodes and remember the
-        // last ones end that is not this node
-        if (this.Parent is not null)
-        {
-            offset = this.Parent.Position;
-            foreach (var parentsChild in this.Parent.Children)
-            {
-                if (ReferenceEquals(this.green, parentsChild.Green)) break;
-                offset = parentsChild.Range.End;
-            }
-        }
-        return offset;
+        throw new NotImplementedException();
     }
 
     private Range ComputeRange()
     {
-        var start = this.Position;
-        var currLine = start.Line;
-        var currCol = start.Column;
-        for (var i = 0; i < this.FullText.Length; ++i)
-        {
-            var ch = this.FullText[i];
-            if (ch == '\r')
-            {
-                // Either Windows or OS-X 9 style newlines
-                if (i + 1 < this.FullText.Length && this.FullText[i + 1] == '\n')
-                {
-                    // Windows-style, eat extra char
-                    ++i;
-                }
-                // Otherwise OS-X 9 style
-                ++currLine;
-                currCol = 0;
-            }
-            else if (ch == '\n')
-            {
-                // Unix-style newline
-                ++currLine;
-                currCol = 0;
-            }
-            else
-            {
-                // NOTE: We might not want to increment in all cases
-                ++currCol;
-            }
-        }
-        var end = new Position(Line: currLine, Column: currCol);
-        return new(start, end);
+        throw new NotImplementedException();
     }
 }
 

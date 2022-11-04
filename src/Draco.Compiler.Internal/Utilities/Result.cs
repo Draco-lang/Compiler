@@ -38,8 +38,6 @@ public readonly struct Result<TOk, TError>
     public bool IsSuccess =>
         this.isSuccess;
 
-
-
     /// <summary>
     /// Initializes a new <see cref="Result{T, TError}"/> with an ok value.
     /// </summary>
@@ -61,8 +59,6 @@ public readonly struct Result<TOk, TError>
         this.error = error;
         this.isSuccess = false;
     }
-
-
 
     /// <summary>
     /// Maps the ok value of the result to another type.
@@ -132,8 +128,6 @@ public readonly struct Result<TOk, TError>
             ifError(this.error);
         }
     }
-
-
 
     /// <summary>
     /// Implicitly converts an ok value to a <see cref="Result{T, TError}"/>.

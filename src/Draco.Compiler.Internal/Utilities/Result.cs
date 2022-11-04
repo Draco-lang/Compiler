@@ -10,24 +10,24 @@ namespace Draco.Compiler.Internal.Utilities;
 /// <typeparam name="TError">The type of the inner error.</typeparam>
 public readonly struct Result<TOk, TError>
 {
-    private readonly TOk value;
+    private readonly TOk ok;
     private readonly TError error;
-    private readonly bool isSuccess;
+    private readonly bool isOk;
 
     /// <summary>
     /// The value of the result. Throws an exception if the result is not an ok value.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    public TOk? Value => this.isSuccess
-        ? this.value
-        : throw new InvalidOperationException("Result does not contain a value.");
+    public TOk? Value => this.isOk
+        ? this.ok
+        : throw new InvalidOperationException("Result is not an ok value.");
 
     /// <summary>
     /// The error of the result. Throws an exception if the result is not an error.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    public TError? Error => this.isSuccess
-        ? throw new InvalidOperationException("Result does not contain an error.")
+    public TError? Error => this.isOk
+        ? throw new InvalidOperationException("Result is not an error.")
         : this.error;
 
     /// <summary>
@@ -35,18 +35,18 @@ public readonly struct Result<TOk, TError>
     /// </summary>
     [MemberNotNullWhen(true, nameof(Value))]
     [MemberNotNullWhen(false, nameof(Error))]
-    public bool IsSuccess =>
-        this.isSuccess;
+    public bool IsOk =>
+        this.isOk;
 
     /// <summary>
     /// Initializes a new <see cref="Result{T, TError}"/> with an ok value.
     /// </summary>
-    /// <param name="value">The ok value.</param>
-    public Result(TOk value)
+    /// <param name="ok">The ok value.</param>
+    public Result(TOk ok)
     {
-        this.value = value;
+        this.ok = ok;
         this.error = default!;
-        this.isSuccess = true;
+        this.isOk = true;
     }
 
     /// <summary>
@@ -55,9 +55,9 @@ public readonly struct Result<TOk, TError>
     /// <param name="error">The error value.</param>
     public Result(TError error)
     {
-        this.value = default!;
+        this.ok = default!;
         this.error = error;
-        this.isSuccess = false;
+        this.isOk = false;
     }
 
     /// <summary>
@@ -66,8 +66,8 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UOk">The type of the new ok value.</typeparam>
     /// <param name="transform">A transformation function mapping the ok value.</param>
     /// <returns>A new result of either the new transformed ok value or the previous error.</returns>
-    public Result<UOk, TError> MapValue<UOk>(Func<TOk, UOk> transform) => this.isSuccess
-        ? new(transform(this.value))
+    public Result<UOk, TError> MapValue<UOk>(Func<TOk, UOk> transform) => this.isOk
+        ? new(transform(this.ok))
         : new(this.error);
 
     /// <summary>
@@ -76,8 +76,8 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UError">The type of the new error value.</typeparam>
     /// <param name="transform">A transformation function mapping the error value.</param>
     /// <returns>A new result of either the new transformed error value or the previous ok value.</returns>
-    public Result<TOk, UError> MapError<UError>(Func<TError, UError> transform) => this.isSuccess
-        ? new(this.value)
+    public Result<TOk, UError> MapError<UError>(Func<TError, UError> transform) => this.isOk
+        ? new(this.ok)
         : new(transform(this.error));
 
     /// <summary>
@@ -86,8 +86,8 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UOk">The type of the new ok value.</typeparam>
     /// <param name="transform">A transformation function mapping the ok value to a new result.</param>
     /// <returns>A new result of either the returned result or the previous error.</returns>
-    public Result<UOk, TError> BindValue<UOk>(Func<TOk, Result<UOk, TError>> transform) => this.isSuccess
-        ? transform(this.value)
+    public Result<UOk, TError> BindValue<UOk>(Func<TOk, Result<UOk, TError>> transform) => this.isOk
+        ? transform(this.ok)
         : new(this.error);
 
     /// <summary>
@@ -97,31 +97,31 @@ public readonly struct Result<TOk, TError>
     /// <param name="transform">A transformation function mapping the error value to a new result.</param>
     /// <returns>A new result of either the returned result or the previous ok value.</returns>
     public Result<TOk, UError> BindError<UError>(Func<TError, Result<TOk, UError>> transform) =>
-        this.isSuccess
-            ? new(this.value)
+        this.isOk
+            ? new(this.ok)
             : transform(this.error);
 
     /// <summary>
     /// Matches the ok value or error.
     /// </summary>
     /// <typeparam name="TResult">The type of the resulting value.</typeparam>
-    /// <param name="ifValue">The function to apply if the result is an ok value.</param>
+    /// <param name="ifOk">The function to apply if the result is an ok value.</param>
     /// <param name="ifError">The function to apply if the result is an error value.</param>
     /// <returns>The result of matching either the ok value or the error value.</returns>
-    public TResult Match<TResult>(Func<TOk, TResult> ifValue, Func<TError, TResult> ifError) => this.isSuccess
-        ? ifValue(this.value)
+    public TResult Match<TResult>(Func<TOk, TResult> ifOk, Func<TError, TResult> ifError) => this.isOk
+        ? ifOk(this.ok)
         : ifError(this.error);
 
     /// <summary>
     /// Switches on the ok value or error.
     /// </summary>
-    /// <param name="ifValue">The function to apply if the result is an ok value.</param>
+    /// <param name="ifOk">The function to apply if the result is an ok value.</param>
     /// <param name="ifError">The function to apply if the result is an error value.</param>
-    public void Switch(Action<TOk> ifValue, Action<TError> ifError)
+    public void Switch(Action<TOk> ifOk, Action<TError> ifError)
     {
-        if (this.isSuccess)
+        if (this.isOk)
         {
-            ifValue(this.value);
+            ifOk(this.ok);
         }
         else
         {
@@ -132,9 +132,9 @@ public readonly struct Result<TOk, TError>
     /// <summary>
     /// Implicitly converts an ok value to a <see cref="Result{T, TError}"/>.
     /// </summary>
-    /// <param name="value">The ok value to convert.</param>
-    public static implicit operator Result<TOk, TError>(TOk value) =>
-        new(value);
+    /// <param name="ok">The ok value to convert.</param>
+    public static implicit operator Result<TOk, TError>(TOk ok) =>
+        new(ok);
 
     /// <summary>
     /// Implicitly converts an error value to a <see cref="Result{T, TError}"/>.

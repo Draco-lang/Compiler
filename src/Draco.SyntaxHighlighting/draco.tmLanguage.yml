@@ -1,0 +1,226 @@
+name: Draco
+scopeName: source.draco
+patterns:
+- include: '#code'
+repository:
+  code:
+    patterns:
+    - include: '#comments'
+    - include: '#statements'
+    - include: '#expressions'
+  comments:
+    patterns:
+    - name: comment.line.double-slash.draco
+      begin: //
+      end: $
+  statements:
+    patterns:
+    - include: '#declarations'
+  declarations:
+    patterns:
+    - include: '#comments'
+    - include: '#variable-declaration'
+    - include: '#function-declaration'
+  variable-declaration:
+    # 'var' and identifier
+    begin: \b(var|val)\b\s*\b([A-Za-z_][A-Za-z0-9_]*)\b
+    beginCaptures:
+      '1': { name: keyword.other.draco }
+      '2': { name: entity.name.variable.draco }
+    # Ends with a semicolon
+    end: ;
+    endCaptures:
+      '0': { name: punctuation.semicolon.draco }
+    patterns:
+      # Type specifier
+    - begin: ':'
+      beginCaptures:
+        '0': { name: punctuation.colon.draco }
+      end: (?=[;=])
+      patterns:
+      - include: '#type-specifiers'
+      # Value specifier
+    - begin: '='
+      beginCaptures:
+        '0': { name: keyword.operator.assignment.draco }
+      end: (?=;)
+      patterns:
+      - include: '#expressions'
+  function-declaration:
+    # 'func' and identifier
+    begin: \b(func)\b\s*\b([A-Za-z_][A-Za-z0-9_]*)\b
+    beginCaptures:
+      '1': { name: keyword.other.draco }
+      '2': { name: entity.name.function.draco }
+    end: (?<=[;}])
+    patterns:
+      # Parenthesized arguments
+    - begin: \(
+      beginCaptures:
+        '0': { name: punctuation.parenthesis.open.draco }
+      end: \)
+      endCaptures:
+        '0': { name: punctuation.parenthesis.close.draco }
+      patterns:
+        # A single argument
+      - begin: \b[A-Za-z_][A-Za-z0-9_]*\b
+        beginCaptures:
+          '0': { name: variable.parameter.draco }
+        end: (?=[,)])
+        patterns:
+          # Type specifier
+        - begin: ':'
+          beginCaptures:
+            '0': { name: punctuation.colon.draco }
+          end: (?=[,)])
+          patterns:
+          - include: '#type-specifiers'
+      # Return type specifier
+    - begin: ':'
+      beginCaptures:
+        '0': { name: punctuation.colon.draco }
+      end: '(?=[={])'
+      patterns:
+      - include: '#type-specifiers'
+      # Inline function body
+    - begin: '='
+      beginCaptures:
+        '0': { name: keyword.operator.assignment.draco }
+      end: ;
+      endCaptures:
+        '0': { name: punctuation.semicolon.draco }
+      patterns:
+      - include: '#expressions'
+      # Block function body
+    - begin: \{
+      beginCaptures:
+        '0': { name: punctuation.curlybrace.open.draco }
+      end: \}
+      endCaptures:
+        '0': { name: punctuation.curlybrace.close.draco }
+      patterns:
+      - include: '#statements'
+      - include: '#expressions'
+  expressions:
+    patterns:
+    - include: '#comments'
+      # Keyword-like operators
+    - name: keyword.operator.draco
+      match: \b(?:and|or|not|mod|rem)\b
+      # Arithmetic operators
+    - name: keyword.operator.draco
+      match: '[-+*/]=?'
+      # Relational operators
+    - name: keyword.operator.draco
+      match: '[><=!]=?'
+      # Control keywords that build up expressions
+    - name: keyword.control.draco
+      match: \b(if|else|while|return|goto)\b
+    - include: '#call-expression'
+      # Variable name
+    - name: variable.other.draco
+      match: '[a-zA-Z_][a-zA-Z0-9_]*'
+    - include: '#block'
+    - include: '#literals'
+  call-expression:
+    begin: \b([A-Za-z_][A-Za-z0-9_]*)\s*([(])
+    beginCaptures:
+      '1': { name: entity.name.function.draco }
+      '2': { name: punctuation.parenthesis.open.draco }
+    end: \)
+    endCaptures:
+      '0': { name: punctuation.parenthesis.close.draco }
+    patterns:
+    - include: '#expressions'
+  type-specifiers:
+    patterns:
+      # Type name
+    - name: entity.name.type.draco
+      match: \b[A-Za-z_][A-Za-z0-9_]*\b
+  block:
+    begin: \{
+    beginCaptures:
+      '0': { name: punctuation.curlybrace.open.draco }
+    end: \}
+    endCaptures:
+      '0': { name: punctuation.curlybrace.close.draco }
+    patterns:
+    - include: '#statements'
+    - include: '#expressions'
+  literals:
+    patterns:
+      # Bool literal
+    - name: constant.language.boolean.draco
+      match: \b(?:true|false)\b
+      # Integer literal
+    - name: constant.numeric.integer.draco
+      match: \b(?:[0-9]+)\b
+      # Character literal
+    - name: constant.character.draco
+      begin: "'"
+      end: "'|$"
+      patterns:
+      - include: '#escape-sequence'
+    - include: '#strings'
+  strings:
+    patterns:
+    - include: '#line-string'
+    - include: '#line-string-ext1'
+    - include: '#multi-line-string'
+    - include: '#multi-line-string-ext1'
+  # Single-line string
+  line-string:
+    name: string.quoted.double.draco
+    begin: '"(?!"")'
+    end: '"|$'
+    patterns:
+    - include: '#escape-sequence'
+    - include: '#string-interpolation'
+  # Single-line string with a '#'
+  line-string-ext1:
+    name: string.quoted.double.draco
+    begin: '#"(?!"")'
+    end: '"#|$'
+    patterns:
+    - include: '#escape-sequence-ext1'
+    - include: '#string-interpolation-ext1'
+  # Multi-line string
+  multi-line-string:
+    name: string.quoted.double.draco
+    begin: '"""'
+    end: '"""'
+    patterns:
+    - include: '#escape-sequence'
+    - include: '#string-interpolation'
+      # Line continuation
+    - name: constant.character.escape.draco
+      match: \\\s*$
+  # Multi-line string with a '#'
+  multi-line-string-ext1:
+    name: string.quoted.double.draco
+    begin: '#"""'
+    end: '"""#'
+    patterns:
+    - include: '#escape-sequence-ext1'
+    - include: '#string-interpolation-ext1'
+      # Line continuation
+    - name: constant.character.escape.draco
+      match: \\#\s*$
+  escape-sequence:
+    name: constant.character.escape.draco
+    match: \\(?:[0abfnrtv'"\\]|(?:u\{[a-fA-F0-9]*\}))
+  escape-sequence-ext1:
+    name: constant.character.escape.draco
+    match: \\#(?:[0abfnrtv'"\\]|(?:u\{[a-fA-F0-9]*\}))
+  string-interpolation:
+    name: meta.interpolation.draco
+    begin: \\\{
+    end: \}
+    patterns:
+    - include: '#code'
+  string-interpolation-ext1:
+    name: meta.interpolation.draco
+    begin: \\#\{
+    end: \}
+    patterns:
+    - include: '#code'

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="All" />
+
+    <PackageReference Include="Nullable" Version="1.3.1" PrivateAssets="All" />
+
+    <Compile Include="../Draco.RedGreenTree/**/*.cs" Link="../Draco.RedGreenTree" Visible="False" />
+    <Compile Remove="../Draco.RedGreenTree/obj/**/*.cs"/>
+  </ItemGroup>
+
+</Project>

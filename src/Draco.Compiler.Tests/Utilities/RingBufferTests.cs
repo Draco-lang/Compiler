@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Utilities;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Tests.Utilities;
 

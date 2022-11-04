@@ -18,19 +18,17 @@ public readonly struct Result<T, TError>
     /// The value of the result. Throws an exception if the result is not a value.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    public T? Value =>
-        this.isSuccess
-            ? this.value
-            : throw new InvalidOperationException("Result does not contain a value.");
+    public T? Value => this.isSuccess
+        ? this.value
+        : throw new InvalidOperationException("Result does not contain a value.");
 
     /// <summary>
     /// The error of the result. Throws an exception if the result is not an error.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    public TError? Error =>
-        this.isSuccess
-            ? throw new InvalidOperationException("Result does not contain an error.")
-            : this.error;
+    public TError? Error => this.isSuccess
+        ? throw new InvalidOperationException("Result does not contain an error.")
+        : this.error;
 
     /// <summary>
     /// Whether the result is a successful value or not.
@@ -72,10 +70,9 @@ public readonly struct Result<T, TError>
     /// <typeparam name="U">The type of the new inner value.</typeparam>
     /// <param name="transform">A transformation function mapping the inner value.</param>
     /// <returns>A new result of either the transformed value or the previous error.</returns>
-    public Result<U, TError> MapValue<U>(Func<T, U> transform) =>
-        this.isSuccess
-            ? new(transform(this.value))
-            : new(this.error);
+    public Result<U, TError> MapValue<U>(Func<T, U> transform) => this.isSuccess
+        ? new(transform(this.value))
+        : new(this.error);
 
     /// <summary>
     /// Maps the inner error value of the result to another error type.
@@ -83,10 +80,9 @@ public readonly struct Result<T, TError>
     /// <typeparam name="UError">The type of the new inner error value.</typeparam>
     /// <param name="transform">A transformation function mapping the inner error value.</param>
     /// <returns>A new result of either the transformed error value or the previous successful value.</returns>
-    public Result<T, UError> MapError<UError>(Func<TError, UError> transform) =>
-        this.isSuccess
-            ? new(this.value)
-            : new(transform(this.error));
+    public Result<T, UError> MapError<UError>(Func<TError, UError> transform) => this.isSuccess
+        ? new(this.value)
+        : new(transform(this.error));
 
     /// <summary>
     /// Binds the inner value to a new result with another inner value type.
@@ -94,10 +90,9 @@ public readonly struct Result<T, TError>
     /// <typeparam name="U">The type of the new inner value.</typeparam>
     /// <param name="transform">A transformation function mapping the inner value to a new result.</param>
     /// <returns>A new result of either the returned result or the previous error.</returns>
-    public Result<U, TError> BindValue<U>(Func<T, Result<U, TError>> transform) =>
-        this.isSuccess
-            ? transform(this.value)
-            : new(this.error);
+    public Result<U, TError> BindValue<U>(Func<T, Result<U, TError>> transform) => this.isSuccess
+        ? transform(this.value)
+        : new(this.error);
 
     /// <summary>
     /// Binds the inner error value to a new result with another inner error type.
@@ -117,10 +112,9 @@ public readonly struct Result<T, TError>
     /// <param name="ifValue">The function to apply if the result is a successful value.</param>
     /// <param name="ifError">The function to apply if the result is an error value.</param>
     /// <returns>The result of matching either the successful value or the error value.</returns>
-    public TResult Match<TResult>(Func<T, TResult> ifValue, Func<TError, TResult> ifError) =>
-        this.isSuccess
-            ? ifValue(this.value)
-            : ifError(this.error);
+    public TResult Match<TResult>(Func<T, TResult> ifValue, Func<TError, TResult> ifError) => this.isSuccess
+        ? ifValue(this.value)
+        : ifError(this.error);
 
     /// <summary>
     /// Switches on the inner value or error.

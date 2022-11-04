@@ -130,6 +130,36 @@ public readonly struct Result<TOk, TError>
     }
 
     /// <summary>
+    /// Returns the ok value or a value from a factory function.
+    /// </summary>
+    /// <param name="factory">The factory function to invoke if the result is not an ok value.</param>
+    public TOk OkOr(Func<TOk> factory) => this.isOk
+        ? this.ok
+        : factory();
+
+    /// <summary>
+    /// Returns the ok value or a default value.
+    /// </summary>
+    /// <param name="defaultValue">The value to return if the result is not an ok value.</param>
+    public TOk OkOr(TOk defaultValue) =>
+        this.OkOr(() => defaultValue);
+
+    /// <summary>
+    /// Returns the error value or a value from a factory function.
+    /// </summary>
+    /// <param name="factory">The factory function to invoke if the result is not an error value.</param>
+    public TError ErrorOr(Func<TError> factory) => this.isOk
+        ? factory()
+        : this.error;
+
+    /// <summary>
+    /// Returns the error value or a default value.
+    /// </summary>
+    /// <param name="defaultValue">The value to return if the result is not an error value.</param>
+    public TError ErrorOr(TError defaultValue) =>
+        this.ErrorOr(() => defaultValue);
+
+    /// <summary>
     /// Implicitly converts an ok value to a <see cref="Result{T, TError}"/>.
     /// </summary>
     /// <param name="ok">The ok value to convert.</param>

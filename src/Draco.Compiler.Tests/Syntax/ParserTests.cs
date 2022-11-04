@@ -103,6 +103,28 @@ public sealed class ParserTests
         this.MainFunctionPlaceHolder($"val x = {inputString};", StringPlaceholder);
     }
 
+    private void VariableDeclarationPlaceHolder(string input, Action predicate)
+    {
+        void StringPlaceholder()
+        {
+            this.N<Stmt.Decl>();
+            {
+                this.N<Decl.Variable>();
+                {
+                    this.T(TokenType.KeywordVal);
+                    this.T(TokenType.Identifier);
+                    this.N<ValueInitializer>();
+                    {
+                        this.T(TokenType.Assign);
+                        predicate();
+                    }
+                    this.T(TokenType.Semicolon);
+                }
+            }
+        }
+        this.MainFunctionPlaceHolder($"val x = {input};", StringPlaceholder);
+    }
+
     private void StringNewline()
     {
         this.N<StringPart.Content>();
@@ -814,55 +836,42 @@ public sealed class ParserTests
     {
         void IfElse()
         {
-            this.N<Stmt.Decl>();
+            this.N<Expr.If>();
             {
-                this.N<Decl.Variable>();
+                this.T(TokenType.KeywordIf);
+                this.T(TokenType.ParenOpen);
+                this.N<Expr.Relational>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.If>();
+                        this.T(TokenType.LiteralInteger);
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.GreaterThan);
+                        this.N<Expr.Literal>();
                         {
-                            this.T(TokenType.KeywordIf);
-                            this.T(TokenType.ParenOpen);
-                            this.N<Expr.Relational>();
-                            {
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralInteger);
-                                }
-                                this.N<Expr.ComparisonElement>();
-                                {
-                                    this.T(TokenType.GreaterThan);
-                                    this.N<Expr.Literal>();
-                                    {
-                                        this.T(TokenType.LiteralInteger);
-                                    }
-                                }
-                            }
-                            this.T(TokenType.ParenClose);
-                            this.N<Expr.Literal>();
-                            {
-                                this.T(TokenType.LiteralInteger);
-                            }
-                            this.N<ElseClause>();
-                            {
-                                this.T(TokenType.KeywordElse);
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralInteger);
-                                }
-                            }
+                            this.T(TokenType.LiteralInteger);
                         }
                     }
-                    this.T(TokenType.Semicolon);
+                }
+                this.T(TokenType.ParenClose);
+                this.N<Expr.Literal>();
+                {
+                    this.T(TokenType.LiteralInteger);
+                }
+                this.N<ElseClause>();
+                {
+                    this.T(TokenType.KeywordElse);
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger);
+                    }
                 }
             }
         }
-        this.MainFunctionPlaceHolder("""
-            val x = if(5 > 0) 3 else 9;
+        this.VariableDeclarationPlaceHolder("""
+            if(5 > 0) 3 else 9
             """, IfElse);
     }
 
@@ -871,47 +880,34 @@ public sealed class ParserTests
     {
         void IfExpression()
         {
-            this.N<Stmt.Decl>();
+            this.N<Expr.If>();
             {
-                this.N<Decl.Variable>();
+                this.T(TokenType.KeywordIf);
+                this.T(TokenType.ParenOpen);
+                this.N<Expr.Relational>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.If>();
+                        this.T(TokenType.LiteralInteger);
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.GreaterThan);
+                        this.N<Expr.Literal>();
                         {
-                            this.T(TokenType.KeywordIf);
-                            this.T(TokenType.ParenOpen);
-                            this.N<Expr.Relational>();
-                            {
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralInteger);
-                                }
-                                this.N<Expr.ComparisonElement>();
-                                {
-                                    this.T(TokenType.GreaterThan);
-                                    this.N<Expr.Literal>();
-                                    {
-                                        this.T(TokenType.LiteralInteger);
-                                    }
-                                }
-                            }
-                            this.T(TokenType.ParenClose);
-                            this.N<Expr.Literal>();
-                            {
-                                this.T(TokenType.LiteralInteger);
-                            }
+                            this.T(TokenType.LiteralInteger);
                         }
                     }
-                    this.T(TokenType.Semicolon);
+                }
+                this.T(TokenType.ParenClose);
+                this.N<Expr.Literal>();
+                {
+                    this.T(TokenType.LiteralInteger);
                 }
             }
         }
-        this.MainFunctionPlaceHolder("""
-            val x = if(5 > 0) 3;
+        this.VariableDeclarationPlaceHolder("""
+            if(5 > 0) 3
             """, IfExpression);
     }
 
@@ -1343,70 +1339,57 @@ public sealed class ParserTests
     {
         void Operators()
         {
-            this.N<Stmt.Decl>();
+            this.N<Expr.Binary>();
             {
-                this.N<Decl.Variable>();
+                this.N<Expr.Binary>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.N<Expr.Binary>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.Binary>();
+                        this.N<Expr.Literal>();
                         {
-                            this.N<Expr.Binary>();
-                            {
-                                this.N<Expr.Binary>();
-                                {
-                                    this.N<Expr.Literal>();
-                                    {
-                                        this.T(TokenType.LiteralInteger, "3");
-                                    }
-                                    this.T(TokenType.KeywordMod);
-                                    this.N<Expr.Literal>();
-                                    {
-                                        this.T(TokenType.LiteralInteger, "2");
-                                    }
-                                }
-                                this.T(TokenType.Plus);
-                                this.N<Expr.Binary>();
-                                {
-                                    this.N<Expr.Literal>();
-                                    {
-                                        this.T(TokenType.LiteralInteger, "2");
-                                    }
-                                    this.T(TokenType.Star);
-                                    this.N<Expr.Unary>();
-                                    {
-                                        this.T(TokenType.Minus);
-                                        this.N<Expr.Literal>();
-                                        {
-                                            this.T(TokenType.LiteralInteger, "8");
-                                        }
-                                    }
-                                }
-                            }
+                            this.T(TokenType.LiteralInteger, "3");
+                        }
+                        this.T(TokenType.KeywordMod);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger, "2");
+                        }
+                    }
+                    this.T(TokenType.Plus);
+                    this.N<Expr.Binary>();
+                    {
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger, "2");
+                        }
+                        this.T(TokenType.Star);
+                        this.N<Expr.Unary>();
+                        {
                             this.T(TokenType.Minus);
-                            this.N<Expr.Binary>();
+                            this.N<Expr.Literal>();
                             {
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralInteger, "9");
-                                }
-                                this.T(TokenType.Slash);
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralInteger, "3");
-                                }
+                                this.T(TokenType.LiteralInteger, "8");
                             }
                         }
                     }
-                    this.T(TokenType.Semicolon);
+                }
+                this.T(TokenType.Minus);
+                this.N<Expr.Binary>();
+                {
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger, "9");
+                    }
+                    this.T(TokenType.Slash);
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger, "3");
+                    }
                 }
             }
         }
-        this.MainFunctionPlaceHolder("""
-            val x = 3 mod 2 + 2 * -8 - 9 / 3;
+        this.VariableDeclarationPlaceHolder("""
+            3 mod 2 + 2 * -8 - 9 / 3
             """, Operators);
     }
 
@@ -1415,46 +1398,33 @@ public sealed class ParserTests
     {
         void Operators()
         {
-            this.N<Stmt.Decl>();
+            this.N<Expr.Binary>();
             {
-                this.N<Decl.Variable>();
+                this.N<Expr.Binary>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.Binary>();
-                        {
-                            this.N<Expr.Binary>();
-                            {
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.KeywordTrue);
-                                }
-                                this.T(TokenType.KeywordAnd);
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.KeywordFalse);
-                                }
-                            }
-                            this.T(TokenType.KeywordOr);
-                            this.N<Expr.Unary>();
-                            {
-                                this.T(TokenType.KeywordNot);
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.KeywordFalse);
-                                }
-                            }
-                        }
+                        this.T(TokenType.KeywordTrue);
                     }
-                    this.T(TokenType.Semicolon);
+                    this.T(TokenType.KeywordAnd);
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.KeywordFalse);
+                    }
+                }
+                this.T(TokenType.KeywordOr);
+                this.N<Expr.Unary>();
+                {
+                    this.T(TokenType.KeywordNot);
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.KeywordFalse);
+                    }
                 }
             }
         }
-        this.MainFunctionPlaceHolder("""
-            val x = true and false or not false;
+        this.VariableDeclarationPlaceHolder("""
+            true and false or not false
             """, Operators);
     }
 
@@ -1463,53 +1433,40 @@ public sealed class ParserTests
     {
         void Operators()
         {
-            this.N<Stmt.Decl>();
+            this.N<Expr.Relational>();
             {
-                this.N<Decl.Variable>();
+                this.N<Expr.Binary>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.Relational>();
+                        this.T(TokenType.LiteralInteger, "3");
+                    }
+                    this.T(TokenType.Plus);
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger, "2");
+                    }
+                }
+                this.N<Expr.ComparisonElement>();
+                {
+                    this.T(TokenType.GreaterThan);
+                    this.N<Expr.Binary>();
+                    {
+                        this.N<Expr.Literal>();
                         {
-                            this.N<Expr.Binary>();
-                            {
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralInteger, "3");
-                                }
-                                this.T(TokenType.Plus);
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralInteger, "2");
-                                }
-                            }
-                            this.N<Expr.ComparisonElement>();
-                            {
-                                this.T(TokenType.GreaterThan);
-                                this.N<Expr.Binary>();
-                                {
-                                    this.N<Expr.Literal>();
-                                    {
-                                        this.T(TokenType.LiteralInteger, "2");
-                                    }
-                                    this.T(TokenType.Star);
-                                    this.N<Expr.Literal>();
-                                    {
-                                        this.T(TokenType.LiteralInteger, "3");
-                                    }
-                                }
-                            }
+                            this.T(TokenType.LiteralInteger, "2");
+                        }
+                        this.T(TokenType.Star);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger, "3");
                         }
                     }
-                    this.T(TokenType.Semicolon);
                 }
             }
         }
-        this.MainFunctionPlaceHolder("""
-            val x = 3 + 2 > 2 * 3;
+        this.VariableDeclarationPlaceHolder("""
+            3 + 2 > 2 * 3
             """, Operators);
     }
 }

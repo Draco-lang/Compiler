@@ -18,7 +18,7 @@ public readonly struct Result<TOk, TError>
     /// The value of the result. Throws an exception if the result is not an ok value.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    public TOk? Value => this.isOk
+    public TOk? Ok => this.isOk
         ? this.ok
         : throw new InvalidOperationException("Result is not an ok value.");
 
@@ -33,7 +33,7 @@ public readonly struct Result<TOk, TError>
     /// <summary>
     /// Whether the result is an ok value or not.
     /// </summary>
-    [MemberNotNullWhen(true, nameof(Value))]
+    [MemberNotNullWhen(true, nameof(Ok))]
     [MemberNotNullWhen(false, nameof(Error))]
     public bool IsOk =>
         this.isOk;

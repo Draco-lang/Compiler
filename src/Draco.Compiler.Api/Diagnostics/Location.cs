@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Draco.Compiler.Api.Diagnostics;
 
-// NOTE: We'll ned a file reference here
+// NOTE: We'll need a file reference here
 
 /// <summary>
 /// Represents a location in a source text.

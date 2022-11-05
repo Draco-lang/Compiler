@@ -91,10 +91,7 @@ public abstract partial class ParseTree
             yield return diag;
         }
         // Find in children too
-        foreach (var child in this.Children)
-        {
-            foreach (var diag in child.CollectAllDiagnostics()) yield return diag;
-        }
+        foreach (var diag in this.Children.SelectMany(c => c.CollectAllDiagnostics())) yield return diag;
     }
 
     private protected virtual Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange relativeRange)
@@ -112,16 +109,16 @@ public abstract partial class ParseTree
         // We simply print the text of all tokens except the first and last ones
         // For the first, we ignore leading trivia, for the last we ignore trailing trivia
         var lastTrailingTrivia = ImmutableArray<Token>.Empty;
-        var tokensEnumerator = this.Tokens.GetEnumerator();
+        using var tokenEnumerator = this.Tokens.GetEnumerator();
         // The first token just gets it's content printed
         // That ignores the leading trivia, trailing will only be printed if there are following tokens
-        Debug.Assert(tokensEnumerator.MoveNext());
-        var firstToken = tokensEnumerator.Current;
+        Debug.Assert(tokenEnumerator.MoveNext());
+        var firstToken = tokenEnumerator.Current;
         sb.Append(firstToken.Text);
         lastTrailingTrivia = firstToken.TrailingTrivia;
-        while (tokensEnumerator.MoveNext())
+        while (tokenEnumerator.MoveNext())
         {
-            var token = tokensEnumerator.Current;
+            var token = tokenEnumerator.Current;
             // Last trailing trivia
             foreach (var t in lastTrailingTrivia) sb.Append(t.Text);
             // Leading trivia
@@ -155,10 +152,7 @@ public abstract partial class ParseTree
 
     protected virtual IEnumerable<Token> GetTokens()
     {
-        foreach (var child in this.Children)
-        {
-            foreach (var t in child.Tokens) yield return t;
-        }
+        foreach (var t in this.Children.SelectMany(c => c.Tokens)) yield return t;
     }
 
     private Token? GetPrecedingToken(ParseTree tree)

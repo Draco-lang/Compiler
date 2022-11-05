@@ -38,7 +38,7 @@
   },
   "scripts": {
     "copy-grammar": "(mkdir syntaxes || true) && (cp ../Draco.SyntaxHighlighting/draco.tmLanguage.json ./syntaxes/draco.tmLanguage.json)",
-    "vscode:prepublish": "(npm run copy-grammar || true) && (npm run compile)",
+    "vscode:prepublish": "(npm run copy-grammar) && (npm run compile)",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts"

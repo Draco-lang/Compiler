@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /Y $(TargetDir) $(SolutionDir)Draco.Extension.VsCode\out" />
+    <Exec Command="xcopy /Y /C $(TargetDir) $(SolutionDir)Draco.Extension.VsCode\out" />
   </Target>
 
 </Project>

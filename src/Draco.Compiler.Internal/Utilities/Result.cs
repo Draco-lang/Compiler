@@ -94,10 +94,9 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UError">The type of the new error value.</typeparam>
     /// <param name="transform">A transformation function mapping the error value to a new result.</param>
     /// <returns>A new result of either the returned result or the previous ok value.</returns>
-    public Result<TOk, UError> BindError<UError>(Func<TError, Result<TOk, UError>> transform) =>
-        this.IsOk
-            ? new(this.ok)
-            : transform(this.error);
+    public Result<TOk, UError> BindError<UError>(Func<TError, Result<TOk, UError>> transform) => this.IsOk
+        ? new(this.ok)
+        : transform(this.error);
 
     /// <summary>
     /// Matches the ok value or error.

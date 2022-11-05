@@ -274,12 +274,12 @@ public sealed class LexerTests
     public void TestMultilineString(string ext)
     {
         const string quotes = "\"\"\"";
-        var text = $"""
-        {ext}{quotes}
+        var text = $""""
+        {ext}"""
             Hello!
             Bye!
-            {quotes}{ext}
-        """;
+            """{ext}
+        """";
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
@@ -330,12 +330,12 @@ public sealed class LexerTests
     public void TestMultilineStringWithUnindentedClosingQuotes(string ext)
     {
         const string quotes = "\"\"\"";
-        var text = $"""
-        {ext}{quotes}
+        var text = $""""
+        {ext}"""
             Hello!
             Bye!
-        {quotes}{ext}
-        """;
+        """{ext}
+        """";
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
@@ -386,12 +386,12 @@ public sealed class LexerTests
     public void TestMultilineStringWithLineContinuation(string ext)
     {
         const string quotes = "\"\"\"";
-        var text = $"""
-        {ext}{quotes}
+        var text = $""""
+        {ext}"""
             Hello!\{ext}
             Bye!
-            {quotes}{ext}
-        """;
+            """{ext}
+        """";
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
@@ -442,12 +442,12 @@ public sealed class LexerTests
     public void TestMultilineStringWithLineContinuationWithWhitespaceAfter(string ext)
     {
         const string quotes = "\"\"\"";
-        var text = $"""
-        {ext}{quotes}
+        var text = $""""
+        {ext}"""
             Hello!\{ext}  
             Bye!
-            {quotes}{ext}
-        """;
+            """{ext}
+        """";
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);

@@ -314,7 +314,10 @@ public sealed class ParserTests
     [Fact]
     public void TestLineStringUnclosed()
     {
-        void UnclosedString()
+        // There is semicolon at the end, because the string is put into declaration
+        this.MainFunctionPlaceHolder("""
+            val x = "Hello, World!;
+            """, () =>
         {
             this.N<Stmt.Decl>();
             {
@@ -335,18 +338,18 @@ public sealed class ParserTests
                     this.MissingT(TokenType.Semicolon);
                 }
             }
-        }
-
-        // There is semicolon at the end, because the string is put into declaration
-        this.MainFunctionPlaceHolder("""
-            val x = "Hello, World!;
-            """, UnclosedString);
+        });
     }
 
     [Fact]
     public void TestMultilineStringUnclosedInterpolation()
     {
-        void UnclosedString()
+        this.MainFunctionPlaceHolder($$""""
+            """
+            Hello, 
+            \{"World!"
+            """
+            """", () =>
         {
             this.N<Expr.String>();
             {
@@ -367,20 +370,13 @@ public sealed class ParserTests
                 this.MissingT(TokenType.InterpolationEnd);
                 this.T(TokenType.MultiLineStringEnd);
             }
-        }
-        var quotes = "\"\"\"";
-        this.MainFunctionPlaceHolder($$""""
-            """
-            Hello, 
-            \{"World!"
-            """
-            """", UnclosedString);
+        });
     }
 
     [Fact]
     public void TestVariableDeclarationWithNoTypeAndWithValueAndMissingSemicolon()
     {
-        void Declaration()
+        this.MainFunctionPlaceHolder("val x = 5", () =>
         {
             this.N<Stmt.Decl>();
             {
@@ -399,8 +395,7 @@ public sealed class ParserTests
                     this.MissingT(TokenType.Semicolon);
                 }
             }
-        }
-        this.MainFunctionPlaceHolder("val x = 5", Declaration);
+        });
     }
 
     [Fact]
@@ -475,7 +470,7 @@ public sealed class ParserTests
     [Fact]
     public void TestVariableDeclarationWithMissingTypeAndNoValue()
     {
-        void Declaration()
+        this.MainFunctionPlaceHolder("val x:;", () =>
         {
             this.N<Stmt.Decl>();
             {
@@ -494,8 +489,7 @@ public sealed class ParserTests
                     this.T(TokenType.Semicolon);
                 }
             }
-        }
-        this.MainFunctionPlaceHolder("val x:;", Declaration);
+        });
     }
 
     [Fact]
@@ -529,7 +523,7 @@ public sealed class ParserTests
     [Fact]
     public void TestVariableDeclarationWithMissingTypeAndMissingValue()
     {
-        void Declaration()
+        this.MainFunctionPlaceHolder("val x: =;", () =>
         {
             this.N<Stmt.Decl>();
             {
@@ -553,8 +547,7 @@ public sealed class ParserTests
                     }
                 }
             }
-        }
-        this.MainFunctionPlaceHolder("val x: =;", Declaration);
+        });
     }
 
     [Fact]
@@ -649,7 +642,11 @@ public sealed class ParserTests
     [Fact]
     public void TestElseStatementsMissingIf()
     {
-        void OnlyElse()
+        this.MainFunctionPlaceHolder("""
+            else {
+                val y = 8;
+            }
+            """, () =>
         {
             this.N<Stmt.Unexpected>();
             {
@@ -678,12 +675,7 @@ public sealed class ParserTests
                 }
             }
             this.T(TokenType.CurlyClose);
-        }
-        this.MainFunctionPlaceHolder("""
-            else {
-                val y = 8;
-            }
-            """, OnlyElse);
+        });
     }
 
     [Fact]
@@ -748,7 +740,9 @@ public sealed class ParserTests
     [Fact]
     public void TestIfStatementMissingContents()
     {
-        void IfMissingStatement()
+        this.MainFunctionPlaceHolder("""
+            if (5 > 0)
+            """, () =>
         {
             this.N<Expr.If>();
             {
@@ -774,10 +768,7 @@ public sealed class ParserTests
                 this.N<Stmt.Expr>();
                 this.N<Expr.Unexpected>();
             }
-        }
-        this.MainFunctionPlaceHolder("""
-            if (5 > 0)
-            """, IfMissingStatement);
+        });
     }
 
     [Fact]
@@ -989,7 +980,9 @@ public sealed class ParserTests
     [Fact]
     public void TestWhileStatementMissingContents()
     {
-        void WhileStatement()
+        this.MainFunctionPlaceHolder("""
+            while (x < 5)
+            """, () =>
         {
             this.N<Expr.While>();
             {
@@ -1015,10 +1008,7 @@ public sealed class ParserTests
                 this.N<Stmt.Expr>();
                 this.N<Expr.Unexpected>();
             }
-        }
-        this.MainFunctionPlaceHolder("""
-            while (x < 5)
-            """, WhileStatement);
+        });
     }
 
     [Fact]
@@ -1070,7 +1060,9 @@ public sealed class ParserTests
     [Fact]
     public void TestGotoNoLabelSpecified()
     {
-        void GotoStatement()
+        this.MainFunctionPlaceHolder("""
+                goto;
+            """, () =>
         {
             this.N<Stmt.Expr>();
             this.N<Expr.Goto>();
@@ -1079,10 +1071,7 @@ public sealed class ParserTests
                 this.N<Expr.Unexpected>();
             }
             this.T(TokenType.Semicolon);
-        }
-        this.MainFunctionPlaceHolder("""
-                goto;
-            """, GotoStatement);
+        });
     }
 
     [Fact]

@@ -991,7 +991,8 @@ internal sealed class Parser
             // We construct an empty token that signals that this is missing from the tree
             // The attached diagnostic message describes what is missing
             var location = new Location(0);
-            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: type);
+            var tokenTypeName = type.GetUserFriendlyName();
+            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: tokenTypeName);
             return Token.From(type, string.Empty, ImmutableArray.Create(diag));
         }
         return token;

@@ -37,7 +37,7 @@ public readonly struct Result<TOk, TError>
     private readonly TError error;
 
     /// <summary>
-    /// Initializes a new <see cref="Result{T, TError}"/> with an ok value.
+    /// Initializes a new <see cref="Result{TOk, TError}"/> with an ok value.
     /// </summary>
     /// <param name="ok">The ok value.</param>
     public Result(TOk ok)
@@ -48,7 +48,7 @@ public readonly struct Result<TOk, TError>
     }
 
     /// <summary>
-    /// Initializes a new <see cref="Result{T, TError}"/> with an error value.
+    /// Initializes a new <see cref="Result{TOk, TError}"/> with an error value.
     /// </summary>
     /// <param name="error">The error value.</param>
     public Result(TError error)
@@ -157,14 +157,14 @@ public readonly struct Result<TOk, TError>
         this.ErrorOr(() => defaultValue);
 
     /// <summary>
-    /// Implicitly converts an ok value to a <see cref="Result{T, TError}"/>.
+    /// Implicitly converts an ok value to a <see cref="Result{TOk, TError}"/>.
     /// </summary>
     /// <param name="ok">The ok value to convert.</param>
     public static implicit operator Result<TOk, TError>(TOk ok) =>
         new(ok);
 
     /// <summary>
-    /// Implicitly converts an error value to a <see cref="Result{T, TError}"/>.
+    /// Implicitly converts an error value to a <see cref="Result{TOk, TError}"/>.
     /// </summary>
     /// <param name="error">The error value to convert.</param>
     public static implicit operator Result<TOk, TError>(TError error) =>

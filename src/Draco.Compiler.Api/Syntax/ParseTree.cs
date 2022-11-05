@@ -44,11 +44,10 @@ public abstract partial class ParseTree
     /// </summary>
     public ParseTree? Parent { get; }
 
-    private string? fullText;
     /// <summary>
     /// The text this node was parsed from.
     /// </summary>
-    public string FullText => this.fullText ??= Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
+    public string FullText => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
 
     private Position? position;
     /// <summary>
@@ -116,7 +115,7 @@ public abstract partial class ParseTree
     private Range ComputeRange()
     {
         var start = this.Position;
-        var end = StepPositionByText(start, this.FullText);
+        var end = StepPositionByText(start, this.ToString());
         return new(start, end);
     }
 

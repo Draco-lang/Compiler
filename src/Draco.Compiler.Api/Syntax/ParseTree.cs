@@ -47,7 +47,7 @@ public abstract partial class ParseTree
     /// <summary>
     /// The text this node was parsed from.
     /// </summary>
-    public string FullText => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
+    public string TextIncludingTrivia => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
 
     private Position? position;
     /// <summary>
@@ -65,10 +65,6 @@ public abstract partial class ParseTree
     /// All <see cref="Token"/>s that this subtree consists of.
     /// </summary>
     public IEnumerable<Token> Tokens => this.GetTokens();
-
-    private Position? positionWithLeadingTrivia;
-    internal Position PositionWithLeadingTrivia =>
-        this.positionWithLeadingTrivia ??= this.ComputePositionWithLeadingTrivia();
 
     public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
@@ -106,8 +102,7 @@ public abstract partial class ParseTree
 
     protected virtual Position ComputePosition()
     {
-        // To avoid double-computing the offset by the leading trivia,
-        // we propagate the work to the first token
+        // For simplicity we propagte to the first token
         var firstToken = this.Tokens.First();
         return firstToken.Position;
     }
@@ -127,22 +122,17 @@ public abstract partial class ParseTree
         }
     }
 
-    private Position ComputePositionWithLeadingTrivia()
+    protected Token? GetPrecedingToken(Token token)
     {
-        var offset = new Position(0, 0);
-        // If there is a parent, we offset by the previous nodes
-        // The simplest way of that is to request the range of all previous nodes and remember the
-        // last ones end that is not this node
-        if (this.Parent is not null)
+        var preceding = null as Token;
+        foreach (var t in this.Tokens)
         {
-            offset = this.Parent.PositionWithLeadingTrivia;
-            foreach (var parentsChild in this.Parent.Children)
-            {
-                if (ReferenceEquals(this.green, parentsChild.Green)) break;
-                offset = parentsChild.Range.End;
-            }
+            if (ReferenceEquals(t.Green, token.Green)) break;
+            preceding = t;
         }
-        return offset;
+        if (preceding is not null) return preceding;
+        if (this.Parent is not null) return this.Parent.GetPrecedingToken(token);
+        return null;
     }
 
     // NOTE: This might be a good general utility somewhere else?
@@ -189,12 +179,24 @@ public abstract partial class ParseTree
 
         protected override Position ComputePosition()
         {
-            var position = this.ComputePositionWithLeadingTrivia();
-            // We offset by the leading trivia
-            foreach (var trivia in this.LeadingTrivia)
+            var position = new Position(Line: 0, Column: 0);
+            // Just get the position of the preceding token, if there is one
+            // If so, we offset from the end that range by the trailing trivia
+            var precedingToken = this.GetPrecedingToken(this);
+            if (precedingToken is not null)
             {
-                position = StepPositionByText(position, trivia.Text);
+                position = precedingToken.Range.End;
+                foreach (var t in precedingToken.TrailingTrivia)
+                {
+                    position = StepPositionByText(position, t.Text);
+                }
             }
+            // Offset by leading trivia
+            foreach (var t in this.LeadingTrivia)
+            {
+                position = StepPositionByText(position, t.Text);
+            }
+            // We are done
             return position;
         }
 

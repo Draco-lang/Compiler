@@ -413,13 +413,23 @@ internal sealed class Lexer
         }
 
         // Check for closing quotes
-        if (ch == '"')
+        // For multiline strings we allow horizontal whitespace
+        // This only happens for empty strings, but we still need to check if
+        var stringEndOffset = offset;
+        var stringEndCh = ch;
+        if (mode.Kind == ModeKind.MultiLineString)
+        {
+            // Consume leading space
+            while (IsSpace(this.Peek(stringEndOffset))) ++stringEndOffset;
+            stringEndCh = this.Peek(stringEndOffset);
+        }
+        if (stringEndCh == '"')
         {
             var endLength = 0;
             if (mode.Kind == ModeKind.MultiLineString)
             {
                 // We are expecting 2 more quotes
-                if (this.Peek(offset + 1) != '"' || this.Peek(offset + 2) != '"') goto not_string_end;
+                if (this.Peek(stringEndOffset + 1) != '"' || this.Peek(stringEndOffset + 2) != '"') goto not_string_end;
                 endLength = 3;
             }
             else
@@ -430,7 +440,7 @@ internal sealed class Lexer
             // Count the number of required closing delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
-                if (this.Peek(offset + endLength + i) != '#') goto not_string_end;
+                if (this.Peek(stringEndOffset + endLength + i) != '#') goto not_string_end;
             }
             endLength += mode.ExtendedDelims;
             // Hit the end of the string
@@ -441,6 +451,8 @@ internal sealed class Lexer
             {
                 // Nothing lexed yet, we can return the end of string token
                 this.PopMode();
+                // In case the string end offset doesn't match, we have leading whitespace
+                if (offset != stringEndOffset) this.ParseLeadingTriviaList();
                 var tokenType = mode.Kind == ModeKind.LineString
                     ? TokenType.LineStringEnd
                     : TokenType.MultiLineStringEnd;

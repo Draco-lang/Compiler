@@ -16,6 +16,12 @@ public sealed class Diagnostic
     /// </summary>
     public Location Location { get; }
 
+    /// <summary>
+    /// The message explaining this diagnostics.
+    /// </summary>
+    public string Message =>
+        string.Format(this.internalDiagnostic.Format, this.internalDiagnostic.FormatArgs);
+
     private readonly Internal.Diagnostics.Diagnostic internalDiagnostic;
 
     internal Diagnostic(
@@ -38,8 +44,7 @@ public sealed class Diagnostic
         };
         var position = this.Location.Range.Start;
         sb.AppendLine($"{severity} at line {position.Line + 1}, column {position.Column + 1}: {this.internalDiagnostic.Title}");
-        var desc = string.Format(this.internalDiagnostic.Format, this.internalDiagnostic.FormatArgs);
-        sb.Append(desc);
+        sb.Append(this.Message);
         return sb.ToString();
     }
 }

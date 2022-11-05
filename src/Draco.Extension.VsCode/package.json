@@ -9,21 +9,54 @@
   "categories": [
     "Programming Languages"
   ],
-  "scripts": {
-    "copy-grammar": "(mkdir syntaxes || true) && cp ../Draco.SyntaxHighlighting/draco.tmLanguage.json ./syntaxes/draco.tmLanguage.json",
-    "vscode:prepublish": "npm run copy-grammar"
-  },
+  "activationEvents": [
+    "onLanguage:draco",
+    "workspaceContains:**/*.draco"
+  ],
+  "main": "./out/extension.js",
   "contributes": {
-    "languages": [{
-      "id": "draco",
-      "aliases": ["Draco", "draco"],
-      "extensions": [".draco"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "draco",
-      "scopeName": "source.draco",
-      "path": "./syntaxes/draco.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "draco",
+        "aliases": [
+          "Draco",
+          "draco"
+        ],
+        "extensions": [
+          ".draco"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "draco",
+        "scopeName": "source.draco",
+        "path": "./syntaxes/draco.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "copy-grammar": "(mkdir syntaxes || true) && (cp ../Draco.SyntaxHighlighting/draco.tmLanguage.json ./syntaxes/draco.tmLanguage.json)",
+    "vscode:prepublish": "(npm run copy-grammar || true) && (npm run compile)",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.0.2"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.73.0",
+    "@typescript-eslint/eslint-plugin": "^5.31.0",
+    "@typescript-eslint/parser": "^5.31.0",
+    "@vscode/test-electron": "^2.1.5",
+    "eslint": "^8.20.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.0.0",
+    "typescript": "^4.7.4"
   }
 }

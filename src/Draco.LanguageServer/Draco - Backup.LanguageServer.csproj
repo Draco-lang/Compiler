@@ -11,8 +11,4 @@
     <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.6" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /Y $(TargetDir) $(SolutionDir)Draco.Extension.VsCode\out" />
-  </Target>
-
 </Project>

@@ -50,8 +50,13 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
             },
         };
 
-    public override Task<Unit> Handle(DidOpenTextDocumentParams request, CancellationToken cancellationToken) =>
-        Unit.Task;
+    public override async Task<Unit> Handle(DidOpenTextDocumentParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri;
+        var sourceText = request.TextDocument.Text;
+        await this.PublishSyntaxDiagnosticsAsync(uri, sourceText);
+        return Unit.Value;
+    }
 
     public override Task<Unit> Handle(DidCloseTextDocumentParams request, CancellationToken cancellationToken) =>
         Unit.Task;
@@ -59,7 +64,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
     public override Task<Unit> Handle(DidSaveTextDocumentParams request, CancellationToken cancellationToken) =>
         Unit.Task;
 
-    public async override Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken cancellationToken)
+    public override async Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken cancellationToken)
     {
         var uri = request.TextDocument.Uri;
         var change = request.ContentChanges.First();

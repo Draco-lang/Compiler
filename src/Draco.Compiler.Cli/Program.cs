@@ -11,11 +11,13 @@ internal class Program
     {
         var tree = ParseTree.Parse("""
             func main() {
+                var a = 0
                 Console.WriteLine("Hi!");
             }
             """);
-        var call = tree.Children.First().Children.ElementAt(4).Children.First().Children.ElementAt(1).Children.First();
-        Console.WriteLine(call.Range);
-        Console.WriteLine(call);
+        foreach (var diag in tree.GetAllDiagnostics())
+        {
+            Console.WriteLine(diag);
+        }
     }
 }

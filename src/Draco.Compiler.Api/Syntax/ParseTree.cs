@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
 
@@ -66,12 +67,39 @@ public abstract partial class ParseTree
     /// </summary>
     public IEnumerable<Token> Tokens => this.GetTokens();
 
+    /// <summary>
+    /// Retrieves all syntactic <see cref="Diagnostic"/>s within this tree.
+    /// </summary>
+    /// <returns>The diagnostics inside this tree.</returns>
+    public IEnumerable<Diagnostic> GetAllDiagnostics() =>
+        this.CollectAllDiagnostics();
+
     public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
 }
 
 public abstract partial class ParseTree
 {
+    private IEnumerable<Diagnostic> CollectAllDiagnostics()
+    {
+        foreach (var internalDiag in this.Green.Diagnostics)
+        {
+            var position = this.Position;
+            var offsetPosition = new Position(position.Line, position.Column + internalDiag.Location.Offset);
+            // TODO: This is likely not correct
+            // But we don't propagate this yet
+            var offsetRange = new Range(offsetPosition, 1);
+            var location = new Location(offsetRange);
+            var diag = new Diagnostic(internalDiag, location);
+            yield return diag;
+        }
+        // Find in children too
+        foreach (var child in this.Children)
+        {
+            foreach (var diag in child.CollectAllDiagnostics()) yield return diag;
+        }
+    }
+
     protected virtual string ComputeTextWithoutSurroundingTrivia()
     {
         var sb = new StringBuilder();

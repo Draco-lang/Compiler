@@ -9,18 +9,12 @@ internal class Program
 {
     internal static void Main(string[] args)
     {
-        var tree = ParseTree.Parse("""
+        var tree = ParseTree.Parse(""""
             func main() {
-                var x = ReadLine();
-                var a: int32 = );
-                if (x == "0") {
-                    Write("0");
-                }
-                else {
-                    while (true) Write("1");
-                }
+                var a = """
+                """;
             }
-            """);
+            """");
         foreach (var diag in tree.GetAllDiagnostics())
         {
             Console.WriteLine(diag);

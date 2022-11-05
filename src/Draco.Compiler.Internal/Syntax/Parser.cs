@@ -814,6 +814,7 @@ internal sealed class Parser
     private Expr.String ParseMultiLineString()
     {
         var openQuote = this.Expect(TokenType.MultiLineStringStart);
+        // TODO: Check for newline
         var content = ImmutableArray.CreateBuilder<StringPart>();
         while (true)
         {
@@ -838,10 +839,17 @@ internal sealed class Parser
         }
         var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
         // We need to check if the close quote is on a newline
-        if (closeQuote.LeadingTrivia.Length > 0)
+        // There are 2 cases:
+        //  - the leading trivia of the closing quotes contains a newline
+        //  - the string is empty and the opening quotes trailing trivia contains a newline
+        var isClosingQuoteOnNewline =
+               closeQuote.LeadingTrivia.Length > 0
+            || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline));
+        if (isClosingQuoteOnNewline)
         {
             Debug.Assert(closeQuote.LeadingTrivia.Length <= 2);
-            Debug.Assert(closeQuote.LeadingTrivia[0].Type == TokenType.Newline);
+            Debug.Assert(openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline)
+                      || closeQuote.LeadingTrivia.Any(t => t.Type == TokenType.Newline));
             if (closeQuote.LeadingTrivia.Length == 2)
             {
                 // The first trivia was newline, the second must be spaces

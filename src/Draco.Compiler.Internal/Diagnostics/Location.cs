@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Diagnostics;
 
+// NOTE: We'll need to shove the file reference in here
+
 /// <summary>
 /// Represents a location in source code.
 /// </summary>

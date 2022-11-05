@@ -446,7 +446,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestVariableDeclarationWithNoTypeAndWithValueAndMissingValue()
+    public void TestVariableDeclarationWithNoTypeAndWithMissingValue()
     {
         void Declaration()
         {
@@ -469,7 +469,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestVariableDeclarationWithNoValueAndWithType()
+    public void TestVariableDeclarationWithTypeAndWithNoValue()
     {
         void Declaration()
         {
@@ -495,7 +495,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestVariableDeclarationWithNoValueAndWithTypeAndMissingType()
+    public void TestVariableDeclarationWithMissingTypeAndNoValue()
     {
         void Declaration()
         {
@@ -521,7 +521,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestVariableDeclarationWithValueAndWithType()
+    public void TestVariableDeclarationWithTypeAndWithValue()
     {
         void Declaration()
         {
@@ -555,7 +555,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestVariableDeclarationWithValueAndWithTypeAndMissingValueAndMissingType()
+    public void TestVariableDeclarationWithMissingTypeAndMissingValue()
     {
         void Declaration()
         {
@@ -1469,13 +1469,13 @@ public sealed class ParserTests
                         {
                             this.T(TokenType.LiteralInteger, "2");
                         }
-                        this.N<ComparisonElement>();
+                    }
+                    this.N<ComparisonElement>();
+                    {
+                        this.T(TokenType.LessThan);
+                        this.N<Expr.Literal>();
                         {
-                            this.T(TokenType.LessThan);
-                            this.N<Expr.Literal>();
-                            {
-                                this.T(TokenType.LiteralInteger, "8");
-                            }
+                            this.T(TokenType.LiteralInteger, "8");
                         }
                     }
                 }

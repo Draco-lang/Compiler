@@ -260,7 +260,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class Goto(
             Token GotoKeyword,
-            Expr.Name Identifier) : Expr;
+            Expr.Name Target) : Expr;
 
         /// <summary>
         /// A return-expression.

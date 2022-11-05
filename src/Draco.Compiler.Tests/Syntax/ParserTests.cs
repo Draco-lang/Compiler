@@ -133,6 +133,22 @@ public sealed class ParserTests
         }
     }
 
+    private void StringContent()
+    {
+        this.N<StringPart.Content>();
+        {
+            this.T(TokenType.StringContent);
+        }
+    }
+
+    private void StringContent(string content)
+    {
+        this.N<StringPart.Content>();
+        {
+            this.T(TokenType.StringContent, content);
+        }
+    }
+
     [Fact]
     public void TestEmpty()
     {
@@ -206,15 +222,12 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestSimpleString()
+    public void TestLineString()
     {
         void SimpleString()
         {
             this.T(TokenType.LineStringStart);
-            this.N<StringPart.Content>();
-            {
-                this.T(TokenType.StringContent, "Hello, World!");
-            }
+            this.StringContent("Hello, World!");
             this.T(TokenType.LineStringEnd);
         }
         this.StringTestsPlaceHolder("""
@@ -223,15 +236,12 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestSimpleMultilineString()
+    public void TestMultilineString()
     {
         void SimpleString()
         {
             this.T(TokenType.MultiLineStringStart);
-            this.N<StringPart.Content>();
-            {
-                this.T(TokenType.StringContent, "Hello, World!");
-            }
+            this.StringContent("Hello, World!");
             this.T(TokenType.MultiLineStringEnd);
         }
         string quotes = "\"\"\"";
@@ -243,33 +253,24 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestStringInterpolation()
+    public void TestLineStringInterpolation()
     {
         void StringInterpolation()
         {
             this.T(TokenType.LineStringStart);
-            this.N<StringPart.Content>();
-            {
-                this.T(TokenType.StringContent, "Hello, ");
-            }
+            this.StringContent("Hello, ");
             this.N<StringPart.Interpolation>();
             {
                 this.T(TokenType.InterpolationStart);
                 this.N<Expr.String>();
                 {
                     this.T(TokenType.LineStringStart);
-                    this.N<StringPart.Content>();
-                    {
-                        this.T(TokenType.StringContent, "World");
-                    }
+                    this.StringContent("World");
                     this.T(TokenType.LineStringEnd);
                 }
                 this.T(TokenType.InterpolationEnd);
             }
-            this.N<StringPart.Content>();
-            {
-                this.T(TokenType.StringContent, "!");
-            }
+            this.StringContent("!");
             this.T(TokenType.LineStringEnd);
         }
         this.StringTestsPlaceHolder("""
@@ -283,10 +284,7 @@ public sealed class ParserTests
         void StringEscapes()
         {
             this.T(TokenType.LineStringStart);
-            this.N<StringPart.Content>();
-            {
-                this.T(TokenType.StringContent, "Hello, \nWorld! 👽");
-            }
+            this.StringContent("Hello, \nWorld! 👽");
             this.T(TokenType.LineStringEnd);
         }
         this.StringTestsPlaceHolder("""
@@ -300,15 +298,9 @@ public sealed class ParserTests
         void StringContinuations()
         {
             this.T(TokenType.MultiLineStringStart);
-            this.N<StringPart.Content>();
-            {
-                this.T(TokenType.StringContent, "Hello, ");
-            }
+            this.StringContent("Hello, ");
             this.StringNewline();
-            this.N<StringPart.Content>();
-            {
-                this.T(TokenType.StringContent, "World!");
-            }
+            this.StringContent("World!");
             this.T(TokenType.MultiLineStringEnd);
         }
         var quotes = "\"\"\"";
@@ -337,10 +329,7 @@ public sealed class ParserTests
                         this.N<Expr.String>();
                         {
                             this.T(TokenType.LineStringStart);
-                            this.N<StringPart.Content>();
-                            {
-                                this.T(TokenType.StringContent, "Hello, World!;");
-                            }
+                            this.StringContent("Hello, World!;");
                             this.MissingT(TokenType.LineStringEnd);
                         }
                     }
@@ -361,10 +350,7 @@ public sealed class ParserTests
         void UnclosedString()
         {
             this.T(TokenType.MultiLineStringStart);
-            this.N<StringPart.Content>();
-            {
-                this.T(TokenType.StringContent, "Hello, ");
-            }
+            this.StringContent("Hello, ");
             this.StringNewline();
             this.N<StringPart.Interpolation>();
             {
@@ -372,10 +358,7 @@ public sealed class ParserTests
                 this.N<Expr.String>();
                 {
                     this.T(TokenType.LineStringStart);
-                    this.N<StringPart.Content>();
-                    {
-                        this.T(TokenType.StringContent, "World!");
-                    }
+                    this.StringContent("World!");
                     this.T(TokenType.LineStringEnd);
                 }
             }
@@ -393,7 +376,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestDeclarationMissingSemicolon()
+    public void TestVariableDeclarationWithNoTypeAndWithValueAndMissingSemicolon()
     {
         void Declaration()
         {
@@ -419,7 +402,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestDeclarationNoTypeNoValue()
+    public void TestVariableDeclarationWithNoTypeAndWithNoValue()
     {
         void Declaration()
         {
@@ -437,7 +420,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestDeclarationNoTypeValue()
+    public void TestVariableDeclarationWithNoTypeAndWithValue()
     {
         void Declaration()
         {
@@ -463,7 +446,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestDeclarationNoTypeValueMissingValue()
+    public void TestVariableDeclarationWithNoTypeAndWithValueAndMissingValue()
     {
         void Declaration()
         {
@@ -477,9 +460,7 @@ public sealed class ParserTests
                     {
                         this.T(TokenType.Assign);
                         this.N<Expr.Unexpected>();
-                        {
-                            this.T(TokenType.Semicolon);
-                        }
+                        this.T(TokenType.Semicolon);
                     }
                 }
             }
@@ -488,7 +469,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestDeclarationNoValueType()
+    public void TestVariableDeclarationWithNoValueAndWithType()
     {
         void Declaration()
         {
@@ -514,7 +495,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestDeclarationNoValueTypeMissingType()
+    public void TestVariableDeclarationWithNoValueAndWithTypeAndMissingType()
     {
         void Declaration()
         {
@@ -540,7 +521,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestDeclarationValueType()
+    public void TestVariableDeclarationWithValueAndWithType()
     {
         void Declaration()
         {
@@ -574,7 +555,7 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestDeclarationValueTypeMissingValueMissingType()
+    public void TestVariableDeclarationWithValueAndWithTypeAndMissingValueAndMissingType()
     {
         void Declaration()
         {
@@ -595,9 +576,7 @@ public sealed class ParserTests
                         {
                             this.T(TokenType.Assign);
                             this.N<Expr.Unexpected>();
-                            {
-                                this.T(TokenType.Semicolon);
-                            }
+                            this.T(TokenType.Semicolon);
                         }
                     }
                 }
@@ -688,10 +667,10 @@ public sealed class ParserTests
             }
         }
         this.MainFunctionPlaceHolder("""
-            if(5 > 0){
+            if (5 > 0){
                 val x = 5;
             }
-            else{
+            else {
                 val y = 'c';
             }
             """, IfElse);
@@ -705,33 +684,33 @@ public sealed class ParserTests
             this.N<Stmt.Unexpected>();
             {
                 this.T(TokenType.KeywordElse);
-                this.N<Expr.Block>();
-                this.T(TokenType.CurlyOpen);
-                this.N<BlockContents>();
+            }
+            this.N<Expr.Block>();
+            this.T(TokenType.CurlyOpen);
+            this.N<BlockContents>();
+            {
+                this.N<Stmt.Decl>();
                 {
-                    this.N<Stmt.Decl>();
+                    this.N<Decl.Variable>();
                     {
-                        this.N<Decl.Variable>();
+                        this.T(TokenType.KeywordVal);
+                        this.T(TokenType.Identifier);
+                        this.N<ValueInitializer>();
                         {
-                            this.T(TokenType.KeywordVal);
-                            this.T(TokenType.Identifier);
-                            this.N<ValueInitializer>();
+                            this.T(TokenType.Assign);
+                            this.N<Expr.Literal>();
                             {
-                                this.T(TokenType.Assign);
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralInteger);
-                                }
+                                this.T(TokenType.LiteralInteger);
                             }
-                            this.T(TokenType.Semicolon);
                         }
+                        this.T(TokenType.Semicolon);
                     }
                 }
-                this.T(TokenType.CurlyClose);
             }
+            this.T(TokenType.CurlyClose);
         }
         this.MainFunctionPlaceHolder("""
-            else{
+            else {
                 val y = 8;
             }
             """, OnlyElse);
@@ -790,7 +769,7 @@ public sealed class ParserTests
             }
         }
         this.MainFunctionPlaceHolder("""
-            if(5 > 0{
+            if (5 > 0 {
                 val x = 5;
             }
             """, IfMissingParan);
@@ -827,7 +806,7 @@ public sealed class ParserTests
             }
         }
         this.MainFunctionPlaceHolder("""
-            if(5 > 0)
+            if (5 > 0)
             """, IfMissingStatement);
     }
 
@@ -871,7 +850,7 @@ public sealed class ParserTests
             }
         }
         this.VariableDeclarationPlaceHolder("""
-            if(5 > 0) 3 else 9
+            if (5 > 0) 3 else 9
             """, IfElse);
     }
 
@@ -907,7 +886,7 @@ public sealed class ParserTests
             }
         }
         this.VariableDeclarationPlaceHolder("""
-            if(5 > 0) 3
+            if (5 > 0) 3
             """, IfExpression);
     }
 
@@ -989,7 +968,7 @@ public sealed class ParserTests
         }
         this.MainFunctionPlaceHolder("""
             var x = 0;
-            while(x < 5){
+            while (x < 5) {
                 x = x + 1;
             }
             """, WhileStatement);
@@ -1073,7 +1052,7 @@ public sealed class ParserTests
         }
         this.MainFunctionPlaceHolder("""
             var x = 0;
-            while(x < 5{
+            while (x < 5 {
                 x = x + 1;
             }
             """, WhileStatement);
@@ -1110,7 +1089,7 @@ public sealed class ParserTests
             }
         }
         this.MainFunctionPlaceHolder("""
-            while(x < 5)
+            while (x < 5)
             """, WhileStatement);
     }
 
@@ -1467,6 +1446,59 @@ public sealed class ParserTests
         }
         this.VariableDeclarationPlaceHolder("""
             3 + 2 > 2 * 3
+            """, Operators);
+    }
+
+    [Fact]
+    public void TestOperatorChainedRelations()
+    {
+        void Operators()
+        {
+            this.N<Expr.Binary>();
+            {
+                this.N<Expr.Relational>();
+                {
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger, "3");
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.GreaterThan);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger, "2");
+                        }
+                        this.N<ComparisonElement>();
+                        {
+                            this.T(TokenType.LessThan);
+                            this.N<Expr.Literal>();
+                            {
+                                this.T(TokenType.LiteralInteger, "8");
+                            }
+                        }
+                    }
+                }
+                this.T(TokenType.KeywordOr);
+                this.N<Expr.Relational>();
+                {
+                    this.N<Expr.Literal>();
+                    {
+                        this.T(TokenType.LiteralInteger, "5");
+                    }
+                    this.N<Expr.ComparisonElement>();
+                    {
+                        this.T(TokenType.Equal);
+                        this.N<Expr.Literal>();
+                        {
+                            this.T(TokenType.LiteralInteger, "3");
+                        }
+                    }
+                }
+            }
+        }
+        this.VariableDeclarationPlaceHolder("""
+            3 > 2 < 8 or 5 == 3
             """, Operators);
     }
 }

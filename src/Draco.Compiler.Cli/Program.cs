@@ -12,7 +12,7 @@ internal class Program
         var tree = ParseTree.Parse("""
             func main() {
                 var x = ReadLine();
-                var a: int32 = 0
+                var a: int32 = );
                 if (x == "0") {
                     Write("0");
                 }

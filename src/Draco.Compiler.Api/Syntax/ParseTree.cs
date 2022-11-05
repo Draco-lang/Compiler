@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -135,9 +136,14 @@ public abstract partial class ParseTree
 
     protected virtual Position ComputePosition()
     {
-        // For simplicity we propagte to the first token
-        var firstToken = this.Tokens.First();
-        return firstToken.Position;
+        // For simplicity we try to propagte to the first token
+        var firstToken = this.Tokens.FirstOrDefault();
+        if (firstToken is not null) return firstToken.Position;
+        // If we can't, we try to do so with the end of the last token
+        var precedingToken = this.GetPrecedingToken(this);
+        if (precedingToken is not null) return precedingToken.Range.End;
+        // Otherwise just default to 0, 0
+        return new(0, 0);
     }
 
     private Range ComputeRange()
@@ -153,6 +159,19 @@ public abstract partial class ParseTree
         {
             foreach (var t in child.Tokens) yield return t;
         }
+    }
+
+    private Token? GetPrecedingToken(ParseTree tree)
+    {
+        var preceding = null as Token;
+        foreach (var child in this.Children)
+        {
+            if (ReferenceEquals(child.Green, tree.Green)) break;
+            preceding = child.Tokens.LastOrDefault() ?? preceding;
+        }
+        if (preceding is not null) return preceding;
+        if (this.Parent is not null) return this.Parent.GetPrecedingToken(tree);
+        return null;
     }
 
     protected Token? GetPrecedingToken(Token token)

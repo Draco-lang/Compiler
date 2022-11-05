@@ -11,8 +11,14 @@ internal class Program
     {
         var tree = ParseTree.Parse("""
             func main() {
-                var a = 0
-                Console.WriteLine("Hi!");
+                var x = ReadLine();
+                var a: int32 = 0
+                if (x == "0") {
+                    Write("0");
+                }
+                else {
+                    while (true) Write("1");
+                }
             }
             """);
         foreach (var diag in tree.GetAllDiagnostics())

@@ -325,7 +325,11 @@ internal sealed class Lexer
             else
             {
                 // Error, illegal character
-                this.AddError(SyntaxErrors.IllegalCharacterLiteral, offset, args: (int)ch2);
+                this.AddError(
+                    SyntaxErrors.IllegalCharacterLiteral,
+                    offset: offset,
+                    width: 1,
+                    args: (int)ch2);
                 resultChar = " ";
             }
             // Expect closing quote
@@ -337,7 +341,10 @@ internal sealed class Lexer
             {
                 // NOTE: We could have some strategy to try to look for closing quotes to try to sync the lexer
                 // Maybe we could search for the next quotes as long as we are in-line?
-                this.AddError(SyntaxErrors.UnclosedCharacterLiteral, offset);
+                this.AddError(
+                    SyntaxErrors.UnclosedCharacterLiteral,
+                    offset: offset,
+                    width: 1);
             }
             // Done
             var text = this.AdvanceWithText(offset);
@@ -618,6 +625,7 @@ internal sealed class Lexer
     /// <returns>True, if an escape was successfully parsed.</returns>
     private string ParseEscapeSequence(ref int offset)
     {
+        var escapeStart = offset - 1;
         var esc = this.Peek(offset);
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')
@@ -642,14 +650,22 @@ internal sealed class Lexer
                 }
                 else
                 {
-                    // TODO: Assign some default here or return early?
-                    this.AddError(SyntaxErrors.ZeroLengthUnicodeCodepoint, offset);
+                    this.AddError(
+                        SyntaxErrors.ZeroLengthUnicodeCodepoint,
+                        offset: escapeStart,
+                        width: offset - escapeStart);
+                    // We just return an empty character
+                    return string.Empty;
                 }
             }
             else
             {
-                // TODO: Assign some default here or return early?
-                this.AddError(SyntaxErrors.UnclosedUnicodeCodepoint, offset);
+                this.AddError(
+                    SyntaxErrors.UnclosedUnicodeCodepoint,
+                    offset: offset,
+                    width: 1);
+                // We just return an empty character
+                return string.Empty;
             }
         }
         // Any single-character escape, find the escaped equivalent
@@ -675,7 +691,11 @@ internal sealed class Lexer
         }
         else
         {
-            this.AddError(SyntaxErrors.IllegalEscapeCharacter, offset, args: esc);
+            this.AddError(
+                SyntaxErrors.IllegalEscapeCharacter,
+                offset: escapeStart,
+                width: 2,
+                args: esc);
             ++offset;
             // We return the escaped character literally as a substitute
             return esc.ToString();
@@ -783,11 +803,10 @@ internal sealed class Lexer
     }
 
     // Errors
-    private void AddError(DiagnosticTemplate template, int offset, params object?[] args)
+    private void AddError(DiagnosticTemplate template, int offset, int width, params object?[] args)
     {
-        // We need to account for leading trivia
-        var leadingTriviaWidth = this.leadingTriviaList.Sum(t => t.Width);
-        var location = new Location(leadingTriviaWidth + offset);
+        var range = new RelativeRange(RelativeOffset.CurrentElement, offset, width);
+        var location = new Location(range);
         var diag = Diagnostic.Create(
             template: template,
             location: location,

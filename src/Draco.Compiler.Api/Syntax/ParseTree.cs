@@ -84,12 +84,8 @@ public abstract partial class ParseTree
     {
         foreach (var internalDiag in this.Green.Diagnostics)
         {
-            var position = this.Position;
-            var offsetPosition = new Position(position.Line, position.Column + internalDiag.Location.Offset);
-            // TODO: This is likely not correct
-            // But we don't propagate this yet
-            var offsetRange = new Range(offsetPosition, 1);
-            var location = new Location(offsetRange);
+            var range = this.TranslateRelativeRange(internalDiag.Location.Range);
+            var location = new Location(range);
             var diag = new Diagnostic(internalDiag, location);
             yield return diag;
         }
@@ -98,6 +94,15 @@ public abstract partial class ParseTree
         {
             foreach (var diag in child.CollectAllDiagnostics()) yield return diag;
         }
+    }
+
+    private protected virtual Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange relativeRange)
+    {
+        if (relativeRange.RelativeTo != Internal.Diagnostics.RelativeOffset.CurrentElement)
+        {
+            throw new NotSupportedException();
+        }
+        return new(this.Position, relativeRange.Width);
     }
 
     protected virtual string ComputeTextWithoutSurroundingTrivia()
@@ -203,6 +208,21 @@ public abstract partial class ParseTree
 {
     public sealed partial class Token
     {
+        private protected override Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange relativeRange)
+        {
+            if (relativeRange.RelativeTo == Internal.Diagnostics.RelativeOffset.EndOfLastElement)
+            {
+                var prevToken = this.GetPrecedingToken(this);
+                var prevEnd = prevToken?.Range.End ?? new(0, 0);
+                return new(prevEnd, relativeRange.Width);
+            }
+            if (relativeRange.RelativeTo == Internal.Diagnostics.RelativeOffset.CurrentElement)
+            {
+                return new(this.Position, relativeRange.Width);
+            }
+            throw new NotSupportedException();
+        }
+
         protected override string ComputeTextWithoutSurroundingTrivia() => this.Text;
 
         protected override Position ComputePosition()

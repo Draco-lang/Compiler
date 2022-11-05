@@ -226,7 +226,7 @@ internal sealed class Parser
                 TokenType.Identifier when this.Peek(1) == TokenType.Colon => false,
                 _ => true,
             });
-            var location = new Location(0);
+            var location = this.GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
             return new Decl.Unexpected(input, ImmutableArray.Create(diag));
         }
@@ -373,7 +373,7 @@ internal sealed class Parser
                 or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
                 _ => true,
             });
-            var location = new Location(0);
+            var location = this.GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
             return new FuncBody.Unexpected(input, ImmutableArray.Create(diag));
         }
@@ -522,7 +522,7 @@ internal sealed class Parser
                                 var tt when expressionStarters.Contains(tt) => false,
                                 _ => true,
                             });
-                            var location = new Location(0);
+                            var location = this.GetLocation(tokens.Sum(i => i.Width));
                             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "statement");
                             stmts.Add(new Stmt.Unexpected(tokens, ImmutableArray.Create(diag)));
                         }
@@ -767,7 +767,7 @@ internal sealed class Parser
                 var type when expressionStarters.Contains(type) => false,
                 _ => true,
             });
-            var location = new Location(0);
+            var location = this.GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
             return new Expr.Unexpected(input, ImmutableArray.Create(diag));
         }
@@ -777,7 +777,7 @@ internal sealed class Parser
     /// <summary>
     /// Parses a line string expression.
     /// </summary>
-    /// <returns>The parsed <see cref="Expr.String"/></returns>
+    /// <returns>The parsed <see cref="Expr.String"/>.</returns>
     private Expr.String ParseLineString()
     {
         var openQuote = this.Expect(TokenType.LineStringStart);
@@ -810,11 +810,27 @@ internal sealed class Parser
     /// <summary>
     /// Parses a multi-line string expression.
     /// </summary>
-    /// <returns>The parsed <see cref="Expr.String"/></returns>
+    /// <returns>The parsed <see cref="Expr.String"/>.</returns>
     private Expr.String ParseMultiLineString()
     {
         var openQuote = this.Expect(TokenType.MultiLineStringStart);
         var content = ImmutableArray.CreateBuilder<StringPart>();
+        // We check if there's a newline
+        if (!openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline))
+        {
+            // Possible stray tokens inline
+            var strayTokens = this.Synchronize(t => t switch
+            {
+                TokenType.MultiLineStringEnd or TokenType.StringNewline => false,
+                _ => true,
+            });
+            var location = this.GetLocation(strayTokens.Sum(t => t.Width));
+            var diag = Diagnostic.Create(
+                SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString,
+                location);
+            var unexpected = new StringPart.Unexpected(strayTokens, ImmutableArray.Create(diag));
+            content.Add(unexpected);
+        }
         while (true)
         {
             var peek = this.Peek();
@@ -838,10 +854,17 @@ internal sealed class Parser
         }
         var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
         // We need to check if the close quote is on a newline
-        if (closeQuote.LeadingTrivia.Length > 0)
+        // There are 2 cases:
+        //  - the leading trivia of the closing quotes contains a newline
+        //  - the string is empty and the opening quotes trailing trivia contains a newline
+        var isClosingQuoteOnNewline =
+               closeQuote.LeadingTrivia.Length > 0
+            || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline));
+        if (isClosingQuoteOnNewline)
         {
             Debug.Assert(closeQuote.LeadingTrivia.Length <= 2);
-            Debug.Assert(closeQuote.LeadingTrivia[0].Type == TokenType.Newline);
+            Debug.Assert(openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline)
+                      || closeQuote.LeadingTrivia.Any(t => t.Type == TokenType.Newline));
             if (closeQuote.LeadingTrivia.Length == 2)
             {
                 // The first trivia was newline, the second must be spaces
@@ -866,7 +889,8 @@ internal sealed class Parser
                         if (nextIsNewline && !contentPart.Value.Text.StartsWith(prefix))
                         {
                             // We are in a newline and the prefixes don't match, that's an error
-                            var location = new Location(0);
+                            var whitespaceLength = contentPart.Value.Text.TakeWhile(char.IsWhiteSpace).Count();
+                            var location = this.GetLocation(whitespaceLength);
                             var diag = Diagnostic.Create(
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
@@ -893,7 +917,7 @@ internal sealed class Parser
         else
         {
             // Error, the closing quotes are not on a newline
-            var location = new Location(0);
+            var location = this.GetLocation(closeQuote.Width);
             var diag = Diagnostic.Create(
                 SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
                 location);
@@ -990,8 +1014,9 @@ internal sealed class Parser
         {
             // We construct an empty token that signals that this is missing from the tree
             // The attached diagnostic message describes what is missing
-            var location = new Location(0);
-            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: type);
+            var location = this.GetLocationRelativeToLastToken(1);
+            var tokenTypeName = type.GetUserFriendlyName();
+            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: tokenTypeName);
             return Token.From(type, string.Empty, ImmutableArray.Create(diag));
         }
         return token;
@@ -1038,4 +1063,12 @@ internal sealed class Parser
         this.tokenSource.Advance();
         return token;
     }
+
+    // Location utility
+
+    // NOTE: These can be static technically, but later they will access instance data
+    // to get a file reference
+    private Location GetLocation(int width) => new(new(RelativeOffset.CurrentElement, 0, width));
+    private Location GetLocationRelativeToLastToken(int width) =>
+        new(new(RelativeOffset.EndOfLastElement, 0, width));
 }

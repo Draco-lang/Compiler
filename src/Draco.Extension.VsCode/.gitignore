@@ -1,2 +1,4 @@
+node_modules
+out
 # We copy it from the original source
 syntaxes

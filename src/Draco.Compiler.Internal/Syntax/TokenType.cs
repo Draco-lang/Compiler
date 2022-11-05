@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -318,12 +319,12 @@ internal static class TokenTypeExtensions
         || tokenType == TokenType.LineComment;
 
     /// <summary>
-    /// Retrieves the textual representation of a token with a type <paramref name="tokenType"/>.
-    /// Illegal to call for token types that have no unique textual representations.
+    /// Attempts to retrieve the textual representation of a token with a type <paramref name="tokenType"/>.
     /// </summary>
     /// <param name="tokenType">The <see cref="TokenType"/> to get the text of.</param>
-    /// <returns>The textual representation of a token with type <paramref name="tokenType"/>.</returns>
-    public static string GetTokenText(this TokenType tokenType) => tokenType switch
+    /// <returns>The textual representation of a token with type <paramref name="tokenType"/>,
+    /// or null, if it doesn't have any.</returns>
+    public static string? GetTokenTextOrNull(this TokenType tokenType) => tokenType switch
     {
         TokenType.EndOfInput => string.Empty,
         TokenType.InterpolationEnd => "}",
@@ -369,6 +370,27 @@ internal static class TokenTypeExtensions
         TokenType.MinusAssign => "-=",
         TokenType.StarAssign => "*=",
         TokenType.SlashAssign => "/=",
-        _ => throw new InvalidOperationException($"{tokenType} has no unique text representation"),
+        _ => null,
+    };
+
+    /// <summary>
+    /// Retrieves the textual representation of a token with a type <paramref name="tokenType"/>.
+    /// Illegal to call for token types that have no unique textual representations.
+    /// </summary>
+    /// <param name="tokenType">The <see cref="TokenType"/> to get the text of.</param>
+    /// <returns>The textual representation of a token with type <paramref name="tokenType"/>.</returns>
+    public static string GetTokenText(this TokenType tokenType) =>
+           tokenType.GetTokenTextOrNull()
+        ?? throw new InvalidOperationException($"{tokenType} has no unique text representation");
+
+    /// <summary>
+    /// Retrieves a user-friendly name for <paramref name="tokenType"/>.
+    /// </summary>
+    /// <param name="tokenType">The <see cref="TokenType"/> to get the user-friendly name for.</param>
+    /// <returns>The user-friendly name of <paramref name="tokenType"/>.</returns>
+    public static string GetUserFriendlyName(this TokenType tokenType) => tokenType switch
+    {
+        TokenType.EndOfInput => "end of file",
+        _ => tokenType.GetTokenTextOrNull() ?? tokenType.ToString().ToLower(),
     };
 }

@@ -67,6 +67,10 @@ public abstract partial class ParseTree
     /// </summary>
     public IEnumerable<Token> Tokens => this.GetTokens();
 
+    private Position? positionWithLeadingTrivia;
+    internal Position PositionWithLeadingTrivia =>
+        this.positionWithLeadingTrivia ??= this.ComputePositionWithLeadingTrivia();
+
     public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
 }
@@ -132,7 +136,7 @@ public abstract partial class ParseTree
         // last ones end that is not this node
         if (this.Parent is not null)
         {
-            offset = this.Parent.Position;
+            offset = this.Parent.PositionWithLeadingTrivia;
             foreach (var parentsChild in this.Parent.Children)
             {
                 if (ReferenceEquals(this.green, parentsChild.Green)) break;

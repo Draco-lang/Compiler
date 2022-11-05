@@ -12,13 +12,12 @@ public readonly struct Result<TOk, TError>
 {
     private readonly TOk ok;
     private readonly TError error;
-    private readonly bool isOk;
 
     /// <summary>
     /// The value of the result. Throws an exception if the result is not an ok value.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    public TOk? Ok => this.isOk
+    public TOk? Ok => this.IsOk
         ? this.ok
         : throw new InvalidOperationException("Result is not an ok value.");
 
@@ -26,7 +25,7 @@ public readonly struct Result<TOk, TError>
     /// The error of the result. Throws an exception if the result is not an error.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    public TError? Error => this.isOk
+    public TError? Error => this.IsOk
         ? throw new InvalidOperationException("Result is not an error.")
         : this.error;
 
@@ -35,8 +34,7 @@ public readonly struct Result<TOk, TError>
     /// </summary>
     [MemberNotNullWhen(true, nameof(Ok))]
     [MemberNotNullWhen(false, nameof(Error))]
-    public bool IsOk =>
-        this.isOk;
+    public bool IsOk { get; }
 
     /// <summary>
     /// Initializes a new <see cref="Result{T, TError}"/> with an ok value.
@@ -46,7 +44,7 @@ public readonly struct Result<TOk, TError>
     {
         this.ok = ok;
         this.error = default!;
-        this.isOk = true;
+        this.IsOk = true;
     }
 
     /// <summary>
@@ -57,7 +55,7 @@ public readonly struct Result<TOk, TError>
     {
         this.ok = default!;
         this.error = error;
-        this.isOk = false;
+        this.IsOk = false;
     }
 
     /// <summary>
@@ -66,7 +64,7 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UOk">The type of the new ok value.</typeparam>
     /// <param name="transform">A transformation function mapping the ok value.</param>
     /// <returns>A new result of either the new transformed ok value or the previous error.</returns>
-    public Result<UOk, TError> MapOk<UOk>(Func<TOk, UOk> transform) => this.isOk
+    public Result<UOk, TError> MapOk<UOk>(Func<TOk, UOk> transform) => this.IsOk
         ? new(transform(this.ok))
         : new(this.error);
 
@@ -76,7 +74,7 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UError">The type of the new error value.</typeparam>
     /// <param name="transform">A transformation function mapping the error value.</param>
     /// <returns>A new result of either the new transformed error value or the previous ok value.</returns>
-    public Result<TOk, UError> MapError<UError>(Func<TError, UError> transform) => this.isOk
+    public Result<TOk, UError> MapError<UError>(Func<TError, UError> transform) => this.IsOk
         ? new(this.ok)
         : new(transform(this.error));
 
@@ -86,7 +84,7 @@ public readonly struct Result<TOk, TError>
     /// <typeparam name="UOk">The type of the new ok value.</typeparam>
     /// <param name="transform">A transformation function mapping the ok value to a new result.</param>
     /// <returns>A new result of either the returned result or the previous error.</returns>
-    public Result<UOk, TError> BindOk<UOk>(Func<TOk, Result<UOk, TError>> transform) => this.isOk
+    public Result<UOk, TError> BindOk<UOk>(Func<TOk, Result<UOk, TError>> transform) => this.IsOk
         ? transform(this.ok)
         : new(this.error);
 
@@ -97,7 +95,7 @@ public readonly struct Result<TOk, TError>
     /// <param name="transform">A transformation function mapping the error value to a new result.</param>
     /// <returns>A new result of either the returned result or the previous ok value.</returns>
     public Result<TOk, UError> BindError<UError>(Func<TError, Result<TOk, UError>> transform) =>
-        this.isOk
+        this.IsOk
             ? new(this.ok)
             : transform(this.error);
 
@@ -108,7 +106,7 @@ public readonly struct Result<TOk, TError>
     /// <param name="ifOk">The function to apply if the result is an ok value.</param>
     /// <param name="ifError">The function to apply if the result is an error value.</param>
     /// <returns>The result of matching either the ok value or the error value.</returns>
-    public TResult Match<TResult>(Func<TOk, TResult> ifOk, Func<TError, TResult> ifError) => this.isOk
+    public TResult Match<TResult>(Func<TOk, TResult> ifOk, Func<TError, TResult> ifError) => this.IsOk
         ? ifOk(this.ok)
         : ifError(this.error);
 
@@ -119,7 +117,7 @@ public readonly struct Result<TOk, TError>
     /// <param name="ifError">The function to apply if the result is an error value.</param>
     public void Switch(Action<TOk> ifOk, Action<TError> ifError)
     {
-        if (this.isOk)
+        if (this.IsOk)
         {
             ifOk(this.ok);
         }
@@ -133,7 +131,7 @@ public readonly struct Result<TOk, TError>
     /// Returns the ok value or a value from a factory function.
     /// </summary>
     /// <param name="factory">The factory function to invoke if the result is not an ok value.</param>
-    public TOk OkOr(Func<TOk> factory) => this.isOk
+    public TOk OkOr(Func<TOk> factory) => this.IsOk
         ? this.ok
         : factory();
 
@@ -148,7 +146,7 @@ public readonly struct Result<TOk, TError>
     /// Returns the error value or a value from a factory function.
     /// </summary>
     /// <param name="factory">The factory function to invoke if the result is not an error value.</param>
-    public TError ErrorOr(Func<TError> factory) => this.isOk
+    public TError ErrorOr(Func<TError> factory) => this.IsOk
         ? factory()
         : this.error;
 

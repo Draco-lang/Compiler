@@ -367,6 +367,19 @@ internal partial record class ParseTree
     public abstract partial record class StringPart : ParseTree
     {
         /// <summary>
+        /// Unexpected tokens in a string.
+        /// </summary>
+        /// <param name="Tokens">The tokens that are unexpected.</param>
+        /// <param name="Diagnostics">The diagnostics attacked.</param>
+        public sealed partial record class Unexpected(
+            ImmutableArray<Token> Tokens,
+            ImmutableArray<Diagnostic> Diagnostics) : StringPart
+        {
+            /// <inheritdoc/>
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+        }
+
+        /// <summary>
         /// Content part of a string literal.
         /// </summary>
         public sealed partial record class Content(

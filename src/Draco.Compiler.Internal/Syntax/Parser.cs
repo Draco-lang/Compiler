@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
@@ -777,7 +778,7 @@ internal sealed class Parser
     /// <summary>
     /// Parses a line string expression.
     /// </summary>
-    /// <returns>The parsed <see cref="Expr.String"/></returns>
+    /// <returns>The parsed <see cref="Expr.String"/>.</returns>
     private Expr.String ParseLineString()
     {
         var openQuote = this.Expect(TokenType.LineStringStart);
@@ -810,12 +811,27 @@ internal sealed class Parser
     /// <summary>
     /// Parses a multi-line string expression.
     /// </summary>
-    /// <returns>The parsed <see cref="Expr.String"/></returns>
+    /// <returns>The parsed <see cref="Expr.String"/>.</returns>
     private Expr.String ParseMultiLineString()
     {
         var openQuote = this.Expect(TokenType.MultiLineStringStart);
-        // TODO: Check for newline
         var content = ImmutableArray.CreateBuilder<StringPart>();
+        // We check if there's a newline
+        if (!openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline))
+        {
+            // Possible stray tokens inline
+            var strayTokens = this.Synchronize(t => t switch
+            {
+                TokenType.MultiLineStringEnd or TokenType.StringNewline => false,
+                _ => true,
+            });
+            var location = this.GetLocation(strayTokens.Sum(t => t.Width));
+            var diag = Diagnostic.Create(
+                SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString,
+                location);
+            var unexpected = new StringPart.Unexpected(strayTokens, ImmutableArray.Create(diag));
+            content.Add(unexpected);
+        }
         while (true)
         {
             var peek = this.Peek();

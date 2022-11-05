@@ -112,7 +112,8 @@ public abstract partial class ParseTree
         using var tokenEnumerator = this.Tokens.GetEnumerator();
         // The first token just gets it's content printed
         // That ignores the leading trivia, trailing will only be printed if there are following tokens
-        Debug.Assert(tokenEnumerator.MoveNext());
+        var hasFirstToken = tokenEnumerator.MoveNext();
+        Debug.Assert(hasFirstToken);
         var firstToken = tokenEnumerator.Current;
         sb.Append(firstToken.Text);
         lastTrailingTrivia = firstToken.TrailingTrivia;

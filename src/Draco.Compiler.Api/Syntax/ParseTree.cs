@@ -150,10 +150,7 @@ public abstract partial class ParseTree
         return new(start, end);
     }
 
-    protected virtual IEnumerable<Token> GetTokens()
-    {
-        foreach (var t in this.Children.SelectMany(c => c.Tokens)) yield return t;
-    }
+    protected virtual IEnumerable<Token> GetTokens() => this.Children.SelectMany(c => c.Tokens);
 
     private Token? GetPrecedingToken(ParseTree tree)
     {

@@ -204,7 +204,7 @@ internal sealed class Parser
     /// Parses a declaration.
     /// </summary>
     /// <returns>The parsed <see cref="Decl"/>.</returns>
-    private Decl ParseDeclaration()
+    internal Decl ParseDeclaration()
     {
         switch (this.Peek())
         {
@@ -237,7 +237,7 @@ internal sealed class Parser
     /// Parses a statement.
     /// </summary>
     /// <returns>The parsed <see cref="Stmt"/>.</returns>
-    private Stmt ParseStatement(bool allowDecl)
+    internal Stmt ParseStatement(bool allowDecl)
     {
         switch (this.Peek())
         {
@@ -581,7 +581,7 @@ internal sealed class Parser
     /// Parses an expression.
     /// </summary>
     /// <returns>The parsed <see cref="Expr"/>.</returns>
-    private Expr ParseExpr()
+    internal Expr ParseExpr()
     {
         // The function that is driven by the precedence table
         Expr ParsePrecedenceLevel(int level)

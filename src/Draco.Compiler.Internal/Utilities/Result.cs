@@ -10,9 +10,6 @@ namespace Draco.Compiler.Internal.Utilities;
 /// <typeparam name="TError">The type of the inner error.</typeparam>
 public readonly struct Result<TOk, TError>
 {
-    private readonly TOk ok;
-    private readonly TError error;
-
     /// <summary>
     /// The value of the result. Throws an exception if the result is not an ok value.
     /// </summary>
@@ -35,6 +32,9 @@ public readonly struct Result<TOk, TError>
     [MemberNotNullWhen(true, nameof(Ok))]
     [MemberNotNullWhen(false, nameof(Error))]
     public bool IsOk { get; }
+
+    private readonly TOk ok;
+    private readonly TError error;
 
     /// <summary>
     /// Initializes a new <see cref="Result{T, TError}"/> with an ok value.

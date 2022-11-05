@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -47,7 +48,7 @@ public abstract partial class ParseTree
     /// <summary>
     /// The text this node was parsed from.
     /// </summary>
-    public string FullText => this.fullText ??= this.ComputeText();
+    public string FullText => this.fullText ??= Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
 
     private Position? position;
     /// <summary>
@@ -66,28 +67,114 @@ public abstract partial class ParseTree
     /// </summary>
     public IEnumerable<Token> Tokens => this.GetTokens();
 
-    public override string ToString() => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
+    public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
 }
 
 public abstract partial class ParseTree
 {
-    protected virtual string ComputeText() =>
-        string.Join(string.Empty, this.Children.Select(n => n.FullText));
-
-    private Position ComputePosition()
+    protected virtual string ComputeTextWithoutSurroundingTrivia()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+        // We simply print the text of all tokens except the first and last ones
+        // For the first, we ignore leading trivia, for the last we ignore trailing trivia
+        var lastTrailingTrivia = ImmutableArray<Token>.Empty;
+        var tokensEnumerator = this.Tokens.GetEnumerator();
+        // The first token just gets it's content printed
+        // That ignores the leading trivia, trailing will only be printed if there are following tokens
+        Debug.Assert(tokensEnumerator.MoveNext());
+        var firstToken = tokensEnumerator.Current;
+        sb.Append(firstToken.Text);
+        lastTrailingTrivia = firstToken.TrailingTrivia;
+        while (tokensEnumerator.MoveNext())
+        {
+            var token = tokensEnumerator.Current;
+            // Last trailing trivia
+            foreach (var t in lastTrailingTrivia) sb.Append(t.Text);
+            // Leading trivia
+            foreach (var t in token.LeadingTrivia) sb.Append(t.Text);
+            // Content
+            sb.Append(token.Text);
+            // Trailing trivia
+            lastTrailingTrivia = token.TrailingTrivia;
+        }
+        return sb.ToString();
+    }
+
+    protected virtual Position ComputePosition()
+    {
+        // To avoid double-computing the offset by the leading trivia,
+        // we propagate the work to the first token
+        var firstToken = this.Tokens.First();
+        return firstToken.Position;
     }
 
     private Range ComputeRange()
     {
-        throw new NotImplementedException();
+        var start = this.Position;
+        var end = StepPositionByText(start, this.FullText);
+        return new(start, end);
     }
 
-    private IEnumerable<Token> GetTokens()
+    protected virtual IEnumerable<Token> GetTokens()
     {
-        throw new NotImplementedException();
+        foreach (var child in this.Children)
+        {
+            foreach (var t in child.Tokens) yield return t;
+        }
+    }
+
+    private Position ComputePositionWithLeadingTrivia()
+    {
+        var offset = new Position(0, 0);
+        // If there is a parent, we offset by the previous nodes
+        // The simplest way of that is to request the range of all previous nodes and remember the
+        // last ones end that is not this node
+        if (this.Parent is not null)
+        {
+            offset = this.Parent.Position;
+            foreach (var parentsChild in this.Parent.Children)
+            {
+                if (ReferenceEquals(this.green, parentsChild.Green)) break;
+                offset = parentsChild.Range.End;
+            }
+        }
+        return offset;
+    }
+
+    // NOTE: This might be a good general utility somewhere else?
+    private static Position StepPositionByText(Position start, string text)
+    {
+        var currLine = start.Line;
+        var currCol = start.Column;
+        for (var i = 0; i < text.Length; ++i)
+        {
+            var ch = text[i];
+            if (ch == '\r')
+            {
+                // Either Windows or OS-X 9 style newlines
+                if (i + 1 < text.Length && text[i + 1] == '\n')
+                {
+                    // Windows-style, eat extra char
+                    ++i;
+                }
+                // Otherwise OS-X 9 style
+                ++currLine;
+                currCol = 0;
+            }
+            else if (ch == '\n')
+            {
+                // Unix-style newline
+                ++currLine;
+                currCol = 0;
+            }
+            else
+            {
+                // NOTE: We might not want to increment in all cases
+                ++currCol;
+            }
+        }
+        return new(Line: currLine, Column: currCol);
     }
 }
 
@@ -95,13 +182,22 @@ public abstract partial class ParseTree
 {
     public sealed partial class Token
     {
-        protected override string ComputeText()
+        protected override string ComputeTextWithoutSurroundingTrivia() => this.Text;
+
+        protected override Position ComputePosition()
         {
-            var sb = new StringBuilder();
-            sb.AppendJoin(string.Empty, this.LeadingTrivia.Select(t => t.Text));
-            sb.Append(this.Text);
-            sb.AppendJoin(string.Empty, this.TrailingTrivia.Select(t => t.Text));
-            return sb.ToString();
+            var position = this.ComputePositionWithLeadingTrivia();
+            // We offset by the leading trivia
+            foreach (var trivia in this.LeadingTrivia)
+            {
+                position = StepPositionByText(position, trivia.Text);
+            }
+            return position;
+        }
+
+        protected override IEnumerable<Token> GetTokens()
+        {
+            yield return this;
         }
     }
 }

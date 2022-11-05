@@ -16,5 +16,6 @@ internal class Program
             """);
         var call = tree.Children.First().Children.ElementAt(4).Children.First().Children.ElementAt(1).Children.First();
         Console.WriteLine(call.Range);
+        Console.WriteLine(call);
     }
 }

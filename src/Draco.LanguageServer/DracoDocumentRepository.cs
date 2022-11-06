@@ -3,18 +3,20 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 
 namespace Draco.LanguageServer;
 
-internal class DracoDocumentRepository
+internal sealed class DracoDocumentRepository
 {
-    public Dictionary<DocumentUri, string> Documents { get; } = new();
-    public void AddOrUpdate(DocumentUri uri, string contents)
+    private Dictionary<DocumentUri, string> Documents { get; } = new();
+    public void AddOrUpdateDocument(DocumentUri uri, string contents)
     {
-        if (this.Documents.TryGetValue(uri, out var document))
-        {
-            this.Documents[uri] = contents;
-        }
-        else
-        {
-            this.Documents.Add(uri, contents);
-        }
+        this.Documents[uri] = contents;
     }
+    public string GetDocument(DocumentUri uri)
+    {
+        if (this.Documents.ContainsKey(uri))
+        {
+            return this.Documents[uri];
+        }
+        return "";
+    }
+
 }

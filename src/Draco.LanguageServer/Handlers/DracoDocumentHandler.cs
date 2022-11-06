@@ -56,7 +56,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
     {
         var uri = request.TextDocument.Uri;
         var sourceText = request.TextDocument.Text;
-        this.repository.AddOrUpdate(uri, sourceText);
+        this.repository.AddOrUpdateDocument(uri, sourceText);
         await this.PublishSyntaxDiagnosticsAsync(uri, sourceText);
         return Unit.Value;
     }
@@ -72,7 +72,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
         var uri = request.TextDocument.Uri;
         var change = request.ContentChanges.First();
         var sourceText = change.Text;
-        this.repository.AddOrUpdate(uri, sourceText);
+        this.repository.AddOrUpdateDocument(uri, sourceText);
         await this.PublishSyntaxDiagnosticsAsync(uri, sourceText);
         return Unit.Value;
     }

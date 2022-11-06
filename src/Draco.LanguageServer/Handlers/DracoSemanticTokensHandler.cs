@@ -11,7 +11,7 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.LanguageServer.Handlers;
 
-public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
+public sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 {
     private readonly DracoDocumentRepository repository;
     internal DracoSemanticTokensHandler(DracoDocumentRepository repository)
@@ -44,7 +44,7 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 
     protected override async Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
-        var content = this.repository.Documents[identifier.TextDocument.Uri];
+        var content = this.repository.GetDocument(identifier.TextDocument.Uri);
         var parseTree = ParseTree.Parse(content);
         var tokens = GetTokens(parseTree);
         foreach (var token in tokens)
@@ -75,5 +75,5 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         };
 
     private static IEnumerable<SemanticToken> GetTokens(ParseTree tree) => tree.Tokens
-        .Select(t => Translator.ToLsp(t)!).Where(t => t is not null);
+        .Select(t => Translator.ToLsp(t)!).OfType<SemanticToken>();
 }

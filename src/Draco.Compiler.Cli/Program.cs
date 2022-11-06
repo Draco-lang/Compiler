@@ -9,15 +9,11 @@ internal class Program
 {
     internal static void Main(string[] args)
     {
-        var tree = ParseTree.Parse(""""
+        var src = """"
             func main() {
-                var a = """
-                """;
+                var a = 0;
             }
-            """");
-        foreach (var diag in tree.GetAllDiagnostics())
-        {
-            Console.WriteLine(diag);
-        }
+            """";
+        ScriptingEngine.Execute(src);
     }
 }

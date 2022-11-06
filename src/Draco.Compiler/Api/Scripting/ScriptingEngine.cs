@@ -114,7 +114,9 @@ public static class ScriptingEngine
 
     public static string CompileToCSharpCode(string text)
     {
+        var compilation = new Compilation();
         var parseTree = ParseTree.Parse(text);
-        return CSharpCodegen.Transpile(parseTree.Green);
+        var semanticModel = compilation.GetSemanticModel(parseTree);
+        return CSharpCodegen.Transpile(semanticModel);
     }
 }

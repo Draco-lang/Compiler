@@ -43,30 +43,14 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 
     protected override async Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
-        //using var typesEnumerator = this.RotateEnum(SemanticTokenType.Defaults).GetEnumerator();
-        //using var modifiersEnumerator = this.RotateEnum(SemanticTokenModifier.Defaults).GetEnumerator();
-        // you would normally get this from a common source that is managed by current open editor, current active editor, etc.
         var content = await File.ReadAllTextAsync(DocumentUri.GetFileSystemPath(identifier)!, cancellationToken).ConfigureAwait(false);
         this.parseTree = ParseTree.Parse(content);
         var tokens = this.GetTokens(this.parseTree);
         await Task.Yield();
         foreach (var token in tokens)
         {
-            builder.Push(Translator.ToLsp(token.Element.Range), token.Type, token.Modifiers);
+            if (token is not null) builder.Push(Translator.ToLsp(token.Token.Range), token.Type, token.Modifiers);
         }
-        //foreach (var (line, text) in content.Split('\n').Select((text, line) => (line, text)))
-        //{
-        //    var parts = text.TrimEnd().Split(';', ' ', '.', '"', '(', ')');
-        //    var index = 0;
-        //    foreach (var part in parts)
-        //    {
-        //        typesEnumerator.MoveNext();
-        //        modifiersEnumerator.MoveNext();
-        //        if (string.IsNullOrWhiteSpace(part)) continue;
-        //        index = text.IndexOf(part, index, StringComparison.Ordinal);
-        //        builder.Push(line, index, part.Length, typesEnumerator.Current);
-        //    }
-        //}
     }
 
     protected override Task<SemanticTokensDocument> GetSemanticTokensDocument(ITextDocumentIdentifierParams @params, CancellationToken cancellationToken)
@@ -94,28 +78,28 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 
     private class SemanticToken
     {
-        public SemanticTokenType Type;
+        public SemanticTokenType? Type;
         public List<SemanticTokenModifier> Modifiers = new List<SemanticTokenModifier>();
-        public Compiler.Api.Syntax.ParseTree Element;
-        public SemanticToken(SemanticTokenType type, List<SemanticTokenModifier> modifiers, Compiler.Api.Syntax.ParseTree element)
+        public Compiler.Api.Syntax.ParseTree Token;
+        public SemanticToken(SemanticTokenType? type, List<SemanticTokenModifier> modifiers, Compiler.Api.Syntax.ParseTree token)
         {
             this.Type = type;
             this.Modifiers = modifiers;
-            this.Element = element;
+            this.Token = token;
         }
 
-        public SemanticToken(SemanticTokenType type, SemanticTokenModifier modifier, Compiler.Api.Syntax.ParseTree element)
+        public SemanticToken(SemanticTokenType? type, SemanticTokenModifier modifier, Compiler.Api.Syntax.ParseTree token)
         {
             this.Type = type;
             this.Modifiers.Add(modifier);
-            this.Element = element;
+            this.Token = token;
         }
     }
 
-    private List<SemanticToken> GetTokens(ParseTree tree) => tree.Tokens
+    private List<SemanticToken?> GetTokens(ParseTree tree) => tree.Tokens
         .Select(t => t.Text switch
         {
-            "var" => new SemanticToken(SemanticTokenType.Keyword, SemanticTokenModifier.Declaration, t),
-            _ => new SemanticToken(SemanticTokenType.Variable, SemanticTokenModifier.Defaults.ToList(), t),
+            "true" => new SemanticToken(SemanticTokenType.String, SemanticTokenModifier.Defaults.ToList(), t), //nonfinished
+            _ => null,
         }).ToList();
 }

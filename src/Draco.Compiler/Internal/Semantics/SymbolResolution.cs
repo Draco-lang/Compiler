@@ -110,6 +110,12 @@ internal static class SymbolResolution
     /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
     public static async QueryValueTask<Symbol?> ReferenceSymbol(QueryDatabase db, ParseTree tree, string name)
     {
-        throw new NotImplementedException();
+        // TODO: This does not obey order-dependent symbols or even scope boundaries
+        // It's just a start to get something up and running
+        var scope = await GetContainingScope(db, tree);
+        if (scope is null) return null;
+        if (scope.Symbols.TryGetValue(name, out var symbol)) return symbol;
+        if (tree.Parent is null) return null;
+        return await ReferenceSymbol(db, tree.Parent, name);
     }
 }

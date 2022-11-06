@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Draco.Query\Draco.Query.csproj" />
+    
     <ProjectReference Include="..\Draco.RedGreenTree.Attributes\Draco.RedGreenTree.Attributes.csproj" />
     <ProjectReference Include="..\Draco.RedGreenTree.SourceGenerator\Draco.RedGreenTree.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
 

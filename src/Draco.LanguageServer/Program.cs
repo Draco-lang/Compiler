@@ -11,7 +11,8 @@ internal class Program
         var server = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options => options
             .WithInput(Console.OpenStandardInput())
             .WithOutput(Console.OpenStandardOutput())
-            .WithHandler<DracoDocumentHandler>());
+            .WithHandler<DracoDocumentHandler>()
+            .WithHandler<DracoSemanticTokensHandler>());
         await server.WaitForExit;
     }
 }

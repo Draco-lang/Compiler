@@ -52,7 +52,7 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         await Task.Yield();
         foreach (var token in tokens)
         {
-            builder.Push(token.Range.Start.Line, token.Range.Start.Column, 5, token.Type, (SemanticTokenModifier[])null);
+            builder.Push(token.Element.Range.Start.Line, token.Element.Range.Start.Column, token.Element.Width, token.Type, token.Modifiers);
         }
         //foreach (var (line, text) in content.Split('\n').Select((text, line) => (line, text)))
         //{
@@ -95,27 +95,20 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
     private class SemanticToken
     {
         public SemanticTokenType Type;
-        public List<SemanticTokenModifier>? Modifiers = new List<SemanticTokenModifier>();
-        public Compiler.Api.Syntax.Range Range;
-        public SemanticToken(SemanticTokenType type, List<SemanticTokenModifier> modifiers, Compiler.Api.Syntax.Range range)
+        public List<SemanticTokenModifier> Modifiers = new List<SemanticTokenModifier>();
+        public Compiler.Api.Syntax.ParseTree Element;
+        public SemanticToken(SemanticTokenType type, List<SemanticTokenModifier> modifiers, Compiler.Api.Syntax.ParseTree element)
         {
             this.Type = type;
             this.Modifiers = modifiers;
-            this.Range = range;
+            this.Element = element;
         }
 
-        public SemanticToken(SemanticTokenType type, SemanticTokenModifier modifier, Compiler.Api.Syntax.Range range)
+        public SemanticToken(SemanticTokenType type, SemanticTokenModifier modifier, Compiler.Api.Syntax.ParseTree element)
         {
             this.Type = type;
             this.Modifiers.Add(modifier);
-            this.Range = range;
-        }
-
-        public SemanticToken(SemanticTokenType type, Compiler.Api.Syntax.Range range)
-        {
-            this.Type = type;
-            this.Modifiers = null;
-            this.Range = range;
+            this.Element = element;
         }
     }
 
@@ -124,8 +117,8 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         var result = new List<SemanticToken>();
         if (tree is ParseTree.Token token) result.Add(token.Text switch
         {
-            "var" => new SemanticToken(SemanticTokenType.Keyword, SemanticTokenModifier.Declaration, token.Range),
-            _ => new SemanticToken(SemanticTokenType.Variable, token.Range),
+            "var" => new SemanticToken(SemanticTokenType.Keyword, SemanticTokenModifier.Declaration, token),
+            _ => new SemanticToken(SemanticTokenType.Variable, SemanticTokenModifier.Defaults.ToList(), token),
         });
         foreach (var child in tree.Children)
         {

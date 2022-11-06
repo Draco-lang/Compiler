@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Draco.LanguageServer.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Draco.LanguageServer;
 
@@ -12,7 +13,9 @@ internal class Program
             .WithInput(Console.OpenStandardInput())
             .WithOutput(Console.OpenStandardOutput())
             .WithHandler<DracoDocumentHandler>()
-            .WithHandler<DracoSemanticTokensHandler>());
+            .WithHandler<DracoSemanticTokensHandler>()
+            .WithServices(s => s
+                .AddSingleton<DracoDocumentRepository>()));
         await server.WaitForExit;
     }
 }

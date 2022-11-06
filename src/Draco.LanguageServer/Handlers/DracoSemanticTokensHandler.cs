@@ -13,6 +13,11 @@ namespace Draco.LanguageServer.Handlers;
 
 public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 {
+    private readonly DracoDocumentRepository repository;
+    internal DracoSemanticTokensHandler(DracoDocumentRepository repository)
+    {
+        this.repository = repository;
+    }
 
     private readonly DocumentSelector documentSelector = new(new DocumentFilter
     {
@@ -39,8 +44,8 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 
     protected override async Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
-        var content = DracoDocumentRepository.Documents[identifier.TextDocument.Uri.Path];
-        var parseTree = ParseTree.Parse(content.Contents);
+        var content = this.repository.Documents[identifier.TextDocument.Uri];
+        var parseTree = ParseTree.Parse(content);
         var tokens = GetTokens(parseTree);
         foreach (var token in tokens)
         {

@@ -572,7 +572,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger);
                 }
-                this.N<Expr.ComparisonElement>();
+                this.N<ComparisonElement>();
                 {
                     this.T(TokenType.GreaterThan);
                     this.N<Expr.Literal>();
@@ -607,7 +607,7 @@ public sealed class ParserTests
                 }
             }
             this.T(TokenType.CurlyClose);
-            this.N<Expr.ElseClause>();
+            this.N<ElseClause>();
             {
                 this.T(TokenType.KeywordElse);
                 this.N<Expr.UnitStmt>();
@@ -698,7 +698,7 @@ public sealed class ParserTests
                     {
                         this.T(TokenType.LiteralInteger);
                     }
-                    this.N<Expr.ComparisonElement>();
+                    this.N<ComparisonElement>();
                     {
                         this.T(TokenType.GreaterThan);
                         this.N<Expr.Literal>();
@@ -754,7 +754,7 @@ public sealed class ParserTests
                     {
                         this.T(TokenType.LiteralInteger);
                     }
-                    this.N<Expr.ComparisonElement>();
+                    this.N<ComparisonElement>();
                     {
                         this.T(TokenType.GreaterThan);
                         this.N<Expr.Literal>();
@@ -788,7 +788,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger);
                 }
-                this.N<Expr.ComparisonElement>();
+                this.N<ComparisonElement>();
                 {
                     this.T(TokenType.GreaterThan);
                     this.N<Expr.Literal>();
@@ -830,7 +830,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger);
                 }
-                this.N<Expr.ComparisonElement>();
+                this.N<ComparisonElement>();
                 {
                     this.T(TokenType.GreaterThan);
                     this.N<Expr.Literal>();
@@ -867,7 +867,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.Identifier);
                 }
-                this.N<Expr.ComparisonElement>();
+                this.N<ComparisonElement>();
                 {
                     this.T(TokenType.LessThan);
                     this.N<Expr.Literal>();
@@ -932,7 +932,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.Identifier);
                 }
-                this.N<Expr.ComparisonElement>();
+                this.N<ComparisonElement>();
                 {
                     this.T(TokenType.LessThan);
                     this.N<Expr.Literal>();
@@ -994,7 +994,7 @@ public sealed class ParserTests
                     {
                         this.T(TokenType.Identifier);
                     }
-                    this.N<Expr.ComparisonElement>();
+                    this.N<ComparisonElement>();
                     {
                         this.T(TokenType.LessThan);
                         this.N<Expr.Literal>();
@@ -1127,7 +1127,7 @@ public sealed class ParserTests
 
         this.N<Expr.Block>();
         this.T(TokenType.CurlyOpen);
-        this.N<Expr.BlockContents>();
+        this.N<BlockContents>();
         {
             this.N<Stmt.Decl>();
             {
@@ -1165,7 +1165,7 @@ public sealed class ParserTests
 
         this.N<Expr.Block>();
         this.T(TokenType.CurlyOpen);
-        this.N<Expr.BlockContents>();
+        this.N<BlockContents>();
         {
             this.N<Stmt.Decl>();
             {
@@ -1198,7 +1198,7 @@ public sealed class ParserTests
 
         this.N<Expr.Block>();
         this.T(TokenType.CurlyOpen);
-        this.N<Expr.BlockContents>();
+        this.N<BlockContents>();
         this.T(TokenType.CurlyClose);
     }
 
@@ -1313,7 +1313,7 @@ public sealed class ParserTests
                     this.T(TokenType.LiteralInteger, "2");
                 }
             }
-            this.N<Expr.ComparisonElement>();
+            this.N<ComparisonElement>();
             {
                 this.T(TokenType.GreaterThan);
                 this.N<Expr.Binary>();
@@ -1347,7 +1347,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger, "3");
                 }
-                this.N<Expr.ComparisonElement>();
+                this.N<ComparisonElement>();
                 {
                     this.T(TokenType.GreaterThan);
                     this.N<Expr.Literal>();
@@ -1371,7 +1371,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger, "5");
                 }
-                this.N<Expr.ComparisonElement>();
+                this.N<ComparisonElement>();
                 {
                     this.T(TokenType.Equal);
                     this.N<Expr.Literal>();

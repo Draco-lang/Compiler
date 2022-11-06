@@ -25,14 +25,16 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
     public TextDocumentSyncKind Change { get; } = TextDocumentSyncKind.Full;
 
     private readonly ILanguageServerFacade server;
+    private readonly DracoDocumentRepository repository;
     private readonly DocumentSelector documentSelector = new(new DocumentFilter
     {
         Pattern = $"**/*{Constants.DracoSourceExtension}",
     });
 
-    public DracoDocumentHandler(ILanguageServerFacade server)
+    public DracoDocumentHandler(ILanguageServerFacade server, DracoDocumentRepository repository)
     {
         this.server = server;
+        this.repository = repository;
     }
 
     public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) =>
@@ -54,6 +56,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
     {
         var uri = request.TextDocument.Uri;
         var sourceText = request.TextDocument.Text;
+        this.repository.AddOrUpdateDocument(uri, sourceText);
         await this.PublishSyntaxDiagnosticsAsync(uri, sourceText);
         return Unit.Value;
     }
@@ -69,6 +72,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
         var uri = request.TextDocument.Uri;
         var change = request.ContentChanges.First();
         var sourceText = change.Text;
+        this.repository.AddOrUpdateDocument(uri, sourceText);
         await this.PublishSyntaxDiagnosticsAsync(uri, sourceText);
         return Unit.Value;
     }

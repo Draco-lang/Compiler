@@ -204,7 +204,7 @@ internal sealed class Parser
     /// Parses a declaration.
     /// </summary>
     /// <returns>The parsed <see cref="Decl"/>.</returns>
-    private Decl ParseDeclaration()
+    internal Decl ParseDeclaration()
     {
         switch (this.Peek())
         {
@@ -237,7 +237,7 @@ internal sealed class Parser
     /// Parses a statement.
     /// </summary>
     /// <returns>The parsed <see cref="Stmt"/>.</returns>
-    private Stmt ParseStatement(bool allowDecl)
+    internal Stmt ParseStatement(bool allowDecl)
     {
         switch (this.Peek())
         {
@@ -581,7 +581,7 @@ internal sealed class Parser
     /// Parses an expression.
     /// </summary>
     /// <returns>The parsed <see cref="Expr"/>.</returns>
-    private Expr ParseExpr()
+    internal Expr ParseExpr()
     {
         // The function that is driven by the precedence table
         Expr ParsePrecedenceLevel(int level)
@@ -658,7 +658,7 @@ internal sealed class Parser
         {
             var gotoKeyword = this.Advance();
             var labelName = this.Expect(TokenType.Identifier);
-            return new Expr.Goto(gotoKeyword, labelName);
+            return new Expr.Goto(gotoKeyword, new Expr.Name(labelName));
         }
 
         default:
@@ -987,11 +987,11 @@ internal sealed class Parser
     /// while a given condition is met.
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
-    /// <returns>The consumed list of <see cref="Token"/>s.</returns>
-    private ImmutableArray<Token> Synchronize(Func<TokenType, bool> keepGoing)
+    /// <returns>The consumed list of <see cref="Token"/>s as <see cref="ParseTree"/>s.</returns>
+    private ImmutableArray<ParseTree> Synchronize(Func<TokenType, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
-        var input = ImmutableArray.CreateBuilder<Token>();
+        var input = ImmutableArray.CreateBuilder<ParseTree>();
         while (true)
         {
             var peek = this.Peek();

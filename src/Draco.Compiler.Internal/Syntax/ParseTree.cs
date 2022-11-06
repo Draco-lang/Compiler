@@ -83,7 +83,7 @@ internal partial record class ParseTree
         /// Unexpected input in declaration context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ImmutableArray<Token> Tokens,
+            ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Decl
         {
             /// <inheritdoc/>
@@ -141,7 +141,7 @@ internal partial record class ParseTree
         /// Unexpected input in function body context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ImmutableArray<Token> Tokens,
+            ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : FuncBody
         {
             /// <inheritdoc/>
@@ -189,7 +189,7 @@ internal partial record class ParseTree
         /// Unexpected input in statement context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ImmutableArray<Token> Tokens,
+            ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Stmt
         {
             /// <inheritdoc/>
@@ -219,7 +219,7 @@ internal partial record class ParseTree
         /// Unexpected input in expression context.
         /// </summary>
         public sealed partial record class Unexpected(
-            ImmutableArray<Token> Tokens,
+            ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Expr
         {
             /// <inheritdoc/>
@@ -260,7 +260,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class Goto(
             Token GotoKeyword,
-            Token Identifier) : Expr;
+            Expr.Name Target) : Expr;
 
         /// <summary>
         /// A return-expression.
@@ -369,10 +369,8 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected tokens in a string.
         /// </summary>
-        /// <param name="Tokens">The tokens that are unexpected.</param>
-        /// <param name="Diagnostics">The diagnostics attacked.</param>
         public sealed partial record class Unexpected(
-            ImmutableArray<Token> Tokens,
+            ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>

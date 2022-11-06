@@ -1068,7 +1068,10 @@ public sealed class ParserTests
             this.N<Expr.Goto>();
             {
                 this.T(TokenType.KeywordGoto);
-                this.N<Expr.Unexpected>();
+                this.N<Expr.Name>();
+                {
+                    this.MissingT(TokenType.Identifier);
+                }
             }
             this.T(TokenType.Semicolon);
         });

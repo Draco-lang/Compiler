@@ -11,6 +11,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.IO;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Draco.Compiler.Api.Syntax;
+using System.Reflection;
 
 namespace Draco.LanguageServer.Handlers;
 public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
@@ -47,21 +48,25 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         // you would normally get this from a common source that is managed by current open editor, current active editor, etc.
         var content = await File.ReadAllTextAsync(DocumentUri.GetFileSystemPath(identifier)!, cancellationToken).ConfigureAwait(false);
         this.parseTree = ParseTree.Parse(content);
+        var tokens = this.GetTokens(this.parseTree);
         await Task.Yield();
-
-        foreach (var (line, text) in content.Split('\n').Select((text, line) => (line, text)))
+        foreach (var token in tokens)
         {
-            var parts = text.TrimEnd().Split(';', ' ', '.', '"', '(', ')');
-            var index = 0;
-            foreach (var part in parts)
-            {
-                typesEnumerator.MoveNext();
-                modifiersEnumerator.MoveNext();
-                if (string.IsNullOrWhiteSpace(part)) continue;
-                index = text.IndexOf(part, index, StringComparison.Ordinal);
-                builder.Push(line, index, part.Length, typesEnumerator.Current);
-            }
+            builder.Push(token.Range.Start.Line, token.Range.Start.Column, 5, token.Type, (SemanticTokenModifier[])null);
         }
+        //foreach (var (line, text) in content.Split('\n').Select((text, line) => (line, text)))
+        //{
+        //    var parts = text.TrimEnd().Split(';', ' ', '.', '"', '(', ')');
+        //    var index = 0;
+        //    foreach (var part in parts)
+        //    {
+        //        typesEnumerator.MoveNext();
+        //        modifiersEnumerator.MoveNext();
+        //        if (string.IsNullOrWhiteSpace(part)) continue;
+        //        index = text.IndexOf(part, index, StringComparison.Ordinal);
+        //        builder.Push(line, index, part.Length, typesEnumerator.Current);
+        //    }
+        //}
     }
 
     protected override Task<SemanticTokensDocument> GetSemanticTokensDocument(ITextDocumentIdentifierParams @params, CancellationToken cancellationToken)

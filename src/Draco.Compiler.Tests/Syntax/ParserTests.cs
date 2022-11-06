@@ -107,14 +107,6 @@ public sealed class ParserTests
         }
     }
 
-    private void StringContent()
-    {
-        this.N<StringPart.Content>();
-        {
-            this.T(TokenType.StringContent);
-        }
-    }
-
     private void StringContent(string content)
     {
         this.N<StringPart.Content>();
@@ -373,26 +365,21 @@ public sealed class ParserTests
     [Fact]
     public void TestVariableDeclarationWithNoTypeAndWithValueAndMissingSemicolon()
     {
-        this.MainFunctionPlaceHolder("val x = 5", () =>
+        this.ParseDeclaration("val x = 5");
+        this.N<Decl.Variable>();
         {
-            this.N<Stmt.Decl>();
+            this.T(TokenType.KeywordVal);
+            this.T(TokenType.Identifier);
+            this.N<ValueInitializer>();
             {
-                this.N<Decl.Variable>();
+                this.T(TokenType.Assign);
+                this.N<Expr.Literal>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
-                    {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.Literal>();
-                        {
-                            this.T(TokenType.LiteralInteger);
-                        }
-                    }
-                    this.MissingT(TokenType.Semicolon);
+                    this.T(TokenType.LiteralInteger);
                 }
             }
-        });
+            this.MissingT(TokenType.Semicolon);
+        }
     }
 
     [Fact]
@@ -467,26 +454,21 @@ public sealed class ParserTests
     [Fact]
     public void TestVariableDeclarationWithMissingTypeAndNoValue()
     {
-        this.MainFunctionPlaceHolder("val x:;", () =>
+        this.ParseDeclaration("val x:;");
+        this.N<Decl.Variable>();
         {
-            this.N<Stmt.Decl>();
+            this.T(TokenType.KeywordVal);
+            this.T(TokenType.Identifier);
+            this.N<TypeSpecifier>();
             {
-                this.N<Decl.Variable>();
+                this.T(TokenType.Colon);
+                this.N<TypeExpr.Name>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<TypeSpecifier>();
-                    {
-                        this.T(TokenType.Colon);
-                        this.N<TypeExpr.Name>();
-                        {
-                            this.MissingT(TokenType.Identifier);
-                        }
-                    }
-                    this.T(TokenType.Semicolon);
+                    this.MissingT(TokenType.Identifier);
                 }
             }
-        });
+            this.T(TokenType.Semicolon);
+        }
     }
 
     [Fact]
@@ -520,31 +502,26 @@ public sealed class ParserTests
     [Fact]
     public void TestVariableDeclarationWithMissingTypeAndMissingValue()
     {
-        this.MainFunctionPlaceHolder("val x: =;", () =>
+        this.ParseDeclaration("val x: =;");
+        this.N<Decl.Variable>();
         {
-            this.N<Stmt.Decl>();
+            this.T(TokenType.KeywordVal);
+            this.T(TokenType.Identifier);
+            this.N<TypeSpecifier>();
             {
-                this.N<Decl.Variable>();
+                this.T(TokenType.Colon);
+                this.N<TypeExpr.Name>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<TypeSpecifier>();
-                    {
-                        this.T(TokenType.Colon);
-                        this.N<TypeExpr.Name>();
-                        {
-                            this.MissingT(TokenType.Identifier);
-                        }
-                        this.N<ValueInitializer>();
-                        {
-                            this.T(TokenType.Assign);
-                            this.N<Expr.Unexpected>();
-                            this.T(TokenType.Semicolon);
-                        }
-                    }
+                    this.MissingT(TokenType.Identifier);
+                }
+                this.N<ValueInitializer>();
+                {
+                    this.T(TokenType.Assign);
+                    this.N<Expr.Unexpected>();
+                    this.T(TokenType.Semicolon);
                 }
             }
-        });
+        }
     }
 
     [Fact]

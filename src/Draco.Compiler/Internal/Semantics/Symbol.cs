@@ -13,6 +13,12 @@ namespace Draco.Compiler.Internal.Semantics;
 internal abstract record class Symbol(string Name)
 {
     /// <summary>
+    /// A symbol for a label.
+    /// </summary>
+    /// <param name="Name">The name of the label.</param>
+    public sealed record class Label(string Name) : Symbol(Name);
+
+    /// <summary>
     /// A symbol for a function declaration.
     /// </summary>
     /// <param name="Name">The name of the function.</param>

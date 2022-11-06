@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ public abstract partial class ParseTree
 /// The base class for all nodes in the Draco parse-tree.
 /// </summary>
 [RedTree(typeof(Internal.Syntax.ParseTree))]
-public abstract partial class ParseTree
+public abstract partial class ParseTree : IEquatable<ParseTree>
 {
     private readonly Internal.Syntax.ParseTree green;
 
@@ -77,6 +78,11 @@ public abstract partial class ParseTree
 
     public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
+
+    // Equality by green nodes
+    public bool Equals(ParseTree? other) => ReferenceEquals(this.Green, other?.Green);
+    public override bool Equals(object? obj) => this.Equals(obj as ParseTree);
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this.Green);
 
     public sealed partial class Token
     {

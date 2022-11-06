@@ -34,7 +34,7 @@ internal static class Translator
         return token.Type switch
         {
             TokenType.LineStringStart or TokenType.LineStringEnd or TokenType.MultiLineStringStart or TokenType.MultiLineStringEnd or TokenType.LiteralCharacter =>
-            new SemanticToken(SemanticTokenType.String, SemanticTokenModifier.Defaults.ToList(), token),
+            new SemanticToken(SemanticTokenType.String, SemanticTokenModifier.Defaults.ToList(), token.Range),
             _ => null,
         };
     }

@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
@@ -9,14 +7,12 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.IO;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Draco.Compiler.Api.Syntax;
-using System.Reflection;
 
 namespace Draco.LanguageServer.Handlers;
+
 public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 {
-    private ParseTree? parseTree;
 
     private readonly DocumentSelector documentSelector = new(new DocumentFilter
     {
@@ -44,12 +40,11 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
     protected override async Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
         var content = await File.ReadAllTextAsync(DocumentUri.GetFileSystemPath(identifier)!, cancellationToken).ConfigureAwait(false);
-        this.parseTree = ParseTree.Parse(content);
-        var tokens = this.GetTokens(this.parseTree);
-        await Task.Yield();
+        var parseTree = ParseTree.Parse(content);
+        var tokens = GetTokens(parseTree);
         foreach (var token in tokens)
         {
-            builder.Push(Translator.ToLsp(token.Token.Range), token.Type, token.Modifiers);
+            builder.Push(Translator.ToLsp(token.Range), token.Type, token.Modifiers);
         }
     }
 
@@ -58,9 +53,8 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         return Task.FromResult(new SemanticTokensDocument(this.RegistrationOptions.Legend));
     }
 
-    protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(SemanticTokensCapability capability, ClientCapabilities clientCapabilities)
-    {
-        return new SemanticTokensRegistrationOptions
+    protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(SemanticTokensCapability capability, ClientCapabilities clientCapabilities) =>
+        new SemanticTokensRegistrationOptions
         {
             DocumentSelector = this.documentSelector,
             Legend = new SemanticTokensLegend
@@ -74,7 +68,7 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
             },
             Range = true
         };
-    }
-    private List<SemanticToken> GetTokens(ParseTree tree) => tree.Tokens
-        .Select(t => Translator.ToLsp(t)!).Where(t => t is not null).ToList();
+
+    private static IEnumerable<SemanticToken> GetTokens(ParseTree tree) => tree.Tokens
+        .Select(t => Translator.ToLsp(t)!).Where(t => t is not null);
 }

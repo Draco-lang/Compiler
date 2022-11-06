@@ -11,7 +11,7 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.LanguageServer.Handlers;
 
-public sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
+internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 {
     private readonly DracoDocumentRepository repository;
 

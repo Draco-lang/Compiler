@@ -52,7 +52,7 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         await Task.Yield();
         foreach (var token in tokens)
         {
-            builder.Push(token.Element.Range.Start.Line, token.Element.Range.Start.Column, token.Element.Width, token.Type, token.Modifiers);
+            builder.Push(Translator.ToLsp(token.Element.Range), token.Type, token.Modifiers);
         }
         //foreach (var (line, text) in content.Split('\n').Select((text, line) => (line, text)))
         //{
@@ -112,18 +112,10 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         }
     }
 
-    private List<SemanticToken> GetTokens(ParseTree tree)
-    {
-        var result = new List<SemanticToken>();
-        if (tree is ParseTree.Token token) result.Add(token.Text switch
+    private List<SemanticToken> GetTokens(ParseTree tree) => tree.Tokens
+        .Select(t => t.Text switch
         {
-            "var" => new SemanticToken(SemanticTokenType.Keyword, SemanticTokenModifier.Declaration, token),
-            _ => new SemanticToken(SemanticTokenType.Variable, SemanticTokenModifier.Defaults.ToList(), token),
-        });
-        foreach (var child in tree.Children)
-        {
-            result.AddRange(this.GetTokens(child));
-        }
-        return result;
-    }
+            "var" => new SemanticToken(SemanticTokenType.Keyword, SemanticTokenModifier.Declaration, t),
+            _ => new SemanticToken(SemanticTokenType.Variable, SemanticTokenModifier.Defaults.ToList(), t),
+        }).ToList();
 }

@@ -77,6 +77,11 @@ public abstract partial class ParseTree
 
     public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
+
+    public sealed partial class Token
+    {
+        public TokenType Type => this.Green.Type;
+    }
 }
 
 public abstract partial class ParseTree

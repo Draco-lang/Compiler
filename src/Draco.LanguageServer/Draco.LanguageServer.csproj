@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,19 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Draco.Compiler.Api\Draco.Compiler.Api.csproj" />
+    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
     <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.6" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <ItemGroup>
-      <FilesToCopy Include="$(TargetDir)**\*"/>
+      <FilesToCopy Include="$(TargetDir)**\*" />
     </ItemGroup>
 
-    <Copy
-      SourceFiles="@(FilesToCopy)"
-      DestinationFolder="$(SolutionDir)Draco.Extension.VsCode\out"
-      SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(SolutionDir)Draco.Extension.VsCode\out" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

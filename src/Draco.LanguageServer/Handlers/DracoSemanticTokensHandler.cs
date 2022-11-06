@@ -39,8 +39,8 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 
     protected override async Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
-        var content = await File.ReadAllTextAsync(DocumentUri.GetFileSystemPath(identifier)!, cancellationToken).ConfigureAwait(false);
-        var parseTree = ParseTree.Parse(content);
+        var content = DracoDocumentRepository.Documents[identifier.TextDocument.Uri.Path];
+        var parseTree = ParseTree.Parse(content.Contents);
         var tokens = GetTokens(parseTree);
         foreach (var token in tokens)
         {

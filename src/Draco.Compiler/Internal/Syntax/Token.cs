@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
+using TokenType = Draco.Compiler.Api.Syntax.TokenType;
 
 namespace Draco.Compiler.Internal.Syntax;
 

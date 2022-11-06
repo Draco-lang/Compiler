@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Draco.Compiler.Internal\Draco.Compiler.Internal.csproj" />
+    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Semantics;
 
 namespace Draco.Compiler.Internal.Semantics;
 
@@ -10,7 +11,7 @@ namespace Draco.Compiler.Internal.Semantics;
 /// The base of all symbols.
 /// </summary>
 /// <param name="Name">The name of the symbol.</param>
-internal abstract record class Symbol(string Name)
+internal abstract record class Symbol(string Name) : ISymbol
 {
     /// <summary>
     /// A symbol for a label.

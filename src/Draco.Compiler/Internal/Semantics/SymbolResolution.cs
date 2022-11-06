@@ -101,6 +101,22 @@ internal static class SymbolResolution
         _ => null,
     };
 
+    // TODO: This API swallows errors
+    /// <summary>
+    /// Retrieves the <see cref="Symbol"/> referenced by the given <see cref="ParseTree"/>.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
+    /// <returns>The <see cref="Symbol"/> that <paramref name="tree"/> references, or null if
+    /// it does not reference any.</returns>
+    public static async QueryValueTask<Symbol?> GetReferencedSymbol(QueryDatabase db, ParseTree tree) => tree switch
+    {
+        ParseTree.Expr.Name name => await ReferenceSymbol(db, tree, name.Identifier.Text),
+        ParseTree.TypeExpr.Name name => await ReferenceSymbol(db, tree, name.Identifier.Text),
+        _ => null,
+    };
+
+    // TODO: This API swallows errors
     /// <summary>
     /// Resolves a <see cref="Symbol"/> reference.
     /// </summary>
@@ -108,7 +124,7 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
     /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
-    public static async QueryValueTask<Symbol?> ReferenceSymbol(QueryDatabase db, ParseTree tree, string name)
+    private static async QueryValueTask<Symbol?> ReferenceSymbol(QueryDatabase db, ParseTree tree, string name)
     {
         // TODO: This does not obey order-dependent symbols or even scope boundaries
         // It's just a start to get something up and running

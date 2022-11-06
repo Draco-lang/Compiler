@@ -24,10 +24,15 @@ internal static class SymbolResolution
         throw new NotImplementedException();
     }
 
-    public static async QueryValueTask<Symbol?> GetDefinedSymbol(QueryDatabase db, ParseTree tree)
+    public static async QueryValueTask<Symbol?> GetDefinedSymbol(QueryDatabase db, ParseTree tree) => tree switch
     {
-        throw new NotImplementedException();
-    }
+        ParseTree.Decl.Variable variable => new Symbol.Variable(
+            IsMutable: variable.Keyword.Type == TokenType.KeywordVar,
+            Name: variable.Identifier.Text),
+        ParseTree.Decl.Func func => new Symbol.Function(
+            Name: func.Identifier.Text),
+        _ => null,
+    };
 
     public static async QueryValueTask<Symbol?> ReferenceSymbol(QueryDatabase db, ParseTree tree, string name)
     {

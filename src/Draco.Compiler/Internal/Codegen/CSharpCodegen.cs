@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
-using TokenType = Draco.Compiler.Api.Syntax.TokenType;
+using Draco.Compiler.Api.Semantics;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
+using TokenType = Draco.Compiler.Api.Syntax.TokenType;
+using ParseTree = Draco.Compiler.Internal.Syntax.ParseTree;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -17,28 +19,65 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 {
-    public static string Transpile(ParseTree parseTree)
+    public static string Transpile(SemanticModel semanticModel)
     {
-        var codegen = new CSharpCodegen();
-        codegen.AppendPrelude();
-        codegen.AppendMainInvocation();
-        codegen.AppendProgramStart();
-        codegen.Visit(parseTree);
-        codegen.AppendProgramEnd();
+        var codegen = new CSharpCodegen(semanticModel);
+        codegen.Generate();
         return codegen.Code;
     }
 
     public string Code => this.output.ToString();
 
+    private readonly SemanticModel semanticModel;
     private readonly StringBuilder output = new();
+    private readonly Dictionary<ISymbol, string> symbolNames = new();
     private int registerCount = 0;
     private int labelCount = 0;
+
+    private CSharpCodegen(SemanticModel semanticModel)
+    {
+        this.semanticModel = semanticModel;
+    }
+
+    private string AllocateRegister() => $"reg_{this.registerCount++}";
+    private string AllocateLabel() => $"label_{this.labelCount++}";
+
+    private string AllocateNameForSymbol(ISymbol symbol)
+    {
+        if (!this.symbolNames.TryGetValue(symbol, out var name))
+        {
+            // TODO: Allocate a new name
+            throw new NotImplementedException();
+        }
+        return name;
+    }
+
+    private string DefinedSymbol(ParseTree parseTree)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    private string ReferencedSymbol(ParseTree parseTree)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    private void Generate()
+    {
+        this.AppendPrelude();
+        this.AppendMainInvocation();
+        this.AppendProgramStart();
+        this.Visit(this.semanticModel.Root.Green);
+        this.AppendProgramEnd();
+    }
 
     private void AppendPrelude() => this.output.AppendLine("""
         using static Prelude;
         internal static class Prelude
         {
-            public record struct Unit;
+            public readonly record struct Unit;
 
             public record struct Char32(int Codepoint)
             {
@@ -78,14 +117,6 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     private StringBuilder Indent1() => this.output.Append("    ");
     private StringBuilder Indent2() => this.output.Append("        ");
 
-    private string AllocateRegister() => $"reg_{this.registerCount++}";
-    private string AllocateLabel() => $"label_{this.labelCount++}";
-    // NOTE: This will have to take a symbol to be fully functional
-    // For now we just make a leap of faith here
-    private string AllocateVariable(string name) => name;
-    // NOTE: See previous
-    private string AllocateLabel(string name) => name;
-
     public override string VisitFuncDecl(Decl.Func node)
     {
         this
@@ -95,8 +126,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
             .AppendJoin(
                 ", ",
                 node.Params.Value.Elements
-                    .Select(e => e.Value.Identifier.Text)
-                    .Select(n => $"dynamic {this.AllocateVariable(n)}"))
+                    .Select(punct => punct.Value)
+                    .Select(param => $"dynamic {this.DefinedSymbol(param)}"))
             .AppendLine(")");
         this
             .Indent1()
@@ -124,13 +155,13 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     {
         this
             .Indent1()
-            .AppendLine($"{this.AllocateLabel(node.Identifier.Text)}:;");
+            .AppendLine($"{this.DefinedSymbol(node)}:;");
         return this.Default;
     }
 
     public override string VisitVariableDecl(Decl.Variable decl)
     {
-        var varReg = this.AllocateVariable(decl.Identifier.Text);
+        var varReg = this.DefinedSymbol(decl);
         this
             .Indent2()
             .AppendLine($"dynamic {varReg} = default(Unit);");
@@ -144,7 +175,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
     public override string VisitGotoExpr(Expr.Goto node)
     {
-        var label = this.AllocateLabel(node.Target.Identifier.Text);
+        var label = this.ReferencedSymbol(node.Target);
         this
             .Indent2()
             .AppendLine($"goto {label};");
@@ -332,5 +363,5 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         }
     }
 
-    public override string VisitNameExpr(Expr.Name node) => this.AllocateVariable(node.Identifier.Text);
+    public override string VisitNameExpr(Expr.Name node) => this.ReferencedSymbol(node);
 }

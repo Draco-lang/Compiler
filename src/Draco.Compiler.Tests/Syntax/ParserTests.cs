@@ -344,33 +344,30 @@ public sealed class ParserTests
     [Fact]
     public void TestMultilineStringUnclosedInterpolation()
     {
-        this.MainFunctionPlaceHolder($$""""
+        this.ParseExpression(""""
             """
             Hello, 
             \{"World!"
             """
-            """", () =>
+            """");
+        this.N<Expr.String>();
         {
-            this.N<Expr.String>();
+            this.T(TokenType.MultiLineStringStart);
+            this.StringContent("Hello, ");
+            this.StringNewline();
+            this.N<StringPart.Interpolation>();
             {
-                this.T(TokenType.MultiLineStringStart);
-                this.StringContent("Hello, ");
-                this.StringNewline();
-                this.N<StringPart.Interpolation>();
+                this.T(TokenType.InterpolationStart);
+                this.N<Expr.String>();
                 {
-                    this.T(TokenType.InterpolationStart);
-                    this.N<Expr.String>();
-                    {
-                        this.T(TokenType.LineStringStart);
-                        this.StringContent("World!");
-                        this.T(TokenType.LineStringEnd);
-                    }
+                    this.T(TokenType.LineStringStart);
+                    this.StringContent("World!");
+                    this.T(TokenType.LineStringEnd);
                 }
-                //this.StringNewline();
-                this.MissingT(TokenType.InterpolationEnd);
-                this.T(TokenType.MultiLineStringEnd);
             }
-        });
+            this.MissingT(TokenType.InterpolationEnd);
+            this.MissingT(TokenType.MultiLineStringEnd);
+        }
     }
 
     [Fact]
@@ -767,6 +764,8 @@ public sealed class ParserTests
                 this.N<Expr.UnitStmt>();
                 this.N<Stmt.Expr>();
                 this.N<Expr.Unexpected>();
+                // TODO: This should be unnecessary
+                this.MissingT(TokenType.Semicolon);
             }
         });
     }
@@ -1007,6 +1006,8 @@ public sealed class ParserTests
                 this.N<Expr.UnitStmt>();
                 this.N<Stmt.Expr>();
                 this.N<Expr.Unexpected>();
+                // TODO: This should be unnecessary
+                this.MissingT(TokenType.Semicolon);
             }
         });
     }

@@ -49,7 +49,7 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         await Task.Yield();
         foreach (var token in tokens)
         {
-            if (token is not null) builder.Push(Translator.ToLsp(token.Token.Range), token.Type, token.Modifiers);
+            builder.Push(Translator.ToLsp(token.Token.Range), token.Type, token.Modifiers);
         }
     }
 
@@ -75,31 +75,6 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
             Range = true
         };
     }
-
-    private class SemanticToken
-    {
-        public SemanticTokenType? Type;
-        public List<SemanticTokenModifier> Modifiers = new List<SemanticTokenModifier>();
-        public Compiler.Api.Syntax.ParseTree Token;
-        public SemanticToken(SemanticTokenType? type, List<SemanticTokenModifier> modifiers, Compiler.Api.Syntax.ParseTree token)
-        {
-            this.Type = type;
-            this.Modifiers = modifiers;
-            this.Token = token;
-        }
-
-        public SemanticToken(SemanticTokenType? type, SemanticTokenModifier modifier, Compiler.Api.Syntax.ParseTree token)
-        {
-            this.Type = type;
-            this.Modifiers.Add(modifier);
-            this.Token = token;
-        }
-    }
-
     private List<SemanticToken?> GetTokens(ParseTree tree) => tree.Tokens
-        .Select(t => t.Text switch
-        {
-            "true" => new SemanticToken(SemanticTokenType.String, SemanticTokenModifier.Defaults.ToList(), t), //nonfinished
-            _ => null,
-        }).ToList();
+        .Select(t => Translator.ToLsp(t)).Where(t => t is not null).ToList();
 }

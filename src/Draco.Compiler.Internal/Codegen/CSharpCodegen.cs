@@ -307,7 +307,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
             else
             {
                 var c = (StringPart.Content)part;
-                var text = c.Value.ValueText!.Substring(c.Cutoff);
+                var text = c.Value.ValueText!.Substring(c.Cutoff); //Infer# says ValueText could be null.
                 this
                     .Indent2()
                     .AppendLine($"{result}.Append(\"{StringUtils.Unescape(text)}\");");

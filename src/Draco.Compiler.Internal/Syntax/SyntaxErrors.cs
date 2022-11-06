@@ -77,6 +77,14 @@ internal static class SyntaxErrors
         format: "insufficient indentation in multiline string");
 
     /// <summary>
+    /// There are extra tokens inline with the opening quotes of a multiline string.
+    /// </summary>
+    public static readonly DiagnosticTemplate ExtraTokensInlineWithOpenQuotesOfMultiLineString = DiagnosticTemplate.Create(
+        title: "illegal tokens",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal tokens inline with opening quotes of multiline string");
+
+    /// <summary>
     /// The closing quotes of a multiline string are not on a new line.
     /// </summary>
     public static readonly DiagnosticTemplate ClosingQuotesOfMultiLineStringNotOnNewLine = DiagnosticTemplate.Create(

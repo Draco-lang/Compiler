@@ -274,12 +274,12 @@ public sealed class LexerTests
     public void TestMultilineString(string ext)
     {
         const string quotes = "\"\"\"";
-        var text = $"""
-        {ext}{quotes}
+        var text = $""""
+        {ext}"""
             Hello!
             Bye!
-            {quotes}{ext}
-        """;
+            """{ext}
+        """";
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
@@ -327,15 +327,156 @@ public sealed class LexerTests
     [InlineData("##")]
     [InlineData("###")]
     [Trait("Feature", "Strings")]
+    public void TestEmptyMultilineString(string ext)
+    {
+        const string quotes = "\"\"\"";
+        var text = $""""
+        {ext}"""
+        """{ext}
+        """";
+        var tokens = Lex(NormalizeNewliens(text));
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal($"{ext}{quotes}", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, "\n");
+        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal($"{quotes}{ext}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestEmptyMultilineStringWithIndentedClosingQuotes(string ext)
+    {
+        const string quotes = "\"\"\"";
+        var text = $""""
+        {ext}"""
+            """{ext}
+        """";
+        var tokens = Lex(NormalizeNewliens(text));
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal($"{ext}{quotes}", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, "\n");
+        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal($"{quotes}{ext}", token.Text);
+        AssertLeadingTrivia(token, "    ");
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestEmptyMultilineStringWithInlineClosingQuotes(string ext)
+    {
+        const string quotes = "\"\"\"";
+        var text = $""""
+        {ext}"""    """{ext}
+        """";
+        var tokens = Lex(NormalizeNewliens(text));
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal($"{ext}{quotes}", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, "    ");
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal($"{quotes}{ext}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestMultilineStringWithInlineClosingQuotes(string ext)
+    {
+        const string quotes = "\"\"\"";
+        var text = $""""
+        {ext}""" hello """{ext}
+        """";
+        var tokens = Lex(NormalizeNewliens(text));
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.MultiLineStringStart, token.Type);
+        Assert.Equal($"{ext}{quotes}", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, " ");
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal($"hello", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.MultiLineStringEnd, token.Type);
+        Assert.Equal($"{quotes}{ext}", token.Text);
+        AssertLeadingTrivia(token, " ");
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
     public void TestMultilineStringWithUnindentedClosingQuotes(string ext)
     {
         const string quotes = "\"\"\"";
-        var text = $"""
-        {ext}{quotes}
+        var text = $""""
+        {ext}"""
             Hello!
             Bye!
-        {quotes}{ext}
-        """;
+        """{ext}
+        """";
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
@@ -386,12 +527,12 @@ public sealed class LexerTests
     public void TestMultilineStringWithLineContinuation(string ext)
     {
         const string quotes = "\"\"\"";
-        var text = $"""
-        {ext}{quotes}
+        var text = $""""
+        {ext}"""
             Hello!\{ext}
             Bye!
-            {quotes}{ext}
-        """;
+            """{ext}
+        """";
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);
@@ -442,12 +583,12 @@ public sealed class LexerTests
     public void TestMultilineStringWithLineContinuationWithWhitespaceAfter(string ext)
     {
         const string quotes = "\"\"\"";
-        var text = $"""
-        {ext}{quotes}
+        var text = $""""
+        {ext}"""
             Hello!\{ext}  
             Bye!
-            {quotes}{ext}
-        """;
+            """{ext}
+        """";
         var tokens = Lex(NormalizeNewliens(text));
 
         AssertNextToken(tokens, out var token);

@@ -987,11 +987,11 @@ internal sealed class Parser
     /// while a given condition is met.
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
-    /// <returns>The consumed list of <see cref="Token"/>s.</returns>
-    private ImmutableArray<Token> Synchronize(Func<TokenType, bool> keepGoing)
+    /// <returns>The consumed list of <see cref="Token"/>s as <see cref="ParseTree"/>s.</returns>
+    private ImmutableArray<ParseTree> Synchronize(Func<TokenType, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
-        var input = ImmutableArray.CreateBuilder<Token>();
+        var input = ImmutableArray.CreateBuilder<ParseTree>();
         while (true)
         {
             var peek = this.Peek();

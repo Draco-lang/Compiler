@@ -143,7 +143,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
     public override string VisitGotoExpr(Expr.Goto node)
     {
-        var label = this.AllocateLabel(node.Identifier.Text);
+        var label = this.AllocateLabel(node.Target.Identifier.Text);
         this
             .Indent2()
             .AppendLine($"goto {label};");

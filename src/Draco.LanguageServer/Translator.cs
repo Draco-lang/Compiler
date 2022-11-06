@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,13 +30,11 @@ internal static class Translator
     public static LspModels.Position ToLsp(CompilerApi.Syntax.Position position) =>
         new(line: position.Line, character: position.Column);
 
-    public static SemanticToken? ToLsp(CompilerApi.Syntax.ParseTree.Token token)
-    {
-        return token.Type switch
+    public static SemanticToken? ToLsp(CompilerApi.Syntax.ParseTree.Token token) =>
+        token.Type switch
         {
             TokenType.LineStringStart or TokenType.LineStringEnd or TokenType.MultiLineStringStart or TokenType.MultiLineStringEnd or TokenType.LiteralCharacter =>
-            new SemanticToken(SemanticTokenType.String, SemanticTokenModifier.Defaults.ToList(), token.Range),
+            new SemanticToken(SemanticTokenType.String, SemanticTokenModifier.Defaults.ToImmutableList(), token.Range),
             _ => null,
         };
-    }
 }

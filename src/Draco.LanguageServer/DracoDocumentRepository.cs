@@ -5,16 +5,13 @@ namespace Draco.LanguageServer;
 
 internal sealed class DracoDocumentRepository
 {
-    private readonly Dictionary<DocumentUri, string> Documents = new();
+    private readonly Dictionary<DocumentUri, string> documents = new();
 
-    public void AddOrUpdateDocument(DocumentUri uri, string contents)
-    {
-        this.Documents[uri] = contents;
-    }
+    public void AddOrUpdateDocument(DocumentUri uri, string contents) => this.documents[uri] = contents;
 
     public string GetDocument(DocumentUri uri)
     {
-        if (this.Documents.TryGetValue(uri, out var contents))
+        if (this.documents.TryGetValue(uri, out var contents))
         {
             return contents;
         }

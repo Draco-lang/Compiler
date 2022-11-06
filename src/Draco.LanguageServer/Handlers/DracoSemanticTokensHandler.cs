@@ -14,6 +14,7 @@ namespace Draco.LanguageServer.Handlers;
 public sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 {
     private readonly DracoDocumentRepository repository;
+
     internal DracoSemanticTokensHandler(DracoDocumentRepository repository)
     {
         this.repository = repository;

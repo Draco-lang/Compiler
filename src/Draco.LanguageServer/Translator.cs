@@ -33,7 +33,7 @@ internal static class Translator
     {
         return token.Type switch
         {
-            TokenType.LineStringStart or TokenType.LineStringEnd or TokenType.MultiLineStringStart or TokenType.MultiLineStringEnd =>
+            TokenType.LineStringStart or TokenType.LineStringEnd or TokenType.MultiLineStringStart or TokenType.MultiLineStringEnd or TokenType.LiteralCharacter =>
             new SemanticToken(SemanticTokenType.String, SemanticTokenModifier.Defaults.ToList(), token),
             _ => null,
         };

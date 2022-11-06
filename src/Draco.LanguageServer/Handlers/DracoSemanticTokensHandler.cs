@@ -75,6 +75,6 @@ public class DracoSemanticTokensHandler : SemanticTokensHandlerBase
             Range = true
         };
     }
-    private List<SemanticToken?> GetTokens(ParseTree tree) => tree.Tokens
-        .Select(t => Translator.ToLsp(t)).Where(t => t is not null).ToList();
+    private List<SemanticToken> GetTokens(ParseTree tree) => tree.Tokens
+        .Select(t => Translator.ToLsp(t)!).Where(t => t is not null).ToList();
 }

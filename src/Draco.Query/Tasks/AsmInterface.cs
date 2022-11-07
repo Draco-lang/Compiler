@@ -29,6 +29,7 @@ internal readonly struct AsmInterface<TAsm, TBuilder>
 
     // Static members needed for codegen
     private static readonly MethodInfo getTypeMethod;
+    private static readonly MethodInfo equalsMethod;
     private static readonly MethodInfo toHashCodeMethod;
     private static readonly MethodInfo memberwiseCloneMethod;
 
@@ -36,6 +37,9 @@ internal readonly struct AsmInterface<TAsm, TBuilder>
     static AsmInterface()
     {
         getTypeMethod = typeof(object).GetMethod(nameof(GetType))!;
+        equalsMethod = typeof(object).GetMethod(
+            nameof(object.Equals),
+            BindingFlags.Public | BindingFlags.Static)!;
         toHashCodeMethod = typeof(HashCode).GetMethod(nameof(HashCode.ToHashCode))!;
         memberwiseCloneMethod = typeof(object).GetMethod(
             nameof(MemberwiseClone),
@@ -79,9 +83,13 @@ internal readonly struct AsmInterface<TAsm, TBuilder>
 
         // Generate each individual comparison between fields
         var comparisons = GetNonSpecialFields()
-            .Select(f => Expression.Equal(
-                Expression.Field(param1, f),
-                Expression.Field(param2, f)));
+            .Select(f => Expression.Call(
+                method: equalsMethod,
+                arguments: new[]
+                {
+                    Expression.Field(param1, f),
+                    Expression.Field(param2, f)
+                }));
 
         // And them together, add a constant true at the start to make 0-field ones correct code
         var comparisonsAnded = comparisons

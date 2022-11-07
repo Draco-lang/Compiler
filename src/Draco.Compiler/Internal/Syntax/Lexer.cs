@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -245,6 +246,20 @@ internal sealed class Lexer
         {
             var offset = 1;
             while (char.IsDigit(this.Peek(offset))) ++offset;
+            if (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1)))
+            {
+                offset++;
+                while (char.IsDigit(this.Peek(offset))) ++offset;
+                var floatview = this.Advance(offset);
+                // TODO: Parsing into an float32 might not be the best idea
+                // TODO: Parsing for just dot is very cursed
+                var floatvalue = float.Parse(floatview.Span, NumberStyles.Any, new CultureInfo("en-US"));
+                this.tokenBuilder
+                    .SetType(TokenType.LiteralFloat)
+                    .SetText(floatview.ToString())
+                    .SetValue(floatvalue);
+                return default;
+            }
             var view = this.Advance(offset);
             // TODO: Parsing into an int32 might not be the best idea
             var value = int.Parse(view.Span);

@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
 using Draco.Compiler.Api.Semantics;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
-using TokenType = Draco.Compiler.Api.Syntax.TokenType;
-using ParseTree = Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Api.Syntax.ParseTree;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -69,7 +67,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         this.AppendPrelude();
         this.AppendMainInvocation();
         this.AppendProgramStart();
-        this.Visit(this.semanticModel.Root.Green);
+        this.Visit(this.semanticModel.Root);
         this.AppendProgramEnd();
     }
 

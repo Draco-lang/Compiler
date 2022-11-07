@@ -4,31 +4,74 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Syntax;
+using Draco.Query;
 
 namespace Draco.Compiler.Internal.Semantics;
 
 /// <summary>
 /// The base of all symbols.
 /// </summary>
-/// <param name="Name">The name of the symbol.</param>
-internal abstract record class Symbol(string Name) : ISymbol
+internal abstract partial class Symbol : ISymbol
+{
+    public string Name { get; }
+
+    // NOTE: Not a good idea
+    public bool IsGlobal =>
+        SymbolResolution.GetContainingScope(this.db, this.definition).Result?.Kind == ScopeKind.Global;
+
+    private readonly QueryDatabase db;
+    private readonly ParseTree definition;
+
+    public Symbol(QueryDatabase db, ParseTree definition, string name)
+    {
+        this.db = db;
+        this.definition = definition;
+        this.Name = name;
+    }
+}
+
+internal abstract partial class Symbol
 {
     /// <summary>
     /// A symbol for a label.
     /// </summary>
-    /// <param name="Name">The name of the label.</param>
-    public sealed record class Label(string Name) : Symbol(Name);
+    public sealed class Label : Symbol
+    {
+        public Label(QueryDatabase db, ParseTree definition, string name)
+            : base(db, definition, name)
+        {
+        }
+    }
+}
 
+internal abstract partial class Symbol
+{
     /// <summary>
     /// A symbol for a function declaration.
     /// </summary>
-    /// <param name="Name">The name of the function.</param>
-    public sealed record class Function(string Name) : Symbol(Name);
+    public sealed class Function : Symbol
+    {
+        public Function(QueryDatabase db, ParseTree definition, string name)
+            : base(db, definition, name)
+        {
+        }
+    }
+}
 
+internal abstract partial class Symbol
+{
     /// <summary>
     /// A symbol for a variable declaration.
     /// </summary>
-    /// <param name="IsMutable">True, if the variable is mutable.</param>
-    /// <param name="Name">The name of the variable.</param>
-    public sealed record class Variable(bool IsMutable, string Name) : Symbol(Name);
+    public sealed class Variable : Symbol
+    {
+        public bool IsMutable { get; }
+
+        public Variable(QueryDatabase db, ParseTree definition, string name, bool isMutable)
+            : base(db, definition, name)
+        {
+            this.IsMutable = isMutable;
+        }
+    }
 }

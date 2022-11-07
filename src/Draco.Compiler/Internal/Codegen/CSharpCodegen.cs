@@ -44,22 +44,30 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     {
         if (!this.symbolNames.TryGetValue(symbol, out var name))
         {
-            // TODO: Allocate a new name
-            throw new NotImplementedException();
+            // For now we reserve their proper names for globals
+            // For the rest we allocate an enumerated ID
+            name = symbol.IsGlobal
+                ? symbol.Name
+                : $"sym_{this.symbolNames.Count}";
+            this.symbolNames.Add(symbol, name);
         }
         return name;
     }
 
     private string DefinedSymbol(ParseTree parseTree)
     {
-        // TODO
-        throw new NotImplementedException();
+        // NOTE: Yeah this API is not async...
+        var symbol = this.semanticModel.GetDefinedSymbol(parseTree).Result;
+        if (symbol is null) throw new NotImplementedException();
+        return this.AllocateNameForSymbol(symbol);
     }
 
     private string ReferencedSymbol(ParseTree parseTree)
     {
-        // TODO
-        throw new NotImplementedException();
+        // NOTE: Yeah this API is not async...
+        var symbol = this.semanticModel.GetReferencedSymbol(parseTree).Result;
+        if (symbol is null) throw new NotImplementedException();
+        return this.AllocateNameForSymbol(symbol);
     }
 
     private void Generate()

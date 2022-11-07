@@ -11,5 +11,13 @@ namespace Draco.Compiler.Api.Semantics;
 /// </summary>
 public interface ISymbol
 {
+    /// <summary>
+    /// The name of the symbol.
+    /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// True, if this symbol is global.
+    /// </summary>
+    public bool IsGlobal { get; }
 }

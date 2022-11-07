@@ -88,16 +88,24 @@ internal static class SymbolResolution
     public static async QueryValueTask<Symbol?> GetDefinedSymbol(QueryDatabase db, ParseTree tree) => tree switch
     {
         ParseTree.Decl.Variable variable => new Symbol.Variable(
-            IsMutable: variable.Keyword.Type == TokenType.KeywordVar,
-            Name: variable.Identifier.Text),
+            db: db,
+            definition: tree,
+            name: variable.Identifier.Text,
+            isMutable: variable.Keyword.Type == TokenType.KeywordVar),
         ParseTree.Decl.Func func => new Symbol.Function(
-            Name: func.Identifier.Text),
+            db: db,
+            definition: tree,
+            name: func.Identifier.Text),
         ParseTree.Decl.Label label => new Symbol.Label(
-            Name: label.Identifier.Text),
+            db: db,
+            definition: tree,
+            name: label.Identifier.Text),
         // NOTE: We might want a different symbol for parameters?
         ParseTree.FuncParam fparam => new Symbol.Variable(
-            IsMutable: false,
-            Name: fparam.Identifier.Text),
+            db: db,
+            definition: tree,
+            name: fparam.Identifier.Text,
+            isMutable: false),
         _ => null,
     };
 

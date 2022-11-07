@@ -12,6 +12,7 @@ internal class Program
         var src = """"
             func main() {
                 var a = 0;
+                var b = a + 1;
             }
             """";
         ScriptingEngine.Execute(src);

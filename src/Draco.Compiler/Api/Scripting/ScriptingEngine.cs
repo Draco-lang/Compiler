@@ -115,6 +115,6 @@ public static class ScriptingEngine
     public static string CompileToCSharpCode(string text)
     {
         var parseTree = ParseTree.Parse(text);
-        return CSharpCodegen.Transpile(parseTree.Green);
+        return CSharpCodegen.Transpile(parseTree);
     }
 }

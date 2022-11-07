@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Utilities;
+using System.Text;
+using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.RedGreenTree.Attributes;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Api.Syntax.ParseTree;
 
-namespace Draco.Compiler.Internal.Syntax;
+namespace Draco.Compiler.Api.Syntax;
 
 /// <summary>
 /// Provides a visitor base that visits each child of the tree.
@@ -15,8 +16,8 @@ namespace Draco.Compiler.Internal.Syntax;
 /// to recurse in the tree.
 /// </summary>
 /// <typeparam name="T">The return type of the visitor.</typeparam>
-[VisitorBase(typeof(ParseTree), typeof(ParseTree))]
-internal abstract partial class ParseTreeVisitorBase<T>
+[VisitorBase(typeof(Internal.Syntax.ParseTree), typeof(ParseTree))]
+public abstract partial class ParseTreeVisitorBase<T>
 {
     protected T VisitImmutableArray<TElement>(ImmutableArray<TElement> elements)
         where TElement : ParseTree
@@ -60,9 +61,5 @@ internal abstract partial class ParseTreeVisitorBase<T>
         return this.Default;
     }
 
-    public virtual T VisitToken(Token token)
-    {
-        this.VisitImmutableArray(token.Diagnostics);
-        return this.Default;
-    }
+    public virtual T VisitToken(Token token) => this.Default;
 }

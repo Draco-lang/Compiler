@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
-using TokenType = Draco.Compiler.Api.Syntax.TokenType;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Api.Syntax.ParseTree;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Codegen;
 

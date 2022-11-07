@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Utilities;
-using Draco.Compiler.Api.Semantics;
 using static Draco.Compiler.Api.Syntax.ParseTree;
 using Draco.Compiler.Api.Syntax;
 

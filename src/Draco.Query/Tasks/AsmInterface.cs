@@ -87,8 +87,8 @@ internal readonly struct AsmInterface<TAsm, TBuilder>
                 method: equalsMethod,
                 arguments: new[]
                 {
-                    Expression.Field(param1, f),
-                    Expression.Field(param2, f)
+                    Expression.Convert(Expression.Field(param1, f), typeof(object)),
+                    Expression.Convert(Expression.Field(param2, f), typeof(object)),
                 }));
 
         // And them together, add a constant true at the start to make 0-field ones correct code

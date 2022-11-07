@@ -39,8 +39,11 @@ internal sealed class VisitorBaseOptions
     [Option('p', "project", Required = true, HelpText = "The project to read types from.")]
     public string Project { get; set; } = string.Empty;
 
-    [Option('t', "tree-root", Required = true, HelpText = "The fully qualified name of the green tree root type.")]
-    public string TreeRoot { get; set; } = string.Empty;
+    [Option('g', "green-tree-root", Required = true, HelpText = "The fully qualified name of the green tree root type.")]
+    public string GreenTreeRoot { get; set; } = string.Empty;
+
+    [Option('r', "red-tree-root", Required = true, HelpText = "The fully qualified name of the red tree root type.")]
+    public string RedTreeRoot { get; set; } = string.Empty;
 
     [Option('v', "visitor", Required = true, HelpText = "The fully qualified name of the visitor type to base the generation on.")]
     public string Visitor { get; set; } = string.Empty;
@@ -96,10 +99,16 @@ internal class Program
             {
                 var project = await workspace.OpenProjectAsync(opts.Project);
                 var compilation = await project.GetCompilationAsync();
-                var rootType = compilation?.GetTypeByMetadataName(opts.TreeRoot);
-                if (rootType is null)
+                var greenRootType = compilation?.GetTypeByMetadataName(opts.GreenTreeRoot);
+                if (greenRootType is null)
                 {
-                    Console.Error.WriteLine($"Could not load {opts.TreeRoot} from {opts.Project}");
+                    Console.Error.WriteLine($"Could not load {opts.GreenTreeRoot} from {opts.Project}");
+                    return 1;
+                }
+                var redRootType = compilation?.GetTypeByMetadataName(opts.RedTreeRoot);
+                if (redRootType is null)
+                {
+                    Console.Error.WriteLine($"Could not load {opts.RedTreeRoot} from {opts.Project}");
                     return 1;
                 }
                 var visitorType = compilation?.GetTypeByMetadataName(opts.Visitor);
@@ -108,7 +117,10 @@ internal class Program
                     Console.Error.WriteLine($"Could not load {opts.Visitor} from {opts.Project}");
                     return 1;
                 }
-                var code = VisitorBaseGenerator.Generate(new(rootType: rootType, visitorType: visitorType));
+                var code = VisitorBaseGenerator.Generate(new(
+                    greenRootType: greenRootType,
+                    redRootType: redRootType,
+                    visitorType: visitorType));
                 Console.WriteLine(code);
                 return 0;
             },

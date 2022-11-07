@@ -315,7 +315,7 @@ internal sealed class Lexer
             {
                 // Escape-sequence
                 ++offset;
-                resultChar = this.ParseEscapeSequence(ref offset);
+                resultChar = this.ParseEscapeSequence(offset - 1, ref offset);
             }
             else if (!char.IsControl(ch2))
             {
@@ -478,6 +478,8 @@ internal sealed class Lexer
         // Check for escape sequence
         if (ch == '\\')
         {
+            var escapeStart = offset;
+
             // Count the number of required delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
@@ -544,7 +546,7 @@ internal sealed class Lexer
 
             offset += mode.ExtendedDelims + 1;
             // Try to parse an escape
-            var escaped = this.ParseEscapeSequence(ref offset);
+            var escaped = this.ParseEscapeSequence(escapeStart, ref offset);
             // Append to result
             this.valueBuilder.Append(escaped);
             goto start;
@@ -631,14 +633,12 @@ internal sealed class Lexer
     /// Parses an escape sequence for strings and character literals.
     /// Reports an error, if the escape sequence is illegal.
     /// </summary>
+    /// <param name="escapeStart">The position where the escape character occurred.</param>
     /// <param name="offset">A reference to an offset that points after the backslash and optional extended
     /// delimiter characters. If parsing the escape succeeded, the result is written back here.</param>
-    /// <param name="result">The resulting character value gets written here, if the escape was parsed
-    /// successfully.</param>
     /// <returns>True, if an escape was successfully parsed.</returns>
-    private string ParseEscapeSequence(ref int offset)
+    private string ParseEscapeSequence(int escapeStart, ref int offset)
     {
-        var escapeStart = offset - 1;
         var esc = this.Peek(offset);
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')

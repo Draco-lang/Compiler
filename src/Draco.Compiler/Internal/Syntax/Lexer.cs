@@ -254,23 +254,22 @@ internal sealed class Lexer
                 while (char.IsDigit(this.Peek(offset))) ++offset;
                 var floatView = this.Advance(offset);
                 // TODO: Parsing into an float32 might not be the best idea
-                // TODO: Parsing for just dot is very cursed
-                var floatvalue = float.Parse(floatView.Span, provider: CultureInfo.InvariantCulture);
+                var floatValue = float.Parse(floatView.Span, provider: CultureInfo.InvariantCulture);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralFloat)
                     .SetText(floatView.ToString())
-                    .SetValue(floatvalue);
+                    .SetValue(floatValue);
                 return default;
             }
 
             // Regular integer
             var intView = this.Advance(offset);
             // TODO: Parsing into an int32 might not be the best idea
-            var value = int.Parse(intView.Span);
+            var intValue = int.Parse(intView.Span);
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
                 .SetText(intView.ToString())
-                .SetValue(value);
+                .SetValue(intValue);
             return default;
         }
 

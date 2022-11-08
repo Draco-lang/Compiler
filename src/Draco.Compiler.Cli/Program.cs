@@ -27,7 +27,7 @@ internal class Program
             Run(file, emitCS, emitExe);
         }, fileOption, emitCSOption, emitExeOption);
 
-        var generateParseTreeCommand = new Command("parseTree", "generates parse tree from specified draco file")
+        var generateParseTreeCommand = new Command("parse", "generates parse tree from specified draco file")
         {
             fileOption,
         };
@@ -37,7 +37,7 @@ internal class Program
         }, fileOption);
 
 
-        var generateCSCommand = new Command("generateCS", "generates c# from specified draco file and displays it to the console")
+        var generateCSCommand = new Command("codegen", "generates c# from specified draco file and displays it to the console")
         {
             fileOption,
             emitCSOption,
@@ -47,7 +47,7 @@ internal class Program
             GenerateCSharp(file, emitCS);
         }, fileOption, emitCSOption);
 
-        var generateExeCommand = new Command("generateExe", "generates executable from specified draco file")
+        var generateExeCommand = new Command("compile", "generates executable from specified draco file")
         {
             fileOption,
             emitCSOption

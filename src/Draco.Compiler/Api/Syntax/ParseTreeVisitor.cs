@@ -25,8 +25,6 @@ public abstract partial class ParseTreeVisitorBase<T>
         return this.Default;
     }
 
-    protected virtual T VisitImmutableArray(ImmutableArray<Diagnostic> diags) => this.Default;
-
     protected T VisitPunctuatedList<TElement>(ParseTree.PunctuatedList<TElement> list)
         where TElement : ParseTree
     {

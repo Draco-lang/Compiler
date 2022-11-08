@@ -62,7 +62,10 @@ public sealed class ParserTests
     private void N<T>() => this.N<T>(_ => true);
 
     private void T(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length == 0);
-    private void T(TokenType type, string value) => this.N<Token>(t => t.Type == type && t.ValueText == value && t.Diagnostics.Length == 0);
+
+    private void T(TokenType type, string text) => this.N<Token>(t => t.Type == type && t.Text == text && t.Diagnostics.Length == 0);
+
+    private void TValue(TokenType type, string value) => this.N<Token>(t => t.Type == type && t.ValueText == value && t.Diagnostics.Length == 0);
 
     private void MissingT(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length > 0);
 
@@ -112,7 +115,7 @@ public sealed class ParserTests
     {
         this.N<StringPart.Content>();
         {
-            this.T(TokenType.StringContent, content);
+            this.TValue(TokenType.StringContent, content);
         }
     }
 
@@ -1196,12 +1199,12 @@ public sealed class ParserTests
                 {
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "3");
+                        this.TValue(TokenType.LiteralInteger, "3");
                     }
                     this.T(TokenType.KeywordMod);
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "2");
+                        this.TValue(TokenType.LiteralInteger, "2");
                     }
                 }
                 this.T(TokenType.Plus);
@@ -1209,7 +1212,7 @@ public sealed class ParserTests
                 {
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "2");
+                        this.TValue(TokenType.LiteralInteger, "2");
                     }
                     this.T(TokenType.Star);
                     this.N<Expr.Unary>();
@@ -1217,7 +1220,7 @@ public sealed class ParserTests
                         this.T(TokenType.Minus);
                         this.N<Expr.Literal>();
                         {
-                            this.N<Token>(t => t.Type == TokenType.LiteralFloat && t.Text == "8.6" && t.Diagnostics.Length == 0);
+                            this.T(TokenType.LiteralFloat, "8.6");
                         }
                     }
                 }
@@ -1227,12 +1230,12 @@ public sealed class ParserTests
             {
                 this.N<Expr.Literal>();
                 {
-                    this.T(TokenType.LiteralInteger, "9");
+                    this.TValue(TokenType.LiteralInteger, "9");
                 }
                 this.T(TokenType.Slash);
                 this.N<Expr.Literal>();
                 {
-                    this.T(TokenType.LiteralInteger, "3");
+                    this.TValue(TokenType.LiteralInteger, "3");
                 }
             }
         }
@@ -1284,12 +1287,12 @@ public sealed class ParserTests
             {
                 this.N<Expr.Literal>();
                 {
-                    this.N<Token>(t => t.Type == TokenType.LiteralFloat && t.Text == "3.8" && t.Diagnostics.Length == 0);
+                    this.T(TokenType.LiteralFloat, "3.8");
                 }
                 this.T(TokenType.Plus);
                 this.N<Expr.Literal>();
                 {
-                    this.T(TokenType.LiteralInteger, "2");
+                    this.TValue(TokenType.LiteralInteger, "2");
                 }
             }
             this.N<ComparisonElement>();
@@ -1299,12 +1302,12 @@ public sealed class ParserTests
                 {
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "2");
+                        this.TValue(TokenType.LiteralInteger, "2");
                     }
                     this.T(TokenType.Star);
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "3");
+                        this.TValue(TokenType.LiteralInteger, "3");
                     }
                 }
             }
@@ -1324,14 +1327,14 @@ public sealed class ParserTests
             {
                 this.N<Expr.Literal>();
                 {
-                    this.T(TokenType.LiteralInteger, "3");
+                    this.TValue(TokenType.LiteralInteger, "3");
                 }
                 this.N<ComparisonElement>();
                 {
                     this.T(TokenType.GreaterThan);
                     this.N<Expr.Literal>();
                     {
-                        this.N<Token>(t => t.Type == TokenType.LiteralFloat && t.Text == "2.89" && t.Diagnostics.Length == 0);
+                        this.T(TokenType.LiteralFloat, "2.89");
                     }
                 }
                 this.N<ComparisonElement>();
@@ -1339,7 +1342,7 @@ public sealed class ParserTests
                     this.T(TokenType.LessThan);
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "8");
+                        this.TValue(TokenType.LiteralInteger, "8");
                     }
                 }
             }
@@ -1348,14 +1351,14 @@ public sealed class ParserTests
             {
                 this.N<Expr.Literal>();
                 {
-                    this.T(TokenType.LiteralInteger, "5");
+                    this.TValue(TokenType.LiteralInteger, "5");
                 }
                 this.N<ComparisonElement>();
                 {
                     this.T(TokenType.Equal);
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "3");
+                        this.TValue(TokenType.LiteralInteger, "3");
                     }
                 }
             }

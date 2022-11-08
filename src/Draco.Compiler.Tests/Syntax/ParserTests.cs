@@ -1185,7 +1185,7 @@ public sealed class ParserTests
     public void TestOperatorPlusMinusTimesDividedMod()
     {
         this.ParseExpression("""
-            3 mod 2 + 2 * -8 - 9 / 3
+            3 mod 2 + 2 * -8.6 - 9 / 3
             """);
 
         this.N<Expr.Binary>();
@@ -1217,7 +1217,7 @@ public sealed class ParserTests
                         this.T(TokenType.Minus);
                         this.N<Expr.Literal>();
                         {
-                            this.T(TokenType.LiteralInteger, "8");
+                            this.N<Token>(t => t.Type == TokenType.LiteralFloat && t.Text == "8.6" && t.Diagnostics.Length == 0);
                         }
                     }
                 }
@@ -1275,7 +1275,7 @@ public sealed class ParserTests
     public void TestOperatorGreaterThanPlusTimes()
     {
         this.ParseExpression("""
-            3 + 2 > 2 * 3
+            3.8 + 2 > 2 * 3
             """);
 
         this.N<Expr.Relational>();
@@ -1284,7 +1284,7 @@ public sealed class ParserTests
             {
                 this.N<Expr.Literal>();
                 {
-                    this.T(TokenType.LiteralInteger, "3");
+                    this.N<Token>(t => t.Type == TokenType.LiteralFloat && t.Text == "3.8" && t.Diagnostics.Length == 0);
                 }
                 this.T(TokenType.Plus);
                 this.N<Expr.Literal>();
@@ -1315,7 +1315,7 @@ public sealed class ParserTests
     public void TestOperatorChainedRelations()
     {
         this.ParseExpression("""
-            3 > 2 < 8 or 5 == 3
+            3 > 2.89 < 8 or 5 == 3
             """);
 
         this.N<Expr.Binary>();
@@ -1331,7 +1331,7 @@ public sealed class ParserTests
                     this.T(TokenType.GreaterThan);
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "2");
+                        this.N<Token>(t => t.Type == TokenType.LiteralFloat && t.Text == "2.89" && t.Diagnostics.Length == 0);
                     }
                 }
                 this.N<ComparisonElement>();

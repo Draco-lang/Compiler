@@ -250,26 +250,26 @@ internal sealed class Lexer
             // Floating point number
             if (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1)))
             {
-                offset++;
+                offset += 2;
                 while (char.IsDigit(this.Peek(offset))) ++offset;
-                var floatview = this.Advance(offset);
+                var floatView = this.Advance(offset);
                 // TODO: Parsing into an float32 might not be the best idea
                 // TODO: Parsing for just dot is very cursed
-                var floatvalue = float.Parse(floatview.Span, provider: CultureInfo.InvariantCulture);
+                var floatvalue = float.Parse(floatView.Span, provider: CultureInfo.InvariantCulture);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralFloat)
-                    .SetText(floatview.ToString())
+                    .SetText(floatView.ToString())
                     .SetValue(floatvalue);
                 return default;
             }
 
             // Regular integer
-            var view = this.Advance(offset);
+            var intView = this.Advance(offset);
             // TODO: Parsing into an int32 might not be the best idea
-            var value = int.Parse(view.Span);
+            var value = int.Parse(intView.Span);
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
-                .SetText(view.ToString())
+                .SetText(intView.ToString())
                 .SetValue(value);
             return default;
         }

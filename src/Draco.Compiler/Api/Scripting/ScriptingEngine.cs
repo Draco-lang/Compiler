@@ -11,17 +11,15 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Draco.Compiler.Api.Scripting;
 
 public static class ScriptingEngine
 {
-    public static void Execute(string text)
+    public static void Execute(string text, bool emitCS)
     {
-        using (Stream dllStream = new FileStream("transpiledProgram.dll", FileMode.OpenOrCreate))
-        {
-            if (!CompileToAssembly(text, dllStream)) return;
-        }
+        GenerateExe(text, emitCS);
 
         // Dump runtime config
         File.WriteAllText(
@@ -42,11 +40,24 @@ public static class ScriptingEngine
         var startInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = $"exec transpiledProgram.dll",
+            Arguments = $"exec transpiledProgram.exe",
         };
         var process = Process.Start(startInfo) ?? throw new InvalidOperationException();
         process.WaitForExit();
         Console.WriteLine($"Process terminated with exit code: {process.ExitCode}");
+    }
+
+    public static void GenerateExe(string text, bool emitCS)
+    {
+        using (Stream dllStream = new FileStream("transpiledProgram.exe", FileMode.OpenOrCreate))
+        {
+            if (!CompileToAssembly(text, dllStream, emitCs: emitCS)) return;
+        }
+    }
+
+    public static string GenerateCSharp(string text)
+    {
+        return CompileToCSharpCode(text);
     }
 
     /// <summary>
@@ -83,11 +94,15 @@ public static class ScriptingEngine
     }
 
     public static bool CompileToAssembly(string text, Stream stream,
-        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null
+        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null, bool emitCs = false
     )
     {
         var cSharpCode = CompileToCSharpCode(text);
 
+        if (emitCs)
+        {
+            File.WriteAllText("transpiledProgram.cs", cSharpCode);
+        }
         // NOTE: This is temporary, we shouldn't rely on compiling to C#
         // and then letting Roslyn do the work
 

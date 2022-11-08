@@ -9,11 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BlazorMonaco" Version="2.1.0" />
     <PackageReference Include="ICSharpCode.Decompiler" Version="8.0.0.7106-preview2" ExcludeAssets="contentfiles" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.10" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.10" PrivateAssets="all" />
   </ItemGroup>
+
+  <Target Name="JSSetup" BeforeTargets="BeforeBuild">
+    <Exec Command="npm install" WorkingDirectory="app"></Exec>
+    <Exec Condition="'$(Configuration)' == 'Debug'" Command="npm run build-debug" WorkingDirectory="app"></Exec>
+    <Exec Condition="'$(Configuration)' == 'Release'" Command="npm run build-release" WorkingDirectory="app"></Exec>
+  </Target>
 
   <ItemGroup>
     <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />

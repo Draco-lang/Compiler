@@ -1,5 +1,6 @@
 using System;
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,8 +14,8 @@ internal class Program
     internal static int Main(string[] args)
     {
         var fileOption = new Argument<FileInfo>("--file", description: "Draco file");
-        var emitCSOption = new Option<bool>("--emitCS", () => false, description: "Specifies if generated c# code should be saved to the disk");
-        var emitExeOption = new Option<bool>("--emitExe", () => false, description: "Specifies if generated executable should be saved to the disk");
+        var emitCSOption = new Option<bool>("--emit-cs", () => false, description: "Specifies if generated c# code should be saved to the disk");
+        var emitExeOption = new Option<bool>("--emit-exe", () => false, description: "Specifies if generated executable should be saved to the disk");
 
         var runCommand = new Command("run", "runs specified draco file")
         {
@@ -65,22 +66,23 @@ internal class Program
         return rootCommand.Invoke(args);
     }
 
-    private static void Run(FileInfo file, bool emitCS, bool emitExe)
+    private static void Run(FileInfo fileInfo, bool emitCS, bool emitExe)
     {
-        Console.WriteLine("Run");
+        ScriptingEngine.Execute(File.ReadAllText(fileInfo.FullName));
     }
 
-    private static void GenerateParseTree(FileInfo file)
+    private static void GenerateParseTree(FileInfo fileInfo)
     {
-        Console.WriteLine("ParseTree");
+        var tree = ParseTree.Parse(File.ReadAllText(fileInfo.FullName));
+        Console.WriteLine(tree.ToDebugString());
     }
 
-    private static void GenerateCSharp(FileInfo file, bool emitCS)
+    private static void GenerateCSharp(FileInfo fileInfo, bool emitCS)
     {
         Console.WriteLine("CSharp");
     }
 
-    private static void GenerateExe(FileInfo file, bool emitCS)
+    private static void GenerateExe(FileInfo fileInfo, bool emitCS)
     {
         Console.WriteLine("Exe");
     }

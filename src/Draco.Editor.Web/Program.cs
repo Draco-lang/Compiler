@@ -58,14 +58,14 @@ public class Program
     public static async Task OnOutputTypeChange(string value)
     {
         SelectedOutputType = value;
-        await UpdateOutput(); // awaiting will block UI thread
+        await UpdateOutput();
     }
 
     [JSInvokable]
     public static async Task CodeChange(string newCode)
     {
         code = newCode;
-        await UpdateOutput(); // awaiting will block UI thread.
+        await UpdateOutput();
     }
 
     private static async Task UpdateOutput()

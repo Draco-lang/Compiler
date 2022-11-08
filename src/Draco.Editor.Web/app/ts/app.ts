@@ -1,9 +1,23 @@
 import * as monaco from 'monaco-editor';
+// @ts-ignore
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+// @ts-ignore
 import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+// @ts-ignore
 import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
+// @ts-ignore
 import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
+// @ts-ignore
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+import { loadWASM } from 'onigasm'; // peer dependency of 'monaco-textmate'
+import { Registry } from 'monaco-textmate'; // peer dependency
+import { wireTmGrammars } from 'monaco-editor-textmate';
+// @ts-ignore
+import onigasm from 'onigasm/lib/onigasm.wasm?url';
+// @ts-ignore
+import vsthemeRaw from '../data/vscode.converted.theme.json?raw';
+import JSON5 from 'json5';
+import tslib from 'tslib';
 
 declare global {
     class DotNet {
@@ -13,24 +27,22 @@ declare global {
 
 // hack for vite bundler...
 self.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === 'json') {
-      return new jsonWorker()
+    getWorker(_, label) {
+        if (label === 'json') {
+            return new jsonWorker()
+        }
+        if (label === 'css' || label === 'scss' || label === 'less') {
+            return new cssWorker()
+        }
+        if (label === 'html' || label === 'handlebars' || label === 'razor') {
+            return new htmlWorker()
+        }
+        if (label === 'typescript' || label === 'javascript') {
+            return new tsWorker()
+        }
+        return new editorWorker()
     }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker()
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker()
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker()
-    }
-    return new editorWorker()
-  }
 }
-
-const namespace = "Draco.Editor.Web";
 
 function isDarkMode() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -57,18 +69,21 @@ export function emitCodeChange() {
     DotNet.invokeMethodAsync<void>(namespace, "CodeChange", text);
 }
 
+export function setRunType(newRuntype: string) {
+    runtype.value = newRuntype;
+}
+
+const namespace = "Draco.Editor.Web";
+
 const runtype = document.getElementById("runtype") as HTMLSelectElement;
 runtype.onchange = () => {
     DotNet.invokeMethodAsync<void>(namespace, "OnOutputTypeChange", runtype.value);
 }
 
-export function setRunType(newRuntype: string) {
-    runtype.value = newRuntype;
-}
-
+//TODO: block blazor load until this function run.
 var dracoEditor = monaco.editor.create(document.getElementById('draco-editor'), {
     value: ['func main() {', '\tprintln("Hello!");', '}'].join('\n'),
-    language: 'rust',
+    language: 'draco',
     theme: getTheme()
 });
 
@@ -82,4 +97,24 @@ var outputEditor = monaco.editor.create(document.getElementById('output-viewer')
     theme: getTheme()
 });
 
+async function main() {
 
+    await loadWASM(onigasm);
+
+    const registry = new Registry({
+        getGrammarDefinition: async (scopeName) => {
+            return {
+                format: 'json',
+                content: await (await fetch(`syntaxes/draco.tmLanguage.json`)).text()
+            }
+        }
+    });
+    // map of monaco "language id's" to TextMate scopeNames
+    const grammars = new Map();
+    grammars.set('draco', 'source.draco');
+    const newTheme = JSON5.parse(vsthemeRaw);
+    monaco.editor.defineTheme("vs-dark", newTheme);
+    monaco.languages.register({id: "draco"});
+    await wireTmGrammars(monaco, registry, grammars, dracoEditor);
+}
+main();

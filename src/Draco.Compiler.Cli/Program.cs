@@ -10,7 +10,7 @@ internal class Program
     internal static void Main(string[] args)
     {
         var src = """"
-            func main() {
+            func main(): int32 {
                 var a = 0;
                 var b = a + 1;
             }

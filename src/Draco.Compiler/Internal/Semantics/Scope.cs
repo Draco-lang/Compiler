@@ -84,7 +84,7 @@ internal readonly struct DeclarationTimeline
     {
         var comparer = Comparer<Declaration>.Create((d1, d2) => d1.Position - d2.Position);
         var searchKey = new Declaration(referencedPosition, null!);
-        var index = this.Declarations.BinarySearch(searchKey);
+        var index = this.Declarations.BinarySearch(searchKey, comparer);
         if (index >= 0)
         {
             // Exact match, can reference

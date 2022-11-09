@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Utilities;
 using Draco.Query;
 using Draco.Query.Tasks;
 
@@ -48,35 +50,22 @@ internal static class SymbolResolution
         if (scopeKind is null) return null;
 
         var result = new List<Declaration>();
-        var position = 0;
 
-        async Task Impl(ParseTree tree)
+        foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
         {
-            // We go through each child of the current tree
-            foreach (var child in tree.Children)
+            var symbol = await GetDefinedSymbol(db, subtree);
+
+            // See if the child defines any symbol
+            if (symbol is not null)
             {
-                var symbol = await GetDefinedSymbol(db, child);
-
-                // See if the child defines any symbol
-                if (symbol is not null)
-                {
-                    // Yes, calculate position and add it
-                    // If we don't allow recursive binding for the symbol, we simply shift position
-                    var symbolPosition = symbol.AllowsRecursiveBinding
-                        ? position
-                        : position + 1;
-                    result!.Add(new(symbolPosition, symbol));
-                }
-
-                // If the child does not define its own scope, we can recursively collect symbols
-                // If it does define its own scope, we assume they are contained within that scope
-                if (GetScopeKind(child) is null) await Impl(child);
-
-                ++position;
+                // Yes, calculate position and add it
+                var symbolPosition = position;
+                // If we don't allow recursive binding for the symbol, we simply shift position
+                if (!symbol.AllowsRecursiveBinding) symbolPosition += subtree.Width;
+                // Add to results
+                result!.Add(new(symbolPosition, symbol));
             }
         }
-
-        await Impl(tree);
 
         // Construct the scope
         return new Scope(
@@ -142,12 +131,8 @@ internal static class SymbolResolution
     /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
     private static async QueryValueTask<Symbol?> ReferenceSymbol(QueryDatabase db, ParseTree tree, string name)
     {
-        var scope = await GetDefinedScope(db, tree);
-        if (scope is null)
-        {
-            if (tree.Parent is null) return null;
-            return await ReferenceSymbol(db, tree.Parent, name);
-        }
+        var scope = await GetContainingScope(db, tree);
+        if (scope is null) return null;
         var referencePositon = GetPosition(tree);
         var declaration = scope.LookUp(name, referencePositon);
         if (declaration is not null) return declaration.Value.Symbol;
@@ -155,18 +140,50 @@ internal static class SymbolResolution
         return await ReferenceSymbol(db, tree.Parent, name);
     }
 
-    // NOTE: The thing does not work yet because position calculations are a little trickier to get right
     private static int GetPosition(ParseTree tree)
     {
-        if (tree.Parent is null) return 0;
-        var position = 0;
-        foreach (var child in tree.Parent.Children)
+        // Step up at least once
+        var treeParent = tree.Parent;
+        if (treeParent is null) return 0;
+        // Walk up to the nearest scope owner
+        while (GetScopeKind(treeParent) is null)
         {
-            if (ReferenceEquals(child.Green, tree.Green)) return position;
-            ++position;
+            treeParent = treeParent.Parent;
+            if (treeParent is null) return 0;
+        }
+        // Search for this subtree
+        foreach (var (child, position) in EnumerateSubtreeInScope(treeParent))
+        {
+            if (ReferenceEquals(tree.Green, child.Green)) return position;
         }
         // NOTE: This should not happen...
         throw new InvalidOperationException();
+    }
+
+    private static IEnumerable<(ParseTree Tree, int Position)> EnumerateSubtreeInScope(ParseTree tree)
+    {
+        // This method must be called on a scope-owning subtree
+        Debug.Assert(GetScopeKind(tree) is not null);
+
+        static IEnumerable<(ParseTree Tree, int Position)> Impl(ParseTree tree, int offset)
+        {
+            // We go through each child of the current tree
+            foreach (var child in tree.Children)
+            {
+                // We yield the child first
+                yield return (child, offset);
+
+                // If the child defines a scope, we don't recurse
+                if (GetScopeKind(child) is not null) continue;
+
+                // Otherwise, we can recurse
+                foreach (var item in Impl(child, offset)) yield return item;
+
+                offset += child.Width;
+            }
+        }
+
+        return Impl(tree, 0);
     }
 
     private static ScopeKind? GetScopeKind(ParseTree tree) => tree switch

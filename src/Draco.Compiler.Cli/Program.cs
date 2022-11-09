@@ -12,7 +12,10 @@ internal class Program
         var src = """"
             func main(): int32 {
                 var a = 0;
-                var b = a + 1;
+                var a = a + 1;
+                var a = a + 1;
+                var a = a + 1;
+                var a = a + 1;
             }
             """";
         ScriptingEngine.Execute(src);

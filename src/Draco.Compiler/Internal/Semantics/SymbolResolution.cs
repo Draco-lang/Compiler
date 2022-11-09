@@ -51,6 +51,9 @@ internal static class SymbolResolution
 
         var result = new List<Declaration>();
 
+        // We inject intrinsics at global scope
+        if (scopeKind == ScopeKind.Global) InjectIntrinsics(db, result);
+
         foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
         {
             var symbol = await GetDefinedSymbol(db, subtree);
@@ -193,4 +196,11 @@ internal static class SymbolResolution
         ParseTree.Decl.Func => ScopeKind.Function,
         _ => null,
     };
+
+    // NOTE: Pretty temporary...
+    private static void InjectIntrinsics(QueryDatabase db, List<Declaration> declarations)
+    {
+        declarations.Add(new(0, new Symbol.Function(db, null, "println")));
+        declarations.Add(new(0, new Symbol.Function(db, null, "print")));
+    }
 }

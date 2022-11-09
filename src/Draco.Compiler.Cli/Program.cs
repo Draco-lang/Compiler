@@ -16,6 +16,7 @@ internal class Program
                 var a = a + 1;
                 var a = a + 1;
                 var a = a + 1;
+                println(a);
             }
             """";
         ScriptingEngine.Execute(src);

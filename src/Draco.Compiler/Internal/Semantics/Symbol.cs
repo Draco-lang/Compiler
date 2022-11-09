@@ -14,8 +14,6 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal abstract partial class Symbol : ISymbol
 {
-    public abstract bool IsRecursiveBinding { get; }
-
     public string Name { get; }
 
     // NOTE: Not a good idea
@@ -40,8 +38,6 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class Label : Symbol
     {
-        public override bool IsRecursiveBinding => true;
-
         public Label(QueryDatabase db, ParseTree definition, string name)
             : base(db, definition, name)
         {
@@ -56,8 +52,6 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class Function : Symbol
     {
-        public override bool IsRecursiveBinding => true;
-
         public Function(QueryDatabase db, ParseTree definition, string name)
             : base(db, definition, name)
         {
@@ -72,8 +66,6 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class Variable : Symbol
     {
-        public override bool IsRecursiveBinding => false;
-
         public bool IsMutable { get; }
 
         public Variable(QueryDatabase db, ParseTree definition, string name, bool isMutable)

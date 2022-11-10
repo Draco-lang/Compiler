@@ -28,6 +28,13 @@ public sealed class SemanticModel
     }
 
     /// <summary>
+    /// Prints this model as a scope tree in a DOT graph format.
+    /// </summary>
+    /// <returns>The DOT graph of the symbols and scopes of <see cref="Root"/>.</returns>
+    public string ToScopeTreeDotGraph() =>
+        ScopeTreePrinter.Print(this.db, this.Root);
+
+    /// <summary>
     /// Retrieves the <see cref="ISymbol"/> defined by <paramref name="subtree"/>.
     /// </summary>
     /// <param name="subtree">The tree that is asked for the defined <see cref="ISymbol"/>.</param>

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 
@@ -30,6 +31,9 @@ internal class Program
             func between(x: int32, a: int32, b: int32): bool =
                 a < x < b;
             """";
-        ScriptingEngine.Execute(src);
+        var compilation = new Compilation();
+        var parseTree = ParseTree.Parse(src);
+        var semanticModel = compilation.GetSemanticModel(parseTree);
+        Console.WriteLine(semanticModel.ToScopeTreeDotGraph());
     }
 }

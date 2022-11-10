@@ -44,8 +44,6 @@ internal static class SymbolResolution
         var scopeKind = GetScopeKind(tree);
         if (scopeKind is null) return null;
 
-        Console.WriteLine($"======== SCOPE {scopeKind} ========\n{tree}\n======== END ========");
-
         var result = new List<Declaration>();
 
         // We inject intrinsics at global scope
@@ -169,10 +167,11 @@ internal static class SymbolResolution
                 yield return (child, offset);
 
                 // If the child defines a scope, we don't recurse
-                if (GetScopeKind(child) is not null) continue;
-
-                // Otherwise, we can recurse
-                foreach (var item in Impl(child, offset)) yield return item;
+                if (GetScopeKind(child) is null)
+                {
+                    // Otherwise, we can recurse
+                    foreach (var item in Impl(child, offset)) yield return item;
+                }
 
                 offset += child.Width;
             }

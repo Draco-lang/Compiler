@@ -25,14 +25,9 @@ internal static class SymbolResolution
     /// <returns>The surrounding <see cref="Scope"/> of <paramref name="tree"/>.</returns>
     public static async Task<Scope?> GetContainingScope(QueryDatabase db, ParseTree tree)
     {
-        while (true)
-        {
-            if (tree.Parent is null) return null;
-            tree = tree.Parent;
-
-            var scope = await GetDefinedScope(db, tree);
-            if (scope is not null) return scope;
-        }
+        var parent = GetScopeDefiningParent(tree);
+        if (parent is null) return null;
+        return await GetDefinedScope(db, parent);
     }
 
     /// <summary>
@@ -48,6 +43,8 @@ internal static class SymbolResolution
         // If the kind is null, this node simply does not define a scope
         var scopeKind = GetScopeKind(tree);
         if (scopeKind is null) return null;
+
+        Console.WriteLine($"======== SCOPE {scopeKind} ========\n{tree}\n======== END ========");
 
         var result = new List<Declaration>();
 
@@ -132,32 +129,25 @@ internal static class SymbolResolution
     /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
     private static async QueryValueTask<Symbol?> ReferenceSymbol(QueryDatabase db, ParseTree tree, string name)
     {
-        // TODO: We can optimize this by stepping up enough times in the tree immediately
-        // We can actually factor that logic out as it has been written in
-        //  - GetPosition
-        //  - GetContainingScope
-        var scope = await GetContainingScope(db, tree);
+        // Walk up the tree for the scope owner
+        var parent = GetScopeDefiningParent(tree);
+        if (parent is null) return null;
+        // Get the scope
+        var scope = await GetDefinedScope(db, parent);;
         if (scope is null) return null;
-        var referencePositon = GetPosition(tree);
+        // Compute reference position
+        var referencePositon = GetPosition(parent, tree);
+        // Look up declaration
         var declaration = scope.LookUp(name, referencePositon);
         if (declaration is not null) return declaration.Value.Symbol;
-        if (tree.Parent is null) return null;
-        return await ReferenceSymbol(db, tree.Parent, name);
+        // Not found, try in parent
+        return await ReferenceSymbol(db, parent, name);
     }
 
-    private static int GetPosition(ParseTree tree)
+    private static int GetPosition(ParseTree parent, ParseTree tree)
     {
-        // Step up at least once
-        var treeParent = tree.Parent;
-        if (treeParent is null) return 0;
-        // Walk up to the nearest scope owner
-        while (GetScopeKind(treeParent) is null)
-        {
-            treeParent = treeParent.Parent;
-            if (treeParent is null) return 0;
-        }
         // Search for this subtree
-        foreach (var (child, position) in EnumerateSubtreeInScope(treeParent))
+        foreach (var (child, position) in EnumerateSubtreeInScope(parent))
         {
             if (ReferenceEquals(tree.Green, child.Green)) return position;
         }
@@ -189,6 +179,17 @@ internal static class SymbolResolution
         }
 
         return Impl(tree, 0);
+    }
+
+    private static ParseTree? GetScopeDefiningParent(ParseTree tree)
+    {
+        while (true)
+        {
+            if (tree.Parent is null) return null;
+            tree = tree.Parent;
+
+            if (GetScopeKind(tree) is not null) return tree;
+        }
     }
 
     private static ScopeKind? GetScopeKind(ParseTree tree) => tree switch

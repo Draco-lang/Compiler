@@ -39,7 +39,7 @@ internal abstract class DotGraphParseTreePrinterBase
     }
 
     protected string Code => $$"""
-        graph scope_tree {
+        digraph scope_tree {
           rankdir="BT"
           graph[ordering="out"]
         {{this.Builder.ToString().TrimEnd()}}

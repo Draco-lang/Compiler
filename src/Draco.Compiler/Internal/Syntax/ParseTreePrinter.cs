@@ -185,7 +185,7 @@ internal sealed class DotParseTreePrinter : DotGraphParseTreePrinterBase
         // Parent relation
         if (this.TryGetParentName(out var parentName))
         {
-            this.Builder.AppendLine($"  {name} -- {parentName}");
+            this.Builder.AppendLine($"  {name} -> {parentName} [dir=none]");
         }
     }
 

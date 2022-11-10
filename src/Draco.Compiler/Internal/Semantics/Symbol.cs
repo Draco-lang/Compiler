@@ -20,16 +20,17 @@ internal abstract partial class Symbol : ISymbol
     // TODO: HACK, definition should not be nullable here!
     // We only did it to allow for intrinsics that really don't have a definition
     public bool IsGlobal =>
-           this.definition is null
-        || SymbolResolution.GetContainingScope(this.db, this.definition).Result?.Kind == ScopeKind.Global;
+           this.Definition is null
+        || SymbolResolution.GetContainingScope(this.db, this.Definition).Result?.Kind == ScopeKind.Global;
+
+    public ParseTree? Definition { get; }
 
     private readonly QueryDatabase db;
-    private readonly ParseTree? definition;
 
     public Symbol(QueryDatabase db, ParseTree? definition, string name)
     {
         this.db = db;
-        this.definition = definition;
+        this.Definition = definition;
         this.Name = name;
     }
 }

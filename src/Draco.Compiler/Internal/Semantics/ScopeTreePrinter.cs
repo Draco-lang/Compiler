@@ -40,17 +40,39 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
     {
         var name = this.GetNodeName(tree);
 
-        // Node text
-        var text = InferNodeText(tree);
-        this.Builder.AppendLine($"  {name} [label=\"{text}\"]");
+        // Query relevant data
+        var scope = this.GetDefinedScope(tree);
+        var referencedSymbol = this.GetReferencedSymbol(tree);
+        var definedSymbol = this.GetDefinedSymbol(tree);
 
-        // TODO: Scope data?
-        // TODO: Reference data?
+        // Node text
+        var textBuilder = new StringBuilder();
+        textBuilder.Append(InferNodeText(tree));
+        if (scope is not null)
+        {
+            // Append scope
+            textBuilder
+                .Append(@"\n")
+                .Append(scope.Kind.ToString())
+                .Append(" { ")
+                .AppendJoin(", ", scope.Timelines
+                    .SelectMany(t => t.Value.Declarations)
+                    .Select(d => d.Name))
+                .Append(" }");
+        }
+        if (referencedSymbol is not null && referencedSymbol.Definition is not null)
+        {
+            // Append reference info
+            var referencedName = this.GetNodeName(referencedSymbol.Definition);
+            this.Builder.AppendLine($"  {name} -> {referencedName}");
+        }
+
+        this.Builder.AppendLine($"  {name} [label=\"{textBuilder}\"]");
 
         // Parent relation
         if (this.TryGetParentName(out var parentName))
         {
-            this.Builder.AppendLine($"  {name} -- {parentName}");
+            this.Builder.AppendLine($"  {name} -> {parentName} [dir=none]");
         }
     }
 

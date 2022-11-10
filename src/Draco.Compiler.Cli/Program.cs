@@ -12,8 +12,12 @@ internal class Program
     {
         var src = """"
             func main(): int32 {
-                var a = 0;
-                println(a + 1);
+                var x;
+                var y;
+                {
+                    var x;
+                    var z = x + y;
+                }
             }
             """";
         var compilation = new Compilation();

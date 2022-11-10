@@ -30,35 +30,28 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
 
     protected override NodeAction GetNodeAction(ParseTree tree) => tree switch
     {
-        ParseTree.Token => NodeAction.Terminate,
-        _ => NodeAction.Print,
+        _ when this.GetDefinedScope(tree) is not null
+            || this.GetDefinedSymbol(tree) is not null
+            || this.GetReferencedSymbol(tree) is not null => NodeAction.Print,
+        _ => NodeAction.Skip,
     };
 
     protected override void PrintSingle(ParseTree tree)
     {
-        async Task Impl()
+        var name = this.GetNodeName(tree);
+
+        // Node text
+        var text = InferNodeText(tree);
+        this.Builder.AppendLine($"  {name} [label=\"{text}\"]");
+
+        // TODO: Scope data?
+        // TODO: Reference data?
+
+        // Parent relation
+        if (this.TryGetParentName(out var parentName))
         {
-            var definedScope = await SymbolResolution.GetDefinedScope(this.db, tree);
-            var referencedSymbol = await SymbolResolution.GetReferencedSymbol(this.db, tree);
-
-            var name = this.GetNodeName(tree);
-
-            // Node text
-            var text = InferNodeText(tree);
-            this.Builder.AppendLine($"  {name} [label=\"{text}\"]");
-
-            // TODO: Scope data?
-            // TODO: Reference data?
-
-            // Parent relation
-            if (this.TryGetParentName(out var parentName))
-            {
-                this.Builder.AppendLine($"  {name} -- {parentName}");
-            }
+            this.Builder.AppendLine($"  {name} -- {parentName}");
         }
-
-        // NOTE: Yes, synchronous wait
-        Impl().Wait();
     }
 
     private static string InferNodeText(ParseTree tree) => tree switch
@@ -67,4 +60,25 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
         ParseTree.TypeExpr.Name name => name.Identifier.Text,
         _ => tree.GetType().Name,
     };
+
+    // TODO: Can we get rid of this pattern?
+    private Scope? GetDefinedScope(ParseTree tree)
+    {
+        async Task<Scope?> Impl() => await SymbolResolution.GetDefinedScope(this.db, tree);
+        return Impl().Result;
+    }
+
+    // TODO: Can we get rid of this pattern?
+    private Symbol? GetDefinedSymbol(ParseTree tree)
+    {
+        async Task<Symbol?> Impl() => await SymbolResolution.GetDefinedSymbol(this.db, tree);
+        return Impl().Result;
+    }
+
+    // TODO: Can we get rid of this pattern?
+    private Symbol? GetReferencedSymbol(ParseTree tree)
+    {
+        async Task<Symbol?> Impl() => await SymbolResolution.GetReferencedSymbol(this.db, tree);
+        return Impl().Result;
+    }
 }

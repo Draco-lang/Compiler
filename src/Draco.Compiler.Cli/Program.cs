@@ -16,10 +16,10 @@ internal class Program
                 println(a + 1);
             }
             """";
-        //var compilation = new Compilation();
+        var compilation = new Compilation();
         var parseTree = ParseTree.Parse(src);
-        //var semanticModel = compilation.GetSemanticModel(parseTree);
-        //Console.WriteLine(semanticModel.ToScopeTreeDotGraphString());
-        Console.WriteLine(parseTree.ToDotGraphString());
+        var semanticModel = compilation.GetSemanticModel(parseTree);
+        Console.WriteLine(semanticModel.ToScopeTreeDotGraphString());
+        //Console.WriteLine(parseTree.ToDotGraphString());
     }
 }

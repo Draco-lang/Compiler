@@ -42,8 +42,8 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
 
         // Query relevant data
         var scope = this.GetDefinedScope(tree);
-        var referencedSymbol = this.GetReferencedSymbol(tree);
         var definedSymbol = this.GetDefinedSymbol(tree);
+        var referencedSymbol = this.GetReferencedSymbol(tree);
 
         // Node text
         var textBuilder = new StringBuilder();
@@ -59,6 +59,14 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
                     .SelectMany(t => t.Value.Declarations)
                     .Select(d => d.Name))
                 .Append(" }");
+        }
+        if (definedSymbol is not null)
+        {
+            // Append defined symbol
+            textBuilder
+                .Append(@"\n")
+                .Append("define ")
+                .Append(definedSymbol.Name);
         }
         if (referencedSymbol is not null && referencedSymbol.Definition is not null)
         {

@@ -12,28 +12,14 @@ internal class Program
     {
         var src = """"
             func main(): int32 {
-                println(between(1, 0, 10));
-                println(between(5, 0, 10));
-                println(between(12, 0, 10));
-                println(fib(6));
-                println(a);
-                var a = a + 1;
-                var a = a + 1;
-                var a = a + 1;
-                var a = a + 1;
-                println(a);
+                var a = 0;
+                println(a + 1);
             }
-
-            func fib(n: int32): int32 =
-                if (n < 3) 1
-                else fib(n - 1) + fib(n - 2);
-
-            func between(x: int32, a: int32, b: int32): bool =
-                a < x < b;
             """";
-        var compilation = new Compilation();
+        //var compilation = new Compilation();
         var parseTree = ParseTree.Parse(src);
-        var semanticModel = compilation.GetSemanticModel(parseTree);
-        Console.WriteLine(semanticModel.ToScopeTreeDotGraph());
+        //var semanticModel = compilation.GetSemanticModel(parseTree);
+        //Console.WriteLine(semanticModel.ToScopeTreeDotGraphString());
+        Console.WriteLine(parseTree.ToDotGraphString());
     }
 }

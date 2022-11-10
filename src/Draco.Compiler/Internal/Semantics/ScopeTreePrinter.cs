@@ -17,7 +17,7 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
     public static string Print(QueryDatabase db, ParseTree parseTree)
     {
         var printer = new ScopeTreePrinter(db);
-        printer.Print(parseTree);
+        printer.PrintTree(parseTree);
         return printer.Code;
     }
 

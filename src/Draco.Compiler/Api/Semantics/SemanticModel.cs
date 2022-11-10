@@ -31,7 +31,7 @@ public sealed class SemanticModel
     /// Prints this model as a scope tree in a DOT graph format.
     /// </summary>
     /// <returns>The DOT graph of the symbols and scopes of <see cref="Root"/>.</returns>
-    public string ToScopeTreeDotGraph() =>
+    public string ToScopeTreeDotGraphString() =>
         ScopeTreePrinter.Print(this.db, this.Root);
 
     /// <summary>

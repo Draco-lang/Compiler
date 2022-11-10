@@ -65,19 +65,19 @@ internal abstract class DotGraphParseTreePrinterBase
 
     protected virtual NodeAction GetNodeAction(ParseTree tree) => NodeAction.Print;
 
-    protected void Print(ParseTree tree)
+    protected void PrintTree(ParseTree tree)
     {
         switch (this.GetNodeAction(tree))
         {
         case NodeAction.Print:
             this.PrintSingle(tree);
             this.parentStack.Push(this.GetNodeName(tree));
-            foreach (var child in tree.Children) this.Print(child);
+            foreach (var child in tree.Children) this.PrintTree(child);
             this.parentStack.Pop();
             break;
 
         case NodeAction.Skip:
-            foreach (var child in tree.Children) this.Print(child);
+            foreach (var child in tree.Children) this.PrintTree(child);
             break;
 
         case NodeAction.TerminateChildren:

@@ -78,6 +78,7 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
 
     public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
+    public string ToDotGraphString() => Internal.Syntax.DotParseTreePrinter.Print(this);
 
     // Equality by green nodes
     public bool Equals(ParseTree? other) => ReferenceEquals(this.Green, other?.Green);

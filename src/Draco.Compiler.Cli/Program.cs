@@ -11,13 +11,13 @@ internal class Program
     {
         var src = """"
             func main(): int32 {
-                var a = 0;
-                var a = a + 1;
-                var a = a + 1;
-                var a = a + 1;
-                var a = a + 1;
-                println(a);
+                println(between(1, 0, 10));
+                println(between(5, 0, 10));
+                println(between(12, 0, 10));
             }
+
+            func between(x: int32, a: int32, b: int32): bool =
+                a < x < b;
             """";
         ScriptingEngine.Execute(src);
     }

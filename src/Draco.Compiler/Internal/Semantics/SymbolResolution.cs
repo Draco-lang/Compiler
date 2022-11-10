@@ -56,18 +56,16 @@ internal static class SymbolResolution
 
         foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
         {
-            var symbol = await GetDefinedSymbol(db, subtree);
-
             // See if the child defines any symbol
-            if (symbol is not null)
-            {
-                // Yes, calculate position and add it
-                var symbolPosition = position;
-                // If we don't allow recursive binding for the symbol, we simply shift position
-                if (!symbol.AllowsRecursiveBinding) symbolPosition += subtree.Width;
-                // Add to results
-                result!.Add(new(symbolPosition, symbol));
-            }
+            var symbol = await GetDefinedSymbol(db, subtree);
+            if (symbol is null) continue;
+
+            // Yes, calculate position and add it
+            var symbolPosition = position;
+            // If we don't allow recursive binding for the symbol, we simply shift position
+            if (!symbol.AllowsRecursiveBinding) symbolPosition += subtree.Width;
+            // Add to results
+            result!.Add(new(symbolPosition, symbol));
         }
 
         // Construct the scope
@@ -134,6 +132,10 @@ internal static class SymbolResolution
     /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
     private static async QueryValueTask<Symbol?> ReferenceSymbol(QueryDatabase db, ParseTree tree, string name)
     {
+        // TODO: We can optimize this by stepping up enough times in the tree immediately
+        // We can actually factor that logic out as it has been written in
+        //  - GetPosition
+        //  - GetContainingScope
         var scope = await GetContainingScope(db, tree);
         if (scope is null) return null;
         var referencePositon = GetPosition(tree);

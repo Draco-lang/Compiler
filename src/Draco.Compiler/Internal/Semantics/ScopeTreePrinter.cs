@@ -12,55 +12,59 @@ namespace Draco.Compiler.Internal.Semantics;
 /// <summary>
 /// Utility for printing the result of symbol resolution in a DOT graph.
 /// </summary>
-internal sealed class ScopeTreePrinter
+internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
 {
     public static string Print(QueryDatabase db, ParseTree parseTree)
     {
         var printer = new ScopeTreePrinter(db);
-        printer.PrintHeader();
         printer.Print(parseTree);
-        printer.PrintFooter();
-        return printer.result.ToString();
+        return printer.Code;
     }
 
     private readonly QueryDatabase db;
-    private readonly StringBuilder result = new();
-    private readonly Dictionary<ParseTree, int> nodeNames = new();
 
     private ScopeTreePrinter(QueryDatabase db)
     {
         this.db = db;
     }
 
-    private int GetNodeName(ParseTree parseTree)
+    protected override NodeAction GetNodeAction(ParseTree tree) => tree switch
     {
-        if (!this.nodeNames.TryGetValue(parseTree, out var name))
+        ParseTree.Token => NodeAction.Terminate,
+        _ => NodeAction.Print,
+    };
+
+    protected override void PrintSingle(ParseTree tree)
+    {
+        async Task Impl()
         {
-            name = this.nodeNames.Count;
-            this.nodeNames.Add(parseTree, name);
+            var definedScope = await SymbolResolution.GetDefinedScope(this.db, tree);
+            var referencedSymbol = await SymbolResolution.GetReferencedSymbol(this.db, tree);
+
+            var name = this.GetNodeName(tree);
+
+            // Node text
+            var text = InferNodeText(tree);
+            this.Builder.AppendLine($"  {name} [label=\"{text}\"]");
+
+            // TODO: Scope data?
+            // TODO: Reference data?
+
+            // Parent relation
+            if (this.TryGetParentName(out var parentName))
+            {
+                this.Builder.AppendLine($"  {name} -- {parentName}");
+            }
         }
-        return name;
+
+        // NOTE: Yes, synchronous wait
+        Impl().Wait();
     }
 
-    private void PrintHeader() => this.result.AppendLine("graph scope_tree {");
-    private void PrintFooter() => this.result.AppendLine("}");
-
-    private void Print(ParseTree parseTree)
+    private static string InferNodeText(ParseTree tree) => tree switch
     {
-        var name = this.GetNodeName(parseTree);
-        // Node text
-        this.result.AppendLine($"  {name} [label=\"{parseTree.GetType().Name}\"]");
-
-        // TODO: Scope data?
-        // TODO: Reference data?
-
-        // Parent relation
-        if (parseTree.Parent is not null)
-        {
-            var parentName = this.GetNodeName(parseTree.Parent);
-            this.result.AppendLine($"  {name} -- {parentName}");
-        }
-        // Recurse to children
-        foreach (var child in parseTree.Children) this.Print(child);
-    }
+        ParseTree.Expr.Name name => name.Identifier.Text,
+        ParseTree.TypeExpr.Name name => name.Identifier.Text,
+        _ => tree.GetType().Name,
+    };
 }

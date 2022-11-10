@@ -18,6 +18,27 @@ namespace Draco.Compiler.Internal.Semantics;
 internal static class SymbolResolution
 {
     /// <summary>
+    /// Categorizes positioning info.
+    /// </summary>
+    private enum BindingKind
+    {
+        /// <summary>
+        /// Accessible from everywhere.
+        /// </summary>
+        OrderIndependent,
+
+        /// <summary>
+        /// Accessible from the definition point and onwards.
+        /// </summary>
+        Recursive,
+
+        /// <summary>
+        /// Accessible from only after the definition point.
+        /// </summary>
+        NonRecursive,
+    }
+
+    /// <summary>
     /// Retrieves the containing <see cref="Scope"/> of a <see cref="ParseTree"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
@@ -56,9 +77,16 @@ internal static class SymbolResolution
             if (symbol is null) continue;
 
             // Yes, calculate position and add it
-            var symbolPosition = position;
-            // If we don't allow recursive binding for the symbol, we simply shift position
-            if (!symbol.AllowsRecursiveBinding) symbolPosition += subtree.Width;
+            var symbolPosition = GetBindingKind(symbol) switch
+            {
+                // Order independent always just gets thrown to the beginning
+                BindingKind.OrderIndependent => 0,
+                // Recursive ones stay in-place
+                BindingKind.Recursive => position,
+                // Non-recursive ones simply get shifted after the subtree
+                BindingKind.NonRecursive => position + subtree.Width,
+                _ => throw new InvalidOperationException(),
+            };
             // Add to results
             result!.Add(new(symbolPosition, symbol));
         }
@@ -190,6 +218,13 @@ internal static class SymbolResolution
             if (GetScopeKind(tree) is not null) return tree;
         }
     }
+
+    private static BindingKind GetBindingKind(Symbol symbol) => symbol switch
+    {
+        Symbol.Label or Symbol.Function => BindingKind.OrderIndependent,
+        Symbol.Variable => BindingKind.NonRecursive,
+        _ => throw new InvalidOperationException(),
+    };
 
     private static ScopeKind? GetScopeKind(ParseTree tree) => tree switch
     {

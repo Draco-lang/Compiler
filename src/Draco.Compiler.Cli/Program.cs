@@ -4,57 +4,47 @@ using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Cli;
 
 internal class Program
 {
+    private static Compilation? compilation;
     internal static int Main(string[] args)
     {
-        var fileArgument = new Argument<FileInfo>("--file", description: "Draco file");
-        var emitCSOption = new Option<bool>("--emit-cs", () => false, description: "Specifies if generated c# code should be saved to the disk");
-
+        var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
+        var emitCSharpOutput = new Option<FileInfo>("--output-cs", description: "Specifies output file for generated c#, if not specified, generated code is not saved to the disk");
+        var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("transpiledProgram.exe"), "Specifies the output file");
         var runCommand = new Command("run", "runs specified draco file")
         {
             fileArgument,
-            emitCSOption,
+            outputOption
         };
-        runCommand.SetHandler((file, emitCS) =>
-        {
-            Run(file, emitCS);
-        }, fileArgument, emitCSOption);
+        runCommand.SetHandler((input, output) => Run(input, output), fileArgument, outputOption);
 
         var generateParseTreeCommand = new Command("parse", "generates parse tree from specified draco file")
         {
             fileArgument,
         };
-        generateParseTreeCommand.SetHandler((file) =>
-        {
-            GenerateParseTree(file);
-        }, fileArgument);
-
+        generateParseTreeCommand.SetHandler((file) => GenerateParseTree(file), fileArgument);
 
         var generateCSCommand = new Command("codegen", "generates c# from specified draco file and displays it to the console")
         {
             fileArgument,
-            emitCSOption,
+            emitCSharpOutput,
         };
-        generateCSCommand.SetHandler((file, emitCS) =>
-        {
-            GenerateCSharp(file, emitCS);
-        }, fileArgument, emitCSOption);
+        generateCSCommand.SetHandler((file, emitCS) => GenerateCSharp(file, emitCS), fileArgument, emitCSharpOutput);
 
         var generateExeCommand = new Command("compile", "generates executable from specified draco file")
         {
             fileArgument,
-            emitCSOption
+            outputOption
         };
-        generateExeCommand.SetHandler((file, emitCS) =>
-        {
-            GenerateExe(file, emitCS);
-        }, fileArgument, emitCSOption);
+        generateExeCommand.SetHandler((input, output) => GenerateExe(input, output), fileArgument, outputOption);
 
         var rootCommand = new RootCommand("CLI for the draco compiler");
         rootCommand.AddCommand(runCommand);
@@ -64,25 +54,33 @@ internal class Program
         return rootCommand.Invoke(args);
     }
 
-    private static void Run(FileInfo fileInfo, bool emitCS) =>
-        ScriptingEngine.Execute(File.ReadAllText(fileInfo.FullName), emitCS);
-
-    private static void GenerateParseTree(FileInfo fileInfo)
+    private static void Run(FileInfo input, FileInfo output)
     {
-        var tree = ParseTree.Parse(File.ReadAllText(fileInfo.FullName));
-        Console.WriteLine(tree.ToDebugString());
+        compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
+        ScriptingEngine.Execute(compilation);
     }
 
-    private static void GenerateCSharp(FileInfo fileInfo, bool emitCS)
+    private static void GenerateParseTree(FileInfo input)
     {
-        string cSharpCode = ScriptingEngine.GenerateCSharp(File.ReadAllText(fileInfo.FullName));
-        Console.WriteLine(cSharpCode);
-        if (emitCS)
+        compilation = new Compilation(File.ReadAllText(input.FullName));
+        ScriptingEngine.CompileToParseTree(compilation);
+        Console.WriteLine(compilation.Parsed!.ToDebugString());
+    }
+
+    private static void GenerateCSharp(FileInfo input, FileInfo emitCS)
+    {
+        compilation = new Compilation(File.ReadAllText(input.FullName));
+        ScriptingEngine.CompileToCSharpCode(compilation);
+        Console.WriteLine(compilation.GeneratedCSharp);
+        if (emitCS is not null)
         {
-            File.WriteAllText("transpiledProgram.cs", cSharpCode);
+            File.WriteAllText(emitCS.FullName, compilation.GeneratedCSharp);
         }
     }
 
-    private static void GenerateExe(FileInfo fileInfo, bool emitCS) =>
-        ScriptingEngine.GenerateExe(File.ReadAllText(fileInfo.FullName), emitCS);
+    private static void GenerateExe(FileInfo input, FileInfo output)
+    {
+        compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
+        ScriptingEngine.GenerateExe(compilation);
+    }
 }

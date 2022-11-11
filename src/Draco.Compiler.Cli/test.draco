@@ -1,4 +1,0 @@
-func main(){
-    val x = "Hello, World!";
-    println(x);
-}

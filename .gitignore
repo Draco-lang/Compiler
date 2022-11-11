@@ -3,3 +3,4 @@ bin
 obj
 *.user
 **/Properties/launchSettings.json
+/src/Draco.Compiler.Cli/test.draco

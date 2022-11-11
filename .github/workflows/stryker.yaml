@@ -40,4 +40,4 @@ jobs:
       run: dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
 
     - name: Run Mutation Testing
-      run: dotnet stryker --reporter "dashboard"
+      run: dotnet stryker --reporter "dashboard" --with-baseline:${{ github.base_ref }} --version ${{ github.head_ref }}

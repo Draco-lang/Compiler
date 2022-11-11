@@ -13,13 +13,13 @@ namespace Draco.Compiler.Api;
 /// </summary>
 public sealed class Compilation
 {
-    public string Source { get; private set; }
+    public string Source { get; }
 
     public ParseTree? Parsed { get; internal set; }
 
     public string? GeneratedCSharp { get; internal set; }
 
-    public FileInfo? CompiledExecutablePath { get; private set; }
+    public FileInfo? CompiledExecutablePath { get; }
 
     public Compilation(string source, string? outputFile = null)
     {

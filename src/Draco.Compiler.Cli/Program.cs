@@ -13,8 +13,12 @@ namespace Draco.Compiler.Cli;
 
 internal class Program
 {
-    private static Compilation? compilation;
     internal static int Main(string[] args)
+    {
+        return ConfigureCommands().Invoke(args);
+    }
+
+    private static RootCommand ConfigureCommands()
     {
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
         var emitCSharpOutput = new Option<FileInfo>("--output-cs", description: "Specifies output file for generated c#, if not specified, generated code is not saved to the disk");
@@ -51,25 +55,25 @@ internal class Program
         rootCommand.AddCommand(generateParseTreeCommand);
         rootCommand.AddCommand(generateCSCommand);
         rootCommand.AddCommand(generateExeCommand);
-        return rootCommand.Invoke(args);
+        return rootCommand;
     }
 
     private static void Run(FileInfo input, FileInfo output)
     {
-        compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
+        Compilation compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
         ScriptingEngine.Execute(compilation);
     }
 
     private static void GenerateParseTree(FileInfo input)
     {
-        compilation = new Compilation(File.ReadAllText(input.FullName));
+        Compilation compilation = new Compilation(File.ReadAllText(input.FullName));
         ScriptingEngine.CompileToParseTree(compilation);
         Console.WriteLine(compilation.Parsed!.ToDebugString());
     }
 
     private static void GenerateCSharp(FileInfo input, FileInfo emitCS)
     {
-        compilation = new Compilation(File.ReadAllText(input.FullName));
+        Compilation compilation = new Compilation(File.ReadAllText(input.FullName));
         ScriptingEngine.CompileToCSharpCode(compilation);
         Console.WriteLine(compilation.GeneratedCSharp);
         if (emitCS is not null)
@@ -80,7 +84,7 @@ internal class Program
 
     private static void GenerateExe(FileInfo input, FileInfo output)
     {
-        compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
+        Compilation compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
         ScriptingEngine.GenerateExe(compilation);
     }
 }

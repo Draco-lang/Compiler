@@ -7,19 +7,17 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Basic.Reference.Assemblies;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Draco.Compiler.Api.Scripting;
 
 public static class ScriptingEngine
 {
-    public static void Execute(Draco.Compiler.Api.Compilation compilation)
+    public static void Execute(Compilation compilation)
     {
-        GenerateExe(compilation);
-        // TODO: If GenerateExe fails, we shouldn't continue
+        if (!GenerateExe(compilation)) return;
         // Dump runtime config
         File.WriteAllText(
             $"{Path.GetFileNameWithoutExtension(compilation.CompiledExecutablePath!.Name)}.runtimeconfig.json",
@@ -46,12 +44,12 @@ public static class ScriptingEngine
         Console.WriteLine($"Process terminated with exit code: {process.ExitCode}");
     }
 
-    public static void GenerateExe(Draco.Compiler.Api.Compilation compilation)
+    public static bool GenerateExe(Compilation compilation)
     {
         if (compilation.CompiledExecutablePath is null) throw new InvalidOperationException("Path for the compiled executable was not specified, so the code can't be compiled");
         using (Stream dllStream = new FileStream(compilation.CompiledExecutablePath.FullName, FileMode.OpenOrCreate))
         {
-            if (!CompileToAssembly(compilation, dllStream)) return;
+            return CompileToAssembly(compilation, dllStream);
         }
     }
 
@@ -88,21 +86,21 @@ public static class ScriptingEngine
         return;
     }
 
-    public static bool CompileToAssembly(Draco.Compiler.Api.Compilation dracoCompilation, Stream stream,
-        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null
+    public static bool CompileToAssembly(Compilation dracoCompilation, Stream stream,
+        Func<Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions, Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions>? csCompilerOptionBuilder = null
     )
     {
         CompileToCSharpCode(dracoCompilation);
         // NOTE: This is temporary, we shouldn't rely on compiling to C#
         // and then letting Roslyn do the work
 
-        var options = new CSharpCompilationOptions(OutputKind.ConsoleApplication);
+        var options = new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
         if (csCompilerOptionBuilder is not null) options = csCompilerOptionBuilder(options);
 
         // Compile
-        var cSharpCompilation = CSharpCompilation.Create(
+        var cSharpCompilation = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(
             assemblyName: dracoCompilation.CompiledExecutablePath!.Name,
-            syntaxTrees: new[] { CSharpSyntaxTree.ParseText(dracoCompilation.GeneratedCSharp!) },
+            syntaxTrees: new[] { Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(dracoCompilation.GeneratedCSharp!) },
             references: ReferenceAssemblies.Net60,
             options: options);
         {
@@ -117,13 +115,13 @@ public static class ScriptingEngine
         }
     }
 
-    public static void CompileToCSharpCode(Draco.Compiler.Api.Compilation compilation)
+    public static void CompileToCSharpCode(Compilation compilation)
     {
         compilation.Parsed = ParseTree.Parse(compilation.Source);
         compilation.GeneratedCSharp = CSharpCodegen.Transpile(compilation.Parsed.Green);
     }
 
-    public static void CompileToParseTree(Draco.Compiler.Api.Compilation compilation)
+    public static void CompileToParseTree(Compilation compilation)
     {
         compilation.Parsed = ParseTree.Parse(compilation.Source);
     }

@@ -3,6 +3,7 @@
 name: Mutation Testing
 
 on:
+  workflow_dispatch:
   push:
     paths:
     - 'src/**'

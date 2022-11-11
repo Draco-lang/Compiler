@@ -44,7 +44,7 @@ jobs:
       if: github.event_name == 'pull_request'
 
     - name: Run Mutation Testing for push
-      run: dotnet stryker --reporter "dashboard" --with-baseline:${{ github.event.base_ref }} --version ${{ github.event.before }}
+      run: dotnet stryker --reporter "dashboard" --with-baseline:${{ github.event.before }} --version ${{ github.event.ref }}
       if: github.event_name == 'push'
 
     - name: Run Mutation Testing for workflow_dispatch

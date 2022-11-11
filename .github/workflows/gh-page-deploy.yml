@@ -5,9 +5,8 @@ name: 'Deploy Blazor Web Editor to GH Pages'
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
     paths:
-      - 'src/**'
+    - 'src/**'
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:

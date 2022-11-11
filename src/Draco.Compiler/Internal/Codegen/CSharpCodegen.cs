@@ -46,9 +46,10 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         {
             // For now we reserve their proper names for globals
             // For the rest we allocate an enumerated ID
-            name = symbol.IsGlobal
-                ? symbol.Name
-                : $"sym_{this.symbolNames.Count}";
+            var scopeKind = ((Semantics.Symbol)symbol).EnclosingScope?.Kind ?? Semantics.ScopeKind.Global;
+            name = scopeKind == Semantics.ScopeKind.Local
+                ? $"sym_{this.symbolNames.Count}"
+                : symbol.Name;
             this.symbolNames.Add(symbol, name);
         }
         return name;

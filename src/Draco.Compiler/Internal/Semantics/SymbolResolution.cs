@@ -103,6 +103,7 @@ internal static class SymbolResolution
     /// Retrieves the <see cref="Symbol"/> defined by the given <see cref="ParseTree"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="scope">The kind of the enclosing scope.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that is asked if it defines a <see cref="Symbol"/>.</param>
     /// <returns>The <see cref="Symbol"/> that <paramref name="tree"/> defines, or null if
     /// it does not define any symbol.</returns>
@@ -110,22 +111,22 @@ internal static class SymbolResolution
     {
         ParseTree.Decl.Variable variable => new Symbol.Variable(
             db: db,
-            definition: tree,
             name: variable.Identifier.Text,
+            definition: tree,
             isMutable: variable.Keyword.Type == TokenType.KeywordVar),
         ParseTree.Decl.Func func => new Symbol.Function(
             db: db,
-            definition: tree,
-            name: func.Identifier.Text),
+            name: func.Identifier.Text,
+            definition: tree),
         ParseTree.Decl.Label label => new Symbol.Label(
             db: db,
-            definition: tree,
-            name: label.Identifier.Text),
+            name: label.Identifier.Text,
+            definition: tree),
         // NOTE: We might want a different symbol for parameters?
         ParseTree.FuncParam fparam => new Symbol.Variable(
             db: db,
-            definition: tree,
             name: fparam.Identifier.Text,
+            definition: tree,
             isMutable: false),
         _ => null,
     };
@@ -237,7 +238,9 @@ internal static class SymbolResolution
     // NOTE: Pretty temporary...
     private static void InjectIntrinsics(QueryDatabase db, List<Declaration> declarations)
     {
-        declarations.Add(new(0, new Symbol.Function(db, null, "println")));
-        declarations.Add(new(0, new Symbol.Function(db, null, "print")));
+        void Add(string name) => declarations.Add(new(0, new Symbol.Intrinsic(name)));
+
+        Add("println");
+        Add("print");
     }
 }

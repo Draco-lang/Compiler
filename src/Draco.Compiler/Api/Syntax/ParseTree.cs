@@ -65,6 +65,11 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     public Range Range => this.range ??= this.ComputeRange();
 
     /// <summary>
+    /// The location of this node.
+    /// </summary>
+    public Location Location => new(this.Range);
+
+    /// <summary>
     /// All <see cref="Token"/>s that this subtree consists of.
     /// </summary>
     public IEnumerable<Token> Tokens => this.GetTokens();

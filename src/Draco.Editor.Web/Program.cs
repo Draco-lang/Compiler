@@ -15,6 +15,7 @@ public class Program
     private static IJSRuntime js = null!;
     private static IJSObjectReference appJS = null!;
     private static string code = "";
+
     public static async Task Main(string[] args)
     {
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -172,5 +173,3 @@ public class Program
         }
     }
 }
-
-

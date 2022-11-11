@@ -17,23 +17,7 @@ declare global {
 
 self.MonacoEnvironment = {
     getWorkerUrl: function (moduleId, label) {
-        switch (label) {
-            case 'json':
-                return './language/json/json.worker.js';
-            case 'css':
-            case 'scss':
-            case 'less':
-                return './language/css/css.worker.js';
-            case 'html':
-            case 'handlebars':
-            case 'razor':
-                return './language/html/html.worker.js';
-            case 'typescript':
-            case 'javascript':
-                return './language/typescript/ts.worker.js';
-            default:
-                return './editor/editor.worker.js';
-        }
+        return './editor/editor.worker.js';
     }
 };
 

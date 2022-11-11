@@ -3,5 +3,3 @@ bin
 obj
 *.user
 **/Properties/launchSettings.json
-
-/src/Draco.Editor.Web/app/node_modules/

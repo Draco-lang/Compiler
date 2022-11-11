@@ -8,6 +8,7 @@ using Microsoft.JSInterop;
 using System.IO.Compression;
 using System.Text;
 using static ICSharpCode.Decompiler.IL.Transforms.Stepper;
+using Draco.Compiler.Api;
 
 namespace Draco.Editor.Web;
 
@@ -16,6 +17,7 @@ public partial class App
     private MonacoEditor? DracoEditor { get; set; }
     private MonacoEditor? OutputViewer { get; set; }
     private string? SelectedOutputType { get; set; } = "Run";
+    private Compilation? compilation { get; set; }
     private static readonly StandaloneEditorConstructionOptions defaultDracoEditorOptions = new()
     {
         AutomaticLayout = true,
@@ -78,19 +80,19 @@ public partial class App
     private async Task UpdateOutput()
     {
         var code = await this.UpdatedURLHash();
-
+        this.compilation = new Compilation(code, "OutputExecutable");
         try
         {
             switch (this.SelectedOutputType)
             {
             case "Run":
-                await this.ShowRun(code);
+                await this.ShowRun(this.compilation);
                 break;
             case "CSharp":
-                await this.ShowCSharp(code);
+                await this.ShowCSharp(this.compilation);
                 break;
             case "IL":
-                await this.ShowIL(code);
+                await this.ShowIL(this.compilation);
                 break;
             default:
                 throw new InvalidOperationException();
@@ -124,7 +126,7 @@ public partial class App
         return code;
     }
 
-    private async Task ShowRun(string code)
+    private async Task ShowRun(Compilation code)
     {
         var oldOut = Console.Out;
         var cts = new CancellationTokenSource();
@@ -147,15 +149,15 @@ public partial class App
         Console.SetOut(oldOut);
     }
 
-    private async Task ShowCSharp(string code)
+    private async Task ShowCSharp(Compilation code)
     {
         defaultOutputEditorOptions.Language = "csharp";
         await this.OutputViewer!.UpdateOptions(defaultOutputEditorOptions);
-        var cSharpCode = ScriptingEngine.CompileToCSharpCode(code);
-        await this.OutputViewer.SetValue(cSharpCode);
+        ScriptingEngine.CompileToCSharpCode(code);
+        await this.OutputViewer.SetValue(code.GeneratedCSharp);
     }
 
-    private async Task ShowIL(string code)
+    private async Task ShowIL(Compilation code)
     {
         defaultOutputEditorOptions.Language = "IL";
         await this.OutputViewer!.UpdateOptions(defaultOutputEditorOptions);

@@ -15,7 +15,6 @@ internal class Program
                 """;
             }
             """");
-
         foreach (var diag in tree.GetAllDiagnostics())
         {
             Console.WriteLine(diag);

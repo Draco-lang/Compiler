@@ -3,9 +3,19 @@
     "sourceMap": true,
     "target": "esnext",
     "moduleResolution": "NodeNext",
-    "module": "ESNext"
+    "module": "esnext",
+    "allowSyntheticDefaultImports": true,
+    "lib": [
+      "WebWorker",
+      "WebWorker.ImportScripts",
+      "DOM",
+      "ES2022"
+    ],
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+
   },
   "include": [
-    "**/*.ts"
+    "ts/**/*.ts"
   ]
 }

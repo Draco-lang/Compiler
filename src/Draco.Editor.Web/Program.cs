@@ -21,7 +21,7 @@ public class Program
         var host = builder.Build();
         js = host.Services.GetRequiredService<IJSRuntime>();
         var navigationManager = host.Services.GetRequiredService<NavigationManager>();
-        appJS = await js.InvokeAsync<IJSObjectReference>("import", "/ts/app.ts");
+        appJS = await js.InvokeAsync<IJSObjectReference>("import", "./ts/app.js");
         await GetDataFromURL(navigationManager);
         await appJS.InvokeVoidAsync("emitCodeChange");
         await host.RunAsync();

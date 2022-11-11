@@ -1,48 +1,41 @@
-import * as monaco from 'monaco-editor';
-// @ts-ignore
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-// @ts-ignore
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-// @ts-ignore
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-// @ts-ignore
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-// @ts-ignore
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
-import { loadWASM } from 'onigasm'; // peer dependency of 'monaco-textmate'
-import { Registry } from 'monaco-textmate'; // peer dependency
-import { wireTmGrammars } from 'monaco-editor-textmate';
-// @ts-ignore
-import onigasm from 'onigasm/lib/onigasm.wasm?url';
-// @ts-ignore
-import vsthemeRaw from '../data/vscode.converted.theme.json?raw';
-import JSON5 from 'json5';
-import tslib from 'tslib';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js'; // Monaco is VSCode core, but limited due to browser environement.
+import onigasmWasm from 'onigasm/lib/onigasm.wasm'; // TextMates regex parser lib compiled in WASM.
+import { loadWASM } from 'onigasm'; // Helper shipped with it to load it.
+import { Registry } from 'monaco-textmate';
+import { wireTmGrammars } from 'monaco-editor-textmate'; // Library that allow running Textmates grammar in monaco.
+import vstheme from '../data/vscode.converted.theme.json';
+import grammarDefinition from '../../../Draco.SyntaxHighlighting/draco.tmLanguage.json';
 
 declare global {
     class DotNet {
         static invokeMethodAsync<T>(assemblyName: string, methodIdentifier: string, ...args: any[]): Promise<T>
     }
-}
-
-// hack for vite bundler...
-self.MonacoEnvironment = {
-    getWorker(_, label) {
-        if (label === 'json') {
-            return new jsonWorker()
-        }
-        if (label === 'css' || label === 'scss' || label === 'less') {
-            return new cssWorker()
-        }
-        if (label === 'html' || label === 'handlebars' || label === 'razor') {
-            return new htmlWorker()
-        }
-        if (label === 'typescript' || label === 'javascript') {
-            return new tsWorker()
-        }
-        return new editorWorker()
+    class Blazor {
+        static start(): Promise<void>;
     }
 }
+
+self.MonacoEnvironment = {
+    getWorkerUrl: function (moduleId, label) {
+        switch (label) {
+            case 'json':
+                return './language/json/json.worker.js';
+            case 'css':
+            case 'scss':
+            case 'less':
+                return './language/css/css.worker.js';
+            case 'html':
+            case 'handlebars':
+            case 'razor':
+                return './language/html/html.worker.js';
+            case 'typescript':
+            case 'javascript':
+                return './language/typescript/ts.worker.js';
+            default:
+                return './editor/editor.worker.js';
+        }
+    }
+};
 
 function isDarkMode() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -98,23 +91,22 @@ var outputEditor = monaco.editor.create(document.getElementById('output-viewer')
 });
 
 async function main() {
-
-    await loadWASM(onigasm);
+    await Blazor.start();
+    await loadWASM(onigasmWasm.buffer);
 
     const registry = new Registry({
         getGrammarDefinition: async (scopeName) => {
             return {
                 format: 'json',
-                content: await (await fetch(`syntaxes/draco.tmLanguage.json`)).text()
+                content: grammarDefinition
             }
         }
     });
     // map of monaco "language id's" to TextMate scopeNames
     const grammars = new Map();
     grammars.set('draco', 'source.draco');
-    const newTheme = JSON5.parse(vsthemeRaw);
-    monaco.editor.defineTheme("vs-dark", newTheme);
-    monaco.languages.register({id: "draco"});
+    monaco.editor.defineTheme("vs-dark", vstheme as monaco.editor.IStandaloneThemeData);
+    monaco.languages.register({ id: "draco" });
     await wireTmGrammars(monaco, registry, grammars, dracoEditor);
 }
 main();

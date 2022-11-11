@@ -1,0 +1,36 @@
+/* css/app.css */
+html,
+body,
+#app {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.editors-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+}
+.editors-container div {
+  width: 50%;
+}
+.settings {
+  flex: 0 1 25px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+@media (prefers-color-scheme: dark) {
+  .settings {
+    background-color: #1e1e1e;
+  }
+  body {
+    background-color: #1e1e1e;
+  }
+}
+@media (prefers-color-scheme: light) {
+  .settings {
+    background-color: #fffffe;
+  }
+}

@@ -4,9 +4,9 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Api.Semantics;
-using Draco.Compiler.Api.Syntax;
 using Draco.Query;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -24,6 +24,9 @@ internal abstract partial class Symbol : ISymbol
     public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
     public Location? Definition => this.DefinitionTree?.Location;
 
+    ImmutableArray<Api.Diagnostics.Diagnostic> ISymbol.Diagnostics => throw new NotImplementedException();
+    Api.Diagnostics.Location? ISymbol.Definition => throw new NotImplementedException();
+
     protected Symbol(string name)
     {
         this.Name = name;
@@ -38,7 +41,7 @@ internal abstract partial class Symbol
         public override ParseTree DefinitionTree { get; }
         // NOTE: Not a good idea to rely on .Result
         public override Scope? EnclosingScope =>
-            SymbolResolution.GetContainingScope(this.db, this.DefinitionTree).Result;
+            SymbolResolution.GetContainingScopeOrNull(this.db, this.DefinitionTree).Result;
 
         private readonly QueryDatabase db;
 

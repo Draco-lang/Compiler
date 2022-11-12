@@ -41,7 +41,7 @@ public sealed class SemanticModel
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// define any.</returns>
     public async Task<ISymbol?> GetDefinedSymbol(ParseTree subtree) =>
-        await SymbolResolution.GetDefinedSymbol(this.db, subtree);
+        await SymbolResolution.GetDefinedSymbolOrNull(this.db, subtree);
 
     // TODO: This API swallows errors
     /// <summary>
@@ -51,5 +51,5 @@ public sealed class SemanticModel
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// reference any.</returns>
     public async Task<ISymbol?> GetReferencedSymbol(ParseTree subtree) =>
-        await SymbolResolution.GetReferencedSymbol(this.db, subtree);
+        await SymbolResolution.GetReferencedSymbolOrNull(this.db, subtree);
 }

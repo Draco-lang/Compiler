@@ -98,6 +98,14 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
 
 public abstract partial class ParseTree
 {
+    internal static Location TranslateLocation(
+        Internal.Syntax.ParseTree tree,
+        Internal.Diagnostics.Location location)
+    {
+        var range = tree.TranslateRelativeRange(location.Range);
+        return new Location(range);
+    }
+
     private IEnumerable<Diagnostic> CollectAllDiagnostics()
     {
         foreach (var internalDiag in this.Green.Diagnostics)

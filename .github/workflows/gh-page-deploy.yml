@@ -5,6 +5,7 @@ name: 'Deploy Blazor Web Editor to GH Pages'
 on:
   workflow_dispatch:
   push:
+      branches: [ main ]
     paths:
     - 'src/**'
 

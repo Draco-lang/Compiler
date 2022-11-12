@@ -1,0 +1,32 @@
+{
+  "type": "module",
+  "scripts": {
+    "build-debug": "tsc -noEmit && node build.js ../wwwroot",
+    "build-release": "tsc -noEmit && node build.js ../wwwroot"
+  },
+  "dependencies": {
+    "base64url": "^3.0.1",
+    "json5": "^2.2.1",
+    "monaco-editor": "^0.34.1",
+    "monaco-editor-textmate": "^4.0.0",
+    "monaco-textmate": "^3.0.1",
+    "onigasm": "^2.2.5",
+    "pako": "^2.1.0",
+    "path": "^0.12.7",
+    "tslib": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/blazor__javascript-interop": "^3.1.2",
+    "@types/node": "^18.11.9",
+    "@types/pako": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.42.1",
+    "@typescript-eslint/parser": "^5.42.1",
+    "esbuild": "^0.15.13",
+    "esbuild-plugin-wat": "^0.2.7",
+    "eslint": "^8.27.0",
+    "monaco-vscode-textmate-theme-converter": "^0.1.7",
+    "node-ts": "^5.1.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.4"
+  }
+}

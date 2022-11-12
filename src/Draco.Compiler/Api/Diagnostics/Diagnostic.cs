@@ -14,7 +14,7 @@ public sealed class Diagnostic
     /// <summary>
     /// The location of the diagnostic.
     /// </summary>
-    public Location Location { get; }
+    public Location? Location { get; }
 
     /// <summary>
     /// The message explaining this diagnostics.
@@ -26,7 +26,7 @@ public sealed class Diagnostic
 
     internal Diagnostic(
         Internal.Diagnostics.Diagnostic internalDiagnostic,
-        Location location)
+        Location? location)
     {
         this.internalDiagnostic = internalDiagnostic;
         this.Location = location;
@@ -42,8 +42,10 @@ public sealed class Diagnostic
             Internal.Diagnostics.DiagnosticSeverity.Error => "error",
             _ => throw new InvalidOperationException(),
         };
-        var position = this.Location.Range.Start;
-        sb.AppendLine($"{severity} at line {position.Line + 1}, column {position.Column + 1}: {this.internalDiagnostic.Title}");
+        var position = this.Location?.Range.Start;
+        sb.Append(severity);
+        if (position is not null) sb.Append($" at line {position.Value.Line + 1}, column {position.Value.Column + 1}");
+        sb.AppendLine($": {this.internalDiagnostic.Title}");
         sb.Append(this.Message);
         return sb.ToString();
     }

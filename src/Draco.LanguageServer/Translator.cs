@@ -18,8 +18,13 @@ internal static class Translator
         Message = diag.Message,
         // TODO: Not necessarily an error
         Severity = LspModels.DiagnosticSeverity.Error,
-        Range = ToLsp(diag.Location.Range),
+        // TODO: Is there a no-range option?
+        Range = ToLsp(diag.Location?.Range) ?? new(),
     };
+
+    public static LspModels.Range? ToLsp(CompilerApi.Syntax.Range? range) => range is null
+        ? null
+        : ToLsp(range.Value);
 
     public static LspModels.Range ToLsp(CompilerApi.Syntax.Range range) =>
         new(ToLsp(range.Start), ToLsp(range.End));

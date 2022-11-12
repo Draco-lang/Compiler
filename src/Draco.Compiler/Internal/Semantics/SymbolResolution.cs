@@ -154,21 +154,21 @@ internal static class SymbolResolution
         ParseTree.Decl.Variable variable => new Symbol.Variable(
             db: db,
             name: variable.Identifier.Text,
-            definition: tree.Green,
+            definition: tree,
             isMutable: variable.Keyword.Type == TokenType.KeywordVar),
         ParseTree.Decl.Func func => new Symbol.Function(
             db: db,
             name: func.Identifier.Text,
-            definition: tree.Green),
+            definition: tree),
         ParseTree.Decl.Label label => new Symbol.Label(
             db: db,
             name: label.Identifier.Text,
-            definition: tree.Green),
+            definition: tree),
         // NOTE: We might want a different symbol for parameters?
         ParseTree.FuncParam fparam => new Symbol.Variable(
             db: db,
             name: fparam.Identifier.Text,
-            definition: tree.Green,
+            definition: tree,
             isMutable: false),
         _ => null,
     };

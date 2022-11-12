@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api.Semantics;
 using Draco.Query;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -22,10 +22,13 @@ internal abstract partial class Symbol : ISymbol
     public abstract ParseTree? DefinitionTree { get; }
     public virtual bool IsError => false;
     public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
-    public Location? Definition => this.DefinitionTree?.Location;
+    public Location? Definition => this.DefinitionTree?.Green.Location;
 
-    ImmutableArray<Api.Diagnostics.Diagnostic> ISymbol.Diagnostics => throw new NotImplementedException();
-    Api.Diagnostics.Location? ISymbol.Definition => throw new NotImplementedException();
+    private ImmutableArray<Api.Diagnostics.Diagnostic>? diagnostics;
+    ImmutableArray<Api.Diagnostics.Diagnostic> ISymbol.Diagnostics => this.diagnostics ??= this.Diagnostics
+        .Select(d => new Api.Diagnostics.Diagnostic(d, (this as ISymbol).Definition))
+        .ToImmutableArray();
+    Api.Diagnostics.Location? ISymbol.Definition => this.DefinitionTree?.Location;
 
     protected Symbol(string name)
     {

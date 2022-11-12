@@ -4,6 +4,8 @@ using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
+using Draco.Compiler.Api;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.Editor.Web;
 
@@ -13,7 +15,6 @@ public class Program
     private static IJSObjectReference appJS = null!;
     private static string code = null!;
     private static string selectedOutputType = null!;
-
     public static async Task Main(string[] args)
     {
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -62,16 +63,17 @@ public class Program
     {
         try
         {
+            var compilation = new Compilation(code, "GeneratedAssembly");
             switch (selectedOutputType)
             {
             case "Run":
-                await RunScript();
+                await RunScript(compilation);
                 break;
             case "CSharp":
-                await DisplayCompiledCSharp();
+                await DisplayCompiledCSharp(compilation);
                 break;
             case "IL":
-                await DisplayCompiledIL();
+                await DisplayCompiledIL(compilation);
                 break;
             default:
                 throw new InvalidOperationException("Invalid switch case.");
@@ -83,7 +85,7 @@ public class Program
         }
     }
 
-    private static async Task RunScript()
+    private static async Task RunScript(Compilation compilation)
     {
         var oldOut = Console.Out;
         var cts = new CancellationTokenSource();
@@ -92,7 +94,7 @@ public class Program
         Console.SetOut(consoleStream);
         try
         {
-            ScriptingEngine.InlineExecute(code);
+            ScriptingEngine.InlineExecute(compilation);
         }
         catch (Exception e)
         {
@@ -104,16 +106,16 @@ public class Program
         Console.SetOut(oldOut);
     }
 
-    private static async Task DisplayCompiledCSharp()
+    private static async Task DisplayCompiledCSharp(Compilation compilation)
     {
-        var cSharpCode = ScriptingEngine.CompileToCSharpCode(code);
-        await SetOutputText(cSharpCode);
+        ScriptingEngine.CompileToCSharpCode(compilation);
+        await SetOutputText(compilation.GeneratedCSharp!);
     }
 
-    private static async Task DisplayCompiledIL()
+    private static async Task DisplayCompiledIL(Compilation compilation)
     {
         using var inlineDllStream = new MemoryStream();
-        if (!ScriptingEngine.CompileToAssembly(code, inlineDllStream)) return;
+        if (!ScriptingEngine.CompileToAssembly(compilation, inlineDllStream)) return;
         inlineDllStream.Position = 0;
         var text = new PlainTextOutput();
         var disassembler = new ReflectionDisassembler(text, default);

@@ -44,7 +44,6 @@
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
-    "node-fetch": "^3.3.0",
     "vscode-languageclient": "^8.0.2"
   },
   "devDependencies": {

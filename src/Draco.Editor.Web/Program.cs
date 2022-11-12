@@ -23,37 +23,11 @@ public class Program
         js = host.Services.GetRequiredService<IJSRuntime>();
         var navigationManager = host.Services.GetRequiredService<NavigationManager>();
         appJS = await js.InvokeAsync<IJSObjectReference>("import", "./ts/app.js");
-        await GetDataFromURL(navigationManager);
         await appJS.InvokeVoidAsync("emitCodeChange");
         await host.RunAsync();
     }
 
-    private static async Task GetDataFromURL(NavigationManager navigationManager)
-    {
-        var uriString = navigationManager.Uri;
-        var uri = new Uri(uriString);
-        if (!string.IsNullOrWhiteSpace(uri.Fragment))
-        {
-            var strBuffer = new string(uri.Fragment.Skip(1).ToArray());
-            // Convert base64URL to Base64.
-            // To be replaced with .NET implementation in .NET 8: https://github.com/dotnet/runtime/issues/1658
-            strBuffer = Uri
-                .UnescapeDataString(strBuffer)
-                .Replace('_', '/')
-                .Replace('-', '+')
-                .PadRight(4 * ((strBuffer.Length + 3) / 4), '='); // Add Base64 padding.
-            var buffer = Convert.FromBase64String(strBuffer); // FromBase64 throws when padding is missing.
-            using var inBuffer = new MemoryStream(buffer);
-            using var gzipStream = new DeflateStream(inBuffer, CompressionMode.Decompress);
-            using var outReader = new StreamReader(gzipStream, Encoding.UTF8);
-            SelectedOutputType = outReader.ReadLine()!;
-            await appJS.InvokeVoidAsync("setRunType", SelectedOutputType);
-            code = outReader.ReadToEnd();
-            await appJS.InvokeVoidAsync("setEditorText", code);
-        }
-    }
-
-    private static string SelectedOutputType { get; set; } = "Run";
+    private static string SelectedOutputType { get; set; }
 
     [JSInvokable]
     public static async Task OnOutputTypeChange(string value)
@@ -99,6 +73,7 @@ public class Program
     private static async Task UpdatedURLHash()
     {
         using var inBuffer = new MemoryStream();
+        inBuffer.WriteByte(1); // Version
         using var outStream = new DeflateStream(inBuffer, CompressionLevel.Optimal, true);
         using var writer = new StreamWriter(outStream, Encoding.UTF8, leaveOpen: true);
         writer.WriteLine(SelectedOutputType);
@@ -109,9 +84,7 @@ public class Program
         // Convert base64 to base64URL.
         var hash = Convert
             .ToBase64String(buffer)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
+            .Base64ToBase64URL();
         await appJS.InvokeVoidAsync("setHash", new object[] { hash });
     }
 

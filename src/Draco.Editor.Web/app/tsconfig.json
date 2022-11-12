@@ -2,7 +2,7 @@
   "compilerOptions": {
     "sourceMap": true,
     "target": "esnext",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "nodenext",
     "module": "esnext",
     "allowSyntheticDefaultImports": true,
     "lib": [

@@ -5,16 +5,20 @@
     "build-release": "tsc -noEmit && node build.js ../wwwroot"
   },
   "dependencies": {
+    "base64url": "^3.0.1",
     "json5": "^2.2.1",
     "monaco-editor": "^0.34.1",
     "monaco-editor-textmate": "^4.0.0",
     "monaco-textmate": "^3.0.1",
     "onigasm": "^2.2.5",
+    "pako": "^2.1.0",
     "path": "^0.12.7",
     "tslib": "^2.4.1"
   },
   "devDependencies": {
+    "@types/blazor__javascript-interop": "^3.1.2",
     "@types/node": "^18.11.9",
+    "@types/pako": "^2.0.0",
     "esbuild": "^0.15.13",
     "esbuild-plugin-wat": "^0.2.7",
     "monaco-vscode-textmate-theme-converter": "^0.1.7",

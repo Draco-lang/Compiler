@@ -18,10 +18,6 @@ let wasmPlugin = {
 }
 
 const workerEntryPoints = [
-    'vs/language/json/json.worker.js',
-    'vs/language/css/css.worker.js',
-    'vs/language/html/html.worker.js',
-    'vs/language/typescript/ts.worker.js',
     'vs/editor/editor.worker.js'
 ];
 
@@ -45,5 +41,5 @@ build({
     inject: ['ts/process.ts'],
     plugins: [wasmPlugin]
 })
-
+console.log(process.cwd());
 fs.copyFileSync('index.html', path.join(outDir, 'index.html') );

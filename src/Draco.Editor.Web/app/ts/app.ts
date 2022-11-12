@@ -5,73 +5,98 @@ import { Registry } from 'monaco-textmate';
 import { wireTmGrammars } from 'monaco-editor-textmate'; // Library that allow running Textmates grammar in monaco.
 import vstheme from '../data/vscode.converted.theme.json';
 import grammarDefinition from '../../../Draco.SyntaxHighlighting/draco.tmLanguage.json';
+import base64url from 'base64url';
+import { Readable } from "stream";
+import { deflateRaw, inflateRaw } from 'pako';
+import { cp } from 'fs';
 
-declare global {
-    class DotNet {
-        static invokeMethodAsync<T>(assemblyName: string, methodIdentifier: string, ...args: any[]): Promise<T>
-    }
+// This file is run on page load.
+// This run before blazor load, and will tell blazor to start.
+
+declare global { // Blazor do not provide types, so we have our own to please typescript.
     class Blazor {
         static start(): Promise<void>;
     }
 }
 
 self.MonacoEnvironment = {
+    // Web Workers need to start a new script, by url.
+    // This is the path where the script of the webworker is served.
     getWorkerUrl: function (moduleId, label) {
         return './editor/editor.worker.js';
     }
 };
 
 function isDarkMode() {
+    // From: https://stackoverflow.com/questions/56393880/how-do-i-detect-dark-mode-using-javascript
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
-function getTheme() {
+function getVSThemeToUse() {
     return isDarkMode() ? "vs-dark" : "vs";
 }
 
-export function setHash(hash) {
-    window.location.hash = hash;
-}
+// We export these group of method so the C# runtime can call them.
 
+/**
+ * Sets the text of the output monaco-editor.
+ * @param text
+ */
 export function setOutputText(text: string) {
     outputEditor.getModel().setValue(text);
 }
 
-export function setEditorText(text: string) {
-    dracoEditor.getModel().setValue(text);
+const outputTypeSelector = document.getElementById("output-type-selector") as HTMLSelectElement;
+
+const hash = window.location.hash;
+let inputCode = `func main() {
+    println("Hello!");
+}
+`
+if (hash != null) {
+    // We store data in the hash of the url, so we need to decode it on load.
+    try {
+        let buffer = base64url.default.toBuffer(hash);
+        buffer = buffer.subarray(1); //skip version.
+        const uncompressed = inflateRaw(buffer);
+        const str = new TextDecoder().decode(uncompressed);
+        const firstNewLine = str.indexOf('\n');
+        outputTypeSelector.value = str.slice(0, firstNewLine);
+        inputCode = str.slice(firstNewLine + 1);
+    } catch (e) {
+        inputCode = `Error while decoding the URL hash. ${e}`
+    }
 }
 
-export function emitCodeChange() {
-    const text = dracoEditor.getModel().createSnapshot().read();
-    DotNet.invokeMethodAsync<void>(namespace, "CodeChange", text);
-}
-
-export function setRunType(newRuntype: string) {
-    runtype.value = newRuntype;
-}
-
-const namespace = "Draco.Editor.Web";
-
-const runtype = document.getElementById("runtype") as HTMLSelectElement;
-runtype.onchange = () => {
-    DotNet.invokeMethodAsync<void>(namespace, "OnOutputTypeChange", runtype.value);
+outputTypeSelector.onchange = () => {
+    DotNet.invokeMethodAsync<void>("Draco.Editor.Web", "OnOutputTypeChange", outputTypeSelector.value);
 }
 
 //TODO: block blazor load until this function run.
 var dracoEditor = monaco.editor.create(document.getElementById('draco-editor'), {
     value: ['func main() {', '\tprintln("Hello!");', '}'].join('\n'),
     language: 'draco',
-    theme: getTheme()
+    theme: getVSThemeToUse()
 });
 
 dracoEditor.onDidChangeModelContent(() => {
-    emitCodeChange();
+    const text = dracoEditor.getModel().createSnapshot().read();
+    // setting the URL before invoking DotNet will allow sharing hard crash.
+    const content = outputTypeSelector.value + "\n" + text;
+    const encoded = new TextEncoder().encode(content);
+    const buffer = new Uint8Array(encoded.length+1);
+    buffer[0] = 1; // version.
+    buffer.set(buffer, 1);
+    const compressed = deflateRaw(buffer);
+    const b64 = base64url.default.encode(Buffer.from(compressed));
+    window.location.hash = b64;
+    DotNet.invokeMethodAsync<void>("Draco.Editor.Web", "CodeChange", text);
 });
 
 var outputEditor = monaco.editor.create(document.getElementById('output-viewer'), {
     value: ['.NET Runtime loading...'].join('\n'),
     language: 'rust',
-    theme: getTheme()
+    theme: getVSThemeToUse()
 });
 
 async function main() {

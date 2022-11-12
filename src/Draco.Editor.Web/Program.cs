@@ -5,7 +5,6 @@ using ICSharpCode.Decompiler;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 using Draco.Compiler.Api;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.Editor.Web;
 
@@ -15,6 +14,7 @@ public class Program
     private static IJSObjectReference appJS = null!;
     private static string code = null!;
     private static string selectedOutputType = null!;
+
     public static async Task Main(string[] args)
     {
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -23,7 +23,7 @@ public class Program
 
         // This will complete when the synchronous part of app.ts finish.
         appJS = await js.InvokeAsync<IJSObjectReference>("import", "./ts/app.js");
-        await ProcessUserInput(); // When the app.ts finish, we 
+        await ProcessUserInput(); // When the app.ts finish, we
         await host.RunAsync();
     }
 

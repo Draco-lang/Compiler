@@ -1,10 +1,7 @@
-using System.IO.Compression;
-using System.Text;
 using Draco.Compiler.Api.Scripting;
 using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 
@@ -24,8 +21,9 @@ public class Program
         js = host.Services.GetRequiredService<IJSRuntime>();
         Console.WriteLine("BeforeImported.");
 
+        // This will complete when the synchronous part of app.ts finish.
         appJS = await js.InvokeAsync<IJSObjectReference>("import", "./ts/app.js");
-        await UpdateOutput();
+        await ProcessUserInput(); // When the app.ts finish, we 
         await host.RunAsync();
     }
 
@@ -33,38 +31,48 @@ public class Program
     [JSInvokable]
     public static void OnInit(string outputType, string newCode)
     {
+        // This is run in the typescript init sequence.
         selectedOutputType = outputType;
         code = newCode;
+        // We cannot call app.ts here because it has not finished running. The main will do that for us.
     }
 
+    /// <summary>
+    /// Called when the user changed output type.
+    /// </summary>
+    /// <param name="value">The new output type.</param>
     [JSInvokable]
     public static async Task OnOutputTypeChange(string value)
     {
         selectedOutputType = value;
-        await UpdateOutput();
+        await ProcessUserInput();
     }
 
+    /// <summary>
+    /// Called when the code input changed.
+    /// </summary>
+    /// <param name="newCode">The whole code inputed.</param>
     [JSInvokable]
     public static async Task CodeChange(string newCode)
     {
         code = newCode;
-        await UpdateOutput();
+        await ProcessUserInput();
     }
 
-    private static async Task UpdateOutput()
+    private static async Task ProcessUserInput()
     {
         try
         {
             switch (selectedOutputType)
             {
             case "Run":
-                await ShowRun();
+                await RunScript();
                 break;
             case "CSharp":
-                await ShowCSharp();
+                await DisplayCompiledCSharp();
                 break;
             case "IL":
-                await ShowIL();
+                await DisplayCompiledIL();
                 break;
             default:
                 throw new InvalidOperationException("Invalid switch case.");
@@ -76,7 +84,7 @@ public class Program
         }
     }
 
-    private static async Task ShowRun()
+    private static async Task RunScript()
     {
         var oldOut = Console.Out;
         var cts = new CancellationTokenSource();
@@ -97,13 +105,13 @@ public class Program
         Console.SetOut(oldOut);
     }
 
-    private static async Task ShowCSharp()
+    private static async Task DisplayCompiledCSharp()
     {
         var cSharpCode = ScriptingEngine.CompileToCSharpCode(code);
         await SetOutputText(cSharpCode);
     }
 
-    private static async Task ShowIL()
+    private static async Task DisplayCompiledIL()
     {
         using var inlineDllStream = new MemoryStream();
         if (!ScriptingEngine.CompileToAssembly(code, inlineDllStream)) return;
@@ -119,8 +127,17 @@ public class Program
         await SetOutputText(text.ToString());
     }
 
+    /// <summary>
+    /// Sets the text of the output editor.
+    /// </summary>
+    /// <param name="text"></param>
+    /// <returns></returns>
     private static async Task SetOutputText(string text) => await appJS.InvokeVoidAsync("setOutputText", text);
 
+    /// <summary>
+    /// Polling loop that take the script output and display it to the output editor.
+    /// </summary>
+    /// <returns></returns>
     private static async Task BackgroundLoop(StringWriter stringWriter, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)

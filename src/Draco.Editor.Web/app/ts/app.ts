@@ -44,6 +44,7 @@ export function setOutputText(text: string) {
     outputEditor.getModel().setValue(text);
 }
 
+// this is the element that allow to select the output type.
 const outputTypeSelector = document.getElementById('output-type-selector') as HTMLSelectElement;
 
 const hash = window.location.hash;
@@ -55,8 +56,8 @@ let inputCode = `func main() {
 if (hash != null && hash.trim().length > 0) {
     // We store data in the hash of the url, so we need to decode it on load.
     try {
-        let buffer = base64url.default.toBuffer(hash);
-        buffer = buffer.subarray(1); //skip version.
+        let buffer = base64url.default.toBuffer(hash); // our hash is encoded in base64 url: https://en.wikipedia.org/wiki/Base64#URL_applications
+        buffer = buffer.subarray(1); // Version byte, for future usage.
         const uncompressed = inflateRaw(buffer);
         const str = new TextDecoder().decode(uncompressed);
         const firstNewLine = str.indexOf('\n');
@@ -68,6 +69,7 @@ if (hash != null && hash.trim().length > 0) {
 }
 
 outputTypeSelector.onchange = () => {
+    // We relay the output type change to C#.
     DotNet.invokeMethodAsync<void>('Draco.Editor.Web', 'OnOutputTypeChange', outputTypeSelector.value);
 };
 
@@ -79,11 +81,12 @@ const dracoEditor = monaco.editor.create(document.getElementById('draco-editor')
 
 dracoEditor.onDidChangeModelContent(() => {
     const text = dracoEditor.getModel().createSnapshot().read();
-    // setting the URL before invoking DotNet will allow sharing hard crash.
+    // setting the URL Hash with the state of the editor.
+    // Doing this before invoking DotNet will allow sharing hard crash.
     const content = outputTypeSelector.value + '\n' + text;
     const encoded = new TextEncoder().encode(content);
     const buffer = new Uint8Array(encoded.length + 1);
-    buffer[0] = 1; // version.
+    buffer[0] = 1; // version, for future use.
     buffer.set(buffer, 1);
     const compressed = deflateRaw(buffer);
     const b64 = base64url.default.encode(Buffer.from(compressed));
@@ -98,9 +101,12 @@ const outputEditor = monaco.editor.create(document.getElementById('output-viewer
 });
 
 async function main() {
+    // We can't do async on top level statements.
     await Blazor.start();
     DotNet.invokeMethodAsync<void>('Draco.Editor.Web', 'OnInit', outputTypeSelector.value, dracoEditor.getModel().createSnapshot().read());
-    await loadWASM(onigasmWasm.buffer);
+    // At this point, the Blazor code can run "concurrently".
+
+    await loadWASM(onigasmWasm.buffer); // https://www.npmjs.com/package/onigasm
 
     const registry = new Registry({
         getGrammarDefinition: async () => {

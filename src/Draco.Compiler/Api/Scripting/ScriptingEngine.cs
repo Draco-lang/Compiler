@@ -118,7 +118,7 @@ public static class ScriptingEngine
     public static void CompileToCSharpCode(Compilation compilation)
     {
         compilation.Parsed = ParseTree.Parse(compilation.Source);
-        compilation.GeneratedCSharp = CSharpCodegen.Transpile(compilation.Parsed.Green);
+        compilation.GeneratedCSharp = CSharpCodegen.Transpile(compilation.Parsed);
     }
 
     public static void CompileToParseTree(Compilation compilation)

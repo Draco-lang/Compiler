@@ -19,7 +19,6 @@ public class Program
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
         var host = builder.Build();
         js = host.Services.GetRequiredService<IJSRuntime>();
-        Console.WriteLine("BeforeImported.");
 
         // This will complete when the synchronous part of app.ts finish.
         appJS = await js.InvokeAsync<IJSObjectReference>("import", "./ts/app.js");

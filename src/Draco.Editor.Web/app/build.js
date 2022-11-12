@@ -2,9 +2,7 @@ import { build } from 'esbuild';
 import * as path from 'path';
 import * as fs from 'fs';
 import { fileURLToPath } from 'url';
-import { CreateThemeBasedLogo } from './logo-handler.js';
-
-CreateThemeBasedLogo();
+import { createThemeBasedLogo as getFavicon } from './favicon-downloader.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,3 +45,6 @@ build({
 
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir);
 fs.copyFileSync('index.html', path.join(outDir, 'index.html'),);
+
+const favicon = await getFavicon();
+fs.writeFileSync(path.join(outDir, 'favicon.svg'), favicon);

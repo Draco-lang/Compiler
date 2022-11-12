@@ -41,5 +41,6 @@ build({
     inject: ['ts/process.ts'],
     plugins: [wasmPlugin]
 })
-console.log(process.cwd());
-fs.copyFileSync('index.html', path.join(outDir, 'index.html') );
+
+if (!fs.existsSync(outDir)) fs.mkdirSync(outDir);
+fs.copyFileSync('index.html', path.join(outDir, 'index.html'),);

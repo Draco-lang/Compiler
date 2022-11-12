@@ -14,25 +14,33 @@ public class Program
 {
     private static IJSRuntime js = null!;
     private static IJSObjectReference appJS = null!;
-    private static string code = "";
+    private static string code = null!;
+    private static string selectedOutputType = null!;
 
     public static async Task Main(string[] args)
     {
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
         var host = builder.Build();
         js = host.Services.GetRequiredService<IJSRuntime>();
-        var navigationManager = host.Services.GetRequiredService<NavigationManager>();
+        Console.WriteLine("BeforeImported.");
+
         appJS = await js.InvokeAsync<IJSObjectReference>("import", "./ts/app.js");
-        await appJS.InvokeVoidAsync("emitCodeChange");
+        await UpdateOutput();
         await host.RunAsync();
     }
 
-    private static string SelectedOutputType { get; set; }
+
+    [JSInvokable]
+    public static void OnInit(string outputType, string newCode)
+    {
+        selectedOutputType = outputType;
+        code = newCode;
+    }
 
     [JSInvokable]
     public static async Task OnOutputTypeChange(string value)
     {
-        SelectedOutputType = value;
+        selectedOutputType = value;
         await UpdateOutput();
     }
 
@@ -45,11 +53,9 @@ public class Program
 
     private static async Task UpdateOutput()
     {
-        await UpdatedURLHash();
-
         try
         {
-            switch (SelectedOutputType)
+            switch (selectedOutputType)
             {
             case "Run":
                 await ShowRun();
@@ -68,24 +74,6 @@ public class Program
         {
             await appJS.InvokeVoidAsync("setOutputText", e.ToString());
         }
-    }
-
-    private static async Task UpdatedURLHash()
-    {
-        using var inBuffer = new MemoryStream();
-        inBuffer.WriteByte(1); // Version
-        using var outStream = new DeflateStream(inBuffer, CompressionLevel.Optimal, true);
-        using var writer = new StreamWriter(outStream, Encoding.UTF8, leaveOpen: true);
-        writer.WriteLine(SelectedOutputType);
-        writer.Write(code);
-        writer.Flush();
-        inBuffer.Position = 0;
-        var buffer = inBuffer.ToArray();
-        // Convert base64 to base64URL.
-        var hash = Convert
-            .ToBase64String(buffer)
-            .Base64ToBase64URL();
-        await appJS.InvokeVoidAsync("setHash", new object[] { hash });
     }
 
     private static async Task ShowRun()

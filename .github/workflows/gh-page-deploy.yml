@@ -5,9 +5,8 @@ name: 'Deploy Blazor Web Editor to GH Pages'
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
     paths:
-      - 'src/**'
+    - 'src/**'
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -29,7 +28,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '6.0.x'
+        dotnet-version: '7.0.x'
     - name: Run tests
       run: dotnet test ./src
     - name: Publish with dotnet

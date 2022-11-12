@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -245,13 +246,30 @@ internal sealed class Lexer
         {
             var offset = 1;
             while (char.IsDigit(this.Peek(offset))) ++offset;
-            var view = this.Advance(offset);
+
+            // Floating point number
+            if (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1)))
+            {
+                offset += 2;
+                while (char.IsDigit(this.Peek(offset))) ++offset;
+                var floatView = this.Advance(offset);
+                // TODO: Parsing into an float32 might not be the best idea
+                var floatValue = float.Parse(floatView.Span, provider: CultureInfo.InvariantCulture);
+                this.tokenBuilder
+                    .SetType(TokenType.LiteralFloat)
+                    .SetText(floatView.ToString())
+                    .SetValue(floatValue);
+                return default;
+            }
+
+            // Regular integer
+            var intView = this.Advance(offset);
             // TODO: Parsing into an int32 might not be the best idea
-            var value = int.Parse(view.Span);
+            var intValue = int.Parse(intView.Span);
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
-                .SetText(view.ToString())
-                .SetValue(value);
+                .SetText(intView.ToString())
+                .SetValue(intValue);
             return default;
         }
 
@@ -315,7 +333,7 @@ internal sealed class Lexer
             {
                 // Escape-sequence
                 ++offset;
-                resultChar = this.ParseEscapeSequence(ref offset);
+                resultChar = this.ParseEscapeSequence(offset - 1, ref offset);
             }
             else if (!char.IsControl(ch2))
             {
@@ -478,6 +496,8 @@ internal sealed class Lexer
         // Check for escape sequence
         if (ch == '\\')
         {
+            var escapeStart = offset;
+
             // Count the number of required delimiters
             for (var i = 0; i < mode.ExtendedDelims; ++i)
             {
@@ -544,7 +564,7 @@ internal sealed class Lexer
 
             offset += mode.ExtendedDelims + 1;
             // Try to parse an escape
-            var escaped = this.ParseEscapeSequence(ref offset);
+            var escaped = this.ParseEscapeSequence(escapeStart, ref offset);
             // Append to result
             this.valueBuilder.Append(escaped);
             goto start;
@@ -631,14 +651,12 @@ internal sealed class Lexer
     /// Parses an escape sequence for strings and character literals.
     /// Reports an error, if the escape sequence is illegal.
     /// </summary>
+    /// <param name="escapeStart">The position where the escape character occurred.</param>
     /// <param name="offset">A reference to an offset that points after the backslash and optional extended
     /// delimiter characters. If parsing the escape succeeded, the result is written back here.</param>
-    /// <param name="result">The resulting character value gets written here, if the escape was parsed
-    /// successfully.</param>
     /// <returns>True, if an escape was successfully parsed.</returns>
-    private string ParseEscapeSequence(ref int offset)
+    private string ParseEscapeSequence(int escapeStart, ref int offset)
     {
-        var escapeStart = offset - 1;
         var esc = this.Peek(offset);
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')

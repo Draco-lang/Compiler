@@ -7,10 +7,12 @@ namespace Draco.RedGreenTree.Attributes;
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class VisitorBaseAttribute : Attribute
 {
-    public Type RootType { get; }
+    public Type GreenRootType { get; }
+    public Type RedRootType { get; }
 
-    public VisitorBaseAttribute(Type rootType)
+    public VisitorBaseAttribute(Type greenRootType, Type redRootType)
     {
-        this.RootType = rootType;
+        this.GreenRootType = greenRootType;
+        this.RedRootType = redRootType;
     }
 }

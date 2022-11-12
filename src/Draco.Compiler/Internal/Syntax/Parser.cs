@@ -163,6 +163,7 @@ internal sealed class Parser
     {
         TokenType.Identifier,
         TokenType.LiteralInteger,
+        TokenType.LiteralFloat,
         TokenType.LiteralCharacter,
         TokenType.LineStringStart,
         TokenType.MultiLineStringStart,
@@ -730,6 +731,7 @@ internal sealed class Parser
         switch (this.Peek())
         {
         case TokenType.LiteralInteger:
+        case TokenType.LiteralFloat:
         case TokenType.LiteralCharacter:
         {
             var value = this.Advance();

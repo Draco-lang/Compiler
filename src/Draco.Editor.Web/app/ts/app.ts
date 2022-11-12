@@ -82,7 +82,7 @@ dracoEditor.onDidChangeModelContent(() => {
     // setting the URL before invoking DotNet will allow sharing hard crash.
     const content = outputTypeSelector.value + '\n' + text;
     const encoded = new TextEncoder().encode(content);
-    const buffer = new Uint8Array(encoded.length+1);
+    const buffer = new Uint8Array(encoded.length + 1);
     buffer[0] = 1; // version.
     buffer.set(buffer, 1);
     const compressed = deflateRaw(buffer);

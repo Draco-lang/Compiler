@@ -1,4 +1,4 @@
-import { build } from 'esbuild'
+import { build } from 'esbuild';
 import * as path from 'path';
 import * as fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -13,9 +13,9 @@ let wasmPlugin = {
         build.onLoad({ filter: /.wasm$/ }, async (args) => ({
             contents: await fs.promises.readFile(args.path),
             loader: 'binary'
-        }))
+        }));
     },
-}
+};
 
 const workerEntryPoints = [
     'vs/editor/editor.worker.js'
@@ -40,7 +40,7 @@ build({
     },
     inject: ['ts/process.ts'],
     plugins: [wasmPlugin]
-})
+});
 
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir);
 fs.copyFileSync('index.html', path.join(outDir, 'index.html'),);

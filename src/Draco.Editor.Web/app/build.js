@@ -2,6 +2,9 @@ import { build } from 'esbuild';
 import * as path from 'path';
 import * as fs from 'fs';
 import { fileURLToPath } from 'url';
+import { CreateThemeBasedLogo } from './logo-handler.js';
+
+CreateThemeBasedLogo();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

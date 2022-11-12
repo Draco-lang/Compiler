@@ -1053,6 +1053,7 @@ public sealed class LexerTests
     [Theory]
     [InlineData("0", TokenType.LiteralInteger)]
     [InlineData("123", TokenType.LiteralInteger)]
+    [InlineData("12.3", TokenType.LiteralFloat)]
     [InlineData("true", TokenType.KeywordTrue)]
     [Trait("Feature", "Literals")]
     internal void TestLiteral(string text, TokenType tokenType)

@@ -1,0 +1,52 @@
+# Checks that the current branch passes all tests
+
+name: Mutation Testing
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+    - 'src/**'
+  pull_request:
+    paths:
+    - 'src/**'
+
+env:
+  DOTNET_VERSION: '7.0.x'   # The .NET SDK version to use
+  CONFIGURATION: 'Release'  # The configuration to use
+  STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+
+jobs:
+  tests:
+    name: mutation-testing-ubuntu-latest
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Install dotnet tools
+      run: dotnet tool restore
+
+    - name: Install dependencies
+      run: dotnet restore ./src
+
+    - name: Build
+      run: dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
+
+    - name: Run Mutation Testing for pull_request
+      run: dotnet stryker --reporter "dashboard" --with-baseline:${{ github.event.pull_request.base.sha }} --version ${{ github.event.pull_request.base.ref }} || dotnet stryker --reporter "dashboard"
+      if: github.event_name == 'pull_request'
+
+    - name: Run Mutation Testing for push
+      run: dotnet stryker --reporter "dashboard" --with-baseline:${{ github.event.before }} --version ${{ github.event.ref }} || dotnet stryker --reporter "dashboard"
+      if: github.event_name == 'push'
+
+    - name: Run Mutation Testing for workflow_dispatch
+      run: dotnet stryker --reporter "dashboard"
+      if: github.event_name == 'workflow_dispatch'

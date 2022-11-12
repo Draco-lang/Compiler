@@ -48,6 +48,11 @@ public enum TokenType
     LiteralInteger,
 
     /// <summary>
+    /// An integer literal.
+    /// </summary>
+    LiteralFloat,
+
+    /// <summary>
     /// A character literal.
     /// </summary>
     LiteralCharacter,

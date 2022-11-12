@@ -8,6 +8,7 @@ using Microsoft.JSInterop;
 using System.IO.Compression;
 using System.Text;
 using static ICSharpCode.Decompiler.IL.Transforms.Stepper;
+using Draco.Compiler.Api;
 
 namespace Draco.Editor.Web;
 
@@ -16,6 +17,7 @@ public partial class App
     private MonacoEditor? DracoEditor { get; set; }
     private MonacoEditor? OutputViewer { get; set; }
     private string? SelectedOutputType { get; set; } = "Run";
+    private Compilation? Compilation { get; set; }
     private static readonly StandaloneEditorConstructionOptions defaultDracoEditorOptions = new()
     {
         AutomaticLayout = true,
@@ -78,19 +80,19 @@ public partial class App
     private async Task UpdateOutput()
     {
         var code = await this.UpdatedURLHash();
-
+        this.Compilation = new Compilation(code, "OutputExecutable");
         try
         {
             switch (this.SelectedOutputType)
             {
             case "Run":
-                await this.ShowRun(code);
+                await this.ShowRun();
                 break;
             case "CSharp":
-                await this.ShowCSharp(code);
+                await this.ShowCSharp();
                 break;
             case "IL":
-                await this.ShowIL(code);
+                await this.ShowIL();
                 break;
             default:
                 throw new InvalidOperationException();
@@ -124,7 +126,7 @@ public partial class App
         return code;
     }
 
-    private async Task ShowRun(string code)
+    private async Task ShowRun()
     {
         var oldOut = Console.Out;
         var cts = new CancellationTokenSource();
@@ -135,7 +137,7 @@ public partial class App
         await this.OutputViewer!.UpdateOptions(defaultOutputEditorOptions);
         try
         {
-            ScriptingEngine.InlineExecute(code);
+            ScriptingEngine.InlineExecute(this.Compilation!);
         }
         catch (Exception e)
         {
@@ -147,21 +149,21 @@ public partial class App
         Console.SetOut(oldOut);
     }
 
-    private async Task ShowCSharp(string code)
+    private async Task ShowCSharp()
     {
         defaultOutputEditorOptions.Language = "csharp";
         await this.OutputViewer!.UpdateOptions(defaultOutputEditorOptions);
-        var cSharpCode = ScriptingEngine.CompileToCSharpCode(code);
-        await this.OutputViewer.SetValue(cSharpCode);
+        ScriptingEngine.CompileToCSharpCode(this.Compilation!);
+        await this.OutputViewer.SetValue(this.Compilation!.GeneratedCSharp);
     }
 
-    private async Task ShowIL(string code)
+    private async Task ShowIL()
     {
         defaultOutputEditorOptions.Language = "IL";
         await this.OutputViewer!.UpdateOptions(defaultOutputEditorOptions);
 
         using var inlineDllStream = new MemoryStream();
-        if (!ScriptingEngine.CompileToAssembly(code, inlineDllStream)) return;
+        if (!ScriptingEngine.CompileToAssembly(this.Compilation!, inlineDllStream)) return;
         inlineDllStream.Position = 0;
         var text = new PlainTextOutput();
         var disassembler = new ReflectionDisassembler(text, default);

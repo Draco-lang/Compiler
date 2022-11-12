@@ -44,5 +44,5 @@ export function CreateThemeBasedLogo() {
             </g>
         </svg>
         `;
-    
+    // TODO: write to Icon.svg and reference it in index.html
 }

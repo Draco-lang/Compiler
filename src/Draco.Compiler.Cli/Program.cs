@@ -23,27 +23,27 @@ internal class Program
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
         var emitCSharpOutput = new Option<FileInfo>("--output-cs", description: "Specifies output file for generated c#, if not specified, generated code is not saved to the disk");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("transpiledProgram.exe"), "Specifies the output file");
-        var runCommand = new Command("run", "runs specified draco file")
+        var runCommand = new Command("run", "Runs specified draco file")
         {
             fileArgument,
             outputOption
         };
         runCommand.SetHandler((input, output) => Run(input, output), fileArgument, outputOption);
 
-        var generateParseTreeCommand = new Command("parse", "generates parse tree from specified draco file")
+        var generateParseTreeCommand = new Command("parse", "Generates parse tree from specified draco file")
         {
             fileArgument,
         };
         generateParseTreeCommand.SetHandler((file) => GenerateParseTree(file), fileArgument);
 
-        var generateCSCommand = new Command("codegen", "generates c# from specified draco file and displays it to the console")
+        var generateCSCommand = new Command("codegen", "Generates c# from specified draco file and displays it to the console")
         {
             fileArgument,
             emitCSharpOutput,
         };
         generateCSCommand.SetHandler((file, emitCS) => GenerateCSharp(file, emitCS), fileArgument, emitCSharpOutput);
 
-        var generateExeCommand = new Command("compile", "generates executable from specified draco file")
+        var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
         {
             fileArgument,
             outputOption
@@ -60,20 +60,20 @@ internal class Program
 
     private static void Run(FileInfo input, FileInfo output)
     {
-        Compilation compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
+        var compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
         ScriptingEngine.Execute(compilation);
     }
 
     private static void GenerateParseTree(FileInfo input)
     {
-        Compilation compilation = new Compilation(File.ReadAllText(input.FullName));
+        var compilation = new Compilation(File.ReadAllText(input.FullName));
         ScriptingEngine.CompileToParseTree(compilation);
         Console.WriteLine(compilation.Parsed!.ToDebugString());
     }
 
     private static void GenerateCSharp(FileInfo input, FileInfo emitCS)
     {
-        Compilation compilation = new Compilation(File.ReadAllText(input.FullName));
+        var compilation = new Compilation(File.ReadAllText(input.FullName));
         ScriptingEngine.CompileToCSharpCode(compilation);
         Console.WriteLine(compilation.GeneratedCSharp);
         if (emitCS is not null)
@@ -84,7 +84,7 @@ internal class Program
 
     private static void GenerateExe(FileInfo input, FileInfo output)
     {
-        Compilation compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
+        var compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
         ScriptingEngine.GenerateExe(compilation);
     }
 }

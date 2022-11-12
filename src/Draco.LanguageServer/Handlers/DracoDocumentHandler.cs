@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using MediatR;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -75,12 +76,17 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
 
     private Task PublishSyntaxDiagnosticsAsync(DocumentUri uri, string text)
     {
+        // TODO: This should be shared
+        var compilation = new Compilation();
         var parseTree = ParseTree.Parse(text);
-        var diags = parseTree.GetAllDiagnostics();
+        var semanticModel = compilation.GetSemanticModel(parseTree);
+        // TODO: API for compilation to get all diagnostics?
+        var diags = parseTree.GetAllDiagnostics().Concat(semanticModel.GetAllDiagnostics());
+        var lspDiags = diags.Select(Translator.ToLsp).ToList();
         this.server.TextDocument.PublishDiagnostics(new()
         {
             Uri = uri,
-            Diagnostics = diags.Select(Translator.ToLsp).ToList(),
+            Diagnostics = lspDiags,
         });
         return Task.CompletedTask;
     }

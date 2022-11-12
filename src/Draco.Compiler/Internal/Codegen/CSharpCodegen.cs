@@ -58,7 +58,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     private string DefinedSymbol(ParseTree parseTree)
     {
         // NOTE: Yeah this API is not async...
-        var symbol = this.semanticModel.GetDefinedSymbol(parseTree).Result;
+        var symbol = this.semanticModel.GetDefinedSymbolOrNull(parseTree).Result;
         if (symbol is null) throw new NotImplementedException();
         return this.AllocateNameForSymbol(symbol);
     }
@@ -67,7 +67,6 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     {
         // NOTE: Yeah this API is not async...
         var symbol = this.semanticModel.GetReferencedSymbol(parseTree).Result;
-        if (symbol is null) throw new NotImplementedException();
         return this.AllocateNameForSymbol(symbol);
     }
 

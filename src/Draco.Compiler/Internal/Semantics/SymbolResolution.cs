@@ -41,22 +41,12 @@ internal static class SymbolResolution
     }
 
     /// <summary>
-    /// Checks, if the given subtree defines a scope.
+    /// Checks, if the given subtree references a symbol.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseTree"/> to check.</param>
-    /// <returns>True, if <paramref name="tree"/> defines a scope.</returns>
-    public static async Task<bool> DefinesScope(QueryDatabase db, ParseTree tree) =>
-        await GetDefinedScopeOrNull(db, tree) is not null;
-
-    /// <summary>
-    /// Checks, if the given subtree defines a symbol.
-    /// </summary>
-    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseTree"/> to check.</param>
-    /// <returns>True, if <paramref name="tree"/> defines a symbol.</returns>
-    public static Task<bool> DefinesSymbol(QueryDatabase db, ParseTree tree) =>
-        Task.FromResult(TryGetReferencedSymbolName(tree, out _));
+    /// <returns>True, if <paramref name="tree"/> references a symbol.</returns>
+    public static bool ReferencesSymbol(ParseTree tree) => TryGetReferencedSymbolName(tree, out _);
 
     /// <summary>
     /// Retrieves the referenced symbol of a subtree.
@@ -75,7 +65,7 @@ internal static class SymbolResolution
                 template: SemanticErrors.UndefinedReference,
                 location: tree.Green.Location,
                 formatArgs: name);
-            symbol = new Symbol.Error(name, ImmutableArray.Create(diag));
+            symbol = new Symbol.Error(name, ImmutableArray.Create(diag), tree);
         }
         return symbol;
     }

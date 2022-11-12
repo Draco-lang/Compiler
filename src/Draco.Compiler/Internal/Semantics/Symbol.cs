@@ -64,15 +64,20 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class Error : Symbol
     {
-        public override ParseTree? DefinitionTree => null;
+        public override ParseTree? DefinitionTree { get; }
+        // TODO: Should be what is below
+        // public override ParseTree? DefinitionTree => null;
         public override Scope? EnclosingScope => null;
         public override bool IsError => true;
         public override ImmutableArray<Diagnostic> Diagnostics { get; }
 
-        public Error(string name, ImmutableArray<Diagnostic> diagnostics)
+        // TODO: NO, THE ERROR SHOULD NOT TAKE THE DEFINITION AS A TREE
+        // BUT THE LOCATION API NEEDS TO BE CLEANED UP
+        public Error(string name, ImmutableArray<Diagnostic> diagnostics, ParseTree definitionTree)
             : base(name)
         {
             this.Diagnostics = diagnostics;
+            this.DefinitionTree = definitionTree;
         }
     }
 }

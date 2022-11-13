@@ -62,7 +62,10 @@ public sealed class ParserTests
     private void N<T>() => this.N<T>(_ => true);
 
     private void T(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length == 0);
-    private void T(TokenType type, string value) => this.N<Token>(t => t.Type == type && t.ValueText == value && t.Diagnostics.Length == 0);
+
+    private void T(TokenType type, string text) => this.N<Token>(t => t.Type == type && t.Text == text && t.Diagnostics.Length == 0);
+
+    private void TValue(TokenType type, string value) => this.N<Token>(t => t.Type == type && t.ValueText == value && t.Diagnostics.Length == 0);
 
     private void MissingT(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length > 0);
 
@@ -112,7 +115,7 @@ public sealed class ParserTests
     {
         this.N<StringPart.Content>();
         {
-            this.T(TokenType.StringContent, content);
+            this.TValue(TokenType.StringContent, content);
         }
     }
 
@@ -1185,7 +1188,7 @@ public sealed class ParserTests
     public void TestOperatorPlusMinusTimesDividedMod()
     {
         this.ParseExpression("""
-            3 mod 2 + 2 * -8 - 9 / 3
+            3 mod 2 + 2 * -8.6 - 9 / 3
             """);
 
         this.N<Expr.Binary>();
@@ -1217,7 +1220,7 @@ public sealed class ParserTests
                         this.T(TokenType.Minus);
                         this.N<Expr.Literal>();
                         {
-                            this.T(TokenType.LiteralInteger, "8");
+                            this.T(TokenType.LiteralFloat, "8.6");
                         }
                     }
                 }
@@ -1275,7 +1278,7 @@ public sealed class ParserTests
     public void TestOperatorGreaterThanPlusTimes()
     {
         this.ParseExpression("""
-            3 + 2 > 2 * 3
+            3.8 + 2 > 2 * 3
             """);
 
         this.N<Expr.Relational>();
@@ -1284,7 +1287,7 @@ public sealed class ParserTests
             {
                 this.N<Expr.Literal>();
                 {
-                    this.T(TokenType.LiteralInteger, "3");
+                    this.T(TokenType.LiteralFloat, "3.8");
                 }
                 this.T(TokenType.Plus);
                 this.N<Expr.Literal>();
@@ -1315,7 +1318,7 @@ public sealed class ParserTests
     public void TestOperatorChainedRelations()
     {
         this.ParseExpression("""
-            3 > 2 < 8 or 5 == 3
+            3 > 2.89 < 8 or 5 == 3
             """);
 
         this.N<Expr.Binary>();
@@ -1331,7 +1334,7 @@ public sealed class ParserTests
                     this.T(TokenType.GreaterThan);
                     this.N<Expr.Literal>();
                     {
-                        this.T(TokenType.LiteralInteger, "2");
+                        this.T(TokenType.LiteralFloat, "2.89");
                     }
                 }
                 this.N<ComparisonElement>();

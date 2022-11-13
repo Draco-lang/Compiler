@@ -123,6 +123,7 @@ public sealed class GreenTreeGenerator : GeneratorBase
             .Select(m => $"{this.GetWidthMethodName}(this.{m.Name})");
         this.contentWriter
             .Write($"private int? {this.WidthFieldName};")
+            .Write(this.GeneratedAttribute)
             .Write($"""
             public override int {this.WidthPropertyName} =>
                 this.{this.WidthFieldName} ??= {string.Join("+", memberWidths)};
@@ -137,8 +138,10 @@ public sealed class GreenTreeGenerator : GeneratorBase
         // For simplicity, we call a GetChildren that the user can roll themselves
         var memberChildren = type
             .GetSanitizedProperties()
+            .Where(p => !p.IsGenerated())
             .Select(m => $"{this.GetChildrenMethodName}(this.{m.Name})");
         this.contentWriter
+            .Write(this.GeneratedAttribute)
             .Write($$"""
             public override System.Collections.Generic.IEnumerable<{{this.RootType.ToDisplayString()}}> {{this.ChildrenPropertyName}}
             {

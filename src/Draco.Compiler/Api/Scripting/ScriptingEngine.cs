@@ -7,25 +7,20 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Basic.Reference.Assemblies;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Draco.Compiler.Api.Scripting;
 
 public static class ScriptingEngine
 {
-    public static void Execute(string text)
+    public static void Execute(Compilation compilation)
     {
-        using (Stream dllStream = new FileStream("transpiledProgram.dll", FileMode.OpenOrCreate))
-        {
-            if (!CompileToAssembly(text, dllStream)) return;
-        }
-
+        if (!GenerateExe(compilation)) return;
         // Dump runtime config
         File.WriteAllText(
-            "transpiledProgram.runtimeconfig.json",
+            $"{Path.GetFileNameWithoutExtension(compilation.CompiledExecutablePath!.Name)}.runtimeconfig.json",
             $$$"""
             {
               "runtimeOptions": {
@@ -42,20 +37,29 @@ public static class ScriptingEngine
         var startInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = $"exec transpiledProgram.dll",
+            Arguments = $"exec {compilation.CompiledExecutablePath}",
         };
         var process = Process.Start(startInfo) ?? throw new InvalidOperationException();
         process.WaitForExit();
         Console.WriteLine($"Process terminated with exit code: {process.ExitCode}");
     }
 
+    public static bool GenerateExe(Compilation compilation)
+    {
+        if (compilation.CompiledExecutablePath is null) throw new InvalidOperationException("Path for the compiled executable was not specified, so the code can't be compiled");
+        using (Stream dllStream = new FileStream(compilation.CompiledExecutablePath.FullName, FileMode.OpenOrCreate))
+        {
+            return CompileToAssembly(compilation, dllStream);
+        }
+    }
+
     /// <summary>
     /// Works in browsers.
     /// </summary>
-    public static void InlineExecute(string text)
+    public static void InlineExecute(Compilation compilation)
     {
         using var memStrem = new MemoryStream();
-        if (!CompileToAssembly(text, memStrem, (config) => config.WithConcurrentBuild(false))) return;
+        if (!CompileToAssembly(compilation, memStrem, (config) => config.WithConcurrentBuild(false))) return;
         var assembly = Assembly.Load(memStrem!.ToArray());
         var mainReturnValue = assembly.EntryPoint!.Invoke(null, new object[]
         {
@@ -82,41 +86,43 @@ public static class ScriptingEngine
         return;
     }
 
-    public static bool CompileToAssembly(string text, Stream stream,
-        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null
+    public static bool CompileToAssembly(Compilation dracoCompilation, Stream stream,
+        Func<Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions, Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions>? csCompilerOptionBuilder = null
     )
     {
-        var cSharpCode = CompileToCSharpCode(text);
-
+        CompileToCSharpCode(dracoCompilation);
         // NOTE: This is temporary, we shouldn't rely on compiling to C#
         // and then letting Roslyn do the work
 
-        var options = new CSharpCompilationOptions(OutputKind.ConsoleApplication);
+        var options = new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
         if (csCompilerOptionBuilder is not null) options = csCompilerOptionBuilder(options);
 
         // Compile
-        var compilation = CSharpCompilation.Create(
-            assemblyName: "transpiledProgram",
-            syntaxTrees: new[] { CSharpSyntaxTree.ParseText(cSharpCode) },
+        var cSharpCompilation = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(
+            assemblyName: dracoCompilation.CompiledExecutablePath!.Name,
+            syntaxTrees: new[] { Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(dracoCompilation.GeneratedCSharp!) },
             references: ReferenceAssemblies.Net60,
             options: options);
         {
-            var emitResult = compilation.Emit(stream);
+            var emitResult = cSharpCompilation.Emit(stream);
             // See if we succeeded
             if (emitResult.Success) return true;
             Console.WriteLine("Failed to compile transpiled C# code");
             foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
             Console.WriteLine("====================================");
-            Console.WriteLine(cSharpCode);
+            Console.WriteLine(dracoCompilation.GeneratedCSharp!);
             return false;
         }
     }
 
-    public static string CompileToCSharpCode(string text)
+    public static void CompileToCSharpCode(Compilation compilation)
     {
-        var compilation = new Compilation();
-        var parseTree = ParseTree.Parse(text);
-        var semanticModel = compilation.GetSemanticModel(parseTree);
-        return CSharpCodegen.Transpile(semanticModel);
+        compilation.Parsed = ParseTree.Parse(compilation.Source);
+        compilation.GeneratedCSharp = CSharpCodegen.Transpile(compilation.Parsed);
+    }
+
+    public static void CompileToParseTree(Compilation compilation)
+    {
+        compilation.Parsed = ParseTree.Parse(compilation.Source);
     }
 }

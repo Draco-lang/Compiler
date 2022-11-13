@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Draco.WebCompiler</title>
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="ts/app.css" rel="stylesheet" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+
+<body>
+    <div class="settings">
+        <select id="output-type-selector">
+            <option value="Run">Run</option>
+            <option value="CSharp">C#</option>
+            <option value="IL">IL</option>
+        </select>
+    </div>
+    <div class="editors-container">
+        <div id="draco-editor"></div>
+        <div id="output-viewer"> </div>
+    </div>
+    <script src="_framework/blazor.webassembly.js" type="module" autostart="false"></script>
+    <script src="ts/app.js" type="module"></script>
+</body>
+
+</html>

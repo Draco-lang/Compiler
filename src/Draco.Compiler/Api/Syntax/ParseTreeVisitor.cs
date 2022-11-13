@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.RedGreenTree.Attributes;
+using static Draco.Compiler.Api.Syntax.ParseTree;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -25,14 +26,16 @@ public abstract partial class ParseTreeVisitorBase<T>
         return this.Default;
     }
 
-    protected T VisitPunctuatedList<TElement>(ParseTree.PunctuatedList<TElement> list)
+    protected virtual T VisitImmutableArray(ImmutableArray<Diagnostic> diags) => this.Default;
+
+    protected T VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
         where TElement : ParseTree
     {
         foreach (var item in list.Elements) this.VisitPunctuated(item);
         return this.Default;
     }
 
-    protected T VisitPunctuated<TElement>(ParseTree.Punctuated<TElement> punctuated)
+    protected T VisitPunctuated<TElement>(Punctuated<TElement> punctuated)
         where TElement : ParseTree
     {
         this.Visit(punctuated.Value);
@@ -40,7 +43,7 @@ public abstract partial class ParseTreeVisitorBase<T>
         return this.Default;
     }
 
-    protected T VisitEnclosed<TElement>(ParseTree.Enclosed<TElement> enclosed)
+    protected T VisitEnclosed<TElement>(Enclosed<TElement> enclosed)
         where TElement : ParseTree
     {
         this.VisitToken(enclosed.OpenToken);
@@ -49,7 +52,7 @@ public abstract partial class ParseTreeVisitorBase<T>
         return this.Default;
     }
 
-    protected T VisitEnclosed<TElement>(ParseTree.Enclosed<ParseTree.PunctuatedList<TElement>> enclosed)
+    protected T VisitEnclosed<TElement>(Enclosed<PunctuatedList<TElement>> enclosed)
         where TElement : ParseTree
     {
         this.VisitToken(enclosed.OpenToken);
@@ -58,5 +61,5 @@ public abstract partial class ParseTreeVisitorBase<T>
         return this.Default;
     }
 
-    public virtual T VisitToken(ParseTree.Token token) => this.Default;
+    public virtual T VisitToken(Token token) => this.Default;
 }

@@ -8,12 +8,11 @@ on:
     paths:
     - 'src/**'
   pull_request:
-    branches: [ main ]
     paths:
     - 'src/**'
 
 env:
-  DOTNET_VERSION: '6.0.x'   # The .NET SDK version to use
+  DOTNET_VERSION: '7.0.x'   # The .NET SDK version to use
   CONFIGURATION: 'Release'  # The configuration to use
 
 jobs:
@@ -28,6 +27,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3.5.1
+      with:
+        node-version: 18
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v1

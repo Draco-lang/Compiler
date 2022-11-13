@@ -144,7 +144,9 @@ public sealed class RedTreeGenerator : GeneratorBase
 
     private void GenerateGreenProperty(INamedTypeSymbol greenType)
     {
-        this.contentWriter.Write(this.GreenRootType.DeclaredAccessibility);
+        this.contentWriter
+            .Write(this.GeneratedAttribute)
+            .Write(this.GreenRootType.DeclaredAccessibility);
         if (!SymbolEquals(this.GreenRootType, greenType)) this.contentWriter.Write("new");
         this.contentWriter
             .Write(greenType.ToDisplayString())
@@ -155,6 +157,8 @@ public sealed class RedTreeGenerator : GeneratorBase
     {
         var relevantProps = greenType
             .GetSanitizedProperties()
+            // Not generated
+            .Where(p => !p.IsGenerated())
             // Only care about public
             .Where(p => p.DeclaredAccessibility == Accessibility.Public)
             // Overriden ones are implemented in base already
@@ -178,6 +182,7 @@ public sealed class RedTreeGenerator : GeneratorBase
 
             // Write the cached projection
             this.contentWriter
+                .Write(this.GeneratedAttribute)
                 .Write(prop.DeclaredAccessibility)
                 .Write(redType)
                 .Write(prop.Name)
@@ -190,6 +195,7 @@ public sealed class RedTreeGenerator : GeneratorBase
         {
             // Just map one-to-one from the green node
             this.contentWriter
+                .Write(this.GeneratedAttribute)
                 .Write(prop.DeclaredAccessibility)
                 .Write(redType)
                 .Write(prop.Name)

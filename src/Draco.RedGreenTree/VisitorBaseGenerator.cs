@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis;
 namespace Draco.RedGreenTree;
 
 /// <summary>
-/// Generates the visitor interface and base class for the red tree based on the green tree.
+/// Generates the visitor base class for the red tree based on the green tree.
 /// </summary>
 public sealed class VisitorBaseGenerator : GeneratorBase
 {
@@ -213,6 +213,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
             foreach (var prop in type.GetSanitizedProperties())
             {
                 if (prop.Type is not INamedTypeSymbol propType) continue;
+                if (prop.IsGenerated()) continue;
 
                 if (!this.IsVisitableProperty(prop))
                 {

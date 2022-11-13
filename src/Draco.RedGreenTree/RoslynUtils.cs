@@ -8,6 +8,8 @@ namespace Draco.RedGreenTree;
 
 internal static class RoslynUtils
 {
+    public const string GeneratedAttribute = "System.CodeDom.Compiler.GeneratedCodeAttribute";
+
     public static bool IsSubtypeOf(this INamedTypeSymbol derived, INamedTypeSymbol? @base)
     {
         if (@base is null) return false;
@@ -79,4 +81,8 @@ internal static class RoslynUtils
         .GetMembers()
         .OfType<IPropertySymbol>()
         .Where(p => p.Name != "EqualityContract");
+
+    public static bool IsGenerated(this ISymbol symbol) => symbol
+        .GetAttributes()
+        .Any(a => a.AttributeClass?.ToDisplayString() == GeneratedAttribute);
 }

@@ -8,12 +8,13 @@ export async function createThemeBasedLogo() {
     let logoLight = stripXMLHeader(bodyLight);
     // logoLight = optimize(logoLight).data;
 
-    await (await fetch('https://raw.githubusercontent.com/Draco-lang/Language-suggestions/main/Resources/Logo-Short-Inverted.svg')).text();
-    let logoDark = stripXMLHeader(bodyLight);
+    const bodyDark = await (await fetch('https://raw.githubusercontent.com/Draco-lang/Language-suggestions/main/Resources/Logo-Short-Inverted.svg')).text();
+    let logoDark = stripXMLHeader(bodyDark);
     // logoDark = optimize(logoDark).data;
     const logoSvg =
         `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-        <style>
+        <svg xmlns="http://www.w3.org/2000/svg">
+            <style>
             @media (prefers-color-scheme: dark) {
                 .light{
                     visibility: hidden;
@@ -25,12 +26,11 @@ export async function createThemeBasedLogo() {
                     visibility: hidden;
                 }
             }
-        </style>
-        <svg>
-            <g class = "dark">
+            </style>
+            <g class="dark">
 ${logoDark}
             </g>
-            <g class = "light">
+            <g class="light">
 ${logoLight}
             </g>
         </svg>

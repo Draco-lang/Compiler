@@ -338,6 +338,42 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void TestNewLineInLineString()
+    {
+        this.MainFunctionPlaceHolder("""
+            val x = "Hello, World!
+            ";
+            """, () =>
+        {
+            this.N<Stmt.Decl>();
+            {
+                this.N<Decl.Variable>();
+                {
+                    this.T(TokenType.KeywordVal);
+                    this.T(TokenType.Identifier);
+                    this.N<ValueInitializer>();
+                    {
+                        this.T(TokenType.Assign);
+                        this.N<Expr.String>();
+                        {
+                            this.T(TokenType.LineStringStart);
+                            this.StringContent("Hello, World!");
+                            this.MissingT(TokenType.LineStringEnd);
+                        }
+                    }
+                    this.MissingT(TokenType.Semicolon);
+                }
+            }
+            this.N<Expr.String>();
+            {
+                this.T(TokenType.LineStringStart);
+                this.StringContent(";");
+                this.MissingT(TokenType.LineStringEnd);
+            }
+        });
+    }
+
+    [Fact]
     public void TestMultilineStringUnclosedInterpolation()
     {
         this.ParseExpression(""""

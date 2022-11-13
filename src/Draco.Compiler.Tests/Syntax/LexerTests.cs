@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
+using static System.Net.Mime.MediaTypeNames;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -640,7 +641,7 @@ public sealed class LexerTests
     public void TestLineStringInterpolation(string ext)
     {
         var text = $$"""
-            {{ext}}"x = \{{ext}}{x}, x + y = \{{ext}}{ x + y }"{{ext}}
+            {{ext}}"x = \{{ext}}{x}, x + y = \{{ext}}{ x + y }, y = \{{ext}}{ {y} }"{{ext}}
             """;
         var tokens = Lex(text);
 
@@ -711,6 +712,44 @@ public sealed class LexerTests
         Assert.Equal(TokenType.InterpolationEnd, token.Type);
         Assert.Equal("}", token.Text);
         AssertNoTriviaOrDiagnostics(token);
+
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal(", y = ", token.Text);
+        Assert.Equal(", y = ", token.ValueText);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationStart, token.Type);
+        Assert.Equal($@"\{ext}{{", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, " ");
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.CurlyOpen, token.Type);
+        Assert.Equal("{", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("y", token.Text);
+        Assert.Equal("y", token.ValueText);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.CurlyClose, token.Type);
+        Assert.Equal("}", token.Text);
+        Assert.Empty(token.LeadingTrivia);
+        AssertTrailingTrivia(token, " ");
+        Assert.Empty(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.InterpolationEnd, token.Type);
+        Assert.Equal("}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);
@@ -1032,6 +1071,7 @@ public sealed class LexerTests
     [InlineData("=", TokenType.Assign)]
     [InlineData("==", TokenType.Equal)]
     [InlineData("mod", TokenType.KeywordMod)]
+    [InlineData("rem", TokenType.KeywordRem)]
     [InlineData("and", TokenType.KeywordAnd)]
     [InlineData("not", TokenType.KeywordNot)]
     [Trait("Feature", "Operators")]
@@ -1071,8 +1111,47 @@ public sealed class LexerTests
         AssertNoTriviaOrDiagnostics(token);
     }
 
+    [Fact]
+    [Trait("Feature", "Literals")]
+    internal void TestIntLiteralsFunctionAttached()
+    {
+        string text = "56.MyFunction()";
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LiteralInteger, token.Type);
+        Assert.Equal("56", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Dot, token.Type);
+        Assert.Equal(".", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.Identifier, token.Type);
+        Assert.Equal("MyFunction", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.ParenOpen, token.Type);
+        Assert.Equal("(", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.ParenClose, token.Type);
+        Assert.Equal(")", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
     [Theory]
     [InlineData("'a'", "a")]
+    [InlineData(@"'\\'", "\\")]
     [InlineData(@"'\''", "'")]
     [InlineData(@"'\""'", "\"")]
     [InlineData(@"'\n'", "\n")]
@@ -1087,6 +1166,26 @@ public sealed class LexerTests
         Assert.Equal(text, token.Text);
         Assert.Equal(charValue, token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Fact]
+    internal void TestUnclosedCharLiteral()
+    {
+        string text = "'a";
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LiteralCharacter, token.Type);
+        Assert.Equal(text, token.Text);
+        Assert.Equal("a", token.ValueText);
+        Assert.Empty(token.LeadingTrivia);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Single(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.EndOfInput, token.Type);

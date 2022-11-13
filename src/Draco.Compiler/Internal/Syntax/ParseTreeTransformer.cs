@@ -24,9 +24,11 @@ internal abstract partial class ParseTreeTransformerBase
         var newBuilder = ImmutableArray.CreateBuilder<TElement>();
         foreach (var element in elements)
         {
-            // var transformed = this.Transform
+            var transformed = (TElement)this.Transform(element, out var elementChanged);
+            newBuilder.Add(transformed);
+            changed = changed || elementChanged;
         }
-        throw new NotImplementedException();
+        return newBuilder.ToImmutable();
     }
 
     protected virtual ImmutableArray<Diagnostic> TransformImmutableArray(
@@ -42,8 +44,15 @@ internal abstract partial class ParseTreeTransformerBase
         out bool changed)
         where TElement : ParseTree
     {
-        // TODO
-        throw new NotImplementedException();
+        changed = false;
+        var newBuilder = ImmutableArray.CreateBuilder<Punctuated<TElement>>();
+        foreach (var element in list.Elements)
+        {
+            var transformed = this.TransformPunctuated(element, out var elementChanged);
+            newBuilder.Add(transformed);
+            changed = changed || elementChanged;
+        }
+        return new(newBuilder.ToImmutable());
     }
 
     protected Punctuated<TElement> TransformPunctuated<TElement>(
@@ -51,8 +60,11 @@ internal abstract partial class ParseTreeTransformerBase
         out bool changed)
         where TElement : ParseTree
     {
-        // TODO
-        throw new NotImplementedException();
+        var punctChanged = false;
+        var element = (TElement)this.Transform(punctuated.Value, out var valueChanged);
+        var punct = punctuated.Punctuation is null ? null : this.TransformToken(punctuated.Punctuation, out punctChanged);
+        changed = valueChanged || punctChanged;
+        return new(element, punct);
     }
 
     protected Enclosed<TElement> TransformEnclosed<TElement>(
@@ -60,8 +72,11 @@ internal abstract partial class ParseTreeTransformerBase
         out bool changed)
         where TElement : ParseTree
     {
-        // TODO
-        throw new NotImplementedException();
+        var open = this.TransformToken(enclosed.OpenToken, out var openChanged);
+        var value = (TElement)this.Transform(enclosed.Value, out var valueChanged);
+        var close = this.TransformToken(enclosed.CloseToken, out var closeChanged);
+        changed = openChanged || valueChanged || closeChanged;
+        return new(open, value, close);
     }
 
     protected Enclosed<PunctuatedList<TElement>> TransformEnclosed<TElement>(
@@ -69,8 +84,11 @@ internal abstract partial class ParseTreeTransformerBase
         out bool changed)
         where TElement : ParseTree
     {
-        // TODO
-        throw new NotImplementedException();
+        var open = this.TransformToken(enclosed.OpenToken, out var openChanged);
+        var value = this.TransformPunctuatedList(enclosed.Value, out var valueChanged);
+        var close = this.TransformToken(enclosed.CloseToken, out var closeChanged);
+        changed = openChanged || valueChanged || closeChanged;
+        return new(open, value, close);
     }
 
     protected int TransformInt32(int value, out bool changed)

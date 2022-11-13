@@ -14,42 +14,62 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal abstract partial class ParseTreeTransformerBase
 {
-    protected ImmutableArray<TElement> TransformImmutableArray<TElement>(ImmutableArray<TElement> elements)
+    protected ImmutableArray<TElement> TransformImmutableArray<TElement>(
+        ImmutableArray<TElement> elements,
+        out bool changed)
         where TElement : ParseTree
     {
         // TODO
         throw new NotImplementedException();
     }
 
-    protected virtual ImmutableArray<Diagnostic> TransformImmutableArray(ImmutableArray<Diagnostic> diags) => diags;
+    protected virtual ImmutableArray<Diagnostic> TransformImmutableArray(
+        ImmutableArray<Diagnostic> diags,
+        out bool changed)
+    {
+        changed = false;
+        return diags;
+    }
 
-    protected PunctuatedList<TElement> TransformPunctuatedList<TElement>(PunctuatedList<TElement> list)
+    protected PunctuatedList<TElement> TransformPunctuatedList<TElement>(
+        PunctuatedList<TElement> list,
+        out bool changed)
         where TElement : ParseTree
     {
         // TODO
         throw new NotImplementedException();
     }
 
-    protected Punctuated<TElement> TransformPunctuated<TElement>(Punctuated<TElement> punctuated)
+    protected Punctuated<TElement> TransformPunctuated<TElement>(
+        Punctuated<TElement> punctuated,
+        out bool changed)
         where TElement : ParseTree
     {
         // TODO
         throw new NotImplementedException();
     }
 
-    protected Enclosed<TElement> TransformEnclosed<TElement>(Enclosed<TElement> enclosed)
+    protected Enclosed<TElement> TransformEnclosed<TElement>(
+        Enclosed<TElement> enclosed,
+        out bool changed)
         where TElement : ParseTree
     {
         // TODO
         throw new NotImplementedException();
     }
 
-    protected Enclosed<PunctuatedList<TElement>> TransformEnclosed<TElement>(Enclosed<PunctuatedList<TElement>> enclosed)
+    protected Enclosed<PunctuatedList<TElement>> TransformEnclosed<TElement>(
+        Enclosed<PunctuatedList<TElement>> enclosed,
+        out bool changed)
         where TElement : ParseTree
     {
         // TODO
         throw new NotImplementedException();
     }
 
-    public virtual Token TransformToken(Token token) => token;
+    public virtual Token TransformToken(Token token, out bool changed)
+    {
+        changed = false;
+        return token;
+    }
 }

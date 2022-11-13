@@ -184,7 +184,11 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             .Write("public virtual")
             .Write(typeName)
             .Write(this.GenerateTransformerMethodName(type))
-            .Write($"({typeName} node)");
+            .Write("(")
+            .Write($"{typeName} node")
+            .Write(",")
+            .Write("out bool changed")
+            .Write(")");
         if (type.IsAbstract)
         {
             this.contentWriter
@@ -209,6 +213,10 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             Debug.Assert(subtypes.Count == 0);
 
             this.contentWriter.Write("{");
+
+            // Collect transformed elements
+            var transformedMembers = new List<(string Transformed, string HasChanged)>();
+
             foreach (var prop in type.GetSanitizedProperties())
             {
                 if (prop.Type is not INamedTypeSymbol propType) continue;
@@ -219,15 +227,34 @@ public sealed class TransformerBaseGenerator : GeneratorBase
                     continue;
                 }
 
+                var transformedProp = $"tr{prop.Name}";
+                var changedFlag = $"{ToCamelCase(prop.Name)}Changed";
+                transformedMembers.Add((transformedProp, changedFlag));
+
+                this.contentWriter.Write($"var {transformedProp} =");
+
                 var accessor = string.Empty;
                 if (propType.NullableAnnotation == NullableAnnotation.Annotated)
                 {
                     if (propType.IsValueType) accessor = ".Value";
-                    this.contentWriter.Write($"if (node.{prop.Name} is not null)");
+                    this.contentWriter.Write($"node.{prop.Name} is null ? null :");
                 }
                 var methodName = this.GenerateTransformerMethodName(propType);
-                this.contentWriter.Write($"this.{methodName}(node.{prop.Name}{accessor});");
+                this.contentWriter.Write($"this.{methodName}(node.{prop.Name}{accessor}, out var {changedFlag});");
             }
+
+            // Optimization, if all are equal to their original, we return the old reference
+            this.contentWriter
+                .Write("if (")
+                .Write(string.Join("&&", transformedMembers.Select(m => $"!{m.HasChanged}")))
+                .Write(") return node;");
+
+            // Construct new instance
+            this.contentWriter
+                .Write($"return new {typeName}(")
+                .Write(string.Join(", ", transformedMembers.Select(m => m.Transformed)))
+                .Write(");");
+
             this.contentWriter
                 .Write("}");
         }

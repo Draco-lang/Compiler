@@ -19,7 +19,8 @@ html, body, #app {
 .settings {
     flex: 0 1 25px;
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
 @media (prefers-color-scheme: dark) {

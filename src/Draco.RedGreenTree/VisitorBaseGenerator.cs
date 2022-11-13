@@ -213,6 +213,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
             foreach (var prop in type.GetSanitizedProperties())
             {
                 if (prop.Type is not INamedTypeSymbol propType) continue;
+                if (prop.IsGenerated()) continue;
 
                 if (!this.IsVisitableProperty(prop))
                 {

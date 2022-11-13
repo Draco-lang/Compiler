@@ -220,6 +220,7 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             foreach (var prop in type.GetSanitizedProperties())
             {
                 if (prop.Type is not INamedTypeSymbol propType) continue;
+                if (prop.IsGenerated()) continue;
 
                 if (!this.IsTransformableProperty(prop))
                 {
@@ -244,10 +245,13 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             }
 
             // Optimization, if all are equal to their original, we return the old reference
-            this.contentWriter
-                .Write("if (")
-                .Write(string.Join("&&", transformedMembers.Select(m => $"!{m.HasChanged}")))
-                .Write(") return node;");
+            if (transformedMembers.Count > 0)
+            {
+                this.contentWriter
+                    .Write("if (")
+                    .Write(string.Join("&&", transformedMembers.Select(m => $"!{m.HasChanged}")))
+                    .Write(") return node;");
+            }
 
             // Construct new instance
             this.contentWriter

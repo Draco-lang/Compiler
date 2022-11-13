@@ -89,7 +89,7 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             .GetMembers()
             .OfType<IMethodSymbol>()
             .Where(m => !m.IsStatic)
-            .Where(m => m.Parameters.Length == 1)
+            .Where(m => m.Parameters.Length == 2)
             .Where(m => m.Name.StartsWith("Transform"));
         foreach (var m in methods) this.customMethodNames.Add(m.Name);
     }

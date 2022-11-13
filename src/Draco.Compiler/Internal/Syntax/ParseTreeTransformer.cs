@@ -67,6 +67,12 @@ internal abstract partial class ParseTreeTransformerBase
         throw new NotImplementedException();
     }
 
+    protected int TransformInt32(int value, out bool changed)
+    {
+        changed = false;
+        return value;
+    }
+
     public virtual Token TransformToken(Token token, out bool changed)
     {
         changed = false;

@@ -45,7 +45,7 @@ function toBase64(u8) {
 }
 
 function fromBase64(str) {
-    return new Uint8Array(atob(str).split('').map(function (c) { return c.charCodeAt(0); }));
+    return new Uint8Array(atob(str).split('').map(c => c.charCodeAt(0)));
 }
 
 function updateHash() {

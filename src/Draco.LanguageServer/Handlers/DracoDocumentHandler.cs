@@ -81,7 +81,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
     private Task PublishSyntaxDiagnosticsAsync(DocumentUri uri, string text)
     {
         // TODO: This should be shared
-        var compilation = new Compilation();
+        var compilation = new Compilation(text);
         var parseTree = ParseTree.Parse(text);
         var semanticModel = compilation.GetSemanticModel(parseTree);
         // TODO: API for compilation to get all diagnostics?

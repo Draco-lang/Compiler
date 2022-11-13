@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Utilities;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Semantics;
 using static Draco.Compiler.Api.Syntax.ParseTree;
 
 namespace Draco.Compiler.Internal.Codegen;

@@ -1,4 +1,4 @@
-export let process = {
-    platform: "browser",
+export const process = {
+    platform: 'browser',
     env: []
-}
+};

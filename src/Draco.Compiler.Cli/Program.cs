@@ -50,11 +50,23 @@ internal class Program
         };
         generateExeCommand.SetHandler((input, output) => GenerateExe(input, output), fileArgument, outputOption);
 
+        var formatCommand = new Command("format")
+        {
+            fileArgument,
+        };
+        formatCommand.SetHandler((input) =>
+        {
+            var compilation = new Compilation(File.ReadAllText(input.FullName));
+            ScriptingEngine.CompileToParseTree(compilation);
+            Console.WriteLine(new CodeFormater().Format(compilation.Parsed!));
+        }, fileArgument);
+
         var rootCommand = new RootCommand("CLI for the draco compiler");
         rootCommand.AddCommand(runCommand);
         rootCommand.AddCommand(generateParseTreeCommand);
         rootCommand.AddCommand(generateCSCommand);
         rootCommand.AddCommand(generateExeCommand);
+        rootCommand.AddCommand(formatCommand);
         return rootCommand;
     }
 

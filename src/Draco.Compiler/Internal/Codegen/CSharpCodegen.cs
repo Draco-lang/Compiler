@@ -102,6 +102,9 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
                 System.Console.WriteLine(value);
                 return default;
             }
+
+            public static dynamic fmt(dynamic format, params dynamic[] args) =>
+                string.Format(format, args);
         }
         """);
 

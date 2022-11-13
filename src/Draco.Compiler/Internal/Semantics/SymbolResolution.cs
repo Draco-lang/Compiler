@@ -287,5 +287,6 @@ internal static class SymbolResolution
 
         Add("println");
         Add("print");
+        Add("fmt");
     }
 }

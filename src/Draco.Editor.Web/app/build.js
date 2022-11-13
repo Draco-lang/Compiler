@@ -65,10 +65,10 @@ const octokit = new Octokit();
 const response = await octokit.repos.getContent({
     owner: 'microsoft',
     repo: 'vscode',
-    path:'extensions/theme-defaults/themes'
+    path: 'extensions/theme-defaults/themes'
 });
 
-const themes = await Promise.all(response.data.map(async s=> {
+const themes = await Promise.all(response.data.map(async s => {
     const resp = await fetch(s.download_url);
     const txt = await resp.text();
     const parsed = JSON5.parse(txt);
@@ -85,9 +85,9 @@ const themesMetadata = themePackageJson.contributes.themes;
 
 themes.forEach(s => {
     themeObj[s.name] = s.theme;
-    themeObj[s.name].base = themesMetadata.find(t=>path.basename(t.path) == s.filename).uiTheme;
+    themeObj[s.name].base = themesMetadata.find(t => path.basename(t.path) == s.filename).uiTheme;
     themeObj[s.name].inherit = true;
-    if(themeObj[s.name].colors === undefined) {
+    if (themeObj[s.name].colors === undefined) {
         themeObj[s.name].colors = {}; // workaround monaco bug: if not set, will throw "Cannot read properties of undefined (reading 'editor.foreground')"
     }
 });
@@ -97,5 +97,5 @@ fs.writeFileSync(path.join(outDir, 'themes.json'), themeListJson);
 const csharpTextmateYml = await (await fetch('https://raw.githubusercontent.com/dotnet/csharp-tmLanguage/main/src/csharp.tmLanguage.yml')).text();
 const csharpTextmate = JSON.stringify(YAML.parse(csharpTextmateYml));
 fs.writeFileSync(path.join(outDir, 'csharp.tmLanguage.json'), csharpTextmate);
-const ilTextmate = await(await fetch('https://raw.githubusercontent.com/soltys/vscode-il/master/syntaxes/il.json')).text();
+const ilTextmate = await (await fetch('https://raw.githubusercontent.com/soltys/vscode-il/master/syntaxes/il.json')).text();
 fs.writeFileSync(path.join(outDir, 'il.tmLanguage.json'), ilTextmate);

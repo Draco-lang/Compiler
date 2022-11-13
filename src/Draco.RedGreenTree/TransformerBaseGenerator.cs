@@ -201,7 +201,7 @@ public sealed class TransformerBaseGenerator : GeneratorBase
                     .Write(this.GetFullRedClassName(subtype))
                     .Write("n")
                     .Write("=>")
-                    .Write($"this.{this.GenerateTransformerMethodName(subtype)}(n),");
+                    .Write($"this.{this.GenerateTransformerMethodName(subtype)}(n, out changed),");
             }
             this.contentWriter
                 .Write("_ => throw new System.ArgumentOutOfRangeException(nameof(node)),")
@@ -232,6 +232,8 @@ public sealed class TransformerBaseGenerator : GeneratorBase
                 var changedFlag = $"{ToCamelCase(prop.Name)}Changed";
                 transformedMembers.Add((transformedProp, changedFlag));
 
+                this.contentWriter.Write($"var {changedFlag} = false;");
+
                 this.contentWriter.Write($"var {transformedProp} =");
 
                 var accessor = string.Empty;
@@ -241,17 +243,24 @@ public sealed class TransformerBaseGenerator : GeneratorBase
                     this.contentWriter.Write($"node.{prop.Name} is null ? null :");
                 }
                 var methodName = this.GenerateTransformerMethodName(propType);
-                this.contentWriter.Write($"this.{methodName}(node.{prop.Name}{accessor}, out var {changedFlag});");
+                this.contentWriter.Write($"this.{methodName}(node.{prop.Name}{accessor}, out {changedFlag});");
             }
 
-            // Optimization, if all are equal to their original, we return the old reference
+            // Changed arg
             if (transformedMembers.Count > 0)
             {
                 this.contentWriter
-                    .Write("if (")
-                    .Write(string.Join("&&", transformedMembers.Select(m => $"!{m.HasChanged}")))
-                    .Write(") return node;");
+                    .Write("changed =")
+                    .Write(string.Join("||", transformedMembers.Select(m => m.HasChanged)))
+                    .Write(";");
             }
+            else
+            {
+                this.contentWriter.Write("changed = false;");
+            }
+
+            // Optimization, if all are equal to their original, we return the old reference
+            this.contentWriter.Write("if (!changed) return node;");
 
             // Construct new instance
             this.contentWriter

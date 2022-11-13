@@ -12,6 +12,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// Provides a transformer base that transforms the tree.
 /// </summary>
+[TransformerBase(typeof(ParseTree), typeof(ParseTree))]
 internal abstract partial class ParseTreeTransformerBase
 {
     protected ImmutableArray<TElement> TransformImmutableArray<TElement>(
@@ -19,7 +20,12 @@ internal abstract partial class ParseTreeTransformerBase
         out bool changed)
         where TElement : ParseTree
     {
-        // TODO
+        changed = false;
+        var newBuilder = ImmutableArray.CreateBuilder<TElement>();
+        foreach (var element in elements)
+        {
+            // var transformed = this.Transform
+        }
         throw new NotImplementedException();
     }
 

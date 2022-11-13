@@ -9,32 +9,31 @@ using Microsoft.CodeAnalysis;
 namespace Draco.RedGreenTree;
 
 /// <summary>
-/// Generates the visitor base class for the red tree based on the green tree.
+/// Generates the transformer base class for the red tree based on the green tree.
 /// </summary>
-public sealed class VisitorBaseGenerator : GeneratorBase
+public sealed class TransformerBaseGenerator : GeneratorBase
 {
     public sealed class Settings
     {
         public INamedTypeSymbol GreenRootType { get; set; }
         public INamedTypeSymbol RedRootType { get; set; }
-        public INamedTypeSymbol VisitorType { get; set; }
-        public string DefaultPropertyName { get; set; } = "Default";
+        public INamedTypeSymbol TransformerType { get; set; }
         public Func<INamedTypeSymbol, string> GetRedName { get; set; } = x => x.Name;
 
         public Settings(
             INamedTypeSymbol greenRootType,
             INamedTypeSymbol redRootType,
-            INamedTypeSymbol visitorType)
+            INamedTypeSymbol transformerType)
         {
             this.GreenRootType = greenRootType;
             this.RedRootType = redRootType;
-            this.VisitorType = visitorType;
+            this.TransformerType = transformerType;
         }
     }
 
     public static string Generate(Settings settings)
     {
-        var generator = new VisitorBaseGenerator(settings);
+        var generator = new TransformerBaseGenerator(settings);
         return generator.Generate();
     }
 
@@ -48,10 +47,9 @@ public sealed class VisitorBaseGenerator : GeneratorBase
 
     private INamedTypeSymbol GreenRootType => this.settings.GreenRootType;
     private INamedTypeSymbol RedRootType => this.settings.RedRootType;
-    private INamedTypeSymbol VisitorType => this.settings.VisitorType;
-    private string DefaultPropertyName => this.settings.DefaultPropertyName;
+    private INamedTypeSymbol TransformerType => this.settings.TransformerType;
 
-    private VisitorBaseGenerator(Settings settings)
+    private TransformerBaseGenerator(Settings settings)
     {
         this.settings = settings;
 
@@ -59,7 +57,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
         this.ExtractGreenTreeNodes();
 
         this.customMethodNames = new();
-        this.ExtractCustomVisitorMethods();
+        this.ExtractCustomTransformerMethods();
     }
 
     private string GetRedClassName(INamedTypeSymbol greenType) => SymbolEquals(greenType, this.GreenRootType)
@@ -81,18 +79,18 @@ public sealed class VisitorBaseGenerator : GeneratorBase
         var relevantNodes = this.GreenRootType
             .EnumerateContainedTypeTree();
         foreach (var n in relevantNodes) this.greenTreeNodes.Add(n);
-        foreach (var n in this.greenTreeNodes) this.generatedMethodNames.Add(this.GenerateVisitorMethodName(n));
+        foreach (var n in this.greenTreeNodes) this.generatedMethodNames.Add(this.GenerateTransformerMethodName(n));
     }
 
-    private void ExtractCustomVisitorMethods()
+    private void ExtractCustomTransformerMethods()
     {
         var result = new Dictionary<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
-        var methods = this.VisitorType
+        var methods = this.TransformerType
             .GetMembers()
             .OfType<IMethodSymbol>()
             .Where(m => !m.IsStatic)
             .Where(m => m.Parameters.Length == 1)
-            .Where(m => m.Name.StartsWith("Visit"));
+            .Where(m => m.Name.StartsWith("Transform"));
         foreach (var m in methods) this.customMethodNames.Add(m.Name);
     }
 
@@ -121,10 +119,10 @@ public sealed class VisitorBaseGenerator : GeneratorBase
 
     private void GenerateNamespace()
     {
-        if (this.VisitorType.ContainingNamespace is null) return;
+        if (this.TransformerType.ContainingNamespace is null) return;
         this.contentWriter
             .Write("namespace ")
-            .Write(this.VisitorType.ContainingNamespace)
+            .Write(this.TransformerType.ContainingNamespace)
             .Write(";");
     }
 
@@ -136,7 +134,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
         foreach (var prop in this.skippedProperties) this.headerWriter.Write($"// - {prop}");
     }
 
-    private string GenerateVisitorMethodName(INamedTypeSymbol symbol)
+    private string GenerateTransformerMethodName(INamedTypeSymbol symbol)
     {
         // Nullable value types are unwrapped
         if (symbol.IsValueType
@@ -145,31 +143,30 @@ public sealed class VisitorBaseGenerator : GeneratorBase
         {
             symbol = namedTypeArg;
         }
-        // For anything not part of the tree, we just generate a VisitNAME
-        if (!this.greenTreeNodes.Contains(symbol)) return $"Visit{symbol.Name}";
+        // For anything not part of the tree, we just generate a TransformNAME
+        if (!this.greenTreeNodes.Contains(symbol)) return $"Transform{symbol.Name}";
         // For anything else, we read up the names in reverse order, excluding the root
         var parts = symbol.EnumerateNestingChain().Skip(1).Reverse().Select(this.GetRedClassName);
-        return $"Visit{string.Join("", parts)}";
+        return $"Transform{string.Join("", parts)}";
     }
 
     private void GenerateBaseClass()
     {
         this.contentWriter
-            .Write(this.VisitorType.DeclaredAccessibility)
-            .Write($"abstract partial class {this.VisitorType.Name}<T>")
-            .Write("{")
-            .Write($"protected virtual T {this.DefaultPropertyName} => default!;");
+            .Write(this.TransformerType.DeclaredAccessibility)
+            .Write($"abstract partial class {this.TransformerType.Name}")
+            .Write("{");
         foreach (var node in this.greenTreeNodes)
         {
-            var methodName = this.GenerateVisitorMethodName(node);
+            var methodName = this.GenerateTransformerMethodName(node);
             if (this.customMethodNames.Contains(methodName)) continue;
             if (!node.IsSubtypeOf(this.GreenRootType)) continue;
-            this.GenerateVisitorMethodForType(node);
+            this.GenerateTransformerMethodForType(node);
         }
         this.contentWriter.Write("}");
     }
 
-    private void GenerateVisitorMethodForType(INamedTypeSymbol type)
+    private void GenerateTransformerMethodForType(INamedTypeSymbol type)
     {
         static int AbstractFirst(INamedTypeSymbol s) => s.IsAbstract ? 0 : 1;
 
@@ -182,10 +179,12 @@ public sealed class VisitorBaseGenerator : GeneratorBase
             .OrderBy(x => x, Comparer<INamedTypeSymbol>.Create((a, b) => AbstractFirst(a) - AbstractFirst(b)))
             .ToList();
 
+        var typeName = this.GetFullRedClassName(type);
         this.contentWriter
-            .Write("public virtual T")
-            .Write(this.GenerateVisitorMethodName(type))
-            .Write($"({this.GetFullRedClassName(type)} node)");
+            .Write("public virtual")
+            .Write(typeName)
+            .Write(this.GenerateTransformerMethodName(type))
+            .Write($"({typeName} node)");
         if (type.IsAbstract)
         {
             this.contentWriter
@@ -198,7 +197,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
                     .Write(this.GetFullRedClassName(subtype))
                     .Write("n")
                     .Write("=>")
-                    .Write($"this.{this.GenerateVisitorMethodName(subtype)}(n),");
+                    .Write($"this.{this.GenerateTransformerMethodName(subtype)}(n),");
             }
             this.contentWriter
                 .Write("_ => throw new System.ArgumentOutOfRangeException(nameof(node)),")
@@ -214,7 +213,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
             {
                 if (prop.Type is not INamedTypeSymbol propType) continue;
 
-                if (!this.IsVisitableProperty(prop))
+                if (!this.IsTransformableProperty(prop))
                 {
                     this.skippedProperties.Add($"{type.ToDisplayString()}.{prop.Name}");
                     continue;
@@ -226,23 +225,22 @@ public sealed class VisitorBaseGenerator : GeneratorBase
                     if (propType.IsValueType) accessor = ".Value";
                     this.contentWriter.Write($"if (node.{prop.Name} is not null)");
                 }
-                var methodName = this.GenerateVisitorMethodName(propType);
+                var methodName = this.GenerateTransformerMethodName(propType);
                 this.contentWriter.Write($"this.{methodName}(node.{prop.Name}{accessor});");
             }
             this.contentWriter
-                .Write($"return this.{this.DefaultPropertyName};")
                 .Write("}");
         }
     }
 
-    private bool IsVisitableProperty(IPropertySymbol prop)
+    private bool IsTransformableProperty(IPropertySymbol prop)
     {
         if (prop.Type is not INamedTypeSymbol propType) return false;
 
         // Don't leak types
         if ((int)prop.DeclaredAccessibility < (int)this.RedRootType.DeclaredAccessibility) return false;
 
-        var methodName = this.GenerateVisitorMethodName(propType);
+        var methodName = this.GenerateTransformerMethodName(propType);
         if (this.generatedMethodNames.Contains(methodName)) return true;
 
         if (this.customMethodNames.Contains(methodName))

@@ -128,7 +128,8 @@ dracoEditor.onDidChangeModelContent(() => {
 
 const outputEditor = monaco.editor.create(document.getElementById('output-viewer'), {
     value: ['.NET Runtime loading...'].join('\n'),
-    theme: 'dynamic-theme'
+    theme: 'dynamic-theme',
+    readOnly: true
 });
 
 async function main() {

@@ -174,7 +174,7 @@ public sealed class LexerTests
     public void TestLineStringEscapes(string ext)
     {
         var text = $$"""
-            {{ext}}"\{{ext}}"\{{ext}}n\{{ext}}'\{{ext}}u{1F47D}"{{ext}}
+            {{ext}}"\{{ext}}"\{{ext}}\\{{ext}}n\{{ext}}'\{{ext}}u{1F47D}\{{ext}}0"{{ext}}
             """;
         var tokens = Lex(text);
 
@@ -185,9 +185,118 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
-        Assert.Equal(@$"\{ext}""\{ext}n\{ext}'\{ext}u{{1F47D}}", token.Text);
-        Assert.Equal("\"\n'👽", token.ValueText);
+        Assert.Equal(@$"\{ext}""\{ext}\\{ext}n\{ext}'\{ext}u{{1F47D}}\{ext}0", token.Text);
+        Assert.Equal("\"\\\n'👽\0", token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+        Assert.Equal($"\"{ext}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestLineStringZeroLengthUnicodeCodepoint(string ext)
+    {
+        var text = $$"""
+            {{ext}}"\{{ext}}u{}"{{ext}}
+            """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal($"{ext}\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal(@$"\{ext}u{{}}", token.Text);
+        Assert.Equal("", token.ValueText);
+        AssertNoTrivia(token);
+        Assert.Single(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+        Assert.Equal($"\"{ext}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestLineStringInvalidUnicodeCodepoint(string ext)
+    {
+        var text = $$"""
+            {{ext}}"\{{ext}}u{3S}"{{ext}}
+            """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal($"{ext}\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal(@$"\{ext}u{{3S}}", token.Text);
+        Assert.Equal("S}", token.ValueText); //TODO: change this when we get better orrors out of invalid unicode codepoints
+        AssertNoTrivia(token);
+        Assert.Single(token.Diagnostics);
+        Assert.Equal("unclosed unicode codepoint escape sequence", token.Diagnostics[0].Format);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.LineStringEnd, token.Type);
+        Assert.Equal($"\"{ext}", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestLineStringUnclosedUnicodeCodepoint(string ext)
+    {
+        var text = $$"""
+            {{ext}}"\{{ext}}u{"{{ext}}
+            """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        Assert.Equal($"{ext}\"", token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal(@$"\{ext}u{{", token.Text);
+        Assert.Equal("", token.ValueText);
+        AssertNoTrivia(token);
+        Assert.Single(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);
@@ -1155,7 +1264,8 @@ public sealed class LexerTests
     [InlineData(@"'\''", "'")]
     [InlineData(@"'\""'", "\"")]
     [InlineData(@"'\n'", "\n")]
-    [InlineData(@"'\u{41}'", "A")]
+    [InlineData(@"'\u{3F}'", "?")]
+    [InlineData(@"'\u{3f}'", "?")]
     [Trait("Feature", "Literals")]
     internal void TestCharLiteral(string text, string charValue)
     {

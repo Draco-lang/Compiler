@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
-using static System.Net.Mime.MediaTypeNames;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -1293,8 +1292,7 @@ public sealed class LexerTests
         Assert.Equal(TokenType.LiteralCharacter, token.Type);
         Assert.Equal(text, token.Text);
         Assert.Equal("a", token.ValueText);
-        Assert.Empty(token.LeadingTrivia);
-        Assert.Empty(token.TrailingTrivia);
+        AssertNoTrivia(token);
         Assert.Single(token.Diagnostics);
 
         AssertNextToken(tokens, out token);

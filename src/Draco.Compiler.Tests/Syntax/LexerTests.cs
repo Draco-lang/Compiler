@@ -1132,7 +1132,7 @@ public sealed class LexerTests
     [InlineData("hello_123", TokenType.Identifier)]
     [InlineData("_hello_123", TokenType.Identifier)]
     [Trait("Feature", "Words")]
-    internal void TestKeyword(string text, TokenType tokenType)
+    public void TestKeyword(string text, TokenType tokenType)
     {
         var tokens = Lex(text);
 
@@ -1155,7 +1155,7 @@ public sealed class LexerTests
     [InlineData(":", TokenType.Colon)]
     [InlineData(";", TokenType.Semicolon)]
     [Trait("Feature", "Punctuations")]
-    internal void TestPunctuation(string text, TokenType tokenType)
+    public void TestPunctuation(string text, TokenType tokenType)
     {
         var tokens = Lex(text);
 
@@ -1183,7 +1183,7 @@ public sealed class LexerTests
     [InlineData("and", TokenType.KeywordAnd)]
     [InlineData("not", TokenType.KeywordNot)]
     [Trait("Feature", "Operators")]
-    internal void TestOperator(string text, TokenType tokenType)
+    public void TestOperator(string text, TokenType tokenType)
     {
         var tokens = Lex(text);
 
@@ -1204,7 +1204,7 @@ public sealed class LexerTests
     [InlineData("12.3", TokenType.LiteralFloat)]
     [InlineData("true", TokenType.KeywordTrue)]
     [Trait("Feature", "Literals")]
-    internal void TestLiteral(string text, TokenType tokenType)
+    public void TestLiteral(string text, TokenType tokenType)
     {
         var tokens = Lex(text);
 
@@ -1221,7 +1221,7 @@ public sealed class LexerTests
 
     [Fact]
     [Trait("Feature", "Literals")]
-    internal void TestIntLiteralsFunctionAttached()
+    public void TestIntLiteralWithMethodCall()
     {
         string text = "56.MyFunction()";
         var tokens = Lex(text);
@@ -1266,7 +1266,7 @@ public sealed class LexerTests
     [InlineData(@"'\u{3F}'", "?")]
     [InlineData(@"'\u{3f}'", "?")]
     [Trait("Feature", "Literals")]
-    internal void TestCharLiteral(string text, string charValue)
+    public void TestCharLiteral(string text, string charValue)
     {
         var tokens = Lex(text);
 
@@ -1283,7 +1283,7 @@ public sealed class LexerTests
     }
 
     [Fact]
-    internal void TestUnclosedCharLiteral()
+    public void TestUnclosedCharLiteral()
     {
         string text = "'a";
         var tokens = Lex(text);

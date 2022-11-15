@@ -15,11 +15,7 @@ internal class Program
 {
     internal static int Main(string[] args)
     {
-        var comp = new Compilation(File.ReadAllText("C:\\Users\\kubab\\source\\repos\\Draco-Compiler\\src\\Draco.Compiler.Cli\\bin\\test.draco"));
-        ScriptingEngine.CompileToParseTree(comp);
-        Console.WriteLine(new CodeFormater().Format(comp.Parsed!));
-        return 0;
-        //return ConfigureCommands().Invoke(args);
+        return ConfigureCommands().Invoke(args);
     }
 
     private static RootCommand ConfigureCommands()

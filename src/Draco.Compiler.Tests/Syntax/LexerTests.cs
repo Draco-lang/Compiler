@@ -821,7 +821,6 @@ public sealed class LexerTests
         Assert.Equal("}", token.Text);
         AssertNoTriviaOrDiagnostics(token);
 
-
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);
         Assert.Equal(", y = ", token.Text);
@@ -857,7 +856,6 @@ public sealed class LexerTests
         Assert.Equal(TokenType.InterpolationEnd, token.Type);
         Assert.Equal("}", token.Text);
         AssertNoTriviaOrDiagnostics(token);
-
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);

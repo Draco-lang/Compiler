@@ -27,6 +27,7 @@ internal class Formater : ParseTreeTransformerBase
             return result.ToString();
         }
     }
+
     private IEnumerable<Token> GetTokens(ParseTree tree)
     {
         var tokens = new List<Token>();
@@ -43,11 +44,13 @@ internal class Formater : ParseTreeTransformerBase
         this.indentCount++;
         return token;
     }
+
     private Token RemoveIndentation(Token token)
     {
         this.indentCount--;
         return token;
     }
+
     public ParseTree Format(ParseTree tree)
     {
         this.tokens = this.GetTokens(tree).GetEnumerator();
@@ -59,21 +62,19 @@ internal class Formater : ParseTreeTransformerBase
 
     public override Token TransformToken(Token token, out bool changed)
     {
-        // TODO: maybe change lastToken and nextToken to Token instead of TokenType?
         if (token.Type == TokenType.EndOfInput)
         {
             changed = false;
             return token;
         }
+
         Token? newToken = token.Type switch
         {
             TokenType.Assign or TokenType.Colon or TokenType.Comma or TokenType.Equal or
             TokenType.GreaterEqual or TokenType.GreaterThan or TokenType.InterpolationStart or
-            TokenType.KeywordAnd or TokenType.KeywordElse or TokenType.KeywordFrom or
-            TokenType.KeywordGoto or TokenType.KeywordIf or TokenType.KeywordImport or
-            TokenType.KeywordMod or TokenType.KeywordNot or
-            TokenType.KeywordOr or TokenType.KeywordRem or TokenType.KeywordReturn or
-            TokenType.KeywordWhile or TokenType.LessEqual or TokenType.LessThan or
+            TokenType.KeywordAnd or TokenType.KeywordFrom or TokenType.KeywordImport or
+            TokenType.KeywordMod or TokenType.KeywordNot or TokenType.KeywordOr or
+            TokenType.KeywordRem or TokenType.LessEqual or TokenType.LessThan or
             TokenType.Minus or TokenType.MinusAssign or TokenType.NotEqual or
             TokenType.Plus or TokenType.PlusAssign or TokenType.Slash or
             TokenType.SlashAssign or TokenType.Star or TokenType.StarAssign
@@ -84,32 +85,58 @@ internal class Formater : ParseTreeTransformerBase
 
             TokenType.ParenOpen => token.NewTrailingTrivia(TokenType.Whitespace, ""),
 
-            TokenType.ParenClose => this.nextToken == TokenType.CurlyOpen ? token.NewTrailingTrivia(TokenType.Whitespace, " ") : token.NewTrailingTrivia(TokenType.Whitespace, ""),
+            TokenType.ParenClose => this.nextToken switch
+            {
+                TokenType.ParenClose or TokenType.Semicolon => token.NewTrailingTrivia(TokenType.Whitespace, ""),
+                _ => token.NewTrailingTrivia(TokenType.Whitespace, " ")
+            },
 
             TokenType.Semicolon => token.NewTrailingTrivia(TokenType.Newline, Environment.NewLine),
 
-            TokenType.CurlyOpen => this.AddIndentation(token).NewTrailingTrivia(TokenType.Newline, Environment.NewLine),
+            TokenType.CurlyOpen => this.lastToken switch
+            {
+                TokenType.Semicolon or TokenType.CurlyClose => this.AddIndentation(token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Newline, Environment.NewLine)),
+                _ => this.AddIndentation(token).NewTrailingTrivia(TokenType.Newline, Environment.NewLine)
+            },
 
-            TokenType.CurlyClose => this.RemoveIndentation(token).NewLeadingTrivia(TokenType.Whitespace, this.indentation),
+            TokenType.CurlyClose => this.RemoveIndentation(token).NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Newline, Environment.NewLine),
+
+            TokenType.KeywordReturn => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, " "),
+
+            TokenType.KeywordGoto => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, " "),
+
+            TokenType.KeywordIf => this.lastToken switch
+            {
+                TokenType.Semicolon or TokenType.CurlyClose => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, " "),
+                _ => token.NewTrailingTrivia(TokenType.Whitespace, " ")
+            },
+
+            TokenType.KeywordElse => this.lastToken switch
+            {
+                TokenType.Semicolon or TokenType.CurlyClose => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, " "),
+                _ => token.NewTrailingTrivia(TokenType.Whitespace, " ")
+            },
+
+            TokenType.KeywordWhile => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, " "),
 
             TokenType.Identifier => (this.lastToken, this.nextToken) switch
             {
                 { lastToken: TokenType.KeywordVal or TokenType.KeywordVar, nextToken: TokenType.Colon }
                 => token.NewTrailingTrivia(TokenType.Whitespace, ""),
 
-                { lastToken: TokenType.KeywordFrom or TokenType.KeywordVal or
-                TokenType.KeywordVar or TokenType.Colon }
+                { lastToken: TokenType.KeywordFrom or TokenType.KeywordVal or TokenType.KeywordVar or TokenType.Colon }
                 => token.NewTrailingTrivia(TokenType.Whitespace, " "),
 
                 { lastToken: TokenType.Semicolon or TokenType.CurlyOpen, nextToken: TokenType.Assign } => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, " "),
                 { lastToken: TokenType.Semicolon or TokenType.CurlyOpen } => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, ""),
 
-                _ => token.NewTrailingTrivia(TokenType.Whitespace, ""),
+                { nextToken: TokenType.Semicolon or TokenType.ParenOpen or TokenType.ParenClose } => token.NewTrailingTrivia(TokenType.Whitespace, ""),
+                _ => token.NewTrailingTrivia(TokenType.Whitespace, " "),
             },
 
             TokenType.LiteralInteger or TokenType.LiteralFloat => (this.lastToken, this.nextToken) switch
             {
-                { nextToken: TokenType.Semicolon } => token.NewTrailingTrivia(TokenType.Whitespace, ""),
+                { nextToken: TokenType.Semicolon or TokenType.ParenClose } => token.NewTrailingTrivia(TokenType.Whitespace, ""),
                 _ => token.NewTrailingTrivia(TokenType.Whitespace, " ")
             },
             _ => null

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Codegen;
 using Draco.Query;
 
 namespace Draco.Compiler.Api;
@@ -39,4 +39,14 @@ public sealed class Compilation
     /// <returns>The <see cref="SemanticModel"/> with <paramref name="tree"/> as the root.</returns>
     public SemanticModel GetSemanticModel(ParseTree tree) =>
         new(this.db, tree);
+
+    /// <summary>
+    /// Emits compiled C# code to a <see cref="Stream"/>.
+    /// </summary>
+    /// <param name="csStream">The stream to write the C# code to.</param>
+    public void EmitCSharp(Stream csStream)
+    {
+        var codegen = new CSharpCodegen(this.GetSemanticModel(this.Parsed!), csStream);
+        codegen.Generate();
+    }
 }

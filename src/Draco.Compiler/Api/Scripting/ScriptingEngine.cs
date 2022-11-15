@@ -118,7 +118,11 @@ public static class ScriptingEngine
     public static void CompileToCSharpCode(Compilation compilation)
     {
         compilation.Parsed = ParseTree.Parse(compilation.Source);
-        compilation.GeneratedCSharp = CSharpCodegen.Transpile(compilation.GetSemanticModel(compilation.Parsed));
+        using var ms = new MemoryStream();
+        compilation.EmitCSharp(ms);
+        ms.Position = 0;
+        var code = new StreamReader(ms).ReadToEnd();
+        compilation.GeneratedCSharp = code;
     }
 
     public static void CompileToParseTree(Compilation compilation)

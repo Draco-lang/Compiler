@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.Utilities;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api.Semantics;
 using static Draco.Compiler.Api.Syntax.ParseTree;
+using System.IO;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -17,24 +18,16 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 {
-    public static string Transpile(SemanticModel semanticModel)
-    {
-        var codegen = new CSharpCodegen(semanticModel);
-        codegen.Generate();
-        return codegen.Code;
-    }
-
-    public string Code => this.output.ToString();
-
     private readonly SemanticModel semanticModel;
-    private readonly StringBuilder output = new();
+    private readonly StreamWriter output;
     private readonly Dictionary<ISymbol, string> symbolNames = new();
     private int registerCount = 0;
     private int labelCount = 0;
 
-    private CSharpCodegen(SemanticModel semanticModel)
+    public CSharpCodegen(SemanticModel semanticModel, Stream output)
     {
         this.semanticModel = semanticModel;
+        this.output = new(output);
     }
 
     private string AllocateRegister() => $"reg_{this.registerCount++}";
@@ -70,16 +63,17 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         return this.AllocateNameForSymbol(symbol);
     }
 
-    private void Generate()
+    public void Generate()
     {
         this.AppendPrelude();
         this.AppendMainInvocation();
         this.AppendProgramStart();
         this.Visit(this.semanticModel.Root);
         this.AppendProgramEnd();
+        this.output.Flush();
     }
 
-    private void AppendPrelude() => this.output.AppendLine("""
+    private void AppendPrelude() => this.output.WriteLine("""
         using static Prelude;
         internal static class Prelude
         {
@@ -108,7 +102,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         }
         """);
 
-    private void AppendMainInvocation() => this.output.AppendLine("""
+    private void AppendMainInvocation() => this.output.WriteLine("""
         internal sealed class Program
         {
             internal static void Main(string[] args) =>
@@ -116,68 +110,67 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         }
         """);
 
-    private void AppendProgramStart() => this.output.AppendLine("""
+    private void AppendProgramStart() => this.output.WriteLine("""
         internal sealed class DracoProgram
         {
         """);
 
-    private void AppendProgramEnd() => this.output.AppendLine("}");
+    private void AppendProgramEnd() => this.output.WriteLine("}");
 
-    private StringBuilder Indent1() => this.output.Append("    ");
-    private StringBuilder Indent2() => this.output.Append("        ");
+    private void Indent1() => this.output.Write("    ");
+    private void Indent2() => this.output.Write("        ");
 
     public override string VisitFuncDecl(Decl.Func node)
     {
-        this
-            .Indent1()
-            .Append($"internal static dynamic {node.Identifier.Text}")
-            .Append('(')
-            .AppendJoin(
-                ", ",
-                node.Params.Value.Elements
-                    .Select(punct => punct.Value)
-                    .Select(param => $"dynamic {this.DefinedSymbol(param)}"))
-            .AppendLine(")");
-        this
-            .Indent1()
-            .AppendLine("{");
+        this.Indent1();
+        this.output.Write($"internal static dynamic {node.Identifier.Text}");
+        this.output.Write('(');
+        this.output.Write(string.Join(
+            ", ",
+            node.Params.Value.Elements
+                .Select(punct => punct.Value)
+                .Select(param => $"dynamic {this.DefinedSymbol(param)}")));
+        this.output.WriteLine(')');
+
+        this.Indent1();
+        this.output.WriteLine('{');
+
         this.VisitFuncBody(node.Body);
-        this
-            .Indent2()
-            .AppendLine("return default(Unit);");
-        this
-            .Indent1()
-            .AppendLine("}");
+
+        this.Indent2();
+        this.output.WriteLine("return default(Unit);");
+
+        this.Indent1();
+        this.output.WriteLine('}');
+
         return this.Default;
     }
 
     public override string VisitInlineBodyFuncBody(FuncBody.InlineBody node)
     {
         var value = this.VisitExpr(node.Expression);
-        this
-            .Indent2()
-            .AppendLine($"return {value};");
+        this.Indent2();
+        this.output.WriteLine($"return {value};");
         return this.Default;
     }
 
     public override string VisitLabelDecl(Decl.Label node)
     {
-        this
-            .Indent1()
-            .AppendLine($"{this.DefinedSymbol(node)}:;");
+        this.Indent1();
+        this.output.WriteLine($"{this.DefinedSymbol(node)}:;");
         return this.Default;
     }
 
     public override string VisitVariableDecl(Decl.Variable decl)
     {
         var varReg = this.DefinedSymbol(decl);
-        this
-            .Indent2()
-            .AppendLine($"dynamic {varReg} = default(Unit);");
+        this.Indent2();
+        this.output.WriteLine($"dynamic {varReg} = default(Unit);");
         if (decl.Initializer is not null)
         {
             var value = this.VisitExpr(decl.Initializer.Value);
-            this.Indent2().AppendLine($"{varReg} = {value};");
+            this.Indent2();
+            this.output.WriteLine($"{varReg} = {value};");
         }
         return this.Default;
     }
@@ -185,9 +178,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     public override string VisitGotoExpr(Expr.Goto node)
     {
         var label = this.ReferencedSymbol(node.Target);
-        this
-            .Indent2()
-            .AppendLine($"goto {label};");
+        this.Indent2();
+        this.output.WriteLine($"goto {label};");
         return this.Default;
     }
 
@@ -195,9 +187,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     {
         var result = "default(Unit)";
         if (node.Expression is not null) result = this.VisitExpr(node.Expression);
-        this
-            .Indent2()
-            .AppendLine($"return {result};");
+        this.Indent2();
+        this.output.WriteLine($"return {result};");
         return this.Default;
     }
 
@@ -206,9 +197,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         var func = this.VisitExpr(node.Called);
         var args = node.Args.Value.Elements.Select(a => this.VisitExpr(a.Value)).ToList();
         var resultReg = this.AllocateRegister();
-        this
-            .Indent2()
-            .AppendLine($"dynamic {resultReg} = {func}({string.Join(", ", args)});");
+        this.Indent2();
+        this.output.WriteLine($"dynamic {resultReg} = {func}({string.Join(", ", args)});");
         return resultReg;
     }
 
@@ -230,9 +220,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         var result = this.AllocateRegister();
         var op = node.Operator.Text;
         var subexpr = this.VisitExpr(node.Operand);
-        this
-            .Indent2()
-            .AppendLine($"dynamic {result} = {op} {subexpr};");
+        this.Indent2();
+        this.output.WriteLine($"dynamic {result} = {op} {subexpr};");
         return subexpr;
     }
 
@@ -243,36 +232,31 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         var left = this.VisitExpr(node.Left);
         var right = this.VisitExpr(node.Right);
         var op = node.Operator.Text;
-        this
-            .Indent2()
-            .AppendLine($"dynamic {result} = {left} {op} {right};");
+        this.Indent2();
+        this.output.WriteLine($"dynamic {result} = {left} {op} {right};");
         return result;
     }
 
     public override string VisitRelationalExpr(Expr.Relational node)
     {
         var result = this.AllocateRegister();
-        this
-            .Indent2()
-            .AppendLine($"dynamic {result} = false;");
+        this.Indent2();
+        this.output.WriteLine($"dynamic {result} = false;");
         var last = this.VisitExpr(node.Left);
         foreach (var cmp in node.Comparisons)
         {
             var op = cmp.Operator.Text;
             var right = this.VisitExpr(cmp.Right);
-            this
-                .Indent2()
-                .AppendLine($"if ({last} {op} {right}) {{");
+            this.Indent2();
+            this.output.WriteLine($"if ({last} {op} {right}) {{");
             last = right;
         }
-        this
-            .Indent2()
-            .AppendLine($"{result} = true;");
+        this.Indent2();
+        this.output.WriteLine($"{result} = true;");
         foreach (var _ in node.Comparisons)
         {
-            this
-                .Indent2()
-                .AppendLine("}");
+            this.Indent2();
+            this.output.WriteLine("}");
         }
         return result;
     }
@@ -289,29 +273,28 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     public override string VisitIfExpr(Expr.If node)
     {
         var result = this.AllocateRegister();
-        this
-            .Indent2()
-            .AppendLine($"dynamic {result} = default(Unit);");
+        this.Indent2();
+        this.output.WriteLine($"dynamic {result} = default(Unit);");
         var elseLabel = this.AllocateLabel();
         var endLabel = this.AllocateLabel();
         var condition = this.VisitExpr(node.Condition.Value);
-        this
-            .Indent2()
-            .AppendLine($"if (!{condition}) goto {elseLabel};");
+        this.Indent2();
+        this.output.WriteLine($"if (!{condition}) goto {elseLabel};");
         var thenValue = this.VisitExpr(node.Then);
-        this.Indent2().AppendLine($"{result} = {thenValue ?? "default(Unit)"};");
-        this.Indent2().AppendLine($"goto {endLabel};");
-        this
-            .Indent1()
-            .AppendLine($"{elseLabel}:;");
+        this.Indent2();
+        this.output.WriteLine($"{result} = {thenValue ?? "default(Unit)"};");
+        this.Indent2();
+        this.output.WriteLine($"goto {endLabel};");
+        this.Indent1();
+        this.output.WriteLine($"{elseLabel}:;");
         if (node.Else is not null)
         {
             var elseValue = this.VisitExpr(node.Else.Expression);
-            this.Indent2().AppendLine($"{result} = {elseValue ?? "default(Unit)"};");
+            this.Indent2();
+            this.output.WriteLine($"{result} = {elseValue ?? "default(Unit)"};");
         }
-        this
-            .Indent1()
-            .AppendLine($"{endLabel}:;");
+        this.Indent1();
+        this.output.WriteLine($"{endLabel}:;");
         return result;
     }
 
@@ -319,39 +302,38 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     {
         var startLabel = this.AllocateLabel();
         var endLabel = this.AllocateLabel();
-        this.Indent1().AppendLine($"{startLabel}:;");
+        this.Indent1();
+        this.output.WriteLine($"{startLabel}:;");
         var cond = this.VisitExpr(node.Condition.Value);
-        this
-            .Indent2()
-            .AppendLine($"if (!{cond}) goto {endLabel};");
+        this.Indent2();
+        this.output.WriteLine($"if (!{cond}) goto {endLabel};");
         this.VisitExpr(node.Expression);
-        this.Indent2().AppendLine($"goto {startLabel};");
-        this.Indent1().AppendLine($"{endLabel}:;");
+        this.Indent2();
+        this.output.WriteLine($"goto {startLabel};");
+        this.Indent1();
+        this.output.WriteLine($"{endLabel}:;");
         return "default(Unit)";
     }
 
     public override string VisitStringExpr(Expr.String node)
     {
         var result = this.AllocateRegister();
-        this
-            .Indent2()
-            .AppendLine($"dynamic {result} = new System.Text.StringBuilder();");
+        this.Indent2();
+        this.output.WriteLine($"dynamic {result} = new System.Text.StringBuilder();");
         foreach (var part in node.Parts)
         {
             if (part is StringPart.Interpolation i)
             {
                 var subexpr = this.VisitExpr(i.Expression);
-                this
-                    .Indent2()
-                    .AppendLine($"{result}.Append({subexpr}.ToString());");
+                this.Indent2();
+                this.output.WriteLine($"{result}.Append({subexpr}.ToString());");
             }
             else
             {
                 var c = (StringPart.Content)part;
                 var text = c.Value.ValueText!.Substring(c.Cutoff); //Infer# says ValueText could be null.
-                this
-                    .Indent2()
-                    .AppendLine($"{result}.Append(\"{StringUtils.Unescape(text)}\");");
+                this.Indent2();
+                this.output.WriteLine($"{result}.Append(\"{StringUtils.Unescape(text)}\");");
             }
         }
         return $"{result}.ToString()";

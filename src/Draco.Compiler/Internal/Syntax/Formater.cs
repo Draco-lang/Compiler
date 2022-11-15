@@ -11,49 +11,56 @@ using Token = Draco.Compiler.Internal.Syntax.ParseTree.Token;
 
 namespace Draco.Compiler.Internal.Syntax;
 
-enum TokenContext
-{
-    IdentifierSpaceAfter,
-    IdentifierNothingAfter,
-    CurlyOpenNewlineAfter,
-    CurlyCloseNewlineBeforeAndAfter,
-    ParenCloseNothingAfter,
-}
-
 internal class Formater : ParseTreeTransformerBase
 {
-    private readonly Queue<TokenContext> context = new Queue<TokenContext>();
+    private TokenType lastToken;
+    private TokenType nextToken;
+    private IEnumerator<Token> tokens;
+    private int indentCount = 0;
+    private string indentation
+    {
+        get
+        {
+            var oneIndent = "    ";
+            var result = new StringBuilder();
+            for (int i = 0; i < this.indentCount; i++, result.Append(oneIndent)) ;
+            return result.ToString();
+        }
+    }
+    private IEnumerable<Token> GetTokens(ParseTree tree)
+    {
+        var tokens = new List<Token>();
+        foreach (var child in tree.Children)
+        {
+            if (child is ParseTree.Token tok) tokens.Add(tok);
+            else tokens.AddRange(this.GetTokens(child));
+        }
+        return tokens;
+    }
+
+    private Token AddIndentation(Token token)
+    {
+        this.indentCount++;
+        return token;
+    }
+    private Token RemoveIndentation(Token token)
+    {
+        this.indentCount--;
+        return token;
+    }
     public ParseTree Format(ParseTree tree)
     {
+        this.tokens = this.GetTokens(tree).GetEnumerator();
+        this.tokens.MoveNext();
+        this.tokens.MoveNext();
+        this.nextToken = this.tokens.Current.Type;
         return this.Transform(tree, out bool changed);
-    }
-
-    // TODO: add stack that can hold the curent context e.g Should identifier have space after or not,
-    // in specific overrides just add to this stack and then call base.VisitOverrideName (queue might be better then stack?)
-    public override ParseTree.Decl.Variable TransformVariableDecl(ParseTree.Decl.Variable node, out bool changed)
-    {
-        // TODO: cover all variable decl cases
-        if (node.Type is not null)
-        {
-            this.context.Enqueue(TokenContext.IdentifierNothingAfter);
-            this.context.Enqueue(TokenContext.IdentifierSpaceAfter);
-        }
-        return base.TransformVariableDecl(node, out changed);
-    }
-
-    public override ParseTree.Decl.Func TransformFuncDecl(ParseTree.Decl.Func node, out bool changed)
-    {
-        // TODO: check for type anotation
-        this.context.Enqueue(TokenContext.IdentifierNothingAfter);
-        this.context.Enqueue(TokenContext.ParenCloseNothingAfter);
-        this.context.Enqueue(TokenContext.CurlyOpenNewlineAfter);
-        this.context.Enqueue(TokenContext.CurlyCloseNewlineBeforeAndAfter);
-        return base.TransformFuncDecl(node, out changed);
     }
 
     public override Token TransformToken(Token token, out bool changed)
     {
-        if(token.Type == TokenType.EndOfInput)
+        // TODO: maybe change lastToken and nextToken to Token instead of TokenType?
+        if (token.Type == TokenType.EndOfInput)
         {
             changed = false;
             return token;
@@ -63,35 +70,61 @@ internal class Formater : ParseTreeTransformerBase
             TokenType.Assign or TokenType.Colon or TokenType.Comma or TokenType.Equal or
             TokenType.GreaterEqual or TokenType.GreaterThan or TokenType.InterpolationStart or
             TokenType.KeywordAnd or TokenType.KeywordElse or TokenType.KeywordFrom or
-            TokenType.KeywordFunc or TokenType.KeywordGoto or TokenType.KeywordIf or
-            TokenType.KeywordImport or TokenType.KeywordMod or TokenType.KeywordNot or
+            TokenType.KeywordGoto or TokenType.KeywordIf or TokenType.KeywordImport or
+            TokenType.KeywordMod or TokenType.KeywordNot or
             TokenType.KeywordOr or TokenType.KeywordRem or TokenType.KeywordReturn or
-            TokenType.KeywordVal or TokenType.KeywordVar or TokenType.KeywordWhile or
-            TokenType.LessEqual or TokenType.LessThan or TokenType.Minus or
-            TokenType.MinusAssign or TokenType.NotEqual or TokenType.Plus or
-            TokenType.PlusAssign or TokenType.Slash or TokenType.SlashAssign or
-            TokenType.Star or TokenType.StarAssign
+            TokenType.KeywordWhile or TokenType.LessEqual or TokenType.LessThan or
+            TokenType.Minus or TokenType.MinusAssign or TokenType.NotEqual or
+            TokenType.Plus or TokenType.PlusAssign or TokenType.Slash or
+            TokenType.SlashAssign or TokenType.Star or TokenType.StarAssign
             => token.NewTrailingTrivia(TokenType.Whitespace, " "),
+
+            TokenType.KeywordVal or TokenType.KeywordVar or TokenType.KeywordFunc
+            => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, " "),
+
             TokenType.ParenOpen => token.NewTrailingTrivia(TokenType.Whitespace, ""),
+
+            TokenType.ParenClose => this.nextToken == TokenType.CurlyOpen ? token.NewTrailingTrivia(TokenType.Whitespace, " ") : token.NewTrailingTrivia(TokenType.Whitespace, ""),
+
+            TokenType.Semicolon => token.NewTrailingTrivia(TokenType.Newline, Environment.NewLine),
+
+            TokenType.CurlyOpen => this.AddIndentation(token).NewTrailingTrivia(TokenType.Newline, Environment.NewLine),
+
+            TokenType.CurlyClose => this.RemoveIndentation(token).NewLeadingTrivia(TokenType.Whitespace, this.indentation),
+
+            TokenType.Identifier => (this.lastToken, this.nextToken) switch
+            {
+                { lastToken: TokenType.KeywordVal or TokenType.KeywordVar, nextToken: TokenType.Colon }
+                => token.NewTrailingTrivia(TokenType.Whitespace, ""),
+
+                { lastToken: TokenType.KeywordFrom or TokenType.KeywordVal or
+                TokenType.KeywordVar or TokenType.Colon }
+                => token.NewTrailingTrivia(TokenType.Whitespace, " "),
+
+                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen, nextToken: TokenType.Assign } => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, " "),
+                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen } => token.NewLeadingTrivia(TokenType.Whitespace, this.indentation).NewTrailingTrivia(TokenType.Whitespace, ""),
+
+                _ => token.NewTrailingTrivia(TokenType.Whitespace, ""),
+            },
+
+            TokenType.LiteralInteger or TokenType.LiteralFloat => (this.lastToken, this.nextToken) switch
+            {
+                { nextToken: TokenType.Semicolon } => token.NewTrailingTrivia(TokenType.Whitespace, ""),
+                _ => token.NewTrailingTrivia(TokenType.Whitespace, " ")
+            },
             _ => null
         };
+        this.lastToken = token.Type;
+        this.tokens.MoveNext();
+        if (this.tokens.Current is null) this.nextToken = TokenType.EndOfInput;
+        else this.nextToken = this.tokens.Current.Type;
         if (newToken is not null)
         {
-            changed = this.checkTokensValueEaqual(token, newToken);
+            changed = !this.checkTokensValueEaqual(token, newToken);
             return newToken;
         }
-        if (!this.context.TryDequeue(out TokenContext currentContext)) throw new InvalidOperationException("Expected token context");
-        newToken = currentContext switch
-        {
-            TokenContext.IdentifierSpaceAfter => token.NewTrailingTrivia(TokenType.Whitespace, " "),
-            TokenContext.IdentifierNothingAfter => token.NewTrailingTrivia(TokenType.Whitespace, ""),
-            TokenContext.CurlyOpenNewlineAfter => token.NewTrailingTrivia(TokenType.Newline, "\n"),
-            TokenContext.CurlyCloseNewlineBeforeAndAfter => token.NewLeadingTrivia(TokenType.Newline, "\n").NewTrailingTrivia(TokenType.Newline, "\n"),
-            TokenContext.ParenCloseNothingAfter => token.NewTrailingTrivia(TokenType.Whitespace, ""),
-            _ => throw new ArgumentOutOfRangeException(nameof(currentContext))
-        };
-        changed = this.checkTokensValueEaqual(token, newToken);
-        return newToken;
+        changed = false;
+        return token;
     }
 
     private bool checkTokensValueEaqual(Token tok1, Token tok2)
@@ -100,6 +133,12 @@ internal class Formater : ParseTreeTransformerBase
         for (int i = 0; i < tok1.TrailingTrivia.Length; i++)
         {
             if (tok1.TrailingTrivia[i].Text != tok2.TrailingTrivia[i].Text) return false;
+        }
+
+        if (tok1.LeadingTrivia.Length != tok2.LeadingTrivia.Length) return false;
+        for (int i = 0; i < tok1.LeadingTrivia.Length; i++)
+        {
+            if (tok1.LeadingTrivia[i].Text != tok2.LeadingTrivia[i].Text) return false;
         }
         return true;
     }

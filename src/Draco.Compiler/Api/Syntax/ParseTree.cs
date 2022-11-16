@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -81,6 +82,11 @@ public abstract partial class ParseTree
     public sealed partial class Token
     {
         public TokenType Type => this.Green.Type;
+    }
+
+    public ParseTree Format()
+    {
+        return ToRed(null, new ParseTreeFormatter().Format(this.Green));
     }
 }
 

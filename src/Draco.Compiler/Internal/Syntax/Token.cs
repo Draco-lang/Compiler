@@ -106,7 +106,60 @@ internal abstract partial record class ParseTree
             if (this.TrailingTrivia.Length > 0) result.AppendLine($"  trailing trivia: {this.TrailingTrivia}");
             return result.ToString().TrimEnd();
         }
+
+        public bool Equals(Token? other)
+        {
+            if (other is null || other is not Token tok) return false;
+            if (this.Type != tok.Type) return false;
+            if (this.Text != tok.Text) return false;
+            if (this.Value != tok.Value) return false;
+            if (this.ValueText != tok.ValueText) return false;
+            if (this.Width != tok.Width) return false;
+
+            if (this.Diagnostics.Length != tok.Diagnostics.Length) return false;
+            for (int i = 0; i < tok.Diagnostics.Length; i++)
+            {
+                if (this.Diagnostics[i] != tok.Diagnostics[i]) return false;
+            }
+
+            if (this.LeadingTrivia.Length != tok.LeadingTrivia.Length) return false;
+            for (int i = 0; i < tok.TrailingTrivia.Length; i++)
+            {
+                if (this.TrailingTrivia[i] != tok.TrailingTrivia[i]) return false;
+            }
+
+            if (this.LeadingTrivia.Length != tok.LeadingTrivia.Length) return false;
+            for (int i = 0; i < tok.LeadingTrivia.Length; i++)
+            {
+                if (this.LeadingTrivia[i] != tok.LeadingTrivia[i]) return false;
+            }
+
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            HashCode hash = new();
+            hash.Add(this.Type);
+            hash.Add(this.Text);
+            hash.Add(this.Value);
+            hash.Add(this.Width);
+            foreach (var diag in this.LeadingTrivia)
+            {
+                hash.Add(diag);
+            }
+            foreach (var diag in this.TrailingTrivia)
+            {
+                hash.Add(diag);
+            }
+            foreach (var diag in this.Diagnostics)
+            {
+                hash.Add(diag);
+            }
+            return hash.ToHashCode();
+        }
     }
+
 
     // Factory functions
     internal partial record class Token
@@ -156,6 +209,7 @@ internal abstract partial record class ParseTree
             leadingTrivia: ImmutableArray<Token>.Empty,
             trailingTrivia: ImmutableArray<Token>.Empty,
             diagnostics: diagnostics);
+
     }
 
     // Builder type
@@ -207,45 +261,76 @@ internal abstract partial record class ParseTree
                     diagnostics: diags);
             }
 
+            public static Builder From(Token token)
+            {
+                return new Builder()
+                    .SetType(token.Type)
+                    .SetText(token.Text)
+                    .SetValue(token.Value)
+                    .SetLeadingTrivia(token.LeadingTrivia)
+                    .SetTrailingTrivia(token.TrailingTrivia)
+                    .SetDiagnostics(token.Diagnostics);
+            }
+
             public Builder SetType(TokenType tokenType)
             {
-                if (this.Type is not null) throw new InvalidOperationException("token type already set");
                 this.Type = tokenType;
                 return this;
             }
 
             public Builder SetText(string text)
             {
-                if (this.Text is not null) throw new InvalidOperationException("text already set");
                 this.Text = text;
                 return this;
             }
 
             public Builder SetValue<T>(T value)
             {
-                if (this.Value is not null) throw new InvalidOperationException("value already set");
                 this.Value = value;
                 return this;
             }
 
             public Builder SetLeadingTrivia(ImmutableArray<Token> trivia)
             {
-                if (this.LeadingTrivia is not null) throw new InvalidOperationException("leading trivia already set");
                 this.LeadingTrivia = trivia;
                 return this;
             }
 
             public Builder SetTrailingTrivia(ImmutableArray<Token> trivia)
             {
-                if (this.TrailingTrivia is not null) throw new InvalidOperationException("trailing trivia already set");
                 this.TrailingTrivia = trivia;
                 return this;
             }
 
             public Builder SetDiagnostics(ImmutableArray<Diagnostic> diagnostics)
             {
-                if (this.Diagnostics is not null) throw new InvalidOperationException("diagnostics already set");
                 this.Diagnostics = diagnostics;
+                return this;
+            }
+
+            public Builder SetLeadingTrivia(TokenType type, string value)
+            {
+                var trivia = Token.From(type, value);
+                var array = ImmutableArray.CreateBuilder<Token>();
+                array.Add(trivia);
+                this.LeadingTrivia = array.ToImmutable();
+                return this;
+            }
+
+            public Builder SetTrailingTrivia(TokenType type, string value)
+            {
+                var trivia = Token.From(type, value);
+                var array = ImmutableArray.CreateBuilder<Token>();
+                array.Add(trivia);
+                this.TrailingTrivia = array.ToImmutable();
+                return this;
+            }
+
+            public Builder SetDiagnostics(Diagnostic diagnostics)
+            {
+                var array = ImmutableArray.CreateBuilder<Diagnostic>();
+                array.Add(diagnostics);
+                this.Diagnostics = array.ToImmutable();
                 return this;
             }
         }

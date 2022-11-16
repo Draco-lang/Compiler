@@ -16,6 +16,15 @@ using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilation
 namespace Draco.Compiler.Api;
 
 /// <summary>
+/// The result type of code emission.
+/// </summary>
+/// <param name="Success">True, if the emission was successful without errors.</param>
+/// <param name="Diagnostics">The <see cref="Diagnostic"/>s produced during emission.</param>
+public readonly record struct EmitResult(
+    bool Success,
+    ImmutableArray<Diagnostic> Diagnostics);
+
+/// <summary>
 /// Represents a single compilation session.
 /// </summary>
 public sealed class Compilation
@@ -94,7 +103,7 @@ public sealed class Compilation
     /// <param name="peStream">The stream to write the binary to.</param>
     /// <param name="csStream">The stream to write the compiled C# code to.</param>
     /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
-    public void Emit(
+    public EmitResult Emit(
         Stream peStream,
         Stream? csStream = null,
         Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null)
@@ -115,7 +124,22 @@ public sealed class Compilation
             references: ReferenceAssemblies.Net60,
             options: options);
         var emitResult = cSharpCompilation.Emit(peStream);
-        // TODO: Expose compilation errors
-        // if (!emitResult.Success) we have errors in emitResult.Diagnostics;
+
+        var diags = ImmutableArray.CreateBuilder<Diagnostic>();
+        foreach (var diag in emitResult.Diagnostics)
+        {
+            // TODO: Clean this mess up
+            diags.Add(new Diagnostic(
+                Internal.Diagnostics.Diagnostic.Create(
+                    template: Internal.Diagnostics.DiagnosticTemplate.Create(
+                        title: "C# compilation error",
+                        severity: DiagnosticSeverity.Error,
+                        format: "Internal compiler error: {0}"),
+                    location: default,
+                    formatArgs: diag.GetMessage()),
+                null));
+        }
+
+        return new(emitResult.Success, diags.ToImmutable());
     }
 }

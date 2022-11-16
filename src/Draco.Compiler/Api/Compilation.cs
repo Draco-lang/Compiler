@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Query;
+using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 
 namespace Draco.Compiler.Api;
 
@@ -72,7 +73,7 @@ public sealed class Compilation
     public void Emit(
         Stream peStream,
         Stream? csStream = null,
-        Func<Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions, Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions>? csCompilerOptionBuilder = null)
+        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null)
     {
         csStream ??= new MemoryStream();
         this.EmitCSharp(csStream);
@@ -81,7 +82,7 @@ public sealed class Compilation
         using var csStreamReader = new StreamReader(csStream);
         var csText = csStreamReader.ReadToEnd();
 
-        var options = new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
+        var options = new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
         if (csCompilerOptionBuilder is not null) options = csCompilerOptionBuilder(options);
 
         var cSharpCompilation = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(

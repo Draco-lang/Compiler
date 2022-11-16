@@ -10,21 +10,28 @@ using Token = Draco.Compiler.Internal.Syntax.ParseTree.Token;
 
 namespace Draco.Compiler.Internal.Syntax;
 
+internal sealed record class ParseTreeFormatterSettings(string Indentation);
+
 internal class ParseTreeFormatter : ParseTreeTransformerBase
 {
     private TokenType? lastToken;
     private TokenType? nextToken;
     private IEnumerator<Token>? tokens;
     private int indentCount = 0;
+    private ParseTreeFormatterSettings settings;
     private string Indentation
     {
         get
         {
-            var oneIndent = "    ";
             var result = new StringBuilder();
-            for (int i = 0; i < this.indentCount; i++, result.Append(oneIndent)) ;
+            for (int i = 0; i < this.indentCount; i++, result.Append(this.settings.Indentation)) ;
             return result.ToString();
         }
+    }
+
+    internal ParseTreeFormatter(ParseTreeFormatterSettings settings)
+    {
+        this.settings = settings;
     }
 
     private IEnumerable<Token> GetTokens(ParseTree tree)

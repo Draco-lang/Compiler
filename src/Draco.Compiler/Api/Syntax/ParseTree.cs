@@ -86,7 +86,7 @@ public abstract partial class ParseTree
 
     public ParseTree Format()
     {
-        return ToRed(null, new ParseTreeFormatter().Format(this.Green));
+        return ToRed(null, new ParseTreeFormatter(new("    ")).Format(this.Green));
     }
 }
 

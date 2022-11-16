@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Basic.Reference.Assemblies;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
@@ -45,6 +47,28 @@ public sealed class Compilation
         this.ParseTree = parseTree;
         this.AssemblyName = assemblyName;
     }
+
+    /// <summary>
+    /// Retrieves all <see cref="Diagnostic"/>s that were produced before emission.
+    /// </summary>
+    /// <returns>The <see cref="Diagnostic"/>s produced before emission.</returns>
+    public ImmutableArray<Diagnostic> GetDiagnostics() => this.GetSyntaxDiagnostics()
+        .Concat(this.GetSemanticDiagnostics())
+        .ToImmutableArray();
+
+    /// <summary>
+    /// Retrieves all <see cref="Diagnostic"/>s that were produced during syntax analysis.
+    /// </summary>
+    /// <returns>The <see cref="Diagnostic"/>s produced during syntax analysis.</returns>
+    public ImmutableArray<Diagnostic> GetSyntaxDiagnostics() =>
+        this.ParseTree.GetAllDiagnostics().ToImmutableArray();
+
+    /// <summary>
+    /// Retrieves all <see cref="Diagnostic"/>s that were produced during semantic analysis.
+    /// </summary>
+    /// <returns>The <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
+    public ImmutableArray<Diagnostic> GetSemanticDiagnostics() =>
+        this.GetSemanticModel(this.ParseTree).GetAllDiagnostics().ToImmutableArray();
 
     /// <summary>
     /// Retrieves the <see cref="SemanticModel"/> for a tree.

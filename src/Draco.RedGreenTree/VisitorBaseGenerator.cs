@@ -2,25 +2,32 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace Draco.RedGreenTree;
 
 /// <summary>
-/// Generates the visitor interface and base class.
+/// Generates the visitor base class for the red tree based on the green tree.
 /// </summary>
 public sealed class VisitorBaseGenerator : GeneratorBase
 {
     public sealed class Settings
     {
-        public INamedTypeSymbol RootType { get; set; }
+        public INamedTypeSymbol GreenRootType { get; set; }
+        public INamedTypeSymbol RedRootType { get; set; }
         public INamedTypeSymbol VisitorType { get; set; }
         public string DefaultPropertyName { get; set; } = "Default";
+        public Func<INamedTypeSymbol, string> GetRedName { get; set; } = x => x.Name;
 
-        public Settings(INamedTypeSymbol rootType, INamedTypeSymbol visitorType)
+        public Settings(
+            INamedTypeSymbol greenRootType,
+            INamedTypeSymbol redRootType,
+            INamedTypeSymbol visitorType)
         {
-            this.RootType = rootType;
+            this.GreenRootType = greenRootType;
+            this.RedRootType = redRootType;
             this.VisitorType = visitorType;
         }
     }
@@ -32,13 +39,15 @@ public sealed class VisitorBaseGenerator : GeneratorBase
     }
 
     private readonly Settings settings;
-    private readonly HashSet<INamedTypeSymbol> treeNodes;
+    private readonly HashSet<INamedTypeSymbol> greenTreeNodes;
+    private readonly HashSet<string> generatedMethodNames = new();
     private readonly HashSet<string> customMethodNames;
     private readonly List<string> skippedProperties = new();
     private readonly CodeWriter headerWriter = new();
     private readonly CodeWriter contentWriter = new();
 
-    private INamedTypeSymbol RootType => this.settings.RootType;
+    private INamedTypeSymbol GreenRootType => this.settings.GreenRootType;
+    private INamedTypeSymbol RedRootType => this.settings.RedRootType;
     private INamedTypeSymbol VisitorType => this.settings.VisitorType;
     private string DefaultPropertyName => this.settings.DefaultPropertyName;
 
@@ -46,18 +55,33 @@ public sealed class VisitorBaseGenerator : GeneratorBase
     {
         this.settings = settings;
 
-        this.treeNodes = new(SymbolEqualityComparer.Default);
-        this.ExtractTreeNodes();
+        this.greenTreeNodes = new(SymbolEqualityComparer.Default);
+        this.ExtractGreenTreeNodes();
 
         this.customMethodNames = new();
         this.ExtractCustomVisitorMethods();
     }
 
-    private void ExtractTreeNodes()
+    private string GetRedClassName(INamedTypeSymbol greenType) => SymbolEquals(greenType, this.GreenRootType)
+        ? this.RedRootType.Name
+        : this.settings.GetRedName(greenType);
+    private string GetFullRedClassName(INamedTypeSymbol greenType)
     {
-        var relevantNodes = this.RootType
+        if (!this.greenTreeNodes.Contains(greenType) && !greenType.IsSubtypeOf(this.settings.GreenRootType))
+        {
+            return greenType.ToDisplayString();
+        }
+        var typeName = string.Join(".", greenType.EnumerateNestingChain().Select(this.GetRedClassName));
+        if (this.RedRootType.ContainingNamespace is null) return typeName;
+        return $"{this.RedRootType.ContainingNamespace.ToDisplayString()}.{typeName}";
+    }
+
+    private void ExtractGreenTreeNodes()
+    {
+        var relevantNodes = this.GreenRootType
             .EnumerateContainedTypeTree();
-        foreach (var n in relevantNodes) this.treeNodes.Add(n);
+        foreach (var n in relevantNodes) this.greenTreeNodes.Add(n);
+        foreach (var n in this.greenTreeNodes) this.generatedMethodNames.Add(this.GenerateVisitorMethodName(n));
     }
 
     private void ExtractCustomVisitorMethods()
@@ -122,9 +146,9 @@ public sealed class VisitorBaseGenerator : GeneratorBase
             symbol = namedTypeArg;
         }
         // For anything not part of the tree, we just generate a VisitNAME
-        if (!this.treeNodes.Contains(symbol)) return $"Visit{symbol.Name}";
+        if (!this.greenTreeNodes.Contains(symbol)) return $"Visit{symbol.Name}";
         // For anything else, we read up the names in reverse order, excluding the root
-        var parts = symbol.EnumerateNestingChain().Skip(1).Reverse().Select(n => n.Name);
+        var parts = symbol.EnumerateNestingChain().Skip(1).Reverse().Select(this.GetRedClassName);
         return $"Visit{string.Join("", parts)}";
     }
 
@@ -135,11 +159,11 @@ public sealed class VisitorBaseGenerator : GeneratorBase
             .Write($"abstract partial class {this.VisitorType.Name}<T>")
             .Write("{")
             .Write($"protected virtual T {this.DefaultPropertyName} => default!;");
-        foreach (var node in this.treeNodes)
+        foreach (var node in this.greenTreeNodes)
         {
             var methodName = this.GenerateVisitorMethodName(node);
             if (this.customMethodNames.Contains(methodName)) continue;
-            if (!node.IsSubtypeOf(this.RootType)) continue;
+            if (!node.IsSubtypeOf(this.GreenRootType)) continue;
             this.GenerateVisitorMethodForType(node);
         }
         this.contentWriter.Write("}");
@@ -153,7 +177,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
         var subtypes = type
             .EnumerateContainedTypeTree()
             .Where(n => !SymbolEquals(n, type))
-            .Where(this.treeNodes.Contains)
+            .Where(this.greenTreeNodes.Contains)
             .Where(n => SymbolEquals(n.BaseType, type))
             .OrderBy(x => x, Comparer<INamedTypeSymbol>.Create((a, b) => AbstractFirst(a) - AbstractFirst(b)))
             .ToList();
@@ -161,7 +185,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
         this.contentWriter
             .Write("public virtual T")
             .Write(this.GenerateVisitorMethodName(type))
-            .Write($"({type.ToDisplayString()} node)");
+            .Write($"({this.GetFullRedClassName(type)} node)");
         if (type.IsAbstract)
         {
             this.contentWriter
@@ -171,7 +195,7 @@ public sealed class VisitorBaseGenerator : GeneratorBase
             foreach (var subtype in subtypes)
             {
                 this.contentWriter
-                    .Write(subtype.ToDisplayString())
+                    .Write(this.GetFullRedClassName(subtype))
                     .Write("n")
                     .Write("=>")
                     .Write($"this.{this.GenerateVisitorMethodName(subtype)}(n),");
@@ -189,9 +213,9 @@ public sealed class VisitorBaseGenerator : GeneratorBase
             foreach (var prop in type.GetSanitizedProperties())
             {
                 if (prop.Type is not INamedTypeSymbol propType) continue;
+                if (prop.IsGenerated()) continue;
 
-                var methodName = this.GenerateVisitorMethodName(propType);
-                if (!this.customMethodNames.Contains(methodName) && !this.treeNodes.Contains(propType))
+                if (!this.IsVisitableProperty(prop))
                 {
                     this.skippedProperties.Add($"{type.ToDisplayString()}.{prop.Name}");
                     continue;
@@ -203,11 +227,31 @@ public sealed class VisitorBaseGenerator : GeneratorBase
                     if (propType.IsValueType) accessor = ".Value";
                     this.contentWriter.Write($"if (node.{prop.Name} is not null)");
                 }
+                var methodName = this.GenerateVisitorMethodName(propType);
                 this.contentWriter.Write($"this.{methodName}(node.{prop.Name}{accessor});");
             }
             this.contentWriter
                 .Write($"return this.{this.DefaultPropertyName};")
                 .Write("}");
         }
+    }
+
+    private bool IsVisitableProperty(IPropertySymbol prop)
+    {
+        if (prop.Type is not INamedTypeSymbol propType) return false;
+
+        // Don't leak types
+        if ((int)prop.DeclaredAccessibility < (int)this.RedRootType.DeclaredAccessibility) return false;
+
+        var methodName = this.GenerateVisitorMethodName(propType);
+        if (this.generatedMethodNames.Contains(methodName)) return true;
+
+        if (this.customMethodNames.Contains(methodName))
+        {
+            // TODO: Some custom checking?
+            return true;
+        }
+
+        return false;
     }
 }

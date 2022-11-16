@@ -1,0 +1,14 @@
+{
+  "stryker-config":
+  {
+      "reporters": [
+          "progress",
+          "html"
+      ],
+      "project": "Draco.Compiler.csproj",
+      "test-projects":[
+        "src/Draco.Compiler.Tests/Draco.Compiler.Tests.csproj"
+      ],
+      "language-version": "preview"
+  }
+}

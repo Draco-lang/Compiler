@@ -18,6 +18,13 @@ public abstract class SourceGeneratorBase<TSettings> : IIncrementalGenerator
     /// </summary>
     public abstract string TopLevelAttributeFullName { get; }
 
+    private static string GetHintName(INamedTypeSymbol type)
+    {
+        var result = $"{type.Name}.g.cs";
+        if (type.ContainingNamespace is not null) result = $"{type.ContainingNamespace.ToDisplayString()}.{result}";
+        return result;
+    }
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var settingsProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
@@ -36,7 +43,7 @@ public abstract class SourceGeneratorBase<TSettings> : IIncrementalGenerator
         context.RegisterSourceOutput(settingsProvider, (ctx, pair) =>
         {
             var source = this.GenerateCode(pair.Settings);
-            ctx.AddSource($"{pair.TargetType.Name}.g.cs", source);
+            ctx.AddSource(GetHintName(pair.TargetType), source);
         });
     }
 

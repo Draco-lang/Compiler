@@ -18,10 +18,12 @@ public sealed class VisitorBaseSourceGenerator : SourceGeneratorBase<VisitorBase
         INamedTypeSymbol targetType,
         AttributeData attributeData)
     {
-        if (attributeData.ConstructorArguments.Length != 1) return null;
-        var arg = attributeData.ConstructorArguments[0];
-        if (arg.Value is not INamedTypeSymbol rootType) return null;
-        return new VisitorBaseGenerator.Settings(rootType, targetType);
+        if (attributeData.ConstructorArguments.Length != 2) return null;
+        var arg1 = attributeData.ConstructorArguments[0];
+        var arg2 = attributeData.ConstructorArguments[1];
+        if (arg1.Value is not INamedTypeSymbol greenRootType) return null;
+        if (arg2.Value is not INamedTypeSymbol redRootType) return null;
+        return new VisitorBaseGenerator.Settings(greenRootType, redRootType, targetType);
     }
 
     protected override string GenerateCode(VisitorBaseGenerator.Settings settings) =>

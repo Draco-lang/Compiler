@@ -7,6 +7,27 @@ using System.Threading.Tasks;
 namespace Draco.Compiler.Api.Diagnostics;
 
 /// <summary>
+/// The possible severities of diagnostic messages.
+/// </summary>
+public enum DiagnosticSeverity
+{
+    /// <summary>
+    /// Informational diagnostic message.
+    /// </summary>
+    Info,
+
+    /// <summary>
+    /// Warning diagnostic message.
+    /// </summary>
+    Warning,
+
+    /// <summary>
+    /// Error diagnostic message.
+    /// </summary>
+    Error,
+}
+
+/// <summary>
 /// A diagnostic produced by the compiler.
 /// </summary>
 public sealed class Diagnostic
@@ -15,6 +36,11 @@ public sealed class Diagnostic
     /// The location of the diagnostic.
     /// </summary>
     public Location? Location { get; }
+
+    /// <summary>
+    /// The severity of the message.
+    /// </summary>
+    public DiagnosticSeverity Severity => this.internalDiagnostic.Severity;
 
     /// <summary>
     /// The message explaining this diagnostics.
@@ -37,9 +63,9 @@ public sealed class Diagnostic
         var sb = new StringBuilder();
         var severity = this.internalDiagnostic.Severity switch
         {
-            Internal.Diagnostics.DiagnosticSeverity.Info => "info",
-            Internal.Diagnostics.DiagnosticSeverity.Warning => "warning",
-            Internal.Diagnostics.DiagnosticSeverity.Error => "error",
+            DiagnosticSeverity.Info => "info",
+            DiagnosticSeverity.Warning => "warning",
+            DiagnosticSeverity.Error => "error",
             _ => throw new InvalidOperationException(),
         };
         var position = this.Location?.Range.Start;

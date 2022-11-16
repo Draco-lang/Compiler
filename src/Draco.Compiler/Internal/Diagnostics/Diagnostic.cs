@@ -3,29 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DiagnosticSeverity = Draco.Compiler.Api.Diagnostics.DiagnosticSeverity;
 
 namespace Draco.Compiler.Internal.Diagnostics;
-
-/// <summary>
-/// The possible severities of diagnostic messages.
-/// </summary>
-internal enum DiagnosticSeverity
-{
-    /// <summary>
-    /// Informational diagnostic message.
-    /// </summary>
-    Info,
-
-    /// <summary>
-    /// Warning diagnostic message.
-    /// </summary>
-    Warning,
-
-    /// <summary>
-    /// Error diagnostic message.
-    /// </summary>
-    Error,
-}
 
 /// <summary>
 /// A template for creating <see cref="Diagnostic"/> messages.

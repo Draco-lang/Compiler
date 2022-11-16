@@ -71,7 +71,7 @@ public sealed class Compilation
     /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
     public void Emit(
         Stream peStream,
-        Stream? csStream,
+        Stream? csStream = null,
         Func<Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions, Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions>? csCompilerOptionBuilder = null)
     {
         csStream ??= new MemoryStream();
@@ -83,6 +83,7 @@ public sealed class Compilation
 
         var options = new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
         if (csCompilerOptionBuilder is not null) options = csCompilerOptionBuilder(options);
+
         var cSharpCompilation = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(
             assemblyName: this.AssemblyName ?? "output",
             syntaxTrees: new[] { Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(csText) },

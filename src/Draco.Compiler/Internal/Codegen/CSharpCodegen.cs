@@ -103,9 +103,9 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         """);
 
     private void AppendMainInvocation() => this.output.WriteLine("""
-        internal sealed class Program
+        public sealed class Program
         {
-            internal static void Main(string[] args) =>
+            public static void Main(string[] args) =>
                 DracoProgram.main();
         }
         """);

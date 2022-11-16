@@ -22,13 +22,13 @@ internal class Program
     {
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
         var emitCSharpOutput = new Option<FileInfo>("--output-cs", description: "Specifies output file for generated c#, if not specified, generated code is not saved to the disk");
-        var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("transpiledProgram.exe"), "Specifies the output file");
+        var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
         var runCommand = new Command("run", "Runs specified draco file")
         {
             fileArgument,
             outputOption
         };
-        runCommand.SetHandler((input, output) => Run(input, output), fileArgument, outputOption);
+        runCommand.SetHandler(Run, fileArgument);
 
         var generateParseTreeCommand = new Command("parse", "Generates parse tree from specified draco file")
         {
@@ -58,33 +58,41 @@ internal class Program
         return rootCommand;
     }
 
-    private static void Run(FileInfo input, FileInfo output)
+    private static void Run(FileInfo input)
     {
-        var compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
-        ScriptingEngine.Execute(compilation);
+        var sourceText = File.ReadAllText(input.FullName);
+        var parseTree = ParseTree.Parse(sourceText);
+        var compilation = Compilation.Create(parseTree);
+        var result = ScriptingEngine.Execute(compilation);
+        Console.WriteLine($"Result: {result}");
     }
 
     private static void GenerateParseTree(FileInfo input)
     {
-        var compilation = new Compilation(File.ReadAllText(input.FullName));
-        ScriptingEngine.CompileToParseTree(compilation);
-        Console.WriteLine(compilation.Parsed!.ToDebugString());
+        var sourceText = File.ReadAllText(input.FullName);
+        var parseTree = ParseTree.Parse(sourceText);
+        Console.WriteLine(parseTree.ToDebugString());
     }
 
-    private static void GenerateCSharp(FileInfo input, FileInfo emitCS)
+    private static void GenerateCSharp(FileInfo input, FileInfo? emitCS)
     {
-        var compilation = new Compilation(File.ReadAllText(input.FullName));
-        ScriptingEngine.CompileToCSharpCode(compilation);
-        Console.WriteLine(compilation.GeneratedCSharp);
-        if (emitCS is not null)
-        {
-            File.WriteAllText(emitCS.FullName, compilation.GeneratedCSharp);
-        }
+        var sourceText = File.ReadAllText(input.FullName);
+        var parseTree = ParseTree.Parse(sourceText);
+        var compilation = Compilation.Create(parseTree);
+        using var csStream = new MemoryStream();
+        compilation.EmitCSharp(csStream);
+        csStream.Position = 0;
+        var generatedCs = new StreamReader(csStream).ReadToEnd();
+        Console.WriteLine(generatedCs);
+        if (emitCS is not null) File.WriteAllText(emitCS.FullName, generatedCs);
     }
 
     private static void GenerateExe(FileInfo input, FileInfo output)
     {
-        var compilation = new Compilation(File.ReadAllText(input.FullName), output.FullName);
-        ScriptingEngine.GenerateExe(compilation);
+        var sourceText = File.ReadAllText(input.FullName);
+        var parseTree = ParseTree.Parse(sourceText);
+        var compilation = Compilation.Create(parseTree, output.Name);
+        using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
+        compilation.Emit(dllStream);
     }
 }

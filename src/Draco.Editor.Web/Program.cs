@@ -115,7 +115,7 @@ public class Program
     private static async Task DisplayCompiledIL(Compilation compilation)
     {
         using var inlineDllStream = new MemoryStream();
-        if (!ScriptingEngine.CompileToAssembly(compilation, inlineDllStream)) return;
+        if (!ScriptingEngine.CompileToAssembly(compilation, inlineDllStream, (config) => config.WithConcurrentBuild(false))) return;
         inlineDllStream.Position = 0;
         var text = new PlainTextOutput();
         var disassembler = new ReflectionDisassembler(text, default);

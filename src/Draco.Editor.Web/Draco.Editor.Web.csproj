@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.0" />
     <!--We need an alpha version to have this patch included: https://github.com/dotnet/aspnetcore/pull/44968 -->
-    <PackageReference Include="Microsoft.JSInterop" Version="8.0.0-alpha.1.22558.5" />
+    <PackageReference Include="Microsoft.JSInterop" Version="8.0.0-alpha.1.22567.5" />
   </ItemGroup>
 
   <Target Name="JSSetup" BeforeTargets="BeforeBuild">

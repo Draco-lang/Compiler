@@ -131,7 +131,7 @@ public sealed class Compilation
             // TODO: Clean this mess up
             diags.Add(new Diagnostic(
                 Internal.Diagnostics.Diagnostic.Create(
-                    template: Internal.Diagnostics.DiagnosticTemplate.Create(
+                    template: DiagnosticTemplate.Create(
                         title: "C# compilation error",
                         severity: DiagnosticSeverity.Error,
                         format: "Internal compiler error: {0}"),

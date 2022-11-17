@@ -3,50 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DiagnosticSeverity = Draco.Compiler.Api.Diagnostics.DiagnosticSeverity;
+using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Diagnostics;
-
-/// <summary>
-/// A template for creating <see cref="Diagnostic"/> messages.
-/// </summary>
-internal sealed record class DiagnosticTemplate
-{
-    /// <summary>
-    /// Creates a new <see cref="DiagnosticTemplate"/>.
-    /// </summary>
-    /// <param name="title">A short title for the message.</param>
-    /// <param name="severity">The severity of the message.</param>
-    /// <param name="format">The format string that describes the diagnostic in detail.</param>
-    /// <returns>The constructed <see cref="DiagnosticTemplate"/>.</returns>
-    public static DiagnosticTemplate Create(string title, DiagnosticSeverity severity, string format) =>
-        new(title: title, severity: severity, format: format);
-
-    /// <summary>
-    /// A short title for the message.
-    /// </summary>
-    public string Title { get; }
-
-    /// <summary>
-    /// The severity of the message.
-    /// </summary>
-    public DiagnosticSeverity Severity { get; }
-
-    /// <summary>
-    /// The format string that describes the diagnostic in detail.
-    /// </summary>
-    public string Format { get; }
-
-    private DiagnosticTemplate(
-        string title,
-        DiagnosticSeverity severity,
-        string format)
-    {
-        this.Title = title;
-        this.Severity = severity;
-        this.Format = format;
-    }
-}
 
 /// <summary>
 /// Represents a diagnostic message produced by the compiler.

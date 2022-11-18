@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
+using ApiDiagnostic = Draco.Compiler.Api.Diagnostics.Diagnostic;
 
 namespace Draco.Compiler.Internal.Diagnostics;
 
@@ -73,4 +75,12 @@ internal sealed record class Diagnostic
         this.FormatArgs = formatArgs;
         this.Location = location;
     }
+
+    /// <summary>
+    /// Translates this <see cref="Diagnostic"/> to an <see cref="ApiDiagnostic"/>.
+    /// </summary>
+    /// <param name="context">The <see cref="ParseTree"/> node this <see cref="Diagnostic"/> is attached to.</param>
+    /// <returns>The equivalent <see cref="ApiDiagnostic"/> to <paramref name="context"/>.</returns>
+    public ApiDiagnostic ToApiDiagnostic(ParseTree context) =>
+        new(this, this.Location.ToApiLocation(context));
 }

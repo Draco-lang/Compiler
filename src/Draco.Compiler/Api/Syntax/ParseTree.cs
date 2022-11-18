@@ -100,12 +100,9 @@ public abstract partial class ParseTree
 {
     private IEnumerable<Diagnostic> CollectAllDiagnostics()
     {
-        foreach (var internalDiag in this.Green.Diagnostics)
-        {
-            var location = this.TranslateLocation(internalDiag.Location);
-            var diag = new Diagnostic(internalDiag, location);
-            yield return diag;
-        }
+        // Translate the diagnostics on this node
+        foreach (var diag in this.Green.Diagnostics) yield return diag.ToApiDiagnostic(this);
+
         // Find in children too
         foreach (var diag in this.Children.SelectMany(c => c.CollectAllDiagnostics())) yield return diag;
     }

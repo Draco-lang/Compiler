@@ -151,36 +151,4 @@ internal sealed record class Diagnostic
         sb.Append(desc);
         return sb.ToString();
     }
-
-    public bool Equals(Diagnostic? other)
-    {
-        //throw new Exception();
-        if (other is null || other is not Diagnostic diag) return false;
-        if (this.Title != diag.Title) return false;
-        if (this.Severity != diag.Severity) return false;
-        if (this.Format != diag.Format) return false;
-        if (this.FormatArgs.Length != diag.FormatArgs.Length) return false;
-        for (int i = 0; i < diag.FormatArgs.Length; i++)
-        {
-            if (this.FormatArgs[i] != diag.FormatArgs[i]) return false;
-        }
-        if (this.Location.Range.Width != this.Location.Range.Width) return false;
-        if (this.Location.Range.Offset != this.Location.Range.Offset) return false;
-        return true;
-    }
-
-    public override int GetHashCode()
-    {
-        HashCode hash = new();
-        hash.Add(this.Title);
-        hash.Add(this.Severity);
-        hash.Add(this.Format);
-        hash.Add(this.Location.Range.Width);
-        hash.Add(this.Location.Range.Offset);
-        foreach (var arg in this.FormatArgs)
-        {
-            hash.Add(arg);
-        }
-        return hash.ToHashCode();
-    }
 }

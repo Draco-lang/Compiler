@@ -106,58 +106,6 @@ internal abstract partial record class ParseTree
             if (this.TrailingTrivia.Length > 0) result.AppendLine($"  trailing trivia: {this.TrailingTrivia}");
             return result.ToString().TrimEnd();
         }
-
-        public bool Equals(Token? other)
-        {
-            if (other is null || other is not Token tok) return false;
-            if (this.Type != tok.Type) return false;
-            if (this.Text != tok.Text) return false;
-            if (this.Value != tok.Value) return false;
-            if (this.ValueText != tok.ValueText) return false;
-            if (this.Width != tok.Width) return false;
-
-            if (this.Diagnostics.Length != tok.Diagnostics.Length) return false;
-            for (int i = 0; i < tok.Diagnostics.Length; i++)
-            {
-                if (this.Diagnostics[i] != tok.Diagnostics[i]) return false;
-            }
-
-            if (this.LeadingTrivia.Length != tok.LeadingTrivia.Length) return false;
-            for (int i = 0; i < tok.TrailingTrivia.Length; i++)
-            {
-                if (this.TrailingTrivia[i] != tok.TrailingTrivia[i]) return false;
-            }
-
-            if (this.LeadingTrivia.Length != tok.LeadingTrivia.Length) return false;
-            for (int i = 0; i < tok.LeadingTrivia.Length; i++)
-            {
-                if (this.LeadingTrivia[i] != tok.LeadingTrivia[i]) return false;
-            }
-
-            return true;
-        }
-
-        public override int GetHashCode()
-        {
-            HashCode hash = new();
-            hash.Add(this.Type);
-            hash.Add(this.Text);
-            hash.Add(this.Value);
-            hash.Add(this.Width);
-            foreach (var diag in this.LeadingTrivia)
-            {
-                hash.Add(diag);
-            }
-            foreach (var diag in this.TrailingTrivia)
-            {
-                hash.Add(diag);
-            }
-            foreach (var diag in this.Diagnostics)
-            {
-                hash.Add(diag);
-            }
-            return hash.ToHashCode();
-        }
     }
 
 

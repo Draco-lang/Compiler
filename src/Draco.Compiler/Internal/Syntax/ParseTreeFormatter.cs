@@ -162,14 +162,14 @@ internal class ParseTreeFormatter : ParseTreeTransformerBase
         else this.nextToken = this.tokens.Current.Type;
         if (resultToken is not null)
         {
-            changed = resultToken != token;
+            changed = !this.checkTokensValueEqual(resultToken, token);
             return resultToken;
         }
         changed = false;
         return token;
     }
 
-    private bool checkTokensValueEaqual(Token tok1, Token tok2)
+    private bool checkTokensValueEqual(Token tok1, Token tok2)
     {
         if (tok1.TrailingTrivia.Length != tok2.TrailingTrivia.Length) return false;
         for (int i = 0; i < tok1.TrailingTrivia.Length; i++)

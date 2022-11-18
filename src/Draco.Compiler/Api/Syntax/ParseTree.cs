@@ -98,12 +98,6 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
 
 public abstract partial class ParseTree
 {
-    internal Location TranslateLocation(Internal.Diagnostics.Location location)
-    {
-        var range = this.TranslateRelativeRange(location.Range);
-        return new Location(range);
-    }
-
     private IEnumerable<Diagnostic> CollectAllDiagnostics()
     {
         foreach (var internalDiag in this.Green.Diagnostics)
@@ -114,15 +108,6 @@ public abstract partial class ParseTree
         }
         // Find in children too
         foreach (var diag in this.Children.SelectMany(c => c.CollectAllDiagnostics())) yield return diag;
-    }
-
-    private protected virtual Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange relativeRange)
-    {
-        if (relativeRange.RelativeTo != Internal.Diagnostics.RelativeOffset.CurrentElement)
-        {
-            throw new NotSupportedException();
-        }
-        return new(this.Position, relativeRange.Width);
     }
 
     protected virtual string ComputeTextWithoutSurroundingTrivia()
@@ -241,21 +226,6 @@ public abstract partial class ParseTree
 {
     public sealed partial class Token
     {
-        private protected override Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange relativeRange)
-        {
-            if (relativeRange.RelativeTo == Internal.Diagnostics.RelativeOffset.EndOfLastElement)
-            {
-                var prevToken = this.GetPrecedingToken(this);
-                var prevEnd = prevToken?.Range.End ?? new(0, 0);
-                return new(prevEnd, relativeRange.Width);
-            }
-            if (relativeRange.RelativeTo == Internal.Diagnostics.RelativeOffset.CurrentElement)
-            {
-                return new(this.Position, relativeRange.Width);
-            }
-            throw new NotSupportedException();
-        }
-
         protected override string ComputeTextWithoutSurroundingTrivia() => this.Text;
 
         protected override Position ComputePosition()

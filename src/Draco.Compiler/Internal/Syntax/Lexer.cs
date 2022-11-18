@@ -837,8 +837,8 @@ internal sealed class Lexer
     // Errors
     private void AddError(DiagnosticTemplate template, int offset, int width, params object?[] args)
     {
-        var range = new RelativeRange(RelativeOffset.CurrentElement, offset, width);
-        var location = new Location(range);
+        var range = new RelativeRange(Offset: offset, Width: width);
+        var location = new Location.Tree(Range: range);
         var diag = Diagnostic.Create(
             template: template,
             location: location,

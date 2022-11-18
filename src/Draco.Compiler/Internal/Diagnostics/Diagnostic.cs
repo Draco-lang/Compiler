@@ -73,21 +73,4 @@ internal sealed record class Diagnostic
         this.FormatArgs = formatArgs;
         this.Location = location;
     }
-
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        var sb = new StringBuilder();
-        var severity = this.Severity switch
-        {
-            DiagnosticSeverity.Info => "info",
-            DiagnosticSeverity.Warning => "warning",
-            DiagnosticSeverity.Error => "error",
-            _ => throw new InvalidOperationException(),
-        };
-        sb.AppendLine($"{severity}: {this.Title}");
-        var desc = string.Format(this.Format, this.FormatArgs);
-        sb.Append(desc);
-        return sb.ToString();
-    }
 }

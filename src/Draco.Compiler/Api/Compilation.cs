@@ -77,15 +77,14 @@ public sealed class Compilation
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     public ImmutableArray<Diagnostic> GetSemanticDiagnostics() =>
-        this.GetSemanticModel(this.ParseTree).GetAllDiagnostics().ToImmutableArray();
+        this.GetSemanticModel().GetAllDiagnostics().ToImmutableArray();
 
     /// <summary>
-    /// Retrieves the <see cref="SemanticModel"/> for a tree.
+    /// Retrieves the <see cref="SemanticModel"/> for this compilation.
     /// </summary>
-    /// <param name="tree">The <see cref="ParseTree"/> root to retrieve the model for.</param>
-    /// <returns>The <see cref="SemanticModel"/> with <paramref name="tree"/> as the root.</returns>
-    public SemanticModel GetSemanticModel(ParseTree tree) =>
-        new(this.db, tree);
+    /// <returns>The <see cref="SemanticModel"/> for this compilation.</returns>
+    public SemanticModel GetSemanticModel() =>
+        new(this.db, this.ParseTree);
 
     /// <summary>
     /// Emits compiled C# code to a <see cref="Stream"/>.
@@ -93,7 +92,7 @@ public sealed class Compilation
     /// <param name="csStream">The stream to write the C# code to.</param>
     public void EmitCSharp(Stream csStream)
     {
-        var codegen = new CSharpCodegen(this.GetSemanticModel(this.ParseTree), csStream);
+        var codegen = new CSharpCodegen(this.GetSemanticModel(), csStream);
         codegen.Generate();
     }
 

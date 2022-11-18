@@ -37,7 +37,6 @@ internal abstract partial class Symbol
     public abstract class InTreeBase : Symbol
     {
         public override ParseTree Definition { get; }
-        // NOTE: Not a good idea to rely on .Result
         public override Scope? EnclosingScope =>
             SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition).GetAwaiter().GetResult();
 

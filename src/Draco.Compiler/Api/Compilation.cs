@@ -90,22 +90,8 @@ public sealed class Compilation
     /// Emits compiled C# code to a <see cref="Stream"/>.
     /// </summary>
     /// <param name="csStream">The stream to write the C# code to.</param>
-    public void EmitCSharp(Stream csStream)
-    {
-        var codegen = new CSharpCodegen(this.GetSemanticModel(), csStream);
-        codegen.Generate();
-    }
-
-    /// <summary>
-    /// Emits compiled binary to a <see cref="Stream"/>.
-    /// </summary>
-    /// <param name="peStream">The stream to write the binary to.</param>
-    /// <param name="csStream">The stream to write the compiled C# code to.</param>
-    /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
-    public EmitResult Emit(
-        Stream peStream,
-        Stream? csStream = null,
-        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null)
+    /// <returns>The result of the emission.</returns>
+    public EmitResult EmitCSharp(Stream csStream)
     {
         var existingDiags = this.GetDiagnostics();
         if (existingDiags.Length > 0)
@@ -115,8 +101,29 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
+        var codegen = new CSharpCodegen(this.GetSemanticModel(), csStream);
+        codegen.Generate();
+
+        return new(
+            Success: true,
+            Diagnostics: ImmutableArray<Diagnostic>.Empty);
+    }
+
+    /// <summary>
+    /// Emits compiled binary to a <see cref="Stream"/>.
+    /// </summary>
+    /// <param name="peStream">The stream to write the binary to.</param>
+    /// <param name="csStream">The stream to write the compiled C# code to.</param>
+    /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
+    /// <returns>The result of the emission.</returns>
+    public EmitResult Emit(
+        Stream peStream,
+        Stream? csStream = null,
+        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null)
+    {
         csStream ??= new MemoryStream();
-        this.EmitCSharp(csStream);
+        var csEmitResult = this.EmitCSharp(csStream);
+        if (!csEmitResult.Success) return csEmitResult;
 
         csStream.Position = 0;
         using var csStreamReader = new StreamReader(csStream);

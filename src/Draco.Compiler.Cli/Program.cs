@@ -61,12 +61,6 @@ internal class Program
         var sourceText = File.ReadAllText(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
-        var diagnostics = compilation.GetDiagnostics();
-        if (diagnostics.Length > 0)
-        {
-            foreach (var diag in diagnostics) Console.WriteLine(diag);
-            return;
-        }
         var execResult = ScriptingEngine.Execute(compilation);
         if (!execResult.Success)
         {
@@ -88,14 +82,13 @@ internal class Program
         var sourceText = File.ReadAllText(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
-        var diagnostics = compilation.GetDiagnostics();
-        if (diagnostics.Length > 0)
+        using var csStream = new MemoryStream();
+        var emitResult = compilation.EmitCSharp(csStream);
+        if (!emitResult.Success)
         {
-            foreach (var diag in diagnostics) Console.WriteLine(diag);
+            foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
             return;
         }
-        using var csStream = new MemoryStream();
-        compilation.EmitCSharp(csStream);
         csStream.Position = 0;
         var generatedCs = new StreamReader(csStream).ReadToEnd();
         Console.WriteLine(generatedCs);
@@ -107,12 +100,6 @@ internal class Program
         var sourceText = File.ReadAllText(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree, output.Name);
-        var diagnostics = compilation.GetDiagnostics();
-        if (diagnostics.Length > 0)
-        {
-            foreach (var diag in diagnostics) Console.WriteLine(diag);
-            return;
-        }
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(dllStream);
         if (!emitResult.Success)

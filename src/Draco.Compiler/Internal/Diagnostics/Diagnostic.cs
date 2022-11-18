@@ -74,6 +74,6 @@ internal sealed record class Diagnostic
     /// </summary>
     /// <param name="context">The <see cref="ParseTree"/> node this <see cref="Diagnostic"/> is attached to.</param>
     /// <returns>The equivalent <see cref="ApiDiagnostic"/> to <paramref name="context"/>.</returns>
-    public ApiDiagnostic ToApiDiagnostic(ParseTree context) =>
+    public ApiDiagnostic ToApiDiagnostic(ParseTree? context) =>
         new(this, this.Location.ToApiLocation(context));
 }

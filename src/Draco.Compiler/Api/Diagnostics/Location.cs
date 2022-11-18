@@ -1,21 +1,49 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.Diagnostics;
-
-// NOTE: We'll need a file reference here
 
 /// <summary>
 /// Represents a location in a source text.
 /// </summary>
-/// <param name="Range">The range of the represented location.</param>
-public readonly record struct Location(Syntax.Range Range)
+public abstract partial class Location
 {
-    public static readonly Location None = default;
+    /// <summary>
+    /// A constant representing no location.
+    /// </summary>
+    public static readonly Location None = new Null();
 
-    // TODO
-    public bool IsNone => false;
+    /// <summary>
+    /// True, if this location represents no location.
+    /// </summary>
+    public virtual bool IsNone => false;
+}
+
+public abstract partial class Location
+{
+    internal sealed class Null : Location
+    {
+        public override bool IsNone => true;
+
+        public override string ToString() => "<no location>";
+    }
+
+    internal sealed class Tree : Location
+    {
+        private readonly Range range;
+
+        public Tree(Range range)
+        {
+            this.range = range;
+        }
+
+        public override string ToString()
+        {
+            var position = this.range.Start;
+            return $"at line {position.Line + 1}, character {position.Column + 1}";
+        }
+    }
 }

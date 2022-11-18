@@ -157,7 +157,7 @@ public sealed class Diagnostic
         };
         sb.Append(severity);
         if (!this.Location.IsNone) sb.Append($" {this.Location}");
-        sb.AppendLine($": {this.Title}");
+        sb.Append(": ");
         sb.Append(string.Format(this.Format, this.FormatArgs));
         return sb.ToString();
     }

@@ -43,8 +43,12 @@ internal abstract partial record class Location
     /// <param name="Range">The relative range compared to the tree.</param>
     public sealed record class OnTree(RelativeRange Range) : Location
     {
-        // TODO
-        public override ApiLocation ToApiLocation(ParseTree? context) => throw new NotImplementedException();
+        public override ApiLocation ToApiLocation(ParseTree? context)
+        {
+            if (context is null) throw new ArgumentNullException(nameof(context));
+            var range = context.TranslateRelativeRange(this.Range);
+            return new ApiLocation.Tree(range);
+        }
     }
 
     /// <summary>

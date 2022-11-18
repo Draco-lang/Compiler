@@ -40,15 +40,19 @@ public interface ISymbol
 /// </summary>
 internal sealed class Symbol : ISymbol
 {
-    public string Name => this.internalSymbol.Name;
-    public bool IsError => this.internalSymbol.IsError;
-    public Location? Definition => this.internalSymbol.Definition?.Location;
-    public ImmutableArray<Diagnostic> Diagnostics => throw new NotImplementedException();
+    public string Name => this.InternalSymbol.Name;
+    public bool IsError => this.InternalSymbol.IsError;
+    public Location? Definition => this.InternalSymbol.Definition?.Location;
+    private ImmutableArray<Diagnostic>? diagnostics;
+    public ImmutableArray<Diagnostic> Diagnostics =>
+        this.diagnostics ??= this.InternalSymbol.Diagnostics
+            .Select(diag => diag.ToApiDiagnostic(null))
+            .ToImmutableArray();
 
-    private readonly InternalSymbol internalSymbol;
+    internal InternalSymbol InternalSymbol { get; }
 
     public Symbol(InternalSymbol internalSymbol)
     {
-        this.internalSymbol = internalSymbol;
+        this.InternalSymbol = internalSymbol;
     }
 }

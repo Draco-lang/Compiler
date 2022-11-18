@@ -288,5 +288,9 @@ internal static class SymbolResolution
         Add("println");
         Add("print");
         Add("fmt");
+        Add("int32");
+        Add("string");
+        Add("unit");
+        Add("bool");
     }
 }

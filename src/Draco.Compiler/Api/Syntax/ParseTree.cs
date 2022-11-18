@@ -67,7 +67,7 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     /// <summary>
     /// The location of this node.
     /// </summary>
-    public Location Location => new(this.Range);
+    public Location Location => new Location.Tree(this.Range);
 
     /// <summary>
     /// All <see cref="Token"/>s that this subtree consists of.
@@ -81,7 +81,8 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     public IEnumerable<Diagnostic> GetAllDiagnostics() =>
         this.CollectAllDiagnostics();
 
-    public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
+    private string? text;
+    public override string ToString() => this.text ??= this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
     public string ToDotGraphString() => Internal.Syntax.DotParseTreePrinter.Print(this);
 
@@ -98,6 +99,14 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
 
 public abstract partial class ParseTree
 {
+    internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range)
+    {
+        var text = this.ToString().AsSpan();
+        var start = StepPositionByText(this.Range.Start, text.Slice(0, range.Offset));
+        var end = StepPositionByText(start, text.Slice(range.Offset, range.Width));
+        return new(start, end);
+    }
+
     private IEnumerable<Diagnostic> CollectAllDiagnostics()
     {
         // Translate the diagnostics on this node
@@ -184,7 +193,7 @@ public abstract partial class ParseTree
     }
 
     // NOTE: This might be a good general utility somewhere else?
-    private static Position StepPositionByText(Position start, string text)
+    private static Position StepPositionByText(Position start, ReadOnlySpan<char> text)
     {
         var currLine = start.Line;
         var currCol = start.Column;

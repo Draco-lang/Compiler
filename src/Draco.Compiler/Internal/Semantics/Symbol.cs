@@ -39,7 +39,7 @@ internal abstract partial class Symbol
         public override ParseTree Definition { get; }
         // NOTE: Not a good idea to rely on .Result
         public override Scope? EnclosingScope =>
-            SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition).Result;
+            SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition).GetAwaiter().GetResult();
 
         private readonly QueryDatabase db;
 

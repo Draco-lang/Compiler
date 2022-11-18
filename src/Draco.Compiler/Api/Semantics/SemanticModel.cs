@@ -46,8 +46,7 @@ public sealed class SemanticModel
         {
             if (SymbolResolution.ReferencesSymbol(tree))
             {
-                // TODO: .Result
-                var sym = SymbolResolution.GetReferencedSymbol(this.db, tree).Result;
+                var sym = SymbolResolution.GetReferencedSymbol(this.db, tree).GetAwaiter().GetResult();
                 foreach (var diag in sym.Diagnostics) yield return diag.ToApiDiagnostic(tree);
             }
 

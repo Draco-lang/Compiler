@@ -92,23 +92,14 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
     };
 
     // TODO: Can we get rid of this pattern?
-    private Scope? GetDefinedScope(ParseTree tree)
-    {
-        async Task<Scope?> Impl() => await SymbolResolution.GetDefinedScopeOrNull(this.db, tree);
-        return Impl().Result;
-    }
+    private Scope? GetDefinedScope(ParseTree tree) =>
+        SymbolResolution.GetDefinedScopeOrNull(this.db, tree).GetAwaiter().GetResult();
 
     // TODO: Can we get rid of this pattern?
-    private Symbol? GetDefinedSymbol(ParseTree tree)
-    {
-        async Task<Symbol?> Impl() => await SymbolResolution.GetDefinedSymbolOrNull(this.db, tree);
-        return Impl().Result;
-    }
+    private Symbol? GetDefinedSymbol(ParseTree tree) =>
+        SymbolResolution.GetDefinedSymbolOrNull(this.db, tree).GetAwaiter().GetResult();
 
     // TODO: Can we get rid of this pattern?
-    private Symbol? GetReferencedSymbol(ParseTree tree)
-    {
-        async Task<Symbol?> Impl() => await SymbolResolution.GetReferencedSymbolOrNull(this.db, tree);
-        return Impl().Result;
-    }
+    private Symbol? GetReferencedSymbol(ParseTree tree) =>
+        SymbolResolution.GetReferencedSymbolOrNull(this.db, tree).GetAwaiter().GetResult();
 }

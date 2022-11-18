@@ -124,6 +124,11 @@ public sealed class Diagnostic
     public object?[] FormatArgs { get; }
 
     /// <summary>
+    /// The formatted message.
+    /// </summary>
+    public string Message => string.Format(this.Format, this.FormatArgs);
+
+    /// <summary>
     /// The assoicated location of the message.
     /// </summary>
     public Location Location { get; }
@@ -157,8 +162,7 @@ public sealed class Diagnostic
         };
         sb.Append(severity);
         if (!this.Location.IsNone) sb.Append($" {this.Location}");
-        sb.Append(": ");
-        sb.Append(string.Format(this.Format, this.FormatArgs));
+        sb.Append(": ").Append(this.Message);
         return sb.ToString();
     }
 }

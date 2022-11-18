@@ -20,6 +20,11 @@ public abstract partial class Location
     /// True, if this location represents no location.
     /// </summary>
     public virtual bool IsNone => false;
+
+    /// <summary>
+    /// The range of this location.
+    /// </summary>
+    public virtual Range? Range => null;
 }
 
 public abstract partial class Location
@@ -33,16 +38,16 @@ public abstract partial class Location
 
     internal sealed class Tree : Location
     {
-        private readonly Range range;
+        public override Range? Range { get; }
 
         public Tree(Range range)
         {
-            this.range = range;
+            this.Range = range;
         }
 
         public override string ToString()
         {
-            var position = this.range.Start;
+            var position = this.Range.Value.Start;
             return $"at line {position.Line + 1}, character {position.Column + 1}";
         }
     }

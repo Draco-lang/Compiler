@@ -58,7 +58,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
         var uri = request.TextDocument.Uri;
         var sourceText = request.TextDocument.Text;
         this.repository.AddOrUpdateDocument(uri, sourceText);
-        await this.PublishSyntaxDiagnosticsAsync(uri, sourceText);
+        await this.PublishDiagnosticsAsync(uri, sourceText);
         return Unit.Value;
     }
 
@@ -74,18 +74,16 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
         var change = request.ContentChanges.First();
         var sourceText = change.Text;
         this.repository.AddOrUpdateDocument(uri, sourceText);
-        await this.PublishSyntaxDiagnosticsAsync(uri, sourceText);
+        await this.PublishDiagnosticsAsync(uri, sourceText);
         return Unit.Value;
     }
 
-    private Task PublishSyntaxDiagnosticsAsync(DocumentUri uri, string text)
+    private Task PublishDiagnosticsAsync(DocumentUri uri, string text)
     {
-        // TODO: This should be shared
-        var compilation = new Compilation(text);
         var parseTree = ParseTree.Parse(text);
-        var semanticModel = compilation.GetSemanticModel(parseTree);
-        // TODO: API for compilation to get all diagnostics?
-        var diags = parseTree.GetAllDiagnostics().Concat(semanticModel.GetAllDiagnostics());
+        // TODO: Compilation should be shared
+        var compilation = Compilation.Create(parseTree);
+        var diags = compilation.GetDiagnostics();
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
         this.server.TextDocument.PublishDiagnostics(new()
         {

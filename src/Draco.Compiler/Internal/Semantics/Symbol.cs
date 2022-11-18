@@ -25,9 +25,11 @@ internal abstract partial class Symbol : ISymbol
     public Location? Definition => this.DefinitionTree?.Green.Location;
 
     private ImmutableArray<Api.Diagnostics.Diagnostic>? diagnostics;
-    ImmutableArray<Api.Diagnostics.Diagnostic> ISymbol.Diagnostics => this.diagnostics ??= this.Diagnostics
-        .Select(d => new Api.Diagnostics.Diagnostic(d, (this as ISymbol).Definition))
-        .ToImmutableArray();
+    // TODO
+    ImmutableArray<Api.Diagnostics.Diagnostic> ISymbol.Diagnostics => throw new NotImplementedException();
+    //ImmutableArray<Api.Diagnostics.Diagnostic> ISymbol.Diagnostics => this.diagnostics ??= this.Diagnostics
+    //    .Select(d => new Api.Diagnostics.Diagnostic(d, (this as ISymbol).Definition))
+    //    .ToImmutableArray();
     Api.Diagnostics.Location? ISymbol.Definition => this.DefinitionTree?.Location;
 
     protected Symbol(string name)

@@ -67,8 +67,13 @@ internal class Program
             foreach (var diag in diagnostics) Console.WriteLine(diag);
             return;
         }
-        var result = ScriptingEngine.Execute(compilation);
-        Console.WriteLine($"Result: {result}");
+        var execResult = ScriptingEngine.Execute(compilation);
+        if (!execResult.Success)
+        {
+            foreach (var diag in execResult.Diagnostics) Console.WriteLine(diag);
+            return;
+        }
+        Console.WriteLine($"Result: {execResult.Result}");
     }
 
     private static void GenerateParseTree(FileInfo input)
@@ -109,6 +114,10 @@ internal class Program
             return;
         }
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
-        compilation.Emit(dllStream);
+        var emitResult = compilation.Emit(dllStream);
+        if (!emitResult.Success)
+        {
+            foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
+        }
     }
 }

@@ -19,22 +19,15 @@ internal sealed record class Diagnostic
     /// </summary>
     /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
     /// <param name="location">The location the diagnostic was produced at.</param>
-    /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
-    public static Diagnostic Create(
-        DiagnosticTemplate template,
-        Location location) => new(template: template, formatArgs: Array.Empty<object?>(), location: location);
-
-    /// <summary>
-    /// Constructs a <see cref="Diagnostic"/> message.
-    /// </summary>
-    /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
-    /// <param name="location">The location the diagnostic was produced at.</param>
     /// <param name="formatArgs">The format arguments of the message.</param>
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
         Location location,
-        params object?[] formatArgs) => new(template: template, location: location, formatArgs: formatArgs);
+        params object?[] formatArgs) => new(
+            template: template,
+            location: location,
+            formatArgs: formatArgs);
 
     /// <summary>
     /// The template for this message.

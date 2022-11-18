@@ -107,10 +107,18 @@ public sealed class Compilation
         Stream? csStream = null,
         Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null)
     {
+        var existingDiags = this.GetDiagnostics();
+        if (existingDiags.Length > 0)
+        {
+            return new(
+                Success: false,
+                Diagnostics: existingDiags);
+        }
+
         csStream ??= new MemoryStream();
         this.EmitCSharp(csStream);
-        csStream.Position = 0;
 
+        csStream.Position = 0;
         using var csStreamReader = new StreamReader(csStream);
         var csText = csStreamReader.ReadToEnd();
 
@@ -124,21 +132,24 @@ public sealed class Compilation
             options: options);
         var emitResult = cSharpCompilation.Emit(peStream);
 
-        var diags = ImmutableArray.CreateBuilder<Diagnostic>();
-        foreach (var diag in emitResult.Diagnostics)
+        if (!emitResult.Success)
         {
-            // TODO: Clean this mess up
-            diags.Add(new Diagnostic(
-                Internal.Diagnostics.Diagnostic.Create(
-                    template: DiagnosticTemplate.Create(
-                        title: "C# compilation error",
-                        severity: DiagnosticSeverity.Error,
-                        format: "Internal compiler error: {0}"),
-                    location: default,
-                    formatArgs: diag.GetMessage()),
-                null));
+            var diags = ImmutableArray.CreateBuilder<Diagnostic>();
+            foreach (var diag in emitResult.Diagnostics)
+            {
+                var translatedDiag = Diagnostic.Create(
+                    template: CodegenErrors.Roslyn,
+                    location: Location.None,
+                    formatArgs: diag.GetMessage());
+                diags.Add(translatedDiag);
+            }
+            return new(
+                Success: false,
+                Diagnostics: diags.ToImmutable());
         }
 
-        return new(emitResult.Success, diags.ToImmutable());
+        return new(
+            Success: true,
+            Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
 }

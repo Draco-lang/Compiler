@@ -63,7 +63,7 @@ internal static class SymbolResolution
             // Emplace an error
             var diag = Diagnostic.Create(
                 template: SemanticErrors.UndefinedReference,
-                location: tree.Green.Location,
+                location: new Location.ToTree(tree),
                 formatArgs: name);
             symbol = new Symbol.Error(name, ImmutableArray.Create(diag));
         }

@@ -13,10 +13,8 @@ namespace Draco.Compiler.Cli;
 
 internal class Program
 {
-    internal static int Main(string[] args)
-    {
-        return ConfigureCommands().Invoke(args);
-    }
+    internal static int Main(string[] args) =>
+        ConfigureCommands().Invoke(args);
 
     private static RootCommand ConfigureCommands()
     {
@@ -26,7 +24,7 @@ internal class Program
         var runCommand = new Command("run", "Runs specified draco file")
         {
             fileArgument,
-            outputOption
+            outputOption,
         };
         runCommand.SetHandler(Run, fileArgument);
 
@@ -46,7 +44,7 @@ internal class Program
         var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
         {
             fileArgument,
-            outputOption
+            outputOption,
         };
         generateExeCommand.SetHandler((input, output) => GenerateExe(input, output), fileArgument, outputOption);
 
@@ -63,6 +61,12 @@ internal class Program
         var sourceText = File.ReadAllText(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
+        var diagnostics = compilation.GetDiagnostics();
+        if (diagnostics.Length > 0)
+        {
+            foreach (var diag in diagnostics) Console.WriteLine(diag);
+            return;
+        }
         var result = ScriptingEngine.Execute(compilation);
         Console.WriteLine($"Result: {result}");
     }
@@ -79,6 +83,12 @@ internal class Program
         var sourceText = File.ReadAllText(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
+        var diagnostics = compilation.GetDiagnostics();
+        if (diagnostics.Length > 0)
+        {
+            foreach (var diag in diagnostics) Console.WriteLine(diag);
+            return;
+        }
         using var csStream = new MemoryStream();
         compilation.EmitCSharp(csStream);
         csStream.Position = 0;
@@ -92,6 +102,12 @@ internal class Program
         var sourceText = File.ReadAllText(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree, output.Name);
+        var diagnostics = compilation.GetDiagnostics();
+        if (diagnostics.Length > 0)
+        {
+            foreach (var diag in diagnostics) Console.WriteLine(diag);
+            return;
+        }
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         compilation.Emit(dllStream);
     }

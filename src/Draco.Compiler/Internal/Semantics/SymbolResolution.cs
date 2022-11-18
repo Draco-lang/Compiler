@@ -65,7 +65,7 @@ internal static class SymbolResolution
                 template: SemanticErrors.UndefinedReference,
                 location: tree.Green.Location,
                 formatArgs: name);
-            symbol = new Symbol.Error(name, ImmutableArray.Create(diag), tree);
+            symbol = new Symbol.Error(name, ImmutableArray.Create(diag));
         }
         return symbol;
     }

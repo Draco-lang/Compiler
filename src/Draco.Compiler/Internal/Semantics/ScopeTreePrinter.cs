@@ -68,12 +68,10 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
                 .Append("define ")
                 .Append(definedSymbol.Name);
         }
-        if (referencedSymbol is not null
-         && referencedSymbol.Definition is not null
-         && referencedSymbol.DefinitionTree is not null)
+        if (referencedSymbol is not null && referencedSymbol.Definition is not null)
         {
             // Append reference info
-            var referencedName = this.GetNodeName(referencedSymbol.DefinitionTree);
+            var referencedName = this.GetNodeName(referencedSymbol.Definition);
             this.Builder.AppendLine($"  {name} -> {referencedName}");
         }
 

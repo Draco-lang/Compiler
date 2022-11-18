@@ -41,9 +41,18 @@ internal abstract partial record class Location
     /// Represents a <see cref="Location"/> relative to a parse-tree element.
     /// </summary>
     /// <param name="Range">The relative range compared to the tree.</param>
-    public sealed record class Tree(RelativeRange Range) : Location
+    public sealed record class OnTree(RelativeRange Range) : Location
     {
         // TODO
         public override ApiLocation ToApiLocation(ParseTree? context) => throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Represents a <see cref="Location"/> referencing a <see cref="ParseTree"/> element.
+    /// </summary>
+    /// <param name="Node">The node the location refers to.</param>
+    public sealed record class ToTree(ParseTree Node) : Location
+    {
+        public override ApiLocation ToApiLocation(ParseTree? context) => this.Node.Location;
     }
 }

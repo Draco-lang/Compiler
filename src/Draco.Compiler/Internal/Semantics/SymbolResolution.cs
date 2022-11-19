@@ -292,5 +292,6 @@ internal static class SymbolResolution
         Add("string");
         Add("unit");
         Add("bool");
+        Add("char");
     }
 }

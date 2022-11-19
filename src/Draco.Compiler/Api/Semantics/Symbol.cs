@@ -12,7 +12,7 @@ namespace Draco.Compiler.Api.Semantics;
 /// <summary>
 /// Represents a symbol in the language.
 /// </summary>
-public interface ISymbol
+public interface ISymbol : IEquatable<ISymbol>
 {
     /// <summary>
     /// The name of the symbol.
@@ -55,4 +55,12 @@ internal sealed class Symbol : ISymbol
     {
         this.InternalSymbol = internalSymbol;
     }
+
+    public override bool Equals(object? obj) => this.Equals(obj as ISymbol);
+
+    public bool Equals(ISymbol? other) =>
+           other is Symbol otherSym
+        && object.Equals(this.InternalSymbol, otherSym.InternalSymbol);
+
+    public override int GetHashCode() => this.InternalSymbol.GetHashCode();
 }

@@ -103,7 +103,8 @@ public abstract partial class ParseTree
     {
         var text = this.ToString().AsSpan();
         var start = StepPositionByText(this.Range.Start, text.Slice(0, range.Offset));
-        var end = StepPositionByText(start, text.Slice(range.Offset, range.Width));
+        var minWidth = Math.Min(range.Width, text.Length);
+        var end = StepPositionByText(start, text.Slice(range.Offset, minWidth));
         return new(start, end);
     }
 

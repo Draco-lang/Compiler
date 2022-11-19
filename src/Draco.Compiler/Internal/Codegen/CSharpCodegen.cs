@@ -206,7 +206,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     {
         var indexed = this.VisitExpr(node.Called);
         var args = node.Args.Value.Elements.Select(a => this.VisitExpr(a.Value)).ToList();
-        return $"{indexed}[{string.Join(", ", args)}];";
+        return $"{indexed}[{string.Join(", ", args)}]";
     }
 
     public override string VisitMemberAccessExpr(Expr.MemberAccess node)
@@ -318,22 +318,29 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     public override string VisitStringExpr(Expr.String node)
     {
         var result = this.AllocateRegister();
-        this.Indent2();
-        this.output.WriteLine($"dynamic {result} = new System.Text.StringBuilder();");
+        this
+            .Indent2()
+            .AppendLine($"dynamic {result} = new System.Text.StringBuilder();");
+        var firstInLine = true;
         foreach (var part in node.Parts)
         {
             if (part is StringPart.Interpolation i)
             {
                 var subexpr = this.VisitExpr(i.Expression);
-                this.Indent2();
-                this.output.WriteLine($"{result}.Append({subexpr}.ToString());");
+                this
+                    .Indent2()
+                    .AppendLine($"{result}.Append({subexpr}.ToString());");
+                firstInLine = false;
             }
             else
             {
                 var c = (StringPart.Content)part;
-                var text = c.Value.ValueText!.Substring(c.Cutoff); //Infer# says ValueText could be null.
-                this.Indent2();
-                this.output.WriteLine($"{result}.Append(\"{StringUtils.Unescape(text)}\");");
+                var text = c.Value.ValueText!;
+                if (firstInLine) text = text.Substring(c.Cutoff);
+                this
+                    .Indent2()
+                    .AppendLine($"{result}.Append(\"{StringUtils.Unescape(text)}\");");
+                firstInLine = c.Value.Type == TokenType.StringNewline;
             }
         }
         return $"{result}.ToString()";

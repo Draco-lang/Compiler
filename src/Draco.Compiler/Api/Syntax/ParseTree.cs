@@ -291,6 +291,9 @@ public abstract partial class ParseTree
     private static IEnumerable<ParseTree> ToRed(ParseTree? parent, IEnumerable<Internal.Syntax.ParseTree> elements) =>
         elements.Select(e => ToRed(parent, e));
 
+    private static ImmutableArray<ParseTree> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree> elements) =>
+        elements.Select(e => ToRed(parent, e)).ToImmutableArray();
+
     private static ImmutableArray<Token> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Token> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 

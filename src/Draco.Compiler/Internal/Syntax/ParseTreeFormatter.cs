@@ -12,13 +12,13 @@ namespace Draco.Compiler.Internal.Syntax;
 
 internal sealed record class ParseTreeFormatterSettings(string Indentation);
 
-internal class ParseTreeFormatter : ParseTreeTransformerBase
+internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 {
     private TokenType? lastToken;
     private TokenType? nextToken;
     private IEnumerator<Token>? tokens;
+    private readonly ParseTreeFormatterSettings settings;
     private int indentCount = 0;
-    private ParseTreeFormatterSettings settings;
     private string Indentation
     {
         get
@@ -36,13 +36,7 @@ internal class ParseTreeFormatter : ParseTreeTransformerBase
 
     private IEnumerable<Token> GetTokens(ParseTree tree)
     {
-        var tokens = new List<Token>();
-        foreach (var child in tree.Children)
-        {
-            if (child is ParseTree.Token tok) tokens.Add(tok);
-            else tokens.AddRange(this.GetTokens(child));
-        }
-        return tokens;
+        return tree.InOrderTraverse().OfType<Token>();
     }
 
     private Token.Builder AddIndentation(Token.Builder newToken)
@@ -60,6 +54,7 @@ internal class ParseTreeFormatter : ParseTreeTransformerBase
     public ParseTree Format(ParseTree tree)
     {
         this.tokens = this.GetTokens(tree).GetEnumerator();
+        // We need to be one token ahead, because the next token affects the current one, so we must advance twice here
         this.tokens.MoveNext();
         this.tokens.MoveNext();
         this.nextToken = this.tokens.Current.Type;
@@ -155,14 +150,14 @@ internal class ParseTreeFormatter : ParseTreeTransformerBase
         else this.nextToken = this.tokens.Current.Type;
         if (resultToken is not null)
         {
-            changed = !this.checkTokensValueEqual(resultToken, token);
+            changed = !this.CheckTokensValueEqual(resultToken, token);
             return resultToken;
         }
         changed = false;
         return token;
     }
 
-    private bool checkTokensValueEqual(Token tok1, Token tok2)
+    private bool CheckTokensValueEqual(Token tok1, Token tok2)
     {
         if (tok1.TrailingTrivia.Length != tok2.TrailingTrivia.Length) return false;
         for (int i = 0; i < tok1.TrailingTrivia.Length; i++)

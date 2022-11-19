@@ -157,7 +157,6 @@ internal abstract partial record class ParseTree
             leadingTrivia: ImmutableArray<Token>.Empty,
             trailingTrivia: ImmutableArray<Token>.Empty,
             diagnostics: diagnostics);
-
     }
 
     // Builder type
@@ -209,16 +208,14 @@ internal abstract partial record class ParseTree
                     diagnostics: diags);
             }
 
-            public static Builder From(Token token)
-            {
-                return new Builder()
+            public static Builder From(Token token) =>
+                new Builder()
                     .SetType(token.Type)
                     .SetText(token.Text)
                     .SetValue(token.Value)
                     .SetLeadingTrivia(token.LeadingTrivia)
                     .SetTrailingTrivia(token.TrailingTrivia)
                     .SetDiagnostics(token.Diagnostics);
-            }
 
             public Builder SetType(TokenType tokenType)
             {

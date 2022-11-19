@@ -255,32 +255,6 @@ internal abstract partial record class ParseTree
                 this.Diagnostics = diagnostics;
                 return this;
             }
-
-            public Builder SetLeadingTrivia(TokenType type, string value)
-            {
-                var trivia = Token.From(type, value);
-                var array = ImmutableArray.CreateBuilder<Token>();
-                array.Add(trivia);
-                this.LeadingTrivia = array.ToImmutable();
-                return this;
-            }
-
-            public Builder SetTrailingTrivia(TokenType type, string value)
-            {
-                var trivia = Token.From(type, value);
-                var array = ImmutableArray.CreateBuilder<Token>();
-                array.Add(trivia);
-                this.TrailingTrivia = array.ToImmutable();
-                return this;
-            }
-
-            public Builder SetDiagnostics(Diagnostic diagnostics)
-            {
-                var array = ImmutableArray.CreateBuilder<Diagnostic>();
-                array.Add(diagnostics);
-                this.Diagnostics = array.ToImmutable();
-                return this;
-            }
         }
     }
 }

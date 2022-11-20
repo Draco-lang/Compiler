@@ -358,5 +358,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         }
     }
 
+    public override string VisitGroupingExpr(Expr.Grouping node) => this.VisitExpr(node.Expression.Value);
+
     public override string VisitNameExpr(Expr.Name node) => this.ReferencedSymbol(node);
 }

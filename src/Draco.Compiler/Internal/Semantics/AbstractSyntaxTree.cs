@@ -11,8 +11,6 @@ namespace Draco.Compiler.Internal.Semantics;
 
 internal abstract partial record class AbstractSyntaxTree
 {
-    public sealed record class Symbol();
-
     public abstract partial record class Decl : AbstractSyntaxTree
     {
         /// <summary>

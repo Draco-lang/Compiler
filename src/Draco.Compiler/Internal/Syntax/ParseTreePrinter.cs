@@ -5,8 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Semantics;
 using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
+using ApiParseTree = Draco.Compiler.Api.Syntax.ParseTree;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -157,4 +159,38 @@ internal sealed class DebugParseTreePrinter
 
     private static string DiagnosticToString(Diagnostic diagnostic) =>
            string.Format(diagnostic.Format, diagnostic.FormatArgs);
+}
+
+/// <summary>
+/// Prints the parse tree in a DOT graph format.
+/// </summary>
+internal sealed class DotParseTreePrinter : DotGraphParseTreePrinterBase
+{
+    public static string Print(ApiParseTree parseTree)
+    {
+        var printer = new DotParseTreePrinter();
+        printer.PrintTree(parseTree);
+        return printer.Code;
+    }
+
+    protected override void PrintSingle(ApiParseTree tree)
+    {
+        var name = this.GetNodeName(tree);
+
+        // Node text
+        var text = NodeToString(tree);
+        this.Builder.AppendLine($"  {name} [label=\"{text}\"]");
+
+        // Parent relation
+        if (this.TryGetParentName(out var parentName))
+        {
+            this.Builder.AppendLine($"  {name} -> {parentName} [dir=none]");
+        }
+    }
+
+    private static string NodeToString(ApiParseTree tree) => tree switch
+    {
+        ApiParseTree.Token token => token.Text,
+        _ => tree.GetType().Name,
+    };
 }

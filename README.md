@@ -11,3 +11,24 @@
 
 ### What is this?
 This is the repository for the work-in-progress compiler for the Draco programming language, a new .NET programming language under development. If you want further details on the language itself or want to contribute ideas, head over to the [language suggestions repository](https://github.com/Draco-lang/Language-suggestions).
+
+### Roadmap
+
+ * Syntax analysis
+   * [x] Lexing
+   * [x] Parsing
+   * [x] Red-green trees
+ * Semantic analysis
+   * [x] Symbol resolution
+   * [ ] Type checking
+   * [ ] Type inference
+   * [ ] Dataflow analysis
+ * Codegen
+   * [ ] AST
+   * [ ] Lowering
+   * [ ] Custom IR
+   * [ ] Writing IL
+   * [ ] Writing PE
+ * [ ] Optimization
+   * [ ] TCO
+   * [ ] Vectorization

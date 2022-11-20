@@ -5,8 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics;
-using Draco.Query;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.Compiler.Api.Semantics;
@@ -46,7 +46,7 @@ public sealed class SemanticModel
         {
             if (SymbolResolution.ReferencesSymbol(tree))
             {
-                var sym = SymbolResolution.GetReferencedSymbol(this.db, tree).GetAwaiter().GetResult();
+                var sym = SymbolResolution.GetReferencedSymbol(this.db, tree);
                 foreach (var diag in sym.Diagnostics) yield return diag.ToApiDiagnostic(tree);
             }
 
@@ -63,11 +63,8 @@ public sealed class SemanticModel
     /// <param name="subtree">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// define any.</returns>
-    public async Task<ISymbol?> GetDefinedSymbolOrNull(ParseTree subtree)
-    {
-        var internalSymbol = await SymbolResolution.GetDefinedSymbolOrNull(this.db, subtree);
-        return internalSymbol?.ToApiSymbol();
-    }
+    public ISymbol? GetDefinedSymbolOrNull(ParseTree subtree) =>
+        SymbolResolution.GetDefinedSymbolOrNull(this.db, subtree)?.ToApiSymbol();
 
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> referenced by <paramref name="subtree"/>.
@@ -75,20 +72,14 @@ public sealed class SemanticModel
     /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// reference any.</returns>
-    public async Task<ISymbol?> GetReferencedSymbolOrNull(ParseTree subtree)
-    {
-        var internalSymbol = await SymbolResolution.GetReferencedSymbolOrNull(this.db, subtree);
-        return internalSymbol?.ToApiSymbol();
-    }
+    public ISymbol? GetReferencedSymbolOrNull(ParseTree subtree) =>
+        SymbolResolution.GetReferencedSymbolOrNull(this.db, subtree)?.ToApiSymbol();
 
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> referenced by <paramref name="subtree"/>.
     /// </summary>
     /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>.</returns>
-    public async Task<ISymbol> GetReferencedSymbol(ParseTree subtree)
-    {
-        var internalSymbol = await SymbolResolution.GetReferencedSymbol(this.db, subtree);
-        return internalSymbol.ToApiSymbol();
-    }
+    public ISymbol GetReferencedSymbol(ParseTree subtree) =>
+        SymbolResolution.GetReferencedSymbol(this.db, subtree).ToApiSymbol();
 }

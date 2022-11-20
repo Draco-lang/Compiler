@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Utilities;
-using Draco.Query;
 
 namespace Draco.Compiler.Internal.Semantics;
 
@@ -93,13 +93,13 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
 
     // TODO: Can we get rid of this pattern?
     private Scope? GetDefinedScope(ParseTree tree) =>
-        SymbolResolution.GetDefinedScopeOrNull(this.db, tree).GetAwaiter().GetResult();
+        SymbolResolution.GetDefinedScopeOrNull(this.db, tree);
 
     // TODO: Can we get rid of this pattern?
     private Symbol? GetDefinedSymbol(ParseTree tree) =>
-        SymbolResolution.GetDefinedSymbolOrNull(this.db, tree).GetAwaiter().GetResult();
+        SymbolResolution.GetDefinedSymbolOrNull(this.db, tree);
 
     // TODO: Can we get rid of this pattern?
     private Symbol? GetReferencedSymbol(ParseTree tree) =>
-        SymbolResolution.GetReferencedSymbolOrNull(this.db, tree).GetAwaiter().GetResult();
+        SymbolResolution.GetReferencedSymbolOrNull(this.db, tree);
 }

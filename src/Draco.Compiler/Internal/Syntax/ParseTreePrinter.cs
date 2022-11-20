@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Semantics;
 using Draco.Compiler.Internal.Utilities;
-using Draco.Query;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
 using ApiParseTree = Draco.Compiler.Api.Syntax.ParseTree;
 

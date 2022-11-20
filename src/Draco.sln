@@ -17,8 +17,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Cli", "Draco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.Attributes", "Draco.RedGreenTree.Attributes\Draco.RedGreenTree.Attributes.csproj", "{42E11AC1-C418-4438-B873-D9CBC104F798}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Query", "Draco.Query\Draco.Query.csproj", "{55D9A5AB-4D84-48F7-9D46-D44A5E635D8B}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Editor.Web", "Draco.Editor.Web\Draco.Editor.Web.csproj", "{3AE74A5A-8201-4DF7-867B-AE929B8387B4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AED258F7-746C-452E-B073-153F9457660B}"
@@ -27,10 +25,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.LanguageServer", "Draco.LanguageServer\Draco.LanguageServer.csproj", "{715FB0AC-561D-4958-8D79-0ACD516BA89B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Query.Sample", "Draco.Query.Sample\Draco.Query.Sample.csproj", "{D636F436-F0B8-452D-97A3-1943ED1BAFAA}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Query.Tests", "Draco.Query.Tests\Draco.Query.Tests.csproj", "{F3D47105-A1AB-4390-BA76-03B66D8C0917}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,12 +75,6 @@ Global
 		{42E11AC1-C418-4438-B873-D9CBC104F798}.Nuget|Any CPU.Build.0 = Release|Any CPU
 		{42E11AC1-C418-4438-B873-D9CBC104F798}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42E11AC1-C418-4438-B873-D9CBC104F798}.Release|Any CPU.Build.0 = Release|Any CPU
-		{55D9A5AB-4D84-48F7-9D46-D44A5E635D8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{55D9A5AB-4D84-48F7-9D46-D44A5E635D8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{55D9A5AB-4D84-48F7-9D46-D44A5E635D8B}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
-		{55D9A5AB-4D84-48F7-9D46-D44A5E635D8B}.Nuget|Any CPU.Build.0 = Release|Any CPU
-		{55D9A5AB-4D84-48F7-9D46-D44A5E635D8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{55D9A5AB-4D84-48F7-9D46-D44A5E635D8B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3AE74A5A-8201-4DF7-867B-AE929B8387B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3AE74A5A-8201-4DF7-867B-AE929B8387B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AE74A5A-8201-4DF7-867B-AE929B8387B4}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
@@ -99,18 +87,6 @@ Global
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D636F436-F0B8-452D-97A3-1943ED1BAFAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D636F436-F0B8-452D-97A3-1943ED1BAFAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D636F436-F0B8-452D-97A3-1943ED1BAFAA}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
-		{D636F436-F0B8-452D-97A3-1943ED1BAFAA}.Nuget|Any CPU.Build.0 = Debug|Any CPU
-		{D636F436-F0B8-452D-97A3-1943ED1BAFAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D636F436-F0B8-452D-97A3-1943ED1BAFAA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F3D47105-A1AB-4390-BA76-03B66D8C0917}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F3D47105-A1AB-4390-BA76-03B66D8C0917}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F3D47105-A1AB-4390-BA76-03B66D8C0917}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
-		{F3D47105-A1AB-4390-BA76-03B66D8C0917}.Nuget|Any CPU.Build.0 = Debug|Any CPU
-		{F3D47105-A1AB-4390-BA76-03B66D8C0917}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F3D47105-A1AB-4390-BA76-03B66D8C0917}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

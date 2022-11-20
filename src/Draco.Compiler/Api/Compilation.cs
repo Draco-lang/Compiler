@@ -10,7 +10,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
-using Draco.Query;
+using Draco.Compiler.Internal.Query;
 using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 
 namespace Draco.Compiler.Api;

@@ -108,7 +108,6 @@ internal abstract partial record class ParseTree
         }
     }
 
-
     // Factory functions
     internal partial record class Token
     {
@@ -208,14 +207,13 @@ internal abstract partial record class ParseTree
                     diagnostics: diags);
             }
 
-            public static Builder From(Token token) =>
-                new Builder()
-                    .SetType(token.Type)
-                    .SetText(token.Text)
-                    .SetValue(token.Value)
-                    .SetLeadingTrivia(token.LeadingTrivia)
-                    .SetTrailingTrivia(token.TrailingTrivia)
-                    .SetDiagnostics(token.Diagnostics);
+            public static Builder From(Token token) => new Builder()
+                .SetType(token.Type)
+                .SetText(token.Text)
+                .SetValue(token.Value)
+                .SetLeadingTrivia(token.LeadingTrivia)
+                .SetTrailingTrivia(token.TrailingTrivia)
+                .SetDiagnostics(token.Diagnostics);
 
             public Builder SetType(TokenType tokenType)
             {

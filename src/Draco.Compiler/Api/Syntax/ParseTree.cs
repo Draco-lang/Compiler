@@ -84,10 +84,8 @@ public abstract partial class ParseTree
         public TokenType Type => this.Green.Type;
     }
 
-    public ParseTree Format()
-    {
-        return ToRed(null, new ParseTreeFormatter(new("    ")).Format(this.Green));
-    }
+    public ParseTree Format() =>
+        ToRed(null, new ParseTreeFormatter(ParseTreeFormatterSettings.DefaultSettings).Format(this.Green));
 }
 
 public abstract partial class ParseTree

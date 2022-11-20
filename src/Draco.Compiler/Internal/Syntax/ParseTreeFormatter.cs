@@ -10,7 +10,10 @@ using Token = Draco.Compiler.Internal.Syntax.ParseTree.Token;
 
 namespace Draco.Compiler.Internal.Syntax;
 
-internal sealed record class ParseTreeFormatterSettings(string Indentation);
+internal sealed record class ParseTreeFormatterSettings(string Indentation)
+{
+    internal static readonly ParseTreeFormatterSettings DefaultSettings = new ParseTreeFormatterSettings("    ");
+}
 
 internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 {
@@ -24,7 +27,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         get
         {
             var result = new StringBuilder();
-            for (int i = 0; i < this.indentCount; i++, result.Append(this.settings.Indentation)) ;
+            for (int i = 0; i < this.indentCount; ++i) result.Append(this.settings.Indentation);
             return result.ToString();
         }
     }
@@ -34,10 +37,8 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         this.settings = settings;
     }
 
-    private IEnumerable<Token> GetTokens(ParseTree tree)
-    {
-        return tree.InOrderTraverse().OfType<Token>();
-    }
+    private IEnumerable<Token> GetTokens(ParseTree tree) =>
+        tree.InOrderTraverse().OfType<Token>();
 
     private Token.Builder AddIndentation(Token.Builder newToken)
     {
@@ -55,10 +56,10 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
     {
         this.tokens = this.GetTokens(tree).GetEnumerator();
         // We need to be one token ahead, because the next token affects the current one, so we must advance twice here
-        this.tokens.MoveNext();
-        this.tokens.MoveNext();
+        if (!(this.tokens.MoveNext() && this.tokens.MoveNext()))
+            return tree;
         this.nextToken = this.tokens.Current.Type;
-        return this.Transform(tree, out bool changed);
+        return this.Transform(tree, out _);
     }
 
     public override Token TransformToken(Token token, out bool changed)
@@ -150,14 +151,14 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         else this.nextToken = this.tokens.Current.Type;
         if (resultToken is not null)
         {
-            changed = !this.CheckTokensValueEqual(resultToken, token);
+            changed = !this.CheckTriviaEqual(resultToken, token);
             return resultToken;
         }
         changed = false;
         return token;
     }
 
-    private bool CheckTokensValueEqual(Token tok1, Token tok2)
+    private bool CheckTriviaEqual(Token tok1, Token tok2)
     {
         if (tok1.TrailingTrivia.Length != tok2.TrailingTrivia.Length) return false;
         for (int i = 0; i < tok1.TrailingTrivia.Length; i++)
@@ -173,8 +174,6 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         return true;
     }
 
-    private ImmutableArray<Token> CreateTrivia(TokenType type, string text)
-    {
-        return ImmutableArray.Create(Token.From(type, text));
-    }
+    private ImmutableArray<Token> CreateTrivia(TokenType type, string text) =>
+        ImmutableArray.Create(Token.From(type, text));
 }

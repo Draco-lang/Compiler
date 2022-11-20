@@ -5,12 +5,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Syntax;
 
-namespace Draco.Compiler.Internal.Syntax;
+namespace Draco.Compiler.Internal.Semantics;
 
 internal abstract partial record class AbstractSyntaxTree
 {
-    public sealed record class Symbol() : AbstractSyntaxTree;
+    public sealed record class Symbol();
 
     public abstract partial record class Decl : AbstractSyntaxTree
     {

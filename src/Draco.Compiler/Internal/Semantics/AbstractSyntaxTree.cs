@@ -17,7 +17,7 @@ internal abstract partial record class AbstractSyntaxTree
         /// A function declaration.
         /// </summary>
         public sealed partial record class Func(
-            Symbol Identifier,
+            Symbol DeclarationSymbol,
             ImmutableArray<Symbol> Params,
             Symbol? ReturnType,
             FuncBody Body) : Decl;
@@ -26,13 +26,13 @@ internal abstract partial record class AbstractSyntaxTree
         /// A label declaration.
         /// </summary>
         public sealed partial record class Label(
-            Symbol Identifier) : Decl;
+            Symbol LabelSymbol) : Decl;
 
         /// <summary>
         /// A variable declaration.
         /// </summary>
         public sealed partial record class Variable(
-            Symbol Identifier,
+            Symbol DeclarationSymbol,
             Symbol? Type,
             Expr Value) : Decl;
     }

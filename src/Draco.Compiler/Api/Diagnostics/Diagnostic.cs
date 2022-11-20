@@ -7,44 +7,162 @@ using System.Threading.Tasks;
 namespace Draco.Compiler.Api.Diagnostics;
 
 /// <summary>
+/// The possible severities of diagnostic messages.
+/// </summary>
+public enum DiagnosticSeverity
+{
+    /// <summary>
+    /// Informational diagnostic message.
+    /// </summary>
+    Info,
+
+    /// <summary>
+    /// Warning diagnostic message.
+    /// </summary>
+    Warning,
+
+    /// <summary>
+    /// Error diagnostic message.
+    /// </summary>
+    Error,
+}
+
+/// <summary>
+/// A template for creating <see cref="Diagnostic"/> messages.
+/// </summary>
+public sealed record class DiagnosticTemplate
+{
+    /// <summary>
+    /// Creates a new <see cref="DiagnosticTemplate"/>.
+    /// </summary>
+    /// <param name="title">A short title for the message.</param>
+    /// <param name="severity">The severity of the message.</param>
+    /// <param name="format">The format string that describes the diagnostic in detail.</param>
+    /// <returns>The constructed <see cref="DiagnosticTemplate"/>.</returns>
+    public static DiagnosticTemplate Create(string title, DiagnosticSeverity severity, string format) =>
+        new(title: title, severity: severity, format: format);
+
+    /// <summary>
+    /// A short title for the message.
+    /// </summary>
+    public string Title { get; }
+
+    /// <summary>
+    /// The severity of the message.
+    /// </summary>
+    public DiagnosticSeverity Severity { get; }
+
+    /// <summary>
+    /// The format string that describes the diagnostic in detail.
+    /// </summary>
+    public string Format { get; }
+
+    private DiagnosticTemplate(
+        string title,
+        DiagnosticSeverity severity,
+        string format)
+    {
+        this.Title = title;
+        this.Severity = severity;
+        this.Format = format;
+    }
+}
+
+/// <summary>
 /// A diagnostic produced by the compiler.
 /// </summary>
 public sealed class Diagnostic
 {
     /// <summary>
-    /// The location of the diagnostic.
+    /// Constructs a <see cref="Diagnostic"/> message.
     /// </summary>
-    public Location Location { get; }
+    /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
+    /// <param name="location">The location the diagnostic was produced at.</param>
+    /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
+    public static Diagnostic Create(
+        DiagnosticTemplate template,
+        Location location) => new(template: template, formatArgs: Array.Empty<object?>(), location: location);
 
     /// <summary>
-    /// The message explaining this diagnostics.
+    /// Constructs a <see cref="Diagnostic"/> message.
     /// </summary>
-    public string Message =>
-        string.Format(this.internalDiagnostic.Format, this.internalDiagnostic.FormatArgs);
+    /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
+    /// <param name="location">The location the diagnostic was produced at.</param>
+    /// <param name="formatArgs">The format arguments of the message.</param>
+    /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
+    public static Diagnostic Create(
+        DiagnosticTemplate template,
+        Location location,
+        params object?[] formatArgs) => new(
+            template: template,
+            location: location,
+            formatArgs: formatArgs);
 
-    private readonly Internal.Diagnostics.Diagnostic internalDiagnostic;
+    /// <summary>
+    /// The template for this message.
+    /// </summary>
+    public DiagnosticTemplate Template { get; }
+
+    /// <summary>
+    /// A short title for the message.
+    /// </summary>
+    public string Title => this.Template.Title;
+
+    /// <summary>
+    /// The severity of the message.
+    /// </summary>
+    public DiagnosticSeverity Severity => this.Template.Severity;
+
+    /// <summary>
+    /// The format string that describes the diagnostic in detail.
+    /// </summary>
+    public string Format => this.Template.Format;
+
+    /// <summary>
+    /// The format arguments to apply to the message.
+    /// </summary>
+    public object?[] FormatArgs { get; }
+
+    /// <summary>
+    /// The formatted message.
+    /// </summary>
+    public string Message => string.Format(this.Format, this.FormatArgs);
+
+    /// <summary>
+    /// The assoicated location of the message.
+    /// </summary>
+    public Location Location { get; }
 
     internal Diagnostic(
         Internal.Diagnostics.Diagnostic internalDiagnostic,
         Location location)
+        : this(internalDiagnostic.Template, internalDiagnostic.FormatArgs, location)
     {
-        this.internalDiagnostic = internalDiagnostic;
+    }
+
+    private Diagnostic(
+        DiagnosticTemplate template,
+        object?[] formatArgs,
+        Location location)
+    {
+        this.Template = template;
+        this.FormatArgs = formatArgs;
         this.Location = location;
     }
 
     public override string ToString()
     {
         var sb = new StringBuilder();
-        var severity = this.internalDiagnostic.Severity switch
+        var severity = this.Severity switch
         {
-            Internal.Diagnostics.DiagnosticSeverity.Info => "info",
-            Internal.Diagnostics.DiagnosticSeverity.Warning => "warning",
-            Internal.Diagnostics.DiagnosticSeverity.Error => "error",
+            DiagnosticSeverity.Info => "info",
+            DiagnosticSeverity.Warning => "warning",
+            DiagnosticSeverity.Error => "error",
             _ => throw new InvalidOperationException(),
         };
-        var position = this.Location.Range.Start;
-        sb.AppendLine($"{severity} at line {position.Line + 1}, column {position.Column + 1}: {this.internalDiagnostic.Title}");
-        sb.Append(this.Message);
+        sb.Append(severity);
+        if (!this.Location.IsNone) sb.Append($" {this.Location}");
+        sb.Append(": ").Append(this.Message);
         return sb.ToString();
     }
 }

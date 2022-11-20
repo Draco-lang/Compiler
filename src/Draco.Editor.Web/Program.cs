@@ -5,6 +5,7 @@ using ICSharpCode.Decompiler;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Editor.Web;
 
@@ -63,7 +64,8 @@ public class Program
     {
         try
         {
-            var compilation = new Compilation(code, "GeneratedAssembly");
+            var tree = ParseTree.Parse(code);
+            var compilation = Compilation.Create(tree);
             switch (selectedOutputType)
             {
             case "Run":
@@ -92,9 +94,13 @@ public class Program
         var consoleStream = new StringWriter();
         var consoleLoop = BackgroundLoop(consoleStream, cts.Token);
         Console.SetOut(consoleStream);
+        var outputText = null as string;
         try
         {
-            ScriptingEngine.InlineExecute(compilation);
+            var execResult = ScriptingEngine.Execute(
+                compilation,
+                csCompilerOptionBuilder: config => config.WithConcurrentBuild(false));
+            if (!execResult.Success) outputText = string.Join("\n", execResult.Diagnostics);
         }
         catch (Exception e)
         {
@@ -102,30 +108,50 @@ public class Program
         }
         cts.Cancel();
         await consoleLoop;
-        await SetOutputText(consoleStream.ToString());
+        outputText ??= consoleStream.ToString();
+        await SetOutputText(outputText);
         Console.SetOut(oldOut);
     }
 
     private static async Task DisplayCompiledCSharp(Compilation compilation)
     {
-        ScriptingEngine.CompileToCSharpCode(compilation);
-        await SetOutputText(compilation.GeneratedCSharp!);
+        var csStream = new MemoryStream();
+        var emitResult = compilation.EmitCSharp(csStream);
+        if (emitResult.Success)
+        {
+            csStream.Position = 0;
+            var csText = new StreamReader(csStream).ReadToEnd();
+            await SetOutputText(csText);
+        }
+        else
+        {
+            var errors = string.Join("\n", emitResult.Diagnostics);
+            await SetOutputText(errors);
+        }
     }
 
     private static async Task DisplayCompiledIL(Compilation compilation)
     {
         using var inlineDllStream = new MemoryStream();
-        if (!ScriptingEngine.CompileToAssembly(compilation, inlineDllStream, (config) => config.WithConcurrentBuild(false))) return;
-        inlineDllStream.Position = 0;
-        var text = new PlainTextOutput();
-        var disassembler = new ReflectionDisassembler(text, default);
-        using (var pe = new PEFile("_", inlineDllStream))
+        var emitResult = compilation.Emit(inlineDllStream, csCompilerOptionBuilder: config => config.WithConcurrentBuild(false));
+        if (emitResult.Success)
         {
-            disassembler.WriteAssemblyHeader(pe);
-            text.WriteLine();
-            disassembler.WriteModuleContents(pe);
+            inlineDllStream.Position = 0;
+            var text = new PlainTextOutput();
+            var disassembler = new ReflectionDisassembler(text, default);
+            using (var pe = new PEFile("_", inlineDllStream))
+            {
+                disassembler.WriteAssemblyHeader(pe);
+                text.WriteLine();
+                disassembler.WriteModuleContents(pe);
+            }
+            await SetOutputText(text.ToString());
         }
-        await SetOutputText(text.ToString());
+        else
+        {
+            var errors = string.Join("\n", emitResult.Diagnostics);
+            await SetOutputText(errors);
+        }
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ public abstract partial class ParseTree
 /// The base class for all nodes in the Draco parse-tree.
 /// </summary>
 [RedTree(typeof(Internal.Syntax.ParseTree))]
-public abstract partial class ParseTree
+public abstract partial class ParseTree : IEquatable<ParseTree>
 {
     private readonly Internal.Syntax.ParseTree green;
 
@@ -64,6 +65,11 @@ public abstract partial class ParseTree
     public Range Range => this.range ??= this.ComputeRange();
 
     /// <summary>
+    /// The location of this node.
+    /// </summary>
+    public Location Location => new Location.Tree(this.Range);
+
+    /// <summary>
     /// All <see cref="Token"/>s that this subtree consists of.
     /// </summary>
     public IEnumerable<Token> Tokens => this.GetTokens();
@@ -75,8 +81,15 @@ public abstract partial class ParseTree
     public IEnumerable<Diagnostic> GetAllDiagnostics() =>
         this.CollectAllDiagnostics();
 
-    public override string ToString() => this.ComputeTextWithoutSurroundingTrivia();
+    private string? text;
+    public override string ToString() => this.text ??= this.ComputeTextWithoutSurroundingTrivia();
     public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
+    public string ToDotGraphString() => Internal.Syntax.DotParseTreePrinter.Print(this);
+
+    // Equality by green nodes
+    public bool Equals(ParseTree? other) => ReferenceEquals(this.Green, other?.Green);
+    public override bool Equals(object? obj) => this.Equals(obj as ParseTree);
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this.Green);
 
     public sealed partial class Token
     {
@@ -86,26 +99,22 @@ public abstract partial class ParseTree
 
 public abstract partial class ParseTree
 {
-    private IEnumerable<Diagnostic> CollectAllDiagnostics()
+    internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range)
     {
-        foreach (var internalDiag in this.Green.Diagnostics)
-        {
-            var range = this.TranslateRelativeRange(internalDiag.Location.Range);
-            var location = new Location(range);
-            var diag = new Diagnostic(internalDiag, location);
-            yield return diag;
-        }
-        // Find in children too
-        foreach (var diag in this.Children.SelectMany(c => c.CollectAllDiagnostics())) yield return diag;
+        var text = this.ToString().AsSpan();
+        var start = StepPositionByText(this.Range.Start, text.Slice(0, range.Offset));
+        var minWidth = Math.Min(range.Width, text.Length);
+        var end = StepPositionByText(start, text.Slice(range.Offset, minWidth));
+        return new(start, end);
     }
 
-    private protected virtual Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange relativeRange)
+    private IEnumerable<Diagnostic> CollectAllDiagnostics()
     {
-        if (relativeRange.RelativeTo != Internal.Diagnostics.RelativeOffset.CurrentElement)
-        {
-            throw new NotSupportedException();
-        }
-        return new(this.Position, relativeRange.Width);
+        // Translate the diagnostics on this node
+        foreach (var diag in this.Green.Diagnostics) yield return diag.ToApiDiagnostic(this);
+
+        // Find in children too
+        foreach (var diag in this.Children.SelectMany(c => c.CollectAllDiagnostics())) yield return diag;
     }
 
     protected virtual string ComputeTextWithoutSurroundingTrivia()
@@ -118,7 +127,7 @@ public abstract partial class ParseTree
         // The first token just gets it's content printed
         // That ignores the leading trivia, trailing will only be printed if there are following tokens
         var hasFirstToken = tokenEnumerator.MoveNext();
-        Debug.Assert(hasFirstToken);
+        if (!hasFirstToken) return string.Empty;
         var firstToken = tokenEnumerator.Current;
         sb.Append(firstToken.Text);
         lastTrailingTrivia = firstToken.TrailingTrivia;
@@ -185,7 +194,7 @@ public abstract partial class ParseTree
     }
 
     // NOTE: This might be a good general utility somewhere else?
-    private static Position StepPositionByText(Position start, string text)
+    private static Position StepPositionByText(Position start, ReadOnlySpan<char> text)
     {
         var currLine = start.Line;
         var currCol = start.Column;
@@ -224,21 +233,6 @@ public abstract partial class ParseTree
 {
     public sealed partial class Token
     {
-        private protected override Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange relativeRange)
-        {
-            if (relativeRange.RelativeTo == Internal.Diagnostics.RelativeOffset.EndOfLastElement)
-            {
-                var prevToken = this.GetPrecedingToken(this);
-                var prevEnd = prevToken?.Range.End ?? new(0, 0);
-                return new(prevEnd, relativeRange.Width);
-            }
-            if (relativeRange.RelativeTo == Internal.Diagnostics.RelativeOffset.CurrentElement)
-            {
-                return new(this.Position, relativeRange.Width);
-            }
-            throw new NotSupportedException();
-        }
-
         protected override string ComputeTextWithoutSurroundingTrivia() => this.Text;
 
         protected override Position ComputePosition()
@@ -297,6 +291,9 @@ public abstract partial class ParseTree
 
     private static IEnumerable<ParseTree> ToRed(ParseTree? parent, IEnumerable<Internal.Syntax.ParseTree> elements) =>
         elements.Select(e => ToRed(parent, e));
+
+    private static ImmutableArray<ParseTree> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree> elements) =>
+        elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
     private static ImmutableArray<Token> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Token> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();

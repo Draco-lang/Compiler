@@ -47,7 +47,7 @@ public abstract partial class Location
 
         public override string ToString()
         {
-            var position = this.Range.Value.Start;
+            var position = this.Range!.Value.Start;
             return $"at line {position.Line + 1}, character {position.Column + 1}";
         }
     }

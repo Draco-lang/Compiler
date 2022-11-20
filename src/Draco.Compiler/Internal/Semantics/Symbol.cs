@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Query;
+using Draco.Compiler.Internal.Query;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ApiSymbol = Draco.Compiler.Api.Semantics.Symbol;
 
@@ -38,7 +38,7 @@ internal abstract partial class Symbol
     {
         public override ParseTree Definition { get; }
         public override Scope? EnclosingScope =>
-            SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition).GetAwaiter().GetResult();
+            SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition);
 
         private readonly QueryDatabase db;
 

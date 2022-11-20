@@ -8,9 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Utilities;
-using Draco.Query;
-using Draco.Query.Tasks;
 
 namespace Draco.Compiler.Internal.Semantics;
 
@@ -54,20 +53,25 @@ internal static class SymbolResolution
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that references a symbol.</param>
     /// <returns>The referenced <see cref="Symbol"/>, which can represent a reference error.</returns>
-    public static async Task<Symbol> GetReferencedSymbol(QueryDatabase db, ParseTree tree)
+    public static Symbol GetReferencedSymbol(QueryDatabase db, ParseTree tree)
     {
-        if (!TryGetReferencedSymbolName(tree, out var name)) throw new InvalidOperationException();
-        var symbol = await ReferenceSymbolOrNull(db, tree, name);
-        if (symbol is null)
+        Symbol Impl(ParseTree tree)
         {
-            // Emplace an error
-            var diag = Diagnostic.Create(
-                template: SemanticErrors.UndefinedReference,
-                location: new Location.ToTree(tree),
-                formatArgs: name);
-            symbol = new Symbol.Error(name, ImmutableArray.Create(diag));
+            if (!TryGetReferencedSymbolName(tree, out var name)) throw new InvalidOperationException();
+            var symbol = ReferenceSymbolOrNull(db, tree, name);
+            if (symbol is null)
+            {
+                // Emplace an error
+                var diag = Diagnostic.Create(
+                    template: SemanticErrors.UndefinedReference,
+                    location: new Location.ToTree(tree),
+                    formatArgs: name);
+                symbol = new Symbol.Error(name, ImmutableArray.Create(diag));
+            }
+            return symbol;
         }
-        return symbol;
+
+        return db.GetOrUpdate(tree, Impl);
     }
 
     /// <summary>
@@ -76,11 +80,16 @@ internal static class SymbolResolution
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that we need the surrounding <see cref="Scope"/> of.</param>
     /// <returns>The surrounding <see cref="Scope"/> of <paramref name="tree"/>.</returns>
-    public static async Task<Scope?> GetContainingScopeOrNull(QueryDatabase db, ParseTree tree)
+    public static Scope? GetContainingScopeOrNull(QueryDatabase db, ParseTree tree)
     {
-        var parent = GetScopeDefiningParent(tree);
-        if (parent is null) return null;
-        return await GetDefinedScopeOrNull(db, parent);
+        Scope? Impl(ParseTree tree)
+        {
+            var parent = GetScopeDefiningParent(tree);
+            if (parent is null) return null;
+            return GetDefinedScopeOrNull(db, parent);
+        }
+
+        return db.GetOrUpdate(tree, Impl);
     }
 
     /// <summary>
@@ -90,78 +99,84 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> to retrieve the <see cref="Scope"/> for.</param>
     /// <returns>The <see cref="Scope"/> associated with <paramref name="tree"/>, or null
     /// if it does not define a scope.</returns>
-    public static async QueryValueTask<Scope?> GetDefinedScopeOrNull(QueryDatabase db, ParseTree tree)
+    public static Scope? GetDefinedScopeOrNull(QueryDatabase db, ParseTree tree)
     {
-        // First get the kind of scope this tree can define
-        // If the kind is null, this node simply does not define a scope
-        var scopeKind = GetScopeKind(tree);
-        if (scopeKind is null) return null;
-
-        var result = new List<Declaration>();
-
-        // We inject intrinsics at global scope
-        if (scopeKind == ScopeKind.Global) InjectIntrinsics(result);
-
-        foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
+        Scope? Impl(ParseTree tree)
         {
-            // See if the child defines any symbol
-            var symbol = await GetDefinedSymbolOrNull(db, subtree);
-            if (symbol is null) continue;
+            // First get the kind of scope this tree can define
+            // If the kind is null, this node simply does not define a scope
+            var scopeKind = GetScopeKind(tree);
+            if (scopeKind is null) return null;
 
-            // Yes, calculate position and add it
-            var symbolPosition = GetBindingKind(symbol) switch
+            var result = new List<Declaration>();
+
+            // We inject intrinsics at global scope
+            if (scopeKind == ScopeKind.Global) InjectIntrinsics(result);
+
+            foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
             {
-                // Order independent always just gets thrown to the beginning
-                BindingKind.OrderIndependent => 0,
-                // Recursive ones stay in-place
-                BindingKind.Recursive => position,
-                // Non-recursive ones simply get shifted after the subtree
-                BindingKind.NonRecursive => position + subtree.Width,
-                _ => throw new InvalidOperationException(),
-            };
-            // Add to results
-            result!.Add(new(symbolPosition, symbol));
+                // See if the child defines any symbol
+                var symbol = GetDefinedSymbolOrNull(db, subtree);
+                if (symbol is null) continue;
+
+                // Yes, calculate position and add it
+                var symbolPosition = GetBindingKind(symbol) switch
+                {
+                    // Order independent always just gets thrown to the beginning
+                    BindingKind.OrderIndependent => 0,
+                    // Recursive ones stay in-place
+                    BindingKind.Recursive => position,
+                    // Non-recursive ones simply get shifted after the subtree
+                    BindingKind.NonRecursive => position + subtree.Width,
+                    _ => throw new InvalidOperationException(),
+                };
+                // Add to results
+                result!.Add(new(symbolPosition, symbol));
+            }
+
+            // Construct the scope
+            return new Scope(
+                Kind: scopeKind.Value,
+                Timelines: result
+                    .GroupBy(d => d.Name)
+                    .ToImmutableDictionary(g => g.Key, g => new DeclarationTimeline(g)));
         }
 
-        // Construct the scope
-        return new Scope(
-            Kind: scopeKind.Value,
-            Timelines: result
-                .GroupBy(d => d.Name)
-                .ToImmutableDictionary(g => g.Key, g => new DeclarationTimeline(g)));
+        return db.GetOrUpdate(tree, Impl);
     }
 
     /// <summary>
     /// Retrieves the <see cref="Symbol"/> defined by the given <see cref="ParseTree"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="scope">The kind of the enclosing scope.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that is asked if it defines a <see cref="Symbol"/>.</param>
     /// <returns>The <see cref="Symbol"/> that <paramref name="tree"/> defines, or null if
     /// it does not define any symbol.</returns>
-    public static async QueryValueTask<Symbol?> GetDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => tree switch
-    {
-        ParseTree.Decl.Variable variable => new Symbol.Variable(
-            db: db,
-            name: variable.Identifier.Text,
-            definition: tree,
-            isMutable: variable.Keyword.Type == TokenType.KeywordVar),
-        ParseTree.Decl.Func func => new Symbol.Function(
-            db: db,
-            name: func.Identifier.Text,
-            definition: tree),
-        ParseTree.Decl.Label label => new Symbol.Label(
-            db: db,
-            name: label.Identifier.Text,
-            definition: tree),
-        // NOTE: We might want a different symbol for parameters?
-        ParseTree.FuncParam fparam => new Symbol.Variable(
-            db: db,
-            name: fparam.Identifier.Text,
-            definition: tree,
-            isMutable: false),
-        _ => null,
-    };
+    public static Symbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+        tree,
+        Symbol? (tree) => tree switch
+        {
+            ParseTree.Decl.Variable variable => new Symbol.Variable(
+                db: db,
+                name: variable.Identifier.Text,
+                definition: tree,
+                isMutable: variable.Keyword.Type == TokenType.KeywordVar),
+            ParseTree.Decl.Func func => new Symbol.Function(
+                db: db,
+                name: func.Identifier.Text,
+                definition: tree),
+            ParseTree.Decl.Label label => new Symbol.Label(
+                db: db,
+                name: label.Identifier.Text,
+                definition: tree),
+            // NOTE: We might want a different symbol for parameters?
+            ParseTree.FuncParam fparam => new Symbol.Variable(
+                db: db,
+                name: fparam.Identifier.Text,
+                definition: tree,
+                isMutable: false),
+            _ => null,
+        });
 
     /// <summary>
     /// Retrieves the <see cref="Symbol"/> referenced by the given <see cref="ParseTree"/>.
@@ -170,11 +185,11 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
     /// <returns>The <see cref="Symbol"/> that <paramref name="tree"/> references, or null if
     /// it does not reference any.</returns>
-    public static async QueryValueTask<Symbol?> GetReferencedSymbolOrNull(
-        QueryDatabase db,
-        ParseTree tree) => TryGetReferencedSymbolName(tree, out var name)
-        ? await ReferenceSymbolOrNull(db, tree, name)
-        : null;
+    public static Symbol? GetReferencedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+        tree,
+        tree => TryGetReferencedSymbolName(tree, out var name)
+            ? ReferenceSymbolOrNull(db, tree, name)
+            : null);
 
     /// <summary>
     /// Resolves a <see cref="Symbol"/> reference.
@@ -183,21 +198,26 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
     /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
-    private static async QueryValueTask<Symbol?> ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name)
+    private static Symbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name)
     {
-        // Walk up the tree for the scope owner
-        var parent = GetScopeDefiningParent(tree);
-        if (parent is null) return null;
-        // Get the scope
-        var scope = await GetDefinedScopeOrNull(db, parent);;
-        if (scope is null) return null;
-        // Compute reference position
-        var referencePositon = GetPosition(parent, tree);
-        // Look up declaration
-        var declaration = scope.LookUp(name, referencePositon);
-        if (declaration is not null) return declaration.Value.Symbol;
-        // Not found, try in parent
-        return await ReferenceSymbolOrNull(db, parent, name);
+        Symbol? Impl(ParseTree tree, string name)
+        {
+            // Walk up the tree for the scope owner
+            var parent = GetScopeDefiningParent(tree);
+            if (parent is null) return null;
+            // Get the scope
+            var scope = GetDefinedScopeOrNull(db, parent); ;
+            if (scope is null) return null;
+            // Compute reference position
+            var referencePositon = GetPosition(parent, tree);
+            // Look up declaration
+            var declaration = scope.LookUp(name, referencePositon);
+            if (declaration is not null) return declaration.Value.Symbol;
+            // Not found, try in parent
+            return ReferenceSymbolOrNull(db, parent, name);
+        }
+
+        return db.GetOrUpdate((tree, name), Impl);
     }
 
     private static bool TryGetReferencedSymbolName(ParseTree tree, [MaybeNullWhen(false)] out string name)

@@ -116,6 +116,26 @@ internal abstract partial class Symbol
     }
 }
 
+internal abstract partial class Symbol
+{
+    /// <summary>
+    /// A symbol types.
+    /// </summary>
+    public sealed class TypeAlias : Symbol
+    {
+        public Type Type { get; }
+        // TODO
+        public override Scope? EnclosingScope => throw new NotImplementedException();
+        public override ParseTree? Definition => throw new NotImplementedException();
+
+        public TypeAlias(string name, Type type)
+            : base(name)
+        {
+            this.Type = type;
+        }
+    }
+}
+
 // NOTE: Temporary
 internal abstract partial class Symbol
 {

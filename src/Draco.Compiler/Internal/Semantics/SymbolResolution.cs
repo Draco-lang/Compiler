@@ -84,7 +84,7 @@ internal static class SymbolResolution
     {
         Scope? Impl(ParseTree tree)
         {
-            var parent = GetScopeDefiningParent(tree);
+            var parent = GetScopeDefiningAncestor(tree);
             if (parent is null) return null;
             return GetDefinedScopeOrNull(db, parent);
         }
@@ -203,23 +203,29 @@ internal static class SymbolResolution
         Symbol? Impl(ParseTree tree, string name)
         {
             // Walk up the tree for the scope owner
-            var parent = GetScopeDefiningParent(tree);
-            if (parent is null) return null;
+            var ancestor = GetScopeDefiningAncestor(tree);
+            if (ancestor is null) return null;
             // Get the scope
-            var scope = GetDefinedScopeOrNull(db, parent); ;
+            var scope = GetDefinedScopeOrNull(db, ancestor); ;
             if (scope is null) return null;
             // Compute reference position
-            var referencePositon = GetPosition(parent, tree);
+            var referencePositon = GetPosition(ancestor, tree);
             // Look up declaration
             var declaration = scope.LookUp(name, referencePositon);
             if (declaration is not null) return declaration.Value.Symbol;
-            // Not found, try in parent
-            return ReferenceSymbolOrNull(db, parent, name);
+            // Not found, try in ancestor
+            return ReferenceSymbolOrNull(db, ancestor, name);
         }
 
         return db.GetOrUpdate((tree, name), Impl);
     }
 
+    /// <summary>
+    /// Attempts to retrieve the name of the referenced symbol by a tree node.
+    /// </summary>
+    /// <param name="tree">The tree that might reference a symbol.</param>
+    /// <param name="name">The referenced symbol name gets written here.</param>
+    /// <returns>True, if <paramref name="tree"/> references a symbol and the result is written to <paramref name="name"/>.</returns>
     private static bool TryGetReferencedSymbolName(ParseTree tree, [MaybeNullWhen(false)] out string name)
     {
         if (tree is ParseTree.Expr.Name nameExpr)
@@ -236,10 +242,16 @@ internal static class SymbolResolution
         return false;
     }
 
-    private static int GetPosition(ParseTree parent, ParseTree tree)
+    /// <summary>
+    /// Retrieves the relative position of a tree node.
+    /// </summary>
+    /// <param name="ancestor">The ancestor of <paramref name="tree"/> to get the position relative to.</param>
+    /// <param name="tree">The tree to get the relative position of.</param>
+    /// <returns>The relative position of <paramref name="tree"/> in <paramref name="ancestor"/>.</returns>
+    private static int GetPosition(ParseTree ancestor, ParseTree tree)
     {
         // Search for this subtree
-        foreach (var (child, position) in EnumerateSubtreeInScope(parent))
+        foreach (var (child, position) in EnumerateSubtreeInScope(ancestor))
         {
             if (ReferenceEquals(tree.Green, child.Green)) return position;
         }
@@ -247,6 +259,11 @@ internal static class SymbolResolution
         throw new InvalidOperationException();
     }
 
+    /// <summary>
+    /// Retrieves all subtrees with their position.
+    /// </summary>
+    /// <param name="tree">The tree to get all subtrees of.</param>
+    /// <returns>The pairs of subtrees and relative positions of <paramref name="tree"/>.</returns>
     private static IEnumerable<(ParseTree Tree, int Position)> EnumerateSubtreeInScope(ParseTree tree)
     {
         // This method must be called on a scope-owning subtree
@@ -274,7 +291,12 @@ internal static class SymbolResolution
         return Impl(tree, 0);
     }
 
-    private static ParseTree? GetScopeDefiningParent(ParseTree tree)
+    /// <summary>
+    /// Retrieves the closest ancestor of <paramref name="tree"/> that defines a scope.
+    /// </summary>
+    /// <param name="tree">The tree to get the scope defining ancestor of.</param>
+    /// <returns>The closest ancestor of <paramref name="tree"/> that defines a scope.</returns>
+    private static ParseTree? GetScopeDefiningAncestor(ParseTree tree)
     {
         while (true)
         {
@@ -285,13 +307,24 @@ internal static class SymbolResolution
         }
     }
 
+    /// <summary>
+    /// Retrieves the <see cref="BindingKind"/> a symbol introduces.
+    /// </summary>
+    /// <param name="symbol">The symbol that introduces a binding.</param>
+    /// <returns>The <see cref="BindingKind"/> of <paramref name="symbol"/>.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
     private static BindingKind GetBindingKind(Symbol symbol) => symbol switch
     {
         Symbol.Label or Symbol.Function => BindingKind.OrderIndependent,
         Symbol.Variable => BindingKind.NonRecursive,
-        _ => throw new InvalidOperationException(),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
+    /// <summary>
+    /// Retrieves the kind of scope that a tree node defines.
+    /// </summary>
+    /// <param name="tree">The tree to get the <see cref="ScopeKind"/> for.</param>
+    /// <returns>The <see cref="ScopeKind"/> for the scope that <paramref name="tree"/> defines, or null if it does not define a scope.</returns>
     private static ScopeKind? GetScopeKind(ParseTree tree) => tree switch
     {
         _ when tree.Parent is null => ScopeKind.Global,

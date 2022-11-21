@@ -31,4 +31,17 @@ internal static class TypeChecker
                 : throw new InvalidOperationException(),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
+
+    /// <summary>
+    /// Determines the type of an expression node.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="expr">The <see cref="ParseTree.Expr"/> to determine the type of.</param>
+    /// <returns>The <see cref="Type"/> of <paramref name="expr"/>.</returns>
+    public static Type TypeOf(QueryDatabase db, ParseTree.Expr expr) => db.GetOrUpdate(
+        expr,
+        Type (expr) => expr switch
+        {
+            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+        });
 }

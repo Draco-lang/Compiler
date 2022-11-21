@@ -333,18 +333,14 @@ internal static class SymbolResolution
         _ => null,
     };
 
-    // NOTE: Pretty temporary...
     private static void InjectIntrinsics(List<Declaration> declarations)
     {
-        void Add(string name) => declarations.Add(new(0, new Symbol.Intrinsic(name)));
+        void AddBuiltinType(string name, System.Type type) =>
+            declarations.Add(new(0, new Symbol.TypeAlias(name, new Type.Builtin(type))));
 
-        Add("println");
-        Add("print");
-        Add("fmt");
-        Add("int32");
-        Add("string");
-        Add("unit");
-        Add("bool");
-        Add("char");
+        AddBuiltinType("int32", typeof(int));
+        AddBuiltinType("string", typeof(string));
+        AddBuiltinType("char", typeof(char));
+        AddBuiltinType("bool", typeof(bool));
     }
 }

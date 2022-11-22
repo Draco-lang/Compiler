@@ -44,10 +44,18 @@ public sealed class SemanticModel
     {
         IEnumerable<Diagnostic> Impl(ParseTree tree)
         {
+            // Symbol
             if (SymbolResolution.ReferencesSymbol(tree))
             {
                 var sym = SymbolResolution.GetReferencedSymbol(this.db, tree);
                 foreach (var diag in sym.Diagnostics) yield return diag.ToApiDiagnostic(tree);
+            }
+
+            // Type
+            if (tree is ParseTree.Expr expr)
+            {
+                var ty = TypeChecker.TypeOf(this.db, expr);
+                foreach (var diag in ty.Diagnostics) yield return diag.ToApiDiagnostic(tree);
             }
 
             // Children

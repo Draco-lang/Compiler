@@ -9,8 +9,14 @@ using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Internal.Semantics;
 
+/// <summary>
+/// An immutable structure representing syntactic and semantic information about source text.
+/// </summary>
 internal abstract record class AbstractSyntaxTree
 {
+    /// <summary>
+    /// A declaration, either top-level or as a statement.
+    /// </summary>
     public abstract record class Decl : AbstractSyntaxTree
     {
         /// <summary>
@@ -55,9 +61,16 @@ internal abstract record class AbstractSyntaxTree
             Expr Expression) : FuncBody;
     }
 
+    /// <summary>
+    /// An expression.
+    /// </summary>
     public abstract record class Expr : AbstractSyntaxTree
     {
-        public record class Unit() : Expr;
+        /// <summary>
+        /// An expression representing unitary value
+        /// </summary>
+        public record class Unit : Expr;
+
         /// <summary>
         /// A block expression
         /// </summary>
@@ -174,6 +187,9 @@ internal abstract record class AbstractSyntaxTree
         Symbol Operator,
         Expr Right) : AbstractSyntaxTree;
 
+    /// <summary>
+    /// A statement in a block.
+    /// </summary>
     public abstract record class Stmt : AbstractSyntaxTree
     {
         /// <summary>

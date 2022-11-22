@@ -17,10 +17,29 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal abstract partial class Symbol
 {
+    /// <summary>
+    /// The name of this symbol that it can be referenced by.
+    /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// True, if this symbol represents an error.
+    /// </summary>
     public virtual bool IsError => false;
+
+    /// <summary>
+    /// The diagnostics related to this symbol.
+    /// </summary>
     public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+
+    /// <summary>
+    /// The enclosing <see cref="Scope"/> of this symbol.
+    /// </summary>
     public abstract Scope? EnclosingScope { get; }
+
+    /// <summary>
+    /// The syntax node that defined this symbol.
+    /// </summary>
     public abstract ParseTree? Definition { get; }
 
     protected Symbol(string name)
@@ -28,6 +47,10 @@ internal abstract partial class Symbol
         this.Name = name;
     }
 
+    /// <summary>
+    /// Converts this <see cref="Symbol"/> to an <see cref="ApiSymbol"/>.
+    /// </summary>
+    /// <returns>The equivalent <see cref="ApiSymbol"/>.</returns>
     public ApiSymbol ToApiSymbol() => new(this);
 }
 

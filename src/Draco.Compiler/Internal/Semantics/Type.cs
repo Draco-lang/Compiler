@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Semantics;
 
@@ -11,6 +13,15 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal abstract partial record class Type
 {
+    /// <summary>
+    /// True, if this is an error type.
+    /// </summary>
+    public virtual bool IsError => false;
+
+    /// <summary>
+    /// All diagnostics related to this type.
+    /// </summary>
+    public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
 }
 
 internal abstract partial record class Type

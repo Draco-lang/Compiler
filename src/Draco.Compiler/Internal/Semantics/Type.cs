@@ -4,8 +4,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics;
 
@@ -61,6 +63,43 @@ internal abstract partial record class Type
 
         public bool Equals(Builtin? other) => this.Type.Equals(other?.Type);
         public override int GetHashCode() => this.Type.GetHashCode();
+    }
+}
+
+internal abstract partial record class Type
+{
+    /// <summary>
+    /// A type variable used for type inference.
+    /// </summary>
+    public sealed record class Variable : Type
+    {
+        private static int idCounter = -1;
+
+        private readonly int id = Interlocked.Increment(ref idCounter);
+        private Type? substitution;
+
+        /// <summary>
+        /// The substitution of this type variable.
+        /// </summary>
+        public Type Substitution
+        {
+            get
+            {
+                if (this.substitution is null) return this;
+                // Pruning
+                if (this.substitution is Variable var) this.substitution = var.Substitution;
+                return this.substitution;
+            }
+            set
+            {
+                if (this.substitution is not null) throw new InvalidOperationException("tried to substitute type variable multiple times");
+                this.substitution = value;
+            }
+        }
+
+        public override string ToString() => $"{StringUtils.IndexToExcelColumnName(this.id)}'";
+
+        // TODO: Equality is tricky because of symmetry
     }
 }
 

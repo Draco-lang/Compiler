@@ -56,3 +56,26 @@ internal abstract partial record class Type
         public override int GetHashCode() => this.Type.GetHashCode();
     }
 }
+
+internal abstract partial record class Type
+{
+    /// <summary>
+    /// Represents a function type.
+    /// </summary>
+    public sealed record class Function(ImmutableArray<Type> Params, Type Return) : Type
+    {
+        public override string ToString() => $"({string.Join(", ", this.Params)}) -> {this.Return}";
+
+        public bool Equals(Function? other) =>
+               other is not null
+            && this.Params.Length == other.Params.Length
+            && this.Return.Equals(other.Return);
+        public override int GetHashCode()
+        {
+            var h = default(HashCode);
+            foreach (var p in this.Params) h.Add(p);
+            h.Add(this.Return);
+            return h.ToHashCode();
+        }
+    }
+}

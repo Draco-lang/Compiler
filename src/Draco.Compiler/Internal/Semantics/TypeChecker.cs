@@ -42,6 +42,14 @@ internal static class TypeChecker
         expr,
         Type (expr) => expr switch
         {
+            ParseTree.Expr.Literal lit => lit.Value.Type switch
+            {
+                TokenType.LiteralInteger => Type.Int32,
+                _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+            },
+            ParseTree.Expr.Block block => block.Enclosed.Value.Value is null
+                ? Type.Unit
+                : TypeOf(db, block.Enclosed.Value.Value),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 }

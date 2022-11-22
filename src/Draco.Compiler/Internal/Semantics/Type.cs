@@ -25,6 +25,13 @@ internal abstract partial record class Type
     public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
 }
 
+// Builtins
+internal abstract partial record class Type
+{
+    public static readonly Type Unit = new Builtin(typeof(void));
+    public static readonly Type Int32 = new Builtin(typeof(int));
+}
+
 internal abstract partial record class Type
 {
     /// <summary>

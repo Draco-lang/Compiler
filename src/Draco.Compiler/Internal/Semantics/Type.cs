@@ -69,43 +69,6 @@ internal abstract partial record class Type
 internal abstract partial record class Type
 {
     /// <summary>
-    /// A type variable used for type inference.
-    /// </summary>
-    public sealed record class Variable : Type
-    {
-        private static int idCounter = -1;
-
-        private readonly int id = Interlocked.Increment(ref idCounter);
-        private Type? substitution;
-
-        /// <summary>
-        /// The substitution of this type variable.
-        /// </summary>
-        public Type Substitution
-        {
-            get
-            {
-                if (this.substitution is null) return this;
-                // Pruning
-                if (this.substitution is Variable var) this.substitution = var.Substitution;
-                return this.substitution;
-            }
-            set
-            {
-                if (this.substitution is not null) throw new InvalidOperationException("tried to substitute type variable multiple times");
-                this.substitution = value;
-            }
-        }
-
-        public override string ToString() => $"{StringUtils.IndexToExcelColumnName(this.id)}'";
-
-        // TODO: Equality is tricky because of symmetry
-    }
-}
-
-internal abstract partial record class Type
-{
-    /// <summary>
     /// Represents a function type.
     /// </summary>
     public sealed record class Function(ImmutableArray<Type> Params, Type Return) : Type

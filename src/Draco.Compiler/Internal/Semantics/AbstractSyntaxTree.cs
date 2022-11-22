@@ -44,7 +44,7 @@ internal abstract record class AbstractSyntaxTree
     }
 
     /// <summary>
-    /// A function body
+    /// A function body.
     /// </summary>
     public record class FuncBody : AbstractSyntaxTree
     {
@@ -67,12 +67,12 @@ internal abstract record class AbstractSyntaxTree
     public abstract record class Expr : AbstractSyntaxTree
     {
         /// <summary>
-        /// An expression representing unitary value
+        /// An expression representing unitary value.
         /// </summary>
         public record class Unit : Expr;
 
         /// <summary>
-        /// A block expression
+        /// A block expression.
         /// </summary>
         public record class Block(
             ImmutableArray<Stmt> Statements,

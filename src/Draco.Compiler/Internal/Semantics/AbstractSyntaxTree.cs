@@ -131,7 +131,7 @@ internal abstract record class AbstractSyntaxTree
         /// </summary>
         public sealed record class MemberAccess(
             Expr Object,
-            Symbol MemberName) : Expr;
+            Symbol Member) : Expr;
 
         /// <summary>
         /// A unary expression.
@@ -171,7 +171,7 @@ internal abstract record class AbstractSyntaxTree
         /// Content part of a string literal.
         /// </summary>
         public sealed record class Content(
-            Symbol Value) : StringPart;
+            string Value) : StringPart;
 
         /// <summary>
         /// An interpolation hole.

@@ -43,7 +43,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     }
 
     public ImmutableDictionary<Symbol, Type> Result => this.types
-        .ToImmutableDictionary(kv => kv.Key, kv => this.MapSubstitutions(kv.Value));
+        .ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value));
 
     private readonly Dictionary<Symbol, Type> types = new();
 
@@ -52,5 +52,5 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     /// </summary>
     /// <param name="type">The <see cref="Type"/> to remove substitutions from.</param>
     /// <returns>The equivalent of <paramref name="type"/> without any variable substitutions.</returns>
-    private Type MapSubstitutions(Type type) => throw new NotImplementedException();
+    private Type RemoveSubstitutions(Type type) => throw new NotImplementedException();
 }

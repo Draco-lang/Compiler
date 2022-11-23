@@ -14,7 +14,38 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 {
-    public ImmutableDictionary<Symbol, Type> Result => this.types.ToImmutable();
+    /// <summary>
+    /// Type variables are uninferred types that can be substituted to regular types or other variables.
+    /// We define type-variables here, but make sure they never escape this type.
+    /// </summary>
+    private sealed record class TypeVar : Type
+    {
+        private Type? substitution;
 
-    private readonly ImmutableDictionary<Symbol, Type>.Builder types = ImmutableDictionary.CreateBuilder<Symbol, Type>();
+        /// <summary>
+        /// The substitution of this type variable.
+        /// </summary>
+        public Type Substitution
+        {
+            get
+            {
+                if (this.substitution is null) return this;
+                // Pruning
+                if (this.substitution is TypeVar var) this.substitution = var.Substitution;
+                return this.substitution;
+            }
+            set
+            {
+                if (this.substitution is not null) throw new InvalidOperationException("tried to substitute type variable multiple times");
+                this.substitution = value;
+            }
+        }
+    }
+
+    public ImmutableDictionary<Symbol, Type> Result => this.types
+        .ToImmutableDictionary(kv => kv.Key, kv => this.Substitute(kv.Value));
+
+    private readonly Dictionary<Symbol, Type> types = new();
+
+    private Type Substitute(Type type) => throw new NotImplementedException();
 }

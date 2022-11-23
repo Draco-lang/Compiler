@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,4 +54,25 @@ internal static class TypeChecker
                 : TypeOf(db, block.Enclosed.Value.Value),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
+
+    /// <summary>
+    /// Infers the <see cref="Type"/>s of symbols in a given function <see cref="Scope"/>.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="scope">The function <see cref="Scope"/> to infer types for.</param>
+    /// <returns>The dictionary of symbols to their inferred types.</returns>
+    private static ImmutableDictionary<Symbol, Type> InferTypes(QueryDatabase db, Scope scope)
+    {
+        Debug.Assert(scope.Kind == ScopeKind.Function);
+        Debug.Assert(scope.Definition is not null);
+
+        return db.GetOrUpdate(
+            scope,
+            scope =>
+            {
+                var visitor = new TypeInferenceVisitor();
+                visitor.Visit(scope.Definition!);
+                return visitor.Result;
+            });
+    }
 }

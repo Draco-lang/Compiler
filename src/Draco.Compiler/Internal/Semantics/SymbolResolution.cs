@@ -136,6 +136,7 @@ internal static class SymbolResolution
 
             // Construct the scope
             return new Scope(
+                Definition: tree,
                 Kind: scopeKind.Value,
                 Timelines: result
                     .GroupBy(d => d.Name)

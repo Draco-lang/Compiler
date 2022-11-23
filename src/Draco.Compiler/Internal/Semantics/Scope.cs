@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Semantics;
 
@@ -32,10 +33,12 @@ internal enum ScopeKind
 /// <summary>
 /// Represents a single scope.
 /// </summary>
+/// <param name="Definition">The <see cref="ParseTree"/> that introduced this scope.</param>
 /// <param name="Kind">The kind of scope.</param>
 /// <param name="Timelines">The symbol names in this scope associated with their
 /// <see cref="DeclarationTimeline"/>s.</param>
 internal sealed record class Scope(
+    ParseTree? Definition,
     ScopeKind Kind,
     ImmutableDictionary<string, DeclarationTimeline> Timelines)
 {

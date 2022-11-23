@@ -184,7 +184,6 @@ internal sealed class Parser
     };
 
     private readonly ITokenSource tokenSource;
-    private Token? lastToken;
 
     public Parser(ITokenSource tokenSource)
     {
@@ -1063,9 +1062,9 @@ internal sealed class Parser
     /// <returns>The consumed <see cref="Token"/>.</returns>
     private Token Advance()
     {
-        this.lastToken = this.tokenSource.Peek();
+        var token = this.tokenSource.Peek();
         this.tokenSource.Advance();
-        return this.lastToken;
+        return token;
     }
 
     // Location utility

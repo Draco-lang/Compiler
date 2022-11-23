@@ -70,7 +70,7 @@ internal static class TypeChecker
             scope,
             scope =>
             {
-                var visitor = new TypeInferenceVisitor();
+                var visitor = new TypeInferenceVisitor(db);
                 visitor.Visit(scope.Definition!);
                 return visitor.Result;
             });

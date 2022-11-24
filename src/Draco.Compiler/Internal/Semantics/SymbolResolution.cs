@@ -40,6 +40,25 @@ internal static class SymbolResolution
     }
 
     /// <summary>
+    /// Retrieves the <see cref="Diagnostic"/> messages relating to symbol resolution.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseTree"/> to check.</param>
+    /// <returns>The <see cref="Diagnostic"/>s related to <paramref name="tree"/>.</returns>
+    public static IEnumerable<Diagnostic> GetDiagnostics(QueryDatabase db, ParseTree tree)
+    {
+        if (ReferencesSymbol(tree))
+        {
+            var sym = GetReferencedSymbol(db, tree);
+            return sym.Diagnostics;
+        }
+        else
+        {
+            return Enumerable.Empty<Diagnostic>();
+        }
+    }
+
+    /// <summary>
     /// Checks, if the given subtree references a symbol.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>

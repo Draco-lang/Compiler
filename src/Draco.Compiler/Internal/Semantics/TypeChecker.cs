@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
 
 namespace Draco.Compiler.Internal.Semantics;
@@ -15,6 +16,25 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal static class TypeChecker
 {
+    /// <summary>
+    /// Retrieves the <see cref="Diagnostic"/> messages relating to types.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseTree"/> to check.</param>
+    /// <returns>The <see cref="Diagnostic"/>s related to <paramref name="tree"/>.</returns>
+    public static IEnumerable<Diagnostic> GetDiagnostics(QueryDatabase db, ParseTree tree)
+    {
+        if (tree is ParseTree.Expr expr)
+        {
+            var ty = TypeOf(db, expr);
+            return ty.Diagnostics;
+        }
+        else
+        {
+            return Enumerable.Empty<Diagnostic>();
+        }
+    }
+
     /// <summary>
     /// Evaluates the given type expression node to the compiler representation of a type.
     /// </summary>

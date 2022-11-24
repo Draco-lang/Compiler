@@ -27,6 +27,11 @@ internal readonly record struct RelativeRange(int Offset, int Width)
 internal abstract partial record class Location
 {
     /// <summary>
+    /// A singleton location representing no location.
+    /// </summary>
+    public static readonly Location None = new Null();
+
+    /// <summary>
     /// Translates this <see cref="Location"/> to an <see cref="ApiLocation"/>, assuming it's relative to
     /// a <see cref="ParseTree"/>.
     /// </summary>
@@ -37,6 +42,11 @@ internal abstract partial record class Location
 
 internal abstract partial record class Location
 {
+    private sealed record class Null : Location
+    {
+        public override ApiLocation ToApiLocation(ParseTree? context) => ApiLocation.None;
+    }
+
     /// <summary>
     /// Represents a <see cref="Location"/> relative to a parse-tree element.
     /// </summary>

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Utilities;
 
@@ -23,6 +24,10 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     private sealed record class TypeVar : Type
     {
         private Type? substitution;
+
+        public TypeVar(Type original) : base(original)
+        {
+        }
 
         /// <summary>
         /// The substitution of this type variable.
@@ -42,10 +47,17 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
                 this.substitution = value;
             }
         }
+
+        public ParseTree? Defitition { get; }
+
+        public TypeVar(ParseTree? defitition)
+        {
+            this.Defitition = defitition;
+        }
     }
 
     public ImmutableDictionary<Symbol, Type> Result => this.types
-        .ToImmutableDictionary(kv => kv.Key, kv => RemoveSubstitutions(kv.Value));
+        .ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value));
 
     private readonly QueryDatabase db;
     private readonly Dictionary<Symbol, Type> types = new();
@@ -60,17 +72,28 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     /// </summary>
     /// <param name="type">The <see cref="Type"/> to remove substitutions from.</param>
     /// <returns>The equivalent of <paramref name="type"/> without any variable substitutions.</returns>
-    private static Type RemoveSubstitutions(Type type) => type switch
+    private Type RemoveSubstitutions(Type type) => type switch
     {
         Type.Builtin => type,
-        TypeVar v => UnwrapTypeVariable(v),
+        TypeVar v => this.UnwrapTypeVariable(v),
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
-    private static Type UnwrapTypeVariable(TypeVar v)
+    private Type UnwrapTypeVariable(TypeVar v)
     {
         var result = v.Substitution;
-        if (result is TypeVar) throw new NotImplementedException("could not infer");
+        if (result is TypeVar)
+        {
+            // TODO: Not necessarily the defined symbol...
+            var symbol = v.Defitition is null
+                ? null
+                : SymbolResolution.GetDefinedSymbolOrNull(this.db, v.Defitition);
+            var diag = Diagnostic.Create(
+                template: SemanticErrors.CouldNotInferType,
+                location: v.Defitition is null ? Location.None : new Location.ToTree(v.Defitition),
+                formatArgs: symbol?.Name);
+            return new Type.Error(ImmutableArray.Create(diag));
+        }
         return result;
     }
 
@@ -94,7 +117,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         {
             // var x;
             // Just a new type variable, will need to infer from context
-            inferredType = new TypeVar();
+            inferredType = new TypeVar(node);
         }
         else if (declaredType is null || valueType is null)
         {

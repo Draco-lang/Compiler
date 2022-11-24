@@ -19,4 +19,12 @@ internal static class SemanticErrors
         title: "undefined reference",
         severity: DiagnosticSeverity.Error,
         format: "undefined reference to {0}");
+
+    /// <summary>
+    /// The type of something could not be inferred.
+    /// </summary>
+    public static readonly DiagnosticTemplate CouldNotInferType = DiagnosticTemplate.Create(
+        title: "could not infer type",
+        severity: DiagnosticSeverity.Error,
+        format: "could not infer type of {0}");
 }

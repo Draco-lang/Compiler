@@ -29,6 +29,22 @@ internal static class TypeChecker
             var ty = TypeOf(db, expr);
             return ty.Diagnostics;
         }
+        else if (tree is ParseTree.Decl.Variable)
+        {
+            var symbol = SymbolResolution.GetDefinedSymbolOrNull(db, tree);
+            if (symbol is null) return Enumerable.Empty<Diagnostic>();
+            // TODO: Have some sensible refactoring for this or utility in SymbolResolution?
+            // Maybe even the ability to ask the declaring function from the variable symbol or something?
+            // Walk up to the nearest scope that's either global or function
+            var scope = SymbolResolution.GetContainingScopeOrNull(db, tree) ?? throw new InvalidOperationException();
+            while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
+            {
+                scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
+            }
+            // Infer the variables from the scope
+            var inferredTypes = InferTypes(db, scope);
+            return inferredTypes[symbol].Diagnostics;
+        }
         else
         {
             return Enumerable.Empty<Diagnostic>();

@@ -13,6 +13,7 @@ namespace Draco.Compiler.Internal.Query;
 internal sealed class QueryDatabase
 {
     private readonly Dictionary<object, object> memoizedValues = new();
+    private readonly List<(string Name, object Args)> computationStack = new();
 
     #region GetOrUpdate
     public TResult GetOrUpdate<T1, TResult>(
@@ -101,7 +102,22 @@ internal sealed class QueryDatabase
     {
         if (!this.memoizedValues.TryGetValue((query, args), out var value))
         {
+            var computationKey = (query, args);
+            // Check, if the key is present
+            var indexOfKey = this.computationStack.IndexOf(computationKey);
+            if (indexOfKey >= 0)
+            {
+                // Present, cycle detected
+                var calledQueries = this.computationStack.Skip(indexOfKey);
+                throw new InvalidOperationException($"Cycle detected:\n{string.Join("\n", calledQueries.Select(q => $"    {q}"))}");
+            }
+            // Push onto stack
+            this.computationStack.Add(computationKey);
+            // Actually perform computation
             value = compute();
+            // Pop
+            this.computationStack.RemoveAt(this.computationStack.Count - 1);
+            // Memoize
             this.memoizedValues.Add((query, args), value!);
         }
         return (T)value!;

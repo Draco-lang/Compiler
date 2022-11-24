@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
+using static Draco.Compiler.Api.Diagnostics.Location;
 
 namespace Draco.Compiler.Internal.Semantics;
 
@@ -33,17 +34,8 @@ internal static class TypeChecker
         {
             var symbol = SymbolResolution.GetDefinedSymbolOrNull(db, tree);
             if (symbol is null) return Enumerable.Empty<Diagnostic>();
-            // TODO: Have some sensible refactoring for this or utility in SymbolResolution?
-            // Maybe even the ability to ask the declaring function from the variable symbol or something?
-            // Walk up to the nearest scope that's either global or function
-            var scope = SymbolResolution.GetContainingScopeOrNull(db, tree) ?? throw new InvalidOperationException();
-            while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
-            {
-                scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
-            }
-            // Infer the variables from the scope
-            var inferredTypes = InferTypes(db, scope);
-            return inferredTypes[symbol].Diagnostics;
+            var type = GetTypeOfSymbol(db, symbol);
+            return type.Diagnostics;
         }
         else
         {
@@ -88,8 +80,31 @@ internal static class TypeChecker
             ParseTree.Expr.Block block => block.Enclosed.Value.Value is null
                 ? Type.Unit
                 : TypeOf(db, block.Enclosed.Value.Value),
+            ParseTree.Expr.Name name => GetTypeOfSymbol(db, SymbolResolution.GetReferencedSymbol(db, name)),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
+
+    /// <summary>
+    /// Retrieves the <see cref="Type"/> of a <see cref="Symbol"/>.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="symbol">The <see cref="Symbol"/> to get the <see cref="Type"/> of.</param>
+    /// <returns>The <see cref="Type"/> of <paramref name="symbol"/>.</returns>
+    private static Type GetTypeOfSymbol(QueryDatabase db, Symbol symbol)
+    {
+        // TODO: Have some sensible refactoring for this or utility in SymbolResolution?
+        // Maybe even the ability to ask the declaring function from the variable symbol or something?
+        // Walk up to the nearest scope that's either global or function
+        var scope = symbol.EnclosingScope ?? throw new InvalidOperationException();
+        while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
+        {
+            scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
+        }
+        // TODO: Not necessarily a variable
+        // Infer the variables from the scope
+        var inferredTypes = InferTypes(db, scope);
+        return inferredTypes[symbol];
+    }
 
     /// <summary>
     /// Infers the <see cref="Type"/>s of symbols in a given function <see cref="Scope"/>.

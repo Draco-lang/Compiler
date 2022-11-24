@@ -108,8 +108,10 @@ internal sealed class QueryDatabase
             if (indexOfKey >= 0)
             {
                 // Present, cycle detected
-                var calledQueries = this.computationStack.Skip(indexOfKey);
-                throw new InvalidOperationException($"Cycle detected:\n{string.Join("\n", calledQueries.Select(q => $"    {q}"))}");
+                var calledQueries = this.computationStack
+                    .Skip(indexOfKey)
+                    .Append(computationKey);
+                throw new InvalidOperationException($"Cycle detected:\n{string.Join("\n", calledQueries.Select(q => $" * {q}"))}");
             }
             // Push onto stack
             this.computationStack.Add(computationKey);

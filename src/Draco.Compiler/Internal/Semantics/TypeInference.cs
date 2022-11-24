@@ -45,7 +45,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     }
 
     public ImmutableDictionary<Symbol, Type> Result => this.types
-        .ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value));
+        .ToImmutableDictionary(kv => kv.Key, kv => RemoveSubstitutions(kv.Value));
 
     private readonly QueryDatabase db;
     private readonly Dictionary<Symbol, Type> types = new();
@@ -60,11 +60,19 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     /// </summary>
     /// <param name="type">The <see cref="Type"/> to remove substitutions from.</param>
     /// <returns>The equivalent of <paramref name="type"/> without any variable substitutions.</returns>
-    private Type RemoveSubstitutions(Type type) => type switch
+    private static Type RemoveSubstitutions(Type type) => type switch
     {
         Type.Builtin => type,
+        TypeVar v => UnwrapTypeVariable(v),
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
+
+    private static Type UnwrapTypeVariable(TypeVar v)
+    {
+        var result = v.Substitution;
+        if (result is TypeVar) throw new NotImplementedException("could not infer");
+        return result;
+    }
 
     public override Unit VisitVariableDecl(ParseTree.Decl.Variable node)
     {
@@ -109,5 +117,22 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         // Inference in children
         return base.VisitVariableDecl(node);
+    }
+
+    public override Unit VisitBinaryExpr(ParseTree.Expr.Binary node)
+    {
+        if (node.Operator.Type == TokenType.Assign)
+        {
+            // Right has to be assignable to left
+            var leftType = TypeChecker.TypeOf(this.db, node.Left);
+            var rightType = TypeChecker.TypeOf(this.db, node.Right);
+            throw new NotImplementedException();
+        }
+        else
+        {
+            // TODO
+        }
+        // Inference in children
+        return base.VisitBinaryExpr(node);
     }
 }

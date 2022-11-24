@@ -94,6 +94,20 @@ internal static class SymbolResolution
     }
 
     /// <summary>
+    /// Retrieves the parent <see cref="Scope"/> of another scope.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="scope">The scope to retieve the parent of.</param>
+    /// <returns>The parent scope of <paramref name="scope"/>.</returns>
+    public static Scope? GetParentScopeOrNull(QueryDatabase db, Scope scope)
+    {
+        if (scope.Definition is null) throw new InvalidOperationException();
+        var ancestor = GetScopeDefiningAncestor(scope.Definition);
+        if (ancestor is null) return null;
+        return GetDefinedScopeOrNull(db, ancestor);
+    }
+
+    /// <summary>
     /// Retrieves the containing <see cref="Scope"/> of a <see cref="ParseTree"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>

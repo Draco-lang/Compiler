@@ -21,6 +21,10 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
     private TokenType? nextToken;
     private IEnumerator<Token>? tokens;
     private readonly ParseTreeFormatterSettings settings;
+    private ImmutableArray<Token> oneSpaceTrivia = CreateTrivia(TokenType.Whitespace, " ");
+    private ImmutableArray<Token> noSpaceTrivia = CreateTrivia(TokenType.Whitespace, "");
+    private ImmutableArray<Token> indentationTrivia;
+    private ImmutableArray<Token> newlineTrivia = CreateTrivia(TokenType.Newline, Environment.NewLine);
     private int indentCount = 0;
     private string Indentation
     {
@@ -54,10 +58,10 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 
     public ParseTree Format(ParseTree tree)
     {
+        this.indentationTrivia = CreateTrivia(TokenType.Whitespace, this.Indentation);
         this.tokens = this.GetTokens(tree).GetEnumerator();
         // We need to be one token ahead, because the next token affects the current one, so we must advance twice here
-        if (!(this.tokens.MoveNext() && this.tokens.MoveNext()))
-            return tree;
+        if (!(this.tokens.MoveNext() && this.tokens.MoveNext())) return tree;
         this.nextToken = this.tokens.Current.Type;
         return this.Transform(tree, out _);
     }
@@ -73,6 +77,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 
         newToken = newToken.Type switch
         {
+            // Maybe use dictionary in future to allow user to alter "stickiness" of some tokens
             TokenType.Assign or TokenType.Colon or TokenType.Comma or TokenType.Equal or
             TokenType.GreaterEqual or TokenType.GreaterThan or TokenType.InterpolationStart or
             TokenType.KeywordAnd or TokenType.KeywordFrom or TokenType.KeywordImport or
@@ -81,66 +86,66 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
             TokenType.Minus or TokenType.MinusAssign or TokenType.NotEqual or
             TokenType.Plus or TokenType.PlusAssign or TokenType.Slash or
             TokenType.SlashAssign or TokenType.Star or TokenType.StarAssign
-            => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
+            => newToken.SetTrailingTrivia(this.oneSpaceTrivia),
 
             TokenType.KeywordVal or TokenType.KeywordVar or TokenType.KeywordFunc
-            => newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
+            => newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
 
-            TokenType.ParenOpen => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, "")),
+            TokenType.ParenOpen => newToken.SetTrailingTrivia(this.noSpaceTrivia),
 
             TokenType.ParenClose => this.nextToken switch
             {
-                TokenType.ParenClose or TokenType.Semicolon => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, "")),
-                _ => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " "))
+                TokenType.ParenClose or TokenType.Semicolon => newToken.SetTrailingTrivia(this.noSpaceTrivia),
+                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia)
             },
 
-            TokenType.Semicolon => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Newline, Environment.NewLine)),
+            TokenType.Semicolon => newToken.SetTrailingTrivia(this.newlineTrivia),
 
             TokenType.CurlyOpen => this.lastToken switch
             {
-                TokenType.Semicolon or TokenType.CurlyClose => this.AddIndentation(newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Newline, Environment.NewLine))),
-                _ => this.AddIndentation(newToken).SetTrailingTrivia(this.CreateTrivia(TokenType.Newline, Environment.NewLine))
+                TokenType.Semicolon or TokenType.CurlyClose => this.AddIndentation(newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.newlineTrivia)),
+                _ => this.AddIndentation(newToken).SetTrailingTrivia(this.newlineTrivia)
             },
 
-            TokenType.CurlyClose => this.RemoveIndentation(newToken).SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Newline, Environment.NewLine)),
+            TokenType.CurlyClose => this.RemoveIndentation(newToken).SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.newlineTrivia),
 
-            TokenType.KeywordReturn => newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
+            TokenType.KeywordReturn => newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
 
-            TokenType.KeywordGoto => newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
+            TokenType.KeywordGoto => newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
 
             TokenType.KeywordIf => this.lastToken switch
             {
-                TokenType.Semicolon or TokenType.CurlyClose => newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
-                _ => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " "))
+                TokenType.Semicolon or TokenType.CurlyClose => newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
+                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia)
             },
 
             TokenType.KeywordElse => this.lastToken switch
             {
-                TokenType.Semicolon or TokenType.CurlyClose => newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
-                _ => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " "))
+                TokenType.Semicolon or TokenType.CurlyClose => newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
+                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia)
             },
 
-            TokenType.KeywordWhile => newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
+            TokenType.KeywordWhile => newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
 
             TokenType.Identifier => (this.lastToken, this.nextToken) switch
             {
                 { lastToken: TokenType.KeywordVal or TokenType.KeywordVar, nextToken: TokenType.Colon }
-                => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, "")),
+                => newToken.SetTrailingTrivia(this.noSpaceTrivia),
 
                 { lastToken: TokenType.KeywordFrom or TokenType.KeywordVal or TokenType.KeywordVar or TokenType.Colon }
-                => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
+                => newToken.SetTrailingTrivia(this.oneSpaceTrivia),
 
-                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen, nextToken: TokenType.Assign } => newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
-                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen } => newToken.SetLeadingTrivia(this.CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, "")),
+                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen, nextToken: TokenType.Assign } => newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
+                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen } => newToken.SetLeadingTrivia(this.indentationTrivia).SetTrailingTrivia(this.noSpaceTrivia),
 
-                { nextToken: TokenType.Semicolon or TokenType.ParenOpen or TokenType.ParenClose } => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, "")),
-                _ => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " ")),
+                { nextToken: TokenType.Semicolon or TokenType.ParenOpen or TokenType.ParenClose } => newToken.SetTrailingTrivia(this.noSpaceTrivia),
+                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia),
             },
 
             TokenType.LiteralInteger or TokenType.LiteralFloat => (this.lastToken, this.nextToken) switch
             {
-                { nextToken: TokenType.Semicolon or TokenType.ParenClose } => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, "")),
-                _ => newToken.SetTrailingTrivia(this.CreateTrivia(TokenType.Whitespace, " "))
+                { nextToken: TokenType.Semicolon or TokenType.ParenClose } => newToken.SetTrailingTrivia(this.noSpaceTrivia),
+                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia)
             },
             _ => newToken
         };
@@ -174,6 +179,6 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         return true;
     }
 
-    private ImmutableArray<Token> CreateTrivia(TokenType type, string text) =>
+    private static ImmutableArray<Token> CreateTrivia(TokenType type, string text) =>
         ImmutableArray.Create(Token.From(type, text));
 }

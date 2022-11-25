@@ -11,6 +11,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
+using DiagnosticTemplate = Draco.Compiler.Api.Diagnostics.DiagnosticTemplate;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -836,8 +837,8 @@ internal sealed class Lexer
     // Errors
     private void AddError(DiagnosticTemplate template, int offset, int width, params object?[] args)
     {
-        var range = new RelativeRange(RelativeOffset.CurrentElement, offset, width);
-        var location = new Location(range);
+        var range = new RelativeRange(Offset: offset, Width: width);
+        var location = new Location.OnTree(Range: range);
         var diag = Diagnostic.Create(
             template: template,
             location: location,
@@ -865,10 +866,6 @@ internal sealed class Lexer
     private static bool IsIdent(char ch) => char.IsLetterOrDigit(ch) || ch == '_';
     private static bool IsSpace(char ch) => char.IsWhiteSpace(ch) && !IsNewline(ch);
     private static bool IsNewline(char ch) => ch == '\r' || ch == '\n';
-    private static bool IsHexDigit(char ch) =>
-           (ch >= '0' && ch <= '9')
-        || (ch >= 'a' && ch <= 'f')
-        || (ch >= 'A' && ch <= 'F');
     private static bool TryParseHexDigit(char ch, out int value)
     {
         if (ch >= '0' && ch <= '9')
@@ -876,12 +873,12 @@ internal sealed class Lexer
             value = ch - '0';
             return true;
         }
-        if (ch >= 'a' && ch <= 'z')
+        if (ch >= 'a' && ch <= 'f')
         {
             value = ch - 'a' + 10;
             return true;
         }
-        if (ch >= 'A' && ch <= 'Z')
+        if (ch >= 'A' && ch <= 'F')
         {
             value = ch - 'A' + 10;
             return true;

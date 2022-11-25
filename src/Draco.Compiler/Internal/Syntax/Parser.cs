@@ -228,7 +228,7 @@ internal sealed class Parser
                 TokenType.Identifier when this.Peek(1) == TokenType.Colon => false,
                 _ => true,
             });
-            var location = this.GetLocation(input.Sum(i => i.Width));
+            var location = GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
             return new Decl.Unexpected(input, ImmutableArray.Create(diag));
         }
@@ -375,7 +375,7 @@ internal sealed class Parser
                 or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
                 _ => true,
             });
-            var location = this.GetLocation(input.Sum(i => i.Width));
+            var location = GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
             return new FuncBody.Unexpected(input, ImmutableArray.Create(diag));
         }
@@ -524,7 +524,7 @@ internal sealed class Parser
                                 var tt when expressionStarters.Contains(tt) => false,
                                 _ => true,
                             });
-                            var location = this.GetLocation(tokens.Sum(i => i.Width));
+                            var location = GetLocation(tokens.Sum(i => i.Width));
                             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "statement");
                             stmts.Add(new Stmt.Unexpected(tokens, ImmutableArray.Create(diag)));
                         }
@@ -770,7 +770,7 @@ internal sealed class Parser
                 var type when expressionStarters.Contains(type) => false,
                 _ => true,
             });
-            var location = this.GetLocation(input.Sum(i => i.Width));
+            var location = GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
             return new Expr.Unexpected(input, ImmutableArray.Create(diag));
         }
@@ -827,7 +827,7 @@ internal sealed class Parser
                 TokenType.MultiLineStringEnd or TokenType.StringNewline => false,
                 _ => true,
             });
-            var location = this.GetLocation(strayTokens.Sum(t => t.Width));
+            var location = GetLocation(strayTokens.Sum(t => t.Width));
             var diag = Diagnostic.Create(
                 SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString,
                 location);
@@ -893,7 +893,7 @@ internal sealed class Parser
                         {
                             // We are in a newline and the prefixes don't match, that's an error
                             var whitespaceLength = contentPart.Value.Text.TakeWhile(char.IsWhiteSpace).Count();
-                            var location = this.GetLocation(whitespaceLength);
+                            var location = GetLocation(whitespaceLength);
                             var diag = Diagnostic.Create(
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
@@ -920,7 +920,7 @@ internal sealed class Parser
         else
         {
             // Error, the closing quotes are not on a newline
-            var location = this.GetLocation(closeQuote.Width);
+            var location = GetLocation(closeQuote.Width);
             var diag = Diagnostic.Create(
                 SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
                 location);
@@ -1017,7 +1017,7 @@ internal sealed class Parser
         {
             // We construct an empty token that signals that this is missing from the tree
             // The attached diagnostic message describes what is missing
-            var location = this.GetLocationRelativeToLastToken(1);
+            var location = GetLocation(0);
             var tokenTypeName = type.GetUserFriendlyName();
             var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: tokenTypeName);
             return Token.From(type, string.Empty, ImmutableArray.Create(diag));
@@ -1069,9 +1069,5 @@ internal sealed class Parser
 
     // Location utility
 
-    // NOTE: These can be static technically, but later they will access instance data
-    // to get a file reference
-    private Location GetLocation(int width) => new(new(RelativeOffset.CurrentElement, 0, width));
-    private Location GetLocationRelativeToLastToken(int width) =>
-        new(new(RelativeOffset.EndOfLastElement, 0, width));
+    private static Location GetLocation(int width) => new Location.OnTree(Range: new(Offset: 0, Width: width));
 }

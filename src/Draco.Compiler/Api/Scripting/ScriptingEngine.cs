@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -8,121 +9,92 @@ using System.Text;
 using System.Threading.Tasks;
 using Basic.Reference.Assemblies;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
+using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 
 namespace Draco.Compiler.Api.Scripting;
 
+/// <summary>
+/// The result type of script execution.
+/// </summary>
+/// <typeparam name="TResult">The expected result type.</typeparam>
+/// <param name="Success">True, if the execution was successful without errors.</param>
+/// <param name="Result">The result of execution.</param>
+/// <param name="Diagnostics">The <see cref="Diagnostic"/>s produced during execution.</param>
+public readonly record struct ExecutionResult<TResult>(
+    bool Success,
+    TResult? Result,
+    ImmutableArray<Diagnostic> Diagnostics);
+
+/// <summary>
+/// Exposes a scripting API.
+/// </summary>
 public static class ScriptingEngine
 {
-    public static void Execute(Compilation compilation)
-    {
-        if (!GenerateExe(compilation)) return;
-        // Dump runtime config
-        File.WriteAllText(
-            $"{Path.GetFileNameWithoutExtension(compilation.CompiledExecutablePath!.Name)}.runtimeconfig.json",
-            $$$"""
-            {
-              "runtimeOptions": {
-                "tfm": "net6.0",
-                "framework": {
-                  "name": "Microsoft.NETCore.App",
-                  "version": "6.0.0"
-                }
-              }
-            }
-            """);
-
-        // Execute
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = $"exec {compilation.CompiledExecutablePath}",
-        };
-        var process = Process.Start(startInfo) ?? throw new InvalidOperationException();
-        process.WaitForExit();
-        Console.WriteLine($"Process terminated with exit code: {process.ExitCode}");
-    }
-
-    public static bool GenerateExe(Compilation compilation)
-    {
-        if (compilation.CompiledExecutablePath is null) throw new InvalidOperationException("Path for the compiled executable was not specified, so the code can't be compiled");
-        using (Stream dllStream = new FileStream(compilation.CompiledExecutablePath.FullName, FileMode.OpenOrCreate))
-        {
-            return CompileToAssembly(compilation, dllStream);
-        }
-    }
+    /// <summary>
+    /// Executes the code of the given compilation.
+    /// </summary>
+    /// <param name="compilation">The <see cref="Compilation"/> to execute.</param>
+    /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
+    /// <returns>The result of the execution.</returns>
+    public static ExecutionResult<object?> Execute(
+        Compilation compilation,
+        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null) =>
+        Execute<object?>(compilation, csCompilerOptionBuilder);
 
     /// <summary>
-    /// Works in browsers.
+    /// Executes the code of the given compilation.
     /// </summary>
-    public static void InlineExecute(Compilation compilation)
+    /// <typeparam name="TResult">The expected result type.</typeparam>
+    /// <param name="compilation">The <see cref="Compilation"/> to execute.</param>
+    /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
+    /// <returns>The result of the execution.</returns>
+    public static ExecutionResult<TResult> Execute<TResult>(
+        Compilation compilation,
+        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null)
     {
-        using var memStrem = new MemoryStream();
-        if (!CompileToAssembly(compilation, memStrem, (config) => config.WithConcurrentBuild(false))) return;
-        var assembly = Assembly.Load(memStrem!.ToArray());
-        var mainReturnValue = assembly.EntryPoint!.Invoke(null, new object[]
-        {
-            Array.Empty<string>()
-        });
-        if (mainReturnValue is Task task)
-        {
-            task.GetAwaiter().GetResult(); // huuuuh, can we do something else ?
-        }
-        if (mainReturnValue is Task<int> taskWithRes)
-        {
-            taskWithRes.GetAwaiter().GetResult();
-            mainReturnValue = taskWithRes.Result;
-        }
-        if (mainReturnValue is int)
-        {
-            Console.WriteLine($"Process terminated with exit code: {mainReturnValue}");
-        }
-        else
-        {
-            Console.WriteLine($"Process terminated.");
-
-        }
-        return;
-    }
-
-    public static bool CompileToAssembly(Compilation dracoCompilation, Stream stream,
-        Func<Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions, Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions>? csCompilerOptionBuilder = null
-    )
-    {
-        CompileToCSharpCode(dracoCompilation);
-        // NOTE: This is temporary, we shouldn't rely on compiling to C#
-        // and then letting Roslyn do the work
-
-        var options = new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
+        using var peStream = new MemoryStream();
+        var options = new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary);
         if (csCompilerOptionBuilder is not null) options = csCompilerOptionBuilder(options);
+        var emitResult = compilation.Emit(
+            peStream,
+            csCompilerOptionBuilder: opt => options);
 
-        // Compile
-        var cSharpCompilation = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(
-            assemblyName: dracoCompilation.CompiledExecutablePath!.Name,
-            syntaxTrees: new[] { Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(dracoCompilation.GeneratedCSharp!) },
-            references: ReferenceAssemblies.Net60,
-            options: options);
+        // Check emission results
+        if (!emitResult.Success)
         {
-            var emitResult = cSharpCompilation.Emit(stream);
-            // See if we succeeded
-            if (emitResult.Success) return true;
-            Console.WriteLine("Failed to compile transpiled C# code");
-            foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
-            Console.WriteLine("====================================");
-            Console.WriteLine(dracoCompilation.GeneratedCSharp!);
-            return false;
+            return new(
+                Success: false,
+                Result: default,
+                Diagnostics: emitResult.Diagnostics);
         }
-    }
 
-    public static void CompileToCSharpCode(Compilation compilation)
-    {
-        compilation.Parsed = ParseTree.Parse(compilation.Source);
-        compilation.GeneratedCSharp = CSharpCodegen.Transpile(compilation.Parsed);
-    }
+        // Load emitted bytes as assembly
+        peStream.Position = 0;
+        var peBytes = peStream.ToArray();
+        var assembly = Assembly.Load(peBytes);
 
-    public static void CompileToParseTree(Compilation compilation)
-    {
-        compilation.Parsed = ParseTree.Parse(compilation.Source);
+        var mainMethod = assembly
+            .GetType("Program")?
+            .GetMethod("Main");
+
+        if (mainMethod is null)
+        {
+            var diag = Diagnostic.Create(
+                template: CodegenErrors.NoMainMethod,
+                location: Location.None);
+            return new(
+                Success: false,
+                Result: default,
+                Diagnostics: ImmutableArray.Create(diag));
+        }
+
+        var result = (TResult?)mainMethod.Invoke(null, new[] { Array.Empty<string>() });
+        return new(
+            Success: true,
+            Result: result,
+            Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
 }

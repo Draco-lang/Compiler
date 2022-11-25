@@ -68,7 +68,7 @@ if(process.env.GITHUB_TOKEN != undefined && process.env.GITHUB_TOKEN.length > 0)
     const auth = createActionAuth();
     const authentication = await auth();
     octokit = new Octokit({
-        auth: authentication
+        auth: authentication.token
     });
 } else {
     octokit = new Octokit();

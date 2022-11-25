@@ -59,6 +59,8 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     public ImmutableDictionary<Symbol, Type> Result => this.types
         .ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value));
 
+    public IReadOnlyDictionary<Symbol, Type> Types => this.types;
+
     private readonly QueryDatabase db;
     private readonly Dictionary<Symbol, Type> types = new();
 

@@ -112,7 +112,7 @@ internal static class TypeChecker
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="scope">The function <see cref="Scope"/> to infer types for.</param>
     /// <returns>The dictionary of symbols to their inferred types.</returns>
-    private static ImmutableDictionary<Symbol, Type> InferTypes(QueryDatabase db, Scope scope)
+    private static IReadOnlyDictionary<Symbol, Type> InferTypes(QueryDatabase db, Scope scope)
     {
         Debug.Assert(scope.Kind == ScopeKind.Function);
         Debug.Assert(scope.Definition is not null);
@@ -125,6 +125,6 @@ internal static class TypeChecker
                 visitor.Visit(scope.Definition!);
                 return visitor.Result;
             },
-            handleCycle: (visitor, scope) => throw new NotImplementedException());
+            handleCycle: (visitor, scope) => visitor.Types);
     }
 }

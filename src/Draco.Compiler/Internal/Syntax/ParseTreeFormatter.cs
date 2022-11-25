@@ -56,12 +56,27 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
     }
 
     public ParseTree Format(ParseTree tree)
-    { 
+    {
         this.tokens = this.GetTokens(tree).GetEnumerator();
         // We need to be one token ahead, because the next token affects the current one, so we must advance twice here
         if (!(this.tokens.MoveNext() && this.tokens.MoveNext())) return tree;
         this.nextToken = this.tokens.Current.Type;
         return this.Transform(tree, out _);
+    }
+
+    public override ParseTree.Decl.Label TransformLabelDecl(ParseTree.Decl.Label node, out bool changed)
+    {
+        var identifierChanged = false;
+        var trIdentifier = this.TransformToken(node.Identifier, out identifierChanged);
+        var trColonToken = Token.Builder.From(node.ColonToken).SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.newlineTrivia).Build();
+        var colonTokenChanged = this.CheckTriviaEqual(trColonToken, node.ColonToken);
+        // We need to advance to the next token by hand, because we don't call TransformToken
+        this.lastToken = TokenType.Colon;
+        if (this.tokens!.MoveNext()) this.nextToken = this.tokens!.Current.Type;
+        else this.nextToken = TokenType.EndOfInput;
+        changed = identifierChanged || colonTokenChanged;
+        if (!changed) return node;
+        return new Draco.Compiler.Internal.Syntax.ParseTree.Decl.Label(trIdentifier, trColonToken);
     }
 
     public override Token TransformToken(Token token, out bool changed)
@@ -84,20 +99,24 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
             TokenType.Minus or TokenType.MinusAssign or TokenType.NotEqual or
             TokenType.Plus or TokenType.PlusAssign or TokenType.Slash or
             TokenType.SlashAssign or TokenType.Star or TokenType.StarAssign
-            => newToken.SetTrailingTrivia(this.oneSpaceTrivia),
+            => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
 
             TokenType.KeywordVal or TokenType.KeywordVar or TokenType.KeywordFunc
             => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
 
-            TokenType.ParenOpen => newToken.SetTrailingTrivia(this.noSpaceTrivia),
+            TokenType.ParenOpen => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.noSpaceTrivia),
 
             TokenType.ParenClose => this.nextToken switch
             {
-                TokenType.ParenClose or TokenType.Semicolon => newToken.SetTrailingTrivia(this.noSpaceTrivia),
-                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia)
+                TokenType.ParenClose or TokenType.Semicolon => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.noSpaceTrivia),
+                _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia)
             },
 
-            TokenType.Semicolon => newToken.SetTrailingTrivia(this.newlineTrivia),
+            TokenType.Semicolon => this.nextToken switch
+            {
+                TokenType.KeywordElse => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
+                _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.newlineTrivia)
+            },
 
             TokenType.CurlyOpen => this.lastToken switch
             {
@@ -114,13 +133,13 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
             TokenType.KeywordIf => this.lastToken switch
             {
                 TokenType.Semicolon or TokenType.CurlyClose => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
-                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia)
+                _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia)
             },
 
             TokenType.KeywordElse => this.lastToken switch
             {
-                TokenType.Semicolon or TokenType.CurlyClose => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
-                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia)
+                TokenType.CurlyClose => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
+                _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia)
             },
 
             TokenType.KeywordWhile => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
@@ -128,19 +147,25 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
             TokenType.Identifier => (this.lastToken, this.nextToken) switch
             {
                 { lastToken: TokenType.KeywordVal or TokenType.KeywordVar, nextToken: TokenType.Colon }
-                => newToken.SetTrailingTrivia(this.noSpaceTrivia),
+                => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.noSpaceTrivia),
 
                 { lastToken: TokenType.KeywordFrom or TokenType.KeywordVal or TokenType.KeywordVar or TokenType.Colon }
-                => newToken.SetTrailingTrivia(this.oneSpaceTrivia),
+                => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
 
                 { lastToken: TokenType.Semicolon or TokenType.CurlyOpen, nextToken: TokenType.Assign } => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
                 { lastToken: TokenType.Semicolon or TokenType.CurlyOpen } => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.noSpaceTrivia),
 
-                { nextToken: TokenType.Semicolon or TokenType.ParenOpen or TokenType.ParenClose } => newToken.SetTrailingTrivia(this.noSpaceTrivia),
-                _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia),
+                { nextToken: TokenType.Semicolon or TokenType.ParenOpen or TokenType.ParenClose } => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.noSpaceTrivia),
+                _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
             },
 
-            TokenType.LiteralInteger or TokenType.LiteralFloat or TokenType.KeywordFalse or TokenType.KeywordTrue or TokenType.LiteralCharacter => (this.lastToken, this.nextToken) switch
+            TokenType.LiteralInteger or TokenType.LiteralFloat or TokenType.KeywordFalse or TokenType.KeywordTrue or TokenType.LiteralCharacter or TokenType.LineStringEnd => (this.lastToken, this.nextToken) switch
+            {
+                { nextToken: TokenType.Semicolon or TokenType.ParenClose } => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.noSpaceTrivia),
+                _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia)
+            },
+
+            TokenType.MultiLineStringEnd => (this.lastToken, this.nextToken) switch
             {
                 { nextToken: TokenType.Semicolon or TokenType.ParenClose } => newToken.SetTrailingTrivia(this.noSpaceTrivia),
                 _ => newToken.SetTrailingTrivia(this.oneSpaceTrivia)

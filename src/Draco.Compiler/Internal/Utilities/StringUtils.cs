@@ -44,7 +44,7 @@ internal static class StringUtils
     /// Converts a 0-based numeric index into an Excel-like column name.
     /// </summary>
     /// <param name="index">The index to convert.</param>
-    /// <returns>The Excep column-name of <paramref name="index"/>.</returns>
+    /// <returns>The Excel column-name of <paramref name="index"/>.</returns>
     public static string IndexToExcelColumnName(int index)
     {
         var result = new StringBuilder();

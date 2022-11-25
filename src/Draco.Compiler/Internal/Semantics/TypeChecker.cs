@@ -118,12 +118,13 @@ internal static class TypeChecker
         Debug.Assert(scope.Definition is not null);
 
         return db.GetOrUpdate(
-            scope,
-            scope =>
+            args: scope,
+            createContext: () => new TypeInferenceVisitor(db),
+            recompute: (visitor, scope) =>
             {
-                var visitor = new TypeInferenceVisitor(db);
                 visitor.Visit(scope.Definition!);
                 return visitor.Result;
-            });
+            },
+            handleCycle: (visitor, scope) => throw new NotImplementedException());
     }
 }

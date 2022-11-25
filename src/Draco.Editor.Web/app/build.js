@@ -1,3 +1,4 @@
+import { createActionAuth } from '@octokit/auth-action';
 import { build } from 'esbuild';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -61,7 +62,18 @@ const favicon = await getFavicon();
 fs.writeFileSync(path.join(outDir, 'favicon.svg'), favicon); // Write favicon to wwwroot.
 
 console.log('Downloading vs themes...');
-const octokit = new Octokit();
+
+let octokit;
+if(process.env.GITHUB_TOKEN != undefined && process.env.GITHUB_TOKEN.length > 0) {
+    const auth = createActionAuth();
+    const authentication = await auth();
+    octokit = new Octokit({
+        auth: authentication
+    });
+} else {
+    octokit = new Octokit();
+}
+
 const response = await octokit.repos.getContent({
     owner: 'microsoft',
     repo: 'vscode',

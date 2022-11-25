@@ -6,47 +6,62 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using System.Runtime.InteropServices.JavaScript;
+using System.Threading.Tasks;
+using System;
+using System.Threading;
+using System.IO;
+using Draco.Edtior.Web;
+using System.Text.Json;
 
 namespace Draco.Editor.Web;
 
-public class Program
+public partial class Program
 {
-    private static IJSRuntime js = null!;
-    private static IJSObjectReference appJS = null!;
     private static string code = null!;
     private static string selectedOutputType = null!;
 
     public static async Task Main(string[] args)
     {
+        Interop.Messages += OnMessage;
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
         var host = builder.Build();
-        js = host.Services.GetRequiredService<IJSRuntime>();
 
         // This will complete when the synchronous part of app.ts finish.
-        appJS = await js.InvokeAsync<IJSObjectReference>("import", "./ts/app.js");
-        await ProcessUserInput(); // When the app.ts finish, we
+        await ProcessUserInput();
         await host.RunAsync();
     }
 
 
-    [JSInvokable]
-    public static void OnInit(string outputType, string newCode)
+
+    public static async void OnMessage(object? sender, (string type, string payload) message)
     {
-        // This is run in the typescript init sequence.
-        selectedOutputType = outputType;
-        code = newCode;
-        // We cannot call app.ts here because it has not finished running. The main will do that for us.
+        switch (message.type)
+        {
+        case "OnInit":
+            var onInit = (OnInit)JsonSerializer.Deserialize(message.payload, typeof(OnInit), SourceGenerationContext.Default);
+            selectedOutputType = onInit.OutputType;
+            code = onInit.Code;
+            return;
+        case "OnOutputTypeChange":
+            selectedOutputType = message.payload;
+            await ProcessUserInput();
+            return;
+        default:
+            throw new NotSupportedException();
+        }
     }
+
+
 
     /// <summary>
     /// Called when the user changed output type.
     /// </summary>
     /// <param name="value">The new output type.</param>
-    [JSInvokable]
+    [JSExport]
     public static async Task OnOutputTypeChange(string value)
     {
         selectedOutputType = value;
-        await ProcessUserInput();
     }
 
     /// <summary>
@@ -83,7 +98,7 @@ public class Program
         }
         catch (Exception e)
         {
-            await appJS.InvokeVoidAsync("setOutputText", e.ToString());
+            await SetOutputText(e.ToString());
         }
     }
 
@@ -159,7 +174,7 @@ public class Program
     /// </summary>
     /// <param name="text"></param>
     /// <returns></returns>
-    private static async Task SetOutputText(string text) => await appJS.InvokeVoidAsync("setOutputText", text);
+    private static async Task SetOutputText(string text) => Interop.SendMessage("setOutputText", text);
 
     /// <summary>
     /// Polling loop that take the script output and display it to the output editor.

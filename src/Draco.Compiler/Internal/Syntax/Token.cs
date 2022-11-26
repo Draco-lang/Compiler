@@ -207,44 +207,46 @@ internal abstract partial record class ParseTree
                     diagnostics: diags);
             }
 
+            public static Builder From(Token token) => new Builder()
+                .SetType(token.Type)
+                .SetText(token.Text)
+                .SetValue(token.Value)
+                .SetLeadingTrivia(token.LeadingTrivia)
+                .SetTrailingTrivia(token.TrailingTrivia)
+                .SetDiagnostics(token.Diagnostics);
+
             public Builder SetType(TokenType tokenType)
             {
-                if (this.Type is not null) throw new InvalidOperationException("token type already set");
                 this.Type = tokenType;
                 return this;
             }
 
             public Builder SetText(string text)
             {
-                if (this.Text is not null) throw new InvalidOperationException("text already set");
                 this.Text = text;
                 return this;
             }
 
             public Builder SetValue<T>(T value)
             {
-                if (this.Value is not null) throw new InvalidOperationException("value already set");
                 this.Value = value;
                 return this;
             }
 
             public Builder SetLeadingTrivia(ImmutableArray<Token> trivia)
             {
-                if (this.LeadingTrivia is not null) throw new InvalidOperationException("leading trivia already set");
                 this.LeadingTrivia = trivia;
                 return this;
             }
 
             public Builder SetTrailingTrivia(ImmutableArray<Token> trivia)
             {
-                if (this.TrailingTrivia is not null) throw new InvalidOperationException("trailing trivia already set");
                 this.TrailingTrivia = trivia;
                 return this;
             }
 
             public Builder SetDiagnostics(ImmutableArray<Diagnostic> diagnostics)
             {
-                if (this.Diagnostics is not null) throw new InvalidOperationException("diagnostics already set");
                 this.Diagnostics = diagnostics;
                 return this;
             }

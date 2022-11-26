@@ -97,7 +97,7 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     /// </summary>
     /// <returns>The formatted <see cref="ParseTree"/>.</returns>
     public ParseTree Format() =>
-        ToRed(null, new ParseTreeFormatter(ParseTreeFormatterSettings.DefaultSettings).Format(this.Green));
+        ToRed(null, new ParseTreeFormatter(ParseTreeFormatterSettings.Default).Format(this.Green));
 }
 
 public abstract partial class ParseTree

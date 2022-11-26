@@ -14,7 +14,7 @@ internal class Program
             .WithOutput(Console.OpenStandardOutput())
             .WithHandler<DracoDocumentHandler>()
             .WithHandler<DracoSemanticTokensHandler>()
-            .WithHandler<DracoFormattingHandler>()
+            .WithHandler<DracoDocumentFormattingHandler>()
             .WithServices(services => services
                 .AddSingleton<DracoDocumentRepository>()));
         await server.WaitForExit;

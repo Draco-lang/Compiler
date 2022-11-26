@@ -7,7 +7,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Draco.LanguageServer.Handlers;
 
-internal sealed class DracoFormattingHandler : DocumentFormattingHandlerBase
+internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandlerBase
 {
     private readonly DracoDocumentRepository repository;
     private readonly DocumentSelector documentSelector = new(new DocumentFilter
@@ -15,7 +15,7 @@ internal sealed class DracoFormattingHandler : DocumentFormattingHandlerBase
         Pattern = $"**/*{Constants.DracoSourceExtension}",
     });
 
-    public DracoFormattingHandler(DracoDocumentRepository repository)
+    public DracoDocumentFormattingHandler(DracoDocumentRepository repository)
     {
         this.repository = repository;
     }

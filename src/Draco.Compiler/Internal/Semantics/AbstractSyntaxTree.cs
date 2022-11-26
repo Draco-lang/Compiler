@@ -11,198 +11,221 @@ using Draco.Compiler.Internal.Syntax;
 namespace Draco.Compiler.Internal.Semantics;
 
 /// <summary>
-/// An immutable structure representing syntactic and semantic information about source text.
+/// An immutable structure representing semantic information about source code.
 /// </summary>
-internal abstract record class AbstractSyntaxTree
+internal abstract record class AbstractSyntaxTree(ParseTree? ParseTree)
 {
     /// <summary>
     /// A declaration, either top-level or as a statement.
     /// </summary>
-    public abstract record class Decl : AbstractSyntaxTree
+    public abstract record class Decl(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
     {
         /// <summary>
         /// A function declaration.
         /// </summary>
         public sealed record class Func(
+            ParseTree? ParseTree,
             Symbol DeclarationSymbol,
             ImmutableArray<Symbol> Params,
             Symbol ReturnType,
-            FuncBody Body) : Decl;
+            FuncBody Body) : Decl(ParseTree);
 
         /// <summary>
         /// A label declaration.
         /// </summary>
         public sealed record class Label(
-            Symbol LabelSymbol) : Decl;
+            ParseTree? ParseTree,
+            Symbol LabelSymbol) : Decl(ParseTree);
 
         /// <summary>
         /// A variable declaration.
         /// </summary>
         public sealed record class Variable(
+            ParseTree? ParseTree,
             Symbol DeclarationSymbol,
             Symbol Type,
-            Expr Value) : Decl;
+            Expr Value) : Decl(ParseTree);
     }
 
     /// <summary>
     /// A function body.
     /// </summary>
-    public record class FuncBody : AbstractSyntaxTree
+    public record class FuncBody(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
     {
         /// <summary>
         /// A block function body.
         /// </summary>
         public sealed record class BlockBody(
-            Expr.Block Block) : FuncBody;
+            ParseTree? ParseTree,
+            Expr.Block Block) : FuncBody(ParseTree);
 
         /// <summary>
         /// An in-line function body.
         /// </summary>
         public sealed record class InlineBody(
-            Expr Expression) : FuncBody;
+            ParseTree? ParseTree,
+            Expr Expression) : FuncBody(ParseTree);
     }
 
     /// <summary>
     /// An expression.
     /// </summary>
-    public abstract record class Expr : AbstractSyntaxTree
+    public abstract record class Expr(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
     {
         /// <summary>
         /// An expression representing unitary value.
         /// </summary>
-        public record class Unit : Expr;
+        public record class Unit(ParseTree? ParseTree) : Expr(ParseTree);
 
         /// <summary>
         /// A block expression.
         /// </summary>
         public record class Block(
+            ParseTree? ParseTree,
             ImmutableArray<Stmt> Statements,
-            Expr Value) : Expr;
+            Expr Value) : Expr(ParseTree);
 
         /// <summary>
         /// A literal expression, i.e. a number, string, boolean value, etc.
         /// </summary>
         public sealed record class Literal(
+            ParseTree? ParseTree,
             object Value,
-            Symbol Type) : Expr;
+            Symbol Type) : Expr(ParseTree);
 
         /// <summary>
         /// An if-expression with an option else clause.
         /// </summary>
         public sealed record class If(
+            ParseTree? ParseTree,
             Expr Condition,
             Expr Then,
-            Expr Else) : Expr;
+            Expr Else) : Expr(ParseTree);
 
         /// <summary>
         /// A while-expression.
         /// </summary>
         public sealed record class While(
+            ParseTree? ParseTree,
             Expr Condition,
-            Expr Expression) : Expr;
+            Expr Expression) : Expr(ParseTree);
 
         /// <summary>
         /// A goto-expression.
         /// </summary>
         public sealed record class Goto(
-            Symbol Target) : Expr;
+            ParseTree? ParseTree,
+            Symbol Target) : Expr(ParseTree);
 
         /// <summary>
         /// A return-expression.
         /// </summary>
         public sealed record class Return(
-            Expr Expression) : Expr;
+            ParseTree? ParseTree,
+            Expr Expression) : Expr(ParseTree);
 
         /// <summary>
         /// Any call expression.
         /// </summary>
         public sealed record class Call(
+            ParseTree? ParseTree,
             Expr Called,
-            ImmutableArray<Expr> Args) : Expr;
+            ImmutableArray<Expr> Args) : Expr(ParseTree);
 
         /// <summary>
         /// Any index expression.
         /// </summary>
         public sealed record class Index(
+            ParseTree? ParseTree,
             Expr Called,
-            ImmutableArray<Expr> Args) : Expr;
+            ImmutableArray<Expr> Args) : Expr(ParseTree);
 
         /// <summary>
         /// A member access expression.
         /// </summary>
         public sealed record class MemberAccess(
+            ParseTree? ParseTree,
             Expr Object,
-            Symbol Member) : Expr;
+            Symbol Member) : Expr(ParseTree);
 
         /// <summary>
         /// A unary expression.
         /// </summary>
         public sealed record class Unary(
+            ParseTree? ParseTree,
             Symbol Operator,
-            Expr Operand) : Expr;
+            Expr Operand) : Expr(ParseTree);
 
         /// <summary>
         /// A binary expression, including assignment and compound assignment.
         /// </summary>
         public sealed record class Binary(
+            ParseTree? ParseTree,
             Expr Left,
             Symbol Operator,
-            Expr Right) : Expr;
+            Expr Right) : Expr(ParseTree);
 
         /// <summary>
         /// A relational expression chain.
         /// </summary>
         public sealed record class Relational(
+            ParseTree? ParseTree,
             Expr Left,
-            ImmutableArray<ComparisonElement> Comparisons) : Expr;
+            ImmutableArray<ComparisonElement> Comparisons) : Expr(ParseTree);
 
         /// <summary>
         /// A string expression composing string content and interpolation.
         /// </summary>
         public sealed record class String(
-            ImmutableArray<StringPart> Parts) : Expr;
+            ParseTree? ParseTree,
+            ImmutableArray<StringPart> Parts) : Expr(ParseTree);
     }
 
     /// <summary>
     /// Part of a string literal/expression.
     /// </summary>
-    public abstract record class StringPart : AbstractSyntaxTree
+    public abstract record class StringPart(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
     {
         /// <summary>
         /// Content part of a string literal.
         /// </summary>
         public sealed record class Content(
-            string Value) : StringPart;
+            ParseTree? ParseTree,
+            string Value) : StringPart(ParseTree);
 
         /// <summary>
         /// An interpolation hole.
         /// </summary>
         public sealed record class Interpolation(
-            Expr Expression) : StringPart;
+            ParseTree? ParseTree,
+            Expr Expression) : StringPart(ParseTree);
     }
 
     /// <summary>
     /// A single comparison element in a comparison chain.
     /// </summary>
     public record class ComparisonElement(
+        ParseTree? ParseTree,
         Symbol Operator,
-        Expr Right) : AbstractSyntaxTree;
+        Expr Right) : AbstractSyntaxTree(ParseTree);
 
     /// <summary>
     /// A statement in a block.
     /// </summary>
-    public abstract record class Stmt : AbstractSyntaxTree
+    public abstract record class Stmt(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
     {
         /// <summary>
         /// A declaration statement.
         /// </summary>
         public new sealed record class Decl(
-            AbstractSyntaxTree.Decl Declaration) : Stmt;
+            ParseTree? ParseTree,
+            AbstractSyntaxTree.Decl Declaration) : Stmt(ParseTree);
 
         /// <summary>
         /// An expression statement.
         /// </summary>
         public new sealed record class Expr(
-            ParseTree.Expr Expression) : Stmt;
+            ParseTree? ParseTree,
+            ParseTree.Expr Expression) : Stmt(ParseTree);
     }
 }

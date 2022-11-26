@@ -47,8 +47,7 @@ internal static class AstBuilder
                 Params: func.Params.Value.Elements.Select(p =>
                     SymbolResolution.GetDefinedSymbolOrNull(db, p.Value) ?? throw new InvalidOperationException()).ToImmutableArray(),
                 ReturnType: func.ReturnType is null ? Type.Unit : TypeChecker.Evaluate(db, func.ReturnType.Type),
-                // TODO
-                Body: null!),
+                Body: ToAst(db, func.Body)),
             _ => throw new ArgumentOutOfRangeException(nameof(decl)),
         });
 
@@ -76,5 +75,12 @@ internal static class AstBuilder
         Ast.Expr (expr) => expr switch
         {
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+        });
+
+    private static Ast.FuncBody ToAst(QueryDatabase db, ParseTree.FuncBody funcBody) => db.GetOrUpdate(
+        funcBody,
+        Ast.FuncBody (funcBody) => funcBody switch
+        {
+            _ => throw new ArgumentOutOfRangeException(nameof(funcBody)),
         });
 }

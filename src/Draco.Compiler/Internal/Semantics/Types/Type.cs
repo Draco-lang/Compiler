@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
 
@@ -32,6 +33,51 @@ internal abstract partial record class Type
 {
     public static readonly Type Unit = new Builtin(typeof(void));
     public static readonly Type Int32 = new Builtin(typeof(int));
+}
+
+internal abstract partial record class Type
+{
+    /// <summary>
+    /// Type variables are uninferred types that can be substituted to regular types or other variables.
+    /// </summary>
+    public sealed record class Variable : Type
+    {
+        private static int idCounter = -1;
+
+        private readonly int id = Interlocked.Increment(ref idCounter);
+        private Type? substitution;
+
+        /// <summary>
+        /// The substitution of this type variable.
+        /// </summary>
+        public Type Substitution
+        {
+            get
+            {
+                if (this.substitution is null) return this;
+                // Pruning
+                if (this.substitution is Variable var) this.substitution = var.Substitution;
+                return this.substitution;
+            }
+            set
+            {
+                if (this.substitution is not null) throw new InvalidOperationException("tried to substitute type variable multiple times");
+                this.substitution = value;
+            }
+        }
+
+        public ParseTree? Defitition { get; }
+
+        public Variable(ParseTree? defitition)
+        {
+            this.Defitition = defitition;
+        }
+
+        public override string ToString() => $"{StringUtils.IndexToExcelColumnName(this.id)}'";
+
+        public bool Equals(Builtin? other) => throw new InvalidOperationException("can't compare type variables");
+        public override int GetHashCode() => throw new InvalidOperationException("can't hash type variables");
+    }
 }
 
 internal abstract partial record class Type

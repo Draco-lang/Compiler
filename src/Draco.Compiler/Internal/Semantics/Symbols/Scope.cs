@@ -89,8 +89,10 @@ internal readonly struct DeclarationTimeline
         var searchKey = new Declaration(referencedPosition, null!);
         var index = this.Declarations.BinarySearch(searchKey, comparer);
         if (index >= 0)
+        {
             // Exact match, can reference
             return this.Declarations[index];
+        }
         else
         {
             // We are in-between, we need to get the previous one, which is defined

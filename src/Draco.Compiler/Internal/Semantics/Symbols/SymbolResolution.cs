@@ -54,7 +54,9 @@ internal static class SymbolResolution
             return sym.Diagnostics;
         }
         else
+        {
             return Enumerable.Empty<Diagnostic>();
+        }
     }
 
     /// <summary>
@@ -285,7 +287,9 @@ internal static class SymbolResolution
     {
         // Search for this subtree
         foreach (var (child, position) in EnumerateSubtreeInScope(ancestor))
+        {
             if (ReferenceEquals(tree.Green, child.Green)) return position;
+        }
         // NOTE: This should not happen...
         throw new InvalidOperationException();
     }
@@ -310,8 +314,10 @@ internal static class SymbolResolution
 
                 // If the child defines a scope, we don't recurse
                 if (GetScopeKind(child) is null)
+                {
                     // Otherwise, we can recurse
                     foreach (var item in Impl(child, offset)) yield return item;
+                }
 
                 offset += child.Width;
             }

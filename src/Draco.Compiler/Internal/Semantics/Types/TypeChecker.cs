@@ -39,7 +39,9 @@ internal static class TypeChecker
             return type.Diagnostics;
         }
         else
+        {
             return Enumerable.Empty<Diagnostic>();
+        }
     }
 
     /// <summary>
@@ -96,7 +98,9 @@ internal static class TypeChecker
         // Walk up to the nearest scope that's either global or function
         var scope = symbol.EnclosingScope ?? throw new InvalidOperationException();
         while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
+        {
             scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
+        }
         // TODO: Not necessarily a variable
         // Infer the variables from the scope
         var inferredTypes = InferTypes(db, scope);

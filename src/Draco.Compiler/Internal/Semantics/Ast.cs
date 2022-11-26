@@ -6,19 +6,20 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Semantics.Symbols;
-using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Api.Syntax;
+using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Internal.Semantics;
 
 /// <summary>
 /// An immutable structure representing semantic information about source code.
 /// </summary>
-internal abstract record class AbstractSyntaxTree(ParseTree? ParseTree)
+internal abstract record class Ast(ParseTree? ParseTree)
 {
     /// <summary>
     /// A declaration, either top-level or as a statement.
     /// </summary>
-    public abstract record class Decl(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
+    public abstract record class Decl(ParseTree? ParseTree) : Ast(ParseTree)
     {
         /// <summary>
         /// A function declaration.
@@ -27,7 +28,7 @@ internal abstract record class AbstractSyntaxTree(ParseTree? ParseTree)
             ParseTree? ParseTree,
             Symbol DeclarationSymbol,
             ImmutableArray<Symbol> Params,
-            Symbol ReturnType,
+            Type ReturnType,
             FuncBody Body) : Decl(ParseTree);
 
         /// <summary>
@@ -50,7 +51,7 @@ internal abstract record class AbstractSyntaxTree(ParseTree? ParseTree)
     /// <summary>
     /// A function body.
     /// </summary>
-    public record class FuncBody(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
+    public record class FuncBody(ParseTree? ParseTree) : Ast(ParseTree)
     {
         /// <summary>
         /// A block function body.
@@ -70,7 +71,7 @@ internal abstract record class AbstractSyntaxTree(ParseTree? ParseTree)
     /// <summary>
     /// An expression.
     /// </summary>
-    public abstract record class Expr(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
+    public abstract record class Expr(ParseTree? ParseTree) : Ast(ParseTree)
     {
         /// <summary>
         /// An expression representing unitary value.
@@ -184,7 +185,7 @@ internal abstract record class AbstractSyntaxTree(ParseTree? ParseTree)
     /// <summary>
     /// Part of a string literal/expression.
     /// </summary>
-    public abstract record class StringPart(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
+    public abstract record class StringPart(ParseTree? ParseTree) : Ast(ParseTree)
     {
         /// <summary>
         /// Content part of a string literal.
@@ -207,19 +208,19 @@ internal abstract record class AbstractSyntaxTree(ParseTree? ParseTree)
     public record class ComparisonElement(
         ParseTree? ParseTree,
         Symbol Operator,
-        Expr Right) : AbstractSyntaxTree(ParseTree);
+        Expr Right) : Ast(ParseTree);
 
     /// <summary>
     /// A statement in a block.
     /// </summary>
-    public abstract record class Stmt(ParseTree? ParseTree) : AbstractSyntaxTree(ParseTree)
+    public abstract record class Stmt(ParseTree? ParseTree) : Ast(ParseTree)
     {
         /// <summary>
         /// A declaration statement.
         /// </summary>
         public new sealed record class Decl(
             ParseTree? ParseTree,
-            AbstractSyntaxTree.Decl Declaration) : Stmt(ParseTree);
+            Ast.Decl Declaration) : Stmt(ParseTree);
 
         /// <summary>
         /// An expression statement.

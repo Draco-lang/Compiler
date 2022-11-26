@@ -29,7 +29,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
             Symbol DeclarationSymbol,
             ImmutableArray<Symbol> Params,
             Type ReturnType,
-            FuncBody Body) : Decl(ParseTree);
+            Expr.Block Body) : Decl(ParseTree);
 
         /// <summary>
         /// A label declaration.
@@ -44,28 +44,8 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public sealed record class Variable(
             ParseTree? ParseTree,
             Symbol DeclarationSymbol,
-            Symbol Type,
-            Expr Value) : Decl(ParseTree);
-    }
-
-    /// <summary>
-    /// A function body.
-    /// </summary>
-    public record class FuncBody(ParseTree? ParseTree) : Ast(ParseTree)
-    {
-        /// <summary>
-        /// A block function body.
-        /// </summary>
-        public sealed record class BlockBody(
-            ParseTree? ParseTree,
-            Expr.Block Block) : FuncBody(ParseTree);
-
-        /// <summary>
-        /// An in-line function body.
-        /// </summary>
-        public sealed record class InlineBody(
-            ParseTree? ParseTree,
-            Expr Expression) : FuncBody(ParseTree);
+            Type Type,
+            Expr? Value) : Decl(ParseTree);
     }
 
     /// <summary>
@@ -227,6 +207,6 @@ internal abstract record class Ast(ParseTree? ParseTree)
         /// </summary>
         public new sealed record class Expr(
             ParseTree? ParseTree,
-            ParseTree.Expr Expression) : Stmt(ParseTree);
+            Ast.Expr Expression) : Stmt(ParseTree);
     }
 }

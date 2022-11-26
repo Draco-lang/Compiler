@@ -41,6 +41,9 @@ internal static class AstBuilder
         decl,
         Ast.Decl (decl) => decl switch
         {
+            // TODO: Eliminate the ?? pattern everywhere by making the API use optional
+            // TODO: Eliminate the null ? null : ... pattern everywhere by making the API use optional
+
             ParseTree.Decl.Func func => new Ast.Decl.Func(
                 ParseTree: func,
                 DeclarationSymbol: SymbolResolution.GetDefinedSymbolOrNull(db, func) ?? throw new InvalidOperationException(),
@@ -48,6 +51,14 @@ internal static class AstBuilder
                     SymbolResolution.GetDefinedSymbolOrNull(db, p.Value) ?? throw new InvalidOperationException()).ToImmutableArray(),
                 ReturnType: func.ReturnType is null ? Type.Unit : TypeChecker.Evaluate(db, func.ReturnType.Type),
                 Body: ToAst(db, func.Body)),
+            ParseTree.Decl.Label label => new Ast.Decl.Label(
+                ParseTree: label,
+                LabelSymbol: SymbolResolution.GetDefinedSymbolOrNull(db, label) ?? throw new InvalidOperationException()),
+            ParseTree.Decl.Variable var => new Ast.Decl.Variable(
+                ParseTree: var,
+                DeclarationSymbol: SymbolResolution.GetDefinedSymbolOrNull(db, var) ?? throw new InvalidOperationException(),
+                Type: var.Type is null ? Type.Unit : TypeChecker.Evaluate(db, var.Type.Type),
+                Value: var.Initializer is null ? null : ToAst(db, var.Initializer.Value)),
             _ => throw new ArgumentOutOfRangeException(nameof(decl)),
         });
 
@@ -61,6 +72,12 @@ internal static class AstBuilder
         stmt,
         Ast.Stmt (stmt) => stmt switch
         {
+            ParseTree.Stmt.Decl d => new Ast.Stmt.Decl(
+                ParseTree: d,
+                Declaration: ToAst(db, d.Declaration)),
+            ParseTree.Stmt.Expr expr => new Ast.Stmt.Expr(
+                ParseTree: expr,
+                Expression: ToAst(db, expr.Expression)),
             _ => throw new ArgumentOutOfRangeException(nameof(stmt)),
         });
 
@@ -77,9 +94,9 @@ internal static class AstBuilder
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 
-    private static Ast.FuncBody ToAst(QueryDatabase db, ParseTree.FuncBody funcBody) => db.GetOrUpdate(
+    private static Ast.Expr.Block ToAst(QueryDatabase db, ParseTree.FuncBody funcBody) => db.GetOrUpdate(
         funcBody,
-        Ast.FuncBody (funcBody) => funcBody switch
+        Ast.Expr.Block (funcBody) => funcBody switch
         {
             _ => throw new ArgumentOutOfRangeException(nameof(funcBody)),
         });

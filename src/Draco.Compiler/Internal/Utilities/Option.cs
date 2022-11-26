@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Utilities;
 /// A type representing an optional (nullable) value, that works for both reference and value types.
 /// </summary>
 /// <typeparam name="T">The type of the optional value.</typeparam>
-internal readonly struct Option<T>
+internal readonly struct Option<T> : IEquatable<Option<T>>, IEquatable<T>
 {
     /// <summary>
     /// A none value.
@@ -32,6 +32,12 @@ internal readonly struct Option<T>
     [MemberNotNullWhen(true, nameof(Value))]
     public bool IsSome { get; }
 
+    /// <summary>
+    /// True, if the option is none.
+    /// </summary>
+    [MemberNotNullWhen(false, nameof(Value))]
+    public bool IsNone => !this.IsSome;
+
     private readonly T value;
 
     public Option()
@@ -45,6 +51,20 @@ internal readonly struct Option<T>
         this.IsSome = true;
         this.value = value;
     }
+
+    public override bool Equals([NotNullWhen(true)] object? obj) =>
+           obj is Option<T> other
+        && this.Equals(other);
+    public bool Equals(Option<T> other)
+    {
+        if (this.IsNone) return other.IsNone;
+        if (other.IsNone) return false;
+        return this.Value.Equals(other.Value);
+    }
+    public bool Equals(T? other) => this.IsSome && this.Value.Equals(other);
+    public override int GetHashCode() => this.IsSome
+        ? this.Value.GetHashCode()
+        : 0;
 
     /// <summary>
     /// Maps the value of the option to another type.

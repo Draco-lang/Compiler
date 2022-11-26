@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Utilities;
 /// A type representing an optional (nullable) value, that works for both reference and value types.
 /// </summary>
 /// <typeparam name="T">The type of the optional value.</typeparam>
-public readonly struct Option<T>
+internal readonly struct Option<T>
 {
     /// <summary>
     /// A none value.
@@ -120,7 +120,7 @@ public readonly struct Option<T>
 /// <summary>
 /// Extension functionality for <see cref="Option{T}"/>.
 /// </summary>
-public static class Option
+internal static class Option
 {
     /// <summary>
     /// Constructs an <see cref="Option{T}"/> containing the given value.

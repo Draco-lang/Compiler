@@ -43,7 +43,7 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         return result;
     }
 
-    protected override async Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
+    protected override Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
         var content = this.repository.GetDocument(identifier.TextDocument.Uri);
         var parseTree = ParseTree.Parse(content);
@@ -52,12 +52,13 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         {
             builder.Push(Translator.ToLsp(token.Range), token.Type, token.Modifiers);
         }
+        return Task.CompletedTask;
     }
 
-    protected override Task<SemanticTokensDocument> GetSemanticTokensDocument(ITextDocumentIdentifierParams @params, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(new SemanticTokensDocument(this.RegistrationOptions.Legend));
-    }
+    protected override Task<SemanticTokensDocument> GetSemanticTokensDocument(
+        ITextDocumentIdentifierParams @params,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(new SemanticTokensDocument(this.RegistrationOptions.Legend));
 
     protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(
         SemanticTokensCapability capability,

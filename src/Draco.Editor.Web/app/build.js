@@ -64,7 +64,7 @@ fs.writeFileSync(path.join(outDir, 'favicon.svg'), favicon); // Write favicon to
 console.log('Downloading vs themes...');
 
 let octokit;
-if(process.env.GITHUB_TOKEN != undefined && process.env.GITHUB_TOKEN.length > 0) {
+if (process.env.GITHUB_TOKEN != undefined && process.env.GITHUB_TOKEN.length > 0) {
     const auth = createActionAuth();
     const authentication = await auth();
     octokit = new Octokit({

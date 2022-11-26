@@ -135,6 +135,13 @@ internal readonly struct Option<T> : IEquatable<Option<T>>, IEquatable<T>
     /// <param name="value">The value to convert.</param>
     public static implicit operator Option<T>(T value) =>
         new(value);
+
+    public static bool operator ==(Option<T> o1, Option<T> o2) => o1.Equals(o2);
+    public static bool operator !=(Option<T> o1, Option<T> o2) => !o1.Equals(o2);
+    public static bool operator ==(Option<T> o1, T o2) => o1.Equals(o2);
+    public static bool operator !=(Option<T> o1, T o2) => !o1.Equals(o2);
+    public static bool operator ==(T o1, Option<T> o2) => o2.Equals(o1);
+    public static bool operator !=(T o1, Option<T> o2) => !o2.Equals(o1);
 }
 
 /// <summary>

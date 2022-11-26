@@ -7,7 +7,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 /// <summary>
 /// Utility for printing the result of symbol resolution in a DOT graph.
@@ -49,7 +49,6 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
         var textBuilder = new StringBuilder();
         textBuilder.Append(InferNodeText(tree));
         if (scope is not null)
-        {
             // Append scope
             textBuilder
                 .Append(@"\n")
@@ -59,15 +58,12 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
                     .SelectMany(t => t.Value.Declarations)
                     .Select(d => d.Name))
                 .Append(" }");
-        }
         if (definedSymbol is not null)
-        {
             // Append defined symbol
             textBuilder
                 .Append(@"\n")
                 .Append("define ")
                 .Append(definedSymbol.Name);
-        }
         if (referencedSymbol is not null && referencedSymbol.Definition is not null)
         {
             // Append reference info
@@ -79,9 +75,7 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
 
         // Parent relation
         if (this.TryGetParentName(out var parentName))
-        {
             this.Builder.AppendLine($"  {name} -> {parentName} [dir=none]");
-        }
     }
 
     private static string InferNodeText(ParseTree tree) => tree switch

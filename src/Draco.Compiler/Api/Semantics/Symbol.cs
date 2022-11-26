@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
-using InternalSymbol = Draco.Compiler.Internal.Semantics.Symbol;
+using InternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.Symbol;
 
 namespace Draco.Compiler.Api.Semantics;
 

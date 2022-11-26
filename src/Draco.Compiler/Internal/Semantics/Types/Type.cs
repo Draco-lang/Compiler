@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.Types;
 
 /// <summary>
 /// The base for all types in the compiler.

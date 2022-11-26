@@ -8,9 +8,10 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.Types;
 
 /// <summary>
 /// A visitor that does type-inference on the given subtree.
@@ -116,18 +117,14 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         // Infer the type from the two potential sources
         var inferredType = null as Type;
         if (declaredType is null && valueType is null)
-        {
             // var x;
             // Just a new type variable, will need to infer from context
             inferredType = new TypeVar(node);
-        }
         else if (declaredType is null || valueType is null)
-        {
             // var x: T;
             // var x = v;
             // Whatever is non-null
             inferredType = declaredType ?? valueType;
-        }
         else
         {
             // var x: T = v;

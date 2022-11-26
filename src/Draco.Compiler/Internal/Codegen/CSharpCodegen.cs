@@ -8,6 +8,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api.Semantics;
 using static Draco.Compiler.Api.Syntax.ParseTree;
 using System.IO;
+using Draco.Compiler.Internal.Semantics.Symbols;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -39,8 +40,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         {
             // For now we reserve their proper names for globals
             // For the rest we allocate an enumerated ID
-            var scopeKind = ((Symbol)symbol).InternalSymbol.EnclosingScope?.Kind ?? Semantics.ScopeKind.Global;
-            name = scopeKind == Semantics.ScopeKind.Local
+            var scopeKind = ((Api.Semantics.Symbol)symbol).InternalSymbol.EnclosingScope?.Kind ?? ScopeKind.Global;
+            name = scopeKind == ScopeKind.Local
                 ? $"sym_{this.symbolNames.Count}"
                 : symbol.Name;
             this.symbolNames.Add(symbol, name);

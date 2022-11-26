@@ -7,10 +7,13 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.Semantics.Types;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ApiSymbol = Draco.Compiler.Api.Semantics.Symbol;
+using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 /// <summary>
 /// The base of all symbols.

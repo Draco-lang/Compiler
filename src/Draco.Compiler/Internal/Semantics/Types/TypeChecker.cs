@@ -8,9 +8,10 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Semantics.Symbols;
 using static Draco.Compiler.Api.Diagnostics.Location;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.Types;
 
 /// <summary>
 /// Implements type-checking.
@@ -38,9 +39,7 @@ internal static class TypeChecker
             return type.Diagnostics;
         }
         else
-        {
             return Enumerable.Empty<Diagnostic>();
-        }
     }
 
     /// <summary>
@@ -97,9 +96,7 @@ internal static class TypeChecker
         // Walk up to the nearest scope that's either global or function
         var scope = symbol.EnclosingScope ?? throw new InvalidOperationException();
         while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
-        {
             scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
-        }
         // TODO: Not necessarily a variable
         // Infer the variables from the scope
         var inferredTypes = InferTypes(db, scope);

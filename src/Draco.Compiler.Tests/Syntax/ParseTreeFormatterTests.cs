@@ -14,8 +14,9 @@ public sealed class ParseTreeFormatterTests
     public void TestFormatting()
     {
         var input = """"
+                myLabelNonIndented:
              func  main  ( )  {   
-                    myLabel:
+                    
             var   x   :  int32   = 5+ 
 
               4  + 5  ;
@@ -35,7 +36,8 @@ public sealed class ParseTreeFormatterTests
                  val  x = 4;
              var t   = 7    ;     
                if(x > t){
-                x = if
+             myLabel:
+                val x = if
                   (t ==5)3 else 4 ;
                } else{
                 var s = 4/1*  6 ;
@@ -55,8 +57,8 @@ public sealed class ParseTreeFormatterTests
             """";
 
         var expected = """"
+            myLabelNonIndented:
             func main() {
-                myLabel:
                 var x: int32 = 5 + 4 + 5;
                 val singleLineString = "";
                 var multilineString = #"""
@@ -71,7 +73,8 @@ public sealed class ParseTreeFormatterTests
                 val x = 4;
                 var t = 7;
                 if (x > t) {
-                    x = if (t == 5) 3 else 4;
+                myLabel:
+                    val x = if (t == 5) 3 else 4;
                 }
                 else {
                     var s = 4 / 1 * 6;

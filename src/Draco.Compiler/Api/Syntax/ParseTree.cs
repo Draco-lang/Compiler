@@ -97,6 +97,10 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
         public TokenType Type => this.Green.Type;
     }
 
+    /// <summary>
+    /// Formats the <see cref="ParseTree"/>.
+    /// </summary>
+    /// <returns>The formatted <see cref="ParseTree"/>.</returns>
     public ParseTree Format() =>
         ToRed(null, new ParseTreeFormatter(ParseTreeFormatterSettings.DefaultSettings).Format(this.Green));
 }

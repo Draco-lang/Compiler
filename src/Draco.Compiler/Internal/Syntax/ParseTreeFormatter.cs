@@ -10,11 +10,17 @@ using Token = Draco.Compiler.Internal.Syntax.ParseTree.Token;
 
 namespace Draco.Compiler.Internal.Syntax;
 
+/// <summary>
+/// Settings that the formatter will use.
+/// </summary>
 internal sealed record class ParseTreeFormatterSettings(string Indentation)
 {
     internal static readonly ParseTreeFormatterSettings DefaultSettings = new ParseTreeFormatterSettings("    ");
 }
 
+/// <summary>
+/// The formatter for <see cref="ParseTree"/>.
+/// </summary>
 internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 {
     private TokenType? lastToken;
@@ -55,6 +61,11 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         return newToken;
     }
 
+    /// <summary>
+    /// Formats the given <see cref="ParseTree"/>.
+    /// </summary>
+    /// <param name="tree">The <see cref="ParseTree"/> to be formatted.</param>
+    /// <returns></returns>
     public ParseTree Format(ParseTree tree)
     {
         this.tokens = this.GetTokens(tree).GetEnumerator();
@@ -90,7 +101,9 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 
         newToken = newToken.Type switch
         {
-            // Maybe use dictionary in future to allow user to alter "stickiness" of some tokens
+            // TODO: Maybe use dictionary in future to allow user to alter "stickiness" of some tokens
+            // Tokens that always have one space after
+            // Note: TokenType.Comma is exception, in case it is in label declaration, it is handeled outside of this function
             TokenType.Assign or TokenType.Colon or TokenType.Comma or TokenType.Equal or
             TokenType.GreaterEqual or TokenType.GreaterThan or TokenType.InterpolationStart or
             TokenType.KeywordAnd or TokenType.KeywordFrom or TokenType.KeywordImport or
@@ -101,7 +114,9 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
             TokenType.SlashAssign or TokenType.Star or TokenType.StarAssign
             => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
 
-            TokenType.KeywordVal or TokenType.KeywordVar or TokenType.KeywordFunc
+            // Tokens that statement can start with, which means they need to have indentation before them
+            // Note: TokenType.Identifier is handeled separately, base on tokens that are before or after the Identifier
+            TokenType.KeywordVal or TokenType.KeywordVar or TokenType.KeywordFunc or TokenType.KeywordReturn or TokenType.KeywordGoto or TokenType.KeywordWhile
             => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
 
             TokenType.ParenOpen => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.noSpaceTrivia),
@@ -126,10 +141,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 
             TokenType.CurlyClose => this.RemoveIndentation(newToken).SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.newlineTrivia),
 
-            TokenType.KeywordReturn => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
-
-            TokenType.KeywordGoto => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
-
+            // If and else keywords are formatted diferently when they are used as expressions and when they are used as statements
             TokenType.KeywordIf => this.lastToken switch
             {
                 TokenType.Semicolon or TokenType.CurlyClose => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
@@ -142,8 +154,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
                 _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia)
             },
 
-            TokenType.KeywordWhile => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.oneSpaceTrivia),
-
+            // Identifier is handeled based on the context in which it is used
             TokenType.Identifier => (this.lastToken, this.nextToken) switch
             {
                 { lastToken: TokenType.KeywordVal or TokenType.KeywordVar, nextToken: TokenType.Colon }
@@ -156,9 +167,11 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
                 { lastToken: TokenType.Semicolon or TokenType.CurlyOpen } => newToken.SetLeadingTrivia(CreateTrivia(TokenType.Whitespace, this.Indentation)).SetTrailingTrivia(this.noSpaceTrivia),
 
                 { nextToken: TokenType.Semicolon or TokenType.ParenOpen or TokenType.ParenClose } => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.noSpaceTrivia),
-                _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia),
+                _ => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.oneSpaceTrivia)
             },
 
+            // Literals are handeled based on the context in which they are used
+            // Note: TokenType.MultiLineStringEnd is handeled separately, beacause we can't alter its leading trivia
             TokenType.LiteralInteger or TokenType.LiteralFloat or TokenType.KeywordFalse or TokenType.KeywordTrue or TokenType.LiteralCharacter or TokenType.LineStringEnd => (this.lastToken, this.nextToken) switch
             {
                 { nextToken: TokenType.Semicolon or TokenType.ParenClose } => newToken.SetLeadingTrivia(this.noSpaceTrivia).SetTrailingTrivia(this.noSpaceTrivia),
@@ -172,6 +185,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
             },
             _ => newToken
         };
+        // Move lastToken and nextToken to next tokens
         var resultToken = newToken.Build();
         this.lastToken = resultToken!.Type;
         this.tokens!.MoveNext();
@@ -179,6 +193,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         else this.nextToken = this.tokens.Current.Type;
         if (resultToken is not null)
         {
+            // If the original token andthe new one have the same trivia, we set  changed to false, so the entire subtree is not recalculated
             changed = !this.CheckTriviaEqual(resultToken, token);
             return resultToken;
         }

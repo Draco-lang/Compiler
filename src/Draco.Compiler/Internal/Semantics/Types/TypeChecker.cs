@@ -82,6 +82,7 @@ internal static class TypeChecker
                 ? Type.Unit
                 : TypeOf(db, block.Enclosed.Value.Value),
             ParseTree.Expr.Name name => GetTypeOfSymbol(db, SymbolResolution.GetReferencedSymbol(db, name)),
+            ParseTree.Expr.Binary bin when bin.Operator.Type == TokenType.Assign => TypeOf(db, bin.Left),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 

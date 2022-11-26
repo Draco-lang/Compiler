@@ -17,12 +17,36 @@ internal sealed class ConstraintSolver
         Unify(to, from);
     }
 
-    private static Type Unify(Type left, Type right)
+    private static void Unify(Type left, Type right)
     {
         left = UnwrapTypeVariable(left);
         right = UnwrapTypeVariable(right);
 
-        throw new NotImplementedException();
+        switch (left, right)
+        {
+        case (Type.Variable v1, Type.Variable v2):
+            // Don't create a cycle
+            if (ReferenceEquals(v1, v2)) break;
+            v1.Substitution = v2;
+            break;
+
+        // Variable substitution
+        case (Type.Variable v1, _):
+            v1.Substitution = right;
+            break;
+        case (_, Type.Variable v2):
+            v2.Substitution = left;
+            break;
+
+        case (Type.Builtin b1, Type.Builtin b2):
+            // TODO: Type error
+            if (b1.Type != b2.Type) throw new NotImplementedException();
+            break;
+
+        default:
+            // TODO
+            throw new NotImplementedException();
+        }
     }
 
     private static Type UnwrapTypeVariable(Type type) => type is Type.Variable v

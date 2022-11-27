@@ -181,6 +181,14 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
     public override Unit VisitCallExpr(ParseTree.Expr.Call node)
     {
+        // Inference in children
+        base.VisitCallExpr(node);
+
+        var calledType = TypeChecker.TypeOf(this.db, node.Called);
+        var argsType = node.Args.Value.Elements
+            .Select(a => TypeChecker.TypeOf(this.db, a.Value))
+            .ToImmutableArray();
+
         // TODO
         throw new NotImplementedException();
     }

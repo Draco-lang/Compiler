@@ -238,7 +238,6 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
             TokenType.KeywordMod or TokenType.KeywordRem => "%",
             _ => node.Operator.Text
         };
-        op = op.Replace("and", "&&").Replace("or", "||").Replace("mod", "%").Replace("rem", "%");
         this.Indent2();
         this.output.WriteLine($"dynamic {result} = {left} {op} {right};");
         return result;

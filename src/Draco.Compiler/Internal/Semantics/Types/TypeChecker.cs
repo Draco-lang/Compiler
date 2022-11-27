@@ -38,6 +38,13 @@ internal static class TypeChecker
             var type = GetTypeOfSymbol(db, symbol);
             return type.Diagnostics;
         }
+        else if (tree is ParseTree.Decl.Func)
+        {
+            var scope = SymbolResolution.GetDefinedScopeOrNull(db, tree) ?? throw new InvalidOperationException();
+            InferLocalTypes(db, scope);
+            // TODO: Diags produced during inference?
+            return Enumerable.Empty<Diagnostic>();
+        }
         else
         {
             return Enumerable.Empty<Diagnostic>();

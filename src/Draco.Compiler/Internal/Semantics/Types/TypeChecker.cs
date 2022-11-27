@@ -69,30 +69,28 @@ internal static class TypeChecker
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="expr">The <see cref="ParseTree.Expr"/> to determine the type of.</param>
     /// <returns>The <see cref="Type"/> of <paramref name="expr"/>.</returns>
-    public static Type TypeOf(QueryDatabase db, ParseTree.Expr expr) => db.GetOrUpdate(
-        expr,
-        Type (expr) => expr switch
+    public static Type TypeOf(QueryDatabase db, ParseTree.Expr expr) => expr switch
+    {
+        ParseTree.Expr.Literal lit => lit.Value.Type switch
         {
-            ParseTree.Expr.Literal lit => lit.Value.Type switch
-            {
-                TokenType.LiteralInteger => Type.Int32,
-                _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-            },
-            ParseTree.Expr.String => Type.String,
-            ParseTree.Expr.Block block => block.Enclosed.Value.Value is null
-                ? Type.Unit
-                : TypeOf(db, block.Enclosed.Value.Value),
-            ParseTree.Expr.Name name => GetTypeOfSymbol(db, SymbolResolution.GetReferencedSymbol(db, name)),
-            ParseTree.Expr.If @if => GetTypeOfLocal(db, @if),
-            ParseTree.Expr.Binary bin => GetTypeOfLocal(db, bin),
-            ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
-            // TODO: Type errors?
-            ParseTree.Expr.Relational => Type.Bool,
-            // TODO: Type errors?
-            ParseTree.Expr.While => Type.Unit,
-            ParseTree.Expr.UnitStmt => Type.Unit,
+            TokenType.LiteralInteger => Type.Int32,
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-        });
+        },
+        ParseTree.Expr.String => Type.String,
+        ParseTree.Expr.Block block => block.Enclosed.Value.Value is null
+            ? Type.Unit
+            : TypeOf(db, block.Enclosed.Value.Value),
+        ParseTree.Expr.Name name => GetTypeOfSymbol(db, SymbolResolution.GetReferencedSymbol(db, name)),
+        ParseTree.Expr.If @if => GetTypeOfLocal(db, @if),
+        ParseTree.Expr.Binary bin => GetTypeOfLocal(db, bin),
+        ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
+        // TODO: Type errors?
+        ParseTree.Expr.Relational => Type.Bool,
+        // TODO: Type errors?
+        ParseTree.Expr.While => Type.Unit,
+        ParseTree.Expr.UnitStmt => Type.Unit,
+        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+    };
 
     /// <summary>
     /// Retrieves the <see cref="Type"/> of a <see cref="Symbol"/>.

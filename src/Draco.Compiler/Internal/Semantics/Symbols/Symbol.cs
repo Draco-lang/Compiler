@@ -128,6 +128,20 @@ internal abstract partial class Symbol
 internal abstract partial class Symbol
 {
     /// <summary>
+    /// A symbol for a parameter declaration.
+    /// </summary>
+    public sealed class Parameter : InTreeBase
+    {
+        public Parameter(QueryDatabase db, string name, ParseTree definition)
+            : base(db, name, definition)
+        {
+        }
+    }
+}
+
+internal abstract partial class Symbol
+{
+    /// <summary>
     /// A symbol for a variable declaration.
     /// </summary>
     public sealed class Variable : InTreeBase

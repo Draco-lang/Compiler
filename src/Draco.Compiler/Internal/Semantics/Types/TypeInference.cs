@@ -124,21 +124,6 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitFuncParam(ParseTree.FuncParam node)
-    {
-        // Inference in children
-        base.VisitFuncParam(node);
-
-        // The symbol we are inferring the type for
-        var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, node);
-        Debug.Assert(symbol is not null);
-
-        var declaredType = TypeChecker.Evaluate(this.db, node.Type.Type);
-        this.symbols[symbol] = declaredType;
-
-        return this.Default;
-    }
-
     public override Unit VisitBinaryExpr(ParseTree.Expr.Binary node)
     {
         // Inference in children

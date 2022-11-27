@@ -96,18 +96,37 @@ internal static class TypeChecker
     /// <returns>The <see cref="Type"/> of <paramref name="symbol"/>.</returns>
     private static Type GetTypeOfSymbol(QueryDatabase db, Symbol symbol)
     {
-        // TODO: Have some sensible refactoring for this or utility in SymbolResolution?
-        // Maybe even the ability to ask the declaring function from the variable symbol or something?
-        // Walk up to the nearest scope that's either global or function
-        var scope = symbol.EnclosingScope ?? throw new InvalidOperationException();
-        while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
+        if (symbol is Symbol.Variable)
         {
-            scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
+            // TODO: Have some sensible refactoring for this or utility in SymbolResolution?
+            // Maybe even the ability to ask the declaring function from the variable symbol or something?
+            // Walk up to the nearest scope that's either global or function
+            var scope = symbol.EnclosingScope ?? throw new InvalidOperationException();
+            while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
+            {
+                scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
+            }
+            // TODO: Not necessarily a variable
+            // Infer the variables from the scope
+            var inferenceResult = InferLocalTypes(db, scope);
+            return inferenceResult.Symbols[symbol];
         }
-        // TODO: Not necessarily a variable
-        // Infer the variables from the scope
-        var inferenceResult = InferLocalTypes(db, scope);
-        return inferenceResult.Symbols[symbol];
+        else if (symbol is Symbol.Parameter)
+        {
+            var definition = (ParseTree.FuncParam)symbol.Definition!;
+            return Evaluate(db, definition.Type.Type);
+        }
+        else if (symbol is Symbol.Function)
+        {
+            var definition = (ParseTree.Decl.Func)symbol.Definition!;
+            // TODO
+            throw new NotImplementedException();
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>

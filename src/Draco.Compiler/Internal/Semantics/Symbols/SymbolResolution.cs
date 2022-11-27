@@ -204,12 +204,10 @@ internal static class SymbolResolution
                 db: db,
                 name: label.Identifier.Text,
                 definition: tree),
-            // NOTE: We might want a different symbol for parameters?
-            ParseTree.FuncParam fparam => new Symbol.Variable(
+            ParseTree.FuncParam fparam => new Symbol.Parameter(
                 db: db,
                 name: fparam.Identifier.Text,
-                definition: tree,
-                isMutable: false),
+                definition: tree),
             _ => null,
         });
 
@@ -352,6 +350,7 @@ internal static class SymbolResolution
     {
         Symbol.Label or Symbol.Function => BindingKind.OrderIndependent,
         Symbol.Variable => BindingKind.NonRecursive,
+        Symbol.Parameter => BindingKind.NonRecursive,
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 

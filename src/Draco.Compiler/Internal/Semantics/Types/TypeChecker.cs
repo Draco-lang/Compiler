@@ -78,6 +78,7 @@ internal static class TypeChecker
                 TokenType.LiteralInteger => Type.Int32,
                 _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             },
+            ParseTree.Expr.String => Type.String,
             ParseTree.Expr.Block block => block.Enclosed.Value.Value is null
                 ? Type.Unit
                 : TypeOf(db, block.Enclosed.Value.Value),
@@ -85,6 +86,11 @@ internal static class TypeChecker
             ParseTree.Expr.If @if => GetTypeOfLocal(db, @if),
             ParseTree.Expr.Binary bin => GetTypeOfLocal(db, bin),
             ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
+            // TODO: Type errors?
+            ParseTree.Expr.Relational => Type.Bool,
+            // TODO: Type errors?
+            ParseTree.Expr.While => Type.Unit,
+            ParseTree.Expr.UnitStmt => Type.Unit,
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 
@@ -119,8 +125,15 @@ internal static class TypeChecker
         else if (symbol is Symbol.Function)
         {
             var definition = (ParseTree.Decl.Func)symbol.Definition!;
-            // TODO
-            throw new NotImplementedException();
+            var paramTypes = definition.Params.Value.Elements
+                .Select(p => Evaluate(db, p.Value.Type.Type))
+                .ToImmutableArray();
+            var returnType = definition.ReturnType is null ? Type.Unit : Evaluate(db, definition.ReturnType.Type);
+            return new Type.Function(paramTypes, returnType);
+        }
+        else if (symbol is Symbol.Intrinsic intrinsic)
+        {
+            return intrinsic.Type;
         }
         else
         {

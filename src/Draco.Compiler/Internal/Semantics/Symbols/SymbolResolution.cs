@@ -372,9 +372,14 @@ internal static class SymbolResolution
         void AddBuiltinType(string name, System.Type type) =>
             declarations.Add(new(0, new Symbol.TypeAlias(name, new Type.Builtin(type))));
 
+        void AddBuiltinFunction(string name, ImmutableArray<Type> @params, Type ret) =>
+            declarations.Add(new(0, new Symbol.Intrinsic(name, new Type.Function(@params, ret))));
+
         AddBuiltinType("int32", typeof(int));
         AddBuiltinType("string", typeof(string));
         AddBuiltinType("char", typeof(char));
         AddBuiltinType("bool", typeof(bool));
+
+        AddBuiltinFunction("println", ImmutableArray.Create(Type.String), Type.Unit);
     }
 }

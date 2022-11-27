@@ -187,9 +187,12 @@ internal abstract partial class Symbol
         public override Scope? EnclosingScope => null;
         public override ParseTree? Definition => null;
 
-        public Intrinsic(string name)
+        public Type Type { get; }
+
+        public Intrinsic(string name, Type type)
             : base(name)
         {
+            this.Type = type;
         }
     }
 }

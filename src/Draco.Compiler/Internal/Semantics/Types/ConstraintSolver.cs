@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,6 +32,15 @@ internal sealed class ConstraintSolver
         return t1;
     }
 
+    public Type Call(Type func, ImmutableArray<Type> args)
+    {
+        // TODO: This is not the right behavior but we don't have overloading yet
+        var returnType = new Type.Variable(null);
+        var callSite = new Type.Function(args, returnType);
+        Unify(func, callSite);
+        return returnType;
+    }
+
     private static void Unify(Type left, Type right)
     {
         left = UnwrapTypeVariable(left);
@@ -55,6 +65,15 @@ internal sealed class ConstraintSolver
         case (Type.Builtin b1, Type.Builtin b2):
             // TODO: Type error
             if (b1.Type != b2.Type) throw new NotImplementedException();
+            break;
+
+        case (Type.Function f1, Type.Function f2):
+            // TODO: Type error
+            if (f1.Params.Length != f2.Params.Length) throw new NotImplementedException();
+            // TODO: Propagate error?
+            Unify(f1.Return, f2.Return);
+            // TODO: Propagate errors?
+            for (var i = 0; i < f1.Params.Length; ++i) Unify(f1.Params[i], f2.Params[i]);
             break;
 
         default:

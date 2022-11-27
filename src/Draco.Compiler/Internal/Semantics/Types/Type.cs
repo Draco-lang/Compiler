@@ -33,6 +33,8 @@ internal abstract partial record class Type
 {
     public static readonly Type Unit = new Builtin(typeof(void));
     public static readonly Type Int32 = new Builtin(typeof(int));
+    public static readonly Type Bool = new Builtin(typeof(bool));
+    public static readonly Type String = new Builtin(typeof(string));
 }
 
 internal abstract partial record class Type

@@ -173,8 +173,9 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         var argsType = node.Args.Value.Elements
             .Select(a => TypeChecker.TypeOf(this.db, a.Value))
             .ToImmutableArray();
+        var returnType = this.solver.Call(calledType, argsType);
+        this.expressions[node] = returnType;
 
-        // TODO
-        throw new NotImplementedException();
+        return this.Default;
     }
 }

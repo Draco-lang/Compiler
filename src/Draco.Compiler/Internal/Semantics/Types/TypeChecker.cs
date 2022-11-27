@@ -178,7 +178,12 @@ internal static class TypeChecker
 
         return db.GetOrUpdate(
             args: scope,
-            createContext: () => new TypeInferenceVisitor(db),
+            createContext: () =>
+            {
+                var definition = (ParseTree.Decl.Func)scope.Definition;
+                var defType = definition.ReturnType is null ? Type.Unit : Evaluate(db, definition.ReturnType.Type);
+                return new TypeInferenceVisitor(db, defType);
+            },
             recompute: (visitor, scope) =>
             {
                 visitor.Visit(scope.Definition!);

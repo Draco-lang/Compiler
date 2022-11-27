@@ -91,7 +91,7 @@ internal sealed class QueryDatabase
                         .Skip(indexOfKey)
                         .Select(c => c.Key)
                         .Append(computationKey);
-                    var calledQueryNames = calledQueries.Select(k => k.Name);
+                    var calledQueryNames = calledQueries.Select(k => $"{k.Name} [{k.Args}]");
                     var cycle = string.Join("\n", calledQueryNames.Select(q => $" * {q}"));
                     throw new InvalidOperationException($"Cycle detected:\n{cycle}");
                 }

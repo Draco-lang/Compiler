@@ -26,6 +26,13 @@ internal sealed class ConstraintSolver
         return to;
     }
 
+    public Type Return(Type declared, Type returned)
+    {
+        // TODO: This is not the right behavior but we don't have subtyping yet
+        Unify(declared, returned);
+        return declared;
+    }
+
     public Type Same(Type t1, Type t2)
     {
         Unify(t1, t2);

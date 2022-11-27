@@ -42,9 +42,12 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     private readonly Dictionary<Symbol, Type> symbols = new();
     private readonly Dictionary<ParseTree.Expr, Type> expressions = new();
 
-    public TypeInferenceVisitor(QueryDatabase db)
+    private readonly Type returnType;
+
+    public TypeInferenceVisitor(QueryDatabase db, Type returnType)
     {
         this.db = db;
+        this.returnType = returnType;
     }
 
     /// <summary>
@@ -120,6 +123,28 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         // Store the inferred type
         Debug.Assert(inferredType is not null);
         this.symbols[symbol] = inferredType;
+
+        return this.Default;
+    }
+
+    public override Unit VisitInlineBodyFuncBody(ParseTree.FuncBody.InlineBody node)
+    {
+        // Inference in children
+        base.VisitInlineBodyFuncBody(node);
+
+        var exprType = TypeChecker.TypeOf(this.db, node.Expression);
+        this.solver.Return(this.returnType, exprType);
+
+        return this.Default;
+    }
+
+    public override Unit VisitReturnExpr(ParseTree.Expr.Return node)
+    {
+        // Inference in children
+        base.VisitReturnExpr(node);
+
+        var exprType = node.Expression is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Expression);
+        this.solver.Return(this.returnType, exprType);
 
         return this.Default;
     }

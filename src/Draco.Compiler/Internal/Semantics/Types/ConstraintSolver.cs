@@ -11,10 +11,24 @@ namespace Draco.Compiler.Internal.Semantics.Types;
 /// </summary>
 internal sealed class ConstraintSolver
 {
-    public void Assignable(Type to, Type from)
+    public Type Assignable(Type to, Type from)
     {
         // TODO: This is not the right behavior but we don't have subtyping yet
         Unify(to, from);
+        return to;
+    }
+
+    public Type CommonAncestor(Type to, Type from)
+    {
+        // TODO: This is not the right behavior but we don't have subtyping yet
+        Unify(to, from);
+        return to;
+    }
+
+    public Type Same(Type t1, Type t2)
+    {
+        Unify(t1, t2);
+        return t1;
     }
 
     private static void Unify(Type left, Type right)

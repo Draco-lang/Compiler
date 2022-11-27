@@ -82,7 +82,9 @@ internal static class TypeChecker
                 ? Type.Unit
                 : TypeOf(db, block.Enclosed.Value.Value),
             ParseTree.Expr.Name name => GetTypeOfSymbol(db, SymbolResolution.GetReferencedSymbol(db, name)),
-            ParseTree.Expr.Binary bin when bin.Operator.Type == TokenType.Assign => TypeOf(db, bin.Left),
+            ParseTree.Expr.If @if => GetTypeOfLocal(db, @if),
+            ParseTree.Expr.Binary bin => GetTypeOfLocal(db, bin),
+            ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 
@@ -104,17 +106,40 @@ internal static class TypeChecker
         }
         // TODO: Not necessarily a variable
         // Infer the variables from the scope
-        var inferredTypes = InferTypes(db, scope);
-        return inferredTypes[symbol];
+        var inferenceResult = InferLocalTypes(db, scope);
+        return inferenceResult.Symbols[symbol];
     }
 
     /// <summary>
-    /// Infers the <see cref="Type"/>s of symbols in a given function <see cref="Scope"/>.
+    /// Retrieves the <see cref="Type"/> of a local <see cref="ParseTree.Expr"/>.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="expr">The <see cref="ParseTree.Expr"/> to get the <see cref="Type"/> of.</param>
+    /// <returns>The <see cref="Type"/> of <paramref name="expr"/>.</returns>
+    private static Type GetTypeOfLocal(QueryDatabase db, ParseTree.Expr expr)
+    {
+        var scope = SymbolResolution.GetContainingScopeOrNull(db, expr) ?? throw new InvalidOperationException();
+        // TODO: Duplicate
+        // TODO: Have some sensible refactoring for this or utility in SymbolResolution?
+        // Maybe even the ability to ask the declaring function from the variable symbol or something?
+        // Walk up to the nearest scope that's either global or function
+        while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
+        {
+            scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
+        }
+        // TODO: Not necessarily a variable
+        // Infer the variables from the scope
+        var inferenceResult = InferLocalTypes(db, scope);
+        return inferenceResult.Expressions[expr];
+    }
+
+    /// <summary>
+    /// Infers the <see cref="Type"/>s of entities in a given function <see cref="Scope"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="scope">The function <see cref="Scope"/> to infer types for.</param>
-    /// <returns>The dictionary of symbols to their inferred types.</returns>
-    private static IReadOnlyDictionary<Symbol, Type> InferTypes(QueryDatabase db, Scope scope)
+    /// <returns>The result of type inference.</returns>
+    private static TypeInferenceResult InferLocalTypes(QueryDatabase db, Scope scope)
     {
         Debug.Assert(scope.Kind == ScopeKind.Function);
         Debug.Assert(scope.Definition is not null);
@@ -127,6 +152,6 @@ internal static class TypeChecker
                 visitor.Visit(scope.Definition!);
                 return visitor.Result;
             },
-            handleCycle: (visitor, scope) => visitor.Types);
+            handleCycle: (visitor, scope) => visitor.PartialResult);
     }
 }

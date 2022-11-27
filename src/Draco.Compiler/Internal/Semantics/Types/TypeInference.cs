@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
@@ -14,18 +15,32 @@ using Draco.Compiler.Internal.Utilities;
 namespace Draco.Compiler.Internal.Semantics.Types;
 
 /// <summary>
+/// The result of local type-inference.
+/// </summary>
+/// <param name="Symbols">The inferred type of symbols.</param>
+/// <param name="Expressions">The inferred type of expressions.</param>
+internal readonly record struct TypeInferenceResult(
+    IReadOnlyDictionary<Symbol, Type> Symbols,
+    IReadOnlyDictionary<ParseTree.Expr, Type> Expressions);
+
+/// <summary>
 /// A visitor that does type-inference on the given subtree.
 /// </summary>
 internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 {
-    public ImmutableDictionary<Symbol, Type> Result => this.types
-        .ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value));
+    public TypeInferenceResult Result => new(
+        Symbols: this.symbols.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)),
+        Expressions: this.expressions.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)));
 
-    public IReadOnlyDictionary<Symbol, Type> Types => this.types;
+    public TypeInferenceResult PartialResult => new(
+        Symbols: this.symbols,
+        Expressions: this.expressions);
 
     private readonly ConstraintSolver solver = new();
     private readonly QueryDatabase db;
-    private readonly Dictionary<Symbol, Type> types = new();
+
+    private readonly Dictionary<Symbol, Type> symbols = new();
+    private readonly Dictionary<ParseTree.Expr, Type> expressions = new();
 
     public TypeInferenceVisitor(QueryDatabase db)
     {
@@ -64,6 +79,9 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
     public override Unit VisitVariableDecl(ParseTree.Decl.Variable node)
     {
+        // Inference in children
+        base.VisitVariableDecl(node);
+
         // The symbol we are inferring the type for
         var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, node);
         Debug.Assert(symbol is not null);
@@ -96,31 +114,74 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             // var x: T = v;
             // TODO: Need to put a constraint that valueType is subtype of declaredType
             inferredType = declaredType;
-            throw new NotImplementedException();
+            this.solver.Assignable(declaredType, valueType);
         }
 
         // Store the inferred type
         Debug.Assert(inferredType is not null);
-        this.types[symbol] = inferredType;
+        this.symbols[symbol] = inferredType;
 
+        return this.Default;
+    }
+
+    public override Unit VisitFuncParam(ParseTree.FuncParam node)
+    {
         // Inference in children
-        return base.VisitVariableDecl(node);
+        base.VisitFuncParam(node);
+
+        // The symbol we are inferring the type for
+        var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, node);
+        Debug.Assert(symbol is not null);
+
+        var declaredType = TypeChecker.Evaluate(this.db, node.Type.Type);
+        this.symbols[symbol] = declaredType;
+
+        return this.Default;
     }
 
     public override Unit VisitBinaryExpr(ParseTree.Expr.Binary node)
     {
+        // Inference in children
+        base.VisitBinaryExpr(node);
+
+        var leftType = TypeChecker.TypeOf(this.db, node.Left);
+        var rightType = TypeChecker.TypeOf(this.db, node.Right);
+
         if (node.Operator.Type == TokenType.Assign)
         {
             // Right has to be assignable to left
-            var leftType = TypeChecker.TypeOf(this.db, node.Left);
-            var rightType = TypeChecker.TypeOf(this.db, node.Right);
-            this.solver.Assignable(leftType, rightType);
+            var resultType = this.solver.Assignable(leftType, rightType);
+            this.expressions[node] = resultType;
         }
         else
         {
-            // TODO
+            // TODO: Temporary
+            var resultType = this.solver.Same(leftType, rightType);
+            this.expressions[node] = resultType;
         }
+
+        return this.Default;
+    }
+
+    public override Unit VisitIfExpr(ParseTree.Expr.If node)
+    {
         // Inference in children
-        return base.VisitBinaryExpr(node);
+        base.VisitIfExpr(node);
+
+        // TODO: Check if condition is bool
+        // var conditionType = TypeChecker.TypeOf(this.db, node.Condition)
+
+        var leftType = TypeChecker.TypeOf(this.db, node.Then);
+        var rightType = node.Else is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Else.Expression);
+        var resultType = this.solver.CommonAncestor(leftType, rightType);
+        this.expressions[node] = resultType;
+
+        return this.Default;
+    }
+
+    public override Unit VisitCallExpr(ParseTree.Expr.Call node)
+    {
+        // TODO
+        throw new NotImplementedException();
     }
 }

@@ -35,7 +35,7 @@ internal static class TypeChecker
         {
             var symbol = SymbolResolution.GetDefinedSymbolOrNull(db, tree);
             if (symbol is null) return Enumerable.Empty<Diagnostic>();
-            var type = GetTypeOfSymbol(db, symbol);
+            var type = TypeOf(db, symbol);
             return type.Diagnostics;
         }
         else if (tree is ParseTree.Decl.Func)
@@ -87,7 +87,7 @@ internal static class TypeChecker
         ParseTree.Expr.Block block => block.Enclosed.Value.Value is null
             ? Type.Unit
             : TypeOf(db, block.Enclosed.Value.Value),
-        ParseTree.Expr.Name name => GetTypeOfSymbol(db, SymbolResolution.GetReferencedSymbol(db, name)),
+        ParseTree.Expr.Name name => TypeOf(db, SymbolResolution.GetReferencedSymbol(db, name)),
         ParseTree.Expr.If @if => GetTypeOfLocal(db, @if),
         ParseTree.Expr.Binary bin => GetTypeOfLocal(db, bin),
         ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
@@ -105,7 +105,7 @@ internal static class TypeChecker
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="symbol">The <see cref="Symbol"/> to get the <see cref="Type"/> of.</param>
     /// <returns>The <see cref="Type"/> of <paramref name="symbol"/>.</returns>
-    private static Type GetTypeOfSymbol(QueryDatabase db, Symbol symbol)
+    public static Type TypeOf(QueryDatabase db, Symbol symbol)
     {
         if (symbol is Symbol.Variable)
         {

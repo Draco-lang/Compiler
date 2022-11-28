@@ -22,6 +22,8 @@ public sealed class SemanticModel
     /// </summary>
     public ParseTree Root { get; }
 
+    internal QueryDatabase QueryDatabase => this.db;
+
     private readonly QueryDatabase db;
 
     internal SemanticModel(QueryDatabase db, ParseTree root)

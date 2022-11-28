@@ -5,10 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Utilities;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Api.Semantics;
 using static Draco.Compiler.Api.Syntax.ParseTree;
 using System.IO;
 using Draco.Compiler.Internal.Semantics.Symbols;
+using Type = Draco.Compiler.Internal.Semantics.Types.Type;
+using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Semantics.Types;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -19,28 +21,29 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 {
-    private readonly SemanticModel semanticModel;
+    private readonly QueryDatabase db;
     private readonly StreamWriter output;
-    private readonly Dictionary<ISymbol, string> symbolNames = new();
+
+    private readonly Dictionary<Symbol, string> symbolNames = new();
     private int registerCount = 0;
     private int labelCount = 0;
 
-    public CSharpCodegen(SemanticModel semanticModel, Stream output)
+    public CSharpCodegen(QueryDatabase db, Stream output)
     {
-        this.semanticModel = semanticModel;
+        this.db = db;
         this.output = new(output);
     }
 
     private string AllocateRegister() => $"reg_{this.registerCount++}";
     private string AllocateLabel() => $"label_{this.labelCount++}";
 
-    private string AllocateNameForSymbol(ISymbol symbol)
+    private string AllocateNameForSymbol(Symbol symbol)
     {
         if (!this.symbolNames.TryGetValue(symbol, out var name))
         {
             // For now we reserve their proper names for globals
             // For the rest we allocate an enumerated ID
-            var scopeKind = ((Api.Semantics.Symbol)symbol).InternalSymbol.EnclosingScope?.Kind ?? ScopeKind.Global;
+            var scopeKind = symbol.EnclosingScope?.Kind ?? ScopeKind.Global;
             name = scopeKind == ScopeKind.Local
                 ? $"sym_{this.symbolNames.Count}"
                 : symbol.Name;
@@ -49,27 +52,27 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         return name;
     }
 
-    private string DefinedSymbol(ParseTree parseTree)
+    private static string TranslateBuiltinType(System.Type type)
     {
-        // NOTE: Yeah this API is not async...
-        var symbol = this.semanticModel.GetDefinedSymbolOrNull(parseTree);
-        if (symbol is null) throw new NotImplementedException();
-        return this.AllocateNameForSymbol(symbol);
+        if (type == typeof(void)) return "void";
+        return type.FullName ?? type.Name;
     }
 
-    private string ReferencedSymbol(ParseTree parseTree)
+    private static string TranslateType(Type type) => type switch
     {
-        // NOTE: Yeah this API is not async...
-        var symbol = this.semanticModel.GetReferencedSymbol(parseTree);
-        return this.AllocateNameForSymbol(symbol);
-    }
+        Type.Builtin builtin => TranslateBuiltinType(builtin.Type),
+        _ => throw new ArgumentOutOfRangeException(nameof(type)),
+    };
 
-    public void Generate()
+    private string TranslateType(TypeExpr? type) =>
+        TranslateType(type is null ? Type.Unit : TypeChecker.Evaluate(this.db, type));
+
+    public void Generate(ParseTree root)
     {
         this.AppendPrelude();
         this.AppendMainInvocation();
         this.AppendProgramStart();
-        this.Visit(this.semanticModel.Root);
+        this.Visit(root);
         this.AppendProgramEnd();
         this.output.Flush();
     }
@@ -86,20 +89,22 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
                     char.ConvertFromUtf32(this.Codepoint);
             }
 
-            public static Unit print(dynamic value)
+            public static Unit print(string value)
             {
                 System.Console.Write(value);
                 return default;
             }
 
-            public static Unit println(dynamic value)
+            public static Unit println(string value)
             {
                 System.Console.WriteLine(value);
                 return default;
             }
 
-            public static dynamic fmt(dynamic format, params dynamic[] args) =>
+            public static string fmt(string format, params string[] args) =>
                 string.Format(format, args);
+
+            public static Unit pass(object? o) => default;
         }
         """);
 
@@ -121,25 +126,48 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     private void Indent1() => this.output.Write("    ");
     private void Indent2() => this.output.Write("        ");
 
+    private string Store(Type type, Func<string> makeName, string value)
+    {
+        this.Indent2();
+        if (type.Equals(Type.Unit))
+        {
+            this.output.WriteLine($"pass({value});");
+            return "default(Unit)";
+        }
+        var reg = makeName();
+        this.output.WriteLine($"{TranslateType(type)} {reg} = {value};");
+        return reg;
+    }
+
+    private string Store(Type type, string name, string value) => this.Store(type, () => name, value);
+
+    private string Store(Type type, string value) => this.Store(type, this.AllocateRegister, value);
+
     public override string VisitFuncDecl(Decl.Func node)
     {
+        var returnType = node.ReturnType is null
+            ? Type.Unit
+            : TypeChecker.Evaluate(this.db, node.ReturnType.Type);
+
         this.Indent1();
-        this.output.Write($"internal static dynamic {node.Identifier.Text}");
+        this.output.Write($"internal static {TranslateType(returnType)} {node.Identifier.Text}");
         this.output.Write('(');
         this.output.Write(string.Join(
             ", ",
             node.Params.Value.Elements
                 .Select(punct => punct.Value)
-                .Select(param => $"dynamic {this.DefinedSymbol(param)}")));
+                .Select(param =>
+                {
+                    var type = this.TranslateType(param.Type.Type);
+                    var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param) ?? throw new InvalidOperationException();
+                    return $"{type} {this.AllocateNameForSymbol(symbol)}";
+                })));
         this.output.WriteLine(')');
 
         this.Indent1();
         this.output.WriteLine('{');
 
         this.VisitFuncBody(node.Body);
-
-        this.Indent2();
-        this.output.WriteLine("return default(Unit);");
 
         this.Indent1();
         this.output.WriteLine('}');
@@ -157,16 +185,19 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
     public override string VisitLabelDecl(Decl.Label node)
     {
+        var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, node) ?? throw new InvalidOperationException();
         this.Indent1();
-        this.output.WriteLine($"{this.DefinedSymbol(node)}:;");
+        this.output.WriteLine($"{this.AllocateNameForSymbol(symbol)}:;");
         return this.Default;
     }
 
     public override string VisitVariableDecl(Decl.Variable decl)
     {
-        var varReg = this.DefinedSymbol(decl);
+        var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, decl) ?? throw new InvalidOperationException();
+        var declaredType = TypeChecker.TypeOf(this.db, symbol);
+        var varReg = this.AllocateNameForSymbol(symbol);
         this.Indent2();
-        this.output.WriteLine($"dynamic {varReg} = default(Unit);");
+        this.output.WriteLine($"{TranslateType(declaredType)} {varReg} = default({TranslateType(declaredType)});");
         if (decl.Initializer is not null)
         {
             var value = this.VisitExpr(decl.Initializer.Value);
@@ -178,7 +209,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
     public override string VisitGotoExpr(Expr.Goto node)
     {
-        var label = this.ReferencedSymbol(node.Target);
+        var symbol = SymbolResolution.GetReferencedSymbolOrNull(this.db, node.Target) ?? throw new InvalidOperationException();
+        var label = this.AllocateNameForSymbol(symbol);
         this.Indent2();
         this.output.WriteLine($"goto {label};");
         return this.Default;
@@ -186,7 +218,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
     public override string VisitReturnExpr(Expr.Return node)
     {
-        var result = "default(Unit)";
+        var result = string.Empty;
         if (node.Expression is not null) result = this.VisitExpr(node.Expression);
         this.Indent2();
         this.output.WriteLine($"return {result};");
@@ -197,9 +229,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     {
         var func = this.VisitExpr(node.Called);
         var args = node.Args.Value.Elements.Select(a => this.VisitExpr(a.Value)).ToList();
-        var resultReg = this.AllocateRegister();
-        this.Indent2();
-        this.output.WriteLine($"dynamic {resultReg} = {func}({string.Join(", ", args)});");
+        var resultType = TypeChecker.TypeOf(this.db, node);
+        var resultReg = this.Store(resultType, $"{func}({string.Join(", ", args)})");
         return resultReg;
     }
 
@@ -218,31 +249,30 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
     public override string VisitUnaryExpr(Expr.Unary node)
     {
-        var result = this.AllocateRegister();
+        var resultType = TypeChecker.TypeOf(this.db, node);
         var op = node.Operator.Text;
         var subexpr = this.VisitExpr(node.Operand);
-        this.Indent2();
-        this.output.WriteLine($"dynamic {result} = {op} {subexpr};");
-        return subexpr;
+        var result = this.Store(resultType, $"{op} {subexpr}");
+        return result;
     }
 
     public override string VisitBinaryExpr(Expr.Binary node)
     {
         // NOTE: Incomplete, mod and rem don't work
-        var result = this.AllocateRegister();
+        var resultType = TypeChecker.TypeOf(this.db, node);
         var left = this.VisitExpr(node.Left);
         var right = this.VisitExpr(node.Right);
         var op = node.Operator.Text;
-        this.Indent2();
-        this.output.WriteLine($"dynamic {result} = {left} {op} {right};");
+        var result = this.Store(resultType, $"{left} {op} {right}");
         return result;
     }
 
     public override string VisitRelationalExpr(Expr.Relational node)
     {
+        var resultType = TypeChecker.TypeOf(this.db, node);
         var result = this.AllocateRegister();
         this.Indent2();
-        this.output.WriteLine($"dynamic {result} = false;");
+        this.output.WriteLine($"{TranslateType(resultType)} {result} = false;");
         var last = this.VisitExpr(node.Left);
         foreach (var cmp in node.Comparisons)
         {
@@ -273,9 +303,8 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
     public override string VisitIfExpr(Expr.If node)
     {
-        var result = this.AllocateRegister();
-        this.Indent2();
-        this.output.WriteLine($"dynamic {result} = default(Unit);");
+        var resultType = TypeChecker.TypeOf(this.db, node);
+        var result = this.Store(resultType, $"default({TranslateType(resultType)})");
         var elseLabel = this.AllocateLabel();
         var endLabel = this.AllocateLabel();
         var condition = this.VisitExpr(node.Condition.Value);
@@ -320,7 +349,7 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
     {
         var result = this.AllocateRegister();
         this.Indent2();
-        this.output.WriteLine($"dynamic {result} = new System.Text.StringBuilder();");
+        this.output.WriteLine($"System.Text.StringBuilder {result} = new System.Text.StringBuilder();");
         var firstInLine = true;
         foreach (var part in node.Parts)
         {
@@ -361,5 +390,9 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
 
     public override string VisitGroupingExpr(Expr.Grouping node) => this.VisitExpr(node.Expression.Value);
 
-    public override string VisitNameExpr(Expr.Name node) => this.ReferencedSymbol(node);
+    public override string VisitNameExpr(Expr.Name node)
+    {
+        var symbol = SymbolResolution.GetReferencedSymbol(this.db, node) ?? throw new InvalidOperationException();
+        return this.AllocateNameForSymbol(symbol);
+    }
 }

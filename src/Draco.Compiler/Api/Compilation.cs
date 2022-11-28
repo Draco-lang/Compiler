@@ -101,8 +101,8 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        var codegen = new CSharpCodegen(this.GetSemanticModel(), csStream);
-        codegen.Generate();
+        var codegen = new CSharpCodegen(this.db, csStream);
+        codegen.Generate(this.ParseTree);
 
         return new(
             Success: true,

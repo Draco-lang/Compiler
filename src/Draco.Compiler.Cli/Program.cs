@@ -8,6 +8,8 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
+using Errata;
+using Spectre.Console;
 
 namespace Draco.Compiler.Cli;
 
@@ -61,6 +63,8 @@ internal class Program
         var sourceText = File.ReadAllText(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
+        if (DisplayDiags(compilation))
+            return;
         var execResult = ScriptingEngine.Execute(compilation);
         if (!execResult.Success)
         {
@@ -106,5 +110,26 @@ internal class Program
         {
             foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
         }
+    }
+
+    private static bool DisplayDiags(Compilation compilation)
+    {
+        var diags = compilation.GetDiagnostics();
+        if (diags.Count() == 0)
+            return false;
+        var report = new Report(
+                new DracoSourceRepository(compilation.ParseTree.ToString()));
+        foreach (var diagnostic in diags)
+        {
+            report.AddDiagnostic(
+                Diagnostic.Error(diagnostic.Message)
+                    .WithLabel(new Label("0",
+                        new Location(diagnostic.Location.Range!.Value.Start.Line + 1, diagnostic.Location.Range!.Value.Start.Column + 1),
+                        diagnostic.Message).WithLength(diagnostic.Location.Range.Value.End.Column - diagnostic.Location.Range.Value.Start.Column > 0 ?
+                        diagnostic.Location.Range.Value.End.Column - diagnostic.Location.Range.Value.Start.Column : 1)
+                        .WithColor(Color.Red)));
+        }
+        report.Render(AnsiConsole.Console);
+        return true;
     }
 }

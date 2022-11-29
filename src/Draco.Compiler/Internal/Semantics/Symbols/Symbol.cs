@@ -159,7 +159,7 @@ internal abstract partial class Symbol
 internal abstract partial class Symbol
 {
     /// <summary>
-    /// A symbol types.
+    /// A symbol for types.
     /// </summary>
     public sealed class TypeAlias : Symbol
     {

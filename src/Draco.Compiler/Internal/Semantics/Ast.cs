@@ -19,6 +19,13 @@ internal abstract record class Ast
     public abstract ParseTree? ParseTree { get; init; }
 
     /// <summary>
+    /// An entire compilation unit.
+    /// </summary>
+    public sealed record class CompilationUnit(
+        ParseTree? ParseTree,
+        ImmutableArray<Decl> Declarations) : Ast;
+
+    /// <summary>
     /// A declaration, either top-level or as a statement.
     /// </summary>
     public abstract record class Decl : Ast

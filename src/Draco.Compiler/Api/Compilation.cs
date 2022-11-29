@@ -11,6 +11,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Semantics;
 using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 
 namespace Draco.Compiler.Api;
@@ -101,8 +102,9 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        var codegen = new CSharpCodegen(this.db, csStream);
-        codegen.Generate(this.ParseTree);
+        var ast = AstBuilder.ToAst(this.db, this.ParseTree);
+        var codegen = new CSharpCodegen(csStream);
+        codegen.Generate(ast);
 
         return new(
             Success: true,

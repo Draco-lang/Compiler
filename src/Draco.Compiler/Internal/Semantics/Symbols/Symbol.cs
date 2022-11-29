@@ -45,6 +45,12 @@ internal abstract partial class Symbol
     /// </summary>
     public abstract ParseTree? Definition { get; }
 
+    // NOTE: Might not be the best definition of global.
+    /// <summary>
+    /// True, if this is a global symbol.
+    /// </summary>
+    public bool IsGlobal => (this.EnclosingScope?.Kind ?? ScopeKind.Global) == ScopeKind.Global;
+
     protected Symbol(string name)
     {
         this.Name = name;

@@ -25,6 +25,7 @@ internal static class AstBuilder
     /// <returns>The <see cref="Ast"/> form of <paramref name="ast"/>.</returns>
     public static Ast ToAst(QueryDatabase db, ParseTree ast) => ast switch
     {
+        ParseTree.CompilationUnit cu => ToAst(db, cu),
         ParseTree.Decl decl => ToAst(db, decl),
         ParseTree.Stmt stmt => ToAst(db, stmt),
         ParseTree.Expr expr => ToAst(db, expr),
@@ -93,6 +94,10 @@ internal static class AstBuilder
         {
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
+
+    private static Ast.CompilationUnit ToAst(QueryDatabase db, ParseTree.CompilationUnit cu) => db.GetOrUpdate(
+        cu,
+        Ast.CompilationUnit (cu) => new(cu, cu.Declarations.Select(d => ToAst(db, d)).ToImmutableArray()));
 
     private static Ast.Expr.Block ToAst(QueryDatabase db, ParseTree.FuncBody funcBody) => db.GetOrUpdate(
         funcBody,

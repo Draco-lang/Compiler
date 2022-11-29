@@ -42,6 +42,8 @@ internal sealed record class Scope(
     ScopeKind Kind,
     ImmutableDictionary<string, DeclarationTimeline> Timelines)
 {
+    // NOTE: Access for parent scope lazily with the DB?
+
     /// <summary>
     /// Attempts to look up a <see cref="Declaration"/> with a given name.
     /// </summary>

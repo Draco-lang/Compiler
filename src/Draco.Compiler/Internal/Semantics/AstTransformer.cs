@@ -63,7 +63,7 @@ internal abstract partial class AstTransformerBase
         return str;
     }
 
-    protected object? TransformObject(object? obj, out bool changed)
+    protected object TransformObject(object obj, out bool changed)
     {
         changed = false;
         return obj;

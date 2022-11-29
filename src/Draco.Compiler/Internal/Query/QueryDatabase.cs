@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Query;
 
+// NOTE: We eventually want to make this thread-safe.
 /// <summary>
 /// Manages memoized results of the compiler.
 /// </summary>

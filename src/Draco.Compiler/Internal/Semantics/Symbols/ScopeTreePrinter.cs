@@ -91,15 +91,12 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
         _ => tree.GetType().Name,
     };
 
-    // TODO: Can we get rid of this pattern?
     private Scope? GetDefinedScope(ParseTree tree) =>
         SymbolResolution.GetDefinedScopeOrNull(this.db, tree);
 
-    // TODO: Can we get rid of this pattern?
     private Symbol? GetDefinedSymbol(ParseTree tree) =>
         SymbolResolution.GetDefinedSymbolOrNull(this.db, tree);
 
-    // TODO: Can we get rid of this pattern?
     private Symbol? GetReferencedSymbol(ParseTree tree) =>
         SymbolResolution.GetReferencedSymbolOrNull(this.db, tree);
 }

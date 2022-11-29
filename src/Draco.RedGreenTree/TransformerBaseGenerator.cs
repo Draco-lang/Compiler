@@ -275,6 +275,7 @@ public sealed class TransformerBaseGenerator : GeneratorBase
 
     private bool IsTransformableProperty(IPropertySymbol prop)
     {
+        if (prop.IsStatic) return false;
         if (prop.Type is not INamedTypeSymbol propType) return false;
 
         // Don't leak types

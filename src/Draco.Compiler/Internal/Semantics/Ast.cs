@@ -65,7 +65,13 @@ internal abstract record class Ast
         /// <summary>
         /// An expression representing unitary value.
         /// </summary>
-        public record class Unit(ParseTree? ParseTree) : Expr;
+        public record class Unit(ParseTree? ParseTree) : Expr
+        {
+            /// <summary>
+            /// A default unit value without a parse tree.
+            /// </summary>
+            public static Unit Default { get; } = new(ParseTree: null);
+        }
 
         /// <summary>
         /// A block expression.

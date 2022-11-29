@@ -97,12 +97,25 @@ internal static class AstBuilder
 
     private static Ast.CompilationUnit ToAst(QueryDatabase db, ParseTree.CompilationUnit cu) => db.GetOrUpdate(
         cu,
-        Ast.CompilationUnit (cu) => new(cu, cu.Declarations.Select(d => ToAst(db, d)).ToImmutableArray()));
+        Ast.CompilationUnit (cu) => new(
+            ParseTree: cu,
+            Declarations: cu.Declarations.Select(d => ToAst(db, d)).ToImmutableArray()));
 
     private static Ast.Expr.Block ToAst(QueryDatabase db, ParseTree.FuncBody funcBody) => db.GetOrUpdate(
         funcBody,
         Ast.Expr.Block (funcBody) => funcBody switch
         {
+            ParseTree.FuncBody.BlockBody blockBody => (Ast.Expr.Block)ToAst(db, blockBody.Block),
+            // Desugar here into a simple return statement inside a block
+            ParseTree.FuncBody.InlineBody inlineBody => new(
+                ParseTree: inlineBody,
+                Statements: ImmutableArray.Create<Ast.Stmt>(
+                    new Ast.Stmt.Expr(
+                        ParseTree: inlineBody,
+                        Expression: new Ast.Expr.Return(
+                            ParseTree: inlineBody,
+                            Expression: ToAst(db, inlineBody.Expression)))),
+                Value: Ast.Expr.Unit.Default),
             _ => throw new ArgumentOutOfRangeException(nameof(funcBody)),
         });
 }

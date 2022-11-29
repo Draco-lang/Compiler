@@ -63,7 +63,7 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     /// <summary>
     /// The location of this node.
     /// </summary>
-    public Location Location => new Location.Tree(this.Range);
+    public Location Location => new Location.InFile(this.Range);
 
     /// <summary>
     /// All <see cref="Token"/>s that this subtree consists of.

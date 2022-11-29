@@ -1069,5 +1069,5 @@ internal sealed class Parser
 
     // Location utility
 
-    private static Location GetLocation(int width) => new Location.OnTree(Range: new(Offset: 0, Width: width));
+    private static Location GetLocation(int width) => new Location.RelativeToTree(Range: new(Offset: 0, Width: width));
 }

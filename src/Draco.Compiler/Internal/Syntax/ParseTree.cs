@@ -21,7 +21,7 @@ internal abstract partial record class ParseTree
     public abstract IEnumerable<ParseTree> Children { get; }
 
     internal RelativeRange Range => new(Offset: 0, Width: this.Width);
-    internal Location Location => new Location.OnTree(Range: this.Range);
+    internal Location Location => new Location.RelativeToTree(Range: this.Range);
 
     /// <summary>
     /// The diagnostics attached to this tree node.

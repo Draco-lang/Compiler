@@ -60,6 +60,9 @@ public sealed class SemanticModel
         return Impl(this.Root);
     }
 
+    // NOTE: These OrNull functions are not too pretty
+    // For now public API is not that big of a concern, so they can stay
+
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> defined by <paramref name="subtree"/>.
     /// </summary>

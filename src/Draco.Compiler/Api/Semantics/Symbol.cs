@@ -9,6 +9,9 @@ using InternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.Symbol;
 
 namespace Draco.Compiler.Api.Semantics;
 
+// NOTE: Eventually we'll need separate interfaces for each kind of symbol
+// For now public API is not that big of a concern, so this is fine
+
 /// <summary>
 /// Represents a symbol in the language.
 /// </summary>
@@ -60,7 +63,7 @@ internal sealed class Symbol : ISymbol
 
     public bool Equals(ISymbol? other) =>
            other is Symbol otherSym
-        && object.Equals(this.InternalSymbol, otherSym.InternalSymbol);
+        && Equals(this.InternalSymbol, otherSym.InternalSymbol);
 
     public override int GetHashCode() => this.InternalSymbol.GetHashCode();
 }

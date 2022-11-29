@@ -27,6 +27,7 @@ public enum DiagnosticSeverity
     Error,
 }
 
+// NOTE: Eventually we'd want error codes too. For now it's way too early for that.
 /// <summary>
 /// A template for creating <see cref="Diagnostic"/> messages.
 /// </summary>

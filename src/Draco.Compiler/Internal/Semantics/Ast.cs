@@ -14,12 +14,14 @@ namespace Draco.Compiler.Internal.Semantics;
 /// <summary>
 /// An immutable structure representing semantic information about source code.
 /// </summary>
-internal abstract record class Ast(ParseTree? ParseTree)
+internal abstract record class Ast
 {
+    public abstract ParseTree? ParseTree { get; init; }
+
     /// <summary>
     /// A declaration, either top-level or as a statement.
     /// </summary>
-    public abstract record class Decl(ParseTree? ParseTree) : Ast(ParseTree)
+    public abstract record class Decl : Ast
     {
         /// <summary>
         /// A function declaration.
@@ -29,14 +31,14 @@ internal abstract record class Ast(ParseTree? ParseTree)
             Symbol DeclarationSymbol,
             ImmutableArray<Symbol> Params,
             Type ReturnType,
-            Expr.Block Body) : Decl(ParseTree);
+            Expr.Block Body) : Decl;
 
         /// <summary>
         /// A label declaration.
         /// </summary>
         public sealed record class Label(
             ParseTree? ParseTree,
-            Symbol LabelSymbol) : Decl(ParseTree);
+            Symbol LabelSymbol) : Decl;
 
         /// <summary>
         /// A variable declaration.
@@ -45,18 +47,18 @@ internal abstract record class Ast(ParseTree? ParseTree)
             ParseTree? ParseTree,
             Symbol DeclarationSymbol,
             Type Type,
-            Expr? Value) : Decl(ParseTree);
+            Expr? Value) : Decl;
     }
 
     /// <summary>
     /// An expression.
     /// </summary>
-    public abstract record class Expr(ParseTree? ParseTree) : Ast(ParseTree)
+    public abstract record class Expr : Ast
     {
         /// <summary>
         /// An expression representing unitary value.
         /// </summary>
-        public record class Unit(ParseTree? ParseTree) : Expr(ParseTree);
+        public record class Unit(ParseTree? ParseTree) : Expr;
 
         /// <summary>
         /// A block expression.
@@ -64,7 +66,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public record class Block(
             ParseTree? ParseTree,
             ImmutableArray<Stmt> Statements,
-            Expr Value) : Expr(ParseTree);
+            Expr Value) : Expr;
 
         /// <summary>
         /// A literal expression, i.e. a number, string, boolean value, etc.
@@ -72,7 +74,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public sealed record class Literal(
             ParseTree? ParseTree,
             object Value,
-            Symbol Type) : Expr(ParseTree);
+            Symbol Type) : Expr;
 
         /// <summary>
         /// An if-expression with an option else clause.
@@ -81,7 +83,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
             ParseTree? ParseTree,
             Expr Condition,
             Expr Then,
-            Expr Else) : Expr(ParseTree);
+            Expr Else) : Expr;
 
         /// <summary>
         /// A while-expression.
@@ -89,21 +91,21 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public sealed record class While(
             ParseTree? ParseTree,
             Expr Condition,
-            Expr Expression) : Expr(ParseTree);
+            Expr Expression) : Expr;
 
         /// <summary>
         /// A goto-expression.
         /// </summary>
         public sealed record class Goto(
             ParseTree? ParseTree,
-            Symbol Target) : Expr(ParseTree);
+            Symbol Target) : Expr;
 
         /// <summary>
         /// A return-expression.
         /// </summary>
         public sealed record class Return(
             ParseTree? ParseTree,
-            Expr Expression) : Expr(ParseTree);
+            Expr Expression) : Expr;
 
         /// <summary>
         /// Any call expression.
@@ -111,7 +113,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public sealed record class Call(
             ParseTree? ParseTree,
             Expr Called,
-            ImmutableArray<Expr> Args) : Expr(ParseTree);
+            ImmutableArray<Expr> Args) : Expr;
 
         /// <summary>
         /// Any index expression.
@@ -119,7 +121,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public sealed record class Index(
             ParseTree? ParseTree,
             Expr Called,
-            ImmutableArray<Expr> Args) : Expr(ParseTree);
+            ImmutableArray<Expr> Args) : Expr;
 
         /// <summary>
         /// A member access expression.
@@ -127,7 +129,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public sealed record class MemberAccess(
             ParseTree? ParseTree,
             Expr Object,
-            Symbol Member) : Expr(ParseTree);
+            Symbol Member) : Expr;
 
         /// <summary>
         /// A unary expression.
@@ -135,7 +137,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public sealed record class Unary(
             ParseTree? ParseTree,
             Symbol Operator,
-            Expr Operand) : Expr(ParseTree);
+            Expr Operand) : Expr;
 
         /// <summary>
         /// A binary expression, including assignment and compound assignment.
@@ -144,7 +146,7 @@ internal abstract record class Ast(ParseTree? ParseTree)
             ParseTree? ParseTree,
             Expr Left,
             Symbol Operator,
-            Expr Right) : Expr(ParseTree);
+            Expr Right) : Expr;
 
         /// <summary>
         /// A relational expression chain.
@@ -152,34 +154,34 @@ internal abstract record class Ast(ParseTree? ParseTree)
         public sealed record class Relational(
             ParseTree? ParseTree,
             Expr Left,
-            ImmutableArray<ComparisonElement> Comparisons) : Expr(ParseTree);
+            ImmutableArray<ComparisonElement> Comparisons) : Expr;
 
         /// <summary>
         /// A string expression composing string content and interpolation.
         /// </summary>
         public sealed record class String(
             ParseTree? ParseTree,
-            ImmutableArray<StringPart> Parts) : Expr(ParseTree);
+            ImmutableArray<StringPart> Parts) : Expr;
     }
 
     /// <summary>
     /// Part of a string literal/expression.
     /// </summary>
-    public abstract record class StringPart(ParseTree? ParseTree) : Ast(ParseTree)
+    public abstract record class StringPart : Ast
     {
         /// <summary>
         /// Content part of a string literal.
         /// </summary>
         public sealed record class Content(
             ParseTree? ParseTree,
-            string Value) : StringPart(ParseTree);
+            string Value) : StringPart;
 
         /// <summary>
         /// An interpolation hole.
         /// </summary>
         public sealed record class Interpolation(
             ParseTree? ParseTree,
-            Expr Expression) : StringPart(ParseTree);
+            Expr Expression) : StringPart;
     }
 
     /// <summary>
@@ -188,25 +190,25 @@ internal abstract record class Ast(ParseTree? ParseTree)
     public record class ComparisonElement(
         ParseTree? ParseTree,
         Symbol Operator,
-        Expr Right) : Ast(ParseTree);
+        Expr Right) : Ast;
 
     /// <summary>
     /// A statement in a block.
     /// </summary>
-    public abstract record class Stmt(ParseTree? ParseTree) : Ast(ParseTree)
+    public abstract record class Stmt : Ast
     {
         /// <summary>
         /// A declaration statement.
         /// </summary>
         public new sealed record class Decl(
             ParseTree? ParseTree,
-            Ast.Decl Declaration) : Stmt(ParseTree);
+            Ast.Decl Declaration) : Stmt;
 
         /// <summary>
         /// An expression statement.
         /// </summary>
         public new sealed record class Expr(
             ParseTree? ParseTree,
-            Ast.Expr Expression) : Stmt(ParseTree);
+            Ast.Expr Expression) : Stmt;
     }
 }

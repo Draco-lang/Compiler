@@ -78,16 +78,6 @@ public sealed class Diagnostic
     /// </summary>
     /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
     /// <param name="location">The location the diagnostic was produced at.</param>
-    /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
-    public static Diagnostic Create(
-        DiagnosticTemplate template,
-        Location location) => new(template: template, formatArgs: Array.Empty<object?>(), location: location);
-
-    /// <summary>
-    /// Constructs a <see cref="Diagnostic"/> message.
-    /// </summary>
-    /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
-    /// <param name="location">The location the diagnostic was produced at.</param>
     /// <param name="formatArgs">The format arguments of the message.</param>
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
@@ -161,7 +151,7 @@ public sealed class Diagnostic
             _ => throw new InvalidOperationException(),
         };
         sb.Append(severity);
-        if (!this.Location.IsNone) sb.Append($" {this.Location}");
+        if (!this.Location.IsNone) sb.Append(' ').Append(this.Location);
         sb.Append(": ").Append(this.Message);
         return sb.ToString();
     }

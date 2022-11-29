@@ -15,7 +15,7 @@ using Draco.Compiler.Internal.Semantics.Types;
 namespace Draco.Compiler.Internal.Codegen;
 
 // NOTE: Currently this is only here to have something hacky but runnable for the compiler
-// Eventually we'll translate to typed C# when implemented type inference, and even to IL
+// Eventually we'll translate to our own IR and then compile that to IL
 /// <summary>
 /// Generates low-level C# code from the Draco <see cref="ParseTree"/>.
 /// </summary>

@@ -77,7 +77,7 @@ internal abstract partial record class Type
 
         public override string ToString() => $"{StringUtils.IndexToExcelColumnName(this.id)}'";
 
-        public bool Equals(Builtin? other) => throw new InvalidOperationException("can't compare type variables");
+        public bool Equals(Variable? other) => throw new InvalidOperationException("can't compare type variables");
         public override int GetHashCode() => throw new InvalidOperationException("can't hash type variables");
     }
 }
@@ -95,7 +95,7 @@ internal abstract partial record class Type
 
         public override string ToString() => "<error>";
 
-        public bool Equals(Builtin? other) => ReferenceEquals(this, other);
+        public bool Equals(Error? other) => ReferenceEquals(this, other);
         public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
     }
 }

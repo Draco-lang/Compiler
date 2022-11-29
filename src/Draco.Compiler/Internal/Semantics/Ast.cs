@@ -175,6 +175,13 @@ internal abstract record class Ast
         public sealed record class String(
             ParseTree? ParseTree,
             ImmutableArray<StringPart> Parts) : Expr;
+
+        /// <summary>
+        /// A name reference expression.
+        /// </summary>
+        public sealed record class Reference(
+            ParseTree? ParseTree,
+            Symbol Symbol) : Expr;
     }
 
     /// <summary>

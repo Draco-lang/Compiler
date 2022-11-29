@@ -92,6 +92,49 @@ internal static class AstBuilder
         expr,
         Ast.Expr (expr) => expr switch
         {
+            ParseTree.Expr.Name name => new Ast.Expr.Reference(
+                ParseTree: name,
+                Symbol: SymbolResolution.GetReferencedSymbol(db, name)),
+            ParseTree.Expr.If @if => new Ast.Expr.If(
+                ParseTree: @if,
+                Condition: ToAst(db, @if.Condition.Value),
+                Then: ToAst(db, @if.Then),
+                Else: @if.Else is null ? Ast.Expr.Unit.Default : ToAst(db, @if.Else.Expression)),
+            ParseTree.Expr.While @while => new Ast.Expr.While(
+                ParseTree: @while,
+                Condition: ToAst(db, @while.Condition.Value),
+                Expression: ToAst(db, @while.Expression)),
+            ParseTree.Expr.Block block => new Ast.Expr.Block(
+                ParseTree: block,
+                Statements: block.Enclosed.Value.Statements.Select(s => ToAst(db, s)).ToImmutableArray(),
+                Value: block.Enclosed.Value.Value is null ? Ast.Expr.Unit.Default : ToAst(db, block.Enclosed.Value.Value)),
+            ParseTree.Expr.Call call => new Ast.Expr.Call(
+                ParseTree: call,
+                Called: ToAst(db, call.Called),
+                Args: call.Args.Value.Elements.Select(a => ToAst(db, a.Value)).ToImmutableArray()),
+            ParseTree.Expr.Relational rel => new Ast.Expr.Relational(
+                ParseTree: rel,
+                Left: ToAst(db, rel.Left),
+                Comparisons: rel.Comparisons.Select(c => ToAst(db, c)).ToImmutableArray()),
+            ParseTree.Expr.Binary bin => new Ast.Expr.Binary(
+                ParseTree: bin,
+                Left: ToAst(db, bin.Left),
+                Operator: null!, // TODO
+                Right: ToAst(db, bin.Right)),
+            ParseTree.Expr.Literal lit => new Ast.Expr.Literal(
+                ParseTree: lit,
+                // TODO
+                Value: null!,
+                // TODO
+                Type: null!),
+            ParseTree.Expr.String str => new Ast.Expr.String(
+                ParseTree: str,
+                Parts: str.Parts.Select(p => ToAst(db, p)).ToImmutableArray()),
+            // We desugar unit statements into { stmt; }
+            ParseTree.Expr.UnitStmt stmt => new Ast.Expr.Block(
+                ParseTree: stmt,
+                Statements: ImmutableArray.Create(ToAst(db, stmt.Statement)),
+                Value: Ast.Expr.Unit.Default),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 
@@ -117,5 +160,25 @@ internal static class AstBuilder
                             Expression: ToAst(db, inlineBody.Expression)))),
                 Value: Ast.Expr.Unit.Default),
             _ => throw new ArgumentOutOfRangeException(nameof(funcBody)),
+        });
+
+    private static Ast.ComparisonElement ToAst(QueryDatabase db, ParseTree.ComparisonElement ce) => db.GetOrUpdate(
+        ce,
+        Ast.ComparisonElement (ce) => new(
+            ParseTree: ce,
+            Operator: null!, // TODO
+            Right: ToAst(db, ce.Right)));
+
+    private static Ast.StringPart ToAst(QueryDatabase db, ParseTree.StringPart part) => db.GetOrUpdate(
+        part,
+        Ast.StringPart (part) => part switch
+        {
+            ParseTree.StringPart.Content content => new Ast.StringPart.Content(
+                ParseTree: content,
+                Value: content.Value.ValueText ?? throw new InvalidOperationException()),
+            ParseTree.StringPart.Interpolation interpolation => new Ast.StringPart.Interpolation(
+                ParseTree: interpolation,
+                Expression: ToAst(db, interpolation.Expression)),
+            _ => throw new ArgumentOutOfRangeException(nameof(part)),
         });
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -61,6 +62,20 @@ internal abstract partial class Symbol
     /// </summary>
     /// <returns>The equivalent <see cref="ApiSymbol"/>.</returns>
     public ApiSymbol ToApiSymbol() => new(this);
+}
+
+internal abstract partial class Symbol
+{
+    /// <summary>
+    /// Any variable symbol.
+    /// </summary>
+    public interface IVariable
+    {
+        /// <summary>
+        /// True, if this is a mutable variable.
+        /// </summary>
+        public bool IsMutable { get; }
+    }
 }
 
 internal abstract partial class Symbol
@@ -150,7 +165,7 @@ internal abstract partial class Symbol
     /// <summary>
     /// A symbol for a variable declaration.
     /// </summary>
-    public sealed class Variable : InTreeBase
+    public sealed class Variable : InTreeBase, IVariable
     {
         public bool IsMutable { get; }
 
@@ -158,6 +173,27 @@ internal abstract partial class Symbol
             : base(db, name, definition)
         {
             this.IsMutable = isMutable;
+        }
+    }
+}
+
+internal abstract partial class Symbol
+{
+    /// <summary>
+    /// A symbol for a synthetized variable declarations.
+    /// </summary>
+    public sealed class SynthetizedVariable : Symbol, IVariable
+    {
+        private static int varCounter = -1;
+
+        public bool IsMutable { get; }
+
+        public override Scope? EnclosingScope => null;
+        public override ParseTree? Definition => null;
+
+        public SynthetizedVariable()
+            : base($"var<{Interlocked.Increment(ref varCounter)}>")
+        {
         }
     }
 }

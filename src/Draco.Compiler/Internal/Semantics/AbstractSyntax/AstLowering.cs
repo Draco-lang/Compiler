@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Semantics.Symbols;
-using static Draco.Compiler.Internal.Semantics.AstFactory;
+using static Draco.Compiler.Internal.Semantics.AbstractSyntax.AstFactory;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 /// <summary>
 /// Implements lowering (desugaring) to the <see cref="Ast"/> to simplify codegen.
@@ -50,14 +50,19 @@ internal sealed class AstLowering : AstTransformerBase
         var body = this.TransformExpr(node.Expression, out _);
 
         return Block(
+            // continue_label:
             Stmt(Label(continueLabel)),
+            // if (!condition) goto break_label;
             Stmt(If(
                 condition: Unary(
                     op: null!, // TODO: Unary boolean negation
                     subexpr: condition),
                 then: Goto(breakLabel))),
+            // body...
             Stmt(body),
+            // goto continue_label;
             Stmt(Goto(continueLabel)),
+            // break_label:
             Stmt(Label(breakLabel)));
     }
 

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.RedGreenTree.Attributes;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 [VisitorBase(typeof(Ast), typeof(Ast))]
 internal abstract partial class AstVisitorBase<T>

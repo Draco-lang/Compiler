@@ -179,11 +179,11 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             .OrderBy(x => x, Comparer<INamedTypeSymbol>.Create((a, b) => AbstractFirst(a) - AbstractFirst(b)))
             .ToList();
 
-        // TODO: Heuristic for type
+        var returnTypeName = this.GetReturnedTypeName(type);
         var typeName = this.GetFullRedClassName(type);
         this.contentWriter
             .Write("public virtual")
-            .Write(typeName)
+            .Write(returnTypeName)
             .Write(this.GenerateTransformerMethodName(type))
             .Write("(")
             .Write($"{typeName} node")
@@ -244,7 +244,8 @@ public sealed class TransformerBaseGenerator : GeneratorBase
                     this.contentWriter.Write($"node.{prop.Name} is null ? null :");
                 }
                 var methodName = this.GenerateTransformerMethodName(propType);
-                this.contentWriter.Write($"this.{methodName}(node.{prop.Name}{accessor}, out {changedFlag});");
+                var propTypeName = this.GetFullRedClassName(propType);
+                this.contentWriter.Write($"({propTypeName})this.{methodName}(node.{prop.Name}{accessor}, out {changedFlag});");
             }
 
             // Changed arg
@@ -272,6 +273,17 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             this.contentWriter
                 .Write("}");
         }
+    }
+
+    private string GetReturnedTypeName(INamedTypeSymbol type)
+    {
+        // For abstract types or ones without an indirect base, keep the original
+        if (type.IsAbstract || SymbolEquals(type.BaseType, this.GreenRootType) || type.BaseType is null)
+        {
+            return this.GetFullRedClassName(type);
+        }
+        // For others, we return the base type
+        return this.GetFullRedClassName(type.BaseType);
     }
 
     private bool IsTransformableProperty(IPropertySymbol prop)

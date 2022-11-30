@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Semantics.Symbols;
-using static Draco.Compiler.Internal.Semantics.Ast;
+using static Draco.Compiler.Internal.Semantics.AbstractSyntax.Ast;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 /// <summary>
 /// Factory helpers for synthetizing AST nodes.

@@ -11,7 +11,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Query;
-using Draco.Compiler.Internal.Semantics;
+using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 
 namespace Draco.Compiler.Api;

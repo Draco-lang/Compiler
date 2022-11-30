@@ -10,7 +10,7 @@ using Draco.Compiler.Internal.Semantics.Types;
 using System.Collections.Immutable;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 /// <summary>
 /// Computations for building the AST.

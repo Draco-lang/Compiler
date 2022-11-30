@@ -10,7 +10,7 @@ using Draco.Compiler.Internal.Semantics.Types;
 using Draco.RedGreenTree.Attributes;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 [TransformerBase(typeof(Ast), typeof(Ast))]
 internal abstract partial class AstTransformerBase

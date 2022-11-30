@@ -11,7 +11,7 @@ using Draco.Compiler.Internal.Semantics.Symbols;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.Types;
-using Draco.Compiler.Internal.Semantics;
+using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 namespace Draco.Compiler.Internal.Codegen;
 

@@ -179,6 +179,7 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             .OrderBy(x => x, Comparer<INamedTypeSymbol>.Create((a, b) => AbstractFirst(a) - AbstractFirst(b)))
             .ToList();
 
+        // TODO: Heuristic for type
         var typeName = this.GetFullRedClassName(type);
         this.contentWriter
             .Write("public virtual")

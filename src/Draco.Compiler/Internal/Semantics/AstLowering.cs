@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Semantics.Symbols;
+using static Draco.Compiler.Internal.Semantics.AstFactory;
 
 namespace Draco.Compiler.Internal.Semantics;
 
@@ -38,6 +39,7 @@ internal sealed class AstLowering : AstTransformerBase
         // continue_label:
         //     if (!condition) goto break_label;
         //     body...
+        //     goto continue_label;
         // break_label:
 
         changed = true;
@@ -47,27 +49,16 @@ internal sealed class AstLowering : AstTransformerBase
         var condition = this.TransformExpr(node.Condition, out _);
         var body = this.TransformExpr(node.Expression, out _);
 
-        return new Ast.Expr.Block(
-            ParseTree: node.ParseTree,
-            Statements: ImmutableArray.Create<Ast.Stmt>(
-                new Ast.Stmt.Decl(
-                    ParseTree: node.ParseTree,
-                    Declaration: new Ast.Decl.Label(
-                        ParseTree: null,
-                        LabelSymbol: continueLabel)),
-                new Ast.Stmt.Expr(
-                    ParseTree: node.ParseTree,
-                    Expression: new Ast.Expr.If(
-                        ParseTree: node.ParseTree,
-                        Condition: condition,
-                        Then: body,
-                        Else: Ast.Expr.Unit.Default)),
-                new Ast.Stmt.Decl(
-                    ParseTree: node.ParseTree,
-                    Declaration: new Ast.Decl.Label(
-                        ParseTree: node.ParseTree,
-                        LabelSymbol: breakLabel))),
-            Value: Ast.Expr.Unit.Default);
+        return Block(
+            Stmt(Label(continueLabel)),
+            Stmt(If(
+                condition: Unary(
+                    op: null!, // TODO: Unary boolean negation
+                    subexpr: condition),
+                then: Goto(breakLabel))),
+            Stmt(body),
+            Stmt(Goto(continueLabel)),
+            Stmt(Label(breakLabel)));
     }
 
     public override Ast.Expr.Relational TransformRelationalExpr(Ast.Expr.Relational node, out bool changed)

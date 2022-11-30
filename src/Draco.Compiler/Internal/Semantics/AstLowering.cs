@@ -26,6 +26,26 @@ internal sealed class AstLowering : AstTransformerBase
     {
     }
 
+    public override Ast.Expr.While TransformWhileExpr(Ast.Expr.While node, out bool changed)
+    {
+        // while (condition)
+        // {
+        //     body...
+        // }
+        //
+        // =>
+        //
+        // continue_label:
+        //     if (!condition) goto break_label;
+        //     body...
+        // break_label:
+
+        changed = true;
+
+        // TODO
+        throw new NotImplementedException();
+    }
+
     public override Ast.Expr.Relational TransformRelationalExpr(Ast.Expr.Relational node, out bool changed)
     {
         // expr1 < expr2 == expr3 > expr4 != ...

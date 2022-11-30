@@ -76,6 +76,13 @@ internal abstract partial class Symbol
         /// </summary>
         public bool IsMutable { get; }
     }
+
+    /// <summary>
+    /// Any label symbol.
+    /// </summary>
+    public interface ILabel
+    {
+    }
 }
 
 internal abstract partial class Symbol
@@ -94,6 +101,20 @@ internal abstract partial class Symbol
         {
             this.db = db;
             this.Definition = definition;
+        }
+    }
+
+    // Base class for synthetized symbols
+    public abstract class SynthetizedBase : Symbol
+    {
+        private static int varCounter = -1;
+
+        public override Scope? EnclosingScope => null;
+        public override ParseTree? Definition => null;
+
+        public SynthetizedBase(string name)
+            : base($"{name}<{Interlocked.Increment(ref varCounter)}>")
+        {
         }
     }
 }
@@ -123,10 +144,24 @@ internal abstract partial class Symbol
     /// <summary>
     /// A symbol for a label.
     /// </summary>
-    public sealed class Label : InTreeBase
+    public sealed class Label : InTreeBase, ILabel
     {
         public Label(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
+        {
+        }
+    }
+}
+
+internal abstract partial class Symbol
+{
+    /// <summary>
+    /// A symbol for a synthetized label.
+    /// </summary>
+    public sealed class SynthetizedLabel : SynthetizedBase, ILabel
+    {
+        public SynthetizedLabel()
+            : base("label")
         {
         }
     }
@@ -182,17 +217,12 @@ internal abstract partial class Symbol
     /// <summary>
     /// A symbol for a synthetized variable declarations.
     /// </summary>
-    public sealed class SynthetizedVariable : Symbol, IVariable
+    public sealed class SynthetizedVariable : SynthetizedBase, IVariable
     {
-        private static int varCounter = -1;
-
         public bool IsMutable { get; }
 
-        public override Scope? EnclosingScope => null;
-        public override ParseTree? Definition => null;
-
         public SynthetizedVariable()
-            : base($"var<{Interlocked.Increment(ref varCounter)}>")
+            : base("var")
         {
         }
     }

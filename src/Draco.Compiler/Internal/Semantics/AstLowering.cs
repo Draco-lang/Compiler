@@ -26,7 +26,7 @@ internal sealed class AstLowering : AstTransformerBase
     {
     }
 
-    public override Ast.Expr.While TransformWhileExpr(Ast.Expr.While node, out bool changed)
+    public override Ast.Expr TransformWhileExpr(Ast.Expr.While node, out bool changed)
     {
         // while (condition)
         // {
@@ -42,8 +42,32 @@ internal sealed class AstLowering : AstTransformerBase
 
         changed = true;
 
-        // TODO
-        throw new NotImplementedException();
+        var continueLabel = new Symbol.SynthetizedLabel();
+        var breakLabel = new Symbol.SynthetizedLabel();
+        var condition = this.TransformExpr(node.Condition, out _);
+        var body = this.TransformExpr(node.Expression, out _);
+
+        return new Ast.Expr.Block(
+            ParseTree: node.ParseTree,
+            Statements: ImmutableArray.Create<Ast.Stmt>(
+                new Ast.Stmt.Decl(
+                    ParseTree: node.ParseTree,
+                    Declaration: new Ast.Decl.Label(
+                        ParseTree: null,
+                        LabelSymbol: continueLabel)),
+                new Ast.Stmt.Expr(
+                    ParseTree: node.ParseTree,
+                    Expression: new Ast.Expr.If(
+                        ParseTree: node.ParseTree,
+                        Condition: condition,
+                        Then: body,
+                        Else: Ast.Expr.Unit.Default)),
+                new Ast.Stmt.Decl(
+                    ParseTree: node.ParseTree,
+                    Declaration: new Ast.Decl.Label(
+                        ParseTree: node.ParseTree,
+                        LabelSymbol: breakLabel))),
+            Value: Ast.Expr.Unit.Default);
     }
 
     public override Ast.Expr.Relational TransformRelationalExpr(Ast.Expr.Relational node, out bool changed)
@@ -70,7 +94,7 @@ internal sealed class AstLowering : AstTransformerBase
             expr = this.TransformExpr(expr, out _);
             var symbol = new Symbol.SynthetizedVariable();
             var assignment = new Ast.Decl.Variable(
-                ParseTree: null,
+                ParseTree: expr.ParseTree,
                 DeclarationSymbol: symbol,
                 Type: null!, // TODO
                 Value: expr);

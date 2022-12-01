@@ -66,7 +66,7 @@ internal sealed class AstLowering : AstTransformerBase
             Stmt(Label(breakLabel)));
     }
 
-    public override Ast.Expr.Relational TransformRelationalExpr(Ast.Expr.Relational node, out bool changed)
+    public override Ast.Expr TransformRelationalExpr(Ast.Expr.Relational node, out bool changed)
     {
         // expr1 < expr2 == expr3 > expr4 != ...
         //
@@ -81,29 +81,47 @@ internal sealed class AstLowering : AstTransformerBase
         //     tmp1 < tmp2 && tmp2 == tmp3 && tmp3 > tmp4 && tmp4 != ...
         // }
 
-        changed = true;
-
-        var tmpVariables = ImmutableArray.CreateBuilder<(Symbol Symbol, Ast.Decl Assignment)>();
-
-        void StoreTemporary(Ast.Expr expr)
+        // Utility to store an expression as a temporary
+        (Symbol Symbol, Ast.Decl Assignment) StoreTemporary(Ast.Expr expr)
         {
-            expr = this.TransformExpr(expr, out _);
-            var symbol = new Symbol.SynthetizedVariable();
-            var assignment = new Ast.Decl.Variable(
-                ParseTree: expr.ParseTree,
-                DeclarationSymbol: symbol,
-                Type: null!, // TODO
-                Value: expr);
-            tmpVariables.Add((symbol, assignment));
+            // TODO: Get type of synthetized var
+            var symbol = new Symbol.SynthetizedVariable(false, null!);
+            var assignment = Var(
+                varSymbol: symbol,
+                value: this.TransformExpr(expr, out _));
+            return (symbol, assignment);
         }
 
-        // Store temporary variables
-        StoreTemporary(node.Left);
-        foreach (var item in node.Comparisons) StoreTemporary(item.Right);
+        changed = true;
 
-        Debug.Assert(tmpVariables.Count >= 2);
+        // Store all expressions as temporary variables
+        var tmpVariables = new List<(Symbol Symbol, Ast.Decl Assignment)>();
+        tmpVariables.Add(StoreTemporary(node.Left));
+        foreach (var item in node.Comparisons) tmpVariables.Add(StoreTemporary(item.Right));
 
-        // TODO
-        throw new NotImplementedException();
+        // Build pairs of comparisons from symbol references
+        var comparisons = new List<Ast.Expr>();
+        for (var i = 0; i < node.Comparisons.Length; ++i)
+        {
+            var left = tmpVariables[i].Symbol;
+            var op = node.Comparisons[i].Operator;
+            var right = tmpVariables[i + 1].Symbol;
+            comparisons.Add(Binary(
+                left: Reference(left),
+                op: op,
+                right: Reference(right)));
+        }
+
+        // Fold them into conjunctions
+        var conjunction = comparisons
+            .Aggregate((x, y) => Binary(
+                left: x,
+                op: null!, // TODO: && operator
+                right: y));
+
+        // Wrap up in block
+        return Block(
+            stmts: tmpVariables.Select(v => Stmt(v.Assignment)),
+            value: conjunction);
     }
 }

@@ -75,6 +75,11 @@ internal abstract partial class Symbol
         /// True, if this is a mutable variable.
         /// </summary>
         public bool IsMutable { get; }
+
+        /// <summary>
+        /// The type of the variable.
+        /// </summary>
+        public Type Type { get; }
     }
 
     /// <summary>
@@ -94,7 +99,7 @@ internal abstract partial class Symbol
         public override Scope? EnclosingScope =>
             SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition);
 
-        private readonly QueryDatabase db;
+        protected readonly QueryDatabase db;
 
         protected InTreeBase(QueryDatabase db, string name, ParseTree definition)
             : base(name)
@@ -204,6 +209,8 @@ internal abstract partial class Symbol
     {
         public bool IsMutable { get; }
 
+        public Type Type => TypeChecker.TypeOf(this.db, this);
+
         public Variable(QueryDatabase db, string name, ParseTree definition, bool isMutable)
             : base(db, name, definition)
         {
@@ -221,9 +228,13 @@ internal abstract partial class Symbol
     {
         public bool IsMutable { get; }
 
-        public SynthetizedVariable()
+        public Type Type { get; }
+
+        public SynthetizedVariable(bool mutable, Type type)
             : base("var")
         {
+            this.IsMutable = mutable;
+            this.Type = type;
         }
     }
 }

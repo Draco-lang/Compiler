@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Api.Syntax;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
+using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
@@ -52,9 +53,11 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Variable(
             ParseTree? ParseTree,
-            Symbol DeclarationSymbol,
-            Type Type,
-            Expr? Value) : Decl;
+            Symbol.IVariable DeclarationSymbol,
+            Expr? Value) : Decl
+        {
+            [Ignore(IgnoreFlags.Transformer)] public Type Type => this.DeclarationSymbol.Type;
+        }
     }
 
     /// <summary>

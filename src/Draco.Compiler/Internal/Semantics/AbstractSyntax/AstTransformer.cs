@@ -45,6 +45,12 @@ internal abstract partial class AstTransformerBase
         return symbol;
     }
 
+    protected Symbol.IVariable TransformIVariable(Symbol.IVariable symbol, out bool changed)
+    {
+        changed = false;
+        return symbol;
+    }
+
     protected Type TransformType(Type type, out bool changed)
     {
         changed = false;

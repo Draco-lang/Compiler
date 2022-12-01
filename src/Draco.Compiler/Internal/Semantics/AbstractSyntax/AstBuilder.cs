@@ -57,8 +57,7 @@ internal static class AstBuilder
                 LabelSymbol: SymbolResolution.GetDefinedSymbolOrNull(db, label) ?? throw new InvalidOperationException()),
             ParseTree.Decl.Variable var => new Ast.Decl.Variable(
                 ParseTree: var,
-                DeclarationSymbol: SymbolResolution.GetDefinedSymbolOrNull(db, var) ?? throw new InvalidOperationException(),
-                Type: var.Type is null ? Type.Unit : TypeChecker.Evaluate(db, var.Type.Type),
+                DeclarationSymbol: (Symbol.IVariable?)SymbolResolution.GetDefinedSymbolOrNull(db, var) ?? throw new InvalidOperationException(),
                 Value: var.Initializer is null ? null : ToAst(db, var.Initializer.Value)),
             _ => throw new ArgumentOutOfRangeException(nameof(decl)),
         });

@@ -10,6 +10,20 @@ internal static class RoslynUtils
 {
     public const string GeneratedAttribute = "System.CodeDom.Compiler.GeneratedCodeAttribute";
 
+    public static bool HasAttribute(this ISymbol symbol, Type attributeType, out object?[] args)
+    {
+        var attr = symbol
+            .GetAttributes()
+            .FirstOrDefault(attr => attr.AttributeClass?.ToDisplayString() == attributeType.FullName);
+        if (attr is null)
+        {
+            args = Array.Empty<object>();
+            return false;
+        }
+        args = attr.ConstructorArguments.Select(a => a.Value).ToArray();
+        return true;
+    }
+
     public static bool IsSubtypeOf(this INamedTypeSymbol derived, INamedTypeSymbol? @base)
     {
         if (@base is null) return false;

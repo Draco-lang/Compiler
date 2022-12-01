@@ -18,6 +18,11 @@ internal static class AstFactory
         ParseTree: null,
         LabelSymbol: symbol);
 
+    public static Decl Var(Symbol.IVariable varSymbol, Expr value) => new Decl.Variable(
+        ParseTree: null,
+        DeclarationSymbol: varSymbol,
+        Value: value);
+
     public static Stmt Stmt(Decl decl) => new Stmt.Decl(
         ParseTree: null,
         Declaration: decl);
@@ -53,4 +58,8 @@ internal static class AstFactory
         Left: left,
         Operator: op,
         Right: right);
+
+    public static Expr Reference(Symbol symbol) => new Expr.Reference(
+        ParseTree: null,
+        Symbol: symbol);
 }

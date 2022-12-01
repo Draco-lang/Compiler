@@ -31,15 +31,13 @@ internal abstract partial class AstTransformerBase
         return newBuilder.ToImmutable();
     }
 
-    protected ImmutableArray<Symbol> TransformImmutableArray(
-        ImmutableArray<Symbol> symbols,
-        out bool changed)
+    protected Symbol TransformSymbol(Symbol symbol, out bool changed)
     {
         changed = false;
-        return symbols;
+        return symbol;
     }
 
-    protected Symbol TransformSymbol(Symbol symbol, out bool changed)
+    protected Symbol TransformFunction(Symbol.Function symbol, out bool changed)
     {
         changed = false;
         return symbol;

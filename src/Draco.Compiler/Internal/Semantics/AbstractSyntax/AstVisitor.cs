@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
@@ -41,5 +42,6 @@ internal abstract partial class AstVisitorBase<T>
         return this.Default;
     }
 
-    protected T VisitImmutableArray(ImmutableArray<Symbols.Symbol> symbols) => this.Default;
+    protected T VisitImmutableArray(ImmutableArray<Symbol> symbols) => this.Default;
+    protected T VisitImmutableArray(ImmutableArray<Symbol.Parameter> symbols) => this.Default;
 }

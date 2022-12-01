@@ -10,7 +10,7 @@ public enum IgnoreFlags
     Transformer = 1 << 0,
 }
 
-[AttributeUsage(AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
 public sealed class IgnoreAttribute : Attribute
 {
     public IgnoreFlags Flags { get; }

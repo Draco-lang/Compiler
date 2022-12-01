@@ -179,6 +179,32 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class Function : InTreeBase
     {
+        public ImmutableArray<Parameter> Params
+        {
+            get
+            {
+                var builder = ImmutableArray.CreateBuilder<Parameter>();
+                var tree = (ParseTree.Decl.Func)this.Definition;
+                foreach (var param in tree.Params.Value.Elements)
+                {
+                    var symbol = (Parameter?)SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value) ?? throw new InvalidOperationException();
+                    builder.Add(symbol);
+                }
+                return builder.ToImmutable();
+            }
+        }
+
+        public Type ReturnType
+        {
+            get
+            {
+                var tree = (ParseTree.Decl.Func)this.Definition;
+                return tree.ReturnType is null
+                    ? Type.Unit
+                    : TypeChecker.Evaluate(this.db, tree.ReturnType.Type);
+            }
+        }
+
         public Function(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
         {
@@ -191,8 +217,11 @@ internal abstract partial class Symbol
     /// <summary>
     /// A symbol for a parameter declaration.
     /// </summary>
-    public sealed class Parameter : InTreeBase
+    public sealed class Parameter : InTreeBase, IVariable
     {
+        public bool IsMutable => false;
+        public Type Type => TypeChecker.TypeOf(this.db, this);
+
         public Parameter(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
         {

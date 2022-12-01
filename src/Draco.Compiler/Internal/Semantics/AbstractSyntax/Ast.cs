@@ -36,24 +36,26 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Func(
             ParseTree? ParseTree,
-            Symbol DeclarationSymbol,
-            ImmutableArray<Symbol> Params,
-            Type ReturnType,
-            Expr.Block Body) : Decl;
+            [Ignore(IgnoreFlags.Transformer)] Symbol.Function DeclarationSymbol,
+            Expr.Block Body) : Decl
+        {
+            [Ignore(IgnoreFlags.Transformer)] public ImmutableArray<Symbol.Parameter> Params => this.DeclarationSymbol.Params;
+            [Ignore(IgnoreFlags.Transformer)] public Type ReturnType => this.DeclarationSymbol.ReturnType;
+        }
 
         /// <summary>
         /// A label declaration.
         /// </summary>
         public sealed record class Label(
             ParseTree? ParseTree,
-            Symbol LabelSymbol) : Decl;
+            [Ignore(IgnoreFlags.Transformer)] Symbol LabelSymbol) : Decl;
 
         /// <summary>
         /// A variable declaration.
         /// </summary>
         public sealed record class Variable(
             ParseTree? ParseTree,
-            Symbol.IVariable DeclarationSymbol,
+            [Ignore(IgnoreFlags.Transformer)] Symbol.IVariable DeclarationSymbol,
             Expr? Value) : Decl
         {
             [Ignore(IgnoreFlags.Transformer)] public Type Type => this.DeclarationSymbol.Type;
@@ -90,7 +92,7 @@ internal abstract record class Ast
         public sealed record class Literal(
             ParseTree? ParseTree,
             object Value,
-            Symbol Type) : Expr;
+            [Ignore(IgnoreFlags.Transformer)] Symbol Type) : Expr;
 
         /// <summary>
         /// An if-expression with an option else clause.
@@ -114,7 +116,7 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Goto(
             ParseTree? ParseTree,
-            Symbol Target) : Expr;
+            [Ignore(IgnoreFlags.Transformer)] Symbol Target) : Expr;
 
         /// <summary>
         /// A return-expression.
@@ -145,14 +147,14 @@ internal abstract record class Ast
         public sealed record class MemberAccess(
             ParseTree? ParseTree,
             Expr Object,
-            Symbol Member) : Expr;
+            [Ignore(IgnoreFlags.Transformer)] Symbol Member) : Expr;
 
         /// <summary>
         /// A unary expression.
         /// </summary>
         public sealed record class Unary(
             ParseTree? ParseTree,
-            Symbol Operator,
+            [Ignore(IgnoreFlags.Transformer)] Symbol Operator,
             Expr Operand) : Expr;
 
         /// <summary>
@@ -161,7 +163,7 @@ internal abstract record class Ast
         public sealed record class Binary(
             ParseTree? ParseTree,
             Expr Left,
-            Symbol Operator,
+            [Ignore(IgnoreFlags.Transformer)] Symbol Operator,
             Expr Right) : Expr;
 
         /// <summary>
@@ -184,7 +186,7 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Reference(
             ParseTree? ParseTree,
-            Symbol Symbol) : Expr;
+            [Ignore(IgnoreFlags.Transformer)] Symbol Symbol) : Expr;
     }
 
     /// <summary>
@@ -212,7 +214,7 @@ internal abstract record class Ast
     /// </summary>
     public record class ComparisonElement(
         ParseTree? ParseTree,
-        Symbol Operator,
+        [Ignore(IgnoreFlags.Transformer)] Symbol Operator,
         Expr Right) : Ast;
 
     /// <summary>

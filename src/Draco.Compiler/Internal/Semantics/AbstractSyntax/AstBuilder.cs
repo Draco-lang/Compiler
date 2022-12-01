@@ -47,10 +47,7 @@ internal static class AstBuilder
 
             ParseTree.Decl.Func func => new Ast.Decl.Func(
                 ParseTree: func,
-                DeclarationSymbol: SymbolResolution.GetDefinedSymbolOrNull(db, func) ?? throw new InvalidOperationException(),
-                Params: func.Params.Value.Elements.Select(p =>
-                    SymbolResolution.GetDefinedSymbolOrNull(db, p.Value) ?? throw new InvalidOperationException()).ToImmutableArray(),
-                ReturnType: func.ReturnType is null ? Type.Unit : TypeChecker.Evaluate(db, func.ReturnType.Type),
+                DeclarationSymbol: (Symbol.Function?)SymbolResolution.GetDefinedSymbolOrNull(db, func) ?? throw new InvalidOperationException(),
                 Body: ToAst(db, func.Body)),
             ParseTree.Decl.Label label => new Ast.Decl.Label(
                 ParseTree: label,

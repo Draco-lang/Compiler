@@ -20,7 +20,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// <summary>
 /// Generates low-level C# code from the Draco <see cref="ParseTree"/>.
 /// </summary>
-internal sealed class CSharpCodegen : AstVisitorBase<string>
+internal sealed class CSharpCodegen : AstVisitorBase<string?>
 {
     // Final output
     private readonly StreamWriter output;
@@ -90,16 +90,39 @@ internal sealed class CSharpCodegen : AstVisitorBase<string>
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
+    private static bool IsUnit(Type type) => type.Equals(Type.Unit);
+
     // Code writer utils
 
     private StringBuilder Indent1() => this.Builder.Append("    ");
     private StringBuilder Indent2() => this.Builder.Append("        ");
-    private StringBuilder WriteInstruction(string instr) => this.Indent2().Append(instr);
-    private StringBuilder WriteLabel(string labelName) => this.Indent1().Append($"{labelName}:;");
+
+    private void WriteInstruction(string instr) => this.Indent2().Append(instr);
+    private void DefineLabel(string labelName) => this.Indent1().Append($"{labelName}:;");
+    private string? DeclareRegister(Type type)
+    {
+        if (IsUnit(type)) return null;
+
+        var name = this.AllocateRegister();
+        this.Indent2().AppendLine($"{TranslateType(type)} {name};");
+        return name;
+    }
+    private string? DefineRegister(Type type, string expr)
+    {
+        if (IsUnit(type))
+        {
+            this.Indent2().AppendLine($"{expr};");
+            return null;
+        }
+
+        var name = this.AllocateRegister();
+        this.Indent2().AppendLine($"{TranslateType(type)} {name} = {expr};");
+        return name;
+    }
 
     // Visitors
 
-    public override string VisitFuncDecl(Ast.Decl.Func node)
+    public override string? VisitFuncDecl(Ast.Decl.Func node)
     {
         // We write to a local builder
         var builder = this.PushNewBuilder();
@@ -128,21 +151,18 @@ internal sealed class CSharpCodegen : AstVisitorBase<string>
         return this.Default;
     }
 
-    public override string VisitBlockExpr(Ast.Expr.Block node)
+    public override string? VisitBlockExpr(Ast.Expr.Block node)
     {
         foreach (var stmt in node.Statements) this.VisitStmt(stmt);
         return this.VisitExpr(node.Value);
     }
 
-    public override string VisitIfExpr(Ast.Expr.If node)
+    public override string? VisitIfExpr(Ast.Expr.If node)
     {
         // Allocate result storage
-        // TODO: We need to find out the type
-        // TODO
-        throw new NotImplementedException();
+        var result = this.DeclareRegister(node.EvaluationType);
 
-        // Allocate then, else and end labels
-        var thenLabel = this.AllocateLabel();
+        // Allocate else and end labels
         var elseLabel = this.AllocateLabel();
         var endLabel = this.AllocateLabel();
 
@@ -151,7 +171,21 @@ internal sealed class CSharpCodegen : AstVisitorBase<string>
 
         // If false, jump to else
         this.WriteInstruction($"if (!({condition})) goto {elseLabel};");
-        //
+        // Otherwise just compile then and store result, then jump to the end
+        var thenResult = this.VisitExpr(node.Then);
+        if (thenResult is not null) this.WriteInstruction($"{result} = {thenResult};");
+        this.WriteInstruction($"goto {endLabel};");
 
+        // Else branch
+        this.DefineLabel(elseLabel);
+        // Similarly to then, compile, store result
+        // No need to jump to the end here, we are already there
+        var elseResult = this.VisitExpr(node.Else);
+        if (elseResult is not null) this.WriteInstruction($"{result} = {elseResult};");
+
+        // End label
+        this.DefineLabel(endLabel);
+
+        return result;
     }
 }

@@ -68,6 +68,11 @@ internal abstract record class Ast
     public abstract record class Expr : Ast
     {
         /// <summary>
+        /// The type this expression evaluates to.
+        /// </summary>
+        [Ignore(IgnoreFlags.Transformer)] public abstract Type EvaluationType { get; }
+
+        /// <summary>
         /// An expression representing unitary value.
         /// </summary>
         public record class Unit(ParseTree? ParseTree) : Expr
@@ -76,6 +81,8 @@ internal abstract record class Ast
             /// A default unit value without a parse tree.
             /// </summary>
             public static Unit Default { get; } = new(ParseTree: null);
+
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Unit;
         }
 
         /// <summary>
@@ -84,7 +91,10 @@ internal abstract record class Ast
         public record class Block(
             ParseTree? ParseTree,
             ImmutableArray<Stmt> Statements,
-            Expr Value) : Expr;
+            Expr Value) : Expr
+        {
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Value.EvaluationType;
+        }
 
         /// <summary>
         /// A literal expression, i.e. a number, string, boolean value, etc.
@@ -92,16 +102,22 @@ internal abstract record class Ast
         public sealed record class Literal(
             ParseTree? ParseTree,
             object Value,
-            Symbol Type) : Expr;
+            Type Type) : Expr
+        {
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType { get; } = Type;
+        }
 
         /// <summary>
-        /// An if-expression with an option else clause.
+        /// An if-expression with an option elSse clause.
         /// </summary>
         public sealed record class If(
             ParseTree? ParseTree,
             Expr Condition,
             Expr Then,
-            Expr Else) : Expr;
+            Expr Else) : Expr
+        {
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Then.EvaluationType;
+        }
 
         /// <summary>
         /// A while-expression.
@@ -109,21 +125,32 @@ internal abstract record class Ast
         public sealed record class While(
             ParseTree? ParseTree,
             Expr Condition,
-            Expr Expression) : Expr;
+            Expr Expression) : Expr
+        {
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Unit;
+        }
 
         /// <summary>
         /// A goto-expression.
         /// </summary>
         public sealed record class Goto(
             ParseTree? ParseTree,
-            Symbol Target) : Expr;
+            Symbol Target) : Expr
+        {
+            // NOTE: Eventually this should be the bottom type
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Unit;
+        }
 
         /// <summary>
         /// A return-expression.
         /// </summary>
         public sealed record class Return(
             ParseTree? ParseTree,
-            Expr Expression) : Expr;
+            Expr Expression) : Expr
+        {
+            // NOTE: Eventually this should be the bottom type
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Unit;
+        }
 
         /// <summary>
         /// Any call expression.
@@ -131,7 +158,11 @@ internal abstract record class Ast
         public sealed record class Call(
             ParseTree? ParseTree,
             Expr Called,
-            ImmutableArray<Expr> Args) : Expr;
+            ImmutableArray<Expr> Args) : Expr
+        {
+            // TODO
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Any index expression.
@@ -139,7 +170,11 @@ internal abstract record class Ast
         public sealed record class Index(
             ParseTree? ParseTree,
             Expr Called,
-            ImmutableArray<Expr> Args) : Expr;
+            ImmutableArray<Expr> Args) : Expr
+        {
+            // TODO
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+        }
 
         /// <summary>
         /// A member access expression.
@@ -147,7 +182,11 @@ internal abstract record class Ast
         public sealed record class MemberAccess(
             ParseTree? ParseTree,
             Expr Object,
-            Symbol Member) : Expr;
+            Symbol Member) : Expr
+        {
+            // TODO
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+        }
 
         /// <summary>
         /// A unary expression.
@@ -155,7 +194,11 @@ internal abstract record class Ast
         public sealed record class Unary(
             ParseTree? ParseTree,
             Symbol Operator,
-            Expr Operand) : Expr;
+            Expr Operand) : Expr
+        {
+            // TODO
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+        }
 
         /// <summary>
         /// A binary expression, including assignment and compound assignment.
@@ -164,7 +207,11 @@ internal abstract record class Ast
             ParseTree? ParseTree,
             Expr Left,
             Symbol Operator,
-            Expr Right) : Expr;
+            Expr Right) : Expr
+        {
+            // TODO
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+        }
 
         /// <summary>
         /// A relational expression chain.
@@ -172,21 +219,32 @@ internal abstract record class Ast
         public sealed record class Relational(
             ParseTree? ParseTree,
             Expr Left,
-            ImmutableArray<ComparisonElement> Comparisons) : Expr;
+            ImmutableArray<ComparisonElement> Comparisons) : Expr
+        {
+            // TODO
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+        }
 
         /// <summary>
         /// A string expression composing string content and interpolation.
         /// </summary>
         public sealed record class String(
             ParseTree? ParseTree,
-            ImmutableArray<StringPart> Parts) : Expr;
+            ImmutableArray<StringPart> Parts) : Expr
+        {
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.String;
+        }
 
         /// <summary>
         /// A name reference expression.
         /// </summary>
         public sealed record class Reference(
             ParseTree? ParseTree,
-            Symbol Symbol) : Expr;
+            Symbol Symbol) : Expr
+        {
+            // TODO
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+        }
     }
 
     /// <summary>

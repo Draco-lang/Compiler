@@ -94,7 +94,8 @@ internal sealed class CSharpCodegen : AstVisitorBase<string>
 
     private StringBuilder Indent1() => this.Builder.Append("    ");
     private StringBuilder Indent2() => this.Builder.Append("        ");
-    private void WriteInstruction(string instr) => this.Indent2().Append(instr);
+    private StringBuilder WriteInstruction(string instr) => this.Indent2().Append(instr);
+    private StringBuilder WriteLabel(string labelName) => this.Indent1().Append($"{labelName}:;");
 
     // Visitors
 
@@ -125,5 +126,32 @@ internal sealed class CSharpCodegen : AstVisitorBase<string>
         this.topLevelBuilder.Append(builder);
 
         return this.Default;
+    }
+
+    public override string VisitBlockExpr(Ast.Expr.Block node)
+    {
+        foreach (var stmt in node.Statements) this.VisitStmt(stmt);
+        return this.VisitExpr(node.Value);
+    }
+
+    public override string VisitIfExpr(Ast.Expr.If node)
+    {
+        // Allocate result storage
+        // TODO: We need to find out the type
+        // TODO
+        throw new NotImplementedException();
+
+        // Allocate then, else and end labels
+        var thenLabel = this.AllocateLabel();
+        var elseLabel = this.AllocateLabel();
+        var endLabel = this.AllocateLabel();
+
+        // Compile condition
+        var condition = this.Visit(node.Condition);
+
+        // If false, jump to else
+        this.WriteInstruction($"if (!({condition})) goto {elseLabel};");
+        //
+
     }
 }

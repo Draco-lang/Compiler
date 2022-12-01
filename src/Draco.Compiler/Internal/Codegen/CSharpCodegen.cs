@@ -165,8 +165,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
 
     public override string VisitLabelDecl(Ast.Decl.Label node)
     {
-        // TODO
-        throw new NotImplementedException();
+        this.DefineLabel(this.AllocateName(node.LabelSymbol));
         return this.Default;
     }
 
@@ -176,16 +175,18 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         return this.VisitExpr(node.Value);
     }
 
-    public override string VisitReturnExpr(Ast.Expr.Return node)
+    public override string? VisitReturnExpr(Ast.Expr.Return node)
     {
-        // TODO
-        throw new NotImplementedException();
+        var result = this.VisitExpr(node.Expression);
+        this.WriteInstruction($"return {result};");
+        return this.Default;
     }
 
     public override string? VisitGotoExpr(Ast.Expr.Goto node)
     {
-        // TODO
-        throw new NotImplementedException();
+        var label = this.AllocateName(node.Target);
+        this.WriteInstruction($"goto {label};");
+        return this.Default;
     }
 
     public override string VisitCallExpr(Ast.Expr.Call node)
@@ -262,9 +263,6 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         throw new NotImplementedException();
     }
 
-    public override string VisitReferenceExpr(Ast.Expr.Reference node)
-    {
-        // TODO
-        throw new NotImplementedException();
-    }
+    public override string VisitReferenceExpr(Ast.Expr.Reference node) =>
+        this.AllocateName(node.Symbol);
 }

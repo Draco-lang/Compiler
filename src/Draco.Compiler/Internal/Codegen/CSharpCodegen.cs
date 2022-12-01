@@ -120,6 +120,11 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         return name;
     }
 
+    // Illegal visitors
+
+    public override string VisitRelationalExpr(Ast.Expr.Relational node) => throw new InvalidOperationException();
+    public override string VisitWhileExpr(Ast.Expr.While node) => throw new InvalidOperationException();
+
     // Visitors
 
     public override string? VisitFuncDecl(Ast.Decl.Func node)
@@ -151,10 +156,54 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         return this.Default;
     }
 
+    public override string VisitVariableDecl(Ast.Decl.Variable node)
+    {
+        // TODO
+        throw new NotImplementedException();
+        return this.Default;
+    }
+
+    public override string VisitLabelDecl(Ast.Decl.Label node)
+    {
+        // TODO
+        throw new NotImplementedException();
+        return this.Default;
+    }
+
     public override string? VisitBlockExpr(Ast.Expr.Block node)
     {
         foreach (var stmt in node.Statements) this.VisitStmt(stmt);
         return this.VisitExpr(node.Value);
+    }
+
+    public override string VisitReturnExpr(Ast.Expr.Return node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override string? VisitGotoExpr(Ast.Expr.Goto node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override string VisitCallExpr(Ast.Expr.Call node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override string VisitIndexExpr(Ast.Expr.Index node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override string VisitMemberAccessExpr(Ast.Expr.MemberAccess node)
+    {
+        // TODO
+        throw new NotImplementedException();
     }
 
     public override string? VisitIfExpr(Ast.Expr.If node)
@@ -187,5 +236,35 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         this.DefineLabel(endLabel);
 
         return result;
+    }
+
+    public override string? VisitUnaryExpr(Ast.Expr.Unary node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override string? VisitBinaryExpr(Ast.Expr.Binary node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override string VisitStringExpr(Ast.Expr.String node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override string VisitLiteralExpr(Ast.Expr.Literal node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override string VisitReferenceExpr(Ast.Expr.Reference node)
+    {
+        // TODO
+        throw new NotImplementedException();
     }
 }

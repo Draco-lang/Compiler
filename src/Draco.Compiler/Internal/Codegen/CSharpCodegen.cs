@@ -263,16 +263,14 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
             if (part is Ast.StringPart.Interpolation i)
             {
                 var subexpr = this.VisitExpr(i.Expression);
-                this.Indent2();
-                this.output.WriteLine($"{builder}.Append({subexpr}.ToString());");
+                this.WriteInstruction($"{builder}.Append({subexpr}.ToString());");
             }
             else
             {
                 var c = (Ast.StringPart.Content)part;
                 var text = c.Value;
                 text = text.Substring(c.Cutoff);
-                this.Indent2();
-                this.output.WriteLine($"{builder}.Append(\"{StringUtils.Unescape(text)}\");");
+                this.WriteInstruction($"{builder}.Append(\"{StringUtils.Unescape(text)}\");");
             }
         }
         var result = this.DefineRegister(Type.String, expr: $"{builder}.ToString()");

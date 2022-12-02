@@ -91,7 +91,7 @@ internal sealed class AstLowering : AstTransformerBase
         changed = true;
 
         // Store all expressions as temporary variables
-        var tmpVariables = new List<(Symbol Symbol, Ast.Stmt Assignment)>();
+        var tmpVariables = new List<(Ast.Expr Reference, Ast.Stmt Assignment)>();
         tmpVariables.Add(this.StoreTemporary(node.Left));
         foreach (var item in node.Comparisons) tmpVariables.Add(this.StoreTemporary(item.Right));
 
@@ -99,13 +99,13 @@ internal sealed class AstLowering : AstTransformerBase
         var comparisons = new List<Ast.Expr>();
         for (var i = 0; i < node.Comparisons.Length; ++i)
         {
-            var left = tmpVariables[i].Symbol;
+            var left = tmpVariables[i].Reference;
             var op = node.Comparisons[i].Operator;
-            var right = tmpVariables[i + 1].Symbol;
+            var right = tmpVariables[i + 1].Reference;
             comparisons.Add(Binary(
-                left: Reference(left),
+                left: left,
                 op: op,
-                right: Reference(right)));
+                right: right));
         }
 
         // Fold them into conjunctions
@@ -122,19 +122,21 @@ internal sealed class AstLowering : AstTransformerBase
     }
 
     // Utility to store an expression to a temporary variable
-    private (Symbol Symbol, Ast.Stmt Assignment) StoreTemporary(Ast.Expr expr)
+    private (Ast.Expr Reference, Ast.Stmt Assignment) StoreTemporary(Ast.Expr expr)
     {
         // Optimization: if it's already a symbol reference, leave as-is
-        if (expr is Ast.Expr.Reference existingRef)
+        // Optimization: if it's a literal, don't bother copying
+        if (expr is Ast.Expr.Reference or Ast.Expr.Literal)
         {
-            return (existingRef.Symbol, Ast.Stmt.NoOp.Default);
+            return (expr, Ast.Stmt.NoOp.Default);
         }
 
         // Otherwise compute and store
         var symbol = new Symbol.SynthetizedVariable(false, TypeChecker.TypeOf(this.db, (ParseTree.Expr)expr.ParseTree!));
+        var symbolRef = Reference(symbol);
         var assignment = Stmt(Var(
             varSymbol: symbol,
             value: this.TransformExpr(expr, out _)));
-        return (symbol, assignment);
+        return (symbolRef, assignment);
     }
 }

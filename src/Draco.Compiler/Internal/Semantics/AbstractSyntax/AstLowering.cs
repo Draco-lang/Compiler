@@ -5,7 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.Semantics.Types;
 using static Draco.Compiler.Internal.Semantics.AbstractSyntax.AstFactory;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
@@ -18,13 +21,17 @@ internal sealed class AstLowering : AstTransformerBase
     /// <summary>
     /// Lowers the <see cref="Ast"/> into simpler elements.
     /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="ast">The <see cref="Ast"/> to lower.</param>
     /// <returns>The lowered equivalent of <paramref name="ast"/>.</returns>
-    public static Ast Lower(Ast ast) =>
-        new AstLowering().Transform(ast, out _);
+    public static Ast Lower(QueryDatabase db, Ast ast) =>
+        new AstLowering(db).Transform(ast, out _);
 
-    private AstLowering()
+    private readonly QueryDatabase db;
+
+    private AstLowering(QueryDatabase db)
     {
+        this.db = db;
     }
 
     public override Ast.Expr TransformWhileExpr(Ast.Expr.While node, out bool changed)
@@ -85,7 +92,7 @@ internal sealed class AstLowering : AstTransformerBase
         (Symbol Symbol, Ast.Decl Assignment) StoreTemporary(Ast.Expr expr)
         {
             // TODO: Get type of synthetized var
-            var symbol = new Symbol.SynthetizedVariable(false, null!);
+            var symbol = new Symbol.SynthetizedVariable(false, TypeChecker.TypeOf(this.db, (ParseTree.Expr)expr.ParseTree!));
             var assignment = Var(
                 varSymbol: symbol,
                 value: this.TransformExpr(expr, out _));

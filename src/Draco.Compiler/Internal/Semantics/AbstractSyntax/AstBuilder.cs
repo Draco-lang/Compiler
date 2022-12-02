@@ -117,12 +117,7 @@ internal static class AstBuilder
                 Left: ToAst(db, bin.Left),
                 Operator: null!, // TODO
                 Right: ToAst(db, bin.Right)),
-            ParseTree.Expr.Literal lit => new Ast.Expr.Literal(
-                ParseTree: lit,
-                // TODO
-                Value: null!,
-                // TODO
-                Type: null!),
+            ParseTree.Expr.Literal lit => ToAst(lit),
             ParseTree.Expr.String str => new Ast.Expr.String(
                 ParseTree: str,
                 Parts: str.Parts.Select(p => ToAst(db, p)).ToImmutableArray()),
@@ -177,4 +172,13 @@ internal static class AstBuilder
                 Expression: ToAst(db, interpolation.Expression)),
             _ => throw new ArgumentOutOfRangeException(nameof(part)),
         });
+
+    private static Ast.Expr ToAst(ParseTree.Expr.Literal lit) => lit.Value.Type switch
+    {
+        TokenType.LiteralInteger => new Ast.Expr.Literal(
+            ParseTree: lit,
+            Value: lit.Value.Value,
+            Type: Type.Int32),
+        _ => throw new NotImplementedException(),
+    };
 }

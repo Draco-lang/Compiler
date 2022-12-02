@@ -103,7 +103,7 @@ public sealed class Compilation
         }
 
         var ast = AstBuilder.ToAst(this.db, this.ParseTree);
-        ast = AstLowering.Lower(ast);
+        ast = AstLowering.Lower(this.db, ast);
         var codegen = new CSharpCodegen(csStream);
         codegen.Generate(ast);
 

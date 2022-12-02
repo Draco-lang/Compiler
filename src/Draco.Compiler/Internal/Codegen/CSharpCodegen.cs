@@ -68,8 +68,8 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         if (!this.symbolNames.TryGetValue(symbol, out var name))
         {
             // Check if we need to generate a name for it
-            // For now we just reserve for globals only
-            var canKeepOriginalName = symbol.IsGlobal;
+            // For now we just reserve for global functions only
+            var canKeepOriginalName = symbol is Symbol.Function && symbol.IsGlobal;
             name = canKeepOriginalName ? symbol.Name : $"sym_{this.symbolNames.Count}";
             this.symbolNames.Add(symbol, name);
         }
@@ -99,24 +99,18 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
 
     private void WriteInstruction(string instr) => this.Indent2().Append(instr);
     private void DefineLabel(string labelName) => this.Indent1().Append($"{labelName}:;");
-    private string? DeclareRegister(Type type)
-    {
-        if (IsUnit(type)) return null;
-
-        var name = this.AllocateRegister();
-        this.Indent2().AppendLine($"{TranslateType(type)} {name};");
-        return name;
-    }
-    private string? DefineRegister(Type type, string expr)
+    private string? DefineRegister(Type type, string? name = null, string? expr = null)
     {
         if (IsUnit(type))
         {
-            this.Indent2().AppendLine($"{expr};");
+            if (expr is not null) this.Indent2().AppendLine($"{expr};");
             return null;
         }
 
-        var name = this.AllocateRegister();
-        this.Indent2().AppendLine($"{TranslateType(type)} {name} = {expr};");
+        name ??= this.AllocateRegister();
+        this.Indent2().Append($"{TranslateType(type)} {name}");
+        if (expr is not null) this.Builder.Append($" = {expr}");
+        this.Builder.AppendLine(";");
         return name;
     }
 
@@ -156,14 +150,15 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         return this.Default;
     }
 
-    public override string VisitVariableDecl(Ast.Decl.Variable node)
+    public override string? VisitVariableDecl(Ast.Decl.Variable node)
     {
-        // TODO
-        throw new NotImplementedException();
+        var name = this.AllocateName((Symbol)node.DeclarationSymbol);
+        var value = node.Value is null ? null : this.VisitExpr(node.Value);
+        this.DefineRegister(node.DeclarationSymbol.Type, name, value);
         return this.Default;
     }
 
-    public override string VisitLabelDecl(Ast.Decl.Label node)
+    public override string? VisitLabelDecl(Ast.Decl.Label node)
     {
         this.DefineLabel(this.AllocateName(node.LabelSymbol));
         return this.Default;
@@ -210,7 +205,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     public override string? VisitIfExpr(Ast.Expr.If node)
     {
         // Allocate result storage
-        var result = this.DeclareRegister(node.EvaluationType);
+        var result = this.DefineRegister(node.EvaluationType);
 
         // Allocate else and end labels
         var elseLabel = this.AllocateLabel();
@@ -241,14 +236,19 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
 
     public override string? VisitUnaryExpr(Ast.Expr.Unary node)
     {
-        // TODO
-        throw new NotImplementedException();
+        var subexpr = this.VisitExpr(node.Operand);
+        var expr = MapUnaryOperator(node.Operator, subexpr);
+        var result = this.DefineRegister(node.EvaluationType, expr: expr);
+        return result;
     }
 
     public override string? VisitBinaryExpr(Ast.Expr.Binary node)
     {
-        // TODO
-        throw new NotImplementedException();
+        var left = this.VisitExpr(node.Left);
+        var right = this.VisitExpr(node.Right);
+        var expr = MapBinaryOperator(node.Operator, left, right);
+        var result = this.DefineRegister(node.EvaluationType, expr: expr);
+        return result;
     }
 
     public override string VisitStringExpr(Ast.Expr.String node)
@@ -257,12 +257,15 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         throw new NotImplementedException();
     }
 
-    public override string VisitLiteralExpr(Ast.Expr.Literal node)
-    {
-        // TODO
-        throw new NotImplementedException();
-    }
+    public override string? VisitLiteralExpr(Ast.Expr.Literal node) =>
+        node.Value?.ToString();
 
     public override string VisitReferenceExpr(Ast.Expr.Reference node) =>
         this.AllocateName(node.Symbol);
+
+    private static string? MapUnaryOperator(Symbol op, string? sub) =>
+        throw new NotImplementedException();
+
+    private static string? MapBinaryOperator(Symbol op, string? left, string? right) =>
+        throw new NotImplementedException();
 }

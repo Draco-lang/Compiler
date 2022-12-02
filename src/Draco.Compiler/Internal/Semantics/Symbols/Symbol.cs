@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
@@ -87,6 +88,17 @@ internal abstract partial class Symbol
     /// </summary>
     public interface ILabel
     {
+    }
+
+    /// <summary>
+    /// Any operator symbol.
+    /// </summary>
+    public interface IOperator
+    {
+        /// <summary>
+        /// The return type of this operator.
+        /// </summary>
+        public Type ReturnType { get; }
     }
 }
 
@@ -305,6 +317,60 @@ internal abstract partial class Symbol
             : base(name)
         {
             this.Type = type;
+        }
+    }
+}
+// NOTE: Temporary
+internal abstract partial class Symbol
+{
+    /// <summary>
+    /// A symbol for primitive operation.
+    /// </summary>
+    public sealed class IntrinsicOperator : Symbol, IOperator
+    {
+        public static readonly IntrinsicOperator Not_Bool = MakeUnary(TokenType.KeywordNot, Type.Bool, Type.Bool);
+
+        public static readonly IntrinsicOperator Add_Int32 = MakeBinary(TokenType.Plus, Type.Int32, Type.Int32, Type.Int32);
+        public static readonly IntrinsicOperator Sub_Int32 = MakeBinary(TokenType.Minus, Type.Int32, Type.Int32, Type.Int32);
+
+        public static readonly IntrinsicOperator Less_Int32 = MakeRelational(TokenType.LessThan, Type.Int32, Type.Int32);
+
+        private static IntrinsicOperator MakeUnary(TokenType op, Type operand, Type result)
+        {
+            var name = SymbolResolution.GetUnaryOperatorName(op);
+            if (name is null) throw new ArgumentException("the token type is not an unary operator", nameof(op));
+            return new(name, new Type.Function(ImmutableArray.Create(operand), result), op);
+        }
+
+        private static IntrinsicOperator MakeBinary(TokenType op, Type left, Type right, Type result)
+        {
+            var name = SymbolResolution.GetBinaryOperatorName(op);
+            if (name is null) throw new ArgumentException("the token type is not a binary operator", nameof(op));
+            return new(name, new Type.Function(ImmutableArray.Create(left, right), result), op);
+        }
+
+        private static IntrinsicOperator MakeRelational(TokenType op, Type left, Type right)
+        {
+            var name = SymbolResolution.GetRelationalOperatorName(op);
+            if (name is null) throw new ArgumentException("the token type is not a relational operator", nameof(op));
+            return new(name, new Type.Function(ImmutableArray.Create(left, right), Type.Bool), op);
+        }
+
+        public override Scope? EnclosingScope => null;
+        public override ParseTree? Definition => null;
+
+        public Type Type { get; }
+        // TODO: We should have a separate enum instead for the intrinsic operator types
+        // We definitely shouldn't let syntax elements leak in
+        public TokenType Operator { get; }
+
+        public Type ReturnType => ((Type.Function)this.Type).Return;
+
+        public IntrinsicOperator(string name, Type type, TokenType op)
+            : base(name)
+        {
+            this.Type = type;
+            this.Operator = op;
         }
     }
 }

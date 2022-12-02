@@ -263,9 +263,32 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     public override string VisitReferenceExpr(Ast.Expr.Reference node) =>
         this.AllocateName(node.Symbol);
 
-    private static string? MapUnaryOperator(Symbol op, string? sub) =>
-        throw new NotImplementedException();
+    private static string? MapUnaryOperator(Symbol op, string? sub)
+    {
+        if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
+        if (sub is null) return null;
+        return intrinsicOp.Operator switch
+        {
+            _ => throw new ArgumentOutOfRangeException(nameof(op)),
+        };
+    }
 
-    private static string? MapBinaryOperator(Symbol op, string? left, string? right) =>
-        throw new NotImplementedException();
+    private static string? MapBinaryOperator(Symbol.IOperator op, string? left, string? right)
+    {
+        if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
+        if (left is null || right is null) return null;
+        return intrinsicOp.Operator switch
+        {
+            // NOTE: TokenTypes shouldn't leak in like this, see note in IntrinsicOperator
+
+            TokenType.LessThan => $"{left} < {right}",
+            TokenType.GreaterThan => $"{left} > {right}",
+            TokenType.LessEqual => $"{left} <= {right}",
+            TokenType.GreaterEqual => $"{left} >= {right}",
+            TokenType.Equal => $"{left} == {right}",
+            TokenType.NotEqual => $"{left} != {right}",
+
+            _ => throw new ArgumentOutOfRangeException(nameof(op)),
+        };
+    }
 }

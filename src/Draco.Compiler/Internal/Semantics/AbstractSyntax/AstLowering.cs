@@ -62,7 +62,7 @@ internal sealed class AstLowering : AstTransformerBase
             // if (!condition) goto break_label;
             Stmt(If(
                 condition: Unary(
-                    op: null!, // TODO: Unary boolean negation
+                    op: Symbol.IntrinsicOperator.Not_Bool,
                     subexpr: condition),
                 then: Goto(breakLabel))),
             // body...

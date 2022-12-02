@@ -119,7 +119,7 @@ internal static class AstBuilder
             ParseTree.Expr.Binary bin => new Ast.Expr.Binary(
                 ParseTree: bin,
                 Left: ToAst(db, bin.Left),
-                Operator: SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException(),
+                Operator: (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException(),
                 Right: ToAst(db, bin.Right)),
             ParseTree.Expr.Literal lit => ToAst(lit),
             ParseTree.Expr.String str => new Ast.Expr.String(
@@ -161,7 +161,7 @@ internal static class AstBuilder
         ce,
         Ast.ComparisonElement (ce) => new(
             ParseTree: ce,
-            Operator: null!, // TODO
+            Operator: (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, ce) ?? throw new InvalidOperationException(),
             Right: ToAst(db, ce.Right)));
 
     private static Ast.StringPart ToAst(QueryDatabase db, ParseTree.StringPart part) => db.GetOrUpdate(

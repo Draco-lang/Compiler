@@ -101,7 +101,7 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Literal(
             ParseTree? ParseTree,
-            object Value,
+            object? Value,
             Type Type) : Expr
         {
             [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType { get; } = Type;
@@ -206,11 +206,11 @@ internal abstract record class Ast
         public sealed record class Binary(
             ParseTree? ParseTree,
             Expr Left,
-            Symbol Operator,
+            Symbol.IOperator Operator,
             Expr Right) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Operator.ReturnType;
         }
 
         /// <summary>
@@ -272,7 +272,7 @@ internal abstract record class Ast
     /// </summary>
     public record class ComparisonElement(
         ParseTree? ParseTree,
-        Symbol Operator,
+        Symbol.IOperator Operator,
         Expr Right) : Ast;
 
     /// <summary>

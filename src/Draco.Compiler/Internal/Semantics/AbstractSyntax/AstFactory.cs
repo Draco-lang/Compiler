@@ -53,7 +53,7 @@ internal static class AstFactory
         Operator: op,
         Operand: subexpr);
 
-    public static Expr Binary(Expr left, Symbol op, Expr right) => new Expr.Binary(
+    public static Expr Binary(Expr left, Symbol.IOperator op, Expr right) => new Expr.Binary(
         ParseTree: null,
         Left: left,
         Operator: op,

@@ -273,12 +273,18 @@ internal static class SymbolResolution
         }
         if (tree is ParseTree.Expr.Unary uryExpr)
         {
-            name = $"unary operator {uryExpr.Operator.Text}";
+            name = GetUnaryOperatorName(uryExpr.Operator.Type);
             return true;
         }
         if (tree is ParseTree.Expr.Binary binExpr)
         {
-            name = $"binary operator {binExpr.Operator.Text}";
+            // NOTE: Assignment is also denoted as binary, but that does not reference an operator
+            name = GetBinaryOperatorName(binExpr.Operator.Type);
+            return name is not null;
+        }
+        if (tree is ParseTree.ComparisonElement cmpElement)
+        {
+            name = GetRelationalOperatorName(cmpElement.Operator.Type);
             return true;
         }
         name = null;
@@ -377,13 +383,47 @@ internal static class SymbolResolution
         _ => null,
     };
 
+    internal static string GetUnaryOperatorName(TokenType op) => op switch
+    {
+        TokenType.Plus => "unary operator +",
+        TokenType.Minus => "unary operator -",
+        TokenType.KeywordNot => "unary operator not",
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
+
+    internal static string? GetBinaryOperatorName(TokenType op) => op switch
+    {
+        TokenType.Assign => null,
+        TokenType.Plus or TokenType.PlusAssign => "binary operator +",
+        TokenType.Minus or TokenType.MinusAssign => "binary operator -",
+        TokenType.Star or TokenType.StarAssign => "binary operator *",
+        TokenType.Slash or TokenType.SlashAssign => "binary operator /",
+        TokenType.KeywordMod => "binary operator mod",
+        TokenType.KeywordRem => "binary operator mod",
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
+
+    internal static string GetRelationalOperatorName(TokenType op) => op switch
+    {
+        TokenType.LessThan => "binary operator <",
+        TokenType.GreaterThan => "binary operator >",
+        TokenType.LessEqual => "binary operator <=",
+        TokenType.GreaterEqual => "binary operator >=",
+        TokenType.Equal => "binary operator ==",
+        TokenType.NotEqual => "binary operator !=",
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
+
     private static void InjectIntrinsics(List<Declaration> declarations)
     {
+        void Add(Symbol symbol) =>
+            declarations.Add(new(0, symbol));
+
         void AddBuiltinType(string name, System.Type type) =>
-            declarations.Add(new(0, new Symbol.TypeAlias(name, new Type.Builtin(type))));
+            Add(new Symbol.TypeAlias(name, new Type.Builtin(type)));
 
         void AddBuiltinFunction(string name, ImmutableArray<Type> @params, Type ret) =>
-            declarations.Add(new(0, new Symbol.Intrinsic(name, new Type.Function(@params, ret))));
+            Add(new Symbol.Intrinsic(name, new Type.Function(@params, ret)));
 
         AddBuiltinType("int32", typeof(int));
         AddBuiltinType("string", typeof(string));
@@ -391,5 +431,12 @@ internal static class SymbolResolution
         AddBuiltinType("bool", typeof(bool));
 
         AddBuiltinFunction("println", ImmutableArray.Create(Type.String), Type.Unit);
+
+        Add(Symbol.IntrinsicOperator.Not_Bool);
+
+        Add(Symbol.IntrinsicOperator.Add_Int32);
+        Add(Symbol.IntrinsicOperator.Sub_Int32);
+
+        Add(Symbol.IntrinsicOperator.Less_Int32);
     }
 }

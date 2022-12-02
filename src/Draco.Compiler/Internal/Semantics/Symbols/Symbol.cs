@@ -47,6 +47,11 @@ internal abstract partial class Symbol
     /// </summary>
     public abstract ParseTree? Definition { get; }
 
+    /// <summary>
+    /// True, if the symbol is visible externally.
+    /// </summary>
+    public virtual bool IsExternallyVisible => false;
+
     // NOTE: Might not be the best definition of global.
     /// <summary>
     /// True, if this is a global symbol.
@@ -252,6 +257,8 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class Variable : InTreeBase, IVariable
     {
+        public override bool IsExternallyVisible => this.IsGlobal;
+
         public bool IsMutable { get; }
 
         public Type Type => TypeChecker.TypeOf(this.db, this);
@@ -271,6 +278,8 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class SynthetizedVariable : SynthetizedBase, IVariable
     {
+        public override bool IsExternallyVisible => false;
+
         public bool IsMutable { get; }
 
         public Type Type { get; }
@@ -291,6 +300,8 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class TypeAlias : Symbol
     {
+        public override bool IsExternallyVisible => true;
+
         public Type Type { get; }
         // TODO
         public override Scope? EnclosingScope => throw new NotImplementedException();
@@ -312,6 +323,8 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class Intrinsic : Symbol
     {
+        public override bool IsExternallyVisible => true;
+
         public override Scope? EnclosingScope => null;
         public override ParseTree? Definition => null;
 
@@ -362,6 +375,7 @@ internal abstract partial class Symbol
 
         public override Scope? EnclosingScope => null;
         public override ParseTree? Definition => null;
+        public override bool IsExternallyVisible => true;
 
         public Type Type { get; }
         // TODO: We should have a separate enum instead for the intrinsic operator types

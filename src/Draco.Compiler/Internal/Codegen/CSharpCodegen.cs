@@ -68,8 +68,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         if (!this.symbolNames.TryGetValue(symbol, out var name))
         {
             // Check if we need to generate a name for it
-            // For now we just reserve for global functions only
-            var canKeepOriginalName = symbol is Symbol.Function && symbol.IsGlobal;
+            var canKeepOriginalName = symbol.IsExternallyVisible;
             name = canKeepOriginalName ? symbol.Name : $"sym_{this.symbolNames.Count}";
             this.symbolNames.Add(symbol, name);
         }

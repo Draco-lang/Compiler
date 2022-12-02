@@ -88,23 +88,12 @@ internal sealed class AstLowering : AstTransformerBase
         //     tmp1 < tmp2 && tmp2 == tmp3 && tmp3 > tmp4 && tmp4 != ...
         // }
 
-        // Utility to store an expression as a temporary
-        (Symbol Symbol, Ast.Decl Assignment) StoreTemporary(Ast.Expr expr)
-        {
-            // TODO: Get type of synthetized var
-            var symbol = new Symbol.SynthetizedVariable(false, TypeChecker.TypeOf(this.db, (ParseTree.Expr)expr.ParseTree!));
-            var assignment = Var(
-                varSymbol: symbol,
-                value: this.TransformExpr(expr, out _));
-            return (symbol, assignment);
-        }
-
         changed = true;
 
         // Store all expressions as temporary variables
-        var tmpVariables = new List<(Symbol Symbol, Ast.Decl Assignment)>();
-        tmpVariables.Add(StoreTemporary(node.Left));
-        foreach (var item in node.Comparisons) tmpVariables.Add(StoreTemporary(item.Right));
+        var tmpVariables = new List<(Symbol Symbol, Ast.Stmt Assignment)>();
+        tmpVariables.Add(this.StoreTemporary(node.Left));
+        foreach (var item in node.Comparisons) tmpVariables.Add(this.StoreTemporary(item.Right));
 
         // Build pairs of comparisons from symbol references
         var comparisons = new List<Ast.Expr>();
@@ -128,7 +117,24 @@ internal sealed class AstLowering : AstTransformerBase
 
         // Wrap up in block
         return Block(
-            stmts: tmpVariables.Select(v => Stmt(v.Assignment)),
+            stmts: tmpVariables.Select(t => t.Assignment),
             value: conjunction);
+    }
+
+    // Utility to store an expression to a temporary variable
+    private (Symbol Symbol, Ast.Stmt Assignment) StoreTemporary(Ast.Expr expr)
+    {
+        // Optimization: if it's already a symbol reference, leave as-is
+        if (expr is Ast.Expr.Reference existingRef)
+        {
+            return (existingRef.Symbol, Ast.Stmt.NoOp.Default);
+        }
+
+        // Otherwise compute and store
+        var symbol = new Symbol.SynthetizedVariable(false, TypeChecker.TypeOf(this.db, (ParseTree.Expr)expr.ParseTree!));
+        var assignment = Stmt(Var(
+            varSymbol: symbol,
+            value: this.TransformExpr(expr, out _)));
+        return (symbol, assignment);
     }
 }

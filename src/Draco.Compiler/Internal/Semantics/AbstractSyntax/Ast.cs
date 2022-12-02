@@ -281,6 +281,18 @@ internal abstract record class Ast
     public abstract record class Stmt : Ast
     {
         /// <summary>
+        /// Represents an empty statement.
+        /// </summary>
+        public sealed record class NoOp(
+            ParseTree? ParseTree) : Stmt
+        {
+            /// <summary>
+            /// A default instance to use.
+            /// </summary>
+            public static NoOp Default { get; } = new(ParseTree: null);
+        }
+
+        /// <summary>
         /// A declaration statement.
         /// </summary>
         public new sealed record class Decl(

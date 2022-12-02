@@ -161,7 +161,8 @@ internal abstract record class Ast
             ImmutableArray<Expr> Args) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType =>
+                ((Type.Function)this.Called.EvaluationType).Return;
         }
 
         /// <summary>
@@ -193,11 +194,11 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Unary(
             ParseTree? ParseTree,
-            Symbol Operator,
+            Symbol.IOperator Operator,
             Expr Operand) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Operator.ReturnType;
         }
 
         /// <summary>
@@ -243,7 +244,13 @@ internal abstract record class Ast
             Symbol Symbol) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Symbol switch
+            {
+                // TODO: Maybe just have an ITyped symbol?
+                Symbol.Function f => f.Type,
+                Symbol.Intrinsic i => i.Type,
+                _ => throw new NotImplementedException(),
+            };
         }
     }
 
@@ -257,7 +264,8 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Content(
             ParseTree? ParseTree,
-            string Value) : StringPart;
+            string Value,
+            int Cutoff) : StringPart;
 
         /// <summary>
         /// An interpolation hole.

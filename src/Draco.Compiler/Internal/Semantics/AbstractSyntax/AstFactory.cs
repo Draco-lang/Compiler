@@ -48,7 +48,7 @@ internal static class AstFactory
         Then: then,
         Else: @else ?? Expr.Unit.Default);
 
-    public static Expr Unary(Symbol op, Expr subexpr) => new Expr.Unary(
+    public static Expr Unary(Symbol.IOperator op, Expr subexpr) => new Expr.Unary(
         ParseTree: null,
         Operator: op,
         Operand: subexpr);

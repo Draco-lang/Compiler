@@ -114,7 +114,7 @@ internal static class AstBuilder
                 Comparisons: rel.Comparisons.Select(c => ToAst(db, c)).ToImmutableArray()),
             ParseTree.Expr.Unary ury => new Ast.Expr.Unary(
                 ParseTree: ury,
-                Operator: SymbolResolution.GetReferencedSymbolOrNull(db, ury) ?? throw new InvalidOperationException(),
+                Operator: (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, ury) ?? throw new InvalidOperationException(),
                 Operand: ToAst(db, ury.Operand)),
             ParseTree.Expr.Binary bin => new Ast.Expr.Binary(
                 ParseTree: bin,
@@ -122,9 +122,7 @@ internal static class AstBuilder
                 Operator: (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException(),
                 Right: ToAst(db, bin.Right)),
             ParseTree.Expr.Literal lit => ToAst(lit),
-            ParseTree.Expr.String str => new Ast.Expr.String(
-                ParseTree: str,
-                Parts: str.Parts.Select(p => ToAst(db, p)).ToImmutableArray()),
+            ParseTree.Expr.String str => ToAst(db, str),
             // We desugar unit statements into { stmt; }
             ParseTree.Expr.UnitStmt stmt => new Ast.Expr.Block(
                 ParseTree: stmt,
@@ -164,18 +162,31 @@ internal static class AstBuilder
             Operator: (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, ce) ?? throw new InvalidOperationException(),
             Right: ToAst(db, ce.Right)));
 
-    private static Ast.StringPart ToAst(QueryDatabase db, ParseTree.StringPart part) => db.GetOrUpdate(
-        part,
-        Ast.StringPart (part) => part switch
+    private static Ast.Expr ToAst(QueryDatabase db, ParseTree.Expr.String str)
+    {
+        // TODO: Maybe move the cutoff/first-in-line logic into the parser itself?
+        // It's a bit misleading to have a nonzero cutoff for parts not at the start of the line
+        var builder = ImmutableArray.CreateBuilder<Ast.StringPart>();
+        var firstInLine = true;
+        foreach (var part in str.Parts)
         {
-            ParseTree.StringPart.Content content => new Ast.StringPart.Content(
-                ParseTree: content,
-                Value: content.Value.ValueText ?? throw new InvalidOperationException()),
-            ParseTree.StringPart.Interpolation interpolation => new Ast.StringPart.Interpolation(
-                ParseTree: interpolation,
-                Expression: ToAst(db, interpolation.Expression)),
-            _ => throw new ArgumentOutOfRangeException(nameof(part)),
-        });
+            builder.Add(part switch
+            {
+                ParseTree.StringPart.Content content => new Ast.StringPart.Content(
+                    ParseTree: content,
+                    Value: content.Value.ValueText ?? throw new InvalidOperationException(),
+                    Cutoff: firstInLine ? content.Cutoff : 0),
+                ParseTree.StringPart.Interpolation interpolation => new Ast.StringPart.Interpolation(
+                    ParseTree: interpolation,
+                    Expression: ToAst(db, interpolation.Expression)),
+                _ => throw new ArgumentOutOfRangeException(nameof(part)),
+            });
+            firstInLine = part is ParseTree.StringPart.Content c && c.Value.Type == TokenType.StringNewline;
+        }
+        return new Ast.Expr.String(
+            ParseTree: str,
+            builder.ToImmutableArray());
+    }
 
     private static Ast.Expr ToAst(ParseTree.Expr.Literal lit) => lit.Value.Type switch
     {

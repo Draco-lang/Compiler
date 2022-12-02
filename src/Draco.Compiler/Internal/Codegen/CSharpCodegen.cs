@@ -97,8 +97,8 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     private StringBuilder Indent1() => this.Builder.Append("    ");
     private StringBuilder Indent2() => this.Builder.Append("        ");
 
-    private void WriteInstruction(string instr) => this.Indent2().Append(instr);
-    private void DefineLabel(string labelName) => this.Indent1().Append($"{labelName}:;");
+    private void WriteInstruction(string instr) => this.Indent2().AppendLine(instr);
+    private void DefineLabel(string labelName) => this.Indent1().AppendLine($"{labelName}:;");
     private string? DefineRegister(Type type, string? name = null, string? expr = null)
     {
         if (IsUnit(type))
@@ -184,19 +184,22 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         return this.Default;
     }
 
-    public override string VisitCallExpr(Ast.Expr.Call node)
+    public override string? VisitCallExpr(Ast.Expr.Call node)
+    {
+        var func = this.VisitExpr(node.Called);
+        var args = node.Args.Select(this.VisitExpr);
+        var expr = $"{func}({string.Join(", ", args)})";
+        var result = this.DefineRegister(node.EvaluationType, expr: expr);
+        return result;
+    }
+
+    public override string? VisitIndexExpr(Ast.Expr.Index node)
     {
         // TODO
         throw new NotImplementedException();
     }
 
-    public override string VisitIndexExpr(Ast.Expr.Index node)
-    {
-        // TODO
-        throw new NotImplementedException();
-    }
-
-    public override string VisitMemberAccessExpr(Ast.Expr.MemberAccess node)
+    public override string? VisitMemberAccessExpr(Ast.Expr.MemberAccess node)
     {
         // TODO
         throw new NotImplementedException();
@@ -215,7 +218,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         var condition = this.Visit(node.Condition);
 
         // If false, jump to else
-        this.WriteInstruction($"if (!({condition})) goto {elseLabel};");
+        this.WriteInstruction($"if (!{condition}) goto {elseLabel};");
         // Otherwise just compile then and store result, then jump to the end
         var thenResult = this.VisitExpr(node.Then);
         if (thenResult is not null) this.WriteInstruction($"{result} = {thenResult};");
@@ -253,8 +256,27 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
 
     public override string VisitStringExpr(Ast.Expr.String node)
     {
-        // TODO
-        throw new NotImplementedException();
+        var builder = this.AllocateRegister();
+        this.WriteInstruction($"System.Text.StringBuilder {builder} = new System.Text.StringBuilder();");
+        foreach (var part in node.Parts)
+        {
+            if (part is Ast.StringPart.Interpolation i)
+            {
+                var subexpr = this.VisitExpr(i.Expression);
+                this.Indent2();
+                this.output.WriteLine($"{builder}.Append({subexpr}.ToString());");
+            }
+            else
+            {
+                var c = (Ast.StringPart.Content)part;
+                var text = c.Value;
+                text = text.Substring(c.Cutoff);
+                this.Indent2();
+                this.output.WriteLine($"{builder}.Append(\"{StringUtils.Unescape(text)}\");");
+            }
+        }
+        var result = this.DefineRegister(Type.String, expr: $"{builder}.ToString()");
+        return result!;
     }
 
     public override string? VisitLiteralExpr(Ast.Expr.Literal node) =>
@@ -263,12 +285,14 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     public override string VisitReferenceExpr(Ast.Expr.Reference node) =>
         this.AllocateName(node.Symbol);
 
-    private static string? MapUnaryOperator(Symbol op, string? sub)
+    private static string? MapUnaryOperator(Symbol.IOperator op, string? sub)
     {
         if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
         if (sub is null) return null;
         return intrinsicOp.Operator switch
         {
+            TokenType.KeywordNot => $"!{sub}",
+
             _ => throw new ArgumentOutOfRangeException(nameof(op)),
         };
     }
@@ -280,6 +304,13 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         return intrinsicOp.Operator switch
         {
             // NOTE: TokenTypes shouldn't leak in like this, see note in IntrinsicOperator
+
+            TokenType.Plus => $"{left} + {right}",
+            TokenType.Minus => $"{left} - {right}",
+            TokenType.Star => $"{left} * {right}",
+            TokenType.Slash => $"{left} / {right}",
+            TokenType.KeywordRem => $"{left} % {right}",
+            TokenType.KeywordMod => $"({left} % {right} + {right}) % {right}",
 
             TokenType.LessThan => $"{left} < {right}",
             TokenType.GreaterThan => $"{left} > {right}",

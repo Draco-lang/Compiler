@@ -217,6 +217,10 @@ internal abstract partial class Symbol
             }
         }
 
+        public Type Type => new Type.Function(
+            this.Params.Select(p => p.Type).ToImmutableArray(),
+            this.ReturnType);
+
         public Function(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
         {

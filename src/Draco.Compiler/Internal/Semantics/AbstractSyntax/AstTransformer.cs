@@ -73,6 +73,12 @@ internal abstract partial class AstTransformerBase
         return str;
     }
 
+    protected object TransformInt32(int val, out bool changed)
+    {
+        changed = false;
+        return val;
+    }
+
     protected object TransformObject(object obj, out bool changed)
     {
         changed = false;

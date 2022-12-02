@@ -112,10 +112,14 @@ internal static class AstBuilder
                 ParseTree: rel,
                 Left: ToAst(db, rel.Left),
                 Comparisons: rel.Comparisons.Select(c => ToAst(db, c)).ToImmutableArray()),
+            ParseTree.Expr.Unary ury => new Ast.Expr.Unary(
+                ParseTree: ury,
+                Operator: SymbolResolution.GetReferencedSymbolOrNull(db, ury) ?? throw new InvalidOperationException(),
+                Operand: ToAst(db, ury.Operand)),
             ParseTree.Expr.Binary bin => new Ast.Expr.Binary(
                 ParseTree: bin,
                 Left: ToAst(db, bin.Left),
-                Operator: null!, // TODO
+                Operator: SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException(),
                 Right: ToAst(db, bin.Right)),
             ParseTree.Expr.Literal lit => ToAst(lit),
             ParseTree.Expr.String str => new Ast.Expr.String(

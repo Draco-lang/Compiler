@@ -271,6 +271,16 @@ internal static class SymbolResolution
             name = nameTypeExpr.Identifier.Text;
             return true;
         }
+        if (tree is ParseTree.Expr.Unary uryExpr)
+        {
+            name = $"unary operator {uryExpr.Operator.Text}";
+            return true;
+        }
+        if (tree is ParseTree.Expr.Binary binExpr)
+        {
+            name = $"binary operator {binExpr.Operator.Text}";
+            return true;
+        }
         name = null;
         return false;
     }

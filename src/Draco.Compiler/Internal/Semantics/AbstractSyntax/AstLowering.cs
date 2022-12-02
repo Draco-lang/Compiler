@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Semantics.Types;
 using static Draco.Compiler.Internal.Semantics.AbstractSyntax.AstFactory;
+using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
@@ -61,9 +62,7 @@ internal sealed class AstLowering : AstTransformerBase
             Stmt(Label(continueLabel)),
             // if (!condition) goto break_label;
             Stmt(If(
-                condition: Unary(
-                    op: Symbol.IntrinsicOperator.Not_Bool,
-                    subexpr: condition),
+                condition: Not(condition),
                 then: Goto(breakLabel))),
             // body...
             Stmt(body),
@@ -109,16 +108,94 @@ internal sealed class AstLowering : AstTransformerBase
         }
 
         // Fold them into conjunctions
-        var conjunction = comparisons
-            .Aggregate((x, y) => Binary(
-                left: x,
-                op: null!, // TODO: && operator
-                right: y));
+        var conjunction = comparisons.Aggregate(And);
+        // Desugar them, conjunctions can be desugared too
+        conjunction = this.TransformExpr(conjunction, out _);
 
         // Wrap up in block
         return Block(
             stmts: tmpVariables.Select(t => t.Assignment),
             value: conjunction);
+    }
+
+    public override Ast.Expr TransformAndExpr(Ast.Expr.And node, out bool changed)
+    {
+        // expr1 and expr2
+        //
+        // =>
+        //
+        // {
+        //     var result = false;
+        //     if (!expr1) goto end_label;
+        //     result = expr2;
+        // end_label:
+        //     result
+        // }
+
+        changed = true;
+
+        var left = this.TransformExpr(node.Left, out _);
+        var right = this.TransformExpr(node.Right, out _);
+
+        var varSymbol = new Symbol.SynthetizedVariable(true, Type.Bool);
+        var endLabel = new Symbol.SynthetizedLabel();
+        return Block(
+            stmts: new[]
+            {
+                // var result = false;
+                Stmt(Var(
+                    varSymbol: varSymbol,
+                    value: Bool(false))),
+                // if (!expr1) goto end_label;
+                Stmt(If(
+                    condition: Not(left),
+                    then: Goto(endLabel))),
+                // result = expr2;
+                Stmt(Assign(Reference(varSymbol), right)),
+                // end_label:
+                Stmt(Label(endLabel)),
+            },
+            value: Reference(varSymbol));
+    }
+
+    public override Ast.Expr TransformOrExpr(Ast.Expr.Or node, out bool changed)
+    {
+        // expr1 or expr2
+        //
+        // =>
+        //
+        // {
+        //     var result = true;
+        //     if (expr1) goto end_label;
+        //     result = expr2;
+        // end_label:
+        //     result
+        // }
+
+        changed = true;
+
+        var left = this.TransformExpr(node.Left, out _);
+        var right = this.TransformExpr(node.Right, out _);
+
+        var varSymbol = new Symbol.SynthetizedVariable(true, Type.Bool);
+        var endLabel = new Symbol.SynthetizedLabel();
+        return Block(
+            stmts: new[]
+            {
+                // var result = false;
+                Stmt(Var(
+                    varSymbol: varSymbol,
+                    value: Bool(true))),
+                // if (expr1) goto end_label;
+                Stmt(If(
+                    condition: left,
+                    then: Goto(endLabel))),
+                // result = expr2;
+                Stmt(Assign(Reference(varSymbol), right)),
+                // end_label:
+                Stmt(Label(endLabel)),
+            },
+            value: Reference(varSymbol));
     }
 
     // Utility to store an expression to a temporary variable

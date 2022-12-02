@@ -9,7 +9,6 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Semantics.Types;
 using System.Collections.Immutable;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
-using static Draco.Compiler.Internal.Semantics.Symbols.Symbol;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
@@ -208,6 +207,20 @@ internal static class AstBuilder
                 CompoundOperator: null,
                 Value: right);
         }
+        else if (bin.Operator.Type == TokenType.KeywordAnd)
+        {
+            return new Ast.Expr.And(
+                ParseTree: bin,
+                Left: left,
+                Right: right);
+        }
+        else if (bin.Operator.Type == TokenType.KeywordOr)
+        {
+            return new Ast.Expr.Or(
+                ParseTree: bin,
+                Left: left,
+                Right: right);
+        }
         else
         {
             var @operator = (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException();
@@ -225,6 +238,14 @@ internal static class AstBuilder
             ParseTree: lit,
             Value: lit.Value.Value,
             Type: Type.Int32),
+        TokenType.KeywordTrue => new Ast.Expr.Literal(
+            ParseTree: lit,
+            Value: true,
+            Type: Type.Bool),
+        TokenType.KeywordFalse => new Ast.Expr.Literal(
+            ParseTree: lit,
+            Value: false,
+            Type: Type.Bool),
         _ => throw new NotImplementedException(),
     };
 }

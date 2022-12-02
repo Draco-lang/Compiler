@@ -197,7 +197,6 @@ internal abstract record class Ast
             Symbol.IOperator Operator,
             Expr Operand) : Expr
         {
-            // TODO
             [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Operator.ReturnType;
         }
 
@@ -210,7 +209,6 @@ internal abstract record class Ast
             Symbol.IOperator Operator,
             Expr Right) : Expr
         {
-            // TODO
             [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Operator.ReturnType;
         }
 
@@ -236,6 +234,28 @@ internal abstract record class Ast
             Expr Value) : Expr
         {
             [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Target.EvaluationType;
+        }
+
+        /// <summary>
+        /// A short-cutting conjunction expression.
+        /// </summary>
+        public sealed record class And(
+            ParseTree? ParseTree,
+            Expr Left,
+            Expr Right) : Expr
+        {
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Bool;
+        }
+
+        /// <summary>
+        /// A short-cutting disjunction expression.
+        /// </summary>
+        public sealed record class Or(
+            ParseTree? ParseTree,
+            Expr Left,
+            Expr Right) : Expr
+        {
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Bool;
         }
 
         /// <summary>

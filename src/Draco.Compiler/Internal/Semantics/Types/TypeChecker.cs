@@ -81,6 +81,7 @@ internal static class TypeChecker
         ParseTree.Expr.Literal lit => lit.Value.Type switch
         {
             TokenType.LiteralInteger => Type.Int32,
+            TokenType.KeywordTrue or TokenType.KeywordFalse => Type.Bool,
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         },
         ParseTree.Expr.String => Type.String,

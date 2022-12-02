@@ -286,7 +286,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     }
 
     public override string? VisitLiteralExpr(Ast.Expr.Literal node) =>
-        node.Value?.ToString();
+        node.Value?.ToString()?.ToLower();
 
     public override string VisitReferenceExpr(Ast.Expr.Reference node) =>
         this.AllocateName(node.Symbol);

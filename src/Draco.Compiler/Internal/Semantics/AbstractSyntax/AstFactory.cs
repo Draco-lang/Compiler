@@ -1,10 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.Semantics.Types;
 using static Draco.Compiler.Internal.Semantics.AbstractSyntax.Ast;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
@@ -59,7 +59,32 @@ internal static class AstFactory
         Operator: op,
         Right: right);
 
+    public static Expr Assign(Expr target, Expr value) => new Expr.Assign(
+        ParseTree: null,
+        Target: target,
+        CompoundOperator: null,
+        Value: value);
+
+    public static Expr And(Expr left, Expr right) => new Expr.And(
+        ParseTree: null,
+        Left: left,
+        Right: right);
+
+    public static Expr Or(Expr left, Expr right) => new Expr.Or(
+        ParseTree: null,
+        Left: left,
+        Right: right);
+
+    public static Expr Not(Expr subexpr) => Unary(
+        op: Symbol.IntrinsicOperator.Not_Bool,
+        subexpr: subexpr);
+
     public static Expr Reference(Symbol symbol) => new Expr.Reference(
         ParseTree: null,
         Symbol: symbol);
+
+    public static Expr Bool(bool value) => new Expr.Literal(
+        ParseTree: null,
+        Value: value,
+        Type: Type.Bool);
 }

@@ -393,7 +393,7 @@ internal static class SymbolResolution
 
     internal static string? GetBinaryOperatorName(TokenType op) => op switch
     {
-        TokenType.Assign => null,
+        TokenType.Assign or TokenType.KeywordAnd or TokenType.KeywordOr => null,
         TokenType.Plus or TokenType.PlusAssign => "binary operator +",
         TokenType.Minus or TokenType.MinusAssign => "binary operator -",
         TokenType.Star or TokenType.StarAssign => "binary operator *",

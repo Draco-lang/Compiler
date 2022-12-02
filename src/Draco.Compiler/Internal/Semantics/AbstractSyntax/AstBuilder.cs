@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Semantics.Types;
 using System.Collections.Immutable;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
+using static Draco.Compiler.Internal.Semantics.Symbols.Symbol;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
@@ -116,11 +117,7 @@ internal static class AstBuilder
                 ParseTree: ury,
                 Operator: (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, ury) ?? throw new InvalidOperationException(),
                 Operand: ToAst(db, ury.Operand)),
-            ParseTree.Expr.Binary bin => new Ast.Expr.Binary(
-                ParseTree: bin,
-                Left: ToAst(db, bin.Left),
-                Operator: (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException(),
-                Right: ToAst(db, bin.Right)),
+            ParseTree.Expr.Binary bin => ToAst(db, bin),
             ParseTree.Expr.Literal lit => ToAst(lit),
             ParseTree.Expr.String str => ToAst(db, str),
             // We desugar unit statements into { stmt; }
@@ -186,6 +183,40 @@ internal static class AstBuilder
         return new Ast.Expr.String(
             ParseTree: str,
             builder.ToImmutableArray());
+    }
+
+    private static Ast.Expr ToAst(QueryDatabase db, ParseTree.Expr.Binary bin)
+    {
+        var left = ToAst(db, bin.Left);
+        var right = ToAst(db, bin.Right);
+
+        // Binary tree either becomes an assignment or a binary expr
+        if (Syntax.TokenTypeExtensions.IsCompoundAssignmentOperator(bin.Operator.Type))
+        {
+            var @operator = (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException();
+            return new Ast.Expr.Assign(
+                ParseTree: bin,
+                Target: left,
+                CompoundOperator: @operator,
+                Value: right);
+        }
+        else if (bin.Operator.Type == TokenType.Assign)
+        {
+            return new Ast.Expr.Assign(
+                ParseTree: bin,
+                Target: left,
+                CompoundOperator: null,
+                Value: right);
+        }
+        else
+        {
+            var @operator = (Symbol.IOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException();
+            return new Ast.Expr.Binary(
+                ParseTree: bin,
+                Left: left,
+                Operator: @operator,
+                Right: right);
+        }
     }
 
     private static Ast.Expr ToAst(ParseTree.Expr.Literal lit) => lit.Value.Type switch

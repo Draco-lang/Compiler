@@ -202,7 +202,7 @@ internal abstract record class Ast
         }
 
         /// <summary>
-        /// A binary expression, including assignment and compound assignment.
+        /// A binary expression.
         /// </summary>
         public sealed record class Binary(
             ParseTree? ParseTree,
@@ -224,6 +224,18 @@ internal abstract record class Ast
         {
             // TODO
             [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// An assignment expression, including compound assignment.
+        /// </summary>
+        public sealed record class Assign(
+            ParseTree? ParseTree,
+            Expr Target,
+            Symbol.IOperator? CompoundOperator,
+            Expr Value) : Expr
+        {
+            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Target.EvaluationType;
         }
 
         /// <summary>

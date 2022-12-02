@@ -253,6 +253,15 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         return result;
     }
 
+    public override string? VisitAssignExpr(Ast.Expr.Assign node)
+    {
+        var left = this.VisitExpr(node.Target);
+        var right = this.VisitExpr(node.Value);
+        var expr = MapAssignmentOperator(node.CompoundOperator, left, right);
+        this.WriteInstruction($"{expr};");
+        return left;
+    }
+
     public override string VisitStringExpr(Ast.Expr.String node)
     {
         var builder = this.AllocateRegister();
@@ -316,6 +325,23 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
             TokenType.Equal => $"{left} == {right}",
             TokenType.NotEqual => $"{left} != {right}",
 
+            _ => throw new ArgumentOutOfRangeException(nameof(op)),
+        };
+    }
+
+    private static string? MapAssignmentOperator(Symbol.IOperator? op, string? left, string? right)
+    {
+        if (op is null) return $"{left} = {right}";
+        if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
+        if (left is null || right is null) return null;
+        return intrinsicOp.Operator switch
+        {
+            // NOTE: TokenTypes shouldn't leak in like this, see note in IntrinsicOperator
+
+            TokenType.Plus => $"{left} += {right}",
+            TokenType.Minus => $"{left} -= {right}",
+            TokenType.Star => $"{left} *= {right}",
+            TokenType.Slash => $"{left} /= {right}",
             _ => throw new ArgumentOutOfRangeException(nameof(op)),
         };
     }

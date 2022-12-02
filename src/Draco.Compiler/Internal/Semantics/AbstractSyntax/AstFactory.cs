@@ -42,11 +42,16 @@ internal static class AstFactory
         ParseTree: null,
         Target: labelSymbol);
 
-    public static Expr If(Expr condition, Expr then, Expr? @else = null) => new Expr.If(
+    public static Expr If(Expr condition, Expr then, Expr @else) => new Expr.If(
         ParseTree: null,
         Condition: condition,
         Then: then,
         Else: @else ?? Expr.Unit.Default);
+
+    public static Stmt If(Expr condition, Expr then) => Stmt(If(
+        condition: condition,
+        then: Block(Stmt(then)),
+        @else: Expr.Unit.Default));
 
     public static Expr Unary(Symbol.IOperator op, Expr subexpr) => new Expr.Unary(
         ParseTree: null,

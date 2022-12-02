@@ -61,9 +61,9 @@ internal sealed class AstLowering : AstTransformerBase
             // continue_label:
             Stmt(Label(continueLabel)),
             // if (!condition) goto break_label;
-            Stmt(If(
+            If(
                 condition: Not(condition),
-                then: Goto(breakLabel))),
+                then: Goto(breakLabel)),
             // body...
             Stmt(body),
             // goto continue_label;
@@ -126,9 +126,7 @@ internal sealed class AstLowering : AstTransformerBase
         //
         // {
         //     var result = false;
-        //     if (!expr1) goto end_label;
-        //     result = expr2;
-        // end_label:
+        //     if (expr1) result = expr2;
         //     result
         // }
 
@@ -138,7 +136,6 @@ internal sealed class AstLowering : AstTransformerBase
         var right = this.TransformExpr(node.Right, out _);
 
         var varSymbol = new Symbol.SynthetizedVariable(true, Type.Bool);
-        var endLabel = new Symbol.SynthetizedLabel();
         return Block(
             stmts: new[]
             {
@@ -146,14 +143,10 @@ internal sealed class AstLowering : AstTransformerBase
                 Stmt(Var(
                     varSymbol: varSymbol,
                     value: Bool(false))),
-                // if (!expr1) goto end_label;
-                Stmt(If(
-                    condition: Not(left),
-                    then: Goto(endLabel))),
-                // result = expr2;
-                Stmt(Assign(Reference(varSymbol), right)),
-                // end_label:
-                Stmt(Label(endLabel)),
+                // if (expr1) result = expr2;
+                If(
+                    condition: left,
+                    then: Assign(Reference(varSymbol), right)),
             },
             value: Reference(varSymbol));
     }
@@ -166,9 +159,7 @@ internal sealed class AstLowering : AstTransformerBase
         //
         // {
         //     var result = true;
-        //     if (expr1) goto end_label;
-        //     result = expr2;
-        // end_label:
+        //     if (!expr1) result = expr2;
         //     result
         // }
 
@@ -178,7 +169,6 @@ internal sealed class AstLowering : AstTransformerBase
         var right = this.TransformExpr(node.Right, out _);
 
         var varSymbol = new Symbol.SynthetizedVariable(true, Type.Bool);
-        var endLabel = new Symbol.SynthetizedLabel();
         return Block(
             stmts: new[]
             {
@@ -186,14 +176,10 @@ internal sealed class AstLowering : AstTransformerBase
                 Stmt(Var(
                     varSymbol: varSymbol,
                     value: Bool(true))),
-                // if (expr1) goto end_label;
-                Stmt(If(
-                    condition: left,
-                    then: Goto(endLabel))),
-                // result = expr2;
-                Stmt(Assign(Reference(varSymbol), right)),
-                // end_label:
-                Stmt(Label(endLabel)),
+                // if (!expr1) result = expr2;
+                If(
+                    condition: Not(left),
+                    then: Assign(Reference(varSymbol), right)),
             },
             value: Reference(varSymbol));
     }

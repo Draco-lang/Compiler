@@ -54,7 +54,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     private StringBuilder PushNewBuilder()
     {
         var newBuilder = new StringBuilder();
-        this.builderStack.Push(newBuilder);
+        this.PushBuilder(newBuilder);
         return newBuilder;
     }
     private StringBuilder PopBuilder() => this.builderStack.Pop();

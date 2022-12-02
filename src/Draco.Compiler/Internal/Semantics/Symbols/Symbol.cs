@@ -196,6 +196,8 @@ internal abstract partial class Symbol
     /// </summary>
     public sealed class Function : InTreeBase
     {
+        public override bool IsExternallyVisible => this.IsGlobal;
+
         public ImmutableArray<Parameter> Params
         {
             get

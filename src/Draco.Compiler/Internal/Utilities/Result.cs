@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Utilities;
 /// </summary>
 /// <typeparam name="TOk">The type of the inner ok value.</typeparam>
 /// <typeparam name="TError">The type of the inner error.</typeparam>
-public readonly struct Result<TOk, TError>
+internal readonly struct Result<TOk, TError>
 {
     /// <summary>
     /// The value of the result. Throws an exception if the result is not an ok value.

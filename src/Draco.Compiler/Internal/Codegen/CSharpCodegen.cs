@@ -231,7 +231,13 @@ internal sealed class CSharpCodegen : ParseTreeVisitorBase<string>
         var result = this.AllocateRegister();
         var left = this.VisitExpr(node.Left);
         var right = this.VisitExpr(node.Right);
-        var op = node.Operator.Text;
+        var op = node.Operator.Type switch
+        {
+            TokenType.KeywordAnd => "&&",
+            TokenType.KeywordOr => "||",
+            TokenType.KeywordMod or TokenType.KeywordRem => "%",
+            _ => node.Operator.Text
+        };
         this.Indent2();
         this.output.WriteLine($"dynamic {result} = {left} {op} {right};");
         return result;

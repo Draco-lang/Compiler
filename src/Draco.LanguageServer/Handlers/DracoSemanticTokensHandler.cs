@@ -59,14 +59,17 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         return Task.FromResult(new SemanticTokensDocument(this.RegistrationOptions.Legend));
     }
 
-    protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(SemanticTokensCapability capability, ClientCapabilities clientCapabilities) =>
-        new SemanticTokensRegistrationOptions
+    protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(
+        SemanticTokensCapability capability,
+        ClientCapabilities clientCapabilities) => capability is null
+        ? new()
+        : new()
         {
             DocumentSelector = this.documentSelector,
             Legend = new SemanticTokensLegend
             {
                 TokenModifiers = capability.TokenModifiers,
-                TokenTypes = capability.TokenTypes
+                TokenTypes = capability.TokenTypes,
             },
             Full = new SemanticTokensCapabilityRequestFull
             {

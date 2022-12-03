@@ -1,17 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Internal.Utilities;
+using Draco.Compiler.Internal.Syntax;
 using Draco.RedGreenTree.Attributes;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -95,6 +91,13 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     {
         public TokenType Type => this.Green.Type;
     }
+
+    /// <summary>
+    /// Formats the <see cref="ParseTree"/>.
+    /// </summary>
+    /// <returns>The formatted <see cref="ParseTree"/>.</returns>
+    public ParseTree Format() =>
+        ToRed(null, new ParseTreeFormatter(ParseTreeFormatterSettings.Default).Format(this.Green));
 }
 
 public abstract partial class ParseTree

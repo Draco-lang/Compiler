@@ -38,13 +38,17 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     public CSharpCodegen(Stream output)
     {
         this.output = new(output);
-        this.builderStack.Push(this.topLevelBuilder);
+        this.PushBuilder(this.topLevelBuilder);
     }
 
     public void Generate(Ast root)
     {
         this.Visit(root);
+        this.output.WriteLine(Prelude);
+        this.output.WriteLine(MainInvocation);
+        this.output.WriteLine(ProgramStart);
         this.output.Write(this.topLevelBuilder);
+        this.output.WriteLine(ProgramEnd);
         this.output.Flush();
     }
 
@@ -345,4 +349,45 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
             _ => throw new ArgumentOutOfRangeException(nameof(op)),
         };
     }
+
+    private static string Prelude => """
+        using static Prelude;
+        internal static class Prelude
+        {
+            public readonly record struct Unit;
+            public record struct Char32(int Codepoint)
+            {
+                public override string ToString() =>
+                    char.ConvertFromUtf32(this.Codepoint);
+            }
+            public static Unit print(string value)
+            {
+                System.Console.Write(value);
+                return default;
+            }
+            public static Unit println(string value)
+            {
+                System.Console.WriteLine(value);
+                return default;
+            }
+            public static string fmt(string format, params string[] args) =>
+                string.Format(format, args);
+            public static Unit pass(object? o) => default;
+        }
+        """;
+
+    private static string MainInvocation => """
+        public sealed class Program
+        {
+            public static void Main(string[] args) =>
+                DracoProgram.main();
+        }
+        """;
+
+    private static string ProgramStart => """
+        internal sealed class DracoProgram
+        {
+        """;
+
+    private static string ProgramEnd => "}";
 }

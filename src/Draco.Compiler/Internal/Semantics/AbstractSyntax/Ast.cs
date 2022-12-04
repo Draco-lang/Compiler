@@ -39,8 +39,11 @@ internal abstract record class Ast
             Symbol.Function DeclarationSymbol,
             Expr.Block Body) : Decl
         {
-            [Ignore(IgnoreFlags.Transformer)] public ImmutableArray<Symbol.Parameter> Params => this.DeclarationSymbol.Params;
-            [Ignore(IgnoreFlags.Transformer)] public Type ReturnType => this.DeclarationSymbol.ReturnType;
+            [Ignore(IgnoreFlags.Transformer)]
+            public ImmutableArray<Symbol.Parameter> Params => this.DeclarationSymbol.Params;
+
+            [Ignore(IgnoreFlags.Transformer)]
+            public Type ReturnType => this.DeclarationSymbol.ReturnType;
         }
 
         /// <summary>
@@ -58,7 +61,8 @@ internal abstract record class Ast
             Symbol.IVariable DeclarationSymbol,
             Expr? Value) : Decl
         {
-            [Ignore(IgnoreFlags.Transformer)] public Type Type => this.DeclarationSymbol.Type;
+            [Ignore(IgnoreFlags.Transformer)]
+            public Type Type => this.DeclarationSymbol.Type;
         }
     }
 
@@ -70,7 +74,8 @@ internal abstract record class Ast
         /// <summary>
         /// The type this expression evaluates to.
         /// </summary>
-        [Ignore(IgnoreFlags.Transformer)] public abstract Type EvaluationType { get; }
+        [Ignore(IgnoreFlags.Transformer)]
+        public abstract Type EvaluationType { get; }
 
         /// <summary>
         /// An expression representing unitary value.
@@ -82,7 +87,8 @@ internal abstract record class Ast
             /// </summary>
             public static Unit Default { get; } = new(ParseTree: null);
 
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Unit;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => Type.Unit;
         }
 
         /// <summary>
@@ -93,7 +99,8 @@ internal abstract record class Ast
             ImmutableArray<Stmt> Statements,
             Expr Value) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Value.EvaluationType;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => this.Value.EvaluationType;
         }
 
         /// <summary>
@@ -104,7 +111,8 @@ internal abstract record class Ast
             object? Value,
             Type Type) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType { get; } = Type;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType { get; } = Type;
         }
 
         /// <summary>
@@ -116,7 +124,8 @@ internal abstract record class Ast
             Expr Then,
             Expr Else) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Then.EvaluationType;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => this.Then.EvaluationType;
         }
 
         /// <summary>
@@ -127,7 +136,8 @@ internal abstract record class Ast
             Expr Condition,
             Expr Expression) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Unit;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => Type.Unit;
         }
 
         /// <summary>
@@ -138,7 +148,8 @@ internal abstract record class Ast
             Symbol Target) : Expr
         {
             // NOTE: Eventually this should be the bottom type
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Unit;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => Type.Unit;
         }
 
         /// <summary>
@@ -149,7 +160,8 @@ internal abstract record class Ast
             Expr Expression) : Expr
         {
             // NOTE: Eventually this should be the bottom type
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Unit;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => Type.Unit;
         }
 
         /// <summary>
@@ -161,8 +173,8 @@ internal abstract record class Ast
             ImmutableArray<Expr> Args) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType =>
-                ((Type.Function)this.Called.EvaluationType).Return;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => ((Type.Function)this.Called.EvaluationType).Return;
         }
 
         /// <summary>
@@ -174,7 +186,8 @@ internal abstract record class Ast
             ImmutableArray<Expr> Args) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => throw new NotImplementedException();
         }
 
         /// <summary>
@@ -186,7 +199,8 @@ internal abstract record class Ast
             Symbol Member) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => throw new NotImplementedException();
         }
 
         /// <summary>
@@ -197,7 +211,8 @@ internal abstract record class Ast
             Symbol.IOperator Operator,
             Expr Operand) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Operator.ReturnType;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => this.Operator.ReturnType;
         }
 
         /// <summary>
@@ -209,7 +224,8 @@ internal abstract record class Ast
             Symbol.IOperator Operator,
             Expr Right) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Operator.ReturnType;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => this.Operator.ReturnType;
         }
 
         /// <summary>
@@ -221,7 +237,8 @@ internal abstract record class Ast
             ImmutableArray<ComparisonElement> Comparisons) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => throw new NotImplementedException();
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => throw new NotImplementedException();
         }
 
         /// <summary>
@@ -233,7 +250,8 @@ internal abstract record class Ast
             Symbol.IOperator? CompoundOperator,
             Expr Value) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Target.EvaluationType;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => this.Target.EvaluationType;
         }
 
         /// <summary>
@@ -244,7 +262,8 @@ internal abstract record class Ast
             Expr Left,
             Expr Right) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Bool;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => Type.Bool;
         }
 
         /// <summary>
@@ -255,7 +274,8 @@ internal abstract record class Ast
             Expr Left,
             Expr Right) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.Bool;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => Type.Bool;
         }
 
         /// <summary>
@@ -265,7 +285,8 @@ internal abstract record class Ast
             ParseTree? ParseTree,
             ImmutableArray<StringPart> Parts) : Expr
         {
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => Type.String;
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => Type.String;
         }
 
         /// <summary>
@@ -276,7 +297,8 @@ internal abstract record class Ast
             Symbol Symbol) : Expr
         {
             // TODO
-            [Ignore(IgnoreFlags.Transformer)] public override Type EvaluationType => this.Symbol switch
+            [Ignore(IgnoreFlags.Transformer)]
+            public override Type EvaluationType => this.Symbol switch
             {
                 // TODO: Maybe just have an ITyped symbol?
                 Symbol.Function f => f.Type,

@@ -170,9 +170,10 @@ internal static class SymbolResolution
 
             // Construct the scope
             return new Scope(
-                Definition: tree,
-                Kind: scopeKind.Value,
-                Timelines: result
+                db: db,
+                definition: tree,
+                kind: scopeKind.Value,
+                timelines: result
                     .GroupBy(d => d.Name)
                     .ToImmutableDictionary(g => g.Key, g => new DeclarationTimeline(g)));
         }

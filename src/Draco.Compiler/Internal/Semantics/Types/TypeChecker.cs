@@ -116,7 +116,7 @@ internal static class TypeChecker
             var scope = symbol.EnclosingScope ?? throw new InvalidOperationException();
             while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
             {
-                scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
+                scope = scope.Parent ?? throw new InvalidOperationException();
             }
             // TODO: Not necessarily a variable
             // Infer the variables from the scope
@@ -163,7 +163,7 @@ internal static class TypeChecker
         // Walk up to the nearest scope that's either global or function
         while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
         {
-            scope = SymbolResolution.GetParentScopeOrNull(db, scope) ?? throw new InvalidOperationException();
+            scope = scope.Parent ?? throw new InvalidOperationException();
         }
         // TODO: Not necessarily a variable
         // Infer the variables from the scope

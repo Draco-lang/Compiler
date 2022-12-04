@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Query;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
 
@@ -30,19 +31,44 @@ internal enum ScopeKind
     Local,
 }
 
-/// <summary>
-/// Represents a single scope.
-/// </summary>
-/// <param name="Definition">The <see cref="ParseTree"/> that introduced this scope.</param>
-/// <param name="Kind">The kind of scope.</param>
-/// <param name="Timelines">The symbol names in this scope associated with their
-/// <see cref="DeclarationTimeline"/>s.</param>
-internal sealed record class Scope(
-    ParseTree? Definition,
-    ScopeKind Kind,
-    ImmutableDictionary<string, DeclarationTimeline> Timelines)
+internal sealed class Scope
 {
-    // NOTE: Access for parent scope lazily with the DB?
+    /// <summary>
+    /// The <see cref="ParseTree"/> that introduced this scope.
+    /// </summary>
+    public ParseTree? Definition { get; }
+
+    /// <summary>
+    /// The kind of scope.
+    /// </summary>
+    public ScopeKind Kind { get; }
+
+    /// <summary>
+    /// The symbol names in this scope associated with their <see cref="DeclarationTimeline"/>s.
+    /// </summary>
+    public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
+
+    /// <summary>
+    /// The parent <see cref="Scope"/> of this one.
+    /// </summary>
+    public Scope? Parent => SymbolResolution.GetParentScopeOrNull(this.db, this);
+
+    /// <summary>
+    /// The <see cref="QueryDatabase"/> that computed this <see cref="Scope"/>.
+    /// </summary>
+    private readonly QueryDatabase db;
+
+    internal Scope(
+        QueryDatabase db,
+        ParseTree? definition,
+        ScopeKind kind,
+        ImmutableDictionary<string, DeclarationTimeline> timelines)
+    {
+        this.db = db;
+        this.Definition = definition;
+        this.Kind = kind;
+        this.Timelines = timelines;
+    }
 
     /// <summary>
     /// Attempts to look up a <see cref="Declaration"/> with a given name.

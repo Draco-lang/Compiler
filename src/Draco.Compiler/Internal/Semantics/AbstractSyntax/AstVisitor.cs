@@ -41,7 +41,4 @@ internal abstract partial class AstVisitorBase<T>
         foreach (var item in parts) this.VisitStringPart(item);
         return this.Default;
     }
-
-    protected T VisitImmutableArray(ImmutableArray<Symbol> symbols) => this.Default;
-    protected T VisitImmutableArray(ImmutableArray<Symbol.Parameter> symbols) => this.Default;
 }

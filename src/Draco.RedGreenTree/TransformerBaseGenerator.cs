@@ -224,6 +224,11 @@ public sealed class TransformerBaseGenerator : GeneratorBase
                 if (prop.Type is not INamedTypeSymbol propType) continue;
                 if (prop.IsGenerated()) continue;
 
+                if (HasFlag(prop, IgnoreFlags.TransformerTransform))
+                {
+                    transformedMembers.Add(($"node.{prop.Name}", "false"));
+                    continue;
+                }
                 if (!this.IsTransformableProperty(prop))
                 {
                     this.skippedProperties.Add($"{type.ToDisplayString()}.{prop.Name}");
@@ -291,11 +296,7 @@ public sealed class TransformerBaseGenerator : GeneratorBase
     {
         if (prop.IsStatic) return false;
         if (prop.Type is not INamedTypeSymbol propType) return false;
-        if (prop.HasAttribute(typeof(IgnoreAttribute), out var args))
-        {
-            var flags = (IgnoreFlags)args[0]!;
-            if (flags.HasFlag(IgnoreFlags.Transformer)) return false;
-        }
+        if (HasFlag(prop, IgnoreFlags.TransformerAll)) return false;
 
         // Don't leak types
         if ((int)prop.DeclaredAccessibility < (int)this.RedRootType.DeclaredAccessibility) return false;
@@ -309,6 +310,16 @@ public sealed class TransformerBaseGenerator : GeneratorBase
             return true;
         }
 
+        return false;
+    }
+
+    private static bool HasFlag(IPropertySymbol prop, IgnoreFlags ignoreFlags)
+    {
+        if (prop.HasAttribute(typeof(IgnoreAttribute), out var args))
+        {
+            var flags = (IgnoreFlags)args[0]!;
+            return flags.HasFlag(ignoreFlags);
+        }
         return false;
     }
 }

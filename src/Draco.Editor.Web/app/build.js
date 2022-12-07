@@ -5,10 +5,9 @@ import * as fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createThemeBasedLogo as getFavicon } from './favicon-downloader.js';
 import { Octokit } from '@octokit/rest';
-import { convertTheme } from 'monaco-vscode-textmate-theme-converter';
 import JSON5 from 'json5';
 import YAML from 'yaml';
-
+import { convertTheme } from "./theme-converter.js";
 // This file manage the build process of the webapp.
 
 const __filename = fileURLToPath(import.meta.url);
@@ -98,10 +97,6 @@ const themesMetadata = themePackageJson.contributes.themes;
 themes.forEach(s => {
     themeObj[s.name] = s.theme;
     themeObj[s.name].base = themesMetadata.find(t => path.basename(t.path) == s.filename).uiTheme;
-    themeObj[s.name].inherit = true;
-    if (themeObj[s.name].colors === undefined) {
-        themeObj[s.name].colors = {}; // workaround monaco bug: if not set, will throw "Cannot read properties of undefined (reading 'editor.foreground')"
-    }
 });
 
 const themeListJson = JSON.stringify(themeObj);

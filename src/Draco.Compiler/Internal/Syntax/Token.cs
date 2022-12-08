@@ -46,12 +46,12 @@ internal abstract partial record class ParseTree
         /// <summary>
         /// The leading trivia for this <see cref="Token"/>.
         /// </summary>
-        public ImmutableArray<Token> LeadingTrivia { get; }
+        public ImmutableArray<Trivia> LeadingTrivia { get; }
 
         /// <summary>
         /// The trailing trivia for this <see cref="Token"/>.
         /// </summary>
-        public ImmutableArray<Token> TrailingTrivia { get; }
+        public ImmutableArray<Trivia> TrailingTrivia { get; }
 
         /// <summary>
         /// The <see cref="Diagnostic"/> messages attached to this <see cref="Token"/>.
@@ -64,8 +64,8 @@ internal abstract partial record class ParseTree
             TokenType type,
             string text,
             object? value,
-            ImmutableArray<Token> leadingTrivia,
-            ImmutableArray<Token> trailingTrivia,
+            ImmutableArray<Trivia> leadingTrivia,
+            ImmutableArray<Trivia> trailingTrivia,
             ImmutableArray<Diagnostic> diagnostics)
         {
             this.Type = type;
@@ -120,8 +120,8 @@ internal abstract partial record class ParseTree
             type: type,
             text: type.GetTokenText(),
             value: null,
-            leadingTrivia: ImmutableArray<Token>.Empty,
-            trailingTrivia: ImmutableArray<Token>.Empty,
+            leadingTrivia: ImmutableArray<Trivia>.Empty,
+            trailingTrivia: ImmutableArray<Trivia>.Empty,
             diagnostics: ImmutableArray<Diagnostic>.Empty);
 
         /// <summary>
@@ -135,8 +135,8 @@ internal abstract partial record class ParseTree
             type: type,
             text: text,
             value: null,
-            leadingTrivia: ImmutableArray<Token>.Empty,
-            trailingTrivia: ImmutableArray<Token>.Empty,
+            leadingTrivia: ImmutableArray<Trivia>.Empty,
+            trailingTrivia: ImmutableArray<Trivia>.Empty,
             diagnostics: ImmutableArray<Diagnostic>.Empty);
 
         /// <summary>
@@ -153,8 +153,8 @@ internal abstract partial record class ParseTree
             type: type,
             text: text,
             value: null,
-            leadingTrivia: ImmutableArray<Token>.Empty,
-            trailingTrivia: ImmutableArray<Token>.Empty,
+            leadingTrivia: ImmutableArray<Trivia>.Empty,
+            trailingTrivia: ImmutableArray<Trivia>.Empty,
             diagnostics: diagnostics);
     }
 
@@ -169,8 +169,8 @@ internal abstract partial record class ParseTree
             public TokenType? Type { get; private set; }
             public string? Text { get; private set; }
             public object? Value { get; private set; }
-            public ImmutableArray<Token>? LeadingTrivia { get; private set; }
-            public ImmutableArray<Token>? TrailingTrivia { get; private set; }
+            public ImmutableArray<Trivia>? LeadingTrivia { get; private set; }
+            public ImmutableArray<Trivia>? TrailingTrivia { get; private set; }
             public ImmutableArray<Diagnostic>? Diagnostics { get; private set; }
 
             /// <summary>
@@ -195,8 +195,8 @@ internal abstract partial record class ParseTree
             {
                 var tt = this.Type ?? throw new InvalidOperationException("specifying token type is required");
                 var text = this.Text ?? tt.GetTokenText();
-                var leadingTriv = this.LeadingTrivia ?? ImmutableArray<Token>.Empty;
-                var trailingTriv = this.TrailingTrivia ?? ImmutableArray<Token>.Empty;
+                var leadingTriv = this.LeadingTrivia ?? ImmutableArray<Trivia>.Empty;
+                var trailingTriv = this.TrailingTrivia ?? ImmutableArray<Trivia>.Empty;
                 var diags = this.Diagnostics ?? ImmutableArray<Diagnostic>.Empty;
                 return new(
                     type: tt,
@@ -233,13 +233,13 @@ internal abstract partial record class ParseTree
                 return this;
             }
 
-            public Builder SetLeadingTrivia(ImmutableArray<Token> trivia)
+            public Builder SetLeadingTrivia(ImmutableArray<Trivia> trivia)
             {
                 this.LeadingTrivia = trivia;
                 return this;
             }
 
-            public Builder SetTrailingTrivia(ImmutableArray<Token> trivia)
+            public Builder SetTrailingTrivia(ImmutableArray<Trivia> trivia)
             {
                 this.TrailingTrivia = trivia;
                 return this;

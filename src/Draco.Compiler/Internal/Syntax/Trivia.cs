@@ -22,7 +22,7 @@ internal abstract partial record class ParseTree
         public string Text { get; }
 
         /// <summary>
-        /// The width of this <see cref="Token"/> in characters.
+        /// The width of this <see cref="Trivia"/> in characters.
         /// </summary>
         public override int Width => this.Text.Length;
 

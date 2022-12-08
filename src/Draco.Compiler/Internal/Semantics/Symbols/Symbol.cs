@@ -195,6 +195,20 @@ internal partial interface ISymbol
     }
 }
 
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A type definition symbol.
+    /// </summary>
+    public interface ITypeDefinition : ISymbol
+    {
+        /// <summary>
+        /// The type that is defined.
+        /// </summary>
+        public Type DefinedType { get; }
+    }
+}
+
 // Implementations /////////////////////////////////////////////////////////////
 
 // TODO

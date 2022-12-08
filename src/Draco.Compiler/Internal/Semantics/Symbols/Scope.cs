@@ -33,6 +33,11 @@ internal partial interface IScope
     public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
 
     /// <summary>
+    /// True, if this is a function scope.
+    /// </summary>
+    public bool IsFunction { get; }
+
+    /// <summary>
     /// Attempts to look up a <see cref="Declaration"/> with a given name.
     /// </summary>
     /// <param name="name">The name of the <see cref="Declaration"/> to look for.</param>

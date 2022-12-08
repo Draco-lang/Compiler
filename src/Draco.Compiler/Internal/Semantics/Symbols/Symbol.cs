@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -220,4 +221,51 @@ internal partial interface ISymbol
 
 // Implementations /////////////////////////////////////////////////////////////
 
-// TODO
+internal partial interface ISymbol
+{
+    // Base helper class for symbols that are materialized in the tree
+    private abstract class InTreeBase : ISymbol
+    {
+        public string Name { get; }
+        public ParseTree Definition { get; }
+        public bool IsError => false;
+        public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+        public IScope DefiningScope => SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition)
+                                    ?? throw new InvalidOperationException();
+        public virtual IFunction? DefiningFunction
+        {
+            get
+            {
+                // Walk up until we hit a function scope
+                var scope = this.DefiningScope;
+                do
+                {
+                    scope = scope.Parent;
+                    if (scope is null) return null;
+                }
+                while (!scope.IsFunction);
+
+                var funcDef = scope.Definition;
+                Debug.Assert(funcDef is not null);
+
+                var funcSymbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, funcDef);
+                Debug.Assert(funcSymbol is not null);
+
+                return (IFunction)funcSymbol;
+            }
+        }
+        public virtual bool IsExternallyVisible => false;
+        public bool IsGlobal => (this.DefiningScope?.Kind ?? ScopeKind.Global) == ScopeKind.Global;
+
+        private readonly QueryDatabase db;
+
+        protected InTreeBase(QueryDatabase db, string name, ParseTree definition)
+        {
+            this.db = db;
+            this.Name = name;
+            this.Definition = definition;
+        }
+
+        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+    }
+}

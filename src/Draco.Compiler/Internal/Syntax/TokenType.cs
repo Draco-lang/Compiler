@@ -12,15 +12,15 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal static class TokenTypeExtensions
 {
-    /// <summary>
-    /// Checks, if <paramref name="tokenType"/> counts as a trivia category.
-    /// </summary>
-    /// <param name="tokenType">The <see cref="TokenType"/> to check.</param>
-    /// <returns>True, if <paramref name="tokenType"/> is a trivia category.</returns>
-    public static bool IsTrivia(this TokenType tokenType) =>
-           tokenType == TokenType.Whitespace
-        || tokenType == TokenType.Newline
-        || tokenType == TokenType.LineComment;
+    ///// <summary>
+    ///// Checks, if <paramref name="tokenType"/> counts as a trivia category.
+    ///// </summary>
+    ///// <param name="tokenType">The <see cref="TokenType"/> to check.</param>
+    ///// <returns>True, if <paramref name="tokenType"/> is a trivia category.</returns>
+    //public static bool IsTrivia(this TokenType tokenType) =>
+    //       tokenType == TokenType.Whitespace
+    //    || tokenType == TokenType.Newline
+    //    || tokenType == TokenType.LineComment;
 
     /// <summary>
     /// Attempts to retrieve the textual representation of a token with a type <paramref name="tokenType"/>.

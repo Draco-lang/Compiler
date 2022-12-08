@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -23,6 +25,8 @@ internal abstract partial record class ParseTree
         /// The width of this <see cref="Token"/> in characters.
         /// </summary>
         public override int Width => this.Text.Length;
+
+        public override IEnumerable<ParseTree> Children => Enumerable.Empty<ParseTree>();
 
         private Trivia(TriviaType type, string text)
         {

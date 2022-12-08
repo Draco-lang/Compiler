@@ -102,4 +102,10 @@ internal abstract partial class ParseTreeTransformerBase
         changed = false;
         return token;
     }
+
+    public virtual Trivia TransformTrivia(Trivia trivia, out bool changed)
+    {
+        changed = false;
+        return trivia;
+    }
 }

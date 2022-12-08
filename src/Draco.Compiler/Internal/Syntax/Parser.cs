@@ -819,7 +819,7 @@ internal sealed class Parser
         var openQuote = this.Expect(TokenType.MultiLineStringStart);
         var content = ImmutableArray.CreateBuilder<StringPart>();
         // We check if there's a newline
-        if (!openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline))
+        if (!openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline))
         {
             // Possible stray tokens inline
             var strayTokens = this.Synchronize(t => t switch
@@ -862,16 +862,16 @@ internal sealed class Parser
         //  - the string is empty and the opening quotes trailing trivia contains a newline
         var isClosingQuoteOnNewline =
                closeQuote.LeadingTrivia.Length > 0
-            || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline));
+            || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline));
         if (isClosingQuoteOnNewline)
         {
             Debug.Assert(closeQuote.LeadingTrivia.Length <= 2);
-            Debug.Assert(openQuote.TrailingTrivia.Any(t => t.Type == TokenType.Newline)
-                      || closeQuote.LeadingTrivia.Any(t => t.Type == TokenType.Newline));
+            Debug.Assert(openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline)
+                      || closeQuote.LeadingTrivia.Any(t => t.Type == TriviaType.Newline));
             if (closeQuote.LeadingTrivia.Length == 2)
             {
                 // The first trivia was newline, the second must be spaces
-                Debug.Assert(closeQuote.LeadingTrivia[1].Type == TokenType.Whitespace);
+                Debug.Assert(closeQuote.LeadingTrivia[1].Type == TriviaType.Whitespace);
                 // For simplicity we rebuild the contents to be able to append diagnostics
                 var newContent = ImmutableArray.CreateBuilder<StringPart>();
                 // We take the whitespace text and check if every line in the string obeys that as a prefix

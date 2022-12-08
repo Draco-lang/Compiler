@@ -101,8 +101,8 @@ internal sealed class Lexer
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
     private readonly Token.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly ImmutableArray<Token>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<Token>();
-    private readonly ImmutableArray<Token>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<Token>();
+    private readonly ImmutableArray<Trivia>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<Trivia>();
+    private readonly ImmutableArray<Trivia>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<Trivia>();
     private readonly ImmutableArray<Diagnostic>.Builder diagnosticList = ImmutableArray.CreateBuilder<Diagnostic>();
 
     public Lexer(ISourceReader sourceReader)
@@ -752,7 +752,7 @@ internal sealed class Lexer
         while (this.TryParseTrivia(out var trivia))
         {
             this.trailingTriviaList.Add(trivia);
-            if (trivia.Type == TokenType.Newline) break;
+            if (trivia.Type == TriviaType.Newline) break;
         }
     }
 
@@ -761,7 +761,7 @@ internal sealed class Lexer
     /// </summary>
     /// <param name="result">The parsed trivia token is written here.</param>
     /// <returns>True, if a trivia token was parsed.</returns>
-    private bool TryParseTrivia([MaybeNullWhen(false)] out Token result)
+    private bool TryParseTrivia([MaybeNullWhen(false)] out Trivia result)
     {
         var ch = this.Peek();
         // Newline
@@ -773,7 +773,7 @@ internal sealed class Lexer
                 this.modeStack.Pop();
                 while (this.CurrentMode.Kind != ModeKind.Normal) this.modeStack.Pop();
             }
-            result = Token.From(TokenType.Newline, this.AdvanceWithText(newlineLength));
+            result = Trivia.From(TriviaType.Newline, this.AdvanceWithText(newlineLength));
             return true;
         }
         // Any horizontal whitespace
@@ -782,7 +782,7 @@ internal sealed class Lexer
             // We merge it into one chunk to not produce so many individual tokens
             var offset = 1;
             while (IsSpace(this.Peek(offset))) ++offset;
-            result = Token.From(TokenType.Whitespace, this.AdvanceWithText(offset));
+            result = Trivia.From(TriviaType.Whitespace, this.AdvanceWithText(offset));
             return true;
         }
         // Line-comment
@@ -793,7 +793,7 @@ internal sealed class Lexer
             // which means that this will terminate, even if the comment was on the last line of the file
             // without a line break
             while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
-            result = Token.From(TokenType.LineComment, this.AdvanceWithText(offset));
+            result = Trivia.From(TriviaType.LineComment, this.AdvanceWithText(offset));
             return true;
         }
         // Not trivia

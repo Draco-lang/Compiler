@@ -20,7 +20,7 @@ namespace Draco.Compiler.Internal.Semantics.Types;
 /// <param name="Symbols">The inferred type of symbols.</param>
 /// <param name="Expressions">The inferred type of expressions.</param>
 internal readonly record struct TypeInferenceResult(
-    IReadOnlyDictionary<Symbol, Type> Symbols,
+    IReadOnlyDictionary<ISymbol, Type> Symbols,
     IReadOnlyDictionary<ParseTree.Expr, Type> Expressions);
 
 /// <summary>
@@ -39,7 +39,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     private readonly ConstraintSolver solver = new();
     private readonly QueryDatabase db;
 
-    private readonly Dictionary<Symbol, Type> symbols = new();
+    private readonly Dictionary<ISymbol, Type> symbols = new();
     private readonly Dictionary<ParseTree.Expr, Type> expressions = new();
 
     private readonly Type returnType;

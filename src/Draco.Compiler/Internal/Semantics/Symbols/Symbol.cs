@@ -50,9 +50,9 @@ internal partial interface ISymbol
     public IFunction? DefiningFunction { get; }
 
     /// <summary>
-    /// The <see cref="Location"/> this symbol was defined at.
+    /// The <see cref="ParseTree"/> this symbol was defined by.
     /// </summary>
-    public Location Definition { get; }
+    public ParseTree? Definition { get; }
 
     /// <summary>
     /// True, if the symbol is visible externally.
@@ -74,19 +74,28 @@ internal partial interface ISymbol
 internal partial interface ISymbol
 {
     /// <summary>
+    /// Any symbol that has a meaningful type, when referenced.
+    /// </summary>
+    public interface ITyped : ISymbol
+    {
+        /// <summary>
+        /// The type of the symbol.
+        /// </summary>
+        public Type Type { get; }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
     /// Any variable symbol.
     /// </summary>
-    public interface IVariable : ISymbol
+    public interface IVariable : ITyped
     {
         /// <summary>
         /// True, if this is a mutable variable.
         /// </summary>
         public bool IsMutable { get; }
-
-        /// <summary>
-        /// The type of the variable.
-        /// </summary>
-        public Type Type { get; }
     }
 }
 
@@ -161,7 +170,7 @@ internal partial interface ISymbol
     /// <summary>
     /// Any function symbol.
     /// </summary>
-    public interface IFunction : ISymbol
+    public interface IFunction : ITyped
     {
         /// <summary>
         /// The scope this function introduces.
@@ -181,7 +190,7 @@ internal partial interface ISymbol
         /// <summary>
         /// The type of the function.
         /// </summary>
-        public Type.Function Type { get; }
+        public new Type.Function Type { get; }
     }
 }
 
@@ -190,7 +199,7 @@ internal partial interface ISymbol
     /// <summary>
     /// Any member symbol.
     /// </summary>
-    public interface IMember : ISymbol
+    public interface IMember : ITyped
     {
     }
 }

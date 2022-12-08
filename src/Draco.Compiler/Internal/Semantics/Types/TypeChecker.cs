@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.Symbols;
+using static System.Formats.Asn1.AsnWriter;
 using static Draco.Compiler.Api.Diagnostics.Location;
 
 namespace Draco.Compiler.Internal.Semantics.Types;
@@ -64,8 +65,8 @@ internal static class TypeChecker
             // TODO: This is a temporary solution
             // Later, we'll need symbol resolution to be able to reference type-symbols only and such
             // For now this is a simple, greedy workaround
-            ParseTree.TypeExpr.Name namedType => SymbolResolution.GetReferencedSymbol(db, namedType) is Symbol.TypeAlias typeAlias
-                ? typeAlias.Type
+            ParseTree.TypeExpr.Name namedType => SymbolResolution.GetReferencedSymbol(db, namedType) is ISymbol.ITypeDefinition typeDef
+                ? typeDef.DefinedType
                 : throw new InvalidOperationException(),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
@@ -101,51 +102,15 @@ internal static class TypeChecker
     };
 
     /// <summary>
-    /// Retrieves the <see cref="Type"/> of a <see cref="Symbol"/>.
+    /// Retrieves the <see cref="Type"/> of a <see cref="ISymbol"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="symbol">The <see cref="Symbol"/> to get the <see cref="Type"/> of.</param>
+    /// <param name="symbol">The <see cref="ISymbol"/> to get the <see cref="Type"/> of.</param>
     /// <returns>The <see cref="Type"/> of <paramref name="symbol"/>.</returns>
-    public static Type TypeOf(QueryDatabase db, Symbol symbol)
+    public static Type TypeOf(QueryDatabase db, ISymbol symbol)
     {
-        if (symbol is Symbol.Variable)
-        {
-            // TODO: Have some sensible refactoring for this or utility in SymbolResolution?
-            // Maybe even the ability to ask the declaring function from the variable symbol or something?
-            // Walk up to the nearest scope that's either global or function
-            var scope = symbol.EnclosingScope ?? throw new InvalidOperationException();
-            while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
-            {
-                scope = scope.Parent ?? throw new InvalidOperationException();
-            }
-            // TODO: Not necessarily a variable
-            // Infer the variables from the scope
-            var inferenceResult = InferLocalTypes(db, scope);
-            return inferenceResult.Symbols[symbol];
-        }
-        else if (symbol is Symbol.Parameter)
-        {
-            var definition = (ParseTree.FuncParam)symbol.Definition!;
-            return Evaluate(db, definition.Type.Type);
-        }
-        else if (symbol is Symbol.Function)
-        {
-            var definition = (ParseTree.Decl.Func)symbol.Definition!;
-            var paramTypes = definition.Params.Value.Elements
-                .Select(p => Evaluate(db, p.Value.Type.Type))
-                .ToImmutableArray();
-            var returnType = definition.ReturnType is null ? Type.Unit : Evaluate(db, definition.ReturnType.Type);
-            return new Type.Function(paramTypes, returnType);
-        }
-        else if (symbol is Symbol.Intrinsic intrinsic)
-        {
-            return intrinsic.Type;
-        }
-        else
-        {
-            // TODO
-            throw new NotImplementedException();
-        }
+        if (symbol is not ISymbol.ITyped typed) throw new InvalidOperationException();
+        return typed.Type;
     }
 
     /// <summary>
@@ -156,15 +121,7 @@ internal static class TypeChecker
     /// <returns>The <see cref="Type"/> of <paramref name="expr"/>.</returns>
     private static Type GetTypeOfLocal(QueryDatabase db, ParseTree.Expr expr)
     {
-        var scope = SymbolResolution.GetContainingScopeOrNull(db, expr) ?? throw new InvalidOperationException();
-        // TODO: Duplicate
-        // TODO: Have some sensible refactoring for this or utility in SymbolResolution?
-        // Maybe even the ability to ask the declaring function from the variable symbol or something?
-        // Walk up to the nearest scope that's either global or function
-        while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
-        {
-            scope = scope.Parent ?? throw new InvalidOperationException();
-        }
+        var scope = GetInferrableAncestor(db, expr);
         // TODO: Not necessarily a variable
         // Infer the variables from the scope
         var inferenceResult = InferLocalTypes(db, scope);
@@ -175,26 +132,39 @@ internal static class TypeChecker
     /// Infers the <see cref="Type"/>s of entities in a given function <see cref="Scope"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="scope">The function <see cref="Scope"/> to infer types for.</param>
+    /// <param name="tree">The subtree to infer types in.</param>
     /// <returns>The result of type inference.</returns>
-    private static TypeInferenceResult InferLocalTypes(QueryDatabase db, Scope scope)
-    {
-        Debug.Assert(scope.Kind == ScopeKind.Function);
-        Debug.Assert(scope.Definition is not null);
+    private static TypeInferenceResult InferLocalTypes(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+        args: tree,
+        createContext: () =>
+        {
+            var definition = (ParseTree.Decl.Func)tree;
+            var defType = definition.ReturnType is null ? Type.Unit : Evaluate(db, definition.ReturnType.Type);
+            return new TypeInferenceVisitor(db, defType);
+        },
+        recompute: (visitor, tree) =>
+        {
+            visitor.Visit(tree);
+            return visitor.Result;
+        },
+        handleCycle: (visitor, tree) => visitor.PartialResult);
 
-        return db.GetOrUpdate(
-            args: scope,
-            createContext: () =>
-            {
-                var definition = (ParseTree.Decl.Func)scope.Definition;
-                var defType = definition.ReturnType is null ? Type.Unit : Evaluate(db, definition.ReturnType.Type);
-                return new TypeInferenceVisitor(db, defType);
-            },
-            recompute: (visitor, scope) =>
-            {
-                visitor.Visit(scope.Definition!);
-                return visitor.Result;
-            },
-            handleCycle: (visitor, scope) => visitor.PartialResult);
+    /// <summary>
+    /// Retrieves the <see cref="ParseTree"/> ancestor that can be used for type inference for <paramref name="tree"/>.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseTree"/> to get the ancestor of.</param>
+    /// <returns>The inferrable ancestor of <paramref name="tree"/>.</returns>
+    private static ParseTree GetInferrableAncestor(QueryDatabase db, ParseTree tree)
+    {
+        var scope = SymbolResolution.GetContainingScopeOrNull(db, tree);
+        Debug.Assert(scope is not null);
+        // Walk up to the nearest scope that's either global or function
+        while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
+        {
+            scope = scope.Parent ?? throw new InvalidOperationException();
+        }
+        Debug.Assert(scope.Definition is not null);
+        return scope.Definition;
     }
 }

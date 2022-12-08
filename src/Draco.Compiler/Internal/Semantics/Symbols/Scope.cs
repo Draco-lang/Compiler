@@ -101,7 +101,7 @@ internal readonly struct DeclarationTimeline
 /// <param name="Position">The relative position of the delcaration relative to the containing scope.
 /// The position is where the symbol is available from.</param>
 /// <param name="Symbol">The declared <see cref="Semantics.Symbol"/>.</param>
-internal readonly record struct Declaration(int Position, Symbol Symbol)
+internal readonly record struct Declaration(int Position, ISymbol Symbol)
 {
     /// <summary>
     /// The name of the contained <see cref="Symbol"/>.

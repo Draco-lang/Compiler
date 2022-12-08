@@ -84,7 +84,7 @@ internal static class AstFactory
         op: Symbol.IntrinsicOperator.Not_Bool,
         subexpr: subexpr);
 
-    public static Expr Reference(ISymbol symbol) => new Expr.Reference(
+    public static Expr Reference(ISymbol.ITyped symbol) => new Expr.Reference(
         ParseTree: null,
         Symbol: symbol);
 

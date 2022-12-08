@@ -155,7 +155,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
 
     public override string? VisitVariableDecl(Ast.Decl.Variable node)
     {
-        var name = this.AllocateName((Symbol)node.DeclarationSymbol);
+        var name = this.AllocateName(node.DeclarationSymbol);
         var value = node.Value is null ? null : this.VisitExpr(node.Value);
         this.DefineRegister(node.DeclarationSymbol.Type, name, value);
         return this.Default;
@@ -295,7 +295,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     public override string VisitReferenceExpr(Ast.Expr.Reference node) =>
         this.AllocateName(node.Symbol);
 
-    private static string? MapUnaryOperator(Symbol.IOperator op, string? sub)
+    private static string? MapUnaryOperator(ISymbol.IUnaryOperator op, string? sub)
     {
         if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
         if (sub is null) return null;
@@ -307,7 +307,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         };
     }
 
-    private static string? MapBinaryOperator(Symbol.IOperator op, string? left, string? right)
+    private static string? MapBinaryOperator(ISymbol.IBinaryOperator op, string? left, string? right)
     {
         if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
         if (left is null || right is null) return null;

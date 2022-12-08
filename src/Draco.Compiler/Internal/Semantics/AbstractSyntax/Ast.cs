@@ -295,17 +295,10 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Reference(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol Symbol) : Expr
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ITyped Symbol) : Expr
         {
-            // TODO
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => this.Symbol switch
-            {
-                // TODO: Maybe just have an ITyped symbol?
-                Symbol.Function f => f.Type,
-                Symbol.Intrinsic i => i.Type,
-                _ => throw new NotImplementedException(),
-            };
+            public override Type EvaluationType => this.Symbol.Type;
         }
     }
 
@@ -335,7 +328,7 @@ internal abstract record class Ast
     /// </summary>
     public record class ComparisonElement(
         [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-        [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol.IOperator Operator,
+        [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IBinaryOperator Operator,
         Expr Right) : Ast;
 
     /// <summary>

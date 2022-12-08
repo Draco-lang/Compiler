@@ -45,14 +45,9 @@ internal partial interface ISymbol
     public Scope? EnclosingScope { get; }
 
     /// <summary>
-    /// The syntax node that defined this symbol.
-    /// </summary>
-    public ParseTree? Definition { get; }
-
-    /// <summary>
     /// The <see cref="Location"/> this symbol was defined at.
     /// </summary>
-    public Location DefinitionLocation { get; }
+    public Location Definition { get; }
 
     /// <summary>
     /// True, if the symbol is visible externally.

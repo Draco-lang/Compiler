@@ -36,11 +36,11 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Func(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol.Function DeclarationSymbol,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction DeclarationSymbol,
             Expr.Block Body) : Decl
         {
             [Ignore(IgnoreFlags.VisitorVisit | IgnoreFlags.TransformerAll)]
-            public ImmutableArray<Symbol.Parameter> Params => this.DeclarationSymbol.Params;
+            public ImmutableArray<ISymbol.IParameter> Params => this.DeclarationSymbol.Parameters;
 
             [Ignore(IgnoreFlags.TransformerAll)]
             public Type ReturnType => this.DeclarationSymbol.ReturnType;
@@ -51,14 +51,14 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Label(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol LabelSymbol) : Decl;
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel LabelSymbol) : Decl;
 
         /// <summary>
         /// A variable declaration.
         /// </summary>
         public sealed record class Variable(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol.IVariable DeclarationSymbol,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IVariable DeclarationSymbol,
             Expr? Value) : Decl
         {
             [Ignore(IgnoreFlags.TransformerAll)]
@@ -146,7 +146,7 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Goto(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol Target) : Expr
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel Target) : Expr
         {
             // NOTE: Eventually this should be the bottom type
             [Ignore(IgnoreFlags.TransformerAll)]
@@ -197,7 +197,7 @@ internal abstract record class Ast
         public sealed record class MemberAccess(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
             Expr Object,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol Member) : Expr
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IMember Member) : Expr
         {
             // TODO
             [Ignore(IgnoreFlags.TransformerAll)]
@@ -209,11 +209,11 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Unary(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol.IOperator Operator,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IUnaryOperator Operator,
             Expr Operand) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => this.Operator.ReturnType;
+            public override Type EvaluationType => this.Operator.ResultType;
         }
 
         /// <summary>
@@ -222,11 +222,11 @@ internal abstract record class Ast
         public sealed record class Binary(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
             Expr Left,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol.IOperator Operator,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IBinaryOperator Operator,
             Expr Right) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => this.Operator.ReturnType;
+            public override Type EvaluationType => this.Operator.ResultType;
         }
 
         /// <summary>
@@ -248,7 +248,7 @@ internal abstract record class Ast
         public sealed record class Assign(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
             Expr Target,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol.IOperator? CompoundOperator,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IBinaryOperator? CompoundOperator,
             Expr Value) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
@@ -295,7 +295,7 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Reference(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] Symbol Symbol) : Expr
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol Symbol) : Expr
         {
             // TODO
             [Ignore(IgnoreFlags.TransformerAll)]

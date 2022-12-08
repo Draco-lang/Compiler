@@ -91,12 +91,12 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
         _ => tree.GetType().Name,
     };
 
-    private Scope? GetDefinedScope(ParseTree tree) =>
+    private IScope? GetDefinedScope(ParseTree tree) =>
         SymbolResolution.GetDefinedScopeOrNull(this.db, tree);
 
-    private Symbol? GetDefinedSymbol(ParseTree tree) =>
+    private ISymbol? GetDefinedSymbol(ParseTree tree) =>
         SymbolResolution.GetDefinedSymbolOrNull(this.db, tree);
 
-    private Symbol? GetReferencedSymbol(ParseTree tree) =>
+    private ISymbol? GetReferencedSymbol(ParseTree tree) =>
         SymbolResolution.GetReferencedSymbolOrNull(this.db, tree);
 }

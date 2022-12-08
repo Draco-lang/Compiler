@@ -10,65 +10,27 @@ using Draco.Compiler.Internal.Query;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
 
+// Interfaces //////////////////////////////////////////////////////////////////
+
 /// <summary>
-/// The different kinds of scopes possible.
+/// The interface of all scopes.
 /// </summary>
-internal enum ScopeKind
+internal partial interface IScope
 {
     /// <summary>
-    /// Global scope.
+    /// The parent of this scope.
     /// </summary>
-    Global,
+    public IScope? Parent { get; }
 
-    /// <summary>
-    /// A scope the function defines as its boundary.
-    /// </summary>
-    Function,
-
-    /// <summary>
-    /// Completely local scope.
-    /// </summary>
-    Local,
-}
-
-internal sealed class Scope
-{
     /// <summary>
     /// The <see cref="ParseTree"/> that introduced this scope.
     /// </summary>
     public ParseTree? Definition { get; }
 
     /// <summary>
-    /// The kind of scope.
-    /// </summary>
-    public ScopeKind Kind { get; }
-
-    /// <summary>
     /// The symbol names in this scope associated with their <see cref="DeclarationTimeline"/>s.
     /// </summary>
     public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
-
-    /// <summary>
-    /// The parent <see cref="Scope"/> of this one.
-    /// </summary>
-    public Scope? Parent => SymbolResolution.GetParentScopeOrNull(this.db, this);
-
-    /// <summary>
-    /// The <see cref="QueryDatabase"/> that computed this <see cref="Scope"/>.
-    /// </summary>
-    private readonly QueryDatabase db;
-
-    internal Scope(
-        QueryDatabase db,
-        ParseTree? definition,
-        ScopeKind kind,
-        ImmutableDictionary<string, DeclarationTimeline> timelines)
-    {
-        this.db = db;
-        this.Definition = definition;
-        this.Kind = kind;
-        this.Timelines = timelines;
-    }
 
     /// <summary>
     /// Attempts to look up a <see cref="Declaration"/> with a given name.
@@ -77,12 +39,12 @@ internal sealed class Scope
     /// <param name="referencedPosition">The position we allow lookup up until.</param>
     /// <returns>The <see cref="Declaration"/> that has name <paramref name="name"/> and is visible from
     /// position <paramref name="referencedPosition"/>, or null if there is none such.</returns>
-    public Declaration? LookUp(string name, int referencedPosition)
-    {
-        if (!this.Timelines.TryGetValue(name, out var timeline)) return null;
-        return timeline.LookUp(referencedPosition);
-    }
+    public Declaration? LookUp(string name, int referencedPosition);
 }
+
+// Implementations /////////////////////////////////////////////////////////////
+
+// TODO
 
 /// <summary>
 /// Represents the timeline of <see cref="Symbol"/>s that are introduced in the same <see cref="Scope"/>

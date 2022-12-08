@@ -73,9 +73,9 @@ internal static class SymbolResolution
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that references a symbol.</param>
     /// <returns>The referenced <see cref="Symbol"/>, which can represent a reference error.</returns>
-    public static Symbol GetReferencedSymbol(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+    public static ISymbol GetReferencedSymbol(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
-        Symbol (tree) =>
+        ISymbol (tree) =>
         {
             if (!TryGetReferencedSymbolName(tree, out var name)) throw new InvalidOperationException();
             var symbol = ReferenceSymbolOrNull(db, tree, name);
@@ -97,7 +97,7 @@ internal static class SymbolResolution
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="scope">The scope to retieve the parent of.</param>
     /// <returns>The parent scope of <paramref name="scope"/>.</returns>
-    public static Scope? GetParentScopeOrNull(QueryDatabase db, Scope scope)
+    public static IScope? GetParentScopeOrNull(QueryDatabase db, IScope scope)
     {
         if (scope.Definition is null) throw new InvalidOperationException();
         var ancestor = GetScopeDefiningAncestor(scope.Definition);
@@ -111,9 +111,9 @@ internal static class SymbolResolution
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that we need the surrounding <see cref="Scope"/> of.</param>
     /// <returns>The surrounding <see cref="Scope"/> of <paramref name="tree"/>.</returns>
-    public static Scope? GetContainingScopeOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+    public static IScope? GetContainingScopeOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
-        Scope? (tree) =>
+        IScope? (tree) =>
         {
             var parent = GetScopeDefiningAncestor(tree);
             if (parent is null) return null;
@@ -127,9 +127,9 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> to retrieve the <see cref="Scope"/> for.</param>
     /// <returns>The <see cref="Scope"/> associated with <paramref name="tree"/>, or null
     /// if it does not define a scope.</returns>
-    public static Scope? GetDefinedScopeOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+    public static IScope? GetDefinedScopeOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
-        Scope? (tree) =>
+        IScope? (tree) =>
         {
             // First get the kind of scope this tree can define
             // If the kind is null, this node simply does not define a scope
@@ -179,9 +179,9 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that is asked if it defines a <see cref="Symbol"/>.</param>
     /// <returns>The <see cref="Symbol"/> that <paramref name="tree"/> defines, or null if
     /// it does not define any symbol.</returns>
-    public static Symbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+    public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
-        Symbol? (tree) => tree switch
+        ISymbol? (tree) => tree switch
         {
             ParseTree.Decl.Variable variable => new Symbol.Variable(
                 db: db,
@@ -210,7 +210,7 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
     /// <returns>The <see cref="Symbol"/> that <paramref name="tree"/> references, or null if
     /// it does not reference any.</returns>
-    public static Symbol? GetReferencedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+    public static ISymbol? GetReferencedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
         tree => TryGetReferencedSymbolName(tree, out var name)
             ? ReferenceSymbolOrNull(db, tree, name)
@@ -223,9 +223,9 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
     /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
-    private static Symbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name) => db.GetOrUpdate(
+    private static ISymbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name) => db.GetOrUpdate(
         (tree, name),
-        Symbol? (tree, name) =>
+        ISymbol? (tree, name) =>
         {
             // Walk up the tree for the scope owner
             var ancestor = GetScopeDefiningAncestor(tree);
@@ -351,11 +351,11 @@ internal static class SymbolResolution
     /// <param name="symbol">The symbol that introduces a binding.</param>
     /// <returns>The <see cref="BindingKind"/> of <paramref name="symbol"/>.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    private static BindingKind GetBindingKind(Symbol symbol) => symbol switch
+    private static BindingKind GetBindingKind(ISymbol symbol) => symbol switch
     {
-        Symbol.Label or Symbol.Function => BindingKind.OrderIndependent,
-        Symbol.Variable => BindingKind.NonRecursive,
-        Symbol.Parameter => BindingKind.NonRecursive,
+        ISymbol.ILabel or ISymbol.IFunction => BindingKind.OrderIndependent,
+        ISymbol.IParameter => BindingKind.NonRecursive,
+        ISymbol.IVariable => BindingKind.NonRecursive,
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
@@ -405,7 +405,7 @@ internal static class SymbolResolution
 
     private static void InjectIntrinsics(List<Declaration> declarations)
     {
-        void Add(Symbol symbol) =>
+        void Add(ISymbol symbol) =>
             declarations.Add(new(0, symbol));
 
         void AddBuiltinType(string name, System.Type type) =>

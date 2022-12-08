@@ -14,11 +14,11 @@ namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 /// </summary>
 internal static class AstFactory
 {
-    public static Decl Label(Symbol symbol) => new Decl.Label(
+    public static Decl Label(ISymbol.ILabel symbol) => new Decl.Label(
         ParseTree: null,
         LabelSymbol: symbol);
 
-    public static Decl Var(Symbol.IVariable varSymbol, Expr value) => new Decl.Variable(
+    public static Decl Var(ISymbol.IVariable varSymbol, Expr value) => new Decl.Variable(
         ParseTree: null,
         DeclarationSymbol: varSymbol,
         Value: value);
@@ -38,7 +38,7 @@ internal static class AstFactory
 
     public static Expr Block(params Stmt[] stmts) => Block(stmts as IEnumerable<Stmt>);
 
-    public static Expr Goto(Symbol labelSymbol) => new Expr.Goto(
+    public static Expr Goto(ISymbol.ILabel labelSymbol) => new Expr.Goto(
         ParseTree: null,
         Target: labelSymbol);
 
@@ -53,12 +53,12 @@ internal static class AstFactory
         then: Block(Stmt(then)),
         @else: Expr.Unit.Default));
 
-    public static Expr Unary(Symbol.IOperator op, Expr subexpr) => new Expr.Unary(
+    public static Expr Unary(ISymbol.IUnaryOperator op, Expr subexpr) => new Expr.Unary(
         ParseTree: null,
         Operator: op,
         Operand: subexpr);
 
-    public static Expr Binary(Expr left, Symbol.IOperator op, Expr right) => new Expr.Binary(
+    public static Expr Binary(Expr left, ISymbol.IBinaryOperator op, Expr right) => new Expr.Binary(
         ParseTree: null,
         Left: left,
         Operator: op,
@@ -84,7 +84,7 @@ internal static class AstFactory
         op: Symbol.IntrinsicOperator.Not_Bool,
         subexpr: subexpr);
 
-    public static Expr Reference(Symbol symbol) => new Expr.Reference(
+    public static Expr Reference(ISymbol symbol) => new Expr.Reference(
         ParseTree: null,
         Symbol: symbol);
 

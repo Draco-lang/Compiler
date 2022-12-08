@@ -31,7 +31,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     private readonly Stack<StringBuilder> builderStack = new();
 
     // Name allocation state
-    private readonly Dictionary<Symbol, string> symbolNames = new();
+    private readonly Dictionary<ISymbol, string> symbolNames = new();
     private int registerCount = 0;
     private int labelCount = 0;
 
@@ -67,7 +67,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
 
     private string AllocateRegister() => $"reg_{this.registerCount++}";
     private string AllocateLabel() => $"label_{this.labelCount++}";
-    private string AllocateName(Symbol symbol)
+    private string AllocateName(ISymbol symbol)
     {
         if (!this.symbolNames.TryGetValue(symbol, out var name))
         {
@@ -333,7 +333,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         };
     }
 
-    private static string? MapAssignmentOperator(Symbol.IOperator? op, string? left, string? right)
+    private static string? MapAssignmentOperator(ISymbol.IBinaryOperator? op, string? left, string? right)
     {
         if (op is null) return $"{left} = {right}";
         if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();

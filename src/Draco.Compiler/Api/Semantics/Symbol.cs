@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
-using InternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.Symbol;
+using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -52,9 +52,9 @@ internal sealed class Symbol : ISymbol
             .Select(diag => diag.ToApiDiagnostic(null))
             .ToImmutableArray();
 
-    internal InternalSymbol InternalSymbol { get; }
+    internal IInternalSymbol InternalSymbol { get; }
 
-    public Symbol(InternalSymbol internalSymbol)
+    public Symbol(IInternalSymbol internalSymbol)
     {
         this.InternalSymbol = internalSymbol;
     }

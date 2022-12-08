@@ -45,6 +45,11 @@ internal partial interface ISymbol
     public IScope? DefiningScope { get; }
 
     /// <summary>
+    /// The <see cref="IFunction"/> that this symbol was defined in.
+    /// </summary>
+    public IFunction? DefiningFunction { get; }
+
+    /// <summary>
     /// The <see cref="Location"/> this symbol was defined at.
     /// </summary>
     public Location Definition { get; }
@@ -158,6 +163,11 @@ internal partial interface ISymbol
     /// </summary>
     public interface IFunction : ISymbol
     {
+        /// <summary>
+        /// The scope this function introduces.
+        /// </summary>
+        public IScope? DefinedScope { get; }
+
         /// <summary>
         /// The parameters of this function.
         /// </summary>

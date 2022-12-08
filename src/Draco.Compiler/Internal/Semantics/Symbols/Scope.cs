@@ -33,6 +33,11 @@ internal partial interface IScope
     public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
 
     /// <summary>
+    /// True, if this is the global scope.
+    /// </summary>
+    public bool IsGlobal { get; }
+
+    /// <summary>
     /// True, if this is a function scope.
     /// </summary>
     public bool IsFunction { get; }

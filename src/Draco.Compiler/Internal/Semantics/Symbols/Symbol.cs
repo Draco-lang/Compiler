@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
@@ -223,6 +224,31 @@ internal partial interface ISymbol
 
 internal partial interface ISymbol
 {
+    // Base for errors
+    private abstract class ErrorBase : ISymbol
+    {
+        public string Name { get; }
+        public bool IsError => true;
+        public ImmutableArray<Diagnostic> Diagnostics { get; }
+        public virtual IScope? DefiningScope => null;
+        public virtual IFunction? DefiningFunction => null;
+        public virtual ParseTree? Definition => null;
+        public bool IsExternallyVisible => false;
+        public bool IsGlobal => false;
+
+        protected ErrorBase(string name, ImmutableArray<Diagnostic> diagnostics)
+        {
+            this.Name = name;
+            this.Diagnostics = diagnostics;
+        }
+
+        // TODO
+        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+    }
+}
+
+internal partial interface ISymbol
+{
     // Base helper class for symbols that are materialized in the tree
     private abstract class InTreeBase : ISymbol
     {
@@ -230,8 +256,15 @@ internal partial interface ISymbol
         public ParseTree Definition { get; }
         public bool IsError => false;
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
-        public IScope DefiningScope => SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition)
-                                    ?? throw new InvalidOperationException();
+        public IScope DefiningScope
+        {
+            get
+            {
+                var result = SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition);
+                Debug.Assert(result is not null);
+                return result;
+            }
+        }
         public virtual IFunction? DefiningFunction
         {
             get
@@ -255,7 +288,7 @@ internal partial interface ISymbol
             }
         }
         public virtual bool IsExternallyVisible => false;
-        public bool IsGlobal => (this.DefiningScope?.Kind ?? ScopeKind.Global) == ScopeKind.Global;
+        public bool IsGlobal => this.DefiningScope.IsGlobal;
 
         private readonly QueryDatabase db;
 
@@ -266,6 +299,45 @@ internal partial interface ISymbol
             this.Definition = definition;
         }
 
+        // TODO
         public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+    }
+}
+
+internal partial interface ISymbol
+{
+    // Base helper class for symbols that are synthetized
+    private abstract class SynthetizedBase : ISymbol
+    {
+        public string Name { get; }
+        public bool IsError => false;
+        public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+        public IScope? DefiningScope => null;
+        public IFunction? DefiningFunction => null;
+        public ParseTree? Definition => null;
+        public virtual bool IsExternallyVisible => false;
+        public virtual bool IsGlobal => false;
+
+        protected SynthetizedBase(string name)
+        {
+            this.Name = name;
+        }
+
+        // TODO
+        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A symbol for a reference error.
+    /// </summary>
+    private sealed class ReferenceError : ErrorBase
+    {
+        public ReferenceError(string name, ImmutableArray<Diagnostic> diagnostics)
+            : base(name, diagnostics)
+        {
+        }
     }
 }

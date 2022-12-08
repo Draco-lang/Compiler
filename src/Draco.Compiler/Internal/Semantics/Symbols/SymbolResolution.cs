@@ -73,9 +73,9 @@ internal static class SymbolResolution
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that references a symbol.</param>
     /// <returns>The referenced <see cref="Symbol"/>, which can represent a reference error.</returns>
-    public static Symbol GetReferencedSymbol(QueryDatabase db, ParseTree tree)
-    {
-        Symbol Impl(ParseTree tree)
+    public static Symbol GetReferencedSymbol(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+        tree,
+        Symbol (tree) =>
         {
             if (!TryGetReferencedSymbolName(tree, out var name)) throw new InvalidOperationException();
             var symbol = ReferenceSymbolOrNull(db, tree, name);
@@ -89,10 +89,7 @@ internal static class SymbolResolution
                 symbol = new Symbol.Error(name, ImmutableArray.Create(diag));
             }
             return symbol;
-        }
-
-        return db.GetOrUpdate(tree, Impl);
-    }
+        });
 
     /// <summary>
     /// Retrieves the parent <see cref="Scope"/> of another scope.
@@ -114,17 +111,14 @@ internal static class SymbolResolution
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that we need the surrounding <see cref="Scope"/> of.</param>
     /// <returns>The surrounding <see cref="Scope"/> of <paramref name="tree"/>.</returns>
-    public static Scope? GetContainingScopeOrNull(QueryDatabase db, ParseTree tree)
-    {
-        Scope? Impl(ParseTree tree)
+    public static Scope? GetContainingScopeOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+        tree,
+        Scope? (tree) =>
         {
             var parent = GetScopeDefiningAncestor(tree);
             if (parent is null) return null;
             return GetDefinedScopeOrNull(db, parent);
-        }
-
-        return db.GetOrUpdate(tree, Impl);
-    }
+        });
 
     /// <summary>
     /// Retrieves the <see cref="Scope"/> that is introduced by a <see cref="ParseTree"/> node.
@@ -133,9 +127,9 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> to retrieve the <see cref="Scope"/> for.</param>
     /// <returns>The <see cref="Scope"/> associated with <paramref name="tree"/>, or null
     /// if it does not define a scope.</returns>
-    public static Scope? GetDefinedScopeOrNull(QueryDatabase db, ParseTree tree)
-    {
-        Scope? Impl(ParseTree tree)
+    public static Scope? GetDefinedScopeOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
+        tree,
+        Scope? (tree) =>
         {
             // First get the kind of scope this tree can define
             // If the kind is null, this node simply does not define a scope
@@ -176,10 +170,7 @@ internal static class SymbolResolution
                 timelines: result
                     .GroupBy(d => d.Name)
                     .ToImmutableDictionary(g => g.Key, g => new DeclarationTimeline(g)));
-        }
-
-        return db.GetOrUpdate(tree, Impl);
-    }
+        });
 
     /// <summary>
     /// Retrieves the <see cref="Symbol"/> defined by the given <see cref="ParseTree"/>.
@@ -232,9 +223,9 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
     /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
-    private static Symbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name)
-    {
-        Symbol? Impl(ParseTree tree, string name)
+    private static Symbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name) => db.GetOrUpdate(
+        (tree, name),
+        Symbol? (tree, name) =>
         {
             // Walk up the tree for the scope owner
             var ancestor = GetScopeDefiningAncestor(tree);
@@ -249,10 +240,7 @@ internal static class SymbolResolution
             if (declaration is not null) return declaration.Value.Symbol;
             // Not found, try in ancestor
             return ReferenceSymbolOrNull(db, ancestor, name);
-        }
-
-        return db.GetOrUpdate((tree, name), Impl);
-    }
+        });
 
     /// <summary>
     /// Attempts to retrieve the name of the referenced symbol by a tree node.

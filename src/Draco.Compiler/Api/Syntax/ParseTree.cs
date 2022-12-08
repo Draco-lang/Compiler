@@ -292,9 +292,8 @@ public abstract partial class ParseTree
     private static Token? ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Token? token) =>
         token is null ? null : new(parent, token);
 
-    [return: NotNullIfNotNull(nameof(trivia))]
-    private static Trivia? ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Trivia? trivia) =>
-        trivia is null ? null : new(parent, trivia);
+    private static Trivia ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Trivia trivia) =>
+        new(parent, trivia);
 
     private static IEnumerable<ParseTree> ToRed(ParseTree? parent, IEnumerable<Internal.Syntax.ParseTree> elements) =>
         elements.Select(e => ToRed(parent, e));

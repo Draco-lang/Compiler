@@ -50,6 +50,11 @@ internal partial interface ISymbol
     public ParseTree? Definition { get; }
 
     /// <summary>
+    /// The <see cref="Location"/> this symbol was defined at.
+    /// </summary>
+    public Location DefinitionLocation { get; }
+
+    /// <summary>
     /// True, if the symbol is visible externally.
     /// </summary>
     public bool IsExternallyVisible { get; }

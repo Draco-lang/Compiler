@@ -35,6 +35,8 @@ internal abstract partial record class Type
     public static readonly Type Int32 = new Builtin(typeof(int));
     public static readonly Type Bool = new Builtin(typeof(bool));
     public static readonly Type String = new Builtin(typeof(string));
+    // TODO: Our characters should be 32 bits, this does not suffice
+    public static readonly Type Char = new Builtin(typeof(char));
 }
 
 internal abstract partial record class Type

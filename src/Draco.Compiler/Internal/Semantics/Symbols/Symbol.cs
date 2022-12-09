@@ -60,6 +60,9 @@ internal partial interface ISymbol
         new IntrinsicBinaryOperator(
             SymbolResolution.GetBinaryOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
             leftOperandType, rightrOperandType, resultType);
+
+    public static ITypeDefinition MakeIntrinsicTypeDefinition(string name, Type type) =>
+        new IntrinsicTypeDefinition(name, type);
 }
 
 // Interfaces //////////////////////////////////////////////////////////////////
@@ -548,7 +551,7 @@ internal partial interface ISymbol
 internal partial interface ISymbol
 {
     /// <summary>
-    /// A symbol for intrinsic functions.
+    /// A symbol for intrinsic functions implemented by the compiler.
     /// </summary>
     private sealed class IntrinsicFunction : SynthetizedBase, IFunction
     {
@@ -573,6 +576,9 @@ internal partial interface ISymbol
 
 internal partial interface ISymbol
 {
+    /// <summary>
+    /// An intrinsic unary operation implemented by the compiler.
+    /// </summary>
     private sealed class IntrinsicUnaryOperator : SynthetizedBase, IUnaryOperator
     {
         public Type OperandType { get; }
@@ -590,6 +596,9 @@ internal partial interface ISymbol
 
 internal partial interface ISymbol
 {
+    /// <summary>
+    /// An intrinsic binary operation implemented by the compiler.
+    /// </summary>
     private sealed class IntrinsicBinaryOperator : SynthetizedBase, IBinaryOperator
     {
         public Type LeftOperandType { get; }
@@ -605,6 +614,23 @@ internal partial interface ISymbol
             this.LeftOperandType = leftOperandType;
             this.RightOperandType = rightOperandType;
             this.ResultType = resultType;
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// Intrinsic primitive types.
+    /// </summary>
+    private sealed class IntrinsicTypeDefinition : SynthetizedBase, ITypeDefinition
+    {
+        public Type DefinedType { get; }
+
+        public IntrinsicTypeDefinition(string name, Type definedType)
+            : base(name)
+        {
+            this.DefinedType = definedType;
         }
     }
 }

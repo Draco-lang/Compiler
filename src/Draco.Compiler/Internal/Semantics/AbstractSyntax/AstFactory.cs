@@ -81,7 +81,7 @@ internal static class AstFactory
         Right: right);
 
     public static Expr Not(Expr subexpr) => Unary(
-        op: Symbol.IntrinsicOperator.Not_Bool,
+        op: Intrinsics.Operators.Not_Bool,
         subexpr: subexpr);
 
     public static Expr Reference(ISymbol.ITyped symbol) => new Expr.Reference(

@@ -188,11 +188,11 @@ internal static class SymbolResolution
                 name: variable.Identifier.Text,
                 definition: tree,
                 isMutable: variable.Keyword.Type == TokenType.KeywordVar),
-            ParseTree.Decl.Func func => new Symbol.Function(
+            ParseTree.Decl.Func func => ISymbol.MakeFunction(
                 db: db,
                 name: func.Identifier.Text,
                 definition: tree),
-            ParseTree.Decl.Label label => new Symbol.Label(
+            ParseTree.Decl.Label label => new ISymbol.MakeLabel(
                 db: db,
                 name: label.Identifier.Text,
                 definition: tree),

@@ -52,8 +52,8 @@ internal sealed class AstLowering : AstTransformerBase
 
         changed = true;
 
-        var continueLabel = new Symbol.SynthetizedLabel();
-        var breakLabel = new Symbol.SynthetizedLabel();
+        var continueLabel = ISymbol.SynthetizeLabel();
+        var breakLabel = ISymbol.SynthetizeLabel();
         var condition = this.TransformExpr(node.Condition, out _);
         var body = this.TransformExpr(node.Expression, out _);
 

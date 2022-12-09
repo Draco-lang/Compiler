@@ -23,14 +23,23 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 internal partial interface ISymbol
 {
+    public static ILabel MakeLabel(QueryDatabase db, string name, ParseTree definition) =>
+        new Label(db, name, definition);
+
+    public static ILabel SynthetizeLabel() =>
+        new SynthetizedLabel();
+
     public static IVariable MakeVariable(QueryDatabase db, string name, ParseTree definition, bool isMutable) =>
         new Variable(db, name, definition, isMutable);
 
     public static IVariable SynthetizeVariable(Type type, bool isMutable) =>
         new SynthetizedVariable(type, isMutable);
 
-    public static IVariable MakeParameter(QueryDatabase db, string name, ParseTree definition) =>
+    public static IParameter MakeParameter(QueryDatabase db, string name, ParseTree definition) =>
         new Parameter(db, name, definition);
+
+    public static IFunction MakeFunction(QueryDatabase db, string name, ParseTree definition) =>
+        new Function(db, name, definition);
 }
 
 // Interfaces //////////////////////////////////////////////////////////////////
@@ -361,6 +370,34 @@ internal partial interface ISymbol
 internal partial interface ISymbol
 {
     /// <summary>
+    /// A symbol for user-defined labels.
+    /// </summary>
+    private sealed class Label : InTreeBase, ILabel
+    {
+        public Label(QueryDatabase db, string name, ParseTree definition)
+            : base(db, name, definition)
+        {
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A symbol for synthetized labels.
+    /// </summary>
+    private sealed class SynthetizedLabel : SynthetizedBase, ILabel
+    {
+        public SynthetizedLabel()
+            : base("label")
+        {
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
     /// A symbol for user-defined variables.
     /// </summary>
     private sealed class Variable : InTreeBase, IVariable
@@ -407,6 +444,60 @@ internal partial interface ISymbol
         public Type Type => TypeChecker.TypeOf(this.db, this);
 
         public Parameter(QueryDatabase db, string name, ParseTree definition)
+            : base(db, name, definition)
+        {
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A symbol for user-defined functions.
+    /// </summary>
+    private sealed class Function : InTreeBase, IFunction
+    {
+        public override bool IsExternallyVisible => this.IsGlobal;
+        public IScope DefinedScope
+        {
+            get
+            {
+                var scope = SymbolResolution.GetDefinedScopeOrNull(this.db, this.Definition);
+                Debug.Assert(scope is not null);
+                return scope;
+            }
+        }
+        public ImmutableArray<IParameter> Parameters
+        {
+            get
+            {
+                var builder = ImmutableArray.CreateBuilder<IParameter>();
+                var tree = (ParseTree.Decl.Func)this.Definition;
+                foreach (var param in tree.Params.Value.Elements)
+                {
+                    var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
+                    Debug.Assert(symbol is IParameter);
+                    builder.Add((IParameter)symbol);
+                }
+                return builder.ToImmutable();
+            }
+        }
+        public Type ReturnType
+        {
+            get
+            {
+                var tree = (ParseTree.Decl.Func)this.Definition;
+                return tree.ReturnType is null
+                    ? Types.Type.Unit
+                    : TypeChecker.Evaluate(this.db, tree.ReturnType.Type);
+            }
+        }
+        public Type.Function Type => new(
+            this.Parameters.Select(p => p.Type).ToImmutableArray(),
+            this.ReturnType);
+        Type ITyped.Type => this.Type;
+
+        public Function(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
         {
         }

@@ -41,8 +41,14 @@ internal partial interface ISymbol
     public static IParameter MakeParameter(QueryDatabase db, string name, ParseTree definition) =>
         new Parameter(db, name, definition);
 
+    public static IParameter SynthetizeParameter(Type type) =>
+        new SynthetizedParameter(type);
+
     public static IFunction MakeFunction(QueryDatabase db, string name, ParseTree definition) =>
         new Function(db, name, definition);
+
+    public static IFunction MakeIntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType) =>
+        new IntrinsicFunction(name, paramTypes, returnType);
 
     public static IUnaryOperator MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
         new IntrinsicUnaryOperator(
@@ -470,6 +476,24 @@ internal partial interface ISymbol
 internal partial interface ISymbol
 {
     /// <summary>
+    /// A symbol for synthetized parameters.
+    /// </summary>
+    private sealed class SynthetizedParameter : SynthetizedBase, IParameter
+    {
+        public bool IsMutable => false;
+        public Type Type { get; }
+
+        public SynthetizedParameter(Type type)
+            : base(GenerateName("parameter"))
+        {
+            this.Type = type;
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
     /// A symbol for user-defined functions.
     /// </summary>
     private sealed class Function : InTreeBase, IFunction
@@ -517,6 +541,32 @@ internal partial interface ISymbol
         public Function(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
         {
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A symbol for intrinsic functions.
+    /// </summary>
+    private sealed class IntrinsicFunction : SynthetizedBase, IFunction
+    {
+        public IScope? DefinedScope => null;
+        public ImmutableArray<IParameter> Parameters { get; }
+        public Type ReturnType { get; }
+        public Type.Function Type => new(
+            this.Parameters.Select(p => p.Type).ToImmutableArray(),
+            this.ReturnType);
+        Type ITyped.Type => this.Type;
+
+        public IntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType)
+            : base(name)
+        {
+            this.Parameters = paramTypes
+                .Select(SynthetizeParameter)
+                .ToImmutableArray();
+            this.ReturnType = returnType;
         }
     }
 }

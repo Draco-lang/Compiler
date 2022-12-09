@@ -125,7 +125,7 @@ public abstract partial class ParseTree
         var sb = new StringBuilder();
         // We simply print the text of all tokens except the first and last ones
         // For the first, we ignore leading trivia, for the last we ignore trailing trivia
-        var lastTrailingTrivia = ImmutableArray<Token>.Empty;
+        var lastTrailingTrivia = ImmutableArray<Trivia>.Empty;
         using var tokenEnumerator = this.Tokens.GetEnumerator();
         // The first token just gets it's content printed
         // That ignores the leading trivia, trailing will only be printed if there are following tokens
@@ -292,6 +292,9 @@ public abstract partial class ParseTree
     private static Token? ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Token? token) =>
         token is null ? null : new(parent, token);
 
+    private static Trivia ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Trivia trivia) =>
+        new(parent, trivia);
+
     private static IEnumerable<ParseTree> ToRed(ParseTree? parent, IEnumerable<Internal.Syntax.ParseTree> elements) =>
         elements.Select(e => ToRed(parent, e));
 
@@ -299,6 +302,9 @@ public abstract partial class ParseTree
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
     private static ImmutableArray<Token> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Token> elements) =>
+        elements.Select(e => ToRed(parent, e)).ToImmutableArray();
+
+    private static ImmutableArray<Trivia> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Trivia> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
     private static ImmutableArray<Decl> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Decl> elements) =>

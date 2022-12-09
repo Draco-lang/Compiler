@@ -183,7 +183,7 @@ internal static class SymbolResolution
         tree,
         ISymbol? (tree) => tree switch
         {
-            ParseTree.Decl.Variable variable => new Symbol.Variable(
+            ParseTree.Decl.Variable variable => ISymbol.MakeVariable(
                 db: db,
                 name: variable.Identifier.Text,
                 definition: tree,
@@ -196,7 +196,7 @@ internal static class SymbolResolution
                 db: db,
                 name: label.Identifier.Text,
                 definition: tree),
-            ParseTree.FuncParam fparam => new Symbol.Parameter(
+            ParseTree.FuncParam fparam => ISymbol.MakeParameter(
                 db: db,
                 name: fparam.Identifier.Text,
                 definition: tree),

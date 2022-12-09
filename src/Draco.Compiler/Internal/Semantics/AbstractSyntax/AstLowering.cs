@@ -135,7 +135,7 @@ internal sealed class AstLowering : AstTransformerBase
         var left = this.TransformExpr(node.Left, out _);
         var right = this.TransformExpr(node.Right, out _);
 
-        var varSymbol = new Symbol.SynthetizedVariable(true, Type.Bool);
+        var varSymbol = ISymbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
         return Block(
             stmts: new[]
             {
@@ -168,7 +168,7 @@ internal sealed class AstLowering : AstTransformerBase
         var left = this.TransformExpr(node.Left, out _);
         var right = this.TransformExpr(node.Right, out _);
 
-        var varSymbol = new Symbol.SynthetizedVariable(true, Type.Bool);
+        var varSymbol = ISymbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
         return Block(
             stmts: new[]
             {
@@ -195,7 +195,8 @@ internal sealed class AstLowering : AstTransformerBase
         }
 
         // Otherwise compute and store
-        var symbol = new Symbol.SynthetizedVariable(false, TypeChecker.TypeOf(this.db, (ParseTree.Expr)expr.ParseTree!));
+        var type = TypeChecker.TypeOf(this.db, (ParseTree.Expr)expr.ParseTree!);
+        var symbol = ISymbol.SynthetizeVariable(type: type, isMutable: false);
         var symbolRef = Reference(symbol);
         var assignment = Stmt(Var(
             varSymbol: symbol,

@@ -43,6 +43,17 @@ internal partial interface ISymbol
 
     public static IFunction MakeFunction(QueryDatabase db, string name, ParseTree definition) =>
         new Function(db, name, definition);
+
+    public static IUnaryOperator MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
+        new IntrinsicUnaryOperator(
+            SymbolResolution.GetUnaryOperatorName(op),
+            operandType, resultType);
+
+    public static IBinaryOperator MakeIntrinsicBinaryOperator(
+        TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
+        new IntrinsicBinaryOperator(
+            SymbolResolution.GetBinaryOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
+            leftOperandType, rightrOperandType, resultType);
 }
 
 // Interfaces //////////////////////////////////////////////////////////////////
@@ -152,7 +163,7 @@ internal partial interface ISymbol
         /// <summary>
         /// The type the operator results in.
         /// </summary>
-        public Type ResultType { get; set; }
+        public Type ResultType { get; }
     }
 
     /// <summary>
@@ -337,6 +348,9 @@ internal partial interface ISymbol
     {
         private static int instanceCounter = -1;
 
+        protected static string GenerateName(string? hint) =>
+            $"{hint ?? "synthetized"}<{Interlocked.Increment(ref instanceCounter)}>";
+
         public string Name { get; }
         public bool IsError => false;
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
@@ -348,7 +362,7 @@ internal partial interface ISymbol
 
         protected SynthetizedBase(string name)
         {
-            this.Name = $"{name}<{Interlocked.Increment(ref instanceCounter)}>";
+            this.Name = name;
         }
 
         // TODO
@@ -392,7 +406,7 @@ internal partial interface ISymbol
     private sealed class SynthetizedLabel : SynthetizedBase, ILabel
     {
         public SynthetizedLabel()
-            : base("label")
+            : base(GenerateName("label"))
         {
         }
     }
@@ -428,7 +442,7 @@ internal partial interface ISymbol
         public bool IsMutable { get; }
 
         public SynthetizedVariable(Type type, bool isMutable)
-            : base("variable")
+            : base(GenerateName("variable"))
         {
             this.Type = type;
             this.IsMutable = isMutable;
@@ -503,6 +517,44 @@ internal partial interface ISymbol
         public Function(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
         {
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    private sealed class IntrinsicUnaryOperator : SynthetizedBase, IUnaryOperator
+    {
+        public Type OperandType { get; }
+        public Type ResultType { get; }
+        public Type.Function FunctionType => new(ImmutableArray.Create(this.OperandType), this.ResultType);
+
+        public IntrinsicUnaryOperator(string name, Type operandType, Type resultType)
+            : base(name)
+        {
+            this.OperandType = operandType;
+            this.ResultType = resultType;
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    private sealed class IntrinsicBinaryOperator : SynthetizedBase, IBinaryOperator
+    {
+        public Type LeftOperandType { get; }
+        public Type RightOperandType { get; }
+        public Type ResultType { get; }
+        public Type.Function FunctionType => new(
+            ImmutableArray.Create(this.LeftOperandType, this.RightOperandType),
+            this.ResultType);
+
+        public IntrinsicBinaryOperator(string name, Type leftOperandType, Type rightOperandType, Type resultType)
+            : base(name)
+        {
+            this.LeftOperandType = leftOperandType;
+            this.RightOperandType = rightOperandType;
+            this.ResultType = resultType;
         }
     }
 }

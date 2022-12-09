@@ -421,11 +421,11 @@ internal static class SymbolResolution
 
         AddBuiltinFunction("println", ImmutableArray.Create(Type.String), Type.Unit);
 
-        Add(Symbol.IntrinsicOperator.Not_Bool);
+        Add(Intrinsics.Not_Bool);
 
-        Add(Symbol.IntrinsicOperator.Add_Int32);
-        Add(Symbol.IntrinsicOperator.Sub_Int32);
+        Add(Intrinsics.Add_Int32);
+        Add(Intrinsics.Sub_Int32);
 
-        Add(Symbol.IntrinsicOperator.Less_Int32);
+        Add(Intrinsics.Less_Int32);
     }
 }

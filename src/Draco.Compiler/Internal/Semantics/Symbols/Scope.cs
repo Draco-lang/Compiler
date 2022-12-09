@@ -10,6 +10,29 @@ using Draco.Compiler.Internal.Query;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
 
+// Factory /////////////////////////////////////////////////////////////////////
+
+internal partial interface IScope
+{
+    public static IScope MakeGlobal(
+        QueryDatabase db,
+        ParseTree definition,
+        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
+        new GlobalScope(db, definition, timelines);
+
+    public static IScope MakeFunction(
+        QueryDatabase db,
+        ParseTree definition,
+        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
+        new FunctionScope(db, definition, timelines);
+
+    public static IScope MakeLocal(
+        QueryDatabase db,
+        ParseTree definition,
+        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
+        new LocalScope(db, definition, timelines);
+}
+
 // Interfaces //////////////////////////////////////////////////////////////////
 
 /// <summary>
@@ -61,14 +84,21 @@ internal partial interface IScope
     /// </summary>
     private abstract class ScopeBase : IScope
     {
-        public abstract IScope? Parent { get; }
-        public abstract ParseTree? Definition { get; }
         public virtual bool IsGlobal => false;
         public virtual bool IsFunction => false;
+        public IScope? Parent => SymbolResolution.GetParentScopeOrNull(this.db, this);
+        public ParseTree Definition { get; }
         public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
 
-        protected ScopeBase(ImmutableDictionary<string, DeclarationTimeline> timelines)
+        private readonly QueryDatabase db;
+
+        protected ScopeBase(
+            QueryDatabase db,
+            ParseTree definition,
+            ImmutableDictionary<string, DeclarationTimeline> timelines)
         {
+            this.db = db;
+            this.Definition = definition;
             this.Timelines = timelines;
         }
 
@@ -76,6 +106,61 @@ internal partial interface IScope
         {
             if (!this.Timelines.TryGetValue(name, out var timeline)) return null;
             return timeline.LookUp(referencedPosition);
+        }
+    }
+}
+
+internal partial interface IScope
+{
+    /// <summary>
+    /// Global scope.
+    /// </summary>
+    private sealed class GlobalScope : ScopeBase
+    {
+        public override bool IsGlobal => true;
+
+        public GlobalScope(
+            QueryDatabase db,
+            ParseTree definition,
+            ImmutableDictionary<string, DeclarationTimeline> timelines)
+            : base(db, definition, timelines)
+        {
+        }
+    }
+}
+
+internal partial interface IScope
+{
+    /// <summary>
+    /// Function scope.
+    /// </summary>
+    private sealed class FunctionScope : ScopeBase
+    {
+        public override bool IsFunction => true;
+
+        public FunctionScope(
+            QueryDatabase db,
+            ParseTree definition,
+            ImmutableDictionary<string, DeclarationTimeline> timelines)
+            : base(db, definition, timelines)
+        {
+        }
+    }
+}
+
+internal partial interface IScope
+{
+    /// <summary>
+    /// Local scope.
+    /// </summary>
+    private sealed class LocalScope : ScopeBase
+    {
+        public LocalScope(
+            QueryDatabase db,
+            ParseTree definition,
+            ImmutableDictionary<string, DeclarationTimeline> timelines)
+            : base(db, definition, timelines)
+        {
         }
     }
 }

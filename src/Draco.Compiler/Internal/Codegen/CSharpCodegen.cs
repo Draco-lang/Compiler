@@ -281,7 +281,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
             {
                 var c = (Ast.StringPart.Content)part;
                 var text = c.Value;
-                text = text.Substring(c.Cutoff);
+                text = text[c.Cutoff..];
                 this.WriteInstruction($"{builder}.Append(\"{StringUtils.Unescape(text)}\");");
             }
         }
@@ -297,57 +297,45 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
 
     private static string? MapUnaryOperator(ISymbol.IUnaryOperator op, string? sub)
     {
-        if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
         if (sub is null) return null;
-        return intrinsicOp.Operator switch
-        {
-            TokenType.KeywordNot => $"!{sub}",
 
-            _ => throw new ArgumentOutOfRangeException(nameof(op)),
-        };
+        if (op == Intrinsics.Operators.Not_Bool) return $"!{sub}";
+
+        throw new NotImplementedException();
     }
 
     private static string? MapBinaryOperator(ISymbol.IBinaryOperator op, string? left, string? right)
     {
-        if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
         if (left is null || right is null) return null;
-        return intrinsicOp.Operator switch
-        {
-            // NOTE: TokenTypes shouldn't leak in like this, see note in IntrinsicOperator
 
-            TokenType.Plus => $"{left} + {right}",
-            TokenType.Minus => $"{left} - {right}",
-            TokenType.Star => $"{left} * {right}",
-            TokenType.Slash => $"{left} / {right}",
-            TokenType.KeywordRem => $"{left} % {right}",
-            TokenType.KeywordMod => $"({left} % {right} + {right}) % {right}",
+        if (op == Intrinsics.Operators.Add_Int32) return $"{left} + {right}";
+        if (op == Intrinsics.Operators.Sub_Int32) return $"{left} - {right}";
+        if (op == Intrinsics.Operators.Mul_Int32) return $"{left} * {right}";
+        if (op == Intrinsics.Operators.Div_Int32) return $"{left} / {right}";
+        if (op == Intrinsics.Operators.Rem_Int32) return $"{left} % {right}";
+        if (op == Intrinsics.Operators.Mod_Int32) return $"({left} % {right} + {right}) % {right}";
 
-            TokenType.LessThan => $"{left} < {right}",
-            TokenType.GreaterThan => $"{left} > {right}",
-            TokenType.LessEqual => $"{left} <= {right}",
-            TokenType.GreaterEqual => $"{left} >= {right}",
-            TokenType.Equal => $"{left} == {right}",
-            TokenType.NotEqual => $"{left} != {right}",
+        if (op == Intrinsics.Operators.Less_Int32) return $"{left} < {right}";
+        if (op == Intrinsics.Operators.Greater_Int32) return $"{left} > {right}";
+        if (op == Intrinsics.Operators.LessEqual_Int32) return $"{left} <= {right}";
+        if (op == Intrinsics.Operators.GreaterEqual_Int32) return $"{left} >= {right}";
+        if (op == Intrinsics.Operators.Equal_Int32) return $"{left} == {right}";
+        if (op == Intrinsics.Operators.NotEqual_Int32) return $"{left} != {right}";
 
-            _ => throw new ArgumentOutOfRangeException(nameof(op)),
-        };
+        throw new NotImplementedException();
     }
 
     private static string? MapAssignmentOperator(ISymbol.IBinaryOperator? op, string? left, string? right)
     {
         if (op is null) return $"{left} = {right}";
-        if (op is not Symbol.IntrinsicOperator intrinsicOp) throw new NotImplementedException();
         if (left is null || right is null) return null;
-        return intrinsicOp.Operator switch
-        {
-            // NOTE: TokenTypes shouldn't leak in like this, see note in IntrinsicOperator
 
-            TokenType.Plus => $"{left} += {right}",
-            TokenType.Minus => $"{left} -= {right}",
-            TokenType.Star => $"{left} *= {right}",
-            TokenType.Slash => $"{left} /= {right}",
-            _ => throw new ArgumentOutOfRangeException(nameof(op)),
-        };
+        if (op == Intrinsics.Operators.Add_Int32) return $"{left} += {right}";
+        if (op == Intrinsics.Operators.Sub_Int32) return $"{left} -= {right}";
+        if (op == Intrinsics.Operators.Mul_Int32) return $"{left} *= {right}";
+        if (op == Intrinsics.Operators.Div_Int32) return $"{left} /= {right}";
+
+        throw new NotImplementedException();
     }
 
     private static string Prelude => """

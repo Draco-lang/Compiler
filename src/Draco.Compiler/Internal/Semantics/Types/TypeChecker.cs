@@ -42,7 +42,8 @@ internal static class TypeChecker
         else if (tree is ParseTree.Decl.Func)
         {
             var scope = SymbolResolution.GetDefinedScopeOrNull(db, tree) ?? throw new InvalidOperationException();
-            InferLocalTypes(db, scope);
+            var definition = scope.Definition;
+            if (definition is not null) InferLocalTypes(db, definition);
             // TODO: Diags produced during inference?
             return Enumerable.Empty<Diagnostic>();
         }

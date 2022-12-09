@@ -61,6 +61,12 @@ internal partial interface ISymbol
             SymbolResolution.GetBinaryOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
             leftOperandType, rightrOperandType, resultType);
 
+    public static IBinaryOperator MakeIntrinsicRelationalOperator(
+        TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
+        new IntrinsicBinaryOperator(
+            SymbolResolution.GetRelationalOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
+            leftOperandType, rightrOperandType, resultType);
+
     public static ITypeDefinition MakeIntrinsicTypeDefinition(string name, Type type) =>
         new IntrinsicTypeDefinition(name, type);
 }
@@ -555,6 +561,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class IntrinsicFunction : SynthetizedBase, IFunction
     {
+        public override bool IsExternallyVisible => true;
         public IScope? DefinedScope => null;
         public ImmutableArray<IParameter> Parameters { get; }
         public Type ReturnType { get; }

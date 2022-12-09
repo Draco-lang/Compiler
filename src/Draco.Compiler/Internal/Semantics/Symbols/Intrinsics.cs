@@ -35,11 +35,11 @@ internal static class Intrinsics
         public static IBinaryOperator Mod_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.KeywordMod, Type.Int32, Type.Int32, Type.Int32);
         public static IBinaryOperator Rem_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.KeywordRem, Type.Int32, Type.Int32, Type.Int32);
 
-        public static IBinaryOperator Less_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.LessThan, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator LessEqual_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.LessEqual, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator Greater_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.GreaterThan, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator GreaterEqual_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.GreaterEqual, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator Equal_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Equal, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator NotEqual_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.NotEqual, Type.Int32, Type.Int32, Type.Int32);
+        public static IBinaryOperator Less_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.LessThan, Type.Int32, Type.Int32, Type.Int32);
+        public static IBinaryOperator LessEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.LessEqual, Type.Int32, Type.Int32, Type.Int32);
+        public static IBinaryOperator Greater_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.GreaterThan, Type.Int32, Type.Int32, Type.Int32);
+        public static IBinaryOperator GreaterEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.GreaterEqual, Type.Int32, Type.Int32, Type.Int32);
+        public static IBinaryOperator Equal_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.Equal, Type.Int32, Type.Int32, Type.Int32);
+        public static IBinaryOperator NotEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.NotEqual, Type.Int32, Type.Int32, Type.Int32);
     }
 }

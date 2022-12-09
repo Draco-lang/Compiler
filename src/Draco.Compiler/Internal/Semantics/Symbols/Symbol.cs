@@ -23,6 +23,9 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 internal partial interface ISymbol
 {
+    public static ISymbol MakeReferenceError(string name, ImmutableArray<Diagnostic> diagnostics) =>
+        new ReferenceError(name, diagnostics);
+
     public static ILabel MakeLabel(QueryDatabase db, string name, ParseTree definition) =>
         new Label(db, name, definition);
 

@@ -86,7 +86,7 @@ internal static class SymbolResolution
                     template: SemanticErrors.UndefinedReference,
                     location: new Location.TreeReference(tree),
                     formatArgs: name);
-                symbol = new Symbol.Error(name, ImmutableArray.Create(diag));
+                symbol = ISymbol.MakeReferenceError(name, ImmutableArray.Create(diag));
             }
             return symbol;
         });
@@ -192,7 +192,7 @@ internal static class SymbolResolution
                 db: db,
                 name: func.Identifier.Text,
                 definition: tree),
-            ParseTree.Decl.Label label => new ISymbol.MakeLabel(
+            ParseTree.Decl.Label label => ISymbol.MakeLabel(
                 db: db,
                 name: label.Identifier.Text,
                 definition: tree),

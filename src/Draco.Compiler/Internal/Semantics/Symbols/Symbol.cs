@@ -19,6 +19,20 @@ using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
 
+// Factory /////////////////////////////////////////////////////////////////////
+
+internal partial interface ISymbol
+{
+    public static IVariable MakeVariable(QueryDatabase db, string name, ParseTree definition, bool isMutable) =>
+        new Variable(db, name, definition, isMutable);
+
+    public static IVariable SynthetizeVariable(Type type, bool isMutable) =>
+        new SynthetizedVariable(type, isMutable);
+
+    public static IVariable MakeParameter(QueryDatabase db, string name, ParseTree definition) =>
+        new Parameter(db, name, definition);
+}
+
 // Interfaces //////////////////////////////////////////////////////////////////
 
 /// <summary>
@@ -290,7 +304,7 @@ internal partial interface ISymbol
         public virtual bool IsExternallyVisible => false;
         public bool IsGlobal => this.DefiningScope.IsGlobal;
 
-        private readonly QueryDatabase db;
+        protected readonly QueryDatabase db;
 
         protected InTreeBase(QueryDatabase db, string name, ParseTree definition)
         {
@@ -309,6 +323,8 @@ internal partial interface ISymbol
     // Base helper class for symbols that are synthetized
     private abstract class SynthetizedBase : ISymbol
     {
+        private static int instanceCounter = -1;
+
         public string Name { get; }
         public bool IsError => false;
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
@@ -320,7 +336,7 @@ internal partial interface ISymbol
 
         protected SynthetizedBase(string name)
         {
-            this.Name = name;
+            this.Name = $"{name}<{Interlocked.Increment(ref instanceCounter)}>";
         }
 
         // TODO
@@ -337,6 +353,61 @@ internal partial interface ISymbol
     {
         public ReferenceError(string name, ImmutableArray<Diagnostic> diagnostics)
             : base(name, diagnostics)
+        {
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A symbol for user-defined variables.
+    /// </summary>
+    private sealed class Variable : InTreeBase, IVariable
+    {
+        public override bool IsExternallyVisible => this.IsGlobal;
+        public bool IsMutable { get; }
+        public Type Type => TypeChecker.TypeOf(this.db, this);
+
+        public Variable(QueryDatabase db, string name, ParseTree definition, bool isMutable)
+            : base(db, name, definition)
+        {
+            this.IsMutable = isMutable;
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A symbol for synthetized variables.
+    /// </summary>
+    private sealed class SynthetizedVariable : SynthetizedBase, IVariable
+    {
+        public Type Type { get; }
+        public bool IsMutable { get; }
+
+        public SynthetizedVariable(Type type, bool isMutable)
+            : base("variable")
+        {
+            this.Type = type;
+            this.IsMutable = isMutable;
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A symbol for user-defined parameters.
+    /// </summary>
+    private sealed class Parameter : InTreeBase, IParameter
+    {
+        public bool IsMutable => false;
+        public Type Type => TypeChecker.TypeOf(this.db, this);
+
+        public Parameter(QueryDatabase db, string name, ParseTree definition)
+            : base(db, name, definition)
         {
         }
     }

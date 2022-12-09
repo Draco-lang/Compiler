@@ -54,10 +54,34 @@ internal partial interface IScope
 
 // Implementations /////////////////////////////////////////////////////////////
 
-// TODO
+internal partial interface IScope
+{
+    /// <summary>
+    /// Base class for all scopes.
+    /// </summary>
+    private abstract class ScopeBase : IScope
+    {
+        public abstract IScope? Parent { get; }
+        public abstract ParseTree? Definition { get; }
+        public virtual bool IsGlobal => false;
+        public virtual bool IsFunction => false;
+        public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
+
+        protected ScopeBase(ImmutableDictionary<string, DeclarationTimeline> timelines)
+        {
+            this.Timelines = timelines;
+        }
+
+        public Declaration? LookUp(string name, int referencedPosition)
+        {
+            if (!this.Timelines.TryGetValue(name, out var timeline)) return null;
+            return timeline.LookUp(referencedPosition);
+        }
+    }
+}
 
 /// <summary>
-/// Represents the timeline of <see cref="Symbol"/>s that are introduced in the same <see cref="Scope"/>
+/// Represents the timeline of <see cref="ISymbol"/>s that are introduced in the same <see cref="IScope"/>
 /// under the same name.
 /// </summary>
 internal readonly struct DeclarationTimeline
@@ -106,11 +130,11 @@ internal readonly struct DeclarationTimeline
 }
 
 /// <summary>
-/// Represents the declaration of a <see cref="Semantics.Symbol"/> in a <see cref="Scope"/>.
+/// Represents the declaration of a <see cref="ISymbol"/> in a <see cref="IScope"/>.
 /// </summary>
 /// <param name="Position">The relative position of the delcaration relative to the containing scope.
 /// The position is where the symbol is available from.</param>
-/// <param name="Symbol">The declared <see cref="Semantics.Symbol"/>.</param>
+/// <param name="Symbol">The declared <see cref="ISymbol"/>.</param>
 internal readonly record struct Declaration(int Position, ISymbol Symbol)
 {
     /// <summary>

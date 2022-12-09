@@ -14,6 +14,18 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 internal partial interface IScope
 {
+    public static IScope Make(
+        QueryDatabase db,
+        ScopeKind kind,
+        ParseTree definition,
+        ImmutableDictionary<string, DeclarationTimeline> timelines) => kind switch
+        {
+            ScopeKind.Global => MakeGlobal(db, definition, timelines),
+            ScopeKind.Function => MakeFunction(db, definition, timelines),
+            ScopeKind.Local => MakeLocal(db, definition, timelines),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
+
     public static IScope MakeGlobal(
         QueryDatabase db,
         ParseTree definition,
@@ -36,10 +48,36 @@ internal partial interface IScope
 // Interfaces //////////////////////////////////////////////////////////////////
 
 /// <summary>
+/// The different kinds of scopes possible.
+/// </summary>
+internal enum ScopeKind
+{
+    /// <summary>
+    /// Global scope.
+    /// </summary>
+    Global,
+
+    /// <summary>
+    /// A scope the function defines as its boundary.
+    /// </summary>
+    Function,
+
+    /// <summary>
+    /// Completely local scope.
+    /// </summary>
+    Local,
+}
+
+/// <summary>
 /// The interface of all scopes.
 /// </summary>
 internal partial interface IScope
 {
+    /// <summary>
+    /// The kind of this scope.
+    /// </summary>
+    public ScopeKind Kind { get; }
+
     /// <summary>
     /// The parent of this scope.
     /// </summary>
@@ -66,6 +104,11 @@ internal partial interface IScope
     public bool IsFunction { get; }
 
     /// <summary>
+    /// True, if this is a local scope.
+    /// </summary>
+    public bool IsLocal { get; }
+
+    /// <summary>
     /// Attempts to look up a <see cref="Declaration"/> with a given name.
     /// </summary>
     /// <param name="name">The name of the <see cref="Declaration"/> to look for.</param>
@@ -84,8 +127,10 @@ internal partial interface IScope
     /// </summary>
     private abstract class ScopeBase : IScope
     {
-        public virtual bool IsGlobal => false;
-        public virtual bool IsFunction => false;
+        public abstract ScopeKind Kind { get; }
+        public bool IsGlobal => this.Kind == ScopeKind.Global;
+        public bool IsFunction => this.Kind == ScopeKind.Function;
+        public bool IsLocal => this.Kind == ScopeKind.Local;
         public IScope? Parent => SymbolResolution.GetParentScopeOrNull(this.db, this);
         public ParseTree Definition { get; }
         public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
@@ -117,7 +162,7 @@ internal partial interface IScope
     /// </summary>
     private sealed class GlobalScope : ScopeBase
     {
-        public override bool IsGlobal => true;
+        public override ScopeKind Kind => ScopeKind.Global;
 
         public GlobalScope(
             QueryDatabase db,
@@ -136,7 +181,7 @@ internal partial interface IScope
     /// </summary>
     private sealed class FunctionScope : ScopeBase
     {
-        public override bool IsFunction => true;
+        public override ScopeKind Kind => ScopeKind.Function;
 
         public FunctionScope(
             QueryDatabase db,
@@ -155,6 +200,8 @@ internal partial interface IScope
     /// </summary>
     private sealed class LocalScope : ScopeBase
     {
+        public override ScopeKind Kind => ScopeKind.Local;
+
         public LocalScope(
             QueryDatabase db,
             ParseTree definition,

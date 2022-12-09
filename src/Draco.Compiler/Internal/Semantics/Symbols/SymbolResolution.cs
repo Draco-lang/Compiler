@@ -163,10 +163,10 @@ internal static class SymbolResolution
             }
 
             // Construct the scope
-            return new Scope(
+            return IScope.Make(
                 db: db,
-                definition: tree,
                 kind: scopeKind.Value,
+                definition: tree,
                 timelines: result
                     .GroupBy(d => d.Name)
                     .ToImmutableDictionary(g => g.Key, g => new DeclarationTimeline(g)));

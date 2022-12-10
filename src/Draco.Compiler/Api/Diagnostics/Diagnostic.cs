@@ -166,6 +166,7 @@ public sealed class Diagnostic
         this.Template = template;
         this.FormatArgs = formatArgs;
         this.Location = location;
+        this.RelatedInformation = relatedInformation;
     }
 
     public override string ToString()

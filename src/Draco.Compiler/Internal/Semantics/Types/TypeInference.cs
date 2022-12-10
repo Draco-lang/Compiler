@@ -190,13 +190,34 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         // Inference in children
         base.VisitIfExpr(node);
 
-        // TODO: Check if condition is bool
-        // var conditionType = TypeChecker.TypeOf(this.db, node.Condition)
+        // Check if condition is bool
+        var conditionType = TypeChecker.TypeOf(this.db, node.Condition.Value);
+        this.solver.Same(conditionType, Type.Bool);
 
+        var resultType = null as Type;
         var leftType = TypeChecker.TypeOf(this.db, node.Then);
-        var rightType = node.Else is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Else.Expression);
-        // TODO: Wrong constraint, we need "Common ancestor"
-        var resultType = this.solver.Same(leftType, rightType).Result;
+        if (node.Else is null)
+        {
+            // Then part has to be of unit
+            this.solver.Same(leftType, Type.Unit)
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(new Location.TreeReference(ExtractReturnExpression(node.Then)))
+                    .AddRelatedInformation("an if-expression without an else branch must result in unit"));
+            resultType = leftType;
+        }
+        else
+        {
+            var rightType = TypeChecker.TypeOf(this.db, node.Else.Expression);
+            // TODO: Wrong constraint, we need "Common ancestor"
+            resultType = this.solver.Same(leftType, rightType)
+                .ConfigureDiagnostic(diags => diags
+                    .WithLocation(new Location.TreeReference(ExtractReturnExpression(node.Else.Expression)))
+                    .AddRelatedInformation(
+                        format: "the other branch was inferred to be {0} here",
+                        formatArgs: new[] { leftType },
+                        location: new Location.TreeReference(ExtractReturnExpression(node.Then))))
+                .Result;
+        }
         this.expressions[node] = resultType;
 
         return this.Default;
@@ -218,4 +239,12 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         return this.Default;
     }
+
+    private static ParseTree.Expr ExtractReturnExpression(ParseTree.Expr expr) => expr switch
+    {
+        ParseTree.Expr.If @if => ExtractReturnExpression(@if.Then),
+        ParseTree.Expr.While @while => ExtractReturnExpression(@while.Expression),
+        ParseTree.Expr.Block block => block.Enclosed.Value.Value ?? block,
+        _ => expr,
+    };
 }

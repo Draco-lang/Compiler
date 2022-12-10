@@ -100,6 +100,8 @@ internal static class TypeChecker
         // TODO: Type errors?
         ParseTree.Expr.While => Type.Unit,
         ParseTree.Expr.UnitStmt => Type.Unit,
+        // TODO: Type errors?
+        ParseTree.Expr.Return => Type.Unit,
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 

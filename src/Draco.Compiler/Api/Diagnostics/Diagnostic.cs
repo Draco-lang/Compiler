@@ -220,6 +220,11 @@ public sealed class DiagnosticRelatedInformation
     /// </summary>
     public object?[] FormatArgs { get; }
 
+    /// <summary>
+    /// The formatted message.
+    /// </summary>
+    public string Message => string.Format(this.Format, this.FormatArgs);
+
     internal DiagnosticRelatedInformation(
         Internal.Diagnostics.DiagnosticRelatedInformation internalInfo,
         Location location)

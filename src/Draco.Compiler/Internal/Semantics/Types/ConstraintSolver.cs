@@ -64,13 +64,15 @@ internal sealed class ConstraintSolver
     private void Unify(ParseTree origin, Type left, Type right)
     {
         var result = Unify(left, right);
-        if (result is not null) this.diagnostics.Add(ToDiagnostic(origin, result.Value));
+        if (result is not null) this.diagnostics.Add(ToDiagnostic(origin, left, right, result.Value));
     }
 
-    private static Diagnostic ToDiagnostic(ParseTree origin, UnificationError error)
+    private static Diagnostic ToDiagnostic(ParseTree origin, Type t1, Type t2, UnificationError error)
     {
-        // TODO
-        throw new NotImplementedException();
+        return Diagnostic.Create(
+            template: SemanticErrors.TypeMismatch,
+            location: new Location.TreeReference(origin),
+            formatArgs: new[] { t1, t2 });
     }
 
     private static UnificationError? Unify(Type left, Type right)

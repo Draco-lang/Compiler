@@ -112,7 +112,16 @@ internal static class TypeChecker
     public static Type TypeOf(QueryDatabase db, ISymbol symbol)
     {
         if (symbol is not ISymbol.ITyped typed) throw new InvalidOperationException();
-        return typed.Type;
+        return db.GetOrUpdate(
+            typed,
+            Type (typed) =>
+            {
+                var definingFunc = symbol.DefiningFunction;
+                Debug.Assert(definingFunc is not null);
+                Debug.Assert(definingFunc.Definition is not null);
+                var inferenceResult = InferLocalTypes(db, definingFunc.Definition);
+                return inferenceResult.Symbols[typed];
+            });
     }
 
     /// <summary>

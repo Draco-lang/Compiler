@@ -27,4 +27,12 @@ internal static class SemanticErrors
         title: "could not infer type",
         severity: DiagnosticSeverity.Error,
         format: "could not infer type of {0}");
+
+    /// <summary>
+    /// A type mismatch error.
+    /// </summary>
+    public static readonly DiagnosticTemplate TypeMismatch = DiagnosticTemplate.Create(
+        title: "type mismatch",
+        severity: DiagnosticSeverity.Error,
+        format: "type mismatch between {0} and {1}");
 }

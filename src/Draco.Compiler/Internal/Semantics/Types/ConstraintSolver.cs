@@ -58,7 +58,71 @@ internal partial interface IConstraint
             this.Second = second;
         }
 
-        public void Solve() => throw new NotImplementedException();
+        public void Solve()
+        {
+            var error = Unify(this.First, this.Second);
+            if (error is not null)
+            {
+                this.Diagnostic.WithMessage(
+                    template: SemanticErrors.TypeMismatch,
+                    args: new[] { this.First, this.Second });
+            }
+        }
+
+        private static UnificationError? Unify(Type left, Type right)
+        {
+            static UnificationError? Ok() => null;
+            static UnificationError? Error(UnificationError err) => err;
+
+            left = UnwrapTypeVariable(left);
+            right = UnwrapTypeVariable(right);
+
+            switch (left, right)
+            {
+            case (Type.Variable v1, Type.Variable v2):
+            {
+                // Don't create a cycle
+                if (!ReferenceEquals(v1, v2)) v1.Substitution = v2;
+                return Ok();
+            }
+
+            // Variable substitution
+            case (Type.Variable v1, _):
+            {
+                v1.Substitution = right;
+                return Ok();
+            }
+            case (_, Type.Variable v2):
+            {
+                v2.Substitution = left;
+                return Ok();
+            }
+
+            case (Type.Builtin b1, Type.Builtin b2):
+            {
+                if (b1.Type != b2.Type) return Error(UnificationError.TypeMismatch);
+                return Ok();
+            }
+
+            case (Type.Function f1, Type.Function f2):
+            {
+                if (f1.Params.Length != f2.Params.Length) return Error(UnificationError.ParameterCountMismatch);
+                var returnError = Unify(f1.Return, f2.Return);
+                if (returnError is not null) return returnError;
+                for (var i = 0; i < f1.Params.Length; ++i)
+                {
+                    var parameterError = Unify(f1.Params[i], f2.Params[i]);
+                    if (parameterError is not null) return parameterError;
+                }
+                return Ok();
+            }
+
+            default:
+            {
+                return Error(UnificationError.TypeMismatch);
+            }
+            }
+        }
     }
 }
 

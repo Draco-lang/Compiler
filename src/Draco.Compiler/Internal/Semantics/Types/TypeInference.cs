@@ -55,6 +55,9 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         this.returnType = returnType;
     }
 
+    // TODO: This is a horrible API, why not make a static method that constructs, visits then calls this?
+    public void Solve() => this.solver.Solve();
+
     /// <summary>
     /// Removes type variable substitutions.
     /// </summary>
@@ -122,7 +125,8 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             // var x: T = v;
             // TODO: Need to put a constraint that valueType is subtype of declaredType
             inferredType = declaredType;
-            this.solver.Assignable(node, declaredType, valueType);
+            // TODO: Not the right constraint, we need "Assignable"
+            this.solver.Same(declaredType, valueType);
         }
 
         // Store the inferred type
@@ -138,7 +142,8 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         base.VisitInlineBodyFuncBody(node);
 
         var exprType = TypeChecker.TypeOf(this.db, node.Expression);
-        this.solver.Return(node, this.returnType, exprType);
+        // TODO: Not the right constraint, we likely need something like "Assignable" here
+        this.solver.Same(this.returnType, exprType);
 
         return this.Default;
     }
@@ -149,7 +154,8 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         base.VisitReturnExpr(node);
 
         var exprType = node.Expression is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Expression);
-        this.solver.Return(node, this.returnType, exprType);
+        // TODO: Not the right constraint, we likely need something like "Assignable" here
+        this.solver.Same(this.returnType, exprType);
 
         return this.Default;
     }
@@ -165,13 +171,14 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         if (node.Operator.Type == TokenType.Assign)
         {
             // Right has to be assignable to left
-            var resultType = this.solver.Assignable(node, leftType, rightType);
+            // TODO: Wrong constraint, we need "Assignable"
+            var resultType = this.solver.Same(leftType, rightType).Result;
             this.expressions[node] = resultType;
         }
         else
         {
             // TODO: Temporary
-            var resultType = this.solver.Same(node, leftType, rightType);
+            var resultType = this.solver.Same(leftType, rightType).Result;
             this.expressions[node] = resultType;
         }
 
@@ -188,7 +195,8 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         var leftType = TypeChecker.TypeOf(this.db, node.Then);
         var rightType = node.Else is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Else.Expression);
-        var resultType = this.solver.CommonAncestor(node, leftType, rightType);
+        // TODO: Wrong constraint, we need "Common ancestor"
+        var resultType = this.solver.Same(leftType, rightType).Result;
         this.expressions[node] = resultType;
 
         return this.Default;
@@ -203,7 +211,9 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         var argsType = node.Args.Value.Elements
             .Select(a => TypeChecker.TypeOf(this.db, a.Value))
             .ToImmutableArray();
-        var returnType = this.solver.Call(node, calledType, argsType);
+        // TODO: We want a "callable" constraint here, but for now we'll go around a bit
+        var clientType = new Type.Function(argsType, new Type.Variable(null));
+        var returnType = ((Type.Function)this.solver.Same(calledType, clientType).Result).Return;
         this.expressions[node] = returnType;
 
         return this.Default;

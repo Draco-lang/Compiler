@@ -156,6 +156,7 @@ internal static class TypeChecker
         recompute: (visitor, tree) =>
         {
             visitor.Visit(tree);
+            visitor.Solve();
             return visitor.Result;
         },
         handleCycle: (visitor, tree) => visitor.PartialResult);

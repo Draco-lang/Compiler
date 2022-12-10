@@ -106,7 +106,8 @@ public sealed class Diagnostic
         params object?[] formatArgs) => Create(
             template: template,
             location: location,
-            formatArgs: formatArgs);
+            formatArgs: formatArgs,
+            relatedInformation: ImmutableArray<DiagnosticRelatedInformation>.Empty);
 
     /// <summary>
     /// The template for this message.

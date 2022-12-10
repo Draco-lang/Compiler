@@ -1,19 +1,39 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using ApiDiagnostic = Draco.Compiler.Api.Diagnostics.Diagnostic;
+using ApiDiagnosticRelatedInformation = Draco.Compiler.Api.Diagnostics.DiagnosticRelatedInformation;
 
 namespace Draco.Compiler.Internal.Diagnostics;
 
 /// <summary>
 /// Represents a diagnostic message produced by the compiler.
 /// </summary>
-internal sealed record class Diagnostic
+internal sealed class Diagnostic
 {
+    /// <summary>
+    /// Constructs a <see cref="Diagnostic"/> message.
+    /// </summary>
+    /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
+    /// <param name="location">The location the diagnostic was produced at.</param>
+    /// <param name="relatedInformation">Related information about the diagnostic.</param>
+    /// <param name="formatArgs">The format arguments of the message.</param>
+    /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
+    public static Diagnostic Create(
+        DiagnosticTemplate template,
+        Location location,
+        ImmutableArray<DiagnosticRelatedInformation> relatedInformation,
+        params object?[] formatArgs) => new(
+            template: template,
+            location: location,
+            formatArgs: formatArgs,
+            relatedInformation: relatedInformation);
+
     /// <summary>
     /// Constructs a <see cref="Diagnostic"/> message.
     /// </summary>
@@ -24,10 +44,11 @@ internal sealed record class Diagnostic
     public static Diagnostic Create(
         DiagnosticTemplate template,
         Location location,
-        params object?[] formatArgs) => new(
+        params object?[] formatArgs) => Create(
             template: template,
             location: location,
-            formatArgs: formatArgs);
+            formatArgs: formatArgs,
+            relatedInformation: ImmutableArray<DiagnosticRelatedInformation>.Empty);
 
     /// <summary>
     /// The template for this message.
@@ -59,14 +80,21 @@ internal sealed record class Diagnostic
     /// </summary>
     public Location Location { get; }
 
+    /// <summary>
+    /// Additional information for this diagnostic.
+    /// </summary>
+    public ImmutableArray<DiagnosticRelatedInformation> RelatedInformation { get; }
+
     private Diagnostic(
         DiagnosticTemplate template,
         object?[] formatArgs,
-        Location location)
+        Location location,
+        ImmutableArray<DiagnosticRelatedInformation> relatedInformation)
     {
         this.Template = template;
         this.FormatArgs = formatArgs;
         this.Location = location;
+        this.RelatedInformation = relatedInformation;
     }
 
     /// <summary>
@@ -74,6 +102,28 @@ internal sealed record class Diagnostic
     /// </summary>
     /// <param name="context">The <see cref="ParseTree"/> node this <see cref="Diagnostic"/> is attached to.</param>
     /// <returns>The equivalent <see cref="ApiDiagnostic"/> to <paramref name="context"/>.</returns>
-    public ApiDiagnostic ToApiDiagnostic(ParseTree? context) =>
+    public ApiDiagnostic ToApiDiagnostic(ParseTree? context) => new(
+        this,
+        this.Location.ToApiLocation(context),
+        this.RelatedInformation.Select(i => i.ToApiDiagnosticRelatedInformation(null)).ToImmutableArray());
+}
+
+/// <summary>
+/// Extra information for diagnostics.
+/// </summary>
+/// <param name="Location">The location of the related info.</param>
+/// <param name="Format">The format message.</param>
+/// <param name="FormatArgs">The format arguments.</param>
+internal sealed record class DiagnosticRelatedInformation(
+    Location Location,
+    string Format,
+    object?[] FormatArgs)
+{
+    /// <summary>
+    /// Translates this <see cref="DiagnosticRelatedInformation"/> to an <see cref="ApiDiagnosticRelatedInformation"/>.
+    /// </summary>
+    /// <param name="context">The <see cref="ParseTree"/> node this <see cref="DiagnosticRelatedInformation"/> is attached to.</param>
+    /// <returns>The equivalent <see cref="ApiDiagnosticRelatedInformation"/> to <paramref name="context"/>.</returns>
+    public ApiDiagnosticRelatedInformation ToApiDiagnosticRelatedInformation(ParseTree? context) =>
         new(this, this.Location.ToApiLocation(context));
 }

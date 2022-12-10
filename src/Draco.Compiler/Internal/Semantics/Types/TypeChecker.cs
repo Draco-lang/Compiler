@@ -43,12 +43,13 @@ internal static class TypeChecker
         {
             var scope = SymbolResolution.GetDefinedScopeOrNull(db, tree) ?? throw new InvalidOperationException();
             var definition = scope.Definition;
-            if (definition is not null) InferLocalTypes(db, definition);
-            // TODO: Diags produced during inference?
-            return Enumerable.Empty<Diagnostic>();
+            Debug.Assert(definition is not null);
+            var result = InferLocalTypes(db, definition);
+            return result.Diagnostics;
         }
         else
         {
+            // TODO: Do we need to consider anything else explicitly?
             return Enumerable.Empty<Diagnostic>();
         }
     }

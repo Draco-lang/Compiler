@@ -4,6 +4,9 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.Types;
 
@@ -12,80 +15,116 @@ namespace Draco.Compiler.Internal.Semantics.Types;
 /// </summary>
 internal sealed class ConstraintSolver
 {
-    public Type Assignable(Type to, Type from)
+    private enum UnificationError
+    {
+        TypeMismatch,
+        ParameterCountMismatch,
+    }
+
+    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics.ToImmutable();
+
+    private readonly ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+
+    public Type Assignable(ParseTree origin, Type to, Type from)
     {
         // TODO: This is not the right behavior but we don't have subtyping yet
-        Unify(to, from);
+        this.Unify(origin, to, from);
         return to;
     }
 
-    public Type CommonAncestor(Type to, Type from)
+    public Type CommonAncestor(ParseTree origin, Type to, Type from)
     {
         // TODO: This is not the right behavior but we don't have subtyping yet
-        Unify(to, from);
+        this.Unify(origin, to, from);
         return to;
     }
 
-    public Type Return(Type declared, Type returned)
+    public Type Return(ParseTree origin, Type declared, Type returned)
     {
         // TODO: This is not the right behavior but we don't have subtyping yet
-        Unify(declared, returned);
+        this.Unify(origin, declared, returned);
         return declared;
     }
 
-    public Type Same(Type t1, Type t2)
+    public Type Same(ParseTree origin, Type t1, Type t2)
     {
-        Unify(t1, t2);
+        this.Unify(origin, t1, t2);
         return t1;
     }
 
-    public Type Call(Type func, ImmutableArray<Type> args)
+    public Type Call(ParseTree origin, Type func, ImmutableArray<Type> args)
     {
         // TODO: This is not the right behavior but we don't have overloading yet
         var returnType = new Type.Variable(null);
         var callSite = new Type.Function(args, returnType);
-        Unify(func, callSite);
+        this.Unify(origin, func, callSite);
         return returnType;
     }
 
-    private static void Unify(Type left, Type right)
+    private void Unify(ParseTree origin, Type left, Type right)
     {
+        var result = Unify(left, right);
+        if (result is not null) this.diagnostics.Add(ToDiagnostic(origin, result.Value));
+    }
+
+    private static Diagnostic ToDiagnostic(ParseTree origin, UnificationError error)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    private static UnificationError? Unify(Type left, Type right)
+    {
+        static UnificationError? Ok() => null;
+        static UnificationError? Error(UnificationError err) => err;
+
         left = UnwrapTypeVariable(left);
         right = UnwrapTypeVariable(right);
 
         switch (left, right)
         {
         case (Type.Variable v1, Type.Variable v2):
+        {
             // Don't create a cycle
-            if (ReferenceEquals(v1, v2)) break;
-            v1.Substitution = v2;
-            break;
+            if (!ReferenceEquals(v1, v2)) v1.Substitution = v2;
+            return Ok();
+        }
 
         // Variable substitution
         case (Type.Variable v1, _):
+        {
             v1.Substitution = right;
-            break;
+            return Ok();
+        }
         case (_, Type.Variable v2):
+        {
             v2.Substitution = left;
-            break;
+            return Ok();
+        }
 
         case (Type.Builtin b1, Type.Builtin b2):
-            // TODO: Type error
-            if (b1.Type != b2.Type) throw new NotImplementedException();
-            break;
+        {
+            if (b1.Type != b2.Type) return Error(UnificationError.TypeMismatch);
+            return Ok();
+        }
 
         case (Type.Function f1, Type.Function f2):
-            // TODO: Type error
-            if (f1.Params.Length != f2.Params.Length) throw new NotImplementedException();
-            // TODO: Propagate error?
-            Unify(f1.Return, f2.Return);
-            // TODO: Propagate errors?
-            for (var i = 0; i < f1.Params.Length; ++i) Unify(f1.Params[i], f2.Params[i]);
-            break;
+        {
+            if (f1.Params.Length != f2.Params.Length) return Error(UnificationError.ParameterCountMismatch);
+            var returnError = Unify(f1.Return, f2.Return);
+            if (returnError is not null) return returnError;
+            for (var i = 0; i < f1.Params.Length; ++i)
+            {
+                var parameterError = Unify(f1.Params[i], f2.Params[i]);
+                if (parameterError is not null) return parameterError;
+            }
+            return Ok();
+        }
 
         default:
-            // TODO
-            throw new NotImplementedException();
+        {
+            return Error(UnificationError.TypeMismatch);
+        }
         }
     }
 

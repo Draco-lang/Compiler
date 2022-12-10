@@ -21,7 +21,8 @@ namespace Draco.Compiler.Internal.Semantics.Types;
 /// <param name="Expressions">The inferred type of expressions.</param>
 internal readonly record struct TypeInferenceResult(
     IReadOnlyDictionary<ISymbol, Type> Symbols,
-    IReadOnlyDictionary<ParseTree.Expr, Type> Expressions);
+    IReadOnlyDictionary<ParseTree.Expr, Type> Expressions,
+    ImmutableArray<Diagnostic> Diagnostics);
 
 /// <summary>
 /// A visitor that does type-inference on the given subtree.
@@ -30,11 +31,15 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 {
     public TypeInferenceResult Result => new(
         Symbols: this.symbols.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)),
-        Expressions: this.expressions.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)));
+        Expressions: this.expressions.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)),
+        Diagnostics: this.Diagnostics);
 
     public TypeInferenceResult PartialResult => new(
         Symbols: this.symbols,
-        Expressions: this.expressions);
+        Expressions: this.expressions,
+        Diagnostics: this.Diagnostics);
+
+    public ImmutableArray<Diagnostic> Diagnostics => this.solver.Diagnostics;
 
     private readonly ConstraintSolver solver = new();
     private readonly QueryDatabase db;
@@ -117,7 +122,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             // var x: T = v;
             // TODO: Need to put a constraint that valueType is subtype of declaredType
             inferredType = declaredType;
-            this.solver.Assignable(declaredType, valueType);
+            this.solver.Assignable(node, declaredType, valueType);
         }
 
         // Store the inferred type
@@ -133,7 +138,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         base.VisitInlineBodyFuncBody(node);
 
         var exprType = TypeChecker.TypeOf(this.db, node.Expression);
-        this.solver.Return(this.returnType, exprType);
+        this.solver.Return(node, this.returnType, exprType);
 
         return this.Default;
     }
@@ -144,7 +149,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         base.VisitReturnExpr(node);
 
         var exprType = node.Expression is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Expression);
-        this.solver.Return(this.returnType, exprType);
+        this.solver.Return(node, this.returnType, exprType);
 
         return this.Default;
     }
@@ -160,13 +165,13 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         if (node.Operator.Type == TokenType.Assign)
         {
             // Right has to be assignable to left
-            var resultType = this.solver.Assignable(leftType, rightType);
+            var resultType = this.solver.Assignable(node, leftType, rightType);
             this.expressions[node] = resultType;
         }
         else
         {
             // TODO: Temporary
-            var resultType = this.solver.Same(leftType, rightType);
+            var resultType = this.solver.Same(node, leftType, rightType);
             this.expressions[node] = resultType;
         }
 
@@ -183,7 +188,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         var leftType = TypeChecker.TypeOf(this.db, node.Then);
         var rightType = node.Else is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Else.Expression);
-        var resultType = this.solver.CommonAncestor(leftType, rightType);
+        var resultType = this.solver.CommonAncestor(node, leftType, rightType);
         this.expressions[node] = resultType;
 
         return this.Default;
@@ -198,7 +203,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         var argsType = node.Args.Value.Elements
             .Select(a => TypeChecker.TypeOf(this.db, a.Value))
             .ToImmutableArray();
-        var returnType = this.solver.Call(calledType, argsType);
+        var returnType = this.solver.Call(node, calledType, argsType);
         this.expressions[node] = returnType;
 
         return this.Default;

@@ -136,6 +136,19 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
+    public override Unit VisitExprStmt(ParseTree.Stmt.Expr node)
+    {
+        // Inference in children
+        base.VisitExprStmt(node);
+
+        // Expect unit
+        var exprType = TypeChecker.TypeOf(this.db, node.Expression);
+        this.solver.Same(exprType, Type.Unit)
+            .ConfigureDiagnostic(diag => diag.WithLocation(ExtractReturnLocation(node.Expression)));
+
+        return this.Default;
+    }
+
     public override Unit VisitInlineBodyFuncBody(ParseTree.FuncBody.InlineBody node)
     {
         // Inference in children
@@ -201,7 +214,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             // Then part has to be of unit
             this.solver.Same(leftType, Type.Unit)
                 .ConfigureDiagnostic(diag => diag
-                    .WithLocation(new Location.TreeReference(ExtractReturnExpression(node.Then)))
+                    .WithLocation(ExtractReturnLocation(node.Then))
                     .AddRelatedInformation("an if-expression without an else branch must result in unit"));
             resultType = leftType;
         }
@@ -211,11 +224,11 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             // TODO: Wrong constraint, we need "Common ancestor"
             resultType = this.solver.Same(leftType, rightType)
                 .ConfigureDiagnostic(diags => diags
-                    .WithLocation(new Location.TreeReference(ExtractReturnExpression(node.Else.Expression)))
+                    .WithLocation(ExtractReturnLocation(node.Else.Expression))
                     .AddRelatedInformation(
                         format: "the other branch was inferred to be {0} here",
                         formatArgs: new[] { leftType },
-                        location: new Location.TreeReference(ExtractReturnExpression(node.Then))))
+                        location: ExtractReturnLocation(node.Then)))
                 .Result;
         }
         this.expressions[node] = resultType;
@@ -239,6 +252,9 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         return this.Default;
     }
+
+    private static Location ExtractReturnLocation(ParseTree.Expr expr) =>
+        new Location.TreeReference(ExtractReturnExpression(expr));
 
     private static ParseTree.Expr ExtractReturnExpression(ParseTree.Expr expr) => expr switch
     {

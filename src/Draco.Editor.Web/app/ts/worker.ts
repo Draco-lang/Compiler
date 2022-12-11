@@ -1,5 +1,5 @@
 importScripts('./dotnet.js');
-declare global { // Blazor do not provide types, so we have our own to please typescript.
+declare global { // Blazor does not provide types, so we have our own to please typescript.
     interface Window {
         dotnet: any;
     }

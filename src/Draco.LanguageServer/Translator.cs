@@ -17,22 +17,11 @@ internal static class Translator
         Severity = LspModels.DiagnosticSeverity.Error,
         // TODO: Is there a no-range option?
         Range = ToLsp(diag.Location.Range) ?? new(),
-        RelatedInformation = diag.RelatedInformation
-            .Select(ToLsp)
-            .ToList(),
-    };
-
-    public static LspModels.DiagnosticRelatedInformation ToLsp(CompilerApi.Diagnostics.DiagnosticRelatedInformation relatedInformation) => new()
-    {
-        // TODO: Wrong
-        Location = new LspModels.Location
-        {
-            // TODO: Hardcoded
-            Uri = OmniSharp.Extensions.LanguageServer.Protocol.DocumentUri.FromFileSystemPath(@"C:/Development/Experiments/Untitled-1.draco"),
-            // TODO: Is there a no-range option?
-            Range = ToLsp(relatedInformation.Location.Range) ?? new(),
-        },
-        Message = relatedInformation.Message,
+        // TODO: Map related information
+        // For now we are not mapping it because Location does not actually map to a file
+        //RelatedInformation = diag.RelatedInformation
+        //    .Select(ToLsp)
+        //    .ToList(),
     };
 
     public static LspModels.Range? ToLsp(CompilerApi.Syntax.Range? range) => range is null

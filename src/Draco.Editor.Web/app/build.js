@@ -7,12 +7,48 @@ import { createThemeBasedLogo as getFavicon } from './favicon-downloader.js';
 import { Octokit } from '@octokit/rest';
 import JSON5 from 'json5';
 import YAML from 'yaml';
-import { convertTheme } from "./theme-converter.js";
+import { defineConfig, build as viteBuild } from 'vite';
+import { convertTheme } from './theme-converter.js';
 // This file manage the build process of the webapp.
 
+const distDir = '../wwwroot';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const outDir = path.join(__dirname, distDir);
+const binFolder = process.argv[2];
 
+async function dotnetjsBuild() {
+    await viteBuild(defineConfig({ // Yes, I'm using another bundler, because this one bundle correctly dotnet.js to CJS...
+        build: {
+            lib: {
+                // Could also be a dictionary or array of multiple entry points
+                entry: path.resolve(binFolder, 'dotnet.js'),
+                name: 'dotnet',
+                fileName: 'dotnet',
+                formats: ['umd']
+            },
+            rollupOptions: {
+                // make sure to externalize deps that shouldn't be bundled
+                // into your library
+                external: ['dotnet.wasm'],
+                output: {
+                    esModule: false,
+                    format: 'cjs',
+                    compact: true
+                }
+            },
+            outDir: outDir
+        }
+    }));
+    // Problem #1: ASP.NET DevServer doesn't send the correct MIME Type on cjs files.
+    // Problem #2: I lost 30 mins trying to configure rollup to output `dotnet.js` instead of `dotnet.cjs` without success.
+    // So I rename the file by hand instead...
+    fs.renameSync(path.join(outDir, 'dotnet.umd.cjs'), path.join(outDir, 'dotnet.js'));
+
+    fs.copyFileSync(path.join(binFolder, 'dotnet.wasm'), path.join(outDir, 'dotnet.wasm'));
+}
+
+await dotnetjsBuild();
 
 // this is a plugin to handle wasm file. We handle it like it was a binary file.
 let wasmPlugin = {
@@ -29,11 +65,8 @@ const workerEntryPoints = [
     'vs/editor/editor.worker.js'
 ];
 
-const distDir = process.argv[2];
-const outDir = path.join(__dirname, distDir);
-
 // Bundle monaco editor workers.
-build({
+await build({
     entryPoints: workerEntryPoints.map((entry) => `node_modules/monaco-editor/esm/${entry}`),
     bundle: true,
     format: 'iife',
@@ -41,16 +74,25 @@ build({
 });
 
 // Bundle our app.
-build({
+await build({
     entryPoints: ['ts/app.ts', 'css/app.css'],
     bundle: true,
-    format: 'esm', // We want ESM to use import in Blazor.
+    format: 'esm',
     outdir: outDir,
     loader: {
         '.ttf': 'file'
     },
     inject: ['ts/process.ts'],
-    plugins: [wasmPlugin]
+    plugins: [wasmPlugin],
+    external: ['dotnet.wasm']
+});
+
+// Bundle the worker.
+await build({
+    entryPoints: ['ts/worker.ts'],
+    bundle: true,
+    format: 'cjs',
+    outfile: path.join(outDir, 'worker.js'),
 });
 
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir);

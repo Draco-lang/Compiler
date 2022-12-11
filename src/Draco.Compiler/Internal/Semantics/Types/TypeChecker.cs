@@ -118,11 +118,22 @@ internal static class TypeChecker
             typed,
             Type (typed) =>
             {
-                var definingFunc = symbol.DefiningFunction;
-                Debug.Assert(definingFunc is not null);
-                Debug.Assert(definingFunc.Definition is not null);
-                var inferenceResult = InferLocalTypes(db, definingFunc.Definition);
-                return inferenceResult.Symbols[typed];
+                if (typed.Definition is null) return typed.Type;
+                if (typed.IsGlobal)
+                {
+                    var definition = typed.Definition;
+                    Debug.Assert(definition is not null);
+                    var inferenceResult = InferLocalTypes(db, definition);
+                    return inferenceResult.Symbols[typed];
+                }
+                else
+                {
+                    var definingFunc = typed.DefiningFunction;
+                    Debug.Assert(definingFunc is not null);
+                    Debug.Assert(definingFunc.Definition is not null);
+                    var inferenceResult = InferLocalTypes(db, definingFunc.Definition);
+                    return inferenceResult.Symbols[typed];
+                }
             });
     }
 
@@ -142,25 +153,15 @@ internal static class TypeChecker
     }
 
     /// <summary>
-    /// Infers the <see cref="Type"/>s of entities in a given function <see cref="Scope"/>.
+    /// Infers the <see cref="Type"/>s of entities in a given function <see cref="IScope"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The subtree to infer types in.</param>
     /// <returns>The result of type inference.</returns>
     private static TypeInferenceResult InferLocalTypes(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         args: tree,
-        createContext: () =>
-        {
-            var definition = (ParseTree.Decl.Func)tree;
-            var defType = definition.ReturnType is null ? Type.Unit : Evaluate(db, definition.ReturnType.Type);
-            return new TypeInferenceVisitor(db, defType, definition.ReturnType);
-        },
-        recompute: (visitor, tree) =>
-        {
-            visitor.Visit(tree);
-            visitor.Solve();
-            return visitor.Result;
-        },
+        createContext: () => new TypeInferenceVisitor(db),
+        recompute: (visitor, tree) => visitor.Infer(tree),
         handleCycle: (visitor, tree) => visitor.PartialResult);
 
     /// <summary>

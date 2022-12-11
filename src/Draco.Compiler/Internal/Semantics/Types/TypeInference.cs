@@ -29,7 +29,11 @@ internal readonly record struct TypeInferenceResult(
 /// </summary>
 internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 {
-    public TypeInferenceResult Result => new(
+    private readonly record struct ReturnContext(
+        Type ReturnType,
+        ParseTree.TypeSpecifier? Specifier);
+
+    private TypeInferenceResult Result => new(
         Symbols: this.symbols.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)),
         Expressions: this.expressions.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)),
         Diagnostics: this.Diagnostics);
@@ -47,18 +51,19 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     private readonly Dictionary<ISymbol, Type> symbols = new();
     private readonly Dictionary<ParseTree.Expr, Type> expressions = new();
 
-    private readonly Type returnType;
-    private readonly ParseTree.TypeSpecifier? returnTypeSpecifier;
+    private readonly Stack<ReturnContext> returnContextStack = new();
 
-    public TypeInferenceVisitor(QueryDatabase db, Type returnType, ParseTree.TypeSpecifier? returnTypeSpecifier)
+    public TypeInferenceVisitor(QueryDatabase db)
     {
         this.db = db;
-        this.returnType = returnType;
-        this.returnTypeSpecifier = returnTypeSpecifier;
     }
 
-    // TODO: This is a horrible API, why not make a static method that constructs, visits then calls this?
-    public void Solve() => this.solver.Solve();
+    public TypeInferenceResult Infer(ParseTree tree)
+    {
+        this.Visit(tree);
+        this.solver.Solve();
+        return this.Result;
+    }
 
     /// <summary>
     /// Removes type variable substitutions.
@@ -88,6 +93,18 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             return new Type.Error(ImmutableArray.Create(diag));
         }
         return result;
+    }
+
+    public override Unit VisitFuncDecl(ParseTree.Decl.Func node)
+    {
+        var context = new ReturnContext(
+            ReturnType: node.ReturnType is null ? Type.Unit : TypeChecker.Evaluate(this.db, node.ReturnType.Type),
+            Specifier: node.ReturnType);
+        this.returnContextStack.Push(context);
+        base.VisitFuncDecl(node);
+        this.returnContextStack.Pop();
+
+        return this.Default;
     }
 
     public override Unit VisitVariableDecl(ParseTree.Decl.Variable node)
@@ -150,16 +167,20 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         // TODO: Case where return type is unit but the expr is not?
         var exprType = TypeChecker.TypeOf(this.db, node.Expression);
+
+        Debug.Assert(this.returnContextStack.Count > 0);
+        var returnContext = this.returnContextStack.Peek();
+
         // TODO: Not the right constraint, we likely need something like "Assignable" here
-        var promise = this.solver.Same(this.returnType, exprType).ConfigureDiagnostic(diag => diag
+        var promise = this.solver.Same(returnContext.ReturnType, exprType).ConfigureDiagnostic(diag => diag
             .WithLocation(new Location.TreeReference(node.Expression)));
-        if (this.returnTypeSpecifier is not null)
+        if (returnContext.Specifier is not null)
         {
             promise.ConfigureDiagnostic(diag => diag
                 .AddRelatedInformation(
                     format: "the return type was specified to be {0} here",
-                    formatArgs: this.returnType,
-                    location: new Location.TreeReference(this.returnTypeSpecifier.Type)));
+                    formatArgs: returnContext.ReturnType,
+                    location: new Location.TreeReference(returnContext.Specifier.Type)));
         }
 
         return this.Default;
@@ -171,16 +192,20 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         base.VisitReturnExpr(node);
 
         var exprType = node.Expression is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Expression);
+
+        Debug.Assert(this.returnContextStack.Count > 0);
+        var returnContext = this.returnContextStack.Peek();
+
         // TODO: Not the right constraint, we likely need something like "Assignable" here
-        var promise = this.solver.Same(this.returnType, exprType).ConfigureDiagnostic(diag => diag
-            .WithLocation(new Location.TreeReference(node.Expression)));
-        if (this.returnTypeSpecifier is not null)
+        var promise = this.solver.Same(returnContext.ReturnType, exprType).ConfigureDiagnostic(diag => diag
+            .WithLocation(new Location.TreeReference(node)));
+        if (returnContext.Specifier is not null)
         {
             promise.ConfigureDiagnostic(diag => diag
                 .AddRelatedInformation(
                     format: "the return type was specified to be {0} here",
-                    formatArgs: this.returnType,
-                    location: new Location.TreeReference(this.returnTypeSpecifier.Type)));
+                    formatArgs: returnContext.ReturnType,
+                    location: new Location.TreeReference(returnContext.Specifier.Type)));
         }
 
         return this.Default;

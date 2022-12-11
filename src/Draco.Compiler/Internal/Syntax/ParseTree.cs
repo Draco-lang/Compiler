@@ -1,12 +1,7 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Internal.Syntax;

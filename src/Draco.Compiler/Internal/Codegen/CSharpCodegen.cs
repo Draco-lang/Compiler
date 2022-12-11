@@ -2,15 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Internal.Utilities;
 using Draco.Compiler.Api.Syntax;
-using static Draco.Compiler.Api.Syntax.ParseTree;
 using System.IO;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
-using Draco.Compiler.Internal.Query;
-using Draco.Compiler.Internal.Semantics.Types;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 namespace Draco.Compiler.Internal.Codegen;

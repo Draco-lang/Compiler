@@ -1,16 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Basic.Reference.Assemblies;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 

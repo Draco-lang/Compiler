@@ -1,14 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Semantics.Types;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.Compiler.Api.Semantics;
 

@@ -1,16 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.Symbols;
-using static System.Formats.Asn1.AsnWriter;
-using static Draco.Compiler.Api.Diagnostics.Location;
 
 namespace Draco.Compiler.Internal.Semantics.Types;
 

@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Semantics.Types;
 using System.Collections.Immutable;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 

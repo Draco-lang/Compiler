@@ -1,19 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
-using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Semantics.Types;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using IApiSymbol = Draco.Compiler.Api.Semantics.ISymbol;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 

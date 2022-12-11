@@ -50,9 +50,6 @@ async function dotnetjsBuild() {
 
 await dotnetjsBuild();
 
-
-
-
 // this is a plugin to handle wasm file. We handle it like it was a binary file.
 let wasmPlugin = {
     name: 'wasm',
@@ -67,8 +64,6 @@ let wasmPlugin = {
 const workerEntryPoints = [
     'vs/editor/editor.worker.js'
 ];
-
-
 
 // Bundle monaco editor workers.
 await build({
@@ -97,9 +92,8 @@ await build({
     entryPoints: ['ts/worker.ts'],
     bundle: true,
     format: 'cjs',
-    outfile: path.join(outDir,'worker.js'),
+    outfile: path.join(outDir, 'worker.js'),
 });
-
 
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir);
 fs.copyFileSync('index.html', path.join(outDir, 'index.html'),); // Copy index.html to wwwroot.

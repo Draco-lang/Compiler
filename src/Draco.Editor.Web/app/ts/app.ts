@@ -137,7 +137,6 @@ worker.onmessage = (ev) => {
     }
 };
 
-
 async function main() {
     const cfg = await (await fetch('_framework/blazor.boot.json')).json();
     const dlls = Object.keys(cfg.resources.assembly).map(

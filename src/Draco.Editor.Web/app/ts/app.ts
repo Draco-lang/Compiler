@@ -9,7 +9,7 @@ import { deflateRaw, inflateRaw } from 'pako';
 // This file is run on page load.
 // This run before blazor load, and will tell blazor to start.
 
-const worker = new Worker('worker.js'); // first thing: we start the worker so it load in parallel.
+const worker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
 
 self.MonacoEnvironment = {
     // Web Workers need to start a new script, by url.

@@ -321,6 +321,11 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
+    // TODO:
+    //  - relational
+    //  - index
+    //  - member access
+
     private static Location ExtractReturnLocation(ParseTree.Expr expr) =>
         new Location.TreeReference(ExtractReturnExpression(expr));
 

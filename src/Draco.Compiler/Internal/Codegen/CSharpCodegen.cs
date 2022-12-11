@@ -28,6 +28,8 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     // Code builders
     private StringBuilder Builder => this.builderStack.Peek();
     private readonly StringBuilder topLevelBuilder = new();
+    private readonly StringBuilder globalsBuilder = new();
+    private readonly StringBuilder staticInitializerBuilder = new();
     private readonly Stack<StringBuilder> builderStack = new();
 
     // Name allocation state
@@ -47,6 +49,10 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         this.output.WriteLine(Prelude);
         this.output.WriteLine(MainInvocation);
         this.output.WriteLine(ProgramStart);
+        this.output.WriteLine(this.globalsBuilder);
+        this.output.WriteLine(StaticInitializerStart);
+        this.output.WriteLine(this.staticInitializerBuilder);
+        this.output.WriteLine(StaticInitializerEnd);
         this.output.Write(this.topLevelBuilder);
         this.output.WriteLine(ProgramEnd);
         this.output.Flush();
@@ -156,8 +162,34 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     public override string? VisitVariableDecl(Ast.Decl.Variable node)
     {
         var name = this.AllocateName(node.DeclarationSymbol);
-        var value = node.Value is null ? null : this.VisitExpr(node.Value);
-        this.DefineRegister(node.DeclarationSymbol.Type, name, value);
+        if (node.DeclarationSymbol.IsGlobal)
+        {
+            // Define it in globals context
+            var type = node.DeclarationSymbol.Type;
+            if (!IsUnit(node.DeclarationSymbol.Type))
+            {
+                // Not unit, can define
+                this.PushBuilder(this.globalsBuilder);
+                this.Indent1().AppendLine($"internal static {TranslateType(type)} {name};");
+                this.PopBuilder();
+            }
+
+            // Assign value in the static initializer context
+            if (node.Value is not null)
+            {
+                this.PushBuilder(this.staticInitializerBuilder);
+                // In either case, the value is translated for side-effects
+                var value = this.VisitExpr(node.Value);
+                // Not unit, can assign
+                if (value is not null) this.WriteInstruction($"{name} = {value};");
+                this.PopBuilder();
+            }
+        }
+        else
+        {
+            var value = node.Value is null ? null : this.VisitExpr(node.Value);
+            this.DefineRegister(node.DeclarationSymbol.Type, name, value);
+        }
         return this.Default;
     }
 
@@ -378,4 +410,11 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         """;
 
     private static string ProgramEnd => "}";
+
+    private static string StaticInitializerStart => """
+            static DracoProgram()
+            {
+        """;
+
+    private static string StaticInitializerEnd => "    }";
 }

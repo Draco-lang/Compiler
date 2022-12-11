@@ -153,7 +153,7 @@ internal static class TypeChecker
         {
             var definition = (ParseTree.Decl.Func)tree;
             var defType = definition.ReturnType is null ? Type.Unit : Evaluate(db, definition.ReturnType.Type);
-            return new TypeInferenceVisitor(db, defType);
+            return new TypeInferenceVisitor(db, defType, definition.ReturnType);
         },
         recompute: (visitor, tree) =>
         {

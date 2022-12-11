@@ -37,7 +37,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     public TypeInferenceResult PartialResult => new(
         Symbols: this.symbols,
         Expressions: this.expressions,
-        Diagnostics: this.Diagnostics);
+        Diagnostics: ImmutableArray<Diagnostic>.Empty);
 
     public ImmutableArray<Diagnostic> Diagnostics => this.solver.Diagnostics;
 
@@ -48,11 +48,13 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     private readonly Dictionary<ParseTree.Expr, Type> expressions = new();
 
     private readonly Type returnType;
+    private readonly ParseTree.TypeSpecifier? returnTypeSpecifier;
 
-    public TypeInferenceVisitor(QueryDatabase db, Type returnType)
+    public TypeInferenceVisitor(QueryDatabase db, Type returnType, ParseTree.TypeSpecifier? returnTypeSpecifier)
     {
         this.db = db;
         this.returnType = returnType;
+        this.returnTypeSpecifier = returnTypeSpecifier;
     }
 
     // TODO: This is a horrible API, why not make a static method that constructs, visits then calls this?
@@ -126,7 +128,12 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             // TODO: Need to put a constraint that valueType is subtype of declaredType
             inferredType = declaredType;
             // TODO: Not the right constraint, we need "Assignable"
-            this.solver.Same(declaredType, valueType);
+            this.solver.Same(declaredType, valueType).ConfigureDiagnostic(diag => diag
+                .WithLocation(new Location.TreeReference(node.Initializer!.Value))
+                .AddRelatedInformation(
+                    format: "the variable type vas declared to be {0} here",
+                    formatArgs: declaredType,
+                    location: new Location.TreeReference(node.Type!.Type)));
         }
 
         // Store the inferred type
@@ -136,27 +143,24 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitExprStmt(ParseTree.Stmt.Expr node)
-    {
-        // Inference in children
-        base.VisitExprStmt(node);
-
-        // Expect unit
-        var exprType = TypeChecker.TypeOf(this.db, node.Expression);
-        this.solver.Same(exprType, Type.Unit)
-            .ConfigureDiagnostic(diag => diag.WithLocation(ExtractReturnLocation(node.Expression)));
-
-        return this.Default;
-    }
-
     public override Unit VisitInlineBodyFuncBody(ParseTree.FuncBody.InlineBody node)
     {
         // Inference in children
         base.VisitInlineBodyFuncBody(node);
 
+        // TODO: Case where return type is unit but the expr is not?
         var exprType = TypeChecker.TypeOf(this.db, node.Expression);
         // TODO: Not the right constraint, we likely need something like "Assignable" here
-        this.solver.Same(this.returnType, exprType);
+        var promise = this.solver.Same(this.returnType, exprType).ConfigureDiagnostic(diag => diag
+            .WithLocation(new Location.TreeReference(node.Expression)));
+        if (this.returnTypeSpecifier is not null)
+        {
+            promise.ConfigureDiagnostic(diag => diag
+                .AddRelatedInformation(
+                    format: "the return type was specified to be {0} here",
+                    formatArgs: this.returnType,
+                    location: new Location.TreeReference(this.returnTypeSpecifier.Type)));
+        }
 
         return this.Default;
     }
@@ -168,7 +172,16 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         var exprType = node.Expression is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Expression);
         // TODO: Not the right constraint, we likely need something like "Assignable" here
-        this.solver.Same(this.returnType, exprType);
+        var promise = this.solver.Same(this.returnType, exprType).ConfigureDiagnostic(diag => diag
+            .WithLocation(new Location.TreeReference(node.Expression)));
+        if (this.returnTypeSpecifier is not null)
+        {
+            promise.ConfigureDiagnostic(diag => diag
+                .AddRelatedInformation(
+                    format: "the return type was specified to be {0} here",
+                    formatArgs: this.returnType,
+                    location: new Location.TreeReference(this.returnTypeSpecifier.Type)));
+        }
 
         return this.Default;
     }
@@ -185,8 +198,21 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         {
             // Right has to be assignable to left
             // TODO: Wrong constraint, we need "Assignable"
-            var resultType = this.solver.Same(leftType, rightType).Result;
-            this.expressions[node] = resultType;
+            var promise = this.solver.Same(leftType, rightType).ConfigureDiagnostic(diag => diag
+                .WithLocation(new Location.TreeReference(node.Right)));
+
+            // Optionally append where the variable was declared
+            var leftSymbol = SymbolResolution.GetReferencedSymbolOrNull(this.db, node.Left);
+            if (leftSymbol is ISymbol.IVariable varSymbol && varSymbol.Definition is not null)
+            {
+                promise.ConfigureDiagnostic(diag => diag
+                    .AddRelatedInformation(
+                        format: "the variable was declared to be {0} here",
+                        formatArgs: leftType,
+                        location: new Location.TreeReference(varSymbol.Definition)));
+            }
+
+            this.expressions[node] = promise.Result;
         }
         else
         {
@@ -205,7 +231,8 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         // Check if condition is bool
         var conditionType = TypeChecker.TypeOf(this.db, node.Condition.Value);
-        this.solver.Same(conditionType, Type.Bool);
+        this.solver.Same(conditionType, Type.Bool).ConfigureDiagnostic(diag => diag
+            .WithLocation(new Location.TreeReference(node.Condition.Value)));
 
         var resultType = null as Type;
         var leftType = TypeChecker.TypeOf(this.db, node.Then);
@@ -232,6 +259,18 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
                 .Result;
         }
         this.expressions[node] = resultType;
+
+        return this.Default;
+    }
+
+    public override Unit VisitWhileExpr(ParseTree.Expr.While node)
+    {
+        // Inference in children
+        base.VisitWhileExpr(node);
+
+        var conditionType = TypeChecker.TypeOf(this.db, node.Condition.Value);
+        this.solver.Same(conditionType, Type.Bool).ConfigureDiagnostic(diag => diag
+            .WithLocation(new Location.TreeReference(node.Condition.Value)));
 
         return this.Default;
     }

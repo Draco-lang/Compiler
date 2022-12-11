@@ -5,15 +5,12 @@ import { Registry } from 'monaco-textmate';
 import { wireTmGrammars } from 'monaco-editor-textmate'; // Library that allow running Textmates grammar in monaco.
 import grammarDefinition from '../../../Draco.SyntaxHighlighting/draco.tmLanguage.json';
 import { deflateRaw, inflateRaw } from 'pako';
+import { IWorkerMessage } from './workerMessage.js';
 
 // This file is run on page load.
 // This run before blazor load, and will tell blazor to start.
 
-declare global { // Blazor do not provide types, so we have our own to please typescript.
-    class Blazor {
-        static start(): Promise<void>;
-    }
-}
+const worker = new Worker('worker.js'); // first thing: we start the worker so it load in parallel.
 
 self.MonacoEnvironment = {
     // Web Workers need to start a new script, by url.
@@ -58,17 +55,7 @@ function updateHash() {
     const buffer = new Uint8Array(compressed.length + 1);
     buffer[0] = 1; // version, for future use.
     buffer.set(compressed, 1);
-    window.location.hash = fromBase64ToBase64URL(toBase64(buffer));
-}
-
-// We export this method so the C# runtime can call them.
-
-/**
- * Sets the text of the output monaco-editor.
- * @param text
- */
-export function setOutputText(text: string) {
-    outputEditor.getModel().setValue(text);
+    history.replaceState(undefined, undefined, '#' + fromBase64ToBase64URL(toBase64(buffer)));
 }
 
 // this is the element that allow to select the output type.
@@ -110,9 +97,11 @@ outputTypeSelector.onchange = () => {
         monaco.editor.setModelLanguage(outputEditor.getModel(), 'none');
         break;
     }
-
     // We relay the output type change to C#.
-    DotNet.invokeMethodAsync<void>('Draco.Editor.Web', 'OnOutputTypeChange', newVal);
+    worker.postMessage({
+        type: 'OnOutputTypeChange',
+        paylod: newVal
+    });
 };
 
 const dracoEditor = monaco.editor.create(document.getElementById('draco-editor'), {
@@ -123,7 +112,10 @@ const dracoEditor = monaco.editor.create(document.getElementById('draco-editor')
 
 dracoEditor.onDidChangeModelContent(() => {
     updateHash();
-    DotNet.invokeMethodAsync<void>('Draco.Editor.Web', 'CodeChange', dracoEditor.getModel().createSnapshot().read());
+    worker.postMessage({
+        type: 'CodeChange',
+        payload: dracoEditor.getModel().createSnapshot().read()
+    });
 });
 
 const outputEditor = monaco.editor.create(document.getElementById('output-viewer'), {
@@ -132,16 +124,48 @@ const outputEditor = monaco.editor.create(document.getElementById('output-viewer
     readOnly: true
 });
 
+worker.onmessage = (ev) => {
+    const msg = ev.data as {
+        type: string;
+        message: string;
+    };
+    switch (msg.type) {
+    case 'setOutputText':
+        outputEditor.getModel().setValue(msg.message);
+        break;
+    default:
+        break;
+    }
+};
+
+
 async function main() {
-    Blazor.start().then( // Start blazor, nonblocking.
-        () => {
-            DotNet.invokeMethodAsync<void>(
-                'Draco.Editor.Web',
-                'OnInit',
-                outputTypeSelector.value, dracoEditor.getModel().createSnapshot().read()
-            );
+    const cfg = await (await fetch('_framework/blazor.boot.json')).json();
+    const dlls = Object.keys(cfg.resources.assembly).map(
+        s => {
+            return {
+                'behavior': 'assembly',
+                'name': s
+            };
         }
     );
+    dlls.push({
+        'behavior': 'dotnetwasm',
+        'name': 'dotnet.wasm'
+    });
+    const bootCfg = {
+        mainAssemblyName: cfg.entryAssembly,
+        assemblyRootFolder: '_framework',
+        assets: dlls,
+    };
+    worker.postMessage(bootCfg);
+    worker.postMessage({
+        type: 'OnInit',
+        payload: {
+            OutputType: outputTypeSelector.value,
+            Code: dracoEditor.getModel().createSnapshot().read()
+        }
+    });
     const wasmPromise = loadWASM(onigasmWasm.buffer); // https://www.npmjs.com/package/onigasm;
 
     const choosenTheme = window.localStorage.getItem('theme'); // get previous user theme choice

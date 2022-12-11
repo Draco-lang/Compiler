@@ -2,52 +2,50 @@ using Draco.Compiler.Api.Scripting;
 using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using System.Text.Json;
 
 namespace Draco.Editor.Web;
 
-public class Program
+public partial class Program
 {
-    private static IJSRuntime js = null!;
-    private static IJSObjectReference appJS = null!;
     private static string code = null!;
     private static string selectedOutputType = null!;
 
-    public static async Task Main(string[] args)
-    {
-        var builder = WebAssemblyHostBuilder.CreateDefault(args);
-        var host = builder.Build();
-        js = host.Services.GetRequiredService<IJSRuntime>();
+    public static async Task Main() => Interop.Messages += OnMessage;
 
-        // This will complete when the synchronous part of app.ts finish.
-        appJS = await js.InvokeAsync<IJSObjectReference>("import", "./ts/app.js");
-        await ProcessUserInput(); // When the app.ts finish, we
-        await host.RunAsync();
+
+    public static async void OnMessage(object? sender, (string type, string payload) message)
+    {
+        switch (message.type)
+        {
+        case "OnInit":
+            var onInit = (OnInit)JsonSerializer.Deserialize(message.payload, typeof(OnInit), SourceGenerationContext.Default)!;
+            selectedOutputType = onInit.OutputType;
+            code = onInit.Code;
+            await ProcessUserInput();
+            return;
+        case "OnOutputTypeChange":
+            selectedOutputType = message.payload;
+            await ProcessUserInput();
+            return;
+        case "CodeChange":
+            code = message.payload;
+            await ProcessUserInput();
+            return;
+        default:
+            throw new NotSupportedException();
+        }
     }
 
-
-    [JSInvokable]
-    public static void OnInit(string outputType, string newCode)
-    {
-        // This is run in the typescript init sequence.
-        selectedOutputType = outputType;
-        code = newCode;
-        // We cannot call app.ts here because it has not finished running. The main will do that for us.
-    }
 
     /// <summary>
     /// Called when the user changed output type.
     /// </summary>
     /// <param name="value">The new output type.</param>
-    [JSInvokable]
-    public static async Task OnOutputTypeChange(string value)
-    {
-        selectedOutputType = value;
-        await ProcessUserInput();
-    }
+    public static async Task OnOutputTypeChange(string value) => selectedOutputType = value;
 
     /// <summary>
     /// Called when the code input changed.
@@ -72,10 +70,10 @@ public class Program
                 await RunScript(compilation);
                 break;
             case "CSharp":
-                await DisplayCompiledCSharp(compilation);
+                DisplayCompiledCSharp(compilation);
                 break;
             case "IL":
-                await DisplayCompiledIL(compilation);
+                DisplayCompiledIL(compilation);
                 break;
             default:
                 throw new InvalidOperationException("Invalid switch case.");
@@ -83,7 +81,7 @@ public class Program
         }
         catch (Exception e)
         {
-            await appJS.InvokeVoidAsync("setOutputText", e.ToString());
+            SetOutputText(e.ToString());
         }
     }
 
@@ -109,11 +107,11 @@ public class Program
         cts.Cancel();
         await consoleLoop;
         outputText ??= consoleStream.ToString();
-        await SetOutputText(outputText);
+        SetOutputText(outputText);
         Console.SetOut(oldOut);
     }
 
-    private static async Task DisplayCompiledCSharp(Compilation compilation)
+    private static void DisplayCompiledCSharp(Compilation compilation)
     {
         var csStream = new MemoryStream();
         var emitResult = compilation.EmitCSharp(csStream);
@@ -121,16 +119,16 @@ public class Program
         {
             csStream.Position = 0;
             var csText = new StreamReader(csStream).ReadToEnd();
-            await SetOutputText(csText);
+            SetOutputText(csText);
         }
         else
         {
             var errors = string.Join("\n", emitResult.Diagnostics);
-            await SetOutputText(errors);
+            SetOutputText(errors);
         }
     }
 
-    private static async Task DisplayCompiledIL(Compilation compilation)
+    private static void DisplayCompiledIL(Compilation compilation)
     {
         using var inlineDllStream = new MemoryStream();
         var emitResult = compilation.Emit(inlineDllStream, csCompilerOptionBuilder: config => config.WithConcurrentBuild(false));
@@ -145,12 +143,12 @@ public class Program
                 text.WriteLine();
                 disassembler.WriteModuleContents(pe);
             }
-            await SetOutputText(text.ToString());
+            SetOutputText(text.ToString());
         }
         else
         {
             var errors = string.Join("\n", emitResult.Diagnostics);
-            await SetOutputText(errors);
+            SetOutputText(errors);
         }
     }
 
@@ -159,7 +157,11 @@ public class Program
     /// </summary>
     /// <param name="text"></param>
     /// <returns></returns>
-    private static async Task SetOutputText(string text) => await appJS.InvokeVoidAsync("setOutputText", text);
+    private static void SetOutputText(string text)
+    {
+        Console.WriteLine("Calling setOutput text with:" + text);
+        Interop.SendMessage("setOutputText", text);
+    }
 
     /// <summary>
     /// Polling loop that take the script output and display it to the output editor.
@@ -169,7 +171,7 @@ public class Program
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            await SetOutputText(stringWriter.ToString());
+            SetOutputText(stringWriter.ToString());
             try
             {
                 await Task.Delay(50, cancellationToken);

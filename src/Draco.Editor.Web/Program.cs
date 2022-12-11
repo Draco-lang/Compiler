@@ -15,25 +15,25 @@ public partial class Program
     private static string code = null!;
     private static string selectedOutputType = null!;
 
-    public static async Task Main() => Interop.Messages += OnMessage;
+    public static void Main() => Interop.Messages += OnMessage;
 
 
-    public static async void OnMessage(object? sender, (string type, string payload) message)
+    public static async Task OnMessage(string type, string payload)
     {
-        switch (message.type)
+        switch (type)
         {
         case "OnInit":
-            var onInit = (OnInit)JsonSerializer.Deserialize(message.payload, typeof(OnInit), SourceGenerationContext.Default)!;
+            var onInit = (OnInit)JsonSerializer.Deserialize(payload, typeof(OnInit), SourceGenerationContext.Default)!;
             selectedOutputType = onInit.OutputType;
             code = onInit.Code;
             await ProcessUserInput();
             return;
         case "OnOutputTypeChange":
-            selectedOutputType = JsonSerializer.Deserialize<string>(message.payload)!;
+            selectedOutputType = JsonSerializer.Deserialize<string>(payload)!;
             await ProcessUserInput();
             return;
         case "CodeChange":
-            code = JsonSerializer.Deserialize<string>(message.payload)!;
+            code = JsonSerializer.Deserialize<string>(payload)!;
             await ProcessUserInput();
             return;
         default:

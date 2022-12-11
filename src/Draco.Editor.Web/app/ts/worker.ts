@@ -17,25 +17,36 @@ let initPromise = new Promise(
 );
 
 let csOnMessage;
-
+const messages = [];
 onmessage = async (e: MessageEvent<unknown>) => {
+    // allow to await the first message in the init part.
     if (firstMessageResolve != undefined) {
         firstMessageResolve(e.data);
         firstMessageResolve = undefined;
         return;
     }
+    // Await that the init code completed.
     if (initPromise != undefined) {
         await initPromise;
         initPromise = undefined;
         initResolve = undefined;
     }
-    try {
-        csOnMessage(e.data['type'], JSON.stringify(e.data['payload']));
-    } catch (e) {
-        console.log(e);
-        throw e;
+    const isWorkerLoop = messages.length == 0; // we start an async message loop if there is no messages stored.
+    messages.push(e.data);
+    if (!isWorkerLoop) {
+        return;
     }
-
+    // Messages loop.
+    while (messages.length > 0) {
+        const currMessage = messages[0];
+        try {
+            await csOnMessage(currMessage['type'], JSON.stringify(currMessage['payload']));
+        } catch (err) {
+            console.log(err);
+            throw err;
+        }
+        messages.shift();
+    }
 };
 
 function sendMessage(type: string, message: string) {

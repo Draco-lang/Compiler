@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishTrimmed>false</PublishTrimmed>
     <LangVersion>11</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +17,7 @@
     <PackageReference Include="Microsoft.JSInterop" Version="8.0.0-alpha.1.22567.5" />
   </ItemGroup>
 
-  <Target Name="JSSetup" BeforeTargets="BeforeBuild">
+  <Target Name="JSSetup" AfterTargets="AfterBuild">
     <Exec Command="npm install" WorkingDirectory="app"></Exec>
     <Exec Condition="'$(Configuration)' == 'Debug'" Command="npm run build-debug" WorkingDirectory="app"></Exec>
     <Exec Condition="'$(Configuration)' == 'Release'" Command="npm run build-release" WorkingDirectory="app"></Exec>

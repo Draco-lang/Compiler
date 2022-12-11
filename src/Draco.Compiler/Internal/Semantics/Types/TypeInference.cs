@@ -186,6 +186,27 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
+    public override Unit VisitUnaryExpr(ParseTree.Expr.Unary node)
+    {
+        // Inference in children
+        base.VisitUnaryExpr(node);
+
+        var subexprType = TypeChecker.TypeOf(this.db, node.Operand);
+
+        if (node.Operator.Type == TokenType.KeywordNot)
+        {
+            // Must be boolean
+            this.solver.Same(subexprType, Type.Bool).ConfigureDiagnostic(diag => diag
+                .WithLocation(new Location.TreeReference(node.Operand)));
+        }
+        else
+        {
+            // TODO
+        }
+
+        return this.Default;
+    }
+
     public override Unit VisitBinaryExpr(ParseTree.Expr.Binary node)
     {
         // Inference in children
@@ -213,6 +234,14 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             }
 
             this.expressions[node] = promise.Result;
+        }
+        else if (node.Operator.Type is TokenType.KeywordAnd or TokenType.KeywordOr)
+        {
+            // We require the sides to be of boolean type
+            this.solver.Same(leftType, Type.Bool).ConfigureDiagnostic(diag => diag
+                .WithLocation(new Location.TreeReference(node.Left)));
+            this.solver.Same(rightType, Type.Bool).ConfigureDiagnostic(diag => diag
+                .WithLocation(new Location.TreeReference(node.Right)));
         }
         else
         {

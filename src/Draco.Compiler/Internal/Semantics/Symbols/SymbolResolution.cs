@@ -423,8 +423,16 @@ internal static class SymbolResolution
 
         Add(Intrinsics.Operators.Add_Int32);
         Add(Intrinsics.Operators.Sub_Int32);
+        Add(Intrinsics.Operators.Mul_Int32);
+        Add(Intrinsics.Operators.Div_Int32);
+        Add(Intrinsics.Operators.Mod_Int32);
 
         Add(Intrinsics.Operators.Less_Int32);
+        Add(Intrinsics.Operators.Greater_Int32);
+        Add(Intrinsics.Operators.LessEqual_Int32);
+        Add(Intrinsics.Operators.GreaterEqual_Int32);
+        Add(Intrinsics.Operators.Equal_Int32);
+        Add(Intrinsics.Operators.NotEqual_Int32);
 
         // TODO: Temporary
         AddBuiltinFunction("println", ImmutableArray.Create(Type.String), Type.Unit);

@@ -6,6 +6,7 @@ using Microsoft.JSInterop;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using System.Text.Json;
+using ICSharpCode.Decompiler.IL;
 
 namespace Draco.Editor.Web;
 
@@ -28,11 +29,11 @@ public partial class Program
             await ProcessUserInput();
             return;
         case "OnOutputTypeChange":
-            selectedOutputType = message.payload;
+            selectedOutputType = JsonSerializer.Deserialize<string>(message.payload)!;
             await ProcessUserInput();
             return;
         case "CodeChange":
-            code = message.payload;
+            code = JsonSerializer.Deserialize<string>(message.payload)!;
             await ProcessUserInput();
             return;
         default:
@@ -76,7 +77,7 @@ public partial class Program
                 DisplayCompiledIL(compilation);
                 break;
             default:
-                throw new InvalidOperationException("Invalid switch case.");
+                throw new InvalidOperationException($"Invalid switch case: {selectedOutputType}.");
             }
         }
         catch (Exception e)
@@ -159,7 +160,6 @@ public partial class Program
     /// <returns></returns>
     private static void SetOutputText(string text)
     {
-        Console.WriteLine("Calling setOutput text with:" + text);
         Interop.SendMessage("setOutputText", text);
     }
 

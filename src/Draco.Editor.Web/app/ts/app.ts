@@ -5,7 +5,6 @@ import { Registry } from 'monaco-textmate';
 import { wireTmGrammars } from 'monaco-editor-textmate'; // Library that allow running Textmates grammar in monaco.
 import grammarDefinition from '../../../Draco.SyntaxHighlighting/draco.tmLanguage.json';
 import { deflateRaw, inflateRaw } from 'pako';
-import { IWorkerMessage } from './workerMessage.js';
 
 // This file is run on page load.
 // This run before blazor load, and will tell blazor to start.
@@ -100,7 +99,7 @@ outputTypeSelector.onchange = () => {
     // We relay the output type change to C#.
     worker.postMessage({
         type: 'OnOutputTypeChange',
-        paylod: newVal
+        payload: newVal
     });
 };
 

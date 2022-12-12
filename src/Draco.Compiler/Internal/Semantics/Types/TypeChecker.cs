@@ -88,6 +88,7 @@ internal static class TypeChecker
             : TypeOf(db, block.Enclosed.Value.Value),
         ParseTree.Expr.Name name => TypeOf(db, SymbolResolution.GetReferencedSymbol(db, name)),
         ParseTree.Expr.If @if => GetTypeOfLocal(db, @if),
+        ParseTree.Expr.Unary ury => GetTypeOfLocal(db, ury),
         ParseTree.Expr.Binary bin => GetTypeOfLocal(db, bin),
         ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
         // TODO: Type errors?

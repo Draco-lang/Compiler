@@ -328,6 +328,8 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         if (sub is null) return null;
 
         if (op == Intrinsics.Operators.Not_Bool) return $"!{sub}";
+        if (op == Intrinsics.Operators.Pos_Int32) return $"+{sub}";
+        if (op == Intrinsics.Operators.Neg_Int32) return $"-{sub}";
 
         throw new NotImplementedException();
     }

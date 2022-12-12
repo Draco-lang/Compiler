@@ -417,6 +417,8 @@ internal static class SymbolResolution
 
         // Operators
         Add(Intrinsics.Operators.Not_Bool);
+        Add(Intrinsics.Operators.Pos_Int32);
+        Add(Intrinsics.Operators.Neg_Int32);
 
         Add(Intrinsics.Operators.Add_Int32);
         Add(Intrinsics.Operators.Sub_Int32);

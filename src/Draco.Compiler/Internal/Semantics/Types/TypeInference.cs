@@ -220,10 +220,12 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             // Must be boolean
             this.solver.Same(subexprType, Type.Bool).ConfigureDiagnostic(diag => diag
                 .WithLocation(new Location.TreeReference(node.Operand)));
+            this.expressions[node] = Type.Bool;
         }
         else
         {
-            // TODO
+            // TODO: Validate operand
+            this.expressions[node] = subexprType;
         }
 
         return this.Default;

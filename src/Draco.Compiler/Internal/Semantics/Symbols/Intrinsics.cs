@@ -21,6 +21,8 @@ internal static class Intrinsics
     public static class Operators
     {
         public static IUnaryOperator Not_Bool { get; } = MakeIntrinsicUnaryOperator(TokenType.KeywordNot, Type.Bool, Type.Bool);
+        public static IUnaryOperator Pos_Int32 { get; } = MakeIntrinsicUnaryOperator(TokenType.Plus, Type.Int32, Type.Int32);
+        public static IUnaryOperator Neg_Int32 { get; } = MakeIntrinsicUnaryOperator(TokenType.Minus, Type.Int32, Type.Int32);
 
         public static IBinaryOperator Add_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Plus, Type.Int32, Type.Int32, Type.Int32);
         public static IBinaryOperator Sub_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Minus, Type.Int32, Type.Int32, Type.Int32);

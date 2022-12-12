@@ -112,7 +112,7 @@ internal abstract record class Ast
         }
 
         /// <summary>
-        /// An if-expression with an option elSse clause.
+        /// An if-expression with an optional else clause.
         /// </summary>
         public sealed record class If(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,

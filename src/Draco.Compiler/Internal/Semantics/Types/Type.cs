@@ -88,6 +88,8 @@ internal abstract partial record class Type
     /// <param name="Diagnostics">The <see cref="Diagnostic"/> messages related to the type error.</param>
     public sealed record class Error(ImmutableArray<Diagnostic> Diagnostics) : Type
     {
+        public static Error Empty { get; } = new(ImmutableArray<Diagnostic>.Empty);
+
         public override bool IsError => true;
         public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
 

@@ -71,6 +71,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     {
         Type.Builtin => type,
         Type.Variable v => this.UnwrapTypeVariable(v),
+        Type.Error e => e,
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 

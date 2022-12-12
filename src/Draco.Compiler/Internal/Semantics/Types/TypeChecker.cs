@@ -109,6 +109,7 @@ internal static class TypeChecker
     /// <returns>The <see cref="Type"/> of <paramref name="symbol"/>.</returns>
     public static Type TypeOf(QueryDatabase db, ISymbol symbol)
     {
+        if (symbol.IsError) return Type.Error.Empty;
         if (symbol is not ISymbol.ITyped typed) throw new InvalidOperationException();
         return db.GetOrUpdate(
             typed,

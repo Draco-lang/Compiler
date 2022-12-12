@@ -93,6 +93,13 @@ internal partial interface IConstraint
                 return Ok();
             }
 
+            // Swallow cascading errors
+            case (Type.Error, _):
+            case (_, Type.Error):
+            {
+                return Ok();
+            }
+
             case (Type.Builtin b1, Type.Builtin b2):
             {
                 if (b1.Type != b2.Type) return Error(UnificationError.TypeMismatch);

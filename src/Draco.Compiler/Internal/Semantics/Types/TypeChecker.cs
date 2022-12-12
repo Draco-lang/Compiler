@@ -179,7 +179,8 @@ internal static class TypeChecker
         // Walk up to the nearest scope that's either global or function
         while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
         {
-            scope = scope.Parent ?? throw new InvalidOperationException();
+            scope = scope.Parent;
+            Debug.Assert(scope is not null);
         }
         Debug.Assert(scope.Definition is not null);
         return scope.Definition;

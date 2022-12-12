@@ -69,7 +69,7 @@ internal static class SymbolResolution
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseTree"/> that references a symbol.</param>
-    /// <returns>The referenced <see cref="Symbol"/>, which can represent a reference error.</returns>
+    /// <returns>The referenced <see cref="ISymbol"/>, which can represent a reference error.</returns>
     public static ISymbol GetReferencedSymbol(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
         ISymbol (tree) =>
@@ -170,11 +170,24 @@ internal static class SymbolResolution
         });
 
     /// <summary>
-    /// Retrieves the <see cref="Symbol"/> defined by the given <see cref="ParseTree"/>.
+    /// Utility for internal API to expect a symbol defined by a certain type of tree.
+    /// See <see cref="GetDefinedSymbolOrNull(QueryDatabase, ParseTree)"/>.
+    /// </summary>
+    public static TSymbol GetDefinedSymbolExpected<TSymbol>(QueryDatabase db, ParseTree tree)
+        where TSymbol : ISymbol
+    {
+        var symbol = GetDefinedSymbolOrNull(db, tree);
+        if (symbol is null) throw new InvalidOperationException("The parse tree does not define a symbol");
+        if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree defines a differen kind of symbol");
+        return tSymbol;
+    }
+
+    /// <summary>
+    /// Retrieves the <see cref="ISymbol"/> defined by the given <see cref="ParseTree"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseTree"/> that is asked if it defines a <see cref="Symbol"/>.</param>
-    /// <returns>The <see cref="Symbol"/> that <paramref name="tree"/> defines, or null if
+    /// <param name="tree">The <see cref="ParseTree"/> that is asked if it defines a <see cref="ISymbol"/>.</param>
+    /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> defines, or null if
     /// it does not define any symbol.</returns>
     public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
@@ -201,11 +214,24 @@ internal static class SymbolResolution
         });
 
     /// <summary>
-    /// Retrieves the <see cref="Symbol"/> referenced by the given <see cref="ParseTree"/>.
+    /// Utility for internal API to expect a symbol referenced by a certain type of tree.
+    /// See <see cref="GetReferencedSymbolOrNull(QueryDatabase, ParseTree)"/>.
+    /// </summary>
+    public static TSymbol GetReferencedSymbolExpected<TSymbol>(QueryDatabase db, ParseTree tree)
+        where TSymbol : ISymbol
+    {
+        var symbol = GetReferencedSymbolOrNull(db, tree);
+        if (symbol is null) throw new InvalidOperationException("The parse tree does not reference a symbol");
+        if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree references a differen kind of symbol");
+        return tSymbol;
+    }
+
+    /// <summary>
+    /// Retrieves the <see cref="ISymbol"/> referenced by the given <see cref="ParseTree"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
-    /// <returns>The <see cref="Symbol"/> that <paramref name="tree"/> references, or null if
+    /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="ISymbol"/>.</param>
+    /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> references, or null if
     /// it does not reference any.</returns>
     public static ISymbol? GetReferencedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
@@ -214,12 +240,12 @@ internal static class SymbolResolution
             : null);
 
     /// <summary>
-    /// Resolves a <see cref="Symbol"/> reference.
+    /// Resolves a <see cref="ISymbol"/> reference.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="Symbol"/>.</param>
+    /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="ISymbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
-    /// <returns>The referenced <see cref="Symbol"/>, or null if not resolved.</returns>
+    /// <returns>The referenced <see cref="ISymbol"/>, or null if not resolved.</returns>
     private static ISymbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name) => db.GetOrUpdate(
         (tree, name),
         ISymbol? (tree, name) =>

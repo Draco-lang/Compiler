@@ -43,14 +43,14 @@ internal static class AstBuilder
 
             ParseTree.Decl.Func func => new Ast.Decl.Func(
                 ParseTree: func,
-                DeclarationSymbol: (ISymbol.IFunction?)SymbolResolution.GetDefinedSymbolOrNull(db, func) ?? throw new InvalidOperationException(),
+                DeclarationSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.IFunction>(db, func),
                 Body: ToAst(db, func.Body)),
             ParseTree.Decl.Label label => new Ast.Decl.Label(
                 ParseTree: label,
-                LabelSymbol: (ISymbol.ILabel?)SymbolResolution.GetDefinedSymbolOrNull(db, label) ?? throw new InvalidOperationException()),
+                LabelSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.ILabel>(db, label)),
             ParseTree.Decl.Variable var => new Ast.Decl.Variable(
                 ParseTree: var,
-                DeclarationSymbol: (ISymbol.IVariable?)SymbolResolution.GetDefinedSymbolOrNull(db, var) ?? throw new InvalidOperationException(),
+                DeclarationSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.IVariable>(db, var),
                 Value: var.Initializer is null ? null : ToAst(db, var.Initializer.Value)),
             _ => throw new ArgumentOutOfRangeException(nameof(decl)),
         });
@@ -86,7 +86,7 @@ internal static class AstBuilder
         {
             ParseTree.Expr.Name name => new Ast.Expr.Reference(
                 ParseTree: name,
-                Symbol: (ISymbol.ITyped)SymbolResolution.GetReferencedSymbol(db, name)),
+                Symbol: SymbolResolution.GetReferencedSymbolExpected<ISymbol.ITyped>(db, name)),
             ParseTree.Expr.If @if => new Ast.Expr.If(
                 ParseTree: @if,
                 Condition: ToAst(db, @if.Condition.Value),
@@ -110,7 +110,7 @@ internal static class AstBuilder
                 Comparisons: rel.Comparisons.Select(c => ToAst(db, c)).ToImmutableArray()),
             ParseTree.Expr.Unary ury => new Ast.Expr.Unary(
                 ParseTree: ury,
-                Operator: (ISymbol.IUnaryOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, ury) ?? throw new InvalidOperationException(),
+                Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IUnaryOperator>(db, ury),
                 Operand: ToAst(db, ury.Operand)),
             ParseTree.Expr.Binary bin => ToAst(db, bin),
             ParseTree.Expr.Literal lit => ToAst(lit),
@@ -151,7 +151,7 @@ internal static class AstBuilder
         ce,
         Ast.ComparisonElement (ce) => new(
             ParseTree: ce,
-            Operator: (ISymbol.IBinaryOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, ce) ?? throw new InvalidOperationException(),
+            Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IBinaryOperator>(db, ce),
             Right: ToAst(db, ce.Right)));
 
     private static Ast.Expr ToAst(QueryDatabase db, ParseTree.Expr.String str)
@@ -188,7 +188,7 @@ internal static class AstBuilder
         // Binary tree either becomes an assignment or a binary expr
         if (Syntax.TokenTypeExtensions.IsCompoundAssignmentOperator(bin.Operator.Type))
         {
-            var @operator = (ISymbol.IBinaryOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException();
+            var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IBinaryOperator>(db, bin);
             return new Ast.Expr.Assign(
                 ParseTree: bin,
                 Target: left,
@@ -219,7 +219,7 @@ internal static class AstBuilder
         }
         else
         {
-            var @operator = (ISymbol.IBinaryOperator?)SymbolResolution.GetReferencedSymbolOrNull(db, bin) ?? throw new InvalidOperationException();
+            var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IBinaryOperator>(db, bin);
             return new Ast.Expr.Binary(
                 ParseTree: bin,
                 Left: left,

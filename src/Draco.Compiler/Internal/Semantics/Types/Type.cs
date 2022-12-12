@@ -73,7 +73,9 @@ internal abstract partial record class Type
             this.Defitition = defitition;
         }
 
-        public override string ToString() => $"{StringUtils.IndexToExcelColumnName(this.id)}'";
+        public override string ToString() => this.substitution is null
+            ? $"{StringUtils.IndexToExcelColumnName(this.id)}'"
+            : this.substitution.ToString();
 
         public bool Equals(Variable? other) => throw new InvalidOperationException("can't compare type variables");
         public override int GetHashCode() => throw new InvalidOperationException("can't hash type variables");

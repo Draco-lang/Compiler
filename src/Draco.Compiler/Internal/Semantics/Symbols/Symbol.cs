@@ -325,10 +325,8 @@ internal partial interface ISymbol
                 var funcDef = scope.Definition;
                 Debug.Assert(funcDef is not null);
 
-                var funcSymbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, funcDef);
-                Debug.Assert(funcSymbol is not null);
-
-                return (IFunction)funcSymbol;
+                var funcSymbol = SymbolResolution.GetDefinedSymbolExpected<ISymbol.IFunction>(this.db, funcDef);
+                return funcSymbol;
             }
         }
         public virtual bool IsExternallyVisible => false;

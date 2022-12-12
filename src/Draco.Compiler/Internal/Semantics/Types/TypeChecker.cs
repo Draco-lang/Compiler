@@ -116,6 +116,11 @@ internal static class TypeChecker
             Type (typed) =>
             {
                 if (typed.Definition is null) return typed.Type;
+                if (typed is ISymbol.IParameter)
+                {
+                    var definition = (ParseTree.FuncParam)typed.Definition;
+                    return Evaluate(db, definition.Type.Type);
+                }
                 if (typed.IsGlobal)
                 {
                     var definition = typed.Definition;

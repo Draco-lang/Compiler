@@ -316,12 +316,11 @@ internal partial interface ISymbol
             {
                 // Walk up until we hit a function scope
                 var scope = this.DefiningScope;
-                do
+                while (!scope.IsFunction)
                 {
                     scope = scope.Parent;
                     if (scope is null) return null;
                 }
-                while (!scope.IsFunction);
 
                 var funcDef = scope.Definition;
                 Debug.Assert(funcDef is not null);

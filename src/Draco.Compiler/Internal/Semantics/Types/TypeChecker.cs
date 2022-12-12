@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
@@ -116,6 +117,7 @@ internal static class TypeChecker
             Type (typed) =>
             {
                 if (typed.Definition is null) return typed.Type;
+                if (typed is ISymbol.IFunction func) return func.Type;
                 if (typed is ISymbol.IParameter)
                 {
                     var definition = (ParseTree.FuncParam)typed.Definition;

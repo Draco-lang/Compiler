@@ -69,9 +69,12 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     /// <returns>The equivalent of <paramref name="type"/> without any variable substitutions.</returns>
     private Type RemoveSubstitutions(Type type) => type switch
     {
-        Type.Builtin => type,
-        Type.Variable v => this.UnwrapTypeVariable(v),
         Type.Error e => e,
+        Type.Variable v => this.UnwrapTypeVariable(v),
+        Type.Function f => new Type.Function(
+            Params: f.Params.Select(this.RemoveSubstitutions).ToImmutableArray(),
+            Return: this.RemoveSubstitutions(f.Return)),
+        Type.Builtin => type,
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
@@ -338,10 +341,9 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         var argsType = node.Args.Value.Elements
             .Select(a => TypeChecker.TypeOf(this.db, a.Value))
             .ToImmutableArray();
-        // TODO: We want a "callable" constraint here, but for now we'll go around a bit
-        var clientType = new Type.Function(argsType, new Type.Variable(null));
-        var returnType = ((Type.Function)this.solver.Same(calledType, clientType).Result).Return;
-        this.expressions[node] = returnType;
+        var promise = this.solver.Call(calledType, argsType).ConfigureDiagnostic(diag => diag
+            .WithLocation(new Location.TreeReference(node)));
+        this.expressions[node] = promise.Result;
 
         return this.Default;
     }

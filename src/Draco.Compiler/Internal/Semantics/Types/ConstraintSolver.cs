@@ -208,4 +208,13 @@ internal sealed class ConstraintSolver
         this.promises.Add(promise);
         return promise;
     }
+
+    public ConstraintSolverPromise<Type> Call(Type calledType, ImmutableArray<Type> argTypes)
+    {
+        // TODO: Hack, this is temporary until we have other constraints
+        var returnType = new Type.Variable(null);
+        var callSite = new Type.Function(argTypes, returnType);
+        var promise = this.Same(callSite, calledType);
+        return new(returnType, promise.Constraint);
+    }
 }

@@ -1,14 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -1069,5 +1065,5 @@ internal sealed class Parser
 
     // Location utility
 
-    private static Location GetLocation(int width) => new Location.OnTree(Range: new(Offset: 0, Width: width));
+    private static Location GetLocation(int width) => new Location.RelativeToTree(Range: new(Offset: 0, Width: width));
 }

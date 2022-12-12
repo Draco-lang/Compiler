@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using ApiLocation = Draco.Compiler.Api.Diagnostics.Location;
 
@@ -27,6 +23,11 @@ internal readonly record struct RelativeRange(int Offset, int Width)
 internal abstract partial record class Location
 {
     /// <summary>
+    /// A singleton location representing no location.
+    /// </summary>
+    public static readonly Location None = new Null();
+
+    /// <summary>
     /// Translates this <see cref="Location"/> to an <see cref="ApiLocation"/>, assuming it's relative to
     /// a <see cref="ParseTree"/>.
     /// </summary>
@@ -38,24 +39,38 @@ internal abstract partial record class Location
 internal abstract partial record class Location
 {
     /// <summary>
+    /// Represents no location.
+    /// </summary>
+    private sealed record class Null : Location
+    {
+        public override ApiLocation ToApiLocation(ParseTree? context) => ApiLocation.None;
+    }
+}
+
+internal abstract partial record class Location
+{
+    /// <summary>
     /// Represents a <see cref="Location"/> relative to a parse-tree element.
     /// </summary>
     /// <param name="Range">The relative range compared to the tree.</param>
-    public sealed record class OnTree(RelativeRange Range) : Location
+    public sealed record class RelativeToTree(RelativeRange Range) : Location
     {
         public override ApiLocation ToApiLocation(ParseTree? context)
         {
             if (context is null) throw new ArgumentNullException(nameof(context));
             var range = context.TranslateRelativeRange(this.Range);
-            return new ApiLocation.Tree(range);
+            return new ApiLocation.InFile(range);
         }
     }
+}
 
+internal abstract partial record class Location
+{
     /// <summary>
     /// Represents a <see cref="Location"/> referencing a <see cref="ParseTree"/> element.
     /// </summary>
     /// <param name="Node">The node the location refers to.</param>
-    public sealed record class ToTree(ParseTree Node) : Location
+    public sealed record class TreeReference(ParseTree Node) : Location
     {
         public override ApiLocation ToApiLocation(ParseTree? context) => this.Node.Location;
     }

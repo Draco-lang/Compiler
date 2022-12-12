@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 /// <summary>
 /// Utility for printing the result of symbol resolution in a DOT graph.
@@ -91,15 +88,12 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
         _ => tree.GetType().Name,
     };
 
-    // TODO: Can we get rid of this pattern?
-    private Scope? GetDefinedScope(ParseTree tree) =>
+    private IScope? GetDefinedScope(ParseTree tree) =>
         SymbolResolution.GetDefinedScopeOrNull(this.db, tree);
 
-    // TODO: Can we get rid of this pattern?
-    private Symbol? GetDefinedSymbol(ParseTree tree) =>
+    private ISymbol? GetDefinedSymbol(ParseTree tree) =>
         SymbolResolution.GetDefinedSymbolOrNull(this.db, tree);
 
-    // TODO: Can we get rid of this pattern?
-    private Symbol? GetReferencedSymbol(ParseTree tree) =>
+    private ISymbol? GetReferencedSymbol(ParseTree tree) =>
         SymbolResolution.GetReferencedSymbolOrNull(this.db, tree);
 }

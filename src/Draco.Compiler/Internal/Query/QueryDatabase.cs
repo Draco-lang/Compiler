@@ -2,108 +2,116 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Query;
 
+// NOTE: We eventually want to make this thread-safe.
 /// <summary>
 /// Manages memoized results of the compiler.
 /// </summary>
 internal sealed class QueryDatabase
 {
+    private readonly record struct ComputationKey(string Name, object Args);
+    private readonly record struct Computation(ComputationKey Key, object Context);
+
     private readonly Dictionary<object, object> memoizedValues = new();
+    private readonly List<Computation> computationStack = new();
 
     #region GetOrUpdate
     public TResult GetOrUpdate<T1, TResult>(
         T1 args,
-        Func<T1, TResult> compute,
+        Func<T1, TResult> recompute,
+        Func<T1, TResult>? handleCycle = null,
         [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args!, () => compute(args));
+        this.GetOrUpdate(
+            queryName: queryName,
+            args: args,
+            createContext: () => default(Unit),
+            recompute: (_, a1) => recompute(a1),
+            handleCycle: handleCycle is null ? null : (ctx, a1) => handleCycle(a1));
+    public TResult GetOrUpdate<T1, TContext, TResult>(
+        T1 args,
+        Func<TContext> createContext,
+        Func<TContext, T1, TResult> recompute,
+        Func<TContext, T1, TResult>? handleCycle = null,
+        [CallerMemberName] string queryName = "") =>
+        this.GetOrUpdateImpl(
+            queryName: queryName,
+            args: args!,
+            createContext: createContext,
+            recompute: ctx => recompute(ctx, args),
+            handleCycle: handleCycle is null ? null : ctx => handleCycle(ctx, args));
+
     public TResult GetOrUpdate<T1, T2, TResult>(
         (T1, T2) args,
-        Func<T1, T2, TResult> compute,
+        Func<T1, T2, TResult> recompute,
+        Func<T1, T2, TResult>? handleCycle = null,
         [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2));
-    public TResult GetOrUpdate<T1, T2, T3, TResult>(
-        (T1, T2, T3) args,
-        Func<T1, T2, T3, TResult> compute,
+        this.GetOrUpdate(
+            queryName: queryName,
+            args: args,
+            createContext: () => default(Unit),
+            recompute: (_, a1, a2) => recompute(a1, a2),
+            handleCycle: handleCycle is null ? null : (ctx, a1, a2) => handleCycle(a1, a2));
+    public TResult GetOrUpdate<T1, T2, TContext, TResult>(
+        (T1, T2) args,
+        Func<TContext> createContext,
+        Func<TContext, T1, T2, TResult> recompute,
+        Func<TContext, T1, T2, TResult>? handleCycle = null,
         [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3));
-    public TResult GetOrUpdate<T1, T2, T3, T4, TResult>(
-        (T1, T2, T3, T4) args,
-        Func<T1, T2, T3, T4, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, TResult>(
-        (T1, T2, T3, T4, T5) args,
-        Func<T1, T2, T3, T4, T5, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, TResult>(
-        (T1, T2, T3, T4, T5, T6) args,
-        Func<T1, T2, T3, T4, T5, T6, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8, T9) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8, args.Item9));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8, args.Item9, args.Item10));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8, args.Item9, args.Item10, args.Item11));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8, args.Item9, args.Item10, args.Item11, args.Item12));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8, args.Item9, args.Item10, args.Item11, args.Item12, args.Item13));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8, args.Item9, args.Item10, args.Item11, args.Item12, args.Item13, args.Item14));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8, args.Item9, args.Item10, args.Item11, args.Item12, args.Item13, args.Item14, args.Item15));
-    public TResult GetOrUpdate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult>(
-        (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) args,
-        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult> compute,
-        [CallerMemberName] string queryName = "") =>
-        this.GetOrUpdateImpl(queryName, args, () => compute(args.Item1, args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8, args.Item9, args.Item10, args.Item11, args.Item12, args.Item13, args.Item14, args.Item15, args.Item16));
+        this.GetOrUpdateImpl(
+            queryName: queryName,
+            args: args!,
+            createContext: createContext,
+            recompute: ctx => recompute(ctx, args.Item1, args.Item2),
+            handleCycle: handleCycle is null ? null : ctx => handleCycle(ctx, args.Item1, args.Item2));
     #endregion
 
-    private T GetOrUpdateImpl<T>(string query, object args, Func<T> compute)
+    private TResult GetOrUpdateImpl<TContext, TResult>(
+        string queryName,
+        object args,
+        Func<TContext> createContext,
+        Func<TContext, TResult> recompute,
+        Func<TContext, TResult>? handleCycle)
     {
-        if (!this.memoizedValues.TryGetValue((query, args), out var value))
+        var computationKey = new ComputationKey(queryName, args);
+        if (!this.memoizedValues.TryGetValue(computationKey, out var value))
         {
-            value = compute();
-            this.memoizedValues.Add((query, args), value!);
+            // Check, if the key is present
+            var indexOfKey = this.computationStack.FindIndex(c => c.Key == computationKey);
+            if (indexOfKey >= 0)
+            {
+                // Present, cycle detected
+                if (handleCycle is null)
+                {
+                    // The query does not handle cycles, error out
+                    var calledQueries = this.computationStack
+                        .Skip(indexOfKey)
+                        .Select(c => c.Key)
+                        .Append(computationKey);
+                    var calledQueryNames = calledQueries.Select(k => $"{k.Name} [{k.Args}]");
+                    var cycle = string.Join("\n", calledQueryNames.Select(q => $" * {q}"));
+                    throw new InvalidOperationException($"Cycle detected:\n{cycle}");
+                }
+                else
+                {
+                    // This query can handle a cycle fine
+                    var context = (TContext)this.computationStack[indexOfKey].Context;
+                    return handleCycle(context);
+                }
+            }
+            // Create context
+            var ctx = createContext();
+            // Push onto stack
+            this.computationStack.Add(new(computationKey, ctx!));
+            // Actually perform computation
+            value = recompute(ctx);
+            // Pop
+            this.computationStack.RemoveAt(this.computationStack.Count - 1);
+            // Memoize
+            this.memoizedValues.Add(computationKey, value!);
         }
-        return (T)value!;
+        return (TResult)value!;
     }
 }

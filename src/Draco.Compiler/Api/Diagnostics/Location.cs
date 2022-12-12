@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.Diagnostics;
@@ -29,18 +25,29 @@ public abstract partial class Location
 
 public abstract partial class Location
 {
+    /// <summary>
+    /// No location.
+    /// </summary>
     internal sealed class Null : Location
     {
         public override bool IsNone => true;
 
         public override string ToString() => "<no location>";
     }
+}
 
-    internal sealed class Tree : Location
+public abstract partial class Location
+{
+    // TODO: Eventually we'll need to store a file here
+
+    /// <summary>
+    /// A location in file.
+    /// </summary>
+    internal sealed class InFile : Location
     {
         public override Range? Range { get; }
 
-        public Tree(Range range)
+        public InFile(Range range)
         {
             this.Range = range;
         }

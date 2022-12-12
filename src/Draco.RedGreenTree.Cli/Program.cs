@@ -1,11 +1,7 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using CommandLine;
 using Microsoft.Build.Locator;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.MSBuild;
 
 namespace Draco.RedGreenTree.Cli;

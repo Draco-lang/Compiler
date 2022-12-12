@@ -1,12 +1,7 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -21,7 +16,7 @@ internal abstract partial record class ParseTree
     public abstract IEnumerable<ParseTree> Children { get; }
 
     internal RelativeRange Range => new(Offset: 0, Width: this.Width);
-    internal Location Location => new Location.OnTree(Range: this.Range);
+    internal Location Location => new Location.RelativeToTree(Range: this.Range);
 
     /// <summary>
     /// The diagnostics attached to this tree node.

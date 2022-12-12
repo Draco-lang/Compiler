@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using System.Threading.Channels;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Token = Draco.Compiler.Internal.Syntax.ParseTree.Token;
 using Trivia = Draco.Compiler.Internal.Syntax.ParseTree.Trivia;

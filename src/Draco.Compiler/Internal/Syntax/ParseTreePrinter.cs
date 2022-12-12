@@ -1,11 +1,8 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Semantics;
 using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
 using ApiParseTree = Draco.Compiler.Api.Syntax.ParseTree;

@@ -1,13 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Query;
-using Draco.Compiler.Internal.Semantics;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.Semantics.Types;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -20,6 +17,8 @@ public sealed class SemanticModel
     /// The root of the tree that the semantic model is for.
     /// </summary>
     public ParseTree Root { get; }
+
+    internal QueryDatabase QueryDatabase => this.db;
 
     private readonly QueryDatabase db;
 
@@ -44,11 +43,11 @@ public sealed class SemanticModel
     {
         IEnumerable<Diagnostic> Impl(ParseTree tree)
         {
-            if (SymbolResolution.ReferencesSymbol(tree))
-            {
-                var sym = SymbolResolution.GetReferencedSymbol(this.db, tree);
-                foreach (var diag in sym.Diagnostics) yield return diag.ToApiDiagnostic(tree);
-            }
+            // Symbol
+            foreach (var diag in SymbolResolution.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
+
+            // Type
+            foreach (var diag in TypeChecker.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
 
             // Children
             foreach (var diag in tree.Children.SelectMany(Impl)) yield return diag;
@@ -56,6 +55,9 @@ public sealed class SemanticModel
 
         return Impl(this.Root);
     }
+
+    // NOTE: These OrNull functions are not too pretty
+    // For now public API is not that big of a concern, so they can stay
 
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> defined by <paramref name="subtree"/>.

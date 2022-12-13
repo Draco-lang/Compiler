@@ -20,6 +20,7 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
         public Func<INamedTypeSymbol, string> GetRedName { get; set; } = x => x.Name;
         public string GreenPropertyName { get; set; } = "Green";
         public string ToRedMethodName { get; set; } = "ToRed";
+        public string ToGreenMethodName { get; set; } = "ToGreen";
 
         public Settings(
             INamedTypeSymbol factoryType,
@@ -51,6 +52,7 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
     private INamedTypeSymbol RedRootType => this.settings.RedRootType;
     private string GreenPropertyName => this.settings.GreenPropertyName;
     private string ToRedMethodName => this.settings.ToRedMethodName;
+    private string ToGreenMethodName => this.settings.ToGreenMethodName;
     private string GetRedClassName(INamedTypeSymbol type) => SymbolEquals(type, this.GreenRootType)
         ? this.RedRootType.Name
         : this.settings.GetRedName(type);
@@ -157,26 +159,37 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
 
         if (this.customMethodNames.Contains(factoryName)) return;
 
-        // Header
-        this.contentWriter
-            .Write(Accessibility.Public)
-            .Write("static")
-            .Write(redName)
-            .Write(factoryName)
-            .Write("(");
-        // Args
-        this.contentWriter.Write(string.Join(
-            ", ",
-            greenType
-                .GetMembers()
-                .OfType<IMethodSymbol>()
-                .Where(m => m.MethodKind == MethodKind.Constructor)
-                .SelectMany(m => m.Parameters)
-                .Select(param => $"{this.TranslareToRedType(param.Type)} {ToCamelCase(param.Name)}")));
-        this.contentWriter.Write(")");
+        foreach (var ctor in greenType
+            .GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(m => m.MethodKind == MethodKind.Constructor))
+        {
+            var ctorParams = ctor.Parameters;
 
-        // Body
-        this.contentWriter.Write("=> throw new System.NotImplementedException();");
+            // Skip copy ctor
+            if (ctorParams.Length == 1 && SymbolEquals(ctorParams[0].Type, greenType)) continue;
+
+            // Header
+            this.contentWriter
+                .Write(Accessibility.Public)
+                .Write("static")
+                .Write(redName)
+                .Write(factoryName)
+                .Write("(");
+            // Args
+            this.contentWriter.Write(string.Join(
+                ", ",
+                ctorParams.Select(param => $"{this.TranslareToRedType(param.Type)} {ToCamelCaseEscaped(param.Name)}")));
+            this.contentWriter.Write(")");
+
+            // Body
+            this.contentWriter
+                .Write("=> new(")
+                .Write(string.Join(
+                    ",",
+                    ctorParams.Select(param => $"{this.ToGreenMethodName}({ToCamelCaseEscaped(param.Name)})")))
+                .Write(");");
+        }
     }
 
     private string GenerateFactoryMethodName(INamedTypeSymbol symbol)

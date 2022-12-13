@@ -21,6 +21,9 @@ public abstract class GeneratorBase
         ? string.Empty
         : $"{char.ToLower(text[0])}{text.Substring(1)}";
 
+    protected static string ToCamelCaseEscaped(string text) =>
+        RoslynUtils.EscapeKeyword(ToCamelCase(text));
+
     protected static string SettingsToHeaderComment(object? settings)
     {
         if (settings is null) return string.Empty;

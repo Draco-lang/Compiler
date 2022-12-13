@@ -23,9 +23,9 @@ internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandler
     public override async Task<TextEditContainer?> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
     {
         var source = this.repository.GetDocument(request.TextDocument.Uri);
-        var tree = ParseTree.Parse(source);
+        var tree = Program.Try(() => ParseTree.Parse(source));
         var originalRange = tree.Range;
-        tree = tree.Format();
+        tree = Program.Try(() => tree.Format());
         var edit = new TextEdit()
         {
             NewText = tree.ToString(),

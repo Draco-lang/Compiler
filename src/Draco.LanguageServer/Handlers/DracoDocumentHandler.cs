@@ -74,7 +74,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
         var change = request.ContentChanges.First();
         var sourceText = change.Text;
         this.repository.AddOrUpdateDocument(uri, sourceText);
-        await this.PublishDiagnosticsAsync(uri, sourceText);
+        await Program.Try(() => this.PublishDiagnosticsAsync(uri, sourceText));
         return Unit.Value;
     }
 

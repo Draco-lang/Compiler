@@ -1,16 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Basic.Reference.Assemblies;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 
 namespace Draco.Compiler.Api;
@@ -101,8 +99,10 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        var codegen = new CSharpCodegen(this.GetSemanticModel(), csStream);
-        codegen.Generate();
+        var ast = AstBuilder.ToAst(this.db, this.ParseTree);
+        ast = AstLowering.Lower(this.db, ast);
+        var codegen = new CSharpCodegen(csStream);
+        codegen.Generate(ast);
 
         return new(
             Success: true,

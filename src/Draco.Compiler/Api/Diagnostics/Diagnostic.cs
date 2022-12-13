@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Immutable;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Draco.Compiler.Api.Diagnostics;
 
@@ -27,6 +25,7 @@ public enum DiagnosticSeverity
     Error,
 }
 
+// NOTE: Eventually we'd want error codes too. For now it's way too early for that.
 /// <summary>
 /// A template for creating <see cref="Diagnostic"/> messages.
 /// </summary>
@@ -78,10 +77,18 @@ public sealed class Diagnostic
     /// </summary>
     /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
     /// <param name="location">The location the diagnostic was produced at.</param>
+    /// <param name="relatedInformation">Related information about the diagnostic.</param>
+    /// <param name="formatArgs">The format arguments of the message.</param>
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
-        Location location) => new(template: template, formatArgs: Array.Empty<object?>(), location: location);
+        Location location,
+        ImmutableArray<DiagnosticRelatedInformation> relatedInformation,
+        params object?[] formatArgs) => new(
+            template: template,
+            location: location,
+            formatArgs: formatArgs,
+            relatedInformation: relatedInformation);
 
     /// <summary>
     /// Constructs a <see cref="Diagnostic"/> message.
@@ -93,10 +100,11 @@ public sealed class Diagnostic
     public static Diagnostic Create(
         DiagnosticTemplate template,
         Location location,
-        params object?[] formatArgs) => new(
+        params object?[] formatArgs) => Create(
             template: template,
             location: location,
-            formatArgs: formatArgs);
+            formatArgs: formatArgs,
+            relatedInformation: ImmutableArray<DiagnosticRelatedInformation>.Empty);
 
     /// <summary>
     /// The template for this message.
@@ -133,21 +141,29 @@ public sealed class Diagnostic
     /// </summary>
     public Location Location { get; }
 
+    /// <summary>
+    /// Related information to this diagnostic.
+    /// </summary>
+    public ImmutableArray<DiagnosticRelatedInformation> RelatedInformation { get; }
+
     internal Diagnostic(
         Internal.Diagnostics.Diagnostic internalDiagnostic,
-        Location location)
-        : this(internalDiagnostic.Template, internalDiagnostic.FormatArgs, location)
+        Location location,
+        ImmutableArray<DiagnosticRelatedInformation> relatedInformation)
+        : this(internalDiagnostic.Template, internalDiagnostic.FormatArgs, location, relatedInformation)
     {
     }
 
     private Diagnostic(
         DiagnosticTemplate template,
         object?[] formatArgs,
-        Location location)
+        Location location,
+        ImmutableArray<DiagnosticRelatedInformation> relatedInformation)
     {
         this.Template = template;
         this.FormatArgs = formatArgs;
         this.Location = location;
+        this.RelatedInformation = relatedInformation;
     }
 
     public override string ToString()
@@ -161,8 +177,66 @@ public sealed class Diagnostic
             _ => throw new InvalidOperationException(),
         };
         sb.Append(severity);
-        if (!this.Location.IsNone) sb.Append($" {this.Location}");
+        if (!this.Location.IsNone) sb.Append(' ').Append(this.Location);
         sb.Append(": ").Append(this.Message);
         return sb.ToString();
+    }
+}
+
+/// <summary>
+/// Represents related information about the diagnostic.
+/// </summary>
+public sealed class DiagnosticRelatedInformation
+{
+    /// <summary>
+    /// Constructs a new <see cref="DiagnosticRelatedInformation"/>.
+    /// </summary>
+    /// <param name="location">The location of the related information.</param>
+    /// <param name="format">The format message.</param>
+    /// <param name="formatArgs">The format arguments.</param>
+    /// <returns>The constructed <see cref="DiagnosticRelatedInformation"/>.</returns>
+    public static DiagnosticRelatedInformation Create(
+        Location location,
+        string format,
+        params object?[] formatArgs) => new(
+            location: location,
+            format: format,
+            formatArgs: formatArgs);
+
+    /// <summary>
+    /// The location of the related information.
+    /// </summary>
+    public Location Location { get; }
+
+    /// <summary>
+    /// The format message.
+    /// </summary>
+    public string Format { get; }
+
+    /// <summary>
+    /// The format arguments.
+    /// </summary>
+    public object?[] FormatArgs { get; }
+
+    /// <summary>
+    /// The formatted message.
+    /// </summary>
+    public string Message => string.Format(this.Format, this.FormatArgs);
+
+    internal DiagnosticRelatedInformation(
+        Internal.Diagnostics.DiagnosticRelatedInformation internalInfo,
+        Location location)
+        : this(location, internalInfo.Format, internalInfo.FormatArgs)
+    {
+    }
+
+    private DiagnosticRelatedInformation(
+        Location location,
+        string format,
+        object?[] formatArgs)
+    {
+        this.Location = location;
+        this.Format = format;
+        this.FormatArgs = formatArgs;
     }
 }

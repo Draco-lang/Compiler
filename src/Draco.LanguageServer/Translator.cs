@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Draco.Compiler.Api.Syntax;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -23,6 +17,11 @@ internal static class Translator
         Severity = LspModels.DiagnosticSeverity.Error,
         // TODO: Is there a no-range option?
         Range = ToLsp(diag.Location.Range) ?? new(),
+        // TODO: Map related information
+        // For now we are not mapping it because Location does not actually map to a file
+        //RelatedInformation = diag.RelatedInformation
+        //    .Select(ToLsp)
+        //    .ToList(),
     };
 
     public static LspModels.Range? ToLsp(CompilerApi.Syntax.Range? range) => range is null
@@ -37,8 +36,14 @@ internal static class Translator
 
     public static SemanticToken? ToLsp(CompilerApi.Syntax.ParseTree.Token token) => token.Type switch
     {
-        TokenType.LineStringStart or TokenType.LineStringEnd or TokenType.MultiLineStringStart or TokenType.MultiLineStringEnd or TokenType.LiteralCharacter =>
-        new SemanticToken(SemanticTokenType.String, SemanticTokenModifier.Defaults.ToImmutableList(), token.Range),
+        CompilerApi.Syntax.TokenType.LineStringStart
+     or CompilerApi.Syntax.TokenType.LineStringEnd
+     or CompilerApi.Syntax.TokenType.MultiLineStringStart
+     or CompilerApi.Syntax.TokenType.MultiLineStringEnd
+     or CompilerApi.Syntax.TokenType.LiteralCharacter => new SemanticToken(
+            LspModels.SemanticTokenType.String,
+            LspModels.SemanticTokenModifier.Defaults.ToImmutableList(),
+            token.Range),
         _ => null,
     };
 }

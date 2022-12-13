@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Utilities;
 
@@ -36,6 +32,24 @@ internal static class StringUtils
                 '\0' => @"\0",
                 _ => ch,
             });
+        }
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Converts a 0-based numeric index into an Excel-like column name.
+    /// </summary>
+    /// <param name="index">The index to convert.</param>
+    /// <returns>The Excel column-name of <paramref name="index"/>.</returns>
+    public static string IndexToExcelColumnName(int index)
+    {
+        var result = new StringBuilder();
+        ++index;
+        while (index > 0)
+        {
+            var mod = (index - 1) % 26;
+            result.Insert(0, (char)('A' + mod));
+            index = (index - mod) / 26;
         }
         return result.ToString();
     }

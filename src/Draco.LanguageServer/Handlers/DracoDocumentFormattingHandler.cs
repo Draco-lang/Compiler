@@ -20,7 +20,7 @@ internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandler
         this.repository = repository;
     }
 
-    public override async Task<TextEditContainer?> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
+    public override Task<TextEditContainer?> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
     {
         var source = this.repository.GetDocument(request.TextDocument.Uri);
         var tree = Program.Try(() => ParseTree.Parse(source));
@@ -31,11 +31,12 @@ internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandler
             NewText = tree.ToString(),
             Range = Translator.ToLsp(originalRange),
         };
-        return new TextEditContainer(edit);
+        var container = new TextEditContainer(edit);
+        return Task.FromResult(container)!;
     }
 
     protected override DocumentFormattingRegistrationOptions CreateRegistrationOptions(DocumentFormattingCapability capability, ClientCapabilities clientCapabilities) =>
-        new DocumentFormattingRegistrationOptions()
+        new()
         {
             DocumentSelector = this.documentSelector
         };

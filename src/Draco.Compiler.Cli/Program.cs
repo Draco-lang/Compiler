@@ -2,12 +2,9 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Cli;
 

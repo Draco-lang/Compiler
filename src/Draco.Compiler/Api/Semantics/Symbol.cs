@@ -1,13 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
-using InternalSymbol = Draco.Compiler.Internal.Semantics.Symbol;
+using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 
 namespace Draco.Compiler.Api.Semantics;
+
+// NOTE: Eventually we'll need separate interfaces for each kind of symbol
+// For now public API is not that big of a concern, so this is fine
 
 /// <summary>
 /// Represents a symbol in the language.
@@ -49,9 +49,9 @@ internal sealed class Symbol : ISymbol
             .Select(diag => diag.ToApiDiagnostic(null))
             .ToImmutableArray();
 
-    internal InternalSymbol InternalSymbol { get; }
+    internal IInternalSymbol InternalSymbol { get; }
 
-    public Symbol(InternalSymbol internalSymbol)
+    public Symbol(IInternalSymbol internalSymbol)
     {
         this.InternalSymbol = internalSymbol;
     }
@@ -60,7 +60,7 @@ internal sealed class Symbol : ISymbol
 
     public bool Equals(ISymbol? other) =>
            other is Symbol otherSym
-        && object.Equals(this.InternalSymbol, otherSym.InternalSymbol);
+        && Equals(this.InternalSymbol, otherSym.InternalSymbol);
 
     public override int GetHashCode() => this.InternalSymbol.GetHashCode();
 }

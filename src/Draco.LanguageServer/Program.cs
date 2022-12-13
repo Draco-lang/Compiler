@@ -26,7 +26,6 @@ internal static class Program
     private static void LogException(Exception exception)
     {
         server.LogError($"Draco language server failed with following error: {exception.Message}");
-        server.ForcefulShutdown();
     }
 
     internal static void Try(Action action)
@@ -35,9 +34,10 @@ internal static class Program
         {
             action();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             LogException(ex);
+            throw;
         }
     }
 
@@ -50,7 +50,7 @@ internal static class Program
         catch (Exception ex)
         {
             LogException(ex);
-            throw new InvalidOperationException();
+            throw;
         }
     }
 }

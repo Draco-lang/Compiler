@@ -14,22 +14,22 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
 {
     public sealed class Settings
     {
-        public INamedTypeSymbol FactoryType { get; set; }
         public INamedTypeSymbol GreenRootType { get; set; }
         public INamedTypeSymbol RedRootType { get; set; }
+        public INamedTypeSymbol FactoryType { get; set; }
         public Func<INamedTypeSymbol, string> GetRedName { get; set; } = x => x.Name;
         public string GreenPropertyName { get; set; } = "Green";
         public string ToRedMethodName { get; set; } = "ToRed";
         public string ToGreenMethodName { get; set; } = "ToGreen";
 
         public Settings(
-            INamedTypeSymbol factoryType,
             INamedTypeSymbol greenRootType,
-            INamedTypeSymbol redRootType)
+            INamedTypeSymbol redRootType,
+            INamedTypeSymbol factoryType)
         {
-            this.FactoryType = factoryType;
             this.GreenRootType = greenRootType;
             this.RedRootType = redRootType;
+            this.FactoryType = factoryType;
         }
     }
 
@@ -42,8 +42,6 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
     private readonly Settings settings;
     private readonly HashSet<INamedTypeSymbol> greenTreeNodes;
     private readonly HashSet<INamedTypeSymbol> typesInParseTree = new(SymbolEqualityComparer.Default);
-    private readonly HashSet<string> generatedMethodNames = new();
-    private readonly HashSet<string> customMethodNames;
     private readonly CodeWriter headerWriter = new();
     private readonly CodeWriter contentWriter = new();
 
@@ -75,9 +73,6 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
 
         this.greenTreeNodes = new(SymbolEqualityComparer.Default);
         this.ExtractGreenTreeNodes();
-
-        this.customMethodNames = new();
-        this.ExtractCustomFactoryMethods();
     }
 
     private void ExtractGreenTreeNodes()
@@ -85,17 +80,6 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
         var relevantNodes = this.GreenRootType
             .EnumerateContainedTypeTree();
         foreach (var n in relevantNodes) this.greenTreeNodes.Add(n);
-        foreach (var n in this.greenTreeNodes) this.generatedMethodNames.Add(this.GenerateFactoryMethodName(n));
-    }
-
-    private void ExtractCustomFactoryMethods()
-    {
-        var result = new Dictionary<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
-        var methods = this.FactoryType
-            .GetMembers()
-            .OfType<IMethodSymbol>()
-            .Where(m => m.IsStatic);
-        foreach (var m in methods) this.customMethodNames.Add(m.Name);
     }
 
     protected override string Generate()
@@ -157,8 +141,6 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
         var redName = this.GetFullRedClassName(greenType);
         var factoryName = this.GenerateFactoryMethodName(greenType);
 
-        if (this.customMethodNames.Contains(factoryName)) return;
-
         foreach (var ctor in greenType
             .GetMembers()
             .OfType<IMethodSymbol>()
@@ -183,11 +165,23 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
             this.contentWriter.Write(")");
 
             // Body
+            // => (RedNode)ToRed(null, new GreenNode(...))
             this.contentWriter
-                .Write("=> new(")
+                .Write("=>")
+                .Write($"({redName})")
+                .Write(this.RedRootType)
+                .Write(".")
+                .Write(this.ToRedMethodName)
+                .Write("(null,");
+            this.contentWriter
+                .Write("new")
+                .Write(greenType)
+                .Write("(")
                 .Write(string.Join(
                     ",",
-                    ctorParams.Select(param => $"{this.ToGreenMethodName}({ToCamelCaseEscaped(param.Name)})")))
+                    ctorParams.Select(param => $"({param.Type.ToDisplayString()}){this.ToGreenMethodName}({ToCamelCaseEscaped(param.Name)})")))
+                .Write(")");
+            this.contentWriter
                 .Write(");");
         }
     }

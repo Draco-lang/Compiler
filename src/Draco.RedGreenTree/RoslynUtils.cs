@@ -75,6 +75,7 @@ internal static class RoslynUtils
         if (attribsSource.HidesInherited()) result.Append("new ");
         if (attribsSource.IsAbstract) result.Append("abstract ");
         if (attribsSource.IsSealed) result.Append("sealed ");
+        if (attribsSource.IsStatic) result.Append("static ");
         if (attribsSource.IsReadOnly) result.Append("readonly ");
         if (partial) result.Append("partial ");
         if (type.IsRecord) result.Append("record ");

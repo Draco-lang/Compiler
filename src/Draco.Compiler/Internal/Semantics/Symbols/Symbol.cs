@@ -342,7 +342,7 @@ internal partial interface ISymbol
         }
 
         // TODO
-        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+        public abstract IApiSymbol ToApiSymbol();
     }
 }
 
@@ -400,6 +400,8 @@ internal partial interface ISymbol
             : base(db, name, definition)
         {
         }
+
+        public override IApiSymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
     }
 }
 
@@ -433,6 +435,8 @@ internal partial interface ISymbol
         {
             this.IsMutable = isMutable;
         }
+
+        public override IApiSymbol ToApiSymbol() => new Api.Semantics.VariableSymbol(this);
     }
 }
 
@@ -469,6 +473,8 @@ internal partial interface ISymbol
             : base(db, name, definition)
         {
         }
+
+        public override IApiSymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
     }
 }
 
@@ -541,6 +547,8 @@ internal partial interface ISymbol
             : base(db, name, definition)
         {
         }
+
+        public override IApiSymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
     }
 }
 

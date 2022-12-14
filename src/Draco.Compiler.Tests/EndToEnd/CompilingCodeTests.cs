@@ -61,6 +61,50 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void LazyAnd()
+    {
+        var assembly = Compile("""
+            func foo(nx2: bool, nx3: bool): int32 = {
+                var result = 1;
+                nx2 and { result *= 2; nx3 } and { result *= 3; false };
+                result
+            };
+            """);
+
+        var r1 = Invoke<int>(assembly, "foo", false, false);
+        var r2 = Invoke<int>(assembly, "foo", false, true);
+        var r3 = Invoke<int>(assembly, "foo", true, false);
+        var r4 = Invoke<int>(assembly, "foo", true, true);
+
+        Assert.Equal(1, r1);
+        Assert.Equal(1, r2);
+        Assert.Equal(2, r3);
+        Assert.Equal(6, r4);
+    }
+
+    [Fact]
+    public void LazyOr()
+    {
+        var assembly = Compile("""
+            func foo(nx2: bool, nx3: bool): int32 = {
+                var result = 1;
+                nx2 or { result *= 2; nx3 } or { result *= 3; false };
+                result
+            };
+            """);
+
+        var r1 = Invoke<int>(assembly, "foo", false, false);
+        var r2 = Invoke<int>(assembly, "foo", false, true);
+        var r3 = Invoke<int>(assembly, "foo", true, false);
+        var r4 = Invoke<int>(assembly, "foo", true, true);
+
+        Assert.Equal(6, r1);
+        Assert.Equal(2, r2);
+        Assert.Equal(1, r3);
+        Assert.Equal(1, r4);
+    }
+
+    [Fact]
     public void RecursiveFactorial()
     {
         var assembly = Compile("""

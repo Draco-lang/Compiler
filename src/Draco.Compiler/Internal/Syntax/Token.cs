@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
+using Draco.RedGreenTree.Attributes;
 using TokenType = Draco.Compiler.Api.Syntax.TokenType;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -15,6 +16,7 @@ internal abstract partial record class ParseTree
     /// Represents a piece of source code that has an associated category and can be considered atomic during parsing.
     /// Stores surrounding trivia and lexical errors.
     /// </summary>
+    [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
     internal sealed partial record class Token : ParseTree
     {
         /// <summary>

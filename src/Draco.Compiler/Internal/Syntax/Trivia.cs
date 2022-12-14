@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
+using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -9,6 +10,7 @@ internal abstract partial record class ParseTree
     /// <summary>
     /// Represents single trivia.
     /// </summary>
+    [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
     internal sealed partial record class Trivia : ParseTree
     {
         /// <summary>

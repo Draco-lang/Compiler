@@ -80,6 +80,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in declaration context.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Decl
@@ -138,6 +139,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in function body context.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : FuncBody
@@ -186,6 +188,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in statement context.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Stmt
@@ -216,6 +219,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in expression context.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Expr
@@ -367,6 +371,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected tokens in a string.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
@@ -378,6 +383,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Content part of a string literal.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Content(
             Token Value,
             int Cutoff,

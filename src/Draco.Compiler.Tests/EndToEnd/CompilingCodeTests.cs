@@ -9,6 +9,36 @@ namespace Draco.Compiler.Tests.EndToEnd;
 public sealed class CompilingCodeTests : EndToEndTestsBase
 {
     [Fact]
+    public void Max()
+    {
+        var assembly = Compile("""
+            func max(a: int32, b: int32): int32 = if (a > b) a else b;
+            """);
+
+        var inputs = new[] { (0, 0), (1, 0), (0, 1), (5, 0), (5, 4), (4, 5) };
+        foreach (var (a, b) in inputs)
+        {
+            var maxi = Invoke<int>(assembly, "max", a, b);
+            Assert.Equal(Math.Max(a, b), maxi);
+        }
+    }
+
+    [Fact]
+    public void Abs()
+    {
+        var assembly = Compile("""
+            func abs(n: int32): int32 = if (n > 0) n else -n;
+            """);
+
+        var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };
+        foreach (var n in inputs)
+        {
+            var absi = Invoke<int>(assembly, "abs", n);
+            Assert.Equal(Math.Abs(n), absi);
+        }
+    }
+
+    [Fact]
     public void RecursiveFibonacci()
     {
         var assembly = Compile("""

@@ -36,14 +36,14 @@ internal class Program
             fileArgument,
             emitCSharpOutput,
         };
-        generateCSCommand.SetHandler((file, emitCS) => GenerateCSharp(file, emitCS), fileArgument, emitCSharpOutput);
+        generateCSCommand.SetHandler(GenerateCSharp, fileArgument, emitCSharpOutput);
 
         var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
         {
             fileArgument,
             outputOption,
         };
-        generateExeCommand.SetHandler((input, output) => GenerateExe(input, output), fileArgument, outputOption);
+        generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption);
 
         var rootCommand = new RootCommand("CLI for the draco compiler");
         rootCommand.AddCommand(runCommand);

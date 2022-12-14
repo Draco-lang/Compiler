@@ -39,6 +39,23 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void RecursiveFactorial()
+    {
+        var assembly = Compile("""
+            func fact(n: int32): int32 =
+                if (n == 0) 1
+                else n * fact(n - 1);
+            """);
+
+        var results = new[] { 1, 1, 2, 6, 24, 120, 720 };
+        for (var i = 0; i < 7; ++i)
+        {
+            var facti = Invoke<int>(assembly, "fact", i);
+            Assert.Equal(results[i], facti);
+        }
+    }
+
+    [Fact]
     public void RecursiveFibonacci()
     {
         var assembly = Compile("""

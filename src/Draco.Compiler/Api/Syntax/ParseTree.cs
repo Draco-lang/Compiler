@@ -100,6 +100,35 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
         green: new Internal.Syntax.ParseTreeFormatter(Internal.Syntax.ParseTreeFormatterSettings.Default).Format(this.Green));
 }
 
+// Traverasal
+public abstract partial class ParseTree
+{
+    /// <summary>
+    /// Traverses this subtree in an in-order fashion, meaning that the order is root, left, right recursively.
+    /// </summary>
+    /// <returns>The <see cref="IEnumerable{ParseTree}"/> that gives back nodes in order.</returns>
+    public IEnumerable<ParseTree> InOrderTraverse()
+    {
+        yield return this;
+        foreach (var child in this.Children)
+        {
+            foreach (var e in child.InOrderTraverse()) yield return e;
+        }
+    }
+
+    /// <summary>
+    /// Searches for a child node of type <typeparamref name="TNode"/>.
+    /// </summary>
+    /// <typeparam name="TNode">The type of child to search for.</typeparam>
+    /// <param name="index">The index of the child to search for.</param>
+    /// <returns>The <paramref name="index"/>th child of type <typeparamref name="TNode"/>.</returns>
+    public TNode FindInChildren<TNode>(int index = 0)
+        where TNode : ParseTree => this
+        .InOrderTraverse()
+        .OfType<TNode>()
+        .ElementAt(index);
+}
+
 public abstract partial class ParseTree
 {
     internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range)

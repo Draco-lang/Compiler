@@ -5,17 +5,35 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
+using IInternalScope = Draco.Compiler.Internal.Semantics.Symbols.IScope;
 
 namespace Draco.Compiler.Tests.Semantics;
 
 public sealed class SymbolResolutionTests
 {
+    private static TSymbol GetInternalSymbol<TSymbol>(ISymbol? symbol)
+        where TSymbol : IInternalSymbol
+    {
+        Assert.NotNull(symbol);
+        var symbolBase = (SymbolBase)symbol!;
+        return (TSymbol)symbolBase.Symbol;
+    }
+
+    private static void AssertParentOf(IInternalScope? parent, IInternalScope? child)
+    {
+        Assert.NotNull(child);
+        Assert.False(ReferenceEquals(parent, child));
+        Assert.True(ReferenceEquals(child!.Parent, parent));
+    }
+
     [Fact]
     public void BasicScopeTree()
     {
-        // func foo() {         // b1
+        // func foo(n: int32) {         // b1
         //     var x1;
         //     {                // b2
         //         var x2;
@@ -29,53 +47,54 @@ public sealed class SymbolResolutionTests
         // }
 
         // Arrange
-        var x1 = VariableDecl(Name("x1"));
-        var x2 = VariableDecl(Name("x2"));
-        var x3 = VariableDecl(Name("x3"));
-        var x4 = VariableDecl(Name("x4"));
-        var x5 = VariableDecl(Name("x5"));
-        var x6 = VariableDecl(Name("x6"));
-
-        var b3 = BlockExpr(DeclStmt(x3));
-        var b5 = BlockExpr(DeclStmt(x5));
-        var b6 = BlockExpr(DeclStmt(x6));
-
-        var b2 = BlockExpr(DeclStmt(x2), ExprStmt(b3));
-        var b4 = BlockExpr(DeclStmt(x5), ExprStmt(b5), ExprStmt(b6));
-
-        var b1 = BlockExpr(DeclStmt(x1), ExprStmt(b2), ExprStmt(b4));
-
-        var funcFoo = FuncDecl(
+        var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray.Create<ParseTree.FuncParam>(),
+            ImmutableArray.Create(
+                FuncParam(Name("n"), NameTypeExpr(Name("int32")))),
             null,
-            BlockBodyFuncBody(b1));
-        var tree = CompilationUnit(funcFoo);
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x1"))),
+                ExprStmt(BlockExpr(
+                    DeclStmt(VariableDecl(Name("x2"))),
+                    ExprStmt(BlockExpr(DeclStmt(VariableDecl(Name("x3"))))))),
+                ExprStmt(BlockExpr(
+                    DeclStmt(VariableDecl(Name("x4"))),
+                    ExprStmt(BlockExpr(DeclStmt(VariableDecl(Name("x5"))))),
+                    ExprStmt(BlockExpr(DeclStmt(VariableDecl(Name("x6")))))))))));
+
+        var foo = tree.FindInChildren<ParseTree.Decl.Func>();
+        var n = tree.FindInChildren<ParseTree.FuncParam>();
+        var x1 = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var x2 = tree.FindInChildren<ParseTree.Decl.Variable>(1);
+        var x3 = tree.FindInChildren<ParseTree.Decl.Variable>(2);
+        var x4 = tree.FindInChildren<ParseTree.Decl.Variable>(3);
+        var x5 = tree.FindInChildren<ParseTree.Decl.Variable>(4);
+        var x6 = tree.FindInChildren<ParseTree.Decl.Variable>(5);
 
         // Act
         var compilation = Compilation.Create(tree);
         var semanticModel = compilation.GetSemanticModel();
 
-        var sym1 = semanticModel.GetDefinedSymbolOrNull(x1);
-        var sym2 = semanticModel.GetDefinedSymbolOrNull(x2);
-        var sym3 = semanticModel.GetDefinedSymbolOrNull(x3);
-        var sym4 = semanticModel.GetDefinedSymbolOrNull(x4);
-        var sym5 = semanticModel.GetDefinedSymbolOrNull(x5);
-        var sym6 = semanticModel.GetDefinedSymbolOrNull(x6);
+        var symFoo = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(foo));
+        var symn = GetInternalSymbol<IInternalSymbol.IParameter>(semanticModel.GetDefinedSymbolOrNull(n));
+        var sym1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x1));
+        var sym2 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x2));
+        var sym3 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x3));
+        var sym4 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x4));
+        var sym5 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x5));
+        var sym6 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x6));
 
         // Assert
-        Assert.NotNull(sym1);
-        Assert.NotNull(sym2);
-        Assert.NotNull(sym3);
-        Assert.NotNull(sym4);
-        Assert.NotNull(sym5);
-        Assert.NotNull(sym6);
 
-        Assert.False(sym1!.IsError);
-        Assert.False(sym2!.IsError);
-        Assert.False(sym3!.IsError);
-        Assert.False(sym4!.IsError);
-        Assert.False(sym5!.IsError);
-        Assert.False(sym6!.IsError);
+        AssertParentOf(sym2.DefiningScope, sym3.DefiningScope);
+        AssertParentOf(sym1.DefiningScope, sym2.DefiningScope);
+        AssertParentOf(sym4.DefiningScope, sym5.DefiningScope);
+        AssertParentOf(sym4.DefiningScope, sym6.DefiningScope);
+        AssertParentOf(sym1.DefiningScope, sym4.DefiningScope);
+
+        AssertParentOf(symn.DefiningScope, sym1.DefiningScope);
+
+        AssertParentOf(symFoo.DefiningScope, symn.DefiningScope);
+        Assert.True(ReferenceEquals(symFoo.DefinedScope, symn.DefiningScope));
     }
 }

@@ -220,11 +220,8 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
         {
             var elements = namedSymbol
                 .TupleElements
-                .Select(e =>
-                {
-                    var type = this.TranslareToRedType(e.Type);
-                    return $"{type} {e.Name}";
-                }).ToList();
+                .Select(e => $"{this.TranslareToRedType(e.Type)} {e.Name}")
+                .ToList();
             return $"({string.Join(", ", elements)})";
         }
         // Generic types

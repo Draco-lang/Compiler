@@ -270,6 +270,8 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
                 .WithLocation(new Location.TreeReference(node.Left)));
             this.solver.Same(rightType, Type.Bool).ConfigureDiagnostic(diag => diag
                 .WithLocation(new Location.TreeReference(node.Right)));
+
+            this.expressions[node] = Type.Bool;
         }
         else
         {

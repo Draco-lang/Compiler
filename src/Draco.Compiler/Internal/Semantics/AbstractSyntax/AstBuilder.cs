@@ -84,6 +84,9 @@ internal static class AstBuilder
         expr,
         Ast.Expr (expr) => expr switch
         {
+            ParseTree.Expr.Return ret => new Ast.Expr.Return(
+                ParseTree: ret,
+                Expression: ret.Expression is null ? Ast.Expr.Unit.Default : ToAst(db, ret.Expression)),
             ParseTree.Expr.Name name => new Ast.Expr.Reference(
                 ParseTree: name,
                 Symbol: SymbolResolution.GetReferencedSymbolExpected<ISymbol.ITyped>(db, name)),

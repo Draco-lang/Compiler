@@ -39,6 +39,28 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void Between()
+    {
+        var assembly = Compile("""
+            func between(n: int32, a: int32, b: int32): bool = a <= n <= b;
+            """);
+
+        var trueInputs = new[] { (0, 0, 0), (0, 0, 1), (0, -1, 0), (0, 0, 5), (1, 0, 5), (4, 0, 5), (5, 0, 5) };
+        foreach (var (n, a, b) in trueInputs)
+        {
+            var isBetween = Invoke<bool>(assembly, "between", n, a, b);
+            Assert.True(isBetween);
+        }
+
+        var falseInputs = new[] { (-1, 0, 0), (2, 0, 1), (1, -1, 0), (6, 0, 5), (-1, 0, 5), (10, 0, 5), (7, 0, 5) };
+        foreach (var (n, a, b) in falseInputs)
+        {
+            var isBetween = Invoke<bool>(assembly, "between", n, a, b);
+            Assert.False(isBetween);
+        }
+    }
+
+    [Fact]
     public void RecursiveFactorial()
     {
         var assembly = Compile("""

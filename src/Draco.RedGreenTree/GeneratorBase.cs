@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using Draco.RedGreenTree.Attributes;
 using Microsoft.CodeAnalysis;
 
 namespace Draco.RedGreenTree;
@@ -40,4 +41,14 @@ public abstract class GeneratorBase
 
     protected static bool SymbolEquals(ISymbol? a, ISymbol? b) =>
         SymbolEqualityComparer.Default.Equals(a, b);
+
+    protected static bool HasIgnoreFlag(ISymbol symbol, IgnoreFlags ignoreFlags)
+    {
+        if (symbol.HasAttribute(typeof(IgnoreAttribute), out var args))
+        {
+            var flags = (IgnoreFlags)args[0]!;
+            return flags.HasFlag(ignoreFlags);
+        }
+        return false;
+    }
 }

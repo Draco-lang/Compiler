@@ -136,7 +136,7 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
     private void GenerateRedFactory(INamedTypeSymbol greenType)
     {
         if (greenType.IsAbstract) return;
-        if (HasFlag(greenType, IgnoreFlags.SyntaxFactoryConstruct)) return;
+        if (HasIgnoreFlag(greenType, IgnoreFlags.SyntaxFactoryConstruct)) return;
 
         var redName = this.GetFullRedClassName(greenType);
         var factoryName = this.GenerateFactoryMethodName(greenType);
@@ -244,15 +244,5 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
         }
         // Anything else
         return symbol.ToDisplayString();
-    }
-
-    private static bool HasFlag(INamedTypeSymbol type, IgnoreFlags ignoreFlags)
-    {
-        if (type.HasAttribute(typeof(IgnoreAttribute), out var args))
-        {
-            var flags = (IgnoreFlags)args[0]!;
-            return flags.HasFlag(ignoreFlags);
-        }
-        return false;
     }
 }

@@ -33,7 +33,7 @@ public sealed class SymbolResolutionTests
     [Fact]
     public void BasicScopeTree()
     {
-        // func foo(n: int32) {         // b1
+        // func foo(n: int32) { // b1
         //     var x1;
         //     {                // b2
         //         var x2;

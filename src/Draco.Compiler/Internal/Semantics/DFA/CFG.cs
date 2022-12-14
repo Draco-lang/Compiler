@@ -1,0 +1,21 @@
+using System.Collections.Generic;
+using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+
+namespace Draco.Compiler.Internal.Semantics.DFA;
+
+internal abstract record class CFG
+{
+    /// <summary>
+    /// Represents a single block in <see cref="CFG"/> consisting non-branching statements, the block ends branching.
+    /// </summary>
+    /// <param name="Statements">List of statements contained in the <see cref="Block"/>.</param>
+    /// <param name="Branches">List of possible <see cref="Branch"/>es.</param>
+    internal sealed record class Block(List<Ast.Stmt> Statements, List<Branch> Branches);
+
+    /// <summary>
+    /// Represents single <see cref="Branch"/>.
+    /// </summary>
+    /// <param name="Target">The <see cref="Block"/> targeted by this <see cref="Branch"/>.</param>
+    /// <param name="Condition">The condition that must be met so the execution continues to the <paramref name="Target"/>.</param>
+    internal sealed record class Branch(Block Target, Ast.Expr Condition);
+}

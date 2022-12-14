@@ -16,14 +16,22 @@ namespace Draco.Compiler.Api.Syntax;
 [SyntaxFactory(typeof(Internal.Syntax.ParseTree), typeof(ParseTree))]
 public static partial class SyntaxFactory
 {
+}
+
+// Utilities
+public static partial class SyntaxFactory
+{
     public static Token EndOfInput { get; } = MakeToken(TokenType.EndOfInput);
 
     private static Token MakeToken(TokenType tokenType) =>
         ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType));
     private static Token MakeToken(TokenType tokenType, string text) =>
         ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType, text));
+}
 
-    // Plumbing methods
+// Plumbing methods
+public static partial class SyntaxFactory
+{
     [return: NotNullIfNotNull(nameof(tree))]
     private static Internal.Syntax.ParseTree? ToGreen(ParseTree? tree) => tree?.Green;
     [return: NotNullIfNotNull(nameof(token))]

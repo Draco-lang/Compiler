@@ -273,4 +273,34 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
     }
+
+    [Fact]
+    public void IfElseTypeMismatch()
+    {
+        // func foo() {
+        //     var x = if (true) 0 else "Hello";
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(
+                    Name("x"),
+                    value: IfExpr(
+                        condition: LiteralExpr(true),
+                        then: LiteralExpr(0),
+                        @else: StringExpr("Hello"))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.GetAllDiagnostics();
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
 }

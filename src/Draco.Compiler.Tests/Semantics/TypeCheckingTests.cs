@@ -175,4 +175,102 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
     }
+
+    [Fact]
+    public void IfConditionIsBool()
+    {
+        // func foo() {
+        //     if (true) {}
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(IfExpr(LiteralExpr(true), BlockExpr()))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.GetAllDiagnostics();
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void IfConditionIsNotBool()
+    {
+        // func foo() {
+        //     if (1) {}
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(IfExpr(LiteralExpr(1), BlockExpr()))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.GetAllDiagnostics();
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void WhileConditionIsBool()
+    {
+        // func foo() {
+        //     while (true) {}
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(WhileExpr(LiteralExpr(true), BlockExpr()))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.GetAllDiagnostics();
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void WhileConditionIsNotBool()
+    {
+        // func foo() {
+        //     while (1) {}
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(WhileExpr(LiteralExpr(1), BlockExpr()))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.GetAllDiagnostics();
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
 }

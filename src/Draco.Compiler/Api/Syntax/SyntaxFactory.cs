@@ -60,6 +60,17 @@ public static partial class SyntaxFactory
     public static Expr.Block BlockExpr(IEnumerable<Stmt> stmts, Expr? value = null) => BlockExpr(stmts.ToImmutableArray(), value);
     public static Expr.Block BlockExpr(params Stmt[] stmts) => BlockExpr(stmts.ToImmutableArray(), null);
 
+    public static Expr.If IfExpr(Expr condition, Expr then, Expr? @else = null) => IfExpr(
+        ifKeyword: KeywordIf,
+        condition: Enclosed(ParenOpen, condition, ParenClose),
+        then: then,
+        @else: @else is null ? null : ElseClause(KeywordElse, @else));
+
+    public static Expr.While WhileExpr(Expr condition, Expr body) => WhileExpr(
+        whileKeyword: KeywordIf,
+        condition: Enclosed(ParenOpen, condition, ParenClose),
+        expression: body);
+
     public static Expr.Call CallExpr(Expr called, ImmutableArray<Expr> args) => CallExpr(
         called,
         Enclosed(ParenOpen, PunctuatedList(args, Comma, trailing: false), ParenClose));
@@ -70,6 +81,7 @@ public static partial class SyntaxFactory
 
     public static Expr.Name NameExpr(string name) => NameExpr(Name(name));
     public static Expr.Literal LiteralExpr(int value) => LiteralExpr(Integer(value));
+    public static Expr.Literal LiteralExpr(bool value) => LiteralExpr(value ? KeywordTrue : KeywordFalse);
     public static Expr.String StringExpr(string value) =>
         StringExpr(LineStringStart, ImmutableArray.Create<StringPart>(ContentStringPart(value)), LineStringEnd);
 
@@ -89,9 +101,13 @@ public static partial class SyntaxFactory
     public static Token Colon { get; } = MakeToken(TokenType.Colon);
     public static Token Semicolon { get; } = MakeToken(TokenType.Semicolon);
     public static Token KeywordReturn { get; } = MakeToken(TokenType.KeywordReturn);
+    public static Token KeywordIf { get; } = MakeToken(TokenType.KeywordIf);
+    public static Token KeywordElse { get; } = MakeToken(TokenType.KeywordElse);
     public static Token KeywordVar { get; } = MakeToken(TokenType.KeywordVar);
     public static Token KeywordVal { get; } = MakeToken(TokenType.KeywordVal);
     public static Token KeywordFunc { get; } = MakeToken(TokenType.KeywordFunc);
+    public static Token KeywordTrue { get; } = MakeToken(TokenType.KeywordTrue);
+    public static Token KeywordFalse { get; } = MakeToken(TokenType.KeywordFalse);
     public static Token CurlyOpen { get; } = MakeToken(TokenType.CurlyOpen);
     public static Token CurlyClose { get; } = MakeToken(TokenType.CurlyClose);
     public static Token ParenOpen { get; } = MakeToken(TokenType.ParenOpen);

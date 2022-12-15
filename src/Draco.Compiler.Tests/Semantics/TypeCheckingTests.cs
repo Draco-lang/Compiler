@@ -153,4 +153,26 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
     }
+
+    [Fact]
+    public void InlineBodyFunctionReturnTypeMismatch()
+    {
+        // func foo(): int32 = "Hello";
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            NameTypeExpr(Name("int32")),
+            InlineBodyFuncBody(StringExpr("Hello"))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.GetAllDiagnostics();
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
 }

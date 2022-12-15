@@ -49,6 +49,7 @@ public static partial class SyntaxFactory
         Semicolon);
 
     public static FuncParam FuncParam(Token name, TypeExpr type) => FuncParam(name, TypeSpecifier(Colon, type));
+    public static FuncBody.InlineBody InlineBodyFuncBody(Expr expr) => InlineBodyFuncBody(Assign, expr, Semicolon);
 
     public static Stmt.Expr ExprStmt(Expr expr) => ExprStmt(expr, null);
 
@@ -58,6 +59,12 @@ public static partial class SyntaxFactory
         CloseToken: CurlyClose));
     public static Expr.Block BlockExpr(IEnumerable<Stmt> stmts, Expr? value = null) => BlockExpr(stmts.ToImmutableArray(), value);
     public static Expr.Block BlockExpr(params Stmt[] stmts) => BlockExpr(stmts.ToImmutableArray(), null);
+
+    public static Expr.Call CallExpr(Expr called, ImmutableArray<Expr> args) => CallExpr(
+        called,
+        Enclosed(ParenOpen, PunctuatedList(args, Comma, trailing: false), ParenClose));
+    public static Expr.Call CallExpr(Expr called, IEnumerable<Expr> args) => CallExpr(called, args.ToImmutableArray());
+    public static Expr.Call CallExpr(Expr called, params Expr[] args) => CallExpr(called, args.ToImmutableArray());
 
     public static Expr.Name NameExpr(string name) => NameExpr(Name(name));
     public static Expr.Literal LiteralExpr(int value) => LiteralExpr(Integer(value));

@@ -149,4 +149,58 @@ public sealed class SymbolResolutionTests
         Assert.True(ReferenceEquals(symx1, symRefx1));
         Assert.True(ReferenceEquals(symx2, symRefx2));
     }
+
+    [Fact]
+    public void OrderIndependentReferencing()
+    {
+        // func bar() = foo();
+        // func foo() = foo();
+        // func baz() = foo();
+
+        // Arrange
+        var tree = CompilationUnit(
+            FuncDecl(
+                Name("bar"),
+                ImmutableArray<ParseTree.FuncParam>.Empty,
+                null,
+                InlineBodyFuncBody(CallExpr(NameExpr("foo")))),
+            FuncDecl(
+                Name("foo"),
+                ImmutableArray<ParseTree.FuncParam>.Empty,
+                null,
+                InlineBodyFuncBody(CallExpr(NameExpr("foo")))),
+            FuncDecl(
+                Name("baz"),
+                ImmutableArray<ParseTree.FuncParam>.Empty,
+                null,
+                InlineBodyFuncBody(CallExpr(NameExpr("foo")))));
+
+        var barDecl = tree.FindInChildren<ParseTree.Decl.Func>(0);
+        var fooDecl = tree.FindInChildren<ParseTree.Decl.Func>(1);
+        var bazDecl = tree.FindInChildren<ParseTree.Decl.Func>(2);
+
+        var call1 = tree.FindInChildren<ParseTree.Expr.Call>(0);
+        var call2 = tree.FindInChildren<ParseTree.Expr.Call>(1);
+        var call3 = tree.FindInChildren<ParseTree.Expr.Call>(2);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var symBar = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(barDecl));
+        var symFoo = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
+        var symBaz = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(bazDecl));
+
+        var refFoo1 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call1.Called));
+        var refFoo2 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call2.Called));
+        var refFoo3 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call3.Called));
+
+        // Assert
+        Assert.False(ReferenceEquals(symBar, symFoo));
+        Assert.False(ReferenceEquals(symFoo, symBaz));
+
+        Assert.True(ReferenceEquals(symFoo, refFoo1));
+        Assert.True(ReferenceEquals(symFoo, refFoo2));
+        Assert.True(ReferenceEquals(symFoo, refFoo3));
+    }
 }

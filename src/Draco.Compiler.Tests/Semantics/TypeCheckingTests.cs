@@ -41,4 +41,60 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(semanticModel.GetAllDiagnostics());
         Assert.Equal(xSym.Type, Type.Int32);
     }
+
+    [Fact]
+    public void VariableTypeInferredFromValue()
+    {
+        // func main() {
+        //     var x = 0;
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("main"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), value: LiteralExpr(0)))))));
+
+        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+
+        // Assert
+        Assert.Empty(semanticModel.GetAllDiagnostics());
+        Assert.Equal(xSym.Type, Type.Int32);
+    }
+
+    [Fact]
+    public void VariableExplicitlyTypedWithoutValue()
+    {
+        // func main() {
+        //     var x: int32;
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("main"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32"))))))));
+
+        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+
+        // Assert
+        Assert.Empty(semanticModel.GetAllDiagnostics());
+        Assert.Equal(xSym.Type, Type.Int32);
+    }
 }

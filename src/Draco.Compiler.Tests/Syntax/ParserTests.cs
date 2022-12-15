@@ -497,10 +497,7 @@ public sealed class ParserTests
             this.N<TypeSpecifier>();
             {
                 this.T(TokenType.Colon);
-                this.N<TypeExpr.Name>();
-                {
-                    this.MissingT(TokenType.Identifier);
-                }
+                this.N<TypeExpr.Unexpected>();
             }
             this.T(TokenType.Semicolon);
         }
@@ -545,10 +542,7 @@ public sealed class ParserTests
             this.N<TypeSpecifier>();
             {
                 this.T(TokenType.Colon);
-                this.N<TypeExpr.Name>();
-                {
-                    this.MissingT(TokenType.Identifier);
-                }
+                this.N<TypeExpr.Unexpected>();
                 this.N<ValueInitializer>();
                 {
                     this.T(TokenType.Assign);

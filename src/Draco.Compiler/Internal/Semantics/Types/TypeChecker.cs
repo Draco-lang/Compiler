@@ -68,6 +68,7 @@ internal static class TypeChecker
         expr,
         Type (expr) => expr switch
         {
+            ParseTree.TypeExpr.Unexpected => Type.Error.Empty,
             // TODO: This is a temporary solution
             // Later, we'll need symbol resolution to be able to reference type-symbols only and such
             // For now this is a simple, greedy workaround

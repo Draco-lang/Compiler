@@ -203,4 +203,47 @@ public sealed class SymbolResolutionTests
         Assert.True(ReferenceEquals(symFoo, refFoo2));
         Assert.True(ReferenceEquals(symFoo, refFoo3));
     }
+
+    [Fact]
+    public void OrderDependentReferencing()
+    {
+        // func foo() {
+        //     var x;
+        //     var y = x + z;
+        //     var z;
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"))),
+                DeclStmt(VariableDecl(Name("y"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("z")))),
+                DeclStmt(VariableDecl(Name("z")))))));
+
+        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var yDecl = tree.FindInChildren<ParseTree.Decl.Variable>(1);
+        var zDecl = tree.FindInChildren<ParseTree.Decl.Variable>(2);
+
+        var xRef = tree.FindInChildren<ParseTree.Expr.Name>(0);
+        var zRef = tree.FindInChildren<ParseTree.Expr.Name>(1);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var symx = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var symy = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(yDecl));
+        var symz = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(zDecl));
+
+        var symRefx = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbol(xRef));
+        var symRefz = GetInternalSymbol<IInternalSymbol>(semanticModel.GetReferencedSymbol(zRef));
+
+        // Assert
+        Assert.True(ReferenceEquals(symx, symRefx));
+        Assert.False(ReferenceEquals(symz, symRefz));
+        Assert.True(symRefz.IsError);
+    }
 }

@@ -288,7 +288,7 @@ internal partial interface ISymbol
         }
 
         // TODO
-        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+        public IApiSymbol ToApiSymbol() => new Api.Semantics.ErrorSymbol(this);
     }
 }
 
@@ -341,7 +341,6 @@ internal partial interface ISymbol
             this.Definition = definition;
         }
 
-        // TODO
         public abstract IApiSymbol ToApiSymbol();
     }
 }

@@ -103,6 +103,14 @@ internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
     }
 }
 
+internal sealed class ErrorSymbol : SymbolBase<IInternalSymbol>
+{
+    public ErrorSymbol(IInternalSymbol symbol)
+        : base(symbol)
+    {
+    }
+}
+
 internal sealed class VariableSymbol : SymbolBase<IInternalSymbol.IVariable>, IVariableSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;

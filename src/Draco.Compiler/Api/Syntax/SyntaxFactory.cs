@@ -34,11 +34,17 @@ public static partial class SyntaxFactory
     public static CompilationUnit CompilationUnit(IEnumerable<Decl> decls) => CompilationUnit(decls.ToImmutableArray());
     public static CompilationUnit CompilationUnit(params Decl[] decls) => CompilationUnit(decls.ToImmutableArray());
 
-    public static Decl.Func FuncDecl(Token name, ImmutableArray<FuncParam> @params, TypeExpr? returnType, FuncBody body) => FuncDecl(
+    public static Decl.Func FuncDecl(Token name, Enclosed<PunctuatedList<FuncParam>> @params, TypeExpr? returnType, FuncBody body) => FuncDecl(
         KeywordFunc,
         name,
-        Enclosed(ParenOpen, PunctuatedList(@params, Comma, trailing: false), ParenClose),
+        @params,
         returnType is null ? null : TypeSpecifier(Colon, returnType),
+        body);
+
+    public static Decl.Func FuncDecl(Token name, ImmutableArray<FuncParam> @params, TypeExpr? returnType, FuncBody body) => FuncDecl(
+        name,
+        Enclosed(ParenOpen, PunctuatedList(@params, Comma, trailing: false), ParenClose),
+        returnType,
         body);
 
     public static Decl.Variable VariableDecl(Token name, TypeExpr? type = null, Expr? value = null) => VariableDecl(
@@ -47,6 +53,13 @@ public static partial class SyntaxFactory
         type is null ? null : TypeSpecifier(Colon, type),
         value is null ? null : ValueInitializer(Assign, value),
         Semicolon);
+
+    public static Enclosed<PunctuatedList<FuncParam>> FuncParamList(ImmutableArray<FuncParam> ps) => Enclosed(
+        ParenOpen,
+        PunctuatedList(ps, Comma, trailing: false),
+        ParenClose);
+    public static Enclosed<PunctuatedList<FuncParam>> FuncParamList(IEnumerable<FuncParam> ps) => FuncParamList(ps.ToImmutableArray());
+    public static Enclosed<PunctuatedList<FuncParam>> FuncParamList(params FuncParam[] ps) => FuncParamList(ps.ToImmutableArray());
 
     public static FuncParam FuncParam(Token name, TypeExpr type) => FuncParam(name, TypeSpecifier(Colon, type));
     public static FuncBody.InlineBody InlineBodyFuncBody(Expr expr) => InlineBodyFuncBody(Assign, expr, Semicolon);

@@ -41,7 +41,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray.Create(
+            FuncParamList(
                 FuncParam(Name("n"), NameTypeExpr(Name("int32")))),
             null,
             BlockBodyFuncBody(BlockExpr(
@@ -102,7 +102,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             null,
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"), null, LiteralExpr(0))),
@@ -153,17 +153,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var tree = CompilationUnit(
             FuncDecl(
                 Name("bar"),
-                ImmutableArray<ParseTree.FuncParam>.Empty,
+                FuncParamList(),
                 null,
                 InlineBodyFuncBody(CallExpr(NameExpr("foo")))),
             FuncDecl(
                 Name("foo"),
-                ImmutableArray<ParseTree.FuncParam>.Empty,
+                FuncParamList(),
                 null,
                 InlineBodyFuncBody(CallExpr(NameExpr("foo")))),
             FuncDecl(
                 Name("baz"),
-                ImmutableArray<ParseTree.FuncParam>.Empty,
+                FuncParamList(),
                 null,
                 InlineBodyFuncBody(CallExpr(NameExpr("foo")))));
 
@@ -208,7 +208,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             null,
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"))),

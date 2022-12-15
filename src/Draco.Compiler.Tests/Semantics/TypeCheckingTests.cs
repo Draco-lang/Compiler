@@ -25,7 +25,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("main"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             null,
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")), LiteralExpr(0)))))));
@@ -53,7 +53,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("main"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             null,
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"), value: LiteralExpr(0)))))));
@@ -81,7 +81,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("main"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             null,
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32"))))))));
@@ -110,7 +110,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("main"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             null,
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"))),
@@ -139,7 +139,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(ReturnExpr(StringExpr("Hello")))))));
@@ -162,7 +162,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             InlineBodyFuncBody(StringExpr("Hello"))));
 
@@ -186,7 +186,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(IfExpr(LiteralExpr(true), BlockExpr()))))));
@@ -210,7 +210,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(IfExpr(LiteralExpr(1), BlockExpr()))))));
@@ -235,7 +235,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(WhileExpr(LiteralExpr(true), BlockExpr()))))));
@@ -259,7 +259,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(WhileExpr(LiteralExpr(1), BlockExpr()))))));
@@ -284,7 +284,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Arrange
         var tree = CompilationUnit(FuncDecl(
             Name("foo"),
-            ImmutableArray<ParseTree.FuncParam>.Empty,
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(
@@ -302,5 +302,39 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void AllowNonUnitExpressionInInlineFuncReturningUnit()
+    {
+        // func foo(): int32 = 0;
+        // func bar() = foo();
+
+        // Arrange
+        var tree = CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                NameTypeExpr(Name("int32")),
+                InlineBodyFuncBody(LiteralExpr(0))),
+            FuncDecl(
+                Name("bar"),
+                FuncParamList(),
+                null,
+                InlineBodyFuncBody(CallExpr(NameExpr("foo")))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var diags = semanticModel.GetAllDiagnostics();
+        var fooDecl = tree.FindInChildren<ParseTree.Decl.Func>(0);
+        var barDecl = tree.FindInChildren<ParseTree.Decl.Func>(1);
+        var fooReturnType = semanticModel.GetReferencedSymbol(fooDecl.ReturnType!.Type);
+        var barReturnType = semanticModel.GetReferencedSymbol(barDecl.ReturnType!.Type);
+        // TODO
+
+        // Assert
+        // TODO
     }
 }

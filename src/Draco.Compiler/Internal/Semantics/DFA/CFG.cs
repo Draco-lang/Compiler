@@ -3,7 +3,7 @@ using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 namespace Draco.Compiler.Internal.Semantics.DFA;
 
-internal abstract record class CFG
+internal sealed record class CFG
 {
     /// <summary>
     /// Represents a single block in <see cref="CFG"/> consisting non-branching statements, the block ends branching.

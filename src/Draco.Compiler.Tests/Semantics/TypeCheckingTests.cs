@@ -97,4 +97,34 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(semanticModel.GetAllDiagnostics());
         Assert.Equal(xSym.Type, Type.Int32);
     }
+
+    [Fact]
+    public void VariableTypeInferredFromLaterAssignment()
+    {
+        // func main() {
+        //     var x;
+        //     x = 0;
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("main"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"))),
+                ExprStmt(BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)))))));
+
+        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+
+        // Assert
+        Assert.Empty(semanticModel.GetAllDiagnostics());
+        Assert.Equal(xSym.Type, Type.Int32);
+    }
 }

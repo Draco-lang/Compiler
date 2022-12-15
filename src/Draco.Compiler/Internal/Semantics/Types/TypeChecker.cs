@@ -77,6 +77,7 @@ internal static class TypeChecker
     /// <returns>The <see cref="Type"/> of <paramref name="expr"/>.</returns>
     public static Type TypeOf(QueryDatabase db, ParseTree.Expr expr) => expr switch
     {
+        ParseTree.Expr.Unexpected => Type.Error.Empty,
         ParseTree.Expr.Literal lit => lit.Value.Type switch
         {
             TokenType.LiteralInteger => Type.Int32,

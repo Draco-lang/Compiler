@@ -762,7 +762,8 @@ internal sealed class Parser
             var input = this.Synchronize(t => t switch
             {
                 TokenType.Semicolon or TokenType.Comma
-                or TokenType.ParenClose or TokenType.BracketClose or TokenType.CurlyClose => false,
+                or TokenType.ParenClose or TokenType.BracketClose
+                or TokenType.CurlyClose or TokenType.InterpolationEnd => false,
                 var type when expressionStarters.Contains(type) => false,
                 _ => true,
             });

@@ -14,6 +14,11 @@ namespace Draco.Compiler.Internal.Semantics.Types;
 internal abstract partial record class Type
 {
     /// <summary>
+    /// Unwraps the type if it's a type-variable.
+    /// </summary>
+    public virtual Type UnwrapTypeVariable => this;
+
+    /// <summary>
     /// True, if this is an error type.
     /// </summary>
     public virtual bool IsError => false;
@@ -43,6 +48,9 @@ internal abstract partial record class Type
     public sealed record class Variable : Type
     {
         private static int idCounter = -1;
+
+        public override Type UnwrapTypeVariable =>
+            this.substitution ?? throw new InvalidOperationException();
 
         private readonly int id = Interlocked.Increment(ref idCounter);
         private Type? substitution;

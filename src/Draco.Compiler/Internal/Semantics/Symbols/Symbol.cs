@@ -427,7 +427,7 @@ internal partial interface ISymbol
     {
         public override bool IsExternallyVisible => this.IsGlobal;
         public bool IsMutable { get; }
-        public Type Type => TypeChecker.TypeOf(this.db, this);
+        public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
 
         public Variable(QueryDatabase db, string name, ParseTree definition, bool isMutable)
             : base(db, name, definition)

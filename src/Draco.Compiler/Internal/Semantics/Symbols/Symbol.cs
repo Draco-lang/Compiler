@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
@@ -369,8 +370,7 @@ internal partial interface ISymbol
             this.Name = name;
         }
 
-        // TODO
-        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+        public abstract IApiSymbol ToApiSymbol();
     }
 }
 
@@ -415,6 +415,8 @@ internal partial interface ISymbol
             : base(GenerateName("label"))
         {
         }
+
+        public override IApiSymbol ToApiSymbol() => new LabelSymbol(this);
     }
 }
 
@@ -455,6 +457,8 @@ internal partial interface ISymbol
             this.Type = type;
             this.IsMutable = isMutable;
         }
+
+        public override IApiSymbol ToApiSymbol() => new VariableSymbol(this);
     }
 }
 
@@ -473,7 +477,7 @@ internal partial interface ISymbol
         {
         }
 
-        public override IApiSymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
+        public override IApiSymbol ToApiSymbol() => new ParameterSymbol(this);
     }
 }
 
@@ -492,6 +496,8 @@ internal partial interface ISymbol
         {
             this.Type = type;
         }
+
+        public override IApiSymbol ToApiSymbol() => new ParameterSymbol(this);
     }
 }
 
@@ -575,6 +581,8 @@ internal partial interface ISymbol
                 .ToImmutableArray();
             this.ReturnType = returnType;
         }
+
+        public override IApiSymbol ToApiSymbol() => new FunctionSymbol(this);
     }
 }
 
@@ -595,6 +603,9 @@ internal partial interface ISymbol
             this.OperandType = operandType;
             this.ResultType = resultType;
         }
+
+        // TODO
+        public override IApiSymbol ToApiSymbol() => throw new NotImplementedException();
     }
 }
 
@@ -619,6 +630,9 @@ internal partial interface ISymbol
             this.RightOperandType = rightOperandType;
             this.ResultType = resultType;
         }
+
+        // TODO
+        public override IApiSymbol ToApiSymbol() => throw new NotImplementedException();
     }
 }
 
@@ -636,5 +650,7 @@ internal partial interface ISymbol
         {
             this.DefinedType = definedType;
         }
+
+        public override IApiSymbol ToApiSymbol() => new TypeSymbol(this);
     }
 }

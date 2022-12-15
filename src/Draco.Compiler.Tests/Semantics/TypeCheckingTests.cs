@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
@@ -330,11 +331,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var diags = semanticModel.GetAllDiagnostics();
         var fooDecl = tree.FindInChildren<ParseTree.Decl.Func>(0);
         var barDecl = tree.FindInChildren<ParseTree.Decl.Func>(1);
-        var fooReturnType = semanticModel.GetReferencedSymbol(fooDecl.ReturnType!.Type);
-        var barReturnType = semanticModel.GetReferencedSymbol(barDecl.ReturnType!.Type);
-        // TODO
+        var fooSymbol = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
+        var barSymbol = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(barDecl));
 
         // Assert
-        // TODO
+        Assert.Empty(diags);
+        Assert.True(ReferenceEquals(fooSymbol.ReturnType, Type.Int32));
+        Assert.True(ReferenceEquals(barSymbol.ReturnType, Type.Unit));
     }
 }

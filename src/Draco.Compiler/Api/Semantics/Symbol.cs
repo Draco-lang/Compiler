@@ -66,6 +66,13 @@ public interface IFunctionSymbol : ISymbol
 {
 }
 
+/// <summary>
+/// Represents a type symbol.
+/// </summary>
+public interface ITypeSymbol : ISymbol
+{
+}
+
 // Proxy classes ///////////////////////////////////////////////////////////////
 
 internal abstract class SymbolBase : ISymbol
@@ -143,6 +150,14 @@ internal sealed class FunctionSymbol : SymbolBase<IInternalSymbol.IFunction>, IF
 {
     public FunctionSymbol(IInternalSymbol.IFunction function)
         : base(function)
+    {
+    }
+}
+
+internal sealed class TypeSymbol : SymbolBase<IInternalSymbol.ITypeDefinition>, ITypeSymbol
+{
+    public TypeSymbol(IInternalSymbol.ITypeDefinition typeDef)
+        : base(typeDef)
     {
     }
 }

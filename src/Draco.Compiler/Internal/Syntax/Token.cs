@@ -141,6 +141,22 @@ internal abstract partial record class ParseTree
             diagnostics: ImmutableArray<Diagnostic>.Empty);
 
         /// <summary>
+        /// Constructs a <see cref="Token"/> from <paramref name="type"/>, <paramref name="text"/> and <paramref name="value"/>.
+        /// </summary>
+        /// <param name="type">The <see cref="TokenType"/> of the token to be constructed.</param>
+        /// <param name="text">The text the <see cref="Token"/> is produced from.</param>
+        /// <param name="value">The value associated with the <see cref="Token"/>.</param>
+        /// <returns>The constructed <see cref="Token"/> with type <paramref name="type"/>,
+        /// text <paramref name="text"/> and value <paramref name="value"/>.</returns>
+        public static Token From(TokenType type, string text, object? value) => new(
+            type: type,
+            text: text,
+            value: value,
+            leadingTrivia: ImmutableArray<Trivia>.Empty,
+            trailingTrivia: ImmutableArray<Trivia>.Empty,
+            diagnostics: ImmutableArray<Diagnostic>.Empty);
+
+        /// <summary>
         /// Constructs a <see cref="Token"/> from <paramref name="type"/>, <paramref name="text"/> and
         /// <paramref name="diagnostics"/>.
         /// </summary>

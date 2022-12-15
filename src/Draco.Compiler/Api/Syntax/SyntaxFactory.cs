@@ -17,6 +17,7 @@ namespace Draco.Compiler.Api.Syntax;
 public static partial class SyntaxFactory
 {
     public static Token Name(string text) => MakeToken(TokenType.Identifier, text);
+    public static Token Integer(int value) => MakeToken(TokenType.LiteralInteger, value.ToString(), value);
 
     public static Enclosed<T> Enclosed<T>(Token open, T value, Token close) => new(open, value, close);
     public static Punctuated<T> Punctuated<T>(T value, Token? punct) => new(value, punct);
@@ -57,6 +58,9 @@ public static partial class SyntaxFactory
         CloseToken: CurlyClose));
     public static Expr.Block BlockExpr(IEnumerable<Stmt> stmts, Expr? value = null) => BlockExpr(stmts.ToImmutableArray(), value);
     public static Expr.Block BlockExpr(params Stmt[] stmts) => BlockExpr(stmts.ToImmutableArray(), null);
+
+    public static Expr.Name NameExpr(string name) => NameExpr(Name(name));
+    public static Expr.Literal LiteralExpr(int value) => LiteralExpr(Integer(value));
 }
 
 // Utilities
@@ -74,11 +78,14 @@ public static partial class SyntaxFactory
     public static Token CurlyClose { get; } = MakeToken(TokenType.CurlyClose);
     public static Token ParenOpen { get; } = MakeToken(TokenType.ParenOpen);
     public static Token ParenClose { get; } = MakeToken(TokenType.ParenClose);
+    public static Token Plus { get; } = MakeToken(TokenType.Plus);
 
     private static Token MakeToken(TokenType tokenType) =>
         ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType));
     private static Token MakeToken(TokenType tokenType, string text) =>
         ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType, text));
+    private static Token MakeToken(TokenType tokenType, string text, object? value) =>
+        ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType, text, value));
 }
 
 // Plumbing methods

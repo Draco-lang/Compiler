@@ -85,7 +85,6 @@ public sealed class SymbolResolutionTests
         var sym6 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x6));
 
         // Assert
-
         AssertParentOf(sym2.DefiningScope, sym3.DefiningScope);
         AssertParentOf(sym1.DefiningScope, sym2.DefiningScope);
         AssertParentOf(sym4.DefiningScope, sym5.DefiningScope);
@@ -96,5 +95,58 @@ public sealed class SymbolResolutionTests
 
         AssertParentOf(symFoo.DefiningScope, symn.DefiningScope);
         Assert.True(ReferenceEquals(symFoo.DefinedScope, symn.DefiningScope));
+    }
+
+    [Fact]
+    public void LocalShadowing()
+    {
+        // func foo() {
+        //     var x = 0;
+        //     var x = x + 1;
+        //     var x = x + 1;
+        //     var x = x + 1;
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), null, LiteralExpr(0))),
+                DeclStmt(VariableDecl(Name("x"), null, BinaryExpr(NameExpr("x"), Plus, LiteralExpr(1)))),
+                DeclStmt(VariableDecl(Name("x"), null, BinaryExpr(NameExpr("x"), Plus, LiteralExpr(1)))),
+                DeclStmt(VariableDecl(Name("x"), null, BinaryExpr(NameExpr("x"), Plus, LiteralExpr(1))))))));
+
+        var x0 = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var x1 = tree.FindInChildren<ParseTree.Decl.Variable>(1);
+        var x2 = tree.FindInChildren<ParseTree.Decl.Variable>(2);
+        var x3 = tree.FindInChildren<ParseTree.Decl.Variable>(3);
+
+        var x0ref = tree.FindInChildren<ParseTree.Expr.Name>(0);
+        var x1ref = tree.FindInChildren<ParseTree.Expr.Name>(1);
+        var x2ref = tree.FindInChildren<ParseTree.Expr.Name>(2);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var symx0 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x0));
+        var symx1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x1));
+        var symx2 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x2));
+        var symx3 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x3));
+
+        var symRefx0 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(x0ref));
+        var symRefx1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(x1ref));
+        var symRefx2 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(x2ref));
+
+        // Assert
+        Assert.False(ReferenceEquals(symx0, symx1));
+        Assert.False(ReferenceEquals(symx1, symx2));
+        Assert.False(ReferenceEquals(symx2, symx3));
+
+        Assert.True(ReferenceEquals(symx0, symRefx0));
+        Assert.True(ReferenceEquals(symx1, symRefx1));
+        Assert.True(ReferenceEquals(symx2, symRefx2));
     }
 }

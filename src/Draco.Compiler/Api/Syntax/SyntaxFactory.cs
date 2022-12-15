@@ -66,8 +66,18 @@ public static partial class SyntaxFactory
     public static Expr.Call CallExpr(Expr called, IEnumerable<Expr> args) => CallExpr(called, args.ToImmutableArray());
     public static Expr.Call CallExpr(Expr called, params Expr[] args) => CallExpr(called, args.ToImmutableArray());
 
+    public static Expr.Return ReturnExpr(Expr? value = null) => ReturnExpr(KeywordReturn, value);
+
     public static Expr.Name NameExpr(string name) => NameExpr(Name(name));
     public static Expr.Literal LiteralExpr(int value) => LiteralExpr(Integer(value));
+    public static Expr.String StringExpr(string value) =>
+        StringExpr(LineStringStart, ImmutableArray.Create<StringPart>(ContentStringPart(value)), LineStringEnd);
+
+    public static StringPart.Content ContentStringPart(string value) =>
+        new(parent: null, green: new Internal.Syntax.ParseTree.StringPart.Content(
+            Value: Internal.Syntax.ParseTree.Token.From(TokenType.StringContent, value),
+            Cutoff: 0,
+            Diagnostics: ImmutableArray<Internal.Diagnostics.Diagnostic>.Empty));
 }
 
 // Utilities
@@ -78,6 +88,7 @@ public static partial class SyntaxFactory
     public static Token Comma { get; } = MakeToken(TokenType.Comma);
     public static Token Colon { get; } = MakeToken(TokenType.Colon);
     public static Token Semicolon { get; } = MakeToken(TokenType.Semicolon);
+    public static Token KeywordReturn { get; } = MakeToken(TokenType.KeywordReturn);
     public static Token KeywordVar { get; } = MakeToken(TokenType.KeywordVar);
     public static Token KeywordVal { get; } = MakeToken(TokenType.KeywordVal);
     public static Token KeywordFunc { get; } = MakeToken(TokenType.KeywordFunc);
@@ -86,6 +97,8 @@ public static partial class SyntaxFactory
     public static Token ParenOpen { get; } = MakeToken(TokenType.ParenOpen);
     public static Token ParenClose { get; } = MakeToken(TokenType.ParenClose);
     public static Token Plus { get; } = MakeToken(TokenType.Plus);
+    public static Token LineStringStart { get; } = MakeToken(TokenType.LineStringStart, "\"");
+    public static Token LineStringEnd { get; } = MakeToken(TokenType.LineStringEnd, "\"");
 
     private static Token MakeToken(TokenType tokenType) =>
         ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType));

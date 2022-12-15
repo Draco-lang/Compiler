@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
@@ -126,5 +127,30 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Empty(semanticModel.GetAllDiagnostics());
         Assert.Equal(xSym.Type, Type.Int32);
+    }
+
+    [Fact]
+    public void BlockBodyFunctionReturnTypeMismatch()
+    {
+        // func foo(): int32 {
+        //     return "Hello";
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            ImmutableArray<ParseTree.FuncParam>.Empty,
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(ReturnExpr(StringExpr("Hello")))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.GetAllDiagnostics();
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
     }
 }

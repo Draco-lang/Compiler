@@ -305,6 +305,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
     }
 
+    // TODO: Unspecified if we want this
+    // There is a strong case against this, since with unit being implicit return type,
+    // it's not intuitive to read
+#if false
     [Fact]
     public void AllowNonUnitExpressionInInlineFuncReturningUnit()
     {
@@ -336,7 +340,45 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.True(ReferenceEquals(fooSymbol.ReturnType, Type.Int32));
-        Assert.True(ReferenceEquals(barSymbol.ReturnType, Type.Unit));
+        Assert.Equal(Type.Int32, fooSymbol.ReturnType);
+        Assert.Equal(Type.Unit, barSymbol.ReturnType);
+    }
+#endif
+
+    [Fact]
+    public void NeverTypeCompatibility()
+    {
+        // func foo() {
+        // start:
+        //     var x = if (true) 0 else return;
+        //     var y = if (true) 0 else goto start;
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    DeclStmt(LabelDecl("start")),
+                    DeclStmt(VariableDecl(Name("x"), value: IfExpr(LiteralExpr(true), LiteralExpr(0), ReturnExpr()))),
+                    DeclStmt(VariableDecl(Name("y"), value: IfExpr(LiteralExpr(true), LiteralExpr(0), GotoExpr("start"))))))));
+
+        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var yDecl = tree.FindInChildren<ParseTree.Decl.Variable>(1);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var diags = semanticModel.GetAllDiagnostics();
+        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var ySym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(yDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(Type.Int32, xSym.Type);
+        Assert.Equal(Type.Int32, ySym.Type);
     }
 }

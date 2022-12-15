@@ -54,6 +54,8 @@ public static partial class SyntaxFactory
         value is null ? null : ValueInitializer(Assign, value),
         Semicolon);
 
+    public static Decl.Label LabelDecl(string name) => LabelDecl(Name(name), Colon);
+
     public static Enclosed<PunctuatedList<FuncParam>> FuncParamList(ImmutableArray<FuncParam> ps) => Enclosed(
         ParenOpen,
         PunctuatedList(ps, Comma, trailing: false),
@@ -91,6 +93,7 @@ public static partial class SyntaxFactory
     public static Expr.Call CallExpr(Expr called, params Expr[] args) => CallExpr(called, args.ToImmutableArray());
 
     public static Expr.Return ReturnExpr(Expr? value = null) => ReturnExpr(KeywordReturn, value);
+    public static Expr.Goto GotoExpr(string label) => GotoExpr(KeywordGoto, NameExpr(label));
 
     public static Expr.Name NameExpr(string name) => NameExpr(Name(name));
     public static Expr.Literal LiteralExpr(int value) => LiteralExpr(Integer(value));
@@ -119,6 +122,7 @@ public static partial class SyntaxFactory
     public static Token KeywordVar { get; } = MakeToken(TokenType.KeywordVar);
     public static Token KeywordVal { get; } = MakeToken(TokenType.KeywordVal);
     public static Token KeywordFunc { get; } = MakeToken(TokenType.KeywordFunc);
+    public static Token KeywordGoto { get; } = MakeToken(TokenType.KeywordGoto);
     public static Token KeywordTrue { get; } = MakeToken(TokenType.KeywordTrue);
     public static Token KeywordFalse { get; } = MakeToken(TokenType.KeywordFalse);
     public static Token CurlyOpen { get; } = MakeToken(TokenType.CurlyOpen);

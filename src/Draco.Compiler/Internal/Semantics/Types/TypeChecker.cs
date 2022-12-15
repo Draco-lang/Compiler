@@ -25,6 +25,14 @@ internal static class TypeChecker
     {
         if (tree is ParseTree.Expr expr)
         {
+            // TODO: Any better way to handle this?
+            // Maybe allow TypeOf to return a nullable?
+            var referencedSymbol = SymbolResolution.GetReferencedSymbolOrNull(db, tree);
+            if (referencedSymbol is not null && referencedSymbol is not ISymbol.ITyped)
+            {
+                // We don't consider it, asking its type is not valid
+                return Enumerable.Empty<Diagnostic>();
+            }
             var ty = TypeOf(db, expr);
             return ty.Diagnostics;
         }
@@ -95,11 +103,10 @@ internal static class TypeChecker
         ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
         // TODO: Type errors?
         ParseTree.Expr.Relational => Type.Bool,
-        // TODO: Type errors?
         ParseTree.Expr.While => Type.Unit,
         ParseTree.Expr.UnitStmt => Type.Unit,
-        // TODO: Type errors?
-        ParseTree.Expr.Return => Type.Unit,
+        ParseTree.Expr.Return => Type.Never_,
+        ParseTree.Expr.Goto => Type.Never_,
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 

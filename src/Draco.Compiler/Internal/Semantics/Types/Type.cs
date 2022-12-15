@@ -32,6 +32,7 @@ internal abstract partial record class Type
 // Builtins
 internal abstract partial record class Type
 {
+    public static readonly Type Never_ = Never.Instance;
     public static readonly Type Unit = new Builtin(typeof(void));
     public static readonly Type Int32 = new Builtin(typeof(int));
     public static readonly Type Bool = new Builtin(typeof(bool));
@@ -107,6 +108,23 @@ internal abstract partial record class Type
 
         public bool Equals(Error? other) => ReferenceEquals(this, other);
         public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+    }
+}
+
+internal abstract partial record class Type
+{
+    /// <summary>
+    /// Represents the bottom-type.
+    /// </summary>
+    public sealed record class Never : Type
+    {
+        public static Never Instance { get; } = new();
+
+        private Never()
+        {
+        }
+
+        public override string ToString() => "<never>";
     }
 }
 

@@ -100,6 +100,13 @@ internal partial interface IConstraint
                 return Ok();
             }
 
+            // Never-type is compativle with everything
+            case (Type.Never, _):
+            case (_, Type.Never):
+            {
+                return Ok();
+            }
+
             case (Type.Builtin b1, Type.Builtin b2):
             {
                 if (b1.Type != b2.Type) return Error(UnificationError.TypeMismatch);

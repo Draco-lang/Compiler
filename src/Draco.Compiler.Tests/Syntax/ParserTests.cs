@@ -1395,4 +1395,26 @@ public sealed class ParserTests
             }
         }
     }
+
+    [Fact]
+    public void TestEmptyInterpolation()
+    {
+        this.ParseExpression("""
+            "a\{}b"
+            """);
+
+        this.N<Expr.String>();
+        {
+            this.T(TokenType.LineStringStart, "\"");
+            this.StringContent("a");
+            this.N<StringPart.Interpolation>();
+            {
+                this.T(TokenType.InterpolationStart);
+                this.N<Expr.Unexpected>();
+                this.T(TokenType.InterpolationEnd);
+            }
+            this.StringContent("b");
+            this.T(TokenType.LineStringEnd, "\"");
+        }
+    }
 }

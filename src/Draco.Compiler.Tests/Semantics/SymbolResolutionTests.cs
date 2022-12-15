@@ -13,16 +13,8 @@ using IInternalScope = Draco.Compiler.Internal.Semantics.Symbols.IScope;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class SymbolResolutionTests
+public sealed class SymbolResolutionTests : SemanticTestsBase
 {
-    private static TSymbol GetInternalSymbol<TSymbol>(ISymbol? symbol)
-        where TSymbol : IInternalSymbol
-    {
-        Assert.NotNull(symbol);
-        var symbolBase = (SymbolBase)symbol!;
-        return (TSymbol)symbolBase.Symbol;
-    }
-
     private static void AssertParentOf(IInternalScope? parent, IInternalScope? child)
     {
         Assert.NotNull(child);

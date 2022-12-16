@@ -72,9 +72,12 @@ internal static class TypeChecker
             // TODO: This is a temporary solution
             // Later, we'll need symbol resolution to be able to reference type-symbols only and such
             // For now this is a simple, greedy workaround
-            ParseTree.TypeExpr.Name namedType => SymbolResolution.GetReferencedSymbol(db, namedType) is ISymbol.ITypeDefinition typeDef
-                ? typeDef.DefinedType
-                : throw new InvalidOperationException(),
+            ParseTree.TypeExpr.Name namedType => SymbolResolution.GetReferencedSymbol(db, namedType) switch
+            {
+                ISymbol.ITypeDefinition typeDef => typeDef.DefinedType,
+                var symbol when symbol.IsError => new Type.Error(symbol.Diagnostics),
+                _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+            },
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 

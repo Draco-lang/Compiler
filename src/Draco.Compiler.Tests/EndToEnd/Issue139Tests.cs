@@ -29,6 +29,15 @@ public sealed class Issue139Tests
     [InlineData("""
         func main(): {}
         """)]
+    [InlineData("""
+        func main() {
+            val x = foo("a", "b");
+        }
+        func foo(x: string, x: string): string = x;
+        """)]
+    [InlineData("""
+        func foo(): Foo = x;
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

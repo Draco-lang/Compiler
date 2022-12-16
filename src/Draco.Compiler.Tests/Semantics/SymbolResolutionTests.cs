@@ -311,4 +311,34 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(wSymRef1.IsError);
         Assert.True(wSymRef2.IsError);
     }
+
+    [Fact]
+    public void ParameterRedefinitionError()
+    {
+        // func foo(x: int32, x: int32) {
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(
+                FuncParam(Name("x"), NameTypeExpr(Name("int32"))),
+                FuncParam(Name("x"), NameTypeExpr(Name("int32")))),
+            null,
+            BlockBodyFuncBody(BlockExpr())));
+
+        var x1Decl = tree.FindInChildren<ParseTree.FuncParam>(0);
+        var x2Decl = tree.FindInChildren<ParseTree.FuncParam>(1);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var x1SymDecl = GetInternalSymbol<IInternalSymbol.IParameter>(semanticModel.GetDefinedSymbolOrNull(x1Decl));
+        var x2SymDecl = semanticModel.GetDefinedSymbolOrNull(x2Decl);
+
+        // Assert
+        Assert.NotNull(x2SymDecl);
+        Assert.True(x2SymDecl!.IsError);
+    }
 }

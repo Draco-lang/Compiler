@@ -376,4 +376,36 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.NotNull(funcSym);
         Assert.True(funcSym!.IsError);
     }
+
+    [Fact]
+    public void GlobalVariableDefinedLater()
+    {
+        // func foo() {
+        //     var y = x;
+        // }
+        // var x;
+
+        // Arrange
+        var tree = CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    DeclStmt(VariableDecl(Name("y"), value: NameExpr("x")))))),
+            VariableDecl(Name("x")));
+
+        var localVarDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var globalVarDecl = tree.FindInChildren<ParseTree.Decl.Variable>(1);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var varRefSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(localVarDecl.Initializer!.Value));
+        var varDeclSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(globalVarDecl));
+
+        // Assert
+        Assert.True(ReferenceEquals(varDeclSym, varRefSym));
+    }
 }

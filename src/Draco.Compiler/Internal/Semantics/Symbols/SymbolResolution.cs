@@ -268,8 +268,16 @@ internal static class SymbolResolution
     /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> defines, or null if
     /// it does not define any symbol.</returns>
     public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
-        tree,
-        ISymbol? (tree) => tree switch
+        args: tree,
+        // We are using a cyclic computation so the defined symbol discovers its own scope
+        // This is so we can handle merges and properly mark a symbol as an error at definition level,
+        // if it happens to be something like an illegal shadowing (like a duplicate parameter name)
+        recompute: ISymbol? (tree) =>
+        {
+            // TODO
+            throw new NotImplementedException();
+        },
+        handleCycle: ISymbol? (tree) => tree switch
         {
             ParseTree.Decl.Variable variable => ISymbol.MakeVariable(
                 db: db,

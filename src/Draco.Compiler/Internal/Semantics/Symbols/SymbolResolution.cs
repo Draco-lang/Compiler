@@ -454,8 +454,8 @@ internal static class SymbolResolution
     private static BindingKind GetBindingKind(ScopeKind scopeKind, ISymbol symbol) => symbol switch
     {
         ISymbol.ILabel or ISymbol.IFunction => BindingKind.OrderIndependent,
+        ISymbol.IParameter => BindingKind.OrderIndependent,
         ISymbol.IVariable when scopeKind == ScopeKind.Global => BindingKind.OrderIndependent,
-        ISymbol.IParameter => BindingKind.NonRecursive,
         ISymbol.IVariable => BindingKind.NonRecursive,
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };

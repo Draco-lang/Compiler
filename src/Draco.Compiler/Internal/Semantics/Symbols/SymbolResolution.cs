@@ -273,34 +273,33 @@ internal static class SymbolResolution
     /// <returns>True, if <paramref name="tree"/> references a symbol and the result is written to <paramref name="name"/>.</returns>
     private static bool TryGetReferencedSymbolName(ParseTree tree, [MaybeNullWhen(false)] out string name)
     {
-        if (tree is ParseTree.Expr.Name nameExpr)
+        switch (tree)
         {
+        case ParseTree.Expr.Name nameExpr:
             name = nameExpr.Identifier.Text;
             return true;
-        }
-        if (tree is ParseTree.TypeExpr.Name nameTypeExpr)
-        {
+
+        case ParseTree.TypeExpr.Name nameTypeExpr:
             name = nameTypeExpr.Identifier.Text;
             return true;
-        }
-        if (tree is ParseTree.Expr.Unary uryExpr)
-        {
+
+        case ParseTree.Expr.Unary uryExpr:
             name = GetUnaryOperatorName(uryExpr.Operator.Type);
             return true;
-        }
-        if (tree is ParseTree.Expr.Binary binExpr)
-        {
+
+        case ParseTree.Expr.Binary binExpr:
             // NOTE: Assignment is also denoted as binary, but that does not reference an operator
             name = GetBinaryOperatorName(binExpr.Operator.Type);
             return name is not null;
-        }
-        if (tree is ParseTree.ComparisonElement cmpElement)
-        {
+
+        case ParseTree.ComparisonElement cmpElement:
             name = GetRelationalOperatorName(cmpElement.Operator.Type);
             return true;
+
+        default:
+            name = null;
+            return false;
         }
-        name = null;
-        return false;
     }
 
     /// <summary>

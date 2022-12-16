@@ -238,4 +238,77 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(ReferenceEquals(symz, symRefz));
         Assert.True(symRefz.IsError);
     }
+
+    [Fact]
+    public void OrderDependentReferencingWithNesting()
+    {
+        // func foo() {
+        //     var x;                 // x1
+        //     {
+        //         var y;             // y1
+        //         var z = x + y;     // z1, x1, y1
+        //         var x;             // x2
+        //         {
+        //             var k = x + w; // k1, x2, error
+        //         }
+        //         var w;             // w1
+        //     }
+        //     var k = w;             // k2, error
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"))),
+                ExprStmt(BlockExpr(
+                    DeclStmt(VariableDecl(Name("y"))),
+                    DeclStmt(VariableDecl(Name("z"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("y")))),
+                    DeclStmt(VariableDecl(Name("x"))),
+                    ExprStmt(BlockExpr(
+                        DeclStmt(VariableDecl(Name("k"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("y")))))),
+                    DeclStmt(VariableDecl(Name("w"))))),
+                DeclStmt(VariableDecl(Name("k"), value: NameExpr("w")))))));
+
+        var x1Decl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var y1Decl = tree.FindInChildren<ParseTree.Decl.Variable>(1);
+        var z1Decl = tree.FindInChildren<ParseTree.Decl.Variable>(2);
+        var x2Decl = tree.FindInChildren<ParseTree.Decl.Variable>(3);
+        var k1Decl = tree.FindInChildren<ParseTree.Decl.Variable>(4);
+        var w1Decl = tree.FindInChildren<ParseTree.Decl.Variable>(5);
+        var k2Decl = tree.FindInChildren<ParseTree.Decl.Variable>(6);
+
+        var x1Ref1 = tree.FindInChildren<ParseTree.Expr.Name>(0);
+        var y1Ref1 = tree.FindInChildren<ParseTree.Expr.Name>(1);
+        var x2Ref1 = tree.FindInChildren<ParseTree.Expr.Name>(2);
+        var wRefErr1 = tree.FindInChildren<ParseTree.Expr.Name>(3);
+        var wRefErr2 = tree.FindInChildren<ParseTree.Expr.Name>(4);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var x1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x1Decl));
+        var y1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(y1Decl));
+        var z1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(z1Decl));
+        var x2SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x2Decl));
+        var k1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(k1Decl));
+        var w1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(w1Decl));
+        var k2SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(k2Decl));
+
+        var x1SymRef1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbol(x1Ref1));
+        var y1SymRef1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbol(y1Ref1));
+        var x2SymRef1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbol(x2Ref1));
+        var wSymRef1 = semanticModel.GetReferencedSymbol(wRefErr1);
+        var wSymRef2 = semanticModel.GetReferencedSymbol(wRefErr2);
+
+        // Assert
+        Assert.True(ReferenceEquals(x1SymDecl, x1SymRef1));
+        Assert.True(ReferenceEquals(y1SymDecl, y1SymRef1));
+        Assert.True(ReferenceEquals(x2SymDecl, x2SymRef1));
+        Assert.True(wSymRef1.IsError);
+        Assert.True(wSymRef2.IsError);
+    }
 }

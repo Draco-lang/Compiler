@@ -160,6 +160,10 @@ internal static class SymbolResolution
                 // Add to timeline declarations
                 timelineDeclarations!.Add(new(symbolPosition, symbol));
 
+                // TODO: We should really add the "merged" symbols here somehow, or at least the unmerged ones
+                // with the diagnostics attached
+                // Otherwise we are only observing an error, if we reference a wrongly overloaded symbol
+
                 // Add to parse-tree mapped declarations
                 treeMappedDeclarations.Add(subtree, symbol);
             }

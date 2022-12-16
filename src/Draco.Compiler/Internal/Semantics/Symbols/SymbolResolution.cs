@@ -143,7 +143,7 @@ internal static class SymbolResolution
             foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
             {
                 // See if the child defines any symbol
-                var symbol = GetDefinedSymbolOrNull(db, subtree);
+                var symbol = ConstructDefinedSymbolOrNull(db, subtree);
                 if (symbol is null) continue;
 
                 // Yes, calculate position and add it
@@ -273,38 +273,46 @@ internal static class SymbolResolution
     /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> defines, or null if
     /// it does not define any symbol.</returns>
     public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
-        args: tree,
-        // We are using a cyclic computation so the defined symbol discovers its own scope
-        // This is so we can handle merges and properly mark a symbol as an error at definition level,
-        // if it happens to be something like an illegal shadowing (like a duplicate parameter name)
-        recompute: ISymbol? (tree) =>
+        tree,
+        ISymbol? (tree) =>
         {
             var scopeDefiningAncestor = GetScopeDefiningAncestor(tree);
+            Debug.Assert(scopeDefiningAncestor is not null);
             var scope = GetDefinedScopeOrNull(db, scopeDefiningAncestor);
             Debug.Assert(scope is not null);
-            return scope.Declarations[tree];
-        },
-        handleCycle: ISymbol? (tree) => tree switch
-        {
-            ParseTree.Decl.Variable variable => ISymbol.MakeVariable(
-                db: db,
-                name: variable.Identifier.Text,
-                definition: tree,
-                isMutable: variable.Keyword.Type == TokenType.KeywordVar),
-            ParseTree.Decl.Func func => ISymbol.MakeFunction(
-                db: db,
-                name: func.Identifier.Text,
-                definition: tree),
-            ParseTree.Decl.Label label => ISymbol.MakeLabel(
-                db: db,
-                name: label.Identifier.Text,
-                definition: tree),
-            ParseTree.FuncParam fparam => ISymbol.MakeParameter(
-                db: db,
-                name: fparam.Identifier.Text,
-                definition: tree),
-            _ => null,
+            return scope.Declarations.TryGetValue(tree, out var symbol)
+                ? symbol
+                : null;
         });
+
+    /// <summary>
+    /// Constructs the <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null, if
+    /// it defines no symbol.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseTree"/> that is asked for the defined <see cref="ISymbol"/>.</param>
+    /// <returns>The <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null.</returns>
+    private static ISymbol? ConstructDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => tree switch
+    {
+        ParseTree.Decl.Variable variable => ISymbol.MakeVariable(
+            db: db,
+            name: variable.Identifier.Text,
+            definition: tree,
+            isMutable: variable.Keyword.Type == TokenType.KeywordVar),
+        ParseTree.Decl.Func func => ISymbol.MakeFunction(
+            db: db,
+            name: func.Identifier.Text,
+            definition: tree),
+        ParseTree.Decl.Label label => ISymbol.MakeLabel(
+            db: db,
+            name: label.Identifier.Text,
+            definition: tree),
+        ParseTree.FuncParam fparam => ISymbol.MakeParameter(
+            db: db,
+            name: fparam.Identifier.Text,
+            definition: tree),
+        _ => null,
+    };
 
     /// <summary>
     /// Utility for internal API to expect a symbol referenced by a certain type of tree.

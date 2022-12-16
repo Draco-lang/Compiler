@@ -7,6 +7,7 @@ using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Utilities;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
@@ -145,7 +146,7 @@ internal static class SymbolResolution
                 if (symbol is null) continue;
 
                 // Yes, calculate position and add it
-                var symbolPosition = GetBindingKind(symbol) switch
+                var symbolPosition = GetBindingKind(scopeKind.Value, symbol) switch
                 {
                     // Order independent always just gets thrown to the beginning
                     BindingKind.OrderIndependent => 0,
@@ -166,8 +167,85 @@ internal static class SymbolResolution
                 definition: tree,
                 timelines: result
                     .GroupBy(d => d.Name)
-                    .ToImmutableDictionary(g => g.Key, g => new DeclarationTimeline(g)));
+                    .ToImmutableDictionary(g => g.Key, ConstructTimeline));
         });
+
+    /// <summary>
+    /// Constructs a <see cref="DeclarationTimeline"/> from the given <see cref="Declaration"/>s belonging to the same name.
+    /// </summary>
+    /// <param name="declarations">The <see cref="Declaration"/>s that are declared under the same name.</param>
+    /// <returns>The constructed <see cref="DeclarationTimeline"/>.</returns>
+    private static DeclarationTimeline ConstructTimeline(IEnumerable<Declaration> declarations)
+    {
+        // We expect the declarations to all relate to the same name and ordered by position
+        Debug.Assert(!declarations.Any() || declarations.All(d => d.Name == declarations.First().Name));
+        Debug.Assert(declarations.Select(d => d.Position).IsOrdered());
+
+        var result = ImmutableArray.CreateBuilder<Declaration>();
+        foreach (var declsAtPosition in declarations.GroupBy(d => d.Position))
+        {
+            var symbols = declsAtPosition.Select(d => d.Symbol);
+            // Map
+            var replacements = ConstructSymbolsFromSymbolGroup(symbols)
+                .Select(sym => new Declaration(declsAtPosition.Key, sym));
+            // Add to the results
+            foreach (var item in replacements) result.Add(item);
+        }
+
+        return new(result.ToImmutable());
+    }
+
+    // TODO: Flaw
+    // Illegal entries will still be part of resolution and be under the same name and same position as non-error entries
+    // This needs to be solved somehow, to at least prefer the non-error entries, when preferrable
+    /// <summary>
+    /// Constructs <see cref="ISymbol"/>s from a group of <see cref="ISymbol"/>s that happen to be under the same position.
+    /// This method merges symbols that can be overloaded, so it might return less symbols than given.
+    /// The illegal overloads (like trying to overload global variables) are also ruled out here.
+    /// </summary>
+    /// <param name="symbols">The <see cref="ISymbol"/>s under the same position.</param>
+    /// <returns>The sequence of <see cref="ISymbol"/>s that can be used in a <see cref="DeclarationTimeline"/>.</returns>
+    private static IEnumerable<ISymbol> ConstructSymbolsFromSymbolGroup(IEnumerable<ISymbol> symbols)
+    {
+        Debug.Assert(symbols.Any());
+
+        var enumerator = symbols.GetEnumerator();
+        enumerator.MoveNext();
+
+        // Based on the first symbol we decide what we do
+        var first = enumerator.Current;
+        switch (first)
+        {
+        case ISymbol.IFunction:
+        case ISymbol.IUnaryOperator:
+        case ISymbol.IBinaryOperator:
+        {
+            // Overloading
+            // TODO: Search in parent for existing overloads to merge
+            // TODO: Only yield first if it's alone
+            yield return first;
+            while (enumerator.MoveNext())
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+            break;
+        }
+
+        default:
+        {
+            // Disallow overloading
+            yield return first;
+            // The rest are considered illegal redeclaration
+            while (enumerator.MoveNext())
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+            break;
+        }
+        }
+    }
 
     /// <summary>
     /// Utility for internal API to expect a symbol defined by a certain type of tree.
@@ -370,12 +448,13 @@ internal static class SymbolResolution
     /// <summary>
     /// Retrieves the <see cref="BindingKind"/> a symbol introduces.
     /// </summary>
+    /// <param name="scopeKind">The <see cref="ScopeKind"/> that <paramref name="symbol"/> is defined in.</param>
     /// <param name="symbol">The symbol that introduces a binding.</param>
     /// <returns>The <see cref="BindingKind"/> of <paramref name="symbol"/>.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    private static BindingKind GetBindingKind(ISymbol symbol) => symbol switch
+    private static BindingKind GetBindingKind(ScopeKind scopeKind, ISymbol symbol) => symbol switch
     {
         ISymbol.ILabel or ISymbol.IFunction => BindingKind.OrderIndependent,
+        ISymbol.IVariable when scopeKind == ScopeKind.Global => BindingKind.OrderIndependent,
         ISymbol.IParameter => BindingKind.NonRecursive,
         ISymbol.IVariable => BindingKind.NonRecursive,
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),

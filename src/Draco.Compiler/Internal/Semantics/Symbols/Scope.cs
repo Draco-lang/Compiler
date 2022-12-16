@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
 
@@ -221,14 +222,15 @@ internal readonly struct DeclarationTimeline
     /// </summary>
     public readonly ImmutableArray<Declaration> Declarations;
 
-    public DeclarationTimeline(IEnumerable<Declaration> declarations)
+    public DeclarationTimeline(ImmutableArray<Declaration> declarations)
     {
         // Either there are no declarations, or all of them have the same name
+        // They also must be ordered
         Debug.Assert(!declarations.Any()
                    || declarations.All(d => d.Name == declarations.First().Name));
-        this.Declarations = declarations
-            .OrderBy(decl => decl.Position)
-            .ToImmutableArray();
+        Debug.Assert(declarations.Select(d => d.Position).IsOrdered());
+
+        this.Declarations = declarations;
     }
 
     /// <summary>

@@ -134,10 +134,11 @@ internal static class SymbolResolution
             var scopeKind = GetScopeKind(tree);
             if (scopeKind is null) return null;
 
-            var result = new List<Declaration>();
+            var timelineDeclarations = new List<Declaration>();
+            var treeMappedDeclarations = ImmutableDictionary.CreateBuilder<ParseTree, ISymbol>();
 
             // We inject intrinsics at global scope
-            if (scopeKind == ScopeKind.Global) InjectIntrinsics(result);
+            if (scopeKind == ScopeKind.Global) InjectIntrinsics(timelineDeclarations);
 
             foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
             {
@@ -156,8 +157,11 @@ internal static class SymbolResolution
                     BindingKind.NonRecursive => position + subtree.Width,
                     _ => throw new InvalidOperationException(),
                 };
-                // Add to results
-                result!.Add(new(symbolPosition, symbol));
+                // Add to timeline declarations
+                timelineDeclarations!.Add(new(symbolPosition, symbol));
+
+                // Add to parse-tree mapped declarations
+                treeMappedDeclarations.Add(subtree, symbol);
             }
 
             // Construct the scope
@@ -165,9 +169,10 @@ internal static class SymbolResolution
                 db: db,
                 kind: scopeKind.Value,
                 definition: tree,
-                timelines: result
+                timelines: timelineDeclarations
                     .GroupBy(d => d.Name)
-                    .ToImmutableDictionary(g => g.Key, ConstructTimeline));
+                    .ToImmutableDictionary(g => g.Key, ConstructTimeline),
+                declarations: treeMappedDeclarations.ToImmutable());
         });
 
     /// <summary>
@@ -274,8 +279,10 @@ internal static class SymbolResolution
         // if it happens to be something like an illegal shadowing (like a duplicate parameter name)
         recompute: ISymbol? (tree) =>
         {
-            // TODO
-            throw new NotImplementedException();
+            var scopeDefiningAncestor = GetScopeDefiningAncestor(tree);
+            var scope = GetDefinedScopeOrNull(db, scopeDefiningAncestor);
+            Debug.Assert(scope is not null);
+            return scope.Declarations[tree];
         },
         handleCycle: ISymbol? (tree) => tree switch
         {

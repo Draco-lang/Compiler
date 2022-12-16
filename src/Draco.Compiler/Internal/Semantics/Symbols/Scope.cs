@@ -17,31 +17,35 @@ internal partial interface IScope
         QueryDatabase db,
         ScopeKind kind,
         ParseTree definition,
-        ImmutableDictionary<string, DeclarationTimeline> timelines) => kind switch
+        ImmutableDictionary<string, DeclarationTimeline> timelines,
+        ImmutableDictionary<ParseTree, ISymbol> declarations) => kind switch
         {
-            ScopeKind.Global => MakeGlobal(db, definition, timelines),
-            ScopeKind.Function => MakeFunction(db, definition, timelines),
-            ScopeKind.Local => MakeLocal(db, definition, timelines),
+            ScopeKind.Global => MakeGlobal(db, definition, timelines, declarations),
+            ScopeKind.Function => MakeFunction(db, definition, timelines, declarations),
+            ScopeKind.Local => MakeLocal(db, definition, timelines, declarations),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 
     public static IScope MakeGlobal(
         QueryDatabase db,
         ParseTree definition,
-        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
-        new GlobalScope(db, definition, timelines);
+        ImmutableDictionary<string, DeclarationTimeline> timelines,
+        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        new GlobalScope(db, definition, timelines, declarations);
 
     public static IScope MakeFunction(
         QueryDatabase db,
         ParseTree definition,
-        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
-        new FunctionScope(db, definition, timelines);
+        ImmutableDictionary<string, DeclarationTimeline> timelines,
+        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        new FunctionScope(db, definition, timelines, declarations);
 
     public static IScope MakeLocal(
         QueryDatabase db,
         ParseTree definition,
-        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
-        new LocalScope(db, definition, timelines);
+        ImmutableDictionary<string, DeclarationTimeline> timelines,
+        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        new LocalScope(db, definition, timelines, declarations);
 }
 
 // Interfaces //////////////////////////////////////////////////////////////////
@@ -93,6 +97,11 @@ internal partial interface IScope
     public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
 
     /// <summary>
+    /// The symbols associated to their declaration.
+    /// </summary>
+    public ImmutableDictionary<ParseTree, ISymbol> Declarations { get; }
+
+    /// <summary>
     /// True, if this is the global scope.
     /// </summary>
     public bool IsGlobal { get; }
@@ -133,17 +142,20 @@ internal partial interface IScope
         public IScope? Parent => SymbolResolution.GetParentScopeOrNull(this.db, this);
         public ParseTree Definition { get; }
         public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
+        public ImmutableDictionary<ParseTree, ISymbol> Declarations { get; }
 
         private readonly QueryDatabase db;
 
         protected ScopeBase(
             QueryDatabase db,
             ParseTree definition,
-            ImmutableDictionary<string, DeclarationTimeline> timelines)
+            ImmutableDictionary<string, DeclarationTimeline> timelines,
+            ImmutableDictionary<ParseTree, ISymbol> declarations)
         {
             this.db = db;
             this.Definition = definition;
             this.Timelines = timelines;
+            this.Declarations = declarations;
         }
 
         public Declaration? LookUp(string name, int referencedPosition)
@@ -166,8 +178,9 @@ internal partial interface IScope
         public GlobalScope(
             QueryDatabase db,
             ParseTree definition,
-            ImmutableDictionary<string, DeclarationTimeline> timelines)
-            : base(db, definition, timelines)
+            ImmutableDictionary<string, DeclarationTimeline> timelines,
+            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            : base(db, definition, timelines, declarations)
         {
         }
     }
@@ -185,8 +198,9 @@ internal partial interface IScope
         public FunctionScope(
             QueryDatabase db,
             ParseTree definition,
-            ImmutableDictionary<string, DeclarationTimeline> timelines)
-            : base(db, definition, timelines)
+            ImmutableDictionary<string, DeclarationTimeline> timelines,
+            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            : base(db, definition, timelines, declarations)
         {
         }
     }
@@ -204,8 +218,9 @@ internal partial interface IScope
         public LocalScope(
             QueryDatabase db,
             ParseTree definition,
-            ImmutableDictionary<string, DeclarationTimeline> timelines)
-            : base(db, definition, timelines)
+            ImmutableDictionary<string, DeclarationTimeline> timelines,
+            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            : base(db, definition, timelines, declarations)
         {
         }
     }

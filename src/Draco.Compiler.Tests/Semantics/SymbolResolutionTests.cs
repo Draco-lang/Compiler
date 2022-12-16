@@ -268,7 +268,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclStmt(VariableDecl(Name("z"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("y")))),
                     DeclStmt(VariableDecl(Name("x"))),
                     ExprStmt(BlockExpr(
-                        DeclStmt(VariableDecl(Name("k"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("y")))))),
+                        DeclStmt(VariableDecl(Name("k"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("w")))))),
                     DeclStmt(VariableDecl(Name("w"))))),
                 DeclStmt(VariableDecl(Name("k"), value: NameExpr("w")))))));
 

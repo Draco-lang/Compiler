@@ -361,12 +361,19 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 NameTypeExpr(Name("int32")),
                 InlineBodyFuncBody(NameExpr("b"))));
 
+        var varDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var funcDecl = tree.FindInChildren<ParseTree.Decl.Func>(0);
+
         // Act
-        // TODO
-        throw new NotImplementedException();
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var varSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(varDecl));
+        var funcSym = semanticModel.GetDefinedSymbolOrNull(funcDecl);
 
         // Assert
-        // TODO
-        throw new NotImplementedException();
+        Assert.False(varSym.IsError);
+        Assert.NotNull(funcSym);
+        Assert.True(funcSym!.IsError);
     }
 }

@@ -131,6 +131,36 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void VariableTypeCanNotBeInferred()
+    {
+        // func main() {
+        //     var x;
+        // }
+
+        // Arrange
+        var tree = CompilationUnit(FuncDecl(
+            Name("main"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x")))))));
+
+        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.GetAllDiagnostics();
+
+        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+        Assert.True(xSym.Type.IsError);
+    }
+
+    [Fact]
     public void BlockBodyFunctionReturnTypeMismatch()
     {
         // func foo(): int32 {

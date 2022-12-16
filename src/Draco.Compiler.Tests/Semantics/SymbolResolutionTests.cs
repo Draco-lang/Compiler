@@ -308,6 +308,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(ReferenceEquals(x1SymDecl, x1SymRef1));
         Assert.True(ReferenceEquals(y1SymDecl, y1SymRef1));
         Assert.True(ReferenceEquals(x2SymDecl, x2SymRef1));
+        // TODO: Maybe we should still resolve the reference, but mark it that it's something that comes later?
+        // (so it is still an error)
+        // It would definitely help reduce error cascading
         Assert.True(wSymRef1.IsError);
         Assert.True(wSymRef2.IsError);
     }
@@ -338,7 +341,32 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x2SymDecl = semanticModel.GetDefinedSymbolOrNull(x2Decl);
 
         // Assert
+        Assert.False(x1SymDecl.IsError);
         Assert.NotNull(x2SymDecl);
         Assert.True(x2SymDecl!.IsError);
+    }
+
+    [Fact]
+    public void FuncOverloadsGlobalVar()
+    {
+        // var b: int32;
+        // func b(b: int32): int32 = b;
+
+        // Arrange
+        var tree = CompilationUnit(
+            VariableDecl(Name("b"), NameTypeExpr(Name("int32"))),
+            FuncDecl(
+                Name("b"),
+                FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("int32")))),
+                NameTypeExpr(Name("int32")),
+                InlineBodyFuncBody(NameExpr("b"))));
+
+        // Act
+        // TODO
+        throw new NotImplementedException();
+
+        // Assert
+        // TODO
+        throw new NotImplementedException();
     }
 }

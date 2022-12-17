@@ -288,7 +288,7 @@ internal partial interface ISymbol
     {
         public string Name { get; }
         public ParseTree Definition { get; }
-        public bool IsError => false;
+        public bool IsError => this.Diagnostics.Length > 0;
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public IScope DefiningScope
         {
@@ -374,8 +374,10 @@ internal partial interface ISymbol
     /// <summary>
     /// A symbol for a reference error.
     /// </summary>
-    private sealed class ReferenceError : ErrorBase
+    private sealed class ReferenceError : ErrorBase, ITyped
     {
+        public Type Type => Type.Error.Empty;
+
         public ReferenceError(string name, ImmutableArray<Diagnostic> diagnostics)
             : base(name, diagnostics)
         {

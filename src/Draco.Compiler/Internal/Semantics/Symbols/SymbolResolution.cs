@@ -46,7 +46,9 @@ internal static class SymbolResolution
     /// <returns>The <see cref="Diagnostic"/>s related to <paramref name="tree"/>.</returns>
     public static IEnumerable<Diagnostic> GetDiagnostics(QueryDatabase db, ParseTree tree)
     {
-        var referencedSymbolDiags = GetReferencedSymbolOrNull(db, tree)?.Diagnostics ?? ImmutableArray<Diagnostic>.Empty;
+        var referencedSymbolDiags = ReferencesSymbol(tree)
+            ? GetReferencedSymbol(db, tree).Diagnostics
+            : ImmutableArray<Diagnostic>.Empty;
         var definedSymbolDiags = GetDefinedSymbolOrNull(db, tree)?.Diagnostics ?? ImmutableArray<Diagnostic>.Empty;
         return referencedSymbolDiags
             .Concat(definedSymbolDiags);
@@ -229,7 +231,7 @@ internal static class SymbolResolution
     public static TSymbol GetReferencedSymbolExpected<TSymbol>(QueryDatabase db, ParseTree tree)
         where TSymbol : ISymbol
     {
-        var symbol = GetReferencedSymbolOrNull(db, tree);
+        var symbol = GetReferencedSymbol(db, tree);
         if (symbol is null) throw new InvalidOperationException("The parse tree does not reference a symbol");
         if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree references a differen kind of symbol");
         return tSymbol;

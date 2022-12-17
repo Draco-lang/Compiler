@@ -181,7 +181,7 @@ internal static class SymbolResolution
             var declarations = ImmutableDictionary.CreateBuilder<ParseTree, ISymbol>();
             var timelines = timelinePreDeclarations
                 .GroupBy(d => d.Name)
-                .ToImmutableDictionary(g => g.Key, g => ConstructTimeline(g, declarations));
+                .ToImmutableDictionary(g => g.Key, g => ConstructTimeline(db, g, declarations));
             return IScope.Make(
                 db: db,
                 kind: scopeKind.Value,
@@ -193,10 +193,12 @@ internal static class SymbolResolution
     /// <summary>
     /// Constructs a <see cref="DeclarationTimeline"/> from the given <see cref="PreDeclaration"/>s belonging to the same name.
     /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="preDeclarations">The <see cref="PreDeclaration"/>s that are declared under the same name.</param>
     /// <param name="declarations">The declarations get written here mapped from the syntax to the individual unmerged symbols.</param>
     /// <returns>The constructed <see cref="DeclarationTimeline"/>.</returns>
     private static DeclarationTimeline ConstructTimeline(
+        QueryDatabase db,
         IEnumerable<PreDeclaration> preDeclarations,
         ImmutableDictionary<ParseTree, ISymbol>.Builder declarations)
     {
@@ -208,7 +210,7 @@ internal static class SymbolResolution
         foreach (var preDeclsAtPosition in preDeclarations.GroupBy(d => d.Position))
         {
             // Merge
-            var merged = MergeDeclarationsInGroup(preDeclsAtPosition, declarations);
+            var merged = MergeDeclarationsInGroup(db, preDeclsAtPosition, declarations);
             // Add to the results
             result.Add(merged);
         }
@@ -221,10 +223,12 @@ internal static class SymbolResolution
     /// This method merges symbols that can be overloaded.
     /// The illegal overloads (like trying to overload global variables) are also ruled out here.
     /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="preDeclarations">The <see cref="PreDeclaration"/>s under the same position.</param>
     /// <param name="declarations">The declarations get written here mapped from the syntax to the individual unmerged symbols.</param>
     /// <returns>The <see cref="Declaration"/> that can be used in the <see cref="DeclarationTimeline"/>.</returns>
     private static Declaration MergeDeclarationsInGroup(
+        QueryDatabase db,
         IEnumerable<PreDeclaration> preDeclarations,
         ImmutableDictionary<ParseTree, ISymbol>.Builder declarations)
     {
@@ -236,19 +240,21 @@ internal static class SymbolResolution
         if (preDeclsList[0].Kind == SymbolKind.Function)
         {
             // Possible overloading
-            var overloadSet = ImmutableArray.Create<ISymbol.IFunction>();
+            var overloadSet = ImmutableArray.CreateBuilder<ISymbol.IFunction>();
             // Look at all functions
             foreach (var preDecl in preDeclsList)
             {
                 if (preDecl.Kind == SymbolKind.Function)
                 {
                     // Add to the set
-                    // TODO
-                    throw new NotImplementedException();
+                    var symbol = ConstructDefinedSymbolOrNull(db, preDecl.Tree);
+                    Debug.Assert(symbol is ISymbol.IFunction);
+                    overloadSet.Add((ISymbol.IFunction)symbol);
                 }
                 else
                 {
                     // Error
+                    // TODO
                     throw new NotImplementedException();
                 }
             }
@@ -258,8 +264,15 @@ internal static class SymbolResolution
         else
         {
             // Disallow overloading
-            // TODO
-            throw new NotImplementedException();
+            for (var i = 1; i < preDeclsList.Count; ++i)
+            {
+                // TODO: Error on the rest
+                throw new NotImplementedException();
+            }
+            // Only the first one is considered legal
+            var result = ConstructDefinedSymbolOrNull(db, preDeclsList[0].Tree);
+            Debug.Assert(result is not null);
+            return new(Position: preDeclsList[0].Position, Symbol: result);
         }
     }
 

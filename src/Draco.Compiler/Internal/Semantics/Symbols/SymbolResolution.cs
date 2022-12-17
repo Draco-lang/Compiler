@@ -174,7 +174,7 @@ internal static class SymbolResolution
                 };
 
                 // Add to timeline pre-declarations
-                timelinePreDeclarations.Add(new(name, subtree, kind, position));
+                timelinePreDeclarations.Add(new(name, subtree, kind, symbolPosition));
             }
 
             // Construct the scope
@@ -250,6 +250,7 @@ internal static class SymbolResolution
                     var symbol = ConstructDefinedSymbolOrNull(db, preDecl.Tree);
                     Debug.Assert(symbol is ISymbol.IFunction);
                     overloadSet.Add((ISymbol.IFunction)symbol);
+                    declarations.Add(preDecl.Tree, symbol);
                 }
                 else
                 {
@@ -258,8 +259,27 @@ internal static class SymbolResolution
                     throw new NotImplementedException();
                 }
             }
-            // TODO: Look for overloads in the parent
-            throw new NotImplementedException();
+            // Look for overloads in the parent
+            if (preDeclsList[0].Tree.Parent is not null)
+            {
+                var symbolInParent = ReferenceSymbolOrNull(db, preDeclsList[0].Tree.Parent!, preDeclsList[0].Name);
+                if (symbolInParent is ISymbol.IFunction f)
+                {
+                    // One function, add it
+                    overloadSet.Add(f);
+                }
+                else if (symbolInParent is ISymbol.IOverloadSet o)
+                {
+                    // Add all functions
+                    overloadSet.AddRange(o.Functions);
+                }
+            }
+            // Overload set done
+            // If there was only one, unwrap
+            var resultSymbol = overloadSet.Count == 1
+                ? overloadSet[0] as ISymbol
+                : ISymbol.SynthetizeOverloadSet(overloadSet.ToImmutable());
+            return new(Position: preDeclsList[0].Position, Symbol: resultSymbol);
         }
         else
         {
@@ -272,6 +292,7 @@ internal static class SymbolResolution
             // Only the first one is considered legal
             var result = ConstructDefinedSymbolOrNull(db, preDeclsList[0].Tree);
             Debug.Assert(result is not null);
+            declarations.Add(preDeclsList[0].Tree, result);
             return new(Position: preDeclsList[0].Position, Symbol: result);
         }
     }

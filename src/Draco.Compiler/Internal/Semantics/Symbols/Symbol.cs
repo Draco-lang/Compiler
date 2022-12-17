@@ -41,17 +41,8 @@ internal partial interface ISymbol
     public static IFunction MakeFunction(QueryDatabase db, string name, ParseTree definition) =>
         new Function(db, name, definition);
 
-    public static IOverloadSet SynthetizeOverloadSet(IFunction f1, IFunction f2)
-    {
-        Debug.Assert(f1.Name == f2.Name);
-        return new OverloadSet(f1.Name, ImmutableArray.Create(f1, f2));
-    }
-
-    public static IOverloadSet SynthetizeOverloadSet(IOverloadSet f1, IFunction f2)
-    {
-        Debug.Assert(f1.Name == f2.Name);
-        return new OverloadSet(f1.Name, f1.Functions.Add(f2));
-    }
+    public static IOverloadSet SynthetizeOverloadSet(ImmutableArray<IFunction> functions) =>
+        new OverloadSet(functions[0].Name, functions);
 
     public static IOverloadSet SynthetizeOverloadSet(IOverloadSet f1, ImmutableArray<IFunction> f2)
     {

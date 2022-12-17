@@ -39,19 +39,6 @@ internal static class SymbolResolution
     }
 
     /// <summary>
-    /// Represents a symbol declaration that is not instantiated yet.
-    /// </summary>
-    /// <param name="Name">The name of the symbol to be declared.</param>
-    /// <param name="Tree">The tree the symbol will originate from.</param>
-    /// <param name="Kind">The <see cref="SymbolKind"/> that the declaration will declare.</param>
-    /// <param name="Position">The relative position of the to-be declared symbol.</param>
-    private readonly record struct PreDeclaration(
-        string Name,
-        ParseTree Tree,
-        SymbolKind Kind,
-        int Position);
-
-    /// <summary>
     /// Retrieves the <see cref="Diagnostic"/> messages relating to symbol resolution.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
@@ -147,22 +134,19 @@ internal static class SymbolResolution
             var scopeKind = GetScopeKind(tree);
             if (scopeKind is null) return null;
 
-            var timelinePreDeclarations = new List<PreDeclaration>();
+            var scopeBuilder = new IScope.Builder(db, scopeKind.Value, tree);
 
-            // TODO
             // We inject intrinsics at global scope
-            // if (scopeKind == ScopeKind.Global) InjectIntrinsics(timelineDeclarations);
-            // throw new NotImplementedException();
+            if (scopeKind == ScopeKind.Global) InjectIntrinsics(scopeBuilder);
 
             foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
             {
                 // See if the child defines any symbol
-                var kindAndName = GetDefinedSymbolKindAndName(subtree);
-                if (kindAndName is null) continue;
-                var (kind, name) = kindAndName.Value;
+                var symbol = ConstructDefinedSymbolOrNull(db, subtree);
+                if (symbol is null) continue;
 
                 // Yes, calculate position and add it
-                var symbolPosition = GetBindingKind(scopeKind.Value, kind) switch
+                var symbolPosition = GetBindingKind(scopeKind.Value, symbol.Kind) switch
                 {
                     // Order independent always just gets thrown to the beginning
                     BindingKind.OrderIndependent => 0,
@@ -174,128 +158,12 @@ internal static class SymbolResolution
                 };
 
                 // Add to timeline pre-declarations
-                timelinePreDeclarations.Add(new(name, subtree, kind, symbolPosition));
+                scopeBuilder.Add(new(Position: symbolPosition, Symbol: symbol));
             }
 
             // Construct the scope
-            var declarations = ImmutableDictionary.CreateBuilder<ParseTree, ISymbol>();
-            var timelines = timelinePreDeclarations
-                .GroupBy(d => d.Name)
-                .ToImmutableDictionary(g => g.Key, g => ConstructTimeline(db, g, declarations));
-            return IScope.Make(
-                db: db,
-                kind: scopeKind.Value,
-                definition: tree,
-                timelines: timelines,
-                declarations: declarations.ToImmutable());
+            return scopeBuilder.Build();
         });
-
-    /// <summary>
-    /// Constructs a <see cref="DeclarationTimeline"/> from the given <see cref="PreDeclaration"/>s belonging to the same name.
-    /// </summary>
-    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="preDeclarations">The <see cref="PreDeclaration"/>s that are declared under the same name.</param>
-    /// <param name="declarations">The declarations get written here mapped from the syntax to the individual unmerged symbols.</param>
-    /// <returns>The constructed <see cref="DeclarationTimeline"/>.</returns>
-    private static DeclarationTimeline ConstructTimeline(
-        QueryDatabase db,
-        IEnumerable<PreDeclaration> preDeclarations,
-        ImmutableDictionary<ParseTree, ISymbol>.Builder declarations)
-    {
-        // We expect the declarations to all relate to the same name and ordered by position
-        Debug.Assert(!preDeclarations.Any() || preDeclarations.All(d => d.Name == preDeclarations.First().Name));
-        Debug.Assert(preDeclarations.Select(d => d.Position).IsOrdered());
-
-        var result = ImmutableArray.CreateBuilder<Declaration>();
-        foreach (var preDeclsAtPosition in preDeclarations.GroupBy(d => d.Position))
-        {
-            // Merge
-            var merged = MergeDeclarationsInGroup(db, preDeclsAtPosition, declarations);
-            // Add to the results
-            result.Add(merged);
-        }
-
-        return new(result.ToImmutable());
-    }
-
-    /// <summary>
-    /// Constructs <see cref="ISymbol"/>s from a group of <see cref="PreDeclaration"/>s that happen to be under the same position.
-    /// This method merges symbols that can be overloaded.
-    /// The illegal overloads (like trying to overload global variables) are also ruled out here.
-    /// </summary>
-    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="preDeclarations">The <see cref="PreDeclaration"/>s under the same position.</param>
-    /// <param name="declarations">The declarations get written here mapped from the syntax to the individual unmerged symbols.</param>
-    /// <returns>The <see cref="Declaration"/> that can be used in the <see cref="DeclarationTimeline"/>.</returns>
-    private static Declaration MergeDeclarationsInGroup(
-        QueryDatabase db,
-        IEnumerable<PreDeclaration> preDeclarations,
-        ImmutableDictionary<ParseTree, ISymbol>.Builder declarations)
-    {
-        Debug.Assert(preDeclarations.Any());
-
-        var preDeclsList = preDeclarations.ToList();
-
-        // Based on the first symbol we decide what we do
-        if (preDeclsList[0].Kind == SymbolKind.Function)
-        {
-            // Possible overloading
-            var overloadSet = ImmutableArray.CreateBuilder<ISymbol.IFunction>();
-            // Look at all functions
-            foreach (var preDecl in preDeclsList)
-            {
-                if (preDecl.Kind == SymbolKind.Function)
-                {
-                    // Add to the set
-                    var symbol = ConstructDefinedSymbolOrNull(db, preDecl.Tree);
-                    Debug.Assert(symbol is ISymbol.IFunction);
-                    overloadSet.Add((ISymbol.IFunction)symbol);
-                    declarations.Add(preDecl.Tree, symbol);
-                }
-                else
-                {
-                    // Error
-                    // TODO
-                    throw new NotImplementedException();
-                }
-            }
-            // Look for overloads in the parent
-            if (preDeclsList[0].Tree.Parent is not null)
-            {
-                var symbolInParent = ReferenceSymbolOrNull(db, preDeclsList[0].Tree.Parent!, preDeclsList[0].Name);
-                if (symbolInParent is ISymbol.IFunction f)
-                {
-                    // One function, add it
-                    overloadSet.Add(f);
-                }
-                else if (symbolInParent is ISymbol.IOverloadSet o)
-                {
-                    // Add all functions
-                    overloadSet.AddRange(o.Functions);
-                }
-            }
-            // Overload set done
-            // If there was only one, unwrap
-            var resultSymbol = overloadSet.Count == 1
-                ? overloadSet[0] as ISymbol
-                : ISymbol.SynthetizeOverloadSet(overloadSet.ToImmutable());
-            return new(Position: preDeclsList[0].Position, Symbol: resultSymbol);
-        }
-        else
-        {
-            // Disallow overloading
-            for (var i = 1; i < preDeclsList.Count; ++i)
-            {
-                // TODO: Error on the rest
-                throw new NotImplementedException();
-            }
-            // Only the first one is considered legal
-            var result = ConstructDefinedSymbolOrNull(db, preDeclsList[0].Tree);
-            Debug.Assert(result is not null);
-            declarations.Add(preDeclsList[0].Tree, result);
-            return new(Position: preDeclsList[0].Position, Symbol: result);
-        }
-    }
 
     /// <summary>
     /// Utility for internal API to expect a symbol defined by a certain type of tree.
@@ -356,20 +224,6 @@ internal static class SymbolResolution
             db: db,
             name: fparam.Identifier.Text,
             definition: tree),
-        _ => null,
-    };
-
-    /// <summary>
-    /// Retrieves the <see cref="SymbolKind"/> and name defined by <paramref name="tree"/>, or null if it does not define a symbol.
-    /// </summary>
-    /// <param name="tree">The <see cref="ParseTree"/> that is asked for the defined <see cref="ISymbol"/>.</param>
-    /// <returns>The <see cref="SymbolKind"/> and name defined by <paramref name="tree"/>, or null.</returns>
-    private static (SymbolKind Kind, string Name)? GetDefinedSymbolKindAndName(ParseTree tree) => tree switch
-    {
-        ParseTree.Decl.Variable var => (SymbolKind.Variable, var.Identifier.Text),
-        ParseTree.Decl.Func func => (SymbolKind.Function, func.Identifier.Text),
-        ParseTree.Decl.Label lbl => (SymbolKind.Label, lbl.Identifier.Text),
-        ParseTree.FuncParam param => (SymbolKind.Parameter, param.Identifier.Text),
         _ => null,
     };
 
@@ -586,10 +440,10 @@ internal static class SymbolResolution
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    private static void InjectIntrinsics(List<Declaration> declarations)
+    private static void InjectIntrinsics(IScope.Builder builder)
     {
         void Add(ISymbol symbol) =>
-            declarations.Add(new(0, symbol));
+            builder.Add(new(0, symbol));
 
         void AddBuiltinFunction(string name, ImmutableArray<Type> @params, Type ret) =>
             Add(ISymbol.MakeIntrinsicFunction(name, @params, ret));

@@ -420,6 +420,23 @@ internal partial interface ISymbol
 internal partial interface ISymbol
 {
     /// <summary>
+    /// A shadowing error.
+    /// </summary>
+    private sealed class ShadowingError : ErrorBase
+    {
+        public override ParseTree Definition { get; }
+
+        public ShadowingError(string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+            : base(name, diagnostics)
+        {
+            this.Definition = definition;
+        }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
     /// A symbol for user-defined labels.
     /// </summary>
     private sealed class Label : InTreeBase, ILabel

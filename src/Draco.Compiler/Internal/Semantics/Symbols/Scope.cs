@@ -285,7 +285,51 @@ internal readonly struct DeclarationTimeline
 internal readonly record struct Declaration(int Position, ISymbol Symbol)
 {
     /// <summary>
-    /// The name of the contained <see cref="Symbol"/>.
+    /// The name of the contained <see cref="ISymbol"/>.
     /// </summary>
     public string Name => this.Symbol.Name;
+
+    /// <summary>
+    /// The definition syntax.
+    /// </summary>
+    public ParseTree? Definition => this.Symbol.Definition;
+}
+
+internal partial interface IScope
+{
+    /// <summary>
+    /// A builder type for constructing scopes.
+    /// </summary>
+    public sealed class Builder
+    {
+        public ScopeKind Kind { get; }
+        public ParseTree Tree { get; }
+
+        private readonly QueryDatabase db;
+        private readonly ImmutableDictionary<string, ImmutableList<Declaration>.Builder>.Builder declarations =
+            ImmutableDictionary.CreateBuilder<string, ImmutableList<Declaration>.Builder>();
+
+        public Builder(QueryDatabase db, ScopeKind kind, ParseTree tree)
+        {
+            this.db = db;
+            this.Kind = kind;
+            this.Tree = tree;
+        }
+
+        public void Add(Declaration declaration)
+        {
+            if (!this.declarations.TryGetValue(declaration.Name, out var timelineList))
+            {
+                timelineList = ImmutableList.CreateBuilder<Declaration>();
+                this.declarations.Add(declaration.Name, timelineList);
+            }
+            timelineList.Add(declaration);
+        }
+
+        public IScope Build()
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
 }

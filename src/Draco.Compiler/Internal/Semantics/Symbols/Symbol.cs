@@ -44,22 +44,25 @@ internal partial interface ISymbol
     public static IFunction MakeIntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType) =>
         new IntrinsicFunction(name, paramTypes, returnType);
 
-    public static IUnaryOperator MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
-        new IntrinsicUnaryOperator(
+    public static IFunction MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
+        new IntrinsicFunction(
             SymbolResolution.GetUnaryOperatorName(op),
-            operandType, resultType);
+            ImmutableArray.Create(operandType),
+            resultType);
 
-    public static IBinaryOperator MakeIntrinsicBinaryOperator(
+    public static IFunction MakeIntrinsicBinaryOperator(
         TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
-        new IntrinsicBinaryOperator(
+        new IntrinsicFunction(
             SymbolResolution.GetBinaryOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
-            leftOperandType, rightrOperandType, resultType);
+            ImmutableArray.Create(leftOperandType, rightrOperandType),
+            resultType);
 
-    public static IBinaryOperator MakeIntrinsicRelationalOperator(
+    public static IFunction MakeIntrinsicRelationalOperator(
         TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
-        new IntrinsicBinaryOperator(
+        new IntrinsicFunction(
             SymbolResolution.GetRelationalOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
-            leftOperandType, rightrOperandType, resultType);
+            ImmutableArray.Create(leftOperandType, rightrOperandType),
+            resultType);
 
     public static ITypeDefinition MakeIntrinsicTypeDefinition(string name, Type type) =>
         new IntrinsicTypeDefinition(name, type);
@@ -96,16 +99,6 @@ internal enum SymbolKind
     /// Type declaration.
     /// </summary>
     Type,
-
-    /// <summary>
-    /// Unary operator.
-    /// </summary>
-    UnaryOperator,
-
-    /// <summary>
-    /// Binary operator.
-    /// </summary>
-    BinaryOperator,
 
     /// <summary>
     /// A label declaration.
@@ -205,52 +198,6 @@ internal partial interface ISymbol
     /// </summary>
     public interface ILabel : ISymbol
     {
-    }
-}
-
-internal partial interface ISymbol
-{
-    /// <summary>
-    /// Any operator symbol.
-    /// </summary>
-    public interface IOperator : ISymbol
-    {
-        /// <summary>
-        /// The type of this operator as a function type.
-        /// </summary>
-        public Type.Function FunctionType { get; }
-
-        /// <summary>
-        /// The type the operator results in.
-        /// </summary>
-        public Type ResultType { get; }
-    }
-
-    /// <summary>
-    /// Any unary operator symbol.
-    /// </summary>
-    public interface IUnaryOperator : IOperator
-    {
-        /// <summary>
-        /// The operand type.
-        /// </summary>
-        public Type OperandType { get; }
-    }
-
-    /// <summary>
-    /// Any binary operator symbol.
-    /// </summary>
-    public interface IBinaryOperator : IOperator
-    {
-        /// <summary>
-        /// The left operand type.
-        /// </summary>
-        public Type LeftOperandType { get; }
-
-        /// <summary>
-        /// The right operand type.
-        /// </summary>
-        public Type RightOperandType { get; }
     }
 }
 
@@ -647,58 +594,6 @@ internal partial interface ISymbol
         }
 
         public override IApiSymbol ToApiSymbol() => new FunctionSymbol(this);
-    }
-}
-
-internal partial interface ISymbol
-{
-    /// <summary>
-    /// An intrinsic unary operation implemented by the compiler.
-    /// </summary>
-    private sealed class IntrinsicUnaryOperator : SynthetizedBase, IUnaryOperator
-    {
-        public override SymbolKind Kind => SymbolKind.UnaryOperator;
-        public Type OperandType { get; }
-        public Type ResultType { get; }
-        public Type.Function FunctionType => new(ImmutableArray.Create(this.OperandType), this.ResultType);
-
-        public IntrinsicUnaryOperator(string name, Type operandType, Type resultType)
-            : base(name)
-        {
-            this.OperandType = operandType;
-            this.ResultType = resultType;
-        }
-
-        // TODO
-        public override IApiSymbol ToApiSymbol() => throw new NotImplementedException();
-    }
-}
-
-internal partial interface ISymbol
-{
-    /// <summary>
-    /// An intrinsic binary operation implemented by the compiler.
-    /// </summary>
-    private sealed class IntrinsicBinaryOperator : SynthetizedBase, IBinaryOperator
-    {
-        public override SymbolKind Kind => SymbolKind.BinaryOperator;
-        public Type LeftOperandType { get; }
-        public Type RightOperandType { get; }
-        public Type ResultType { get; }
-        public Type.Function FunctionType => new(
-            ImmutableArray.Create(this.LeftOperandType, this.RightOperandType),
-            this.ResultType);
-
-        public IntrinsicBinaryOperator(string name, Type leftOperandType, Type rightOperandType, Type resultType)
-            : base(name)
-        {
-            this.LeftOperandType = leftOperandType;
-            this.RightOperandType = rightOperandType;
-            this.ResultType = resultType;
-        }
-
-        // TODO
-        public override IApiSymbol ToApiSymbol() => throw new NotImplementedException();
     }
 }
 

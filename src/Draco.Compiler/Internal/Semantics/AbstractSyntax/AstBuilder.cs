@@ -113,7 +113,7 @@ internal static class AstBuilder
                 Comparisons: rel.Comparisons.Select(c => ToAst(db, c)).ToImmutableArray()),
             ParseTree.Expr.Unary ury => new Ast.Expr.Unary(
                 ParseTree: ury,
-                Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IUnaryOperator>(db, ury),
+                Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, ury),
                 Operand: ToAst(db, ury.Operand)),
             ParseTree.Expr.Binary bin => ToAst(db, bin),
             ParseTree.Expr.Literal lit => ToAst(lit),
@@ -154,7 +154,7 @@ internal static class AstBuilder
         ce,
         Ast.ComparisonElement (ce) => new(
             ParseTree: ce,
-            Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IBinaryOperator>(db, ce),
+            Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, ce),
             Right: ToAst(db, ce.Right)));
 
     private static Ast.Expr ToAst(QueryDatabase db, ParseTree.Expr.String str)
@@ -191,7 +191,7 @@ internal static class AstBuilder
         // Binary tree either becomes an assignment or a binary expr
         if (Syntax.TokenTypeExtensions.IsCompoundAssignmentOperator(bin.Operator.Type))
         {
-            var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IBinaryOperator>(db, bin);
+            var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, bin);
             return new Ast.Expr.Assign(
                 ParseTree: bin,
                 Target: left,
@@ -222,7 +222,7 @@ internal static class AstBuilder
         }
         else
         {
-            var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IBinaryOperator>(db, bin);
+            var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, bin);
             return new Ast.Expr.Binary(
                 ParseTree: bin,
                 Left: left,

@@ -204,11 +204,11 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Unary(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IUnaryOperator Operator,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction Operator,
             Expr Operand) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => this.Operator.ResultType;
+            public override Type EvaluationType => this.Operator.ReturnType;
         }
 
         /// <summary>
@@ -217,11 +217,11 @@ internal abstract record class Ast
         public sealed record class Binary(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
             Expr Left,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IBinaryOperator Operator,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction Operator,
             Expr Right) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => this.Operator.ResultType;
+            public override Type EvaluationType => this.Operator.ReturnType;
         }
 
         /// <summary>
@@ -243,7 +243,7 @@ internal abstract record class Ast
         public sealed record class Assign(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
             Expr Target,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IBinaryOperator? CompoundOperator,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction? CompoundOperator,
             Expr Value) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
@@ -323,7 +323,7 @@ internal abstract record class Ast
     /// </summary>
     public record class ComparisonElement(
         [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
-        [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IBinaryOperator Operator,
+        [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction Operator,
         Expr Right) : Ast;
 
     /// <summary>

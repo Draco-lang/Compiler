@@ -233,25 +233,17 @@ internal static class SymbolResolution
         var preDeclsList = preDeclarations.ToList();
 
         // Based on the first symbol we decide what we do
-        switch (preDeclsList[0].Kind)
-        {
-        case SymbolKind.Function:
-        case SymbolKind.UnaryOperator:
-        case SymbolKind.BinaryOperator:
+        if (preDeclsList[0].Kind == SymbolKind.Function)
         {
             // Overloading
             // TODO: Search for overloads in parent
             throw new NotImplementedException();
-            break;
         }
-
-        default:
+        else
         {
             // Disallow overloading
             // TODO
             throw new NotImplementedException();
-            break;
-        }
         }
     }
 

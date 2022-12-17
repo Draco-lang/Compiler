@@ -39,6 +39,19 @@ internal static class SymbolResolution
     }
 
     /// <summary>
+    /// Represents a symbol declaration that is not instantiated yet.
+    /// </summary>
+    /// <param name="Name">The name of the symbol to be declared.</param>
+    /// <param name="Tree">The tree the symbol will originate from.</param>
+    /// <param name="Kind">The <see cref="SymbolKind"/> that the declaration will declare.</param>
+    /// <param name="Position">The relative position of the to-be declared symbol.</param>
+    private readonly record struct PreDeclaration(
+        string Name,
+        ParseTree Tree,
+        SymbolKind Kind,
+        int Position);
+
+    /// <summary>
     /// Retrieves the <see cref="Diagnostic"/> messages relating to symbol resolution.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
@@ -134,20 +147,22 @@ internal static class SymbolResolution
             var scopeKind = GetScopeKind(tree);
             if (scopeKind is null) return null;
 
-            var timelineDeclarations = new List<Declaration>();
-            var treeMappedDeclarations = ImmutableDictionary.CreateBuilder<ParseTree, ISymbol>();
+            var timelinePreDeclarations = new List<PreDeclaration>();
 
+            // TODO
             // We inject intrinsics at global scope
-            if (scopeKind == ScopeKind.Global) InjectIntrinsics(timelineDeclarations);
+            // if (scopeKind == ScopeKind.Global) InjectIntrinsics(timelineDeclarations);
+            // throw new NotImplementedException();
 
             foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
             {
                 // See if the child defines any symbol
-                var symbol = ConstructDefinedSymbolOrNull(db, subtree);
-                if (symbol is null) continue;
+                var kindAndName = GetDefinedSymbolKindAndName(subtree);
+                if (kindAndName is null) continue;
+                var (kind, name) = kindAndName.Value;
 
                 // Yes, calculate position and add it
-                var symbolPosition = GetBindingKind(scopeKind.Value, symbol) switch
+                var symbolPosition = GetBindingKind(scopeKind.Value, kind) switch
                 {
                     // Order independent always just gets thrown to the beginning
                     BindingKind.OrderIndependent => 0,
@@ -157,100 +172,84 @@ internal static class SymbolResolution
                     BindingKind.NonRecursive => position + subtree.Width,
                     _ => throw new InvalidOperationException(),
                 };
-                // Add to timeline declarations
-                timelineDeclarations!.Add(new(symbolPosition, symbol));
 
-                // TODO: We should really add the "merged" symbols here somehow, or at least the unmerged ones
-                // with the diagnostics attached
-                // Otherwise we are only observing an error, if we reference a wrongly overloaded symbol
-
-                // Add to parse-tree mapped declarations
-                treeMappedDeclarations.Add(subtree, symbol);
+                // Add to timeline pre-declarations
+                timelinePreDeclarations.Add(new(name, subtree, kind, position));
             }
 
             // Construct the scope
+            var declarations = ImmutableDictionary.CreateBuilder<ParseTree, ISymbol>();
+            var timelines = timelinePreDeclarations
+                .GroupBy(d => d.Name)
+                .ToImmutableDictionary(g => g.Key, g => ConstructTimeline(g, declarations));
             return IScope.Make(
                 db: db,
                 kind: scopeKind.Value,
                 definition: tree,
-                timelines: timelineDeclarations
-                    .GroupBy(d => d.Name)
-                    .ToImmutableDictionary(g => g.Key, ConstructTimeline),
-                declarations: treeMappedDeclarations.ToImmutable());
+                timelines: timelines,
+                declarations: declarations.ToImmutable());
         });
 
     /// <summary>
-    /// Constructs a <see cref="DeclarationTimeline"/> from the given <see cref="Declaration"/>s belonging to the same name.
+    /// Constructs a <see cref="DeclarationTimeline"/> from the given <see cref="PreDeclaration"/>s belonging to the same name.
     /// </summary>
-    /// <param name="declarations">The <see cref="Declaration"/>s that are declared under the same name.</param>
+    /// <param name="preDeclarations">The <see cref="PreDeclaration"/>s that are declared under the same name.</param>
+    /// <param name="declarations">The declarations get written here mapped from the syntax to the individual unmerged symbols.</param>
     /// <returns>The constructed <see cref="DeclarationTimeline"/>.</returns>
-    private static DeclarationTimeline ConstructTimeline(IEnumerable<Declaration> declarations)
+    private static DeclarationTimeline ConstructTimeline(
+        IEnumerable<PreDeclaration> preDeclarations,
+        ImmutableDictionary<ParseTree, ISymbol>.Builder declarations)
     {
         // We expect the declarations to all relate to the same name and ordered by position
-        Debug.Assert(!declarations.Any() || declarations.All(d => d.Name == declarations.First().Name));
-        Debug.Assert(declarations.Select(d => d.Position).IsOrdered());
+        Debug.Assert(!preDeclarations.Any() || preDeclarations.All(d => d.Name == preDeclarations.First().Name));
+        Debug.Assert(preDeclarations.Select(d => d.Position).IsOrdered());
 
         var result = ImmutableArray.CreateBuilder<Declaration>();
-        foreach (var declsAtPosition in declarations.GroupBy(d => d.Position))
+        foreach (var preDeclsAtPosition in preDeclarations.GroupBy(d => d.Position))
         {
-            var symbols = declsAtPosition.Select(d => d.Symbol);
-            // Map
-            var replacements = ConstructSymbolsFromSymbolGroup(symbols)
-                .Select(sym => new Declaration(declsAtPosition.Key, sym));
+            // Merge
+            var merged = MergeDeclarationsInGroup(preDeclsAtPosition, declarations);
             // Add to the results
-            foreach (var item in replacements) result.Add(item);
+            result.Add(merged);
         }
 
         return new(result.ToImmutable());
     }
 
-    // TODO: Flaw
-    // Illegal entries will still be part of resolution and be under the same name and same position as non-error entries
-    // This needs to be solved somehow, to at least prefer the non-error entries, when preferrable
     /// <summary>
-    /// Constructs <see cref="ISymbol"/>s from a group of <see cref="ISymbol"/>s that happen to be under the same position.
-    /// This method merges symbols that can be overloaded, so it might return less symbols than given.
+    /// Constructs <see cref="ISymbol"/>s from a group of <see cref="PreDeclaration"/>s that happen to be under the same position.
+    /// This method merges symbols that can be overloaded.
     /// The illegal overloads (like trying to overload global variables) are also ruled out here.
     /// </summary>
-    /// <param name="symbols">The <see cref="ISymbol"/>s under the same position.</param>
-    /// <returns>The sequence of <see cref="ISymbol"/>s that can be used in a <see cref="DeclarationTimeline"/>.</returns>
-    private static IEnumerable<ISymbol> ConstructSymbolsFromSymbolGroup(IEnumerable<ISymbol> symbols)
+    /// <param name="preDeclarations">The <see cref="PreDeclaration"/>s under the same position.</param>
+    /// <param name="declarations">The declarations get written here mapped from the syntax to the individual unmerged symbols.</param>
+    /// <returns>The <see cref="Declaration"/> that can be used in the <see cref="DeclarationTimeline"/>.</returns>
+    private static Declaration MergeDeclarationsInGroup(
+        IEnumerable<PreDeclaration> preDeclarations,
+        ImmutableDictionary<ParseTree, ISymbol>.Builder declarations)
     {
-        Debug.Assert(symbols.Any());
+        Debug.Assert(preDeclarations.Any());
 
-        var enumerator = symbols.GetEnumerator();
-        enumerator.MoveNext();
+        var preDeclsList = preDeclarations.ToList();
 
         // Based on the first symbol we decide what we do
-        var first = enumerator.Current;
-        switch (first)
+        switch (preDeclsList[0].Kind)
         {
-        case ISymbol.IFunction:
-        case ISymbol.IUnaryOperator:
-        case ISymbol.IBinaryOperator:
+        case SymbolKind.Function:
+        case SymbolKind.UnaryOperator:
+        case SymbolKind.BinaryOperator:
         {
             // Overloading
-            // TODO: Search in parent for existing overloads to merge
-            // TODO: Only yield first if it's alone
-            yield return first;
-            while (enumerator.MoveNext())
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
+            // TODO: Search for overloads in parent
+            throw new NotImplementedException();
             break;
         }
 
         default:
         {
             // Disallow overloading
-            yield return first;
-            // The rest are considered illegal redeclaration
-            while (enumerator.MoveNext())
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
+            // TODO
+            throw new NotImplementedException();
             break;
         }
         }
@@ -315,6 +314,20 @@ internal static class SymbolResolution
             db: db,
             name: fparam.Identifier.Text,
             definition: tree),
+        _ => null,
+    };
+
+    /// <summary>
+    /// Retrieves the <see cref="SymbolKind"/> and name defined by <paramref name="tree"/>, or null if it does not define a symbol.
+    /// </summary>
+    /// <param name="tree">The <see cref="ParseTree"/> that is asked for the defined <see cref="ISymbol"/>.</param>
+    /// <returns>The <see cref="SymbolKind"/> and name defined by <paramref name="tree"/>, or null.</returns>
+    private static (SymbolKind Kind, string Name)? GetDefinedSymbolKindAndName(ParseTree tree) => tree switch
+    {
+        ParseTree.Decl.Variable var => (SymbolKind.Variable, var.Identifier.Text),
+        ParseTree.Decl.Func func => (SymbolKind.Function, func.Identifier.Text),
+        ParseTree.Decl.Label lbl => (SymbolKind.Label, lbl.Identifier.Text),
+        ParseTree.FuncParam param => (SymbolKind.Parameter, param.Identifier.Text),
         _ => null,
     };
 
@@ -476,15 +489,15 @@ internal static class SymbolResolution
     /// Retrieves the <see cref="BindingKind"/> a symbol introduces.
     /// </summary>
     /// <param name="scopeKind">The <see cref="ScopeKind"/> that <paramref name="symbol"/> is defined in.</param>
-    /// <param name="symbol">The symbol that introduces a binding.</param>
-    /// <returns>The <see cref="BindingKind"/> of <paramref name="symbol"/>.</returns>
-    private static BindingKind GetBindingKind(ScopeKind scopeKind, ISymbol symbol) => symbol switch
+    /// <param name="symbolKind">The <see cref="SymbolKind"/> that introduces a binding.</param>
+    /// <returns>The <see cref="BindingKind"/> of <paramref name="symbolKind"/> declared in <paramref name="scopeKind"/>.</returns>
+    private static BindingKind GetBindingKind(ScopeKind scopeKind, SymbolKind symbolKind) => symbolKind switch
     {
-        ISymbol.ILabel or ISymbol.IFunction => BindingKind.OrderIndependent,
-        ISymbol.IParameter => BindingKind.OrderIndependent,
-        ISymbol.IVariable when scopeKind == ScopeKind.Global => BindingKind.OrderIndependent,
-        ISymbol.IVariable => BindingKind.NonRecursive,
-        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+        SymbolKind.Label or SymbolKind.Function => BindingKind.OrderIndependent,
+        SymbolKind.Parameter => BindingKind.OrderIndependent,
+        SymbolKind.Variable when scopeKind == ScopeKind.Global => BindingKind.OrderIndependent,
+        SymbolKind.Variable => BindingKind.NonRecursive,
+        _ => throw new ArgumentOutOfRangeException(nameof(symbolKind)),
     };
 
     /// <summary>

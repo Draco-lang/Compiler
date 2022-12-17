@@ -68,6 +68,52 @@ internal partial interface ISymbol
 // Interfaces //////////////////////////////////////////////////////////////////
 
 /// <summary>
+/// The different kinds of symbols.
+/// </summary>
+internal enum SymbolKind
+{
+    /// <summary>
+    /// Not resolvable to any category.
+    /// </summary>
+    Error,
+
+    /// <summary>
+    /// A variable.
+    /// </summary>
+    Variable,
+
+    /// <summary>
+    /// Function parameter.
+    /// </summary>
+    Parameter,
+
+    /// <summary>
+    /// Function declaration.
+    /// </summary>
+    Function,
+
+    /// <summary>
+    /// Type declaration.
+    /// </summary>
+    Type,
+
+    /// <summary>
+    /// Unary operator.
+    /// </summary>
+    UnaryOperator,
+
+    /// <summary>
+    /// Binary operator.
+    /// </summary>
+    BinaryOperator,
+
+    /// <summary>
+    /// A label declaration.
+    /// </summary>
+    Label,
+}
+
+/// <summary>
 /// The interface of all symbols.
 /// </summary>
 internal partial interface ISymbol
@@ -81,6 +127,11 @@ internal partial interface ISymbol
     /// True, if this symbol references some kind of error.
     /// </summary>
     public bool IsError { get; }
+
+    /// <summary>
+    /// The kind of this symbol.
+    /// </summary>
+    public SymbolKind Kind { get; }
 
     /// <summary>
     /// The diagnostics attached to this symbol.
@@ -275,6 +326,7 @@ internal partial interface ISymbol
     {
         public string Name { get; }
         public bool IsError => true;
+        public SymbolKind Kind => SymbolKind.Error;
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public virtual IScope? DefiningScope => null;
         public virtual IFunction? DefiningFunction => null;
@@ -301,6 +353,7 @@ internal partial interface ISymbol
         public string Name { get; }
         public ParseTree Definition { get; }
         public bool IsError => false;
+        public abstract SymbolKind Kind { get; }
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
         public IScope DefiningScope
         {
@@ -358,6 +411,7 @@ internal partial interface ISymbol
 
         public string Name { get; }
         public bool IsError => false;
+        public abstract SymbolKind Kind { get; }
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
         public IScope? DefiningScope => null;
         public IFunction? DefiningFunction => null;
@@ -395,6 +449,8 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Label : InTreeBase, ILabel
     {
+        public override SymbolKind Kind => SymbolKind.Label;
+
         public Label(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
         {
@@ -411,6 +467,8 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class SynthetizedLabel : SynthetizedBase, ILabel
     {
+        public override SymbolKind Kind => SymbolKind.Label;
+
         public SynthetizedLabel()
             : base(GenerateName("label"))
         {
@@ -427,6 +485,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Variable : InTreeBase, IVariable
     {
+        public override SymbolKind Kind => SymbolKind.Variable;
         public override bool IsExternallyVisible => this.IsGlobal;
         public bool IsMutable { get; }
         public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
@@ -448,6 +507,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class SynthetizedVariable : SynthetizedBase, IVariable
     {
+        public override SymbolKind Kind => SymbolKind.Variable;
         public Type Type { get; }
         public bool IsMutable { get; }
 
@@ -469,6 +529,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Parameter : InTreeBase, IParameter
     {
+        public override SymbolKind Kind => SymbolKind.Parameter;
         public bool IsMutable => false;
         public Type Type => TypeChecker.TypeOf(this.db, this);
 
@@ -488,6 +549,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class SynthetizedParameter : SynthetizedBase, IParameter
     {
+        public override SymbolKind Kind => SymbolKind.Parameter;
         public bool IsMutable => false;
         public Type Type { get; }
 
@@ -508,6 +570,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Function : InTreeBase, IFunction
     {
+        public override SymbolKind Kind => SymbolKind.Function;
         public override bool IsExternallyVisible => this.IsGlobal;
         public IScope DefinedScope
         {
@@ -564,6 +627,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class IntrinsicFunction : SynthetizedBase, IFunction
     {
+        public override SymbolKind Kind => SymbolKind.Function;
         public override bool IsExternallyVisible => true;
         public IScope? DefinedScope => null;
         public ImmutableArray<IParameter> Parameters { get; }
@@ -593,6 +657,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class IntrinsicUnaryOperator : SynthetizedBase, IUnaryOperator
     {
+        public override SymbolKind Kind => SymbolKind.UnaryOperator;
         public Type OperandType { get; }
         public Type ResultType { get; }
         public Type.Function FunctionType => new(ImmutableArray.Create(this.OperandType), this.ResultType);
@@ -616,6 +681,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class IntrinsicBinaryOperator : SynthetizedBase, IBinaryOperator
     {
+        public override SymbolKind Kind => SymbolKind.BinaryOperator;
         public Type LeftOperandType { get; }
         public Type RightOperandType { get; }
         public Type ResultType { get; }
@@ -643,6 +709,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class IntrinsicTypeDefinition : SynthetizedBase, ITypeDefinition
     {
+        public override SymbolKind Kind => SymbolKind.Type;
         public Type DefinedType { get; }
 
         public IntrinsicTypeDefinition(string name, Type definedType)

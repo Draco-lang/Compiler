@@ -235,8 +235,9 @@ internal static class SymbolResolution
         // Based on the first symbol we decide what we do
         if (preDeclsList[0].Kind == SymbolKind.Function)
         {
-            // Overloading
-            // TODO: Search for overloads in parent
+            // Possible overloading
+            // First we look if the parent has overloads
+            // TODO
             throw new NotImplementedException();
         }
         else

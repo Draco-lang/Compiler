@@ -41,6 +41,24 @@ internal partial interface ISymbol
     public static IFunction MakeFunction(QueryDatabase db, string name, ParseTree definition) =>
         new Function(db, name, definition);
 
+    public static IOverloadSet SynthetizeOverloadSet(IFunction f1, IFunction f2)
+    {
+        Debug.Assert(f1.Name == f2.Name);
+        return new OverloadSet(f1.Name, ImmutableArray.Create(f1, f2));
+    }
+
+    public static IOverloadSet SynthetizeOverloadSet(IOverloadSet f1, IFunction f2)
+    {
+        Debug.Assert(f1.Name == f2.Name);
+        return new OverloadSet(f1.Name, f1.Functions.Add(f2));
+    }
+
+    public static IOverloadSet SynthetizeOverloadSet(IOverloadSet f1, ImmutableArray<IFunction> f2)
+    {
+        Debug.Assert(f2.All(f => f1.Name == f.Name));
+        return new OverloadSet(f1.Name, f1.Functions.AddRange(f2));
+    }
+
     public static IFunction MakeIntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType) =>
         new IntrinsicFunction(name, paramTypes, returnType);
 
@@ -94,6 +112,11 @@ internal enum SymbolKind
     /// Function declaration.
     /// </summary>
     Function,
+
+    /// <summary>
+    /// A set of overloads.
+    /// </summary>
+    OverloadSet,
 
     /// <summary>
     /// Type declaration.
@@ -237,6 +260,20 @@ internal partial interface ISymbol
         /// The type of the function.
         /// </summary>
         public new Type.Function Type { get; }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A set of functions that are overloaded.
+    /// </summary>
+    public interface IOverloadSet : ISymbol
+    {
+        /// <summary>
+        /// The functions that participate in the overload.
+        /// </summary>
+        public ImmutableArray<IFunction> Functions { get; }
     }
 }
 
@@ -563,7 +600,27 @@ internal partial interface ISymbol
         {
         }
 
-        public override IApiSymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
+        public override IApiSymbol ToApiSymbol() => new FunctionSymbol(this);
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A set of overloaded functions.
+    /// </summary>
+    private sealed class OverloadSet : SynthetizedBase, IOverloadSet
+    {
+        public override SymbolKind Kind => SymbolKind.OverloadSet;
+        public ImmutableArray<IFunction> Functions { get; }
+
+        public OverloadSet(string name, ImmutableArray<IFunction> functions)
+            : base(name)
+        {
+            this.Functions = functions;
+        }
+
+        public override IApiSymbol ToApiSymbol() => throw new NotImplementedException();
     }
 }
 

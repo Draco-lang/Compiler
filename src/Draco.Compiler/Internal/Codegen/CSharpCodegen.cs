@@ -323,7 +323,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
     public override string VisitReferenceExpr(Ast.Expr.Reference node) =>
         this.AllocateName(node.Symbol);
 
-    private static string? MapUnaryOperator(ISymbol.IUnaryOperator op, string? sub)
+    private static string? MapUnaryOperator(ISymbol.IFunction op, string? sub)
     {
         if (sub is null) return null;
 
@@ -334,7 +334,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         throw new NotImplementedException();
     }
 
-    private static string? MapBinaryOperator(ISymbol.IBinaryOperator op, string? left, string? right)
+    private static string? MapBinaryOperator(ISymbol.IFunction op, string? left, string? right)
     {
         if (left is null || right is null) return null;
 
@@ -355,7 +355,7 @@ internal sealed class CSharpCodegen : AstVisitorBase<string?>
         throw new NotImplementedException();
     }
 
-    private static string? MapAssignmentOperator(ISymbol.IBinaryOperator? op, string? left, string? right)
+    private static string? MapAssignmentOperator(ISymbol.IFunction? op, string? left, string? right)
     {
         if (op is null) return $"{left} = {right}";
         if (left is null || right is null) return null;

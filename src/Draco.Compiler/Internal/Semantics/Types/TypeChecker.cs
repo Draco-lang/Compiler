@@ -25,6 +25,14 @@ internal static class TypeChecker
     {
         if (tree is ParseTree.Expr expr)
         {
+            // TODO: Any better way to handle this?
+            // Maybe allow TypeOf to return a nullable?
+            var referencedSymbol = SymbolResolution.GetReferencedSymbolOrNull(db, tree);
+            if (referencedSymbol is not null && referencedSymbol is not ISymbol.ITyped)
+            {
+                // We don't consider it, asking its type is not valid
+                return Enumerable.Empty<Diagnostic>();
+            }
             var ty = TypeOf(db, expr);
             return ty.Diagnostics;
         }
@@ -60,12 +68,16 @@ internal static class TypeChecker
         expr,
         Type (expr) => expr switch
         {
+            ParseTree.TypeExpr.Unexpected => Type.Error.Empty,
             // TODO: This is a temporary solution
             // Later, we'll need symbol resolution to be able to reference type-symbols only and such
             // For now this is a simple, greedy workaround
-            ParseTree.TypeExpr.Name namedType => SymbolResolution.GetReferencedSymbol(db, namedType) is ISymbol.ITypeDefinition typeDef
-                ? typeDef.DefinedType
-                : throw new InvalidOperationException(),
+            ParseTree.TypeExpr.Name namedType => SymbolResolution.GetReferencedSymbol(db, namedType) switch
+            {
+                ISymbol.ITypeDefinition typeDef => typeDef.DefinedType,
+                var symbol when symbol.IsError => new Type.Error(symbol.Diagnostics),
+                _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+            },
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 
@@ -77,6 +89,7 @@ internal static class TypeChecker
     /// <returns>The <see cref="Type"/> of <paramref name="expr"/>.</returns>
     public static Type TypeOf(QueryDatabase db, ParseTree.Expr expr) => expr switch
     {
+        ParseTree.Expr.Unexpected => Type.Error.Empty,
         ParseTree.Expr.Literal lit => lit.Value.Type switch
         {
             TokenType.LiteralInteger => Type.Int32,
@@ -94,11 +107,10 @@ internal static class TypeChecker
         ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
         // TODO: Type errors?
         ParseTree.Expr.Relational => Type.Bool,
-        // TODO: Type errors?
         ParseTree.Expr.While => Type.Unit,
         ParseTree.Expr.UnitStmt => Type.Unit,
-        // TODO: Type errors?
-        ParseTree.Expr.Return => Type.Unit,
+        ParseTree.Expr.Return => Type.Never_,
+        ParseTree.Expr.Goto => Type.Never_,
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 

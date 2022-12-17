@@ -7,6 +7,7 @@ using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Utilities;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
@@ -45,15 +46,12 @@ internal static class SymbolResolution
     /// <returns>The <see cref="Diagnostic"/>s related to <paramref name="tree"/>.</returns>
     public static IEnumerable<Diagnostic> GetDiagnostics(QueryDatabase db, ParseTree tree)
     {
-        if (ReferencesSymbol(tree))
-        {
-            var sym = GetReferencedSymbol(db, tree);
-            return sym.Diagnostics;
-        }
-        else
-        {
-            return Enumerable.Empty<Diagnostic>();
-        }
+        var referencedSymbolDiags = ReferencesSymbol(tree)
+            ? GetReferencedSymbol(db, tree).Diagnostics
+            : ImmutableArray<Diagnostic>.Empty;
+        var definedSymbolDiags = GetDefinedSymbolOrNull(db, tree)?.Diagnostics ?? ImmutableArray<Diagnostic>.Empty;
+        return referencedSymbolDiags
+            .Concat(definedSymbolDiags);
     }
 
     /// <summary>
@@ -133,19 +131,19 @@ internal static class SymbolResolution
             var scopeKind = GetScopeKind(tree);
             if (scopeKind is null) return null;
 
-            var result = new List<Declaration>();
+            var scopeBuilder = new IScope.Builder(db, scopeKind.Value, tree);
 
             // We inject intrinsics at global scope
-            if (scopeKind == ScopeKind.Global) InjectIntrinsics(result);
+            if (scopeKind == ScopeKind.Global) InjectIntrinsics(scopeBuilder);
 
             foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
             {
                 // See if the child defines any symbol
-                var symbol = GetDefinedSymbolOrNull(db, subtree);
+                var symbol = ConstructDefinedSymbolOrNull(db, subtree);
                 if (symbol is null) continue;
 
                 // Yes, calculate position and add it
-                var symbolPosition = GetBindingKind(symbol) switch
+                var symbolPosition = GetBindingKind(scopeKind.Value, symbol) switch
                 {
                     // Order independent always just gets thrown to the beginning
                     BindingKind.OrderIndependent => 0,
@@ -155,18 +153,13 @@ internal static class SymbolResolution
                     BindingKind.NonRecursive => position + subtree.Width,
                     _ => throw new InvalidOperationException(),
                 };
-                // Add to results
-                result!.Add(new(symbolPosition, symbol));
+
+                // Add to timeline pre-declarations
+                scopeBuilder.Add(new(Position: symbolPosition, Symbol: symbol));
             }
 
             // Construct the scope
-            return IScope.Make(
-                db: db,
-                kind: scopeKind.Value,
-                definition: tree,
-                timelines: result
-                    .GroupBy(d => d.Name)
-                    .ToImmutableDictionary(g => g.Key, g => new DeclarationTimeline(g)));
+            return scopeBuilder.Build();
         });
 
     /// <summary>
@@ -191,27 +184,45 @@ internal static class SymbolResolution
     /// it does not define any symbol.</returns>
     public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => db.GetOrUpdate(
         tree,
-        ISymbol? (tree) => tree switch
+        ISymbol? (tree) =>
         {
-            ParseTree.Decl.Variable variable => ISymbol.MakeVariable(
-                db: db,
-                name: variable.Identifier.Text,
-                definition: tree,
-                isMutable: variable.Keyword.Type == TokenType.KeywordVar),
-            ParseTree.Decl.Func func => ISymbol.MakeFunction(
-                db: db,
-                name: func.Identifier.Text,
-                definition: tree),
-            ParseTree.Decl.Label label => ISymbol.MakeLabel(
-                db: db,
-                name: label.Identifier.Text,
-                definition: tree),
-            ParseTree.FuncParam fparam => ISymbol.MakeParameter(
-                db: db,
-                name: fparam.Identifier.Text,
-                definition: tree),
-            _ => null,
+            var scopeDefiningAncestor = GetScopeDefiningAncestor(tree);
+            if (scopeDefiningAncestor is null) return null;
+            var scope = GetDefinedScopeOrNull(db, scopeDefiningAncestor);
+            if (scope is null) return null;
+            return scope.Declarations.TryGetValue(tree, out var symbol)
+                ? symbol
+                : null;
         });
+
+    /// <summary>
+    /// Constructs the <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null, if
+    /// it defines no symbol.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseTree"/> that is asked for the defined <see cref="ISymbol"/>.</param>
+    /// <returns>The <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null.</returns>
+    private static ISymbol? ConstructDefinedSymbolOrNull(QueryDatabase db, ParseTree tree) => tree switch
+    {
+        ParseTree.Decl.Variable variable => ISymbol.MakeVariable(
+            db: db,
+            name: variable.Identifier.Text,
+            definition: tree,
+            isMutable: variable.Keyword.Type == TokenType.KeywordVar),
+        ParseTree.Decl.Func func => ISymbol.MakeFunction(
+            db: db,
+            name: func.Identifier.Text,
+            definition: tree),
+        ParseTree.Decl.Label label => ISymbol.MakeLabel(
+            db: db,
+            name: label.Identifier.Text,
+            definition: tree),
+        ParseTree.FuncParam fparam => ISymbol.MakeParameter(
+            db: db,
+            name: fparam.Identifier.Text,
+            definition: tree),
+        _ => null,
+    };
 
     /// <summary>
     /// Utility for internal API to expect a symbol referenced by a certain type of tree.
@@ -220,7 +231,7 @@ internal static class SymbolResolution
     public static TSymbol GetReferencedSymbolExpected<TSymbol>(QueryDatabase db, ParseTree tree)
         where TSymbol : ISymbol
     {
-        var symbol = GetReferencedSymbolOrNull(db, tree);
+        var symbol = GetReferencedSymbol(db, tree);
         if (symbol is null) throw new InvalidOperationException("The parse tree does not reference a symbol");
         if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree references a differen kind of symbol");
         return tSymbol;
@@ -246,7 +257,7 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="ISymbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
     /// <returns>The referenced <see cref="ISymbol"/>, or null if not resolved.</returns>
-    private static ISymbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name) => db.GetOrUpdate(
+    public static ISymbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name) => db.GetOrUpdate(
         (tree, name),
         ISymbol? (tree, name) =>
         {
@@ -273,34 +284,33 @@ internal static class SymbolResolution
     /// <returns>True, if <paramref name="tree"/> references a symbol and the result is written to <paramref name="name"/>.</returns>
     private static bool TryGetReferencedSymbolName(ParseTree tree, [MaybeNullWhen(false)] out string name)
     {
-        if (tree is ParseTree.Expr.Name nameExpr)
+        switch (tree)
         {
+        case ParseTree.Expr.Name nameExpr:
             name = nameExpr.Identifier.Text;
             return true;
-        }
-        if (tree is ParseTree.TypeExpr.Name nameTypeExpr)
-        {
+
+        case ParseTree.TypeExpr.Name nameTypeExpr:
             name = nameTypeExpr.Identifier.Text;
             return true;
-        }
-        if (tree is ParseTree.Expr.Unary uryExpr)
-        {
+
+        case ParseTree.Expr.Unary uryExpr:
             name = GetUnaryOperatorName(uryExpr.Operator.Type);
             return true;
-        }
-        if (tree is ParseTree.Expr.Binary binExpr)
-        {
+
+        case ParseTree.Expr.Binary binExpr:
             // NOTE: Assignment is also denoted as binary, but that does not reference an operator
             name = GetBinaryOperatorName(binExpr.Operator.Type);
             return name is not null;
-        }
-        if (tree is ParseTree.ComparisonElement cmpElement)
-        {
+
+        case ParseTree.ComparisonElement cmpElement:
             name = GetRelationalOperatorName(cmpElement.Operator.Type);
             return true;
+
+        default:
+            name = null;
+            return false;
         }
-        name = null;
-        return false;
     }
 
     /// <summary>
@@ -371,13 +381,14 @@ internal static class SymbolResolution
     /// <summary>
     /// Retrieves the <see cref="BindingKind"/> a symbol introduces.
     /// </summary>
-    /// <param name="symbol">The symbol that introduces a binding.</param>
-    /// <returns>The <see cref="BindingKind"/> of <paramref name="symbol"/>.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    private static BindingKind GetBindingKind(ISymbol symbol) => symbol switch
+    /// <param name="scopeKind">The <see cref="ScopeKind"/> that <paramref name="symbol"/> is defined in.</param>
+    /// <param name="symbol">The <see cref="ISymbol"/> that was defined.</param>
+    /// <returns>The <see cref="BindingKind"/> of <paramref name="symbol"/> declared in <paramref name="scopeKind"/>.</returns>
+    private static BindingKind GetBindingKind(ScopeKind scopeKind, ISymbol symbol) => symbol switch
     {
         ISymbol.ILabel or ISymbol.IFunction => BindingKind.OrderIndependent,
-        ISymbol.IParameter => BindingKind.NonRecursive,
+        ISymbol.IParameter => BindingKind.OrderIndependent,
+        ISymbol.IVariable when scopeKind == ScopeKind.Global => BindingKind.OrderIndependent,
         ISymbol.IVariable => BindingKind.NonRecursive,
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
@@ -426,10 +437,10 @@ internal static class SymbolResolution
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    private static void InjectIntrinsics(List<Declaration> declarations)
+    private static void InjectIntrinsics(IScope.Builder builder)
     {
         void Add(ISymbol symbol) =>
-            declarations.Add(new(0, symbol));
+            builder.Add(new(0, symbol));
 
         void AddBuiltinFunction(string name, ImmutableArray<Type> @params, Type ret) =>
             Add(ISymbol.MakeIntrinsicFunction(name, @params, ret));

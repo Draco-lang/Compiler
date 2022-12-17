@@ -497,10 +497,7 @@ public sealed class ParserTests
             this.N<TypeSpecifier>();
             {
                 this.T(TokenType.Colon);
-                this.N<TypeExpr.Name>();
-                {
-                    this.MissingT(TokenType.Identifier);
-                }
+                this.N<TypeExpr.Unexpected>();
             }
             this.T(TokenType.Semicolon);
         }
@@ -545,10 +542,7 @@ public sealed class ParserTests
             this.N<TypeSpecifier>();
             {
                 this.T(TokenType.Colon);
-                this.N<TypeExpr.Name>();
-                {
-                    this.MissingT(TokenType.Identifier);
-                }
+                this.N<TypeExpr.Unexpected>();
                 this.N<ValueInitializer>();
                 {
                     this.T(TokenType.Assign);
@@ -1393,6 +1387,28 @@ public sealed class ParserTests
                     }
                 }
             }
+        }
+    }
+
+    [Fact]
+    public void TestEmptyInterpolation()
+    {
+        this.ParseExpression("""
+            "a\{}b"
+            """);
+
+        this.N<Expr.String>();
+        {
+            this.T(TokenType.LineStringStart, "\"");
+            this.StringContent("a");
+            this.N<StringPart.Interpolation>();
+            {
+                this.T(TokenType.InterpolationStart);
+                this.N<Expr.Unexpected>();
+                this.T(TokenType.InterpolationEnd);
+            }
+            this.StringContent("b");
+            this.T(TokenType.LineStringEnd, "\"");
         }
     }
 }

@@ -50,12 +50,12 @@ internal static class AstFactory
         then: Block(Stmt(then)),
         @else: Expr.Unit.Default));
 
-    public static Expr Unary(ISymbol.IUnaryOperator op, Expr subexpr) => new Expr.Unary(
+    public static Expr Unary(ISymbol.IFunction op, Expr subexpr) => new Expr.Unary(
         ParseTree: null,
         Operator: op,
         Operand: subexpr);
 
-    public static Expr Binary(Expr left, ISymbol.IBinaryOperator op, Expr right) => new Expr.Binary(
+    public static Expr Binary(Expr left, ISymbol.IFunction op, Expr right) => new Expr.Binary(
         ParseTree: null,
         Left: left,
         Operator: op,

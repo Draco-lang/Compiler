@@ -4,7 +4,9 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
 
@@ -16,31 +18,35 @@ internal partial interface IScope
         QueryDatabase db,
         ScopeKind kind,
         ParseTree definition,
-        ImmutableDictionary<string, DeclarationTimeline> timelines) => kind switch
+        ImmutableDictionary<string, DeclarationTimeline> timelines,
+        ImmutableDictionary<ParseTree, ISymbol> declarations) => kind switch
         {
-            ScopeKind.Global => MakeGlobal(db, definition, timelines),
-            ScopeKind.Function => MakeFunction(db, definition, timelines),
-            ScopeKind.Local => MakeLocal(db, definition, timelines),
+            ScopeKind.Global => MakeGlobal(db, definition, timelines, declarations),
+            ScopeKind.Function => MakeFunction(db, definition, timelines, declarations),
+            ScopeKind.Local => MakeLocal(db, definition, timelines, declarations),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 
     public static IScope MakeGlobal(
         QueryDatabase db,
         ParseTree definition,
-        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
-        new GlobalScope(db, definition, timelines);
+        ImmutableDictionary<string, DeclarationTimeline> timelines,
+        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        new GlobalScope(db, definition, timelines, declarations);
 
     public static IScope MakeFunction(
         QueryDatabase db,
         ParseTree definition,
-        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
-        new FunctionScope(db, definition, timelines);
+        ImmutableDictionary<string, DeclarationTimeline> timelines,
+        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        new FunctionScope(db, definition, timelines, declarations);
 
     public static IScope MakeLocal(
         QueryDatabase db,
         ParseTree definition,
-        ImmutableDictionary<string, DeclarationTimeline> timelines) =>
-        new LocalScope(db, definition, timelines);
+        ImmutableDictionary<string, DeclarationTimeline> timelines,
+        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        new LocalScope(db, definition, timelines, declarations);
 }
 
 // Interfaces //////////////////////////////////////////////////////////////////
@@ -92,6 +98,11 @@ internal partial interface IScope
     public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
 
     /// <summary>
+    /// The symbols associated to their declaration.
+    /// </summary>
+    public ImmutableDictionary<ParseTree, ISymbol> Declarations { get; }
+
+    /// <summary>
     /// True, if this is the global scope.
     /// </summary>
     public bool IsGlobal { get; }
@@ -132,17 +143,20 @@ internal partial interface IScope
         public IScope? Parent => SymbolResolution.GetParentScopeOrNull(this.db, this);
         public ParseTree Definition { get; }
         public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
+        public ImmutableDictionary<ParseTree, ISymbol> Declarations { get; }
 
         private readonly QueryDatabase db;
 
         protected ScopeBase(
             QueryDatabase db,
             ParseTree definition,
-            ImmutableDictionary<string, DeclarationTimeline> timelines)
+            ImmutableDictionary<string, DeclarationTimeline> timelines,
+            ImmutableDictionary<ParseTree, ISymbol> declarations)
         {
             this.db = db;
             this.Definition = definition;
             this.Timelines = timelines;
+            this.Declarations = declarations;
         }
 
         public Declaration? LookUp(string name, int referencedPosition)
@@ -165,8 +179,9 @@ internal partial interface IScope
         public GlobalScope(
             QueryDatabase db,
             ParseTree definition,
-            ImmutableDictionary<string, DeclarationTimeline> timelines)
-            : base(db, definition, timelines)
+            ImmutableDictionary<string, DeclarationTimeline> timelines,
+            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            : base(db, definition, timelines, declarations)
         {
         }
     }
@@ -184,8 +199,9 @@ internal partial interface IScope
         public FunctionScope(
             QueryDatabase db,
             ParseTree definition,
-            ImmutableDictionary<string, DeclarationTimeline> timelines)
-            : base(db, definition, timelines)
+            ImmutableDictionary<string, DeclarationTimeline> timelines,
+            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            : base(db, definition, timelines, declarations)
         {
         }
     }
@@ -203,8 +219,9 @@ internal partial interface IScope
         public LocalScope(
             QueryDatabase db,
             ParseTree definition,
-            ImmutableDictionary<string, DeclarationTimeline> timelines)
-            : base(db, definition, timelines)
+            ImmutableDictionary<string, DeclarationTimeline> timelines,
+            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            : base(db, definition, timelines, declarations)
         {
         }
     }
@@ -221,14 +238,15 @@ internal readonly struct DeclarationTimeline
     /// </summary>
     public readonly ImmutableArray<Declaration> Declarations;
 
-    public DeclarationTimeline(IEnumerable<Declaration> declarations)
+    public DeclarationTimeline(ImmutableArray<Declaration> declarations)
     {
         // Either there are no declarations, or all of them have the same name
+        // They also must be ordered
         Debug.Assert(!declarations.Any()
                    || declarations.All(d => d.Name == declarations.First().Name));
-        this.Declarations = declarations
-            .OrderBy(decl => decl.Position)
-            .ToImmutableArray();
+        Debug.Assert(declarations.Select(d => d.Position).IsOrdered());
+
+        this.Declarations = declarations;
     }
 
     /// <summary>
@@ -268,7 +286,145 @@ internal readonly struct DeclarationTimeline
 internal readonly record struct Declaration(int Position, ISymbol Symbol)
 {
     /// <summary>
-    /// The name of the contained <see cref="Symbol"/>.
+    /// The name of the contained <see cref="ISymbol"/>.
     /// </summary>
     public string Name => this.Symbol.Name;
+
+    /// <summary>
+    /// The definition syntax.
+    /// </summary>
+    public ParseTree? Definition => this.Symbol.Definition;
+}
+
+internal partial interface IScope
+{
+    /// <summary>
+    /// A builder type for constructing scopes.
+    /// </summary>
+    public sealed class Builder
+    {
+        public ScopeKind Kind { get; }
+        public ParseTree Tree { get; }
+
+        private readonly QueryDatabase db;
+        private readonly Dictionary<string, ImmutableArray<Declaration>.Builder> declarations = new();
+
+        public Builder(QueryDatabase db, ScopeKind kind, ParseTree tree)
+        {
+            this.db = db;
+            this.Kind = kind;
+            this.Tree = tree;
+        }
+
+        public void Add(Declaration declaration)
+        {
+            if (!this.declarations.TryGetValue(declaration.Name, out var timelineList))
+            {
+                timelineList = ImmutableArray.CreateBuilder<Declaration>();
+                this.declarations.Add(declaration.Name, timelineList);
+            }
+            timelineList.Add(declaration);
+        }
+
+        public IScope Build()
+        {
+            var timelines = ImmutableDictionary.CreateBuilder<string, DeclarationTimeline>();
+            var declarations = ImmutableDictionary.CreateBuilder<ParseTree, ISymbol>();
+
+            void AddDeclaration(ISymbol symbol)
+            {
+                if (symbol.Definition is not null) declarations!.Add(symbol.Definition, symbol);
+            }
+
+            foreach (var (name, declsWithName) in this.declarations)
+            {
+                // Declarations must be in increasing order
+                Debug.Assert(declsWithName.Select(decl => decl.Position).IsOrdered());
+                var currentTimeline = ImmutableArray.CreateBuilder<Declaration>();
+                foreach (var declsAtSamePosition in declsWithName
+                    .GroupBy(decl => decl.Position)
+                    .Select(g => g.ToList()))
+                {
+                    // The declarations are under the same name and same position
+                    // The first symbol will determine how we handle the group
+                    var first = declsAtSamePosition[0];
+                    if (first.Symbol is ISymbol.IFunction)
+                    {
+                        // Potential overload set
+                        var overloadSet = ImmutableArray.CreateBuilder<ISymbol.IFunction>();
+                        foreach (var decl in declsAtSamePosition)
+                        {
+                            if (decl.Symbol is ISymbol.IFunction func)
+                            {
+                                // Part of the set
+                                overloadSet.Add(func);
+                                AddDeclaration(func);
+                            }
+                            else
+                            {
+                                // TODO: Provide other definitions position?
+                                // Error, wrap it up
+                                var diag = Diagnostic.Create(
+                                    template: SemanticErrors.IllegalShadowing,
+                                    location: decl.Definition is null ? Location.None : new Location.TreeReference(decl.Definition),
+                                    formatArgs: name);
+                                var errorSymbol = decl.Symbol.WithDiagnostics(ImmutableArray.Create(diag));
+                                AddDeclaration(errorSymbol);
+                            }
+                        }
+                        // Look in parent scope if there is an overload set
+                        var symbolInParent = this.declarations.Values
+                            .SelectMany(d => d)
+                            .Select(d => d.Definition?.Parent)
+                            .Where(t => t is not null)
+                            .Select(t => SymbolResolution.ReferenceSymbolOrNull(this.db, t!, name))
+                            .FirstOrDefault();
+                        if (symbolInParent is ISymbol.IFunction f)
+                        {
+                            // Parent has a function, add to overloads
+                            overloadSet.Add(f);
+                        }
+                        else if (symbolInParent is ISymbol.IOverloadSet ovSet)
+                        {
+                            // Parent has an overload set, add all
+                            overloadSet.AddRange(ovSet.Functions);
+                        }
+                        // Unwrap singular overload
+                        var resultSymbol = overloadSet.Count == 1
+                            ? overloadSet[0] as ISymbol
+                            : ISymbol.SynthetizeOverloadSet(overloadSet.ToImmutable());
+                        // Add to timeline
+                        currentTimeline.Add(new(Position: first.Position, resultSymbol));
+                    }
+                    else
+                    {
+                        // Only the first one is valid, the rest are wrapped up as error
+                        currentTimeline.Add(first);
+                        AddDeclaration(first.Symbol);
+                        // Add rest as error
+                        for (var i = 1; i < declsAtSamePosition.Count; ++i)
+                        {
+                            var other = declsAtSamePosition[i];
+                            // TODO: Provide other definitions position?
+                            // Error, wrap it up
+                            var diag = Diagnostic.Create(
+                                template: SemanticErrors.IllegalShadowing,
+                                location: other.Definition is null ? Location.None : new Location.TreeReference(other.Definition),
+                                formatArgs: name);
+                            var errorSymbol = other.Symbol.WithDiagnostics(ImmutableArray.Create(diag));
+                            AddDeclaration(errorSymbol);
+                        }
+                    }
+                }
+                timelines.Add(name, new(currentTimeline.ToImmutable()));
+            }
+
+            return Make(
+                db: this.db,
+                kind: this.Kind,
+                definition: this.Tree,
+                timelines: timelines.ToImmutable(),
+                declarations: declarations.ToImmutable());
+        }
+    }
 }

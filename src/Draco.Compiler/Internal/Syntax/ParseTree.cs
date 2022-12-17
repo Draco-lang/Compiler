@@ -168,7 +168,21 @@ internal partial record class ParseTree
     /// </summary>
     public abstract partial record class TypeExpr : ParseTree
     {
-        // This is the only kind of type expression for now
+        /// <summary>
+        /// Unexpected input in type context.
+        /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
+        public sealed partial record class Unexpected(
+            ImmutableArray<ParseTree> Elements,
+            ImmutableArray<Diagnostic> Diagnostics) : TypeExpr
+        {
+            /// <inheritdoc/>
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+        }
+
+        /// <summary>
+        /// A reference to a type by name.
+        /// </summary>
         public sealed partial record class Name(
             Token Identifier) : TypeExpr;
     }

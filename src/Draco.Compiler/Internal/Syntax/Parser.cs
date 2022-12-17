@@ -394,9 +394,25 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="TypeExpr"/>.</returns>
     private TypeExpr ParseTypeExpr()
     {
-        // For now we only allow identifiers
-        var typeName = this.Expect(TokenType.Identifier);
-        return new TypeExpr.Name(typeName);
+        if (this.Matches(TokenType.Identifier, out var typeName))
+        {
+            return new TypeExpr.Name(typeName);
+        }
+        else
+        {
+            var input = this.Synchronize(t => t switch
+            {
+                TokenType.Semicolon or TokenType.Comma
+                or TokenType.ParenClose or TokenType.BracketClose
+                or TokenType.CurlyClose or TokenType.InterpolationEnd
+                or TokenType.Assign => false,
+                var type when expressionStarters.Contains(type) => false,
+                _ => true,
+            });
+            var location = GetLocation(input.Sum(i => i.Width));
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "type");
+            return new TypeExpr.Unexpected(input, ImmutableArray.Create(diag));
+        }
     }
 
     /// <summary>
@@ -762,7 +778,8 @@ internal sealed class Parser
             var input = this.Synchronize(t => t switch
             {
                 TokenType.Semicolon or TokenType.Comma
-                or TokenType.ParenClose or TokenType.BracketClose or TokenType.CurlyClose => false,
+                or TokenType.ParenClose or TokenType.BracketClose
+                or TokenType.CurlyClose or TokenType.InterpolationEnd => false,
                 var type when expressionStarters.Contains(type) => false,
                 _ => true,
             });

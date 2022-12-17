@@ -30,4 +30,12 @@ internal static class SemanticErrors
         title: "type mismatch",
         severity: DiagnosticSeverity.Error,
         format: "type mismatch between {0} and {1}");
+
+    /// <summary>
+    /// A shadowing error.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalShadowing = DiagnosticTemplate.Create(
+        title: "illegal shadowing",
+        severity: DiagnosticSeverity.Error,
+        format: "symbol {0} illegally shadows symbol with the same name");
 }

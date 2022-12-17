@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
@@ -16,49 +17,62 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 internal partial interface ISymbol
 {
+    // TODO: Maybe error factories could construct the diags themselves?
     public static ISymbol MakeReferenceError(string name, ImmutableArray<Diagnostic> diagnostics) =>
         new ReferenceError(name, diagnostics);
 
     public static ILabel MakeLabel(QueryDatabase db, string name, ParseTree definition) =>
-        new Label(db, name, definition);
+        new Label(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static ILabel SynthetizeLabel() =>
         new SynthetizedLabel();
 
     public static IVariable MakeVariable(QueryDatabase db, string name, ParseTree definition, bool isMutable) =>
-        new Variable(db, name, definition, isMutable);
+        new Variable(db, name, definition, ImmutableArray<Diagnostic>.Empty, isMutable);
 
     public static IVariable SynthetizeVariable(Type type, bool isMutable) =>
         new SynthetizedVariable(type, isMutable);
 
     public static IParameter MakeParameter(QueryDatabase db, string name, ParseTree definition) =>
-        new Parameter(db, name, definition);
+        new Parameter(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static IParameter SynthetizeParameter(Type type) =>
         new SynthetizedParameter(type);
 
     public static IFunction MakeFunction(QueryDatabase db, string name, ParseTree definition) =>
-        new Function(db, name, definition);
+        new Function(db, name, definition, ImmutableArray<Diagnostic>.Empty);
+
+    public static IOverloadSet SynthetizeOverloadSet(ImmutableArray<IFunction> functions) =>
+        new OverloadSet(functions[0].Name, functions);
+
+    public static IOverloadSet SynthetizeOverloadSet(IOverloadSet f1, ImmutableArray<IFunction> f2)
+    {
+        Debug.Assert(f2.All(f => f1.Name == f.Name));
+        return new OverloadSet(f1.Name, f1.Functions.AddRange(f2));
+    }
 
     public static IFunction MakeIntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType) =>
         new IntrinsicFunction(name, paramTypes, returnType);
 
-    public static IUnaryOperator MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
-        new IntrinsicUnaryOperator(
+    public static IFunction MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
+        new IntrinsicFunction(
             SymbolResolution.GetUnaryOperatorName(op),
-            operandType, resultType);
+            ImmutableArray.Create(operandType),
+            resultType);
 
-    public static IBinaryOperator MakeIntrinsicBinaryOperator(
+    public static IFunction MakeIntrinsicBinaryOperator(
         TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
-        new IntrinsicBinaryOperator(
+        new IntrinsicFunction(
             SymbolResolution.GetBinaryOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
-            leftOperandType, rightrOperandType, resultType);
+            ImmutableArray.Create(leftOperandType, rightrOperandType),
+            resultType);
 
-    public static IBinaryOperator MakeIntrinsicRelationalOperator(
+    public static IFunction MakeIntrinsicRelationalOperator(
         TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
-        new IntrinsicBinaryOperator(
+        new IntrinsicFunction(
             SymbolResolution.GetRelationalOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
-            leftOperandType, rightrOperandType, resultType);
+            ImmutableArray.Create(leftOperandType, rightrOperandType),
+            resultType);
 
     public static ITypeDefinition MakeIntrinsicTypeDefinition(string name, Type type) =>
         new IntrinsicTypeDefinition(name, type);
@@ -116,6 +130,13 @@ internal partial interface ISymbol
     /// </summary>
     /// <returns>The equivalent <see cref="IApiSymbol"/>.</returns>
     public IApiSymbol ToApiSymbol();
+
+    /// <summary>
+    /// Appends <see cref="Diagnostic"/>s to this <see cref="ISymbol"/>, creating a new one.
+    /// </summary>
+    /// <param name="diagnostics">The diagnostics to append.</param>
+    /// <returns>A copy of this symbol with <paramref name="diagnostics"/> appended.</returns>
+    public ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics);
 }
 
 internal partial interface ISymbol
@@ -159,52 +180,6 @@ internal partial interface ISymbol
 internal partial interface ISymbol
 {
     /// <summary>
-    /// Any operator symbol.
-    /// </summary>
-    public interface IOperator : ISymbol
-    {
-        /// <summary>
-        /// The type of this operator as a function type.
-        /// </summary>
-        public Type.Function FunctionType { get; }
-
-        /// <summary>
-        /// The type the operator results in.
-        /// </summary>
-        public Type ResultType { get; }
-    }
-
-    /// <summary>
-    /// Any unary operator symbol.
-    /// </summary>
-    public interface IUnaryOperator : IOperator
-    {
-        /// <summary>
-        /// The operand type.
-        /// </summary>
-        public Type OperandType { get; }
-    }
-
-    /// <summary>
-    /// Any binary operator symbol.
-    /// </summary>
-    public interface IBinaryOperator : IOperator
-    {
-        /// <summary>
-        /// The left operand type.
-        /// </summary>
-        public Type LeftOperandType { get; }
-
-        /// <summary>
-        /// The right operand type.
-        /// </summary>
-        public Type RightOperandType { get; }
-    }
-}
-
-internal partial interface ISymbol
-{
-    /// <summary>
     /// Any function parameter symbol.
     /// </summary>
     public interface IParameter : IVariable
@@ -238,6 +213,20 @@ internal partial interface ISymbol
         /// The type of the function.
         /// </summary>
         public new Type.Function Type { get; }
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A set of functions that are overloaded.
+    /// </summary>
+    public interface IOverloadSet : ISymbol
+    {
+        /// <summary>
+        /// The functions that participate in the overload.
+        /// </summary>
+        public ImmutableArray<IFunction> Functions { get; }
     }
 }
 
@@ -287,8 +276,8 @@ internal partial interface ISymbol
             this.Diagnostics = diagnostics;
         }
 
-        // TODO
-        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+        public IApiSymbol ToApiSymbol() => new ErrorSymbol(this);
+        public abstract ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics);
     }
 }
 
@@ -299,8 +288,8 @@ internal partial interface ISymbol
     {
         public string Name { get; }
         public ParseTree Definition { get; }
-        public bool IsError => false;
-        public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+        public bool IsError => this.Diagnostics.Length > 0;
+        public ImmutableArray<Diagnostic> Diagnostics { get; }
         public IScope DefiningScope
         {
             get
@@ -334,15 +323,20 @@ internal partial interface ISymbol
 
         protected readonly QueryDatabase db;
 
-        protected InTreeBase(QueryDatabase db, string name, ParseTree definition)
+        protected InTreeBase(
+            QueryDatabase db,
+            string name,
+            ParseTree definition,
+            ImmutableArray<Diagnostic> diagnostics)
         {
             this.db = db;
             this.Name = name;
             this.Definition = definition;
+            this.Diagnostics = diagnostics;
         }
 
-        // TODO
-        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+        public abstract IApiSymbol ToApiSymbol();
+        public abstract ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics);
     }
 }
 
@@ -370,8 +364,8 @@ internal partial interface ISymbol
             this.Name = name;
         }
 
-        // TODO
-        public IApiSymbol ToApiSymbol() => throw new NotImplementedException();
+        public abstract IApiSymbol ToApiSymbol();
+        public ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) => throw new NotSupportedException();
     }
 }
 
@@ -380,12 +374,17 @@ internal partial interface ISymbol
     /// <summary>
     /// A symbol for a reference error.
     /// </summary>
-    private sealed class ReferenceError : ErrorBase
+    private sealed class ReferenceError : ErrorBase, ITyped
     {
+        public Type Type => Type.Error.Empty;
+
         public ReferenceError(string name, ImmutableArray<Diagnostic> diagnostics)
             : base(name, diagnostics)
         {
         }
+
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new ReferenceError(this.Name, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
     }
 }
 
@@ -396,10 +395,14 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Label : InTreeBase, ILabel
     {
-        public Label(QueryDatabase db, string name, ParseTree definition)
-            : base(db, name, definition)
+        public Label(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+            : base(db, name, definition, diagnostics)
         {
         }
+
+        public override IApiSymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new Label(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
     }
 }
 
@@ -414,6 +417,8 @@ internal partial interface ISymbol
             : base(GenerateName("label"))
         {
         }
+
+        public override IApiSymbol ToApiSymbol() => new LabelSymbol(this);
     }
 }
 
@@ -426,13 +431,17 @@ internal partial interface ISymbol
     {
         public override bool IsExternallyVisible => this.IsGlobal;
         public bool IsMutable { get; }
-        public Type Type => TypeChecker.TypeOf(this.db, this);
+        public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
 
-        public Variable(QueryDatabase db, string name, ParseTree definition, bool isMutable)
-            : base(db, name, definition)
+        public Variable(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics, bool isMutable)
+            : base(db, name, definition, diagnostics)
         {
             this.IsMutable = isMutable;
         }
+
+        public override IApiSymbol ToApiSymbol() => new VariableSymbol(this);
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new Variable(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray(), this.IsMutable);
     }
 }
 
@@ -452,6 +461,8 @@ internal partial interface ISymbol
             this.Type = type;
             this.IsMutable = isMutable;
         }
+
+        public override IApiSymbol ToApiSymbol() => new VariableSymbol(this);
     }
 }
 
@@ -465,10 +476,14 @@ internal partial interface ISymbol
         public bool IsMutable => false;
         public Type Type => TypeChecker.TypeOf(this.db, this);
 
-        public Parameter(QueryDatabase db, string name, ParseTree definition)
-            : base(db, name, definition)
+        public Parameter(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+            : base(db, name, definition, diagnostics)
         {
         }
+
+        public override IApiSymbol ToApiSymbol() => new ParameterSymbol(this);
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new Parameter(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
     }
 }
 
@@ -487,6 +502,8 @@ internal partial interface ISymbol
         {
             this.Type = type;
         }
+
+        public override IApiSymbol ToApiSymbol() => new ParameterSymbol(this);
     }
 }
 
@@ -537,10 +554,33 @@ internal partial interface ISymbol
             this.ReturnType);
         Type ITyped.Type => this.Type;
 
-        public Function(QueryDatabase db, string name, ParseTree definition)
-            : base(db, name, definition)
+        public Function(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+            : base(db, name, definition, diagnostics)
         {
         }
+
+        public override IApiSymbol ToApiSymbol() => new FunctionSymbol(this);
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new Function(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
+    }
+}
+
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// A set of overloaded functions.
+    /// </summary>
+    private sealed class OverloadSet : SynthetizedBase, IOverloadSet
+    {
+        public ImmutableArray<IFunction> Functions { get; }
+
+        public OverloadSet(string name, ImmutableArray<IFunction> functions)
+            : base(name)
+        {
+            this.Functions = functions;
+        }
+
+        public override IApiSymbol ToApiSymbol() => throw new NotImplementedException();
     }
 }
 
@@ -568,50 +608,8 @@ internal partial interface ISymbol
                 .ToImmutableArray();
             this.ReturnType = returnType;
         }
-    }
-}
 
-internal partial interface ISymbol
-{
-    /// <summary>
-    /// An intrinsic unary operation implemented by the compiler.
-    /// </summary>
-    private sealed class IntrinsicUnaryOperator : SynthetizedBase, IUnaryOperator
-    {
-        public Type OperandType { get; }
-        public Type ResultType { get; }
-        public Type.Function FunctionType => new(ImmutableArray.Create(this.OperandType), this.ResultType);
-
-        public IntrinsicUnaryOperator(string name, Type operandType, Type resultType)
-            : base(name)
-        {
-            this.OperandType = operandType;
-            this.ResultType = resultType;
-        }
-    }
-}
-
-internal partial interface ISymbol
-{
-    /// <summary>
-    /// An intrinsic binary operation implemented by the compiler.
-    /// </summary>
-    private sealed class IntrinsicBinaryOperator : SynthetizedBase, IBinaryOperator
-    {
-        public Type LeftOperandType { get; }
-        public Type RightOperandType { get; }
-        public Type ResultType { get; }
-        public Type.Function FunctionType => new(
-            ImmutableArray.Create(this.LeftOperandType, this.RightOperandType),
-            this.ResultType);
-
-        public IntrinsicBinaryOperator(string name, Type leftOperandType, Type rightOperandType, Type resultType)
-            : base(name)
-        {
-            this.LeftOperandType = leftOperandType;
-            this.RightOperandType = rightOperandType;
-            this.ResultType = resultType;
-        }
+        public override IApiSymbol ToApiSymbol() => new FunctionSymbol(this);
     }
 }
 
@@ -629,5 +627,7 @@ internal partial interface ISymbol
         {
             this.DefinedType = definedType;
         }
+
+        public override IApiSymbol ToApiSymbol() => new TypeSymbol(this);
     }
 }

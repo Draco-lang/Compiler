@@ -14,6 +14,11 @@ namespace Draco.Compiler.Internal.Semantics.Types;
 internal abstract partial record class Type
 {
     /// <summary>
+    /// Unwraps the type if it's a type-variable.
+    /// </summary>
+    public virtual Type UnwrapTypeVariable => this;
+
+    /// <summary>
     /// True, if this is an error type.
     /// </summary>
     public virtual bool IsError => false;
@@ -27,6 +32,7 @@ internal abstract partial record class Type
 // Builtins
 internal abstract partial record class Type
 {
+    public static readonly Type Never_ = Never.Instance;
     public static readonly Type Unit = new Builtin(typeof(void));
     public static readonly Type Int32 = new Builtin(typeof(int));
     public static readonly Type Bool = new Builtin(typeof(bool));
@@ -43,6 +49,9 @@ internal abstract partial record class Type
     public sealed record class Variable : Type
     {
         private static int idCounter = -1;
+
+        public override Type UnwrapTypeVariable =>
+            this.substitution ?? throw new InvalidOperationException();
 
         private readonly int id = Interlocked.Increment(ref idCounter);
         private Type? substitution;
@@ -99,6 +108,23 @@ internal abstract partial record class Type
 
         public bool Equals(Error? other) => ReferenceEquals(this, other);
         public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+    }
+}
+
+internal abstract partial record class Type
+{
+    /// <summary>
+    /// Represents the bottom-type.
+    /// </summary>
+    public sealed record class Never : Type
+    {
+        public static Never Instance { get; } = new();
+
+        private Never()
+        {
+        }
+
+        public override string ToString() => "<never>";
     }
 }
 

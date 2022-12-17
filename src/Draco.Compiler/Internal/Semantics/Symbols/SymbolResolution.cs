@@ -236,8 +236,23 @@ internal static class SymbolResolution
         if (preDeclsList[0].Kind == SymbolKind.Function)
         {
             // Possible overloading
-            // First we look if the parent has overloads
-            // TODO
+            var overloadSet = ImmutableArray.Create<ISymbol.IFunction>();
+            // Look at all functions
+            foreach (var preDecl in preDeclsList)
+            {
+                if (preDecl.Kind == SymbolKind.Function)
+                {
+                    // Add to the set
+                    // TODO
+                    throw new NotImplementedException();
+                }
+                else
+                {
+                    // Error
+                    throw new NotImplementedException();
+                }
+            }
+            // TODO: Look for overloads in the parent
             throw new NotImplementedException();
         }
         else

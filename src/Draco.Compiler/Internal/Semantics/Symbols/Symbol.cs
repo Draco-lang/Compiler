@@ -17,8 +17,13 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 internal partial interface ISymbol
 {
+    // TODO: Maybe error factories could construct the diags themselves?
     public static ISymbol MakeReferenceError(string name, ImmutableArray<Diagnostic> diagnostics) =>
         new ReferenceError(name, diagnostics);
+
+    // TODO: Maybe error factories could construct the diags themselves?
+    public static ISymbol MakeShadowingError(ISymbol original, ImmutableArray<Diagnostic> diagnostics) =>
+        new ShadowingError(original, diagnostics);
 
     public static ILabel MakeLabel(QueryDatabase db, string name, ParseTree definition) =>
         new Label(db, name, definition);
@@ -80,47 +85,6 @@ internal partial interface ISymbol
 // Interfaces //////////////////////////////////////////////////////////////////
 
 /// <summary>
-/// The different kinds of symbols.
-/// </summary>
-internal enum SymbolKind
-{
-    /// <summary>
-    /// Not resolvable to any category.
-    /// </summary>
-    Error,
-
-    /// <summary>
-    /// A variable.
-    /// </summary>
-    Variable,
-
-    /// <summary>
-    /// Function parameter.
-    /// </summary>
-    Parameter,
-
-    /// <summary>
-    /// Function declaration.
-    /// </summary>
-    Function,
-
-    /// <summary>
-    /// A set of overloads.
-    /// </summary>
-    OverloadSet,
-
-    /// <summary>
-    /// Type declaration.
-    /// </summary>
-    Type,
-
-    /// <summary>
-    /// A label declaration.
-    /// </summary>
-    Label,
-}
-
-/// <summary>
 /// The interface of all symbols.
 /// </summary>
 internal partial interface ISymbol
@@ -134,11 +98,6 @@ internal partial interface ISymbol
     /// True, if this symbol references some kind of error.
     /// </summary>
     public bool IsError { get; }
-
-    /// <summary>
-    /// The kind of this symbol.
-    /// </summary>
-    public SymbolKind Kind { get; }
 
     /// <summary>
     /// The diagnostics attached to this symbol.
@@ -301,7 +260,6 @@ internal partial interface ISymbol
     {
         public string Name { get; }
         public bool IsError => true;
-        public SymbolKind Kind => SymbolKind.Error;
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public virtual IScope? DefiningScope => null;
         public virtual IFunction? DefiningFunction => null;
@@ -328,7 +286,6 @@ internal partial interface ISymbol
         public string Name { get; }
         public ParseTree Definition { get; }
         public bool IsError => false;
-        public abstract SymbolKind Kind { get; }
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
         public IScope DefiningScope
         {
@@ -386,7 +343,6 @@ internal partial interface ISymbol
 
         public string Name { get; }
         public bool IsError => false;
-        public abstract SymbolKind Kind { get; }
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
         public IScope? DefiningScope => null;
         public IFunction? DefiningFunction => null;
@@ -424,12 +380,14 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class ShadowingError : ErrorBase
     {
-        public override ParseTree Definition { get; }
+        public override ParseTree? Definition => this.Original.Definition;
 
-        public ShadowingError(string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
-            : base(name, diagnostics)
+        public ISymbol Original { get; }
+
+        public ShadowingError(ISymbol original, ImmutableArray<Diagnostic> diagnostics)
+            : base(original.Name, diagnostics)
         {
-            this.Definition = definition;
+            this.Original = original;
         }
     }
 }
@@ -441,8 +399,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Label : InTreeBase, ILabel
     {
-        public override SymbolKind Kind => SymbolKind.Label;
-
         public Label(QueryDatabase db, string name, ParseTree definition)
             : base(db, name, definition)
         {
@@ -459,8 +415,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class SynthetizedLabel : SynthetizedBase, ILabel
     {
-        public override SymbolKind Kind => SymbolKind.Label;
-
         public SynthetizedLabel()
             : base(GenerateName("label"))
         {
@@ -477,7 +431,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Variable : InTreeBase, IVariable
     {
-        public override SymbolKind Kind => SymbolKind.Variable;
         public override bool IsExternallyVisible => this.IsGlobal;
         public bool IsMutable { get; }
         public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
@@ -499,7 +452,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class SynthetizedVariable : SynthetizedBase, IVariable
     {
-        public override SymbolKind Kind => SymbolKind.Variable;
         public Type Type { get; }
         public bool IsMutable { get; }
 
@@ -521,7 +473,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Parameter : InTreeBase, IParameter
     {
-        public override SymbolKind Kind => SymbolKind.Parameter;
         public bool IsMutable => false;
         public Type Type => TypeChecker.TypeOf(this.db, this);
 
@@ -541,7 +492,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class SynthetizedParameter : SynthetizedBase, IParameter
     {
-        public override SymbolKind Kind => SymbolKind.Parameter;
         public bool IsMutable => false;
         public Type Type { get; }
 
@@ -562,7 +512,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Function : InTreeBase, IFunction
     {
-        public override SymbolKind Kind => SymbolKind.Function;
         public override bool IsExternallyVisible => this.IsGlobal;
         public IScope DefinedScope
         {
@@ -582,6 +531,7 @@ internal partial interface ISymbol
                 foreach (var param in tree.Params.Value.Elements)
                 {
                     var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
+                    if (symbol is ShadowingError err) symbol = err.Original;
                     Debug.Assert(symbol is IParameter);
                     builder.Add((IParameter)symbol);
                 }
@@ -619,7 +569,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class OverloadSet : SynthetizedBase, IOverloadSet
     {
-        public override SymbolKind Kind => SymbolKind.OverloadSet;
         public ImmutableArray<IFunction> Functions { get; }
 
         public OverloadSet(string name, ImmutableArray<IFunction> functions)
@@ -639,7 +588,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class IntrinsicFunction : SynthetizedBase, IFunction
     {
-        public override SymbolKind Kind => SymbolKind.Function;
         public override bool IsExternallyVisible => true;
         public IScope? DefinedScope => null;
         public ImmutableArray<IParameter> Parameters { get; }
@@ -669,7 +617,6 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class IntrinsicTypeDefinition : SynthetizedBase, ITypeDefinition
     {
-        public override SymbolKind Kind => SymbolKind.Type;
         public Type DefinedType { get; }
 
         public IntrinsicTypeDefinition(string name, Type definedType)

@@ -146,7 +146,7 @@ internal static class SymbolResolution
                 if (symbol is null) continue;
 
                 // Yes, calculate position and add it
-                var symbolPosition = GetBindingKind(scopeKind.Value, symbol.Kind) switch
+                var symbolPosition = GetBindingKind(scopeKind.Value, symbol) switch
                 {
                     // Order independent always just gets thrown to the beginning
                     BindingKind.OrderIndependent => 0,
@@ -260,7 +260,7 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseTree"/> that references a <see cref="ISymbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
     /// <returns>The referenced <see cref="ISymbol"/>, or null if not resolved.</returns>
-    private static ISymbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name) => db.GetOrUpdate(
+    public static ISymbol? ReferenceSymbolOrNull(QueryDatabase db, ParseTree tree, string name) => db.GetOrUpdate(
         (tree, name),
         ISymbol? (tree, name) =>
         {
@@ -385,15 +385,15 @@ internal static class SymbolResolution
     /// Retrieves the <see cref="BindingKind"/> a symbol introduces.
     /// </summary>
     /// <param name="scopeKind">The <see cref="ScopeKind"/> that <paramref name="symbol"/> is defined in.</param>
-    /// <param name="symbolKind">The <see cref="SymbolKind"/> that introduces a binding.</param>
-    /// <returns>The <see cref="BindingKind"/> of <paramref name="symbolKind"/> declared in <paramref name="scopeKind"/>.</returns>
-    private static BindingKind GetBindingKind(ScopeKind scopeKind, SymbolKind symbolKind) => symbolKind switch
+    /// <param name="symbol">The <see cref="ISymbol"/> that was defined.</param>
+    /// <returns>The <see cref="BindingKind"/> of <paramref name="symbol"/> declared in <paramref name="scopeKind"/>.</returns>
+    private static BindingKind GetBindingKind(ScopeKind scopeKind, ISymbol symbol) => symbol switch
     {
-        SymbolKind.Label or SymbolKind.Function => BindingKind.OrderIndependent,
-        SymbolKind.Parameter => BindingKind.OrderIndependent,
-        SymbolKind.Variable when scopeKind == ScopeKind.Global => BindingKind.OrderIndependent,
-        SymbolKind.Variable => BindingKind.NonRecursive,
-        _ => throw new ArgumentOutOfRangeException(nameof(symbolKind)),
+        ISymbol.ILabel or ISymbol.IFunction => BindingKind.OrderIndependent,
+        ISymbol.IParameter => BindingKind.OrderIndependent,
+        ISymbol.IVariable when scopeKind == ScopeKind.Global => BindingKind.OrderIndependent,
+        ISymbol.IVariable => BindingKind.NonRecursive,
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
     /// <summary>

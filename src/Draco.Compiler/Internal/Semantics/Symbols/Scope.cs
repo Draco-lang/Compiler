@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Utilities;
 
@@ -306,8 +307,7 @@ internal partial interface IScope
         public ParseTree Tree { get; }
 
         private readonly QueryDatabase db;
-        private readonly ImmutableDictionary<string, ImmutableList<Declaration>.Builder>.Builder declarations =
-            ImmutableDictionary.CreateBuilder<string, ImmutableList<Declaration>.Builder>();
+        private readonly Dictionary<string, ImmutableArray<Declaration>.Builder> declarations = new();
 
         public Builder(QueryDatabase db, ScopeKind kind, ParseTree tree)
         {
@@ -320,7 +320,7 @@ internal partial interface IScope
         {
             if (!this.declarations.TryGetValue(declaration.Name, out var timelineList))
             {
-                timelineList = ImmutableList.CreateBuilder<Declaration>();
+                timelineList = ImmutableArray.CreateBuilder<Declaration>();
                 this.declarations.Add(declaration.Name, timelineList);
             }
             timelineList.Add(declaration);
@@ -328,8 +328,103 @@ internal partial interface IScope
 
         public IScope Build()
         {
-            // TODO
-            throw new NotImplementedException();
+            var timelines = ImmutableDictionary.CreateBuilder<string, DeclarationTimeline>();
+            var declarations = ImmutableDictionary.CreateBuilder<ParseTree, ISymbol>();
+
+            void AddDeclaration(ISymbol symbol)
+            {
+                if (symbol.Definition is not null) declarations!.Add(symbol.Definition, symbol);
+            }
+
+            foreach (var (name, declsWithName) in this.declarations)
+            {
+                // Declarations must be in increasing order
+                Debug.Assert(declsWithName.Select(decl => decl.Position).IsOrdered());
+                var currentTimeline = ImmutableArray.CreateBuilder<Declaration>();
+                foreach (var declsAtSamePosition in declsWithName
+                    .GroupBy(decl => decl.Position)
+                    .Select(g => g.ToList()))
+                {
+                    // The declarations are under the same name and same position
+                    // The first symbol will determine how we handle the group
+                    var first = declsAtSamePosition[0];
+                    if (first.Symbol is ISymbol.IFunction)
+                    {
+                        // Potential overload set
+                        var overloadSet = ImmutableArray.CreateBuilder<ISymbol.IFunction>();
+                        foreach (var decl in declsAtSamePosition)
+                        {
+                            if (decl.Symbol is ISymbol.IFunction func)
+                            {
+                                // Part of the set
+                                overloadSet.Add(func);
+                                AddDeclaration(func);
+                            }
+                            else
+                            {
+                                // TODO: Provide other definitions position?
+                                // Error, wrap it up
+                                var diag = Diagnostic.Create(
+                                    template: SemanticErrors.IllegalShadowing,
+                                    location: decl.Definition is null ? Location.None : new Location.TreeReference(decl.Definition),
+                                    formatArgs: name);
+                                var errorSymbol = ISymbol.MakeShadowingError(decl.Symbol, ImmutableArray.Create(diag));
+                                AddDeclaration(errorSymbol);
+                            }
+                        }
+                        // Look in parent scope if there is an overload set
+                        var symbolInParent = this.declarations.Values
+                            .SelectMany(d => d)
+                            .Select(d => d.Definition?.Parent)
+                            .Where(t => t is not null)
+                            .Select(t => SymbolResolution.ReferenceSymbolOrNull(this.db, t!, name))
+                            .FirstOrDefault();
+                        if (symbolInParent is ISymbol.IFunction f)
+                        {
+                            // Parent has a function, add to overloads
+                            overloadSet.Add(f);
+                        }
+                        else if (symbolInParent is ISymbol.IOverloadSet ovSet)
+                        {
+                            // Parent has an overload set, add all
+                            overloadSet.AddRange(ovSet.Functions);
+                        }
+                        // Unwrap singular overload
+                        var resultSymbol = overloadSet.Count == 1
+                            ? overloadSet[0] as ISymbol
+                            : ISymbol.SynthetizeOverloadSet(overloadSet.ToImmutable());
+                        // Add to timeline
+                        currentTimeline.Add(new(Position: first.Position, resultSymbol));
+                    }
+                    else
+                    {
+                        // Only the first one is valid, the rest are wrapped up as error
+                        currentTimeline.Add(first);
+                        AddDeclaration(first.Symbol);
+                        // Add rest as error
+                        for (var i = 1; i < declsAtSamePosition.Count; ++i)
+                        {
+                            var other = declsAtSamePosition[i];
+                            // TODO: Provide other definitions position?
+                            // Error, wrap it up
+                            var diag = Diagnostic.Create(
+                                template: SemanticErrors.IllegalShadowing,
+                                location: other.Definition is null ? Location.None : new Location.TreeReference(other.Definition),
+                                formatArgs: name);
+                            var errorSymbol = ISymbol.MakeShadowingError(other.Symbol, ImmutableArray.Create(diag));
+                            AddDeclaration(errorSymbol);
+                        }
+                    }
+                }
+                timelines.Add(name, new(currentTimeline.ToImmutable()));
+            }
+
+            return Make(
+                db: this.db,
+                kind: this.Kind,
+                definition: this.Tree,
+                timelines: timelines.ToImmutable(),
+                declarations: declarations.ToImmutable());
         }
     }
 }

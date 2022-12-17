@@ -46,15 +46,10 @@ internal static class SymbolResolution
     /// <returns>The <see cref="Diagnostic"/>s related to <paramref name="tree"/>.</returns>
     public static IEnumerable<Diagnostic> GetDiagnostics(QueryDatabase db, ParseTree tree)
     {
-        if (ReferencesSymbol(tree))
-        {
-            var sym = GetReferencedSymbol(db, tree);
-            return sym.Diagnostics;
-        }
-        else
-        {
-            return Enumerable.Empty<Diagnostic>();
-        }
+        var referencedSymbolDiags = GetReferencedSymbolOrNull(db, tree)?.Diagnostics ?? ImmutableArray<Diagnostic>.Empty;
+        var definedSymbolDiags = GetDefinedSymbolOrNull(db, tree)?.Diagnostics ?? ImmutableArray<Diagnostic>.Empty;
+        return referencedSymbolDiags
+            .Concat(definedSymbolDiags);
     }
 
     /// <summary>
@@ -174,7 +169,6 @@ internal static class SymbolResolution
     {
         var symbol = GetDefinedSymbolOrNull(db, tree);
         if (symbol is null) throw new InvalidOperationException("The parse tree does not define a symbol");
-        if (symbol is ISymbol.IErrorProxy err) symbol = err.Original;
         if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree defines a differen kind of symbol");
         return tSymbol;
     }
@@ -191,9 +185,9 @@ internal static class SymbolResolution
         ISymbol? (tree) =>
         {
             var scopeDefiningAncestor = GetScopeDefiningAncestor(tree);
-            Debug.Assert(scopeDefiningAncestor is not null);
+            if (scopeDefiningAncestor is null) return null;
             var scope = GetDefinedScopeOrNull(db, scopeDefiningAncestor);
-            Debug.Assert(scope is not null);
+            if (scope is null) return null;
             return scope.Declarations.TryGetValue(tree, out var symbol)
                 ? symbol
                 : null;

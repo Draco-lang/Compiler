@@ -368,7 +368,7 @@ internal partial interface IScope
                                     template: SemanticErrors.IllegalShadowing,
                                     location: decl.Definition is null ? Location.None : new Location.TreeReference(decl.Definition),
                                     formatArgs: name);
-                                var errorSymbol = ISymbol.MakeShadowingError(decl.Symbol, ImmutableArray.Create(diag));
+                                var errorSymbol = decl.Symbol.WithDiagnostics(ImmutableArray.Create(diag));
                                 AddDeclaration(errorSymbol);
                             }
                         }
@@ -411,7 +411,7 @@ internal partial interface IScope
                                 template: SemanticErrors.IllegalShadowing,
                                 location: other.Definition is null ? Location.None : new Location.TreeReference(other.Definition),
                                 formatArgs: name);
-                            var errorSymbol = ISymbol.MakeShadowingError(other.Symbol, ImmutableArray.Create(diag));
+                            var errorSymbol = other.Symbol.WithDiagnostics(ImmutableArray.Create(diag));
                             AddDeclaration(errorSymbol);
                         }
                     }

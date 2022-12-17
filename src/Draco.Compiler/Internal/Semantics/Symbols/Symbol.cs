@@ -21,30 +21,26 @@ internal partial interface ISymbol
     public static ISymbol MakeReferenceError(string name, ImmutableArray<Diagnostic> diagnostics) =>
         new ReferenceError(name, diagnostics);
 
-    // TODO: Maybe error factories could construct the diags themselves?
-    public static ISymbol MakeShadowingError(ISymbol original, ImmutableArray<Diagnostic> diagnostics) =>
-        new ShadowingError(original, diagnostics);
-
     public static ILabel MakeLabel(QueryDatabase db, string name, ParseTree definition) =>
-        new Label(db, name, definition);
+        new Label(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static ILabel SynthetizeLabel() =>
         new SynthetizedLabel();
 
     public static IVariable MakeVariable(QueryDatabase db, string name, ParseTree definition, bool isMutable) =>
-        new Variable(db, name, definition, isMutable);
+        new Variable(db, name, definition, ImmutableArray<Diagnostic>.Empty, isMutable);
 
     public static IVariable SynthetizeVariable(Type type, bool isMutable) =>
         new SynthetizedVariable(type, isMutable);
 
     public static IParameter MakeParameter(QueryDatabase db, string name, ParseTree definition) =>
-        new Parameter(db, name, definition);
+        new Parameter(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static IParameter SynthetizeParameter(Type type) =>
         new SynthetizedParameter(type);
 
     public static IFunction MakeFunction(QueryDatabase db, string name, ParseTree definition) =>
-        new Function(db, name, definition);
+        new Function(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static IOverloadSet SynthetizeOverloadSet(ImmutableArray<IFunction> functions) =>
         new OverloadSet(functions[0].Name, functions);
@@ -134,6 +130,13 @@ internal partial interface ISymbol
     /// </summary>
     /// <returns>The equivalent <see cref="IApiSymbol"/>.</returns>
     public IApiSymbol ToApiSymbol();
+
+    /// <summary>
+    /// Appends <see cref="Diagnostic"/>s to this <see cref="ISymbol"/>, creating a new one.
+    /// </summary>
+    /// <param name="diagnostics">The diagnostics to append.</param>
+    /// <returns>A copy of this symbol with <paramref name="diagnostics"/> appended.</returns>
+    public ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics);
 }
 
 internal partial interface ISymbol
@@ -251,20 +254,6 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
-{
-    /// <summary>
-    /// Any symbol that serves as an error proxy.
-    /// </summary>
-    public interface IErrorProxy
-    {
-        /// <summary>
-        /// The wrapped symbol.
-        /// </summary>
-        public ISymbol Original { get; }
-    }
-}
-
 // Implementations /////////////////////////////////////////////////////////////
 
 internal partial interface ISymbol
@@ -287,8 +276,8 @@ internal partial interface ISymbol
             this.Diagnostics = diagnostics;
         }
 
-        // TODO
-        public IApiSymbol ToApiSymbol() => new Api.Semantics.ErrorSymbol(this);
+        public IApiSymbol ToApiSymbol() => new ErrorSymbol(this);
+        public abstract ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics);
     }
 }
 
@@ -300,7 +289,7 @@ internal partial interface ISymbol
         public string Name { get; }
         public ParseTree Definition { get; }
         public bool IsError => false;
-        public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+        public ImmutableArray<Diagnostic> Diagnostics { get; }
         public IScope DefiningScope
         {
             get
@@ -334,14 +323,20 @@ internal partial interface ISymbol
 
         protected readonly QueryDatabase db;
 
-        protected InTreeBase(QueryDatabase db, string name, ParseTree definition)
+        protected InTreeBase(
+            QueryDatabase db,
+            string name,
+            ParseTree definition,
+            ImmutableArray<Diagnostic> diagnostics)
         {
             this.db = db;
             this.Name = name;
             this.Definition = definition;
+            this.Diagnostics = diagnostics;
         }
 
         public abstract IApiSymbol ToApiSymbol();
+        public abstract ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics);
     }
 }
 
@@ -370,6 +365,7 @@ internal partial interface ISymbol
         }
 
         public abstract IApiSymbol ToApiSymbol();
+        public ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) => throw new NotSupportedException();
     }
 }
 
@@ -384,25 +380,9 @@ internal partial interface ISymbol
             : base(name, diagnostics)
         {
         }
-    }
-}
 
-internal partial interface ISymbol
-{
-    /// <summary>
-    /// A shadowing error.
-    /// </summary>
-    private sealed class ShadowingError : ErrorBase, IErrorProxy
-    {
-        public override ParseTree? Definition => this.Original.Definition;
-
-        public ISymbol Original { get; }
-
-        public ShadowingError(ISymbol original, ImmutableArray<Diagnostic> diagnostics)
-            : base(original.Name, diagnostics)
-        {
-            this.Original = original;
-        }
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new ReferenceError(this.Name, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
     }
 }
 
@@ -413,12 +393,14 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Label : InTreeBase, ILabel
     {
-        public Label(QueryDatabase db, string name, ParseTree definition)
-            : base(db, name, definition)
+        public Label(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+            : base(db, name, definition, diagnostics)
         {
         }
 
         public override IApiSymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new Label(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
     }
 }
 
@@ -449,13 +431,15 @@ internal partial interface ISymbol
         public bool IsMutable { get; }
         public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
 
-        public Variable(QueryDatabase db, string name, ParseTree definition, bool isMutable)
-            : base(db, name, definition)
+        public Variable(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics, bool isMutable)
+            : base(db, name, definition, diagnostics)
         {
             this.IsMutable = isMutable;
         }
 
-        public override IApiSymbol ToApiSymbol() => new Api.Semantics.VariableSymbol(this);
+        public override IApiSymbol ToApiSymbol() => new VariableSymbol(this);
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new Variable(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray(), this.IsMutable);
     }
 }
 
@@ -490,12 +474,14 @@ internal partial interface ISymbol
         public bool IsMutable => false;
         public Type Type => TypeChecker.TypeOf(this.db, this);
 
-        public Parameter(QueryDatabase db, string name, ParseTree definition)
-            : base(db, name, definition)
+        public Parameter(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+            : base(db, name, definition, diagnostics)
         {
         }
 
         public override IApiSymbol ToApiSymbol() => new ParameterSymbol(this);
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new Parameter(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
     }
 }
 
@@ -545,7 +531,6 @@ internal partial interface ISymbol
                 foreach (var param in tree.Params.Value.Elements)
                 {
                     var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
-                    if (symbol is IErrorProxy err) symbol = err.Original;
                     Debug.Assert(symbol is IParameter);
                     builder.Add((IParameter)symbol);
                 }
@@ -567,12 +552,14 @@ internal partial interface ISymbol
             this.ReturnType);
         Type ITyped.Type => this.Type;
 
-        public Function(QueryDatabase db, string name, ParseTree definition)
-            : base(db, name, definition)
+        public Function(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+            : base(db, name, definition, diagnostics)
         {
         }
 
         public override IApiSymbol ToApiSymbol() => new FunctionSymbol(this);
+        public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
+            new Function(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
     }
 }
 

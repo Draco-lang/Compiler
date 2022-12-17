@@ -115,7 +115,6 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         // The symbol we are inferring the type for
         var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, node);
-        if (symbol is ISymbol.IErrorProxy err) symbol = err.Original;
         Debug.Assert(symbol is not null);
 
         // The declared type after the ':' and the value type after the '='

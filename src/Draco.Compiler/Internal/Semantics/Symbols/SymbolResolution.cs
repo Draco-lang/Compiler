@@ -174,6 +174,7 @@ internal static class SymbolResolution
     {
         var symbol = GetDefinedSymbolOrNull(db, tree);
         if (symbol is null) throw new InvalidOperationException("The parse tree does not define a symbol");
+        if (symbol is ISymbol.IErrorProxy err) symbol = err.Original;
         if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree defines a differen kind of symbol");
         return tSymbol;
     }

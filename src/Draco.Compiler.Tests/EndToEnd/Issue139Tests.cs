@@ -36,13 +36,19 @@ public sealed class Issue139Tests
         func foo(x: string, x: string): string = x;
         """)]
     [InlineData("""
+        func main() {}
         func foo(): Foo = x;
+        """)]
+    [InlineData("""
+        func main() {}
+        var x = 0;
+        var x = 0;
         """)]
     [Theory]
     public void DoesNotCrash(string source)
     {
         var parseTree = ParseTree.Parse(source);
         var compilation = Compilation.Create(parseTree);
-        _ = compilation.GetDiagnostics();
+        compilation.EmitCSharp(new MemoryStream());
     }
 }

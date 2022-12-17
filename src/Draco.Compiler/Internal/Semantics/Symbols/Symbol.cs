@@ -251,6 +251,20 @@ internal partial interface ISymbol
     }
 }
 
+internal partial interface ISymbol
+{
+    /// <summary>
+    /// Any symbol that serves as an error proxy.
+    /// </summary>
+    public interface IErrorProxy
+    {
+        /// <summary>
+        /// The wrapped symbol.
+        /// </summary>
+        public ISymbol Original { get; }
+    }
+}
+
 // Implementations /////////////////////////////////////////////////////////////
 
 internal partial interface ISymbol
@@ -378,7 +392,7 @@ internal partial interface ISymbol
     /// <summary>
     /// A shadowing error.
     /// </summary>
-    private sealed class ShadowingError : ErrorBase
+    private sealed class ShadowingError : ErrorBase, IErrorProxy
     {
         public override ParseTree? Definition => this.Original.Definition;
 
@@ -531,7 +545,7 @@ internal partial interface ISymbol
                 foreach (var param in tree.Params.Value.Elements)
                 {
                     var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
-                    if (symbol is ShadowingError err) symbol = err.Original;
+                    if (symbol is IErrorProxy err) symbol = err.Original;
                     Debug.Assert(symbol is IParameter);
                     builder.Add((IParameter)symbol);
                 }

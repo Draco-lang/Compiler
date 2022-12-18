@@ -60,5 +60,19 @@ internal sealed class ProcBuilder
         ReturnType: this.ReturnType,
         BasicBlocks: this.BuildBasicBlocks());
 
-    private ImmutableArray<BasicBlock> BuildBasicBlocks() => throw new NotImplementedException();
+    private ImmutableArray<BasicBlock> BuildBasicBlocks()
+    {
+        var result = ImmutableArray.CreateBuilder<BasicBlock>();
+        var currentBuffer = ImmutableArray.CreateBuilder<Instr>();
+        foreach (var instr in this.Instructions)
+        {
+            currentBuffer.Add(instr);
+            if (instr.IsJump)
+            {
+                result.Add(new(Instructions: currentBuffer.ToImmutable()));
+                currentBuffer.Clear();
+            }
+        }
+        return result.ToImmutable();
+    }
 }

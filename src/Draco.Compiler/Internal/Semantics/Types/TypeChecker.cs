@@ -90,6 +90,7 @@ internal static class TypeChecker
     public static Type TypeOf(QueryDatabase db, ParseTree.Expr expr) => expr switch
     {
         ParseTree.Expr.Unexpected => Type.Error.Empty,
+        ParseTree.Expr.Grouping g => TypeOf(db, g.Expression.Value),
         ParseTree.Expr.Literal lit => lit.Value.Type switch
         {
             TokenType.LiteralInteger => Type.Int32,

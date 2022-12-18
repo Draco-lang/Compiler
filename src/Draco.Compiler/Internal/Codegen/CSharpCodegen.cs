@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.Codegen;
 // NOTE: Currently this is only here to have something hacky but runnable for the compiler
 // Eventually we'll translate to our own IR and then compile that to IL
 /// <summary>
-/// Generates low-level C# code from the Draco <see cref="ParseTree"/>.
+/// Generates low-level C# code from the Draco <see cref="Ast"/>.
 /// </summary>
 internal sealed class CSharpCodegen : AstVisitorBase<string?>
 {

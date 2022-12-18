@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Compiler.Internal.Codegen.Dir;
+namespace Draco.Compiler.Internal.Dir;
 
 /// <summary>
 /// A unit of compilation resulting in a single binary.

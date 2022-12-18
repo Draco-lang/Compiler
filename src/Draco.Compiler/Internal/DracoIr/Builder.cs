@@ -12,6 +12,17 @@ namespace Draco.Compiler.Internal.DracoIr;
 /// </summary>
 internal sealed class AssemblyBuilder
 {
+    /// <summary>
+    /// The procedures within this assembly.
+    /// </summary>
+    public IDictionary<string, ProcBuilder> Procedures { get; set; } = new Dictionary<string, ProcBuilder>();
+
+    /// <summary>
+    /// Builds the <see cref="Assembly"/> from this builder.
+    /// </summary>
+    /// <returns>The built <see cref="Assembly"/>.</returns>
+    public Assembly Build() => new(
+        Procs: this.Procedures.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Build()));
 }
 
 /// <summary>
@@ -33,4 +44,21 @@ internal sealed class ProcBuilder
     /// The return type of the procedure.
     /// </summary>
     public Type ReturnType { get; set; } = Type.Void;
+
+    /// <summary>
+    /// The instructions within this builder.
+    /// </summary>
+    public IList<Instr>.Builder Instructions { get; set; } = new List<Instr>();
+
+    /// <summary>
+    /// Builds the <see cref="Proc"/> from this builder.
+    /// </summary>
+    /// <returns>The built <see cref="Proc"/>.</returns>
+    public Proc Build() => new(
+        Name: this.Name,
+        Params: this.Params.ToImmutable(),
+        ReturnType: this.ReturnType,
+        BasicBlocks: this.BuildBasicBlocks());
+
+    private ImmutableArray<BasicBlock> BuildBasicBlocks() => throw new NotImplementedException();
 }

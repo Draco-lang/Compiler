@@ -106,7 +106,6 @@ internal static class TypeChecker
         ParseTree.Expr.Unary ury => GetTypeOfLocal(db, ury),
         ParseTree.Expr.Binary bin => GetTypeOfLocal(db, bin),
         ParseTree.Expr.Call call => GetTypeOfLocal(db, call),
-        // TODO: Type errors?
         ParseTree.Expr.Relational => Type.Bool,
         ParseTree.Expr.While => Type.Unit,
         ParseTree.Expr.UnitStmt => Type.Unit,

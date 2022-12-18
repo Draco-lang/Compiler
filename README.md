@@ -20,12 +20,12 @@ This is the repository for the work-in-progress compiler for the Draco programmi
    * [x] Red-green trees
  * Semantic analysis
    * [x] Symbol resolution
-   * [ ] Type checking
-   * [ ] Type inference
+   * [x] Type checking
+   * [x] Type inference
    * [ ] Dataflow analysis
  * Codegen
-   * [ ] AST
-   * [ ] Lowering
+   * [x] AST
+   * [x] Lowering
    * [ ] Custom IR
    * [ ] Writing IL
    * [ ] Writing PE

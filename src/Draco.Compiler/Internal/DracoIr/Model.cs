@@ -38,7 +38,15 @@ internal sealed record class BasicBlock(
 /// <summary>
 /// The base class for all instructions.
 /// </summary>
-internal abstract record class Instr
+internal abstract partial record class Instr
+{
+    /// <summary>
+    /// True, if this is some kind of jump instruction.
+    /// </summary>
+    public virtual bool IsJump => false;
+}
+
+internal abstract partial record class Instr
 {
     /// <summary>
     /// Adds together the two integer operands.

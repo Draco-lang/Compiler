@@ -48,7 +48,7 @@ internal sealed class ProcBuilder
     /// <summary>
     /// The instructions within this builder.
     /// </summary>
-    public IList<Instr>.Builder Instructions { get; set; } = new List<Instr>();
+    public IList<Instr> Instructions { get; set; } = new List<Instr>();
 
     /// <summary>
     /// Builds the <see cref="Proc"/> from this builder.

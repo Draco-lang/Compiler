@@ -13,10 +13,16 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class DracoIrCodegen : AstVisitorBase<Value?>
 {
-    private readonly AssemblyBuilder builder;
+    private readonly AssemblyBuilder assemblyBuilder;
+    private ProcBuilder procBuilder = null!;
 
     public DracoIrCodegen(AssemblyBuilder builder)
     {
-        this.builder = builder;
+        this.assemblyBuilder = builder;
+    }
+
+    public override Value VisitFuncDecl(Ast.Decl.Func node)
+    {
+        throw new NotImplementedException();
     }
 }

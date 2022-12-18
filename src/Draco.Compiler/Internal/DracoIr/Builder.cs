@@ -15,14 +15,25 @@ internal sealed class AssemblyBuilder
     /// <summary>
     /// The procedures within this assembly.
     /// </summary>
-    public IDictionary<string, ProcBuilder> Procedures { get; set; } = new Dictionary<string, ProcBuilder>();
+    public IList<ProcBuilder> Procedures { get; set; } = new List<ProcBuilder>();
+
+    /// <summary>
+    /// Adds a procedure to this assembly.
+    /// </summary>
+    /// <returns>The builder to the procedure.</returns>
+    public ProcBuilder AddProc()
+    {
+        var builder = new ProcBuilder();
+        this.Procedures.Add(builder);
+        return builder;
+    }
 
     /// <summary>
     /// Builds the <see cref="Assembly"/> from this builder.
     /// </summary>
     /// <returns>The built <see cref="Assembly"/>.</returns>
     public Assembly Build() => new(
-        Procs: this.Procedures.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Build()));
+        Procs: this.Procedures.ToImmutableDictionary(b => b.Name, b => b.Build()));
 }
 
 /// <summary>

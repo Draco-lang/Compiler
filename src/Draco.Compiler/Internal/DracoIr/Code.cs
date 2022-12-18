@@ -41,12 +41,12 @@ internal sealed record class BasicBlock(
 internal abstract record class Instr
 {
     /// <summary>
-    /// Adds together the two operands.
+    /// Adds together the two integer operands.
     /// </summary>
     /// <param name="Target">The target register to store in.</param>
     /// <param name="Left">The left operand.</param>
     /// <param name="Right">The right operand.</param>
-    public sealed record class Add(Value.Reg Target, Value Left, Value Right) : Instr;
+    public sealed record class AddInt(Value.Reg Target, Value Left, Value Right) : Instr;
 }
 
 /// <summary>

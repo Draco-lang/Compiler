@@ -54,6 +54,15 @@ internal abstract record class Instr
 /// </summary>
 internal abstract record class Type
 {
+    public static readonly Builtin Void = new(typeof(void));
+    public static readonly Builtin Int32 = new(typeof(int));
+    public static readonly Builtin Bool = new(typeof(bool));
+
+    /// <summary>
+    /// A builtin type.
+    /// </summary>
+    /// <param name="Type">The built-in <see cref="System.Type"/>.</param>
+    public sealed record class Builtin(System.Type Type) : Type;
 }
 
 /// <summary>

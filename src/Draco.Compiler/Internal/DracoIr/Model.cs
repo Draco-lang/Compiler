@@ -7,161 +7,106 @@ using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.DracoIr;
 
-/// <summary>
-/// A unit of compilation resulting in a single binary.
-/// </summary>
-/// <param name="Procs">The procedures in this <see cref="Assembly"/>.</param>
-internal sealed record class Assembly(
-    ImmutableDictionary<string, Proc> Procs);
+// Interfaces //////////////////////////////////////////////////////////////////
 
 /// <summary>
-/// A single procedure defined.
+/// Interface for a compilation unit.
 /// </summary>
-/// <param name="Name">The name of the procedure.</param>
-/// <param name="Params">The procedure parameters.</param>
-/// <param name="ReturnType">The return type of the procedure.</param>
-/// <param name="BasicBlocks">The basic blocks in this procedure.</param>
-internal sealed record class Proc(
-    string Name,
-    ImmutableArray<Value.Param> Params,
-    Type ReturnType,
-    ImmutableArray<BasicBlock> BasicBlocks);
-
-/// <summary>
-/// A single continuous block of instructions that can only be jumped into at the very beginning and only has
-/// branching at the very end.
-/// </summary>
-/// <param name="Instructions">The instructions within this block.</param>
-internal sealed record class BasicBlock(
-    ImmutableArray<Instr> Instructions);
-
-/// <summary>
-/// The base class for all instructions.
-/// </summary>
-internal abstract partial record class Instr
+internal interface IReadOnlyAssembly
 {
     /// <summary>
-    /// True, if this is some kind of jump instruction.
+    /// The name of this assembly.
     /// </summary>
-    public virtual bool IsJump => false;
-}
-
-internal abstract partial record class Instr
-{
-    /// <summary>
-    /// Returns from the procedure.
-    /// </summary>
-    /// <param name="Value">The value to return.</param>
-    public sealed record class Ret(Value Value) : Instr
-    {
-        public override bool IsJump => true;
-    }
+    public string Name { get; }
 
     /// <summary>
-    /// Unconditionally jumps to the given target.
+    /// The procedures defined in this assembly.
     /// </summary>
-    /// <param name="Target">The target to jump to.</param>
-    public sealed record class Jmp(BasicBlock Target) : Instr
-    {
-        public override bool IsJump => true;
-    }
-
-    /// <summary>
-    /// Conditionally jumps to one target or the other.
-    /// </summary>
-    /// <param name="Condition">Condition to base the jump on.</param>
-    /// <param name="TrueTarget">The target to jump to if <paramref name="Condition"/> is true.</param>
-    /// <param name="FalseTarget">The target to jump to if <paramref name="Condition"/> is false.</param>
-    public sealed record class JmpIf(
-        Value Condition,
-        BasicBlock TrueTarget,
-        BasicBlock FalseTarget) : Instr
-    {
-        public override bool IsJump => true;
-    }
-
-    /// <summary>
-    /// Adds together the two integer operands.
-    /// </summary>
-    /// <param name="Target">The target register to store the result in.</param>
-    /// <param name="Left">The left operand.</param>
-    /// <param name="Right">The right operand.</param>
-    public sealed record class AddInt(Value.Reg Target, Value Left, Value Right) : Instr;
-
-    /// <summary>
-    /// Less-than compares the two integer operands.
-    /// </summary>
-    /// <param name="Target">The target register to store the result in.</param>
-    /// <param name="Left">The left operand.</param>
-    /// <param name="Right">The right operand.</param>
-    public sealed record class LessInt(Value.Reg Target, Value Left, Value Right) : Instr;
-
-    /// <summary>
-    /// Less-or-equal compares the two integer operands.
-    /// </summary>
-    /// <param name="Target">The target register to store the result in.</param>
-    /// <param name="Left">The left operand.</param>
-    /// <param name="Right">The right operand.</param>
-    public sealed record class LessEqualInt(Value.Reg Target, Value Left, Value Right) : Instr;
-
-    /// <summary>
-    /// Equality compares the two integer operands.
-    /// </summary>
-    /// <param name="Target">The target register to store the result in.</param>
-    /// <param name="Left">The left operand.</param>
-    /// <param name="Right">The right operand.</param>
-    public sealed record class EqualInt(Value.Reg Target, Value Left, Value Right) : Instr;
-}
-
-// Constants
-internal abstract partial record class Type
-{
-    public static readonly Builtin Void = new(typeof(void));
-    public static readonly Builtin Int32 = new(typeof(int));
-    public static readonly Builtin Bool = new(typeof(bool));
+    public IReadOnlyDictionary<string, IReadOnlyProcecude> Procedures { get; }
 }
 
 /// <summary>
-/// The base of all IR types.
+/// Interface for a single procedure.
 /// </summary>
-internal abstract partial record class Type
+internal interface IReadOnlyProcecude
 {
     /// <summary>
-    /// A builtin type.
+    /// The name of this procedure.
     /// </summary>
-    /// <param name="Type">The built-in <see cref="System.Type"/>.</param>
-    public sealed record class Builtin(System.Type Type) : Type;
+    public string Name { get; }
+
+    /// <summary>
+    /// The entry-point of the block.
+    /// </summary>
+    public IReadOnlyBasicBlock Entry { get; }
 }
 
 /// <summary>
-/// The base of all IR values that can be used as operands.
+/// The interface for a basic block.
 /// </summary>
-internal abstract partial record class Value
+internal interface IReadOnlyBasicBlock
 {
     /// <summary>
-    /// The type of the value.
+    /// The instructions in this block.
     /// </summary>
-    public abstract Type Type { get; }
+    public IReadOnlyList<IReadOnlyInstruction> Instructions { get; }
 }
 
-// Implementations
-internal abstract partial record class Value
+/// <summary>
+/// Interface for a single instruction.
+/// </summary>
+internal interface IReadOnlyInstruction
 {
     /// <summary>
-    /// Represents a procedure parameter.
+    /// The kind of this instruction.
     /// </summary>
-    /// <param name="Type">The type of the parameter.</param>
-    public sealed record class Param(Type Type) : Value
-    {
-        public override Type Type { get; } = Type;
-    }
+    public InstructionKind Kind { get; }
 
     /// <summary>
-    /// A single virtual register that can be only assigned once.
+    /// True, if this is a branching instruction.
     /// </summary>
-    /// <param name="Type">The type of the value the register can store.</param>
-    public sealed record class Reg(Type Type) : Value
-    {
-        public override Type Type { get; } = Type;
-    }
+    public bool IsBranch { get; }
+
+    /// <summary>
+    /// Retrieves an operand of this instruction.
+    /// </summary>
+    /// <typeparam name="T">The type of the operand.</typeparam>
+    /// <param name="index">The indef of the operand.</param>
+    /// <returns>The operand at index <paramref name="index"/>.</returns>
+    public T OperandAt<T>(int index);
 }
+
+/// <summary>
+/// The different kinds of instructions.
+/// </summary>
+internal enum InstructionKind
+{
+    /// <summary>
+    /// No operation.
+    /// </summary>
+    Nop,
+
+    /// <summary>
+    /// Return from a procedure.
+    /// </summary>
+    Ret,
+
+    /// <summary>
+    /// Unconditional jump.
+    /// </summary>
+    Jmp,
+
+    /// <summary>
+    /// Conditional jump.
+    /// </summary>
+    JmpIf,
+
+    /// <summary>
+    /// Integer addition.
+    /// </summary>
+    AddInt,
+}
+
+// Implementations /////////////////////////////////////////////////////////////
+
+// TODO

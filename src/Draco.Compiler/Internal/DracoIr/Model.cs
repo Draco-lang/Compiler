@@ -186,34 +186,34 @@ internal abstract partial class Instruction
 
         public override T GetOperandAt<T>(int index)
         {
-            if (index == 0)
+            switch (index)
             {
+            case 0:
                 if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
                 return (T)(object)this.operand1!;
-            }
-            if (index == 1)
-            {
+            case 1:
                 if (typeof(T) != typeof(T2)) throw new InvalidOperationException("invalid operand type");
                 return (T)(object)this.operand2!;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
-            throw new ArgumentOutOfRangeException(nameof(index));
         }
 
         public override void SetOperandAt<T>(int index, T value)
         {
-            if (index == 0)
+            switch (index)
             {
+            case 0:
                 if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
                 this.operand1 = (T1)(object)value!;
-                return;
-            }
-            if (index == 1)
-            {
+                break;
+            case 1:
                 if (typeof(T) != typeof(T2)) throw new InvalidOperationException("invalid operand type");
                 this.operand2 = (T2)(object)value!;
-                return;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
-            throw new ArgumentOutOfRangeException(nameof(index));
         }
     }
 
@@ -233,45 +233,41 @@ internal abstract partial class Instruction
 
         public override T GetOperandAt<T>(int index)
         {
-            if (index == 0)
+            switch (index)
             {
+            case 0:
                 if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
                 return (T)(object)this.operand1!;
-            }
-            if (index == 1)
-            {
+            case 1:
                 if (typeof(T) != typeof(T2)) throw new InvalidOperationException("invalid operand type");
                 return (T)(object)this.operand2!;
-            }
-            if (index == 2)
-            {
+            case 2:
                 if (typeof(T) != typeof(T3)) throw new InvalidOperationException("invalid operand type");
                 return (T)(object)this.operand3!;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
-            throw new ArgumentOutOfRangeException(nameof(index));
         }
 
         public override void SetOperandAt<T>(int index, T value)
         {
-            if (index == 0)
+            switch (index)
             {
+            case 0:
                 if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
                 this.operand1 = (T1)(object)value!;
-                return;
-            }
-            if (index == 1)
-            {
+                break;
+            case 1:
                 if (typeof(T) != typeof(T2)) throw new InvalidOperationException("invalid operand type");
                 this.operand2 = (T2)(object)value!;
-                return;
-            }
-            if (index == 2)
-            {
+                break;
+            case 2:
                 if (typeof(T) != typeof(T3)) throw new InvalidOperationException("invalid operand type");
                 this.operand3 = (T3)(object)value!;
-                return;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
-            throw new ArgumentOutOfRangeException(nameof(index));
         }
     }
 }

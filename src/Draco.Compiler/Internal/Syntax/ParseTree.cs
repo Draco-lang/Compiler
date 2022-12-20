@@ -1,12 +1,7 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -21,7 +16,7 @@ internal abstract partial record class ParseTree
     public abstract IEnumerable<ParseTree> Children { get; }
 
     internal RelativeRange Range => new(Offset: 0, Width: this.Width);
-    internal Location Location => new Location.OnTree(Range: this.Range);
+    internal Location Location => new Location.RelativeToTree(Range: this.Range);
 
     /// <summary>
     /// The diagnostics attached to this tree node.
@@ -85,6 +80,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in declaration context.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Decl
@@ -143,6 +139,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in function body context.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : FuncBody
@@ -171,7 +168,21 @@ internal partial record class ParseTree
     /// </summary>
     public abstract partial record class TypeExpr : ParseTree
     {
-        // This is the only kind of type expression for now
+        /// <summary>
+        /// Unexpected input in type context.
+        /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
+        public sealed partial record class Unexpected(
+            ImmutableArray<ParseTree> Elements,
+            ImmutableArray<Diagnostic> Diagnostics) : TypeExpr
+        {
+            /// <inheritdoc/>
+            internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+        }
+
+        /// <summary>
+        /// A reference to a type by name.
+        /// </summary>
         public sealed partial record class Name(
             Token Identifier) : TypeExpr;
     }
@@ -191,6 +202,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in statement context.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Stmt
@@ -221,6 +233,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected input in expression context.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Expr
@@ -372,6 +385,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Unexpected tokens in a string.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
             ImmutableArray<ParseTree> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
@@ -383,6 +397,7 @@ internal partial record class ParseTree
         /// <summary>
         /// Content part of a string literal.
         /// </summary>
+        [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Content(
             Token Value,
             int Cutoff,

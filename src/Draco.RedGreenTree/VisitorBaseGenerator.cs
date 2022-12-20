@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Text;
+using Draco.RedGreenTree.Attributes;
 using Microsoft.CodeAnalysis;
 
 namespace Draco.RedGreenTree;
@@ -238,7 +237,9 @@ public sealed class VisitorBaseGenerator : GeneratorBase
 
     private bool IsVisitableProperty(IPropertySymbol prop)
     {
+        if (prop.IsStatic) return false;
         if (prop.Type is not INamedTypeSymbol propType) return false;
+        if (HasIgnoreFlag(prop, IgnoreFlags.VisitorVisit)) return false;
 
         // Don't leak types
         if ((int)prop.DeclaredAccessibility < (int)this.RedRootType.DeclaredAccessibility) return false;

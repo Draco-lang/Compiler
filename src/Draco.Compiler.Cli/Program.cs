@@ -2,12 +2,9 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Cli;
 
@@ -39,14 +36,14 @@ internal class Program
             fileArgument,
             emitCSharpOutput,
         };
-        generateCSCommand.SetHandler((file, emitCS) => GenerateCSharp(file, emitCS), fileArgument, emitCSharpOutput);
+        generateCSCommand.SetHandler(GenerateCSharp, fileArgument, emitCSharpOutput);
 
         var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
         {
             fileArgument,
             outputOption,
         };
-        generateExeCommand.SetHandler((input, output) => GenerateExe(input, output), fileArgument, outputOption);
+        generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption);
 
         var rootCommand = new RootCommand("CLI for the draco compiler");
         rootCommand.AddCommand(runCommand);

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Internal.Syntax;
 using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -63,7 +62,7 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     /// <summary>
     /// The location of this node.
     /// </summary>
-    public Location Location => new Location.Tree(this.Range);
+    public Location Location => new Location.InFile(this.Range);
 
     /// <summary>
     /// All <see cref="Token"/>s that this subtree consists of.
@@ -96,8 +95,38 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     /// Formats the <see cref="ParseTree"/>.
     /// </summary>
     /// <returns>The formatted <see cref="ParseTree"/>.</returns>
-    public ParseTree Format() =>
-        ToRed(null, new ParseTreeFormatter(ParseTreeFormatterSettings.Default).Format(this.Green));
+    public ParseTree Format() => ToRed(
+        parent: null,
+        green: new Internal.Syntax.ParseTreeFormatter(Internal.Syntax.ParseTreeFormatterSettings.Default).Format(this.Green));
+}
+
+// Traverasal
+public abstract partial class ParseTree
+{
+    /// <summary>
+    /// Traverses this subtree in an in-order fashion, meaning that the order is root, left, right recursively.
+    /// </summary>
+    /// <returns>The <see cref="IEnumerable{ParseTree}"/> that gives back nodes in order.</returns>
+    public IEnumerable<ParseTree> InOrderTraverse()
+    {
+        yield return this;
+        foreach (var child in this.Children)
+        {
+            foreach (var e in child.InOrderTraverse()) yield return e;
+        }
+    }
+
+    /// <summary>
+    /// Searches for a child node of type <typeparamref name="TNode"/>.
+    /// </summary>
+    /// <typeparam name="TNode">The type of child to search for.</typeparam>
+    /// <param name="index">The index of the child to search for.</param>
+    /// <returns>The <paramref name="index"/>th child of type <typeparamref name="TNode"/>.</returns>
+    public TNode FindInChildren<TNode>(int index = 0)
+        where TNode : ParseTree => this
+        .InOrderTraverse()
+        .OfType<TNode>()
+        .ElementAt(index);
 }
 
 public abstract partial class ParseTree
@@ -105,7 +134,7 @@ public abstract partial class ParseTree
     internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range)
     {
         var text = this.ToString().AsSpan();
-        var start = StepPositionByText(this.Range.Start, text.Slice(0, range.Offset));
+        var start = StepPositionByText(this.Range.Start, text[..range.Offset]);
         var minWidth = Math.Min(range.Width, text.Length);
         var end = StepPositionByText(start, text.Slice(range.Offset, minWidth));
         return new(start, end);
@@ -125,7 +154,7 @@ public abstract partial class ParseTree
         var sb = new StringBuilder();
         // We simply print the text of all tokens except the first and last ones
         // For the first, we ignore leading trivia, for the last we ignore trailing trivia
-        var lastTrailingTrivia = ImmutableArray<Token>.Empty;
+        var lastTrailingTrivia = ImmutableArray<Trivia>.Empty;
         using var tokenEnumerator = this.Tokens.GetEnumerator();
         // The first token just gets it's content printed
         // That ignores the leading trivia, trailing will only be printed if there are following tokens
@@ -289,8 +318,11 @@ public abstract partial class ParseTree
     // TODO: Can we reduce boilerplate?
 
     [return: NotNullIfNotNull(nameof(token))]
-    private static Token? ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Token? token) =>
+    internal static Token? ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Token? token) =>
         token is null ? null : new(parent, token);
+
+    private static Trivia ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Trivia trivia) =>
+        new(parent, trivia);
 
     private static IEnumerable<ParseTree> ToRed(ParseTree? parent, IEnumerable<Internal.Syntax.ParseTree> elements) =>
         elements.Select(e => ToRed(parent, e));
@@ -299,6 +331,9 @@ public abstract partial class ParseTree
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
     private static ImmutableArray<Token> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Token> elements) =>
+        elements.Select(e => ToRed(parent, e)).ToImmutableArray();
+
+    private static ImmutableArray<Trivia> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Trivia> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
     private static ImmutableArray<Decl> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Decl> elements) =>

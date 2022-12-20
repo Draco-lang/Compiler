@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
 
@@ -101,5 +97,11 @@ internal abstract partial class ParseTreeTransformerBase
     {
         changed = false;
         return token;
+    }
+
+    public virtual Trivia TransformTrivia(Trivia trivia, out bool changed)
+    {
+        changed = false;
+        return trivia;
     }
 }

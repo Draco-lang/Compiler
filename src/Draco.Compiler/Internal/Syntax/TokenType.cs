@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -12,16 +8,6 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal static class TokenTypeExtensions
 {
-    /// <summary>
-    /// Checks, if <paramref name="tokenType"/> counts as a trivia category.
-    /// </summary>
-    /// <param name="tokenType">The <see cref="TokenType"/> to check.</param>
-    /// <returns>True, if <paramref name="tokenType"/> is a trivia category.</returns>
-    public static bool IsTrivia(this TokenType tokenType) =>
-           tokenType == TokenType.Whitespace
-        || tokenType == TokenType.Newline
-        || tokenType == TokenType.LineComment;
-
     /// <summary>
     /// Attempts to retrieve the textual representation of a token with a type <paramref name="tokenType"/>.
     /// </summary>
@@ -97,4 +83,15 @@ internal static class TokenTypeExtensions
         TokenType.EndOfInput => "end of file",
         _ => tokenType.GetTokenTextOrNull() ?? tokenType.ToString().ToLower(),
     };
+
+    /// <summary>
+    /// Checks if the given <paramref name="tokenType"/> is a compound assignment operator.
+    /// </summary>
+    /// <param name="tokenType">The <see cref="TokenType"/> to check.</param>
+    /// <returns>True, if <paramref name="tokenType"/> is a compound assignment operator.</returns>
+    public static bool IsCompoundAssignmentOperator(this TokenType tokenType) =>
+           tokenType == TokenType.PlusAssign
+        || tokenType == TokenType.MinusAssign
+        || tokenType == TokenType.StarAssign
+        || tokenType == TokenType.SlashAssign;
 }

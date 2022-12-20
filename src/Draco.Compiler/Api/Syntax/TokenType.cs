@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Draco.Compiler.Api.Syntax;
 
 /// <summary>
@@ -21,21 +14,6 @@ public enum TokenType
     /// Any unknown character.
     /// </summary>
     Unknown,
-
-    /// <summary>
-    /// Any horizontal whitespace.
-    /// </summary>
-    Whitespace,
-
-    /// <summary>
-    /// Any newline sequence.
-    /// </summary>
-    Newline,
-
-    /// <summary>
-    /// Single line comments.
-    /// </summary>
-    LineComment,
 
     /// <summary>
     /// Non-keyword names.

@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
 using static Draco.Compiler.Internal.Syntax.ParseTree;
@@ -158,7 +152,7 @@ public sealed class LexerTests
         Assert.Equal(TokenType.EndOfInput, token.Type);
         Assert.Equal(string.Empty, token.Text);
         Assert.Single(token.LeadingTrivia);
-        Assert.Equal(TokenType.Newline, token.LeadingTrivia[0].Type);
+        Assert.Equal(TriviaType.Newline, token.LeadingTrivia[0].Type);
         Assert.Equal("\n", token.LeadingTrivia[0].Text);
         Assert.Empty(token.TrailingTrivia);
         Assert.Empty(token.Diagnostics);
@@ -397,7 +391,7 @@ public sealed class LexerTests
         Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         Assert.Single(token.TrailingTrivia);
-        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Equal(TriviaType.Newline, token.TrailingTrivia[0].Type);
         Assert.Empty(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
@@ -451,7 +445,7 @@ public sealed class LexerTests
         Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         AssertTrailingTrivia(token, "\n");
-        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Equal(TriviaType.Newline, token.TrailingTrivia[0].Type);
         Assert.Empty(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
@@ -485,7 +479,7 @@ public sealed class LexerTests
         Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         AssertTrailingTrivia(token, "\n");
-        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Equal(TriviaType.Newline, token.TrailingTrivia[0].Type);
         Assert.Empty(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
@@ -594,7 +588,7 @@ public sealed class LexerTests
         Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         Assert.Single(token.TrailingTrivia);
-        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Equal(TriviaType.Newline, token.TrailingTrivia[0].Type);
         Assert.Empty(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
@@ -650,7 +644,7 @@ public sealed class LexerTests
         Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         Assert.Single(token.TrailingTrivia);
-        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Equal(TriviaType.Newline, token.TrailingTrivia[0].Type);
         Assert.Empty(token.Diagnostics);
 
         AssertNextToken(tokens, out token);
@@ -706,7 +700,7 @@ public sealed class LexerTests
         Assert.Equal($"{ext}{quotes}", token.Text);
         Assert.Empty(token.LeadingTrivia);
         Assert.Single(token.TrailingTrivia);
-        Assert.Equal(TokenType.Newline, token.TrailingTrivia[0].Type);
+        Assert.Equal(TriviaType.Newline, token.TrailingTrivia[0].Type);
         Assert.Empty(token.Diagnostics);
 
         AssertNextToken(tokens, out token);

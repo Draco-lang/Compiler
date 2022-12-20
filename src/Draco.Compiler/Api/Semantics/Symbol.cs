@@ -1,13 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
-using InternalSymbol = Draco.Compiler.Internal.Semantics.Symbol;
+using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 
 namespace Draco.Compiler.Api.Semantics;
+
+// Interfaces //////////////////////////////////////////////////////////////////
 
 /// <summary>
 /// Represents a symbol in the language.
@@ -36,31 +35,129 @@ public interface ISymbol : IEquatable<ISymbol>
 }
 
 /// <summary>
-/// Implementation for the symbol interfaces.
+/// Represents a variable symbol.
 /// </summary>
-internal sealed class Symbol : ISymbol
+public interface IVariableSymbol : ISymbol
 {
-    public string Name => this.InternalSymbol.Name;
-    public bool IsError => this.InternalSymbol.IsError;
-    public Location? Definition => this.InternalSymbol.Definition?.Location;
-    private ImmutableArray<Diagnostic>? diagnostics;
-    public ImmutableArray<Diagnostic> Diagnostics =>
-        this.diagnostics ??= this.InternalSymbol.Diagnostics
-            .Select(diag => diag.ToApiDiagnostic(null))
-            .ToImmutableArray();
+    /// <summary>
+    /// True, if this is a mutable variable.
+    /// </summary>
+    public bool IsMutable { get; }
+}
 
-    internal InternalSymbol InternalSymbol { get; }
+/// <summary>
+/// Represents a label symbol.
+/// </summary>
+public interface ILabelSymbol : ISymbol
+{
+}
 
-    public Symbol(InternalSymbol internalSymbol)
+/// <summary>
+/// Represents a parameter symbol.
+/// </summary>
+public interface IParameterSymbol : IVariableSymbol
+{
+}
+
+/// <summary>
+/// Represents a parameter symbol.
+/// </summary>
+public interface IFunctionSymbol : ISymbol
+{
+}
+
+/// <summary>
+/// Represents a type symbol.
+/// </summary>
+public interface ITypeSymbol : ISymbol
+{
+}
+
+// Proxy classes ///////////////////////////////////////////////////////////////
+
+internal abstract class SymbolBase : ISymbol
+{
+    public IInternalSymbol Symbol { get; }
+
+    public string Name => this.Symbol.Name;
+    public bool IsError => this.Symbol.IsError;
+    public ImmutableArray<Diagnostic> Diagnostics => this.Symbol.Diagnostics
+        .Select(d => d.ToApiDiagnostic(null))
+        .ToImmutableArray();
+
+    public Location? Definition => this.Symbol.Definition?.Location;
+
+    public SymbolBase(IInternalSymbol symbol)
     {
-        this.InternalSymbol = internalSymbol;
+        this.Symbol = symbol;
     }
 
-    public override bool Equals(object? obj) => this.Equals(obj as ISymbol);
+    // TODO
+    public bool Equals(ISymbol? other) => throw new NotImplementedException();
 
-    public bool Equals(ISymbol? other) =>
-           other is Symbol otherSym
-        && object.Equals(this.InternalSymbol, otherSym.InternalSymbol);
+    // TODO
+    public override int GetHashCode() => throw new NotImplementedException();
+}
 
-    public override int GetHashCode() => this.InternalSymbol.GetHashCode();
+internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
+    where TInternalSymbol : IInternalSymbol
+{
+    public new TInternalSymbol Symbol => (TInternalSymbol)base.Symbol;
+
+    protected SymbolBase(TInternalSymbol symbol)
+        : base(symbol)
+    {
+    }
+}
+
+internal sealed class ErrorSymbol : SymbolBase<IInternalSymbol>
+{
+    public ErrorSymbol(IInternalSymbol symbol)
+        : base(symbol)
+    {
+    }
+}
+
+internal sealed class VariableSymbol : SymbolBase<IInternalSymbol.IVariable>, IVariableSymbol
+{
+    public bool IsMutable => this.Symbol.IsMutable;
+
+    public VariableSymbol(IInternalSymbol.IVariable variable)
+        : base(variable)
+    {
+    }
+}
+
+internal sealed class LabelSymbol : SymbolBase<IInternalSymbol.ILabel>, ILabelSymbol
+{
+    public LabelSymbol(IInternalSymbol.ILabel label)
+        : base(label)
+    {
+    }
+}
+
+internal sealed class ParameterSymbol : SymbolBase<IInternalSymbol.IParameter>, IParameterSymbol
+{
+    public bool IsMutable => this.Symbol.IsMutable;
+
+    public ParameterSymbol(IInternalSymbol.IParameter parameter)
+        : base(parameter)
+    {
+    }
+}
+
+internal sealed class FunctionSymbol : SymbolBase<IInternalSymbol.IFunction>, IFunctionSymbol
+{
+    public FunctionSymbol(IInternalSymbol.IFunction function)
+        : base(function)
+    {
+    }
+}
+
+internal sealed class TypeSymbol : SymbolBase<IInternalSymbol.ITypeDefinition>, ITypeSymbol
+{
+    public TypeSymbol(IInternalSymbol.ITypeDefinition typeDef)
+        : base(typeDef)
+    {
+    }
 }

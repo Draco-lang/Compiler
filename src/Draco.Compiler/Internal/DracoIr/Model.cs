@@ -68,6 +68,11 @@ internal interface IReadOnlyInstruction
     public bool IsBranch { get; }
 
     /// <summary>
+    /// The number of operands.
+    /// </summary>
+    public int OperandCount { get; }
+
+    /// <summary>
     /// Retrieves an operand of this instruction.
     /// </summary>
     /// <typeparam name="T">The type of the operand.</typeparam>
@@ -110,6 +115,24 @@ internal enum InstructionKind
 // Implementations /////////////////////////////////////////////////////////////
 
 /// <summary>
+/// Base for all values.
+/// </summary>
+internal abstract record class Value
+{
+    /// <summary>
+    /// A register value.
+    /// </summary>
+    public sealed record class Register : Value;
+}
+
+/// <summary>
+/// Base for all types.
+/// </summary>
+internal abstract record class Type
+{
+}
+
+/// <summary>
 /// A base class for instructions.
 /// </summary>
 internal abstract partial class Instruction : IReadOnlyInstruction
@@ -121,8 +144,9 @@ internal abstract partial class Instruction : IReadOnlyInstruction
         InstructionKind.JmpIf,
     };
 
-    public InstructionKind Kind { get; set; }
+    public InstructionKind Kind { get; }
     public bool IsBranch => branchInstructions.Contains(this.Kind);
+    public abstract int OperandCount { get; }
 
     public Instruction(InstructionKind kind)
     {
@@ -133,11 +157,28 @@ internal abstract partial class Instruction : IReadOnlyInstruction
     public abstract void SetOperandAt<T>(int index, T value);
 }
 
+// Factory
+internal abstract partial class Instruction
+{
+    public static Instruction Nop() =>
+        new Instruction0(InstructionKind.Nop);
+    public static Instruction Ret(Value value) =>
+        new Instruction1<Value>(InstructionKind.Ret, value);
+    public static Instruction Jmp(IReadOnlyBasicBlock bb) =>
+        new Instruction1<IReadOnlyBasicBlock>(InstructionKind.Jmp, bb);
+    public static Instruction JmpIf(Value condition, IReadOnlyBasicBlock then, IReadOnlyBasicBlock els) =>
+        new Instruction3<Value, IReadOnlyBasicBlock, IReadOnlyBasicBlock>(InstructionKind.JmpIf, condition, then, els);
+    public static Instruction AddInt(Value.Register target, Value a, Value b) =>
+        new Instruction3<Value.Register, Value, Value>(InstructionKind.AddInt, target, a, b);
+}
+
 // Implementations
 internal abstract partial class Instruction
 {
     private sealed class Instruction0 : Instruction
     {
+        public override int OperandCount => 0;
+
         public Instruction0(InstructionKind kind)
             : base(kind)
         {
@@ -149,6 +190,8 @@ internal abstract partial class Instruction
 
     private sealed class Instruction1<T1> : Instruction
     {
+        public override int OperandCount => 1;
+
         private T1 operand1;
 
         public Instruction1(InstructionKind kind, T1 operand1)
@@ -160,20 +203,22 @@ internal abstract partial class Instruction
         public override T GetOperandAt<T>(int index)
         {
             if (index != 0) throw new ArgumentOutOfRangeException(nameof(index));
-            if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
-            return (T)(object)this.operand1!;
+            if (this.operand1 is not T op1) throw new InvalidOperationException("invalid operand type");
+            return op1;
         }
 
         public override void SetOperandAt<T>(int index, T value)
         {
             if (index != 0) throw new ArgumentOutOfRangeException(nameof(index));
-            if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
+            if (this.operand1 is not T) throw new InvalidOperationException("invalid operand type");
             this.operand1 = (T1)(object)value!;
         }
     }
 
     private sealed class Instruction2<T1, T2> : Instruction
     {
+        public override int OperandCount => 2;
+
         private T1 operand1;
         private T2 operand2;
 
@@ -189,11 +234,11 @@ internal abstract partial class Instruction
             switch (index)
             {
             case 0:
-                if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
-                return (T)(object)this.operand1!;
+                if (this.operand1 is not T op1) throw new InvalidOperationException("invalid operand type");
+                return op1;
             case 1:
-                if (typeof(T) != typeof(T2)) throw new InvalidOperationException("invalid operand type");
-                return (T)(object)this.operand2!;
+                if (this.operand2 is not T op2) throw new InvalidOperationException("invalid operand type");
+                return op2;
             default:
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
@@ -204,11 +249,11 @@ internal abstract partial class Instruction
             switch (index)
             {
             case 0:
-                if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
+                if (this.operand1 is not T) throw new InvalidOperationException("invalid operand type");
                 this.operand1 = (T1)(object)value!;
                 break;
             case 1:
-                if (typeof(T) != typeof(T2)) throw new InvalidOperationException("invalid operand type");
+                if (this.operand2 is not T) throw new InvalidOperationException("invalid operand type");
                 this.operand2 = (T2)(object)value!;
                 break;
             default:
@@ -219,6 +264,8 @@ internal abstract partial class Instruction
 
     private sealed class Instruction3<T1, T2, T3> : Instruction
     {
+        public override int OperandCount => 3;
+
         private T1 operand1;
         private T2 operand2;
         private T3 operand3;
@@ -236,14 +283,14 @@ internal abstract partial class Instruction
             switch (index)
             {
             case 0:
-                if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
-                return (T)(object)this.operand1!;
+                if (this.operand1 is not T op1) throw new InvalidOperationException("invalid operand type");
+                return op1;
             case 1:
-                if (typeof(T) != typeof(T2)) throw new InvalidOperationException("invalid operand type");
-                return (T)(object)this.operand2!;
+                if (this.operand2 is not T op2) throw new InvalidOperationException("invalid operand type");
+                return op2;
             case 2:
-                if (typeof(T) != typeof(T3)) throw new InvalidOperationException("invalid operand type");
-                return (T)(object)this.operand3!;
+                if (this.operand3 is not T op3) throw new InvalidOperationException("invalid operand type");
+                return op3;
             default:
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
@@ -254,15 +301,15 @@ internal abstract partial class Instruction
             switch (index)
             {
             case 0:
-                if (typeof(T) != typeof(T1)) throw new InvalidOperationException("invalid operand type");
+                if (this.operand1 is not T) throw new InvalidOperationException("invalid operand type");
                 this.operand1 = (T1)(object)value!;
                 break;
             case 1:
-                if (typeof(T) != typeof(T2)) throw new InvalidOperationException("invalid operand type");
+                if (this.operand2 is not T) throw new InvalidOperationException("invalid operand type");
                 this.operand2 = (T2)(object)value!;
                 break;
             case 2:
-                if (typeof(T) != typeof(T3)) throw new InvalidOperationException("invalid operand type");
+                if (this.operand3 is not T) throw new InvalidOperationException("invalid operand type");
                 this.operand3 = (T3)(object)value!;
                 break;
             default:

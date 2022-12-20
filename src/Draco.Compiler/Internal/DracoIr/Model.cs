@@ -115,6 +115,46 @@ internal enum InstructionKind
 // Implementations /////////////////////////////////////////////////////////////
 
 /// <summary>
+/// An <see cref="IReadOnlyAssembly"/> implementation.
+/// </summary>
+internal sealed class Assembly : IReadOnlyAssembly
+{
+    public string Name { get; set; } = "assembly";
+
+    public IDictionary<string, Procedure> Procedures { get; } = new Dictionary<string, Procedure>();
+    // TODO: We need a projection wrapper type
+    IReadOnlyDictionary<string, IReadOnlyProcecude> IReadOnlyAssembly.Procedures => throw new NotImplementedException();
+
+    public Assembly(string name)
+    {
+        this.Name = name;
+    }
+}
+
+/// <summary>
+/// An <see cref="IReadOnlyProcecude"/> implementation.
+/// </summary>
+internal sealed class Procedure : IReadOnlyProcecude
+{
+    public string Name { get; }
+
+    public BasicBlock Entry { get; set; } = new();
+    IReadOnlyBasicBlock IReadOnlyProcecude.Entry => this.Entry;
+
+    public Procedure(string name)
+    {
+        this.Name = name;
+    }
+}
+
+internal sealed class BasicBlock : IReadOnlyBasicBlock
+{
+    public IList<Instruction> Instructions { get; } = new List<Instruction>();
+    // TODO: We need a projection wrapper type
+    IReadOnlyList<IReadOnlyInstruction> IReadOnlyBasicBlock.Instructions => throw new NotImplementedException();
+}
+
+/// <summary>
 /// Base for all values.
 /// </summary>
 internal abstract record class Value

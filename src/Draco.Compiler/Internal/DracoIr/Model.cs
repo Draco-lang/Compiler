@@ -131,7 +131,7 @@ internal enum InstructionKind
 /// </summary>
 internal sealed class Assembly : IReadOnlyAssembly
 {
-    public string Name { get; set; } = "assembly";
+    public string Name { get; set; }
 
     public IDictionary<string, Procedure> Procedures { get; } = new Dictionary<string, Procedure>();
     IReadOnlyDictionary<string, IReadOnlyProcecude> IReadOnlyAssembly.Procedures =>
@@ -142,6 +142,13 @@ internal sealed class Assembly : IReadOnlyAssembly
     public Assembly(string name)
     {
         this.Name = name;
+    }
+
+    public Procedure DefineProcedure(string name)
+    {
+        var proc = new Procedure(name);
+        this.Procedures.Add(name, proc);
+        return proc;
     }
 
     public override string ToString() => $"""
@@ -198,7 +205,7 @@ internal sealed class BasicBlock : IReadOnlyBasicBlock
     private readonly List<Instruction> instructions = new();
 
     public string ToReferenceString() => $"bb_{this.id}";
-    public override string ToString() => $"{this.ToReferenceString()}:{string.Join("\n  ", this.instructions)}";
+    public override string ToString() => $"label {this.ToReferenceString()}:{string.Join("\n  ", this.instructions)}";
 }
 
 /// <summary>

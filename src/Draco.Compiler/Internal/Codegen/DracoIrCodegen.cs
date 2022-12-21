@@ -39,7 +39,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         if (!this.procedures.TryGetValue(function, out var proc))
         {
-            proc = new(function.Name);
+            proc = this.assembly.DefineProcedure(function.Name);
             this.procedures.Add(function, proc);
         }
         return proc;

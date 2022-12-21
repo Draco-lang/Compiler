@@ -7,6 +7,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
+using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
@@ -103,6 +104,11 @@ public sealed class Compilation
         ast = AstLowering.Lower(this.db, ast);
         var codegen = new CSharpCodegen(csStream);
         codegen.Generate(ast);
+
+        // TODO: Temporary
+        var asm = new Assembly(this.AssemblyName ?? "output");
+        DracoIrCodegen.Generate(asm, ast);
+        var ir = asm.ToString();
 
         return new(
             Success: true,

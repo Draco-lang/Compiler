@@ -13,6 +13,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class DracoIrCodegen : AstVisitorBase<Value?>
 {
+#if false
     private readonly AssemblyBuilder assemblyBuilder;
     private ProcBuilder procBuilder = null!;
 
@@ -20,6 +21,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value?>
     {
         this.assemblyBuilder = builder;
     }
+#endif
 
     public override Value VisitFuncDecl(Ast.Decl.Func node)
     {

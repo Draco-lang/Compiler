@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.DracoIr;
 
@@ -122,8 +123,10 @@ internal sealed class Assembly : IReadOnlyAssembly
     public string Name { get; set; } = "assembly";
 
     public IDictionary<string, Procedure> Procedures { get; } = new Dictionary<string, Procedure>();
-    // TODO: We need a projection wrapper type
-    IReadOnlyDictionary<string, IReadOnlyProcecude> IReadOnlyAssembly.Procedures => throw new NotImplementedException();
+    IReadOnlyDictionary<string, IReadOnlyProcecude> IReadOnlyAssembly.Procedures =>
+        new CovariantReadOnlyDictionary<string, Procedure, IReadOnlyProcecude>(this.procedures);
+
+    private readonly Dictionary<string, Procedure> procedures = new();
 
     public Assembly(string name)
     {
@@ -149,9 +152,10 @@ internal sealed class Procedure : IReadOnlyProcecude
 
 internal sealed class BasicBlock : IReadOnlyBasicBlock
 {
-    public IList<Instruction> Instructions { get; } = new List<Instruction>();
-    // TODO: We need a projection wrapper type
-    IReadOnlyList<IReadOnlyInstruction> IReadOnlyBasicBlock.Instructions => throw new NotImplementedException();
+    public IList<Instruction> Instructions => this.instructions;
+    IReadOnlyList<IReadOnlyInstruction> IReadOnlyBasicBlock.Instructions => this.instructions;
+
+    private readonly List<Instruction> instructions = new();
 }
 
 /// <summary>

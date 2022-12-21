@@ -32,8 +32,9 @@ internal sealed class InstructionWriter
     /// <param name="instruction">The <see cref="Instruction"/> to write.</param>
     public void Write(Instruction instruction)
     {
-        if (this.currentBasicBlock is null) throw new InvalidOperationException("The current Basic Block could not be inferred");
-        this.currentBasicBlock.Instructions.Add(instruction);
+        // If there is no current block, open one
+        if (this.currentBasicBlock is null) this.PlaceLabel();
+        this.currentBasicBlock!.Instructions.Add(instruction);
         if (instruction.IsBranch) this.currentBasicBlock = null;
     }
 

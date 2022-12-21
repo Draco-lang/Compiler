@@ -30,6 +30,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     private InstructionWriter writer = null!;
 
     private readonly Dictionary<ISymbol.IFunction, Procedure> procedures = new();
+    private readonly Dictionary<ISymbol.ILabel, Label> labels = new();
     private readonly Dictionary<ISymbol, Value> values = new();
 
     private DracoIrCodegen(Assembly assembly)
@@ -56,6 +57,23 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return proc;
     }
 
+    private Label GetLabel(ISymbol.ILabel label)
+    {
+        if (!this.labels.TryGetValue(label, out var lbl))
+        {
+            lbl = this.writer.DeclareLabel();
+            this.labels.Add(label, lbl);
+        }
+        return lbl;
+    }
+
+    private Value.Register CompileLvalue(Ast.Expr expr) => expr switch
+    {
+        // TODO: Cast might fail
+        Ast.Expr.Reference r => (Value.Register)this.values[r.Symbol],
+        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+    };
+
     public override Value VisitFuncDecl(Ast.Decl.Func node)
     {
         var oldWriter = this.writer;
@@ -72,6 +90,25 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         this.VisitBlockExpr(node.Body);
 
         this.writer = oldWriter;
+        return this.Default;
+    }
+
+    public override Value VisitVariableDecl(Ast.Decl.Variable node)
+    {
+        var stackSpace = this.writer.Alloc(this.TranslateType(node.Type));
+        this.values[node.DeclarationSymbol] = stackSpace;
+        if (node.Value is not null)
+        {
+            var value = this.VisitExpr(node.Value);
+            this.writer.Store(stackSpace, value);
+        }
+        return this.Default;
+    }
+
+    public override Value VisitLabelDecl(Ast.Decl.Label node)
+    {
+        var label = this.GetLabel(node.LabelSymbol);
+        this.writer.PlaceLabel(label);
         return this.Default;
     }
 
@@ -104,7 +141,6 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
         this.writer.PlaceLabel(endLabel);
 
-        // TODO: Value?
         return this.writer.Load(result);
     }
 
@@ -112,7 +148,22 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         var value = this.VisitExpr(node.Expression);
         this.writer.Ret(value);
-        return this.Default;
+        return Value.Unit.Instance;
+    }
+
+    public override Value VisitGotoExpr(Ast.Expr.Goto node)
+    {
+        var label = this.GetLabel(node.Target);
+        this.writer.Jmp(label);
+        return Value.Unit.Instance;
+    }
+
+    public override Value VisitUnaryExpr(Ast.Expr.Unary node)
+    {
+        var sub = this.VisitExpr(node.Operand);
+        if (node.Operator == Intrinsics.Operators.Not_Bool) return this.writer.NotBool(sub);
+        // TODO
+        throw new NotImplementedException();
     }
 
     public override Value VisitBinaryExpr(Ast.Expr.Binary node)
@@ -130,9 +181,26 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         throw new NotImplementedException();
     }
 
+    public override Value VisitAssignExpr(Ast.Expr.Assign node)
+    {
+        var right = this.VisitExpr(node.Value);
+        var toStore = right;
+        if (node.CompoundOperator is not null)
+        {
+            var left = this.VisitExpr(node.Target);
+            if (node.CompoundOperator == Intrinsics.Operators.Add_Int32) toStore = this.writer.AddInt(left, right);
+            // TODO
+            else throw new NotImplementedException();
+        }
+        var target = this.CompileLvalue(node.Target);
+        this.writer.Store(target, toStore);
+        return right;
+    }
+
     public override Value VisitReferenceExpr(Ast.Expr.Reference node) => node.Symbol switch
     {
         ISymbol.IParameter => this.values[node.Symbol],
+        ISymbol.IVariable => this.writer.Load(this.values[node.Symbol]),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;

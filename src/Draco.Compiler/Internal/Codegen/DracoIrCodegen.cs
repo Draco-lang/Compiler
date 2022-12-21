@@ -108,6 +108,13 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return this.writer.Load(result);
     }
 
+    public override Value VisitReturnExpr(Ast.Expr.Return node)
+    {
+        var value = this.VisitExpr(node.Expression);
+        this.writer.Ret(value);
+        return this.Default;
+    }
+
     public override Value VisitReferenceExpr(Ast.Expr.Reference node) => this.values[node.Symbol];
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;
     public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Constant(node.Value);

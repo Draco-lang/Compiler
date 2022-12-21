@@ -220,7 +220,7 @@ internal sealed class Procedure : IReadOnlyProcecude
     public InstructionWriter Writer() => new(this);
 
     public override string ToString() => $"""
-        proc {this.ReturnType} {this.Name}({string.Join(", ", this.Parameters)}):
+        proc {this.ReturnType} {this.Name}({string.Join(", ", this.Parameters.Select(p => p.ToFullString()))}):
         {string.Join("\n", this.BasicBlocks.Select(bb => bb.ToFullString()))}
         """;
 }
@@ -259,7 +259,8 @@ internal abstract partial record class Value
     {
         public override Type Type { get; } = Type;
 
-        public override string ToString() => $"{this.Type} arg_{this.Index}";
+        public string ToFullString() => $"{this.Type} {this}";
+        public override string ToString() => $"arg_{this.Index}";
     }
 
     /// <summary>
@@ -286,7 +287,8 @@ internal abstract partial record class Value
 
         public override Type Type { get; } = Type;
 
-        public override string ToString() => $"{this.Type} reg_{this.id}";
+        public string ToFullString() => $"{this.Type} {this}";
+        public override string ToString() => $"reg_{this.id}";
     }
 
     /// <summary>
@@ -326,7 +328,7 @@ internal abstract partial record class Type
     /// <param name="Element">The pointer element.</param>
     public sealed record class Ptr(Type Element) : Type
     {
-        public override string ToString() => $"*{this.Element}";
+        public override string ToString() => $"{this.Element}*";
     }
 }
 
@@ -365,10 +367,19 @@ internal abstract partial class Instruction : IReadOnlyInstruction
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.Append(StringUtils.ToSnakeCase(this.Kind.ToString()));
-        for (var i = 0; i < this.OperandCount; ++i)
+        var offset = 0;
+        // If the first argument is a register, we assume it's a target
+        if (this.GetType().GenericTypeArguments.FirstOrDefault() == typeof(Value.Register))
         {
-            if (i == 0) result.Append(' ');
+            offset = 1;
+            result
+                .Append(this.GetOperandAt<Value.Register>(0).ToFullString())
+                .Append(" = ");
+        }
+        result.Append(StringUtils.ToSnakeCase(this.Kind.ToString()));
+        for (var i = offset; i < this.OperandCount; ++i)
+        {
+            if (i == offset) result.Append(' ');
             else result.Append(", ");
 
             result.Append(this.GetOperandAt<object>(i));

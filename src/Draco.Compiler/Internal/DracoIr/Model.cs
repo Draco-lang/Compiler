@@ -37,9 +37,19 @@ internal interface IReadOnlyProcecude
     public string Name { get; }
 
     /// <summary>
+    /// The return-type of this procedure.
+    /// </summary>
+    public Type ReturnType { get; }
+
+    /// <summary>
     /// The entry-point of the block.
     /// </summary>
     public IReadOnlyBasicBlock Entry { get; }
+
+    /// <summary>
+    /// All <see cref="IReadOnlyBasicBlock"/>s in this procedure in the order they were written.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyBasicBlock> BasicBlocks { get; }
 }
 
 /// <summary>
@@ -140,14 +150,29 @@ internal sealed class Assembly : IReadOnlyAssembly
 internal sealed class Procedure : IReadOnlyProcecude
 {
     public string Name { get; }
+    public Type ReturnType { get; set; } = Type.Unit;
 
-    public BasicBlock Entry { get; set; } = new();
+    public BasicBlock Entry => this.basicBlocks[0];
     IReadOnlyBasicBlock IReadOnlyProcecude.Entry => this.Entry;
+
+    public IList<BasicBlock> BasicBlocks => this.basicBlocks;
+    IReadOnlyList<IReadOnlyBasicBlock> IReadOnlyProcecude.BasicBlocks => this.basicBlocks;
+
+    private readonly List<BasicBlock> basicBlocks = new()
+    {
+        new(),
+    };
 
     public Procedure(string name)
     {
         this.Name = name;
     }
+
+    /// <summary>
+    /// Retrieves the <see cref="InstructionWriter"/> for this procedure.
+    /// </summary>
+    /// <returns>An <see cref="InstructionWriter"/> that can be used to generate code.</returns>
+    public InstructionWriter Writer() => new(this);
 }
 
 internal sealed class BasicBlock : IReadOnlyBasicBlock
@@ -172,8 +197,19 @@ internal abstract record class Value
 /// <summary>
 /// Base for all types.
 /// </summary>
-internal abstract record class Type
+internal abstract partial record class Type
 {
+    /// <summary>
+    /// A builtin <see cref="Type"/>.
+    /// </summary>
+    /// <param name="Type">The native <see cref="System.Type"/> referenced.</param>
+    public sealed record class Builtin(System.Type Type) : Type;
+}
+
+// Builtins
+internal abstract partial record class Type
+{
+    public static Type Unit { get; } = new Builtin(typeof(void));
 }
 
 /// <summary>

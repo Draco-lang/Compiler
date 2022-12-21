@@ -16,18 +16,11 @@ internal static class EnumerableExtensions
     /// </summary>
     /// <typeparam name="T">The item type.</typeparam>
     /// <param name="vs">The sequence to check.</param>
-    /// <returns>True, if <paramref name="vs"/> are ordered in ascending order.</returns>
-    public static bool IsOrdered<T>(this IEnumerable<T> vs) => IsOrdered(vs, Comparer<T>.Default);
-
-    /// <summary>
-    /// Checks if a given sequence is ordered in ascending order.
-    /// </summary>
-    /// <typeparam name="T">The item type.</typeparam>
-    /// <param name="vs">The sequence to check.</param>
     /// <param name="comparer">The comparer to compare items with.</param>
     /// <returns>True, if <paramref name="vs"/> are ordered in ascending order.</returns>
-    public static bool IsOrdered<T>(this IEnumerable<T> vs, IComparer<T> comparer)
+    public static bool IsOrdered<T>(this IEnumerable<T> vs, IComparer<T>? comparer = null)
     {
+        comparer ??= Comparer<T>.Default;
         var enumerator = vs.GetEnumerator();
         // Empty sequences are considered sorted
         if (!enumerator.MoveNext()) return true;

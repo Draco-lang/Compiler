@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.Symbols;
+using Type = Draco.Compiler.Internal.DracoIr.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -35,6 +36,15 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         this.assembly = assembly;
     }
 
+    private Type TranslateType(Semantics.Types.Type type)
+    {
+        if (type == Semantics.Types.Type.Unit) return Type.Unit;
+        if (type == Semantics.Types.Type.Bool) return Type.Bool;
+        if (type == Semantics.Types.Type.Int32) return Type.Int32;
+
+        throw new NotImplementedException();
+    }
+
     private Procedure GetProcedure(ISymbol.IFunction function)
     {
         if (!this.procedures.TryGetValue(function, out var proc))
@@ -48,14 +58,44 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     public override Value VisitFuncDecl(Ast.Decl.Func node)
     {
         var oldWriter = this.writer;
-        this.writer = this.GetProcedure(node.DeclarationSymbol).Writer();
+        var procedure = this.GetProcedure(node.DeclarationSymbol);
+        this.writer = procedure.Writer();
 
         // TODO: Parameters
-        // TODO: Return type
+        procedure.ReturnType = this.TranslateType(node.ReturnType);
 
         this.VisitBlockExpr(node.Body);
 
         this.writer = oldWriter;
         return this.Default;
     }
+
+    public override Value VisitBlockExpr(Ast.Expr.Block node)
+    {
+        foreach (var stmt in node.Statements) this.VisitStmt(stmt);
+        return this.VisitExpr(node.Value);
+    }
+
+    public override Value VisitIfExpr(Ast.Expr.If node)
+    {
+        var thenLabel = this.writer.DeclareLabel();
+        var elseLabel = this.writer.DeclareLabel();
+
+        var condition = this.VisitExpr(node.Condition);
+        this.writer.JmpIf(condition, thenLabel, elseLabel);
+
+        this.writer.PlaceLabel(thenLabel);
+        // TODO: Store value?
+        this.VisitExpr(node.Then);
+
+        this.writer.PlaceLabel(elseLabel);
+        // TODO: Store value?
+        this.VisitExpr(node.Else);
+
+        // TODO: Value?
+        return this.Default;
+    }
+
+    public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;
+    public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Constant(node.Value);
 }

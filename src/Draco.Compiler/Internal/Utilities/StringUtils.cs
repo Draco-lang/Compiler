@@ -62,18 +62,19 @@ internal static class StringUtils
     public static string ToSnakeCase(string text)
     {
         var result = new StringBuilder();
+        var first = true;
         foreach (var ch in text)
         {
             if (char.IsUpper(ch))
             {
-                result
-                    .Append('_')
-                    .Append(char.ToLower(ch));
+                if (!first) result.Append('_');
+                result.Append(char.ToLower(ch));
             }
             else
             {
                 result.Append(ch);
             }
+            first = false;
         }
         return result.ToString();
     }

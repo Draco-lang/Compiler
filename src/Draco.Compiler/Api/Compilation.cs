@@ -106,9 +106,12 @@ public sealed class Compilation
         codegen.Generate(ast);
 
         // TODO: Temporary
+        Console.WriteLine("IR code");
         var asm = new Assembly(this.AssemblyName ?? "output");
         DracoIrCodegen.Generate(asm, ast);
         var ir = asm.ToString();
+        Console.WriteLine(ir);
+        Console.WriteLine("\n=========");
 
         return new(
             Success: true,

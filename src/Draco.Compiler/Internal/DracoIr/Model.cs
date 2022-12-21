@@ -190,7 +190,7 @@ internal sealed class Procedure : IReadOnlyProcecude
 
     public override string ToString() => $"""
         proc {this.ReturnType} {this.Name}():
-        {string.Join("\n", this.BasicBlocks)}
+        {string.Join("\n", this.BasicBlocks.Select(bb => bb.ToFullString()))}
         """;
 }
 
@@ -204,8 +204,11 @@ internal sealed class BasicBlock : IReadOnlyBasicBlock
     private readonly int id = Interlocked.Increment(ref idCounter);
     private readonly List<Instruction> instructions = new();
 
-    public string ToReferenceString() => $"bb_{this.id}";
-    public override string ToString() => $"label {this.ToReferenceString()}:{string.Join("\n  ", this.instructions)}";
+    public override string ToString() => $"bb_{this.id}";
+    public string ToFullString() => $"""
+        label {this}:
+            {string.Join("\n  ", this.instructions)}
+        """;
 }
 
 /// <summary>
@@ -213,6 +216,16 @@ internal sealed class BasicBlock : IReadOnlyBasicBlock
 /// </summary>
 internal abstract record class Value
 {
+    /// <summary>
+    /// A unitary value.
+    /// </summary>
+    public sealed record class Unit : Value
+    {
+        public static Unit Instance { get; } = new();
+
+        public override string ToString() => "unit";
+    }
+
     /// <summary>
     /// A register value.
     /// </summary>
@@ -223,6 +236,15 @@ internal abstract record class Value
         private readonly int id = Interlocked.Increment(ref idCounter);
 
         public override string ToString() => $"reg_{this.id}";
+    }
+
+    /// <summary>
+    ///  A constant value.
+    /// </summary>
+    /// <param name="Value">The constant value.</param>
+    public sealed record class Constant(object? Value) : Value
+    {
+        public override string ToString() => this.Value?.ToString() ?? "null";
     }
 }
 
@@ -245,6 +267,8 @@ internal abstract partial record class Type
 internal abstract partial record class Type
 {
     public static Type Unit { get; } = new Builtin(typeof(void));
+    public static Type Bool { get; } = new Builtin(typeof(bool));
+    public static Type Int32 { get; } = new Builtin(typeof(int));
 }
 
 /// <summary>

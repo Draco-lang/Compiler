@@ -30,6 +30,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     private InstructionWriter writer = null!;
 
     private readonly Dictionary<ISymbol.IFunction, Procedure> procedures = new();
+    private readonly Dictionary<ISymbol, Value> values = new();
 
     private DracoIrCodegen(Assembly assembly)
     {
@@ -61,7 +62,11 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         var procedure = this.GetProcedure(node.DeclarationSymbol);
         this.writer = procedure.Writer();
 
-        // TODO: Parameters
+        foreach (var param in node.Params)
+        {
+            var paramValue = procedure.DefineParameter(this.TranslateType(param.Type));
+            this.values[param] = paramValue;
+        }
         procedure.ReturnType = this.TranslateType(node.ReturnType);
 
         this.VisitBlockExpr(node.Body);
@@ -80,22 +85,30 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         var thenLabel = this.writer.DeclareLabel();
         var elseLabel = this.writer.DeclareLabel();
+        var endLabel = this.writer.DeclareLabel();
+
+        // Allcoate value for result
+        var result = this.writer.Alloc(this.TranslateType(node.EvaluationType));
 
         var condition = this.VisitExpr(node.Condition);
         this.writer.JmpIf(condition, thenLabel, elseLabel);
 
         this.writer.PlaceLabel(thenLabel);
-        // TODO: Store value?
-        this.VisitExpr(node.Then);
+        var thenValue = this.VisitExpr(node.Then);
+        this.writer.Store(result, thenValue);
+        this.writer.Jmp(endLabel);
 
         this.writer.PlaceLabel(elseLabel);
-        // TODO: Store value?
-        this.VisitExpr(node.Else);
+        var elseValue = this.VisitExpr(node.Else);
+        this.writer.Store(result, elseValue);
+
+        this.writer.PlaceLabel(endLabel);
 
         // TODO: Value?
-        return this.Default;
+        return this.writer.Load(result);
     }
 
+    public override Value VisitReferenceExpr(Ast.Expr.Reference node) => this.values[node.Symbol];
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;
     public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Constant(node.Value);
 }

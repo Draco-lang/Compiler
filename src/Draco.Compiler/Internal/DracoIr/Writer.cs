@@ -76,15 +76,23 @@ internal sealed class InstructionWriter
     // Instruction factories ///////////////////////////////////////////////////
 
     public void Nop() => this.Write(Instruction.Nop());
+    public Value.Register Alloc(Type type) => this.MakeWithRegister(new Type.Ptr(type), target => Instruction.Alloc(target, type));
+    public void Store(Value target, Value src) => this.Write(Instruction.Store(target, src));
+    public Value.Register Load(Value src)
+    {
+        if (src.Type is not Type.Ptr ptr) throw new InvalidOperationException("can not load from non-pointer value");
+        return this.MakeWithRegister(ptr.Element, target => Instruction.Load(target, src));
+    }
     public void Ret(Value value) => this.Write(Instruction.Ret(value));
     public void Jmp(Label label) => this.Write(Instruction.Jmp(label.Target));
     public void JmpIf(Value condition, Label thenLabel, Label elsLabel) =>
         this.Write(Instruction.JmpIf(condition, thenLabel.Target, elsLabel.Target));
-    public Value.Register AddInt(Value a, Value b) => this.MakeWithRegister(target => Instruction.AddInt(target, a, b));
+    public Value.Register AddInt(Value a, Value b) =>
+        this.MakeWithRegister(a.Type, target => Instruction.AddInt(target, a, b));
 
-    private Value.Register MakeWithRegister(Func<Value.Register, Instruction> make)
+    private Value.Register MakeWithRegister(Type type, Func<Value.Register, Instruction> make)
     {
-        var result = new Value.Register();
+        var result = new Value.Register(type);
         var instr = make(result);
         this.Write(instr);
         return result;

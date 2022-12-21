@@ -43,6 +43,11 @@ internal interface IReadOnlyProcecude
     public Type ReturnType { get; }
 
     /// <summary>
+    /// The parameters of this procedure.
+    /// </summary>
+    public IReadOnlyList<Value.Parameter> Parameters { get; }
+
+    /// <summary>
     /// The entry-point of the block.
     /// </summary>
     public IReadOnlyBasicBlock Entry { get; }
@@ -102,6 +107,21 @@ internal enum InstructionKind
     /// No operation.
     /// </summary>
     Nop,
+
+    /// <summary>
+    /// Allocate stack-memory for a local.
+    /// </summary>
+    Alloc,
+
+    /// <summary>
+    /// Store into a local.
+    /// </summary>
+    Store,
+
+    /// <summary>
+    /// Load from a local.
+    /// </summary>
+    Load,
 
     /// <summary>
     /// Return from a procedure.
@@ -166,12 +186,16 @@ internal sealed class Procedure : IReadOnlyProcecude
     public string Name { get; }
     public Type ReturnType { get; set; } = Type.Unit;
 
+    public IList<Value.Parameter> Parameters => this.parameters;
+    IReadOnlyList<Value.Parameter> IReadOnlyProcecude.Parameters => this.parameters;
+
     public BasicBlock Entry => this.basicBlocks[0];
     IReadOnlyBasicBlock IReadOnlyProcecude.Entry => this.Entry;
 
     public IList<BasicBlock> BasicBlocks => this.basicBlocks;
     IReadOnlyList<IReadOnlyBasicBlock> IReadOnlyProcecude.BasicBlocks => this.basicBlocks;
 
+    private readonly List<Value.Parameter> parameters = new();
     private readonly List<BasicBlock> basicBlocks = new()
     {
         new(),
@@ -182,6 +206,13 @@ internal sealed class Procedure : IReadOnlyProcecude
         this.Name = name;
     }
 
+    public Value.Parameter DefineParameter(Type type)
+    {
+        var param = new Value.Parameter(type, this.parameters.Count);
+        this.parameters.Add(param);
+        return param;
+    }
+
     /// <summary>
     /// Retrieves the <see cref="InstructionWriter"/> for this procedure.
     /// </summary>
@@ -189,7 +220,7 @@ internal sealed class Procedure : IReadOnlyProcecude
     public InstructionWriter Writer() => new(this);
 
     public override string ToString() => $"""
-        proc {this.ReturnType} {this.Name}():
+        proc {this.ReturnType} {this.Name}({string.Join(", ", this.Parameters)}):
         {string.Join("\n", this.BasicBlocks.Select(bb => bb.ToFullString()))}
         """;
 }
@@ -207,15 +238,30 @@ internal sealed class BasicBlock : IReadOnlyBasicBlock
     public override string ToString() => $"bb_{this.id}";
     public string ToFullString() => $"""
         label {this}:
-            {string.Join("\n  ", this.instructions)}
+          {string.Join("\n  ", this.instructions)}
         """;
 }
 
 /// <summary>
 /// Base for all values.
 /// </summary>
-internal abstract record class Value
+internal abstract partial record class Value
 {
+    /// <summary>
+    /// The <see cref="DracoIr.Type"/> of this <see cref="Value"/>.
+    /// </summary>
+    public abstract Type Type { get; }
+}
+
+internal abstract partial record class Value
+{
+    public sealed record class Parameter(Type Type, int Index) : Value
+    {
+        public override Type Type { get; } = Type;
+
+        public override string ToString() => $"{this.Type} arg_{this.Index}";
+    }
+
     /// <summary>
     /// A unitary value.
     /// </summary>
@@ -223,19 +269,24 @@ internal abstract record class Value
     {
         public static Unit Instance { get; } = new();
 
+        public override Type Type => Type.Unit;
+
         public override string ToString() => "unit";
     }
 
     /// <summary>
     /// A register value.
     /// </summary>
-    public sealed record class Register : Value
+    /// <param name="Type">The <see cref="DracoIr.Type"/> of this <see cref="Register"/>.</param>
+    public sealed record class Register(Type Type) : Value
     {
         private static int idCounter = -1;
 
         private readonly int id = Interlocked.Increment(ref idCounter);
 
-        public override string ToString() => $"reg_{this.id}";
+        public override Type Type { get; } = Type;
+
+        public override string ToString() => $"{this.Type} reg_{this.id}";
     }
 
     /// <summary>
@@ -244,6 +295,13 @@ internal abstract record class Value
     /// <param name="Value">The constant value.</param>
     public sealed record class Constant(object? Value) : Value
     {
+        public override Type Type => this.Value switch
+        {
+            bool => Type.Bool,
+            int => Type.Int32,
+            _ => throw new InvalidOperationException(),
+        };
+
         public override string ToString() => this.Value?.ToString() ?? "null";
     }
 }
@@ -260,6 +318,15 @@ internal abstract partial record class Type
     public sealed record class Builtin(System.Type Type) : Type
     {
         public override string ToString() => this.Type.FullName ?? this.Type.Name;
+    }
+
+    /// <summary>
+    /// A pointer type.
+    /// </summary>
+    /// <param name="Element">The pointer element.</param>
+    public sealed record class Ptr(Type Element) : Type
+    {
+        public override string ToString() => $"*{this.Element}";
     }
 }
 
@@ -315,6 +382,12 @@ internal abstract partial class Instruction
 {
     public static Instruction Nop() =>
         new Instruction0(InstructionKind.Nop);
+    public static Instruction Alloc(Value.Register target, Type type) =>
+        new Instruction2<Value.Register, Type>(InstructionKind.Alloc, target, type);
+    public static Instruction Store(Value target, Value src) =>
+        new Instruction2<Value, Value>(InstructionKind.Store, target, src);
+    public static Instruction Load(Value.Register target, Value src) =>
+        new Instruction2<Value.Register, Value>(InstructionKind.Load, target, src);
     public static Instruction Ret(Value value) =>
         new Instruction1<Value>(InstructionKind.Ret, value);
     public static Instruction Jmp(IReadOnlyBasicBlock bb) =>

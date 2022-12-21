@@ -99,6 +99,8 @@ internal sealed class InstructionWriter
         this.MakeWithRegister(Type.Bool, target => Instruction.LessEqualInt(target, a, b));
     public Value.Register EqualInt(Value a, Value b) =>
         this.MakeWithRegister(Type.Bool, target => Instruction.EqualInt(target, a, b));
+    public Value.Register NegInt(Value a) =>
+        this.MakeWithRegister(a.Type, target => Instruction.NegInt(target, a));
     public Value.Register NotBool(Value a) =>
         this.MakeWithRegister(Type.Bool, target => Instruction.NotBool(target, a));
 

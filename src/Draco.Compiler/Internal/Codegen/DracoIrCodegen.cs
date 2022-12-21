@@ -162,6 +162,8 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         var sub = this.VisitExpr(node.Operand);
         if (node.Operator == Intrinsics.Operators.Not_Bool) return this.writer.NotBool(sub);
+        if (node.Operator == Intrinsics.Operators.Pos_Int32) return sub;
+        if (node.Operator == Intrinsics.Operators.Neg_Int32) return this.writer.NegInt(sub);
         // TODO
         throw new NotImplementedException();
     }

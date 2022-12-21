@@ -159,6 +159,11 @@ internal enum InstructionKind
     EqualInt,
 
     /// <summary>
+    /// Integer negation.
+    /// </summary>
+    NegInt,
+
+    /// <summary>
     /// Boolean negation.
     /// </summary>
     NotBool,
@@ -433,6 +438,8 @@ internal abstract partial class Instruction
         new Instruction3<Value.Register, Value, Value>(InstructionKind.LessEqualInt, target, a, b);
     public static Instruction EqualInt(Value.Register target, Value a, Value b) =>
         new Instruction3<Value.Register, Value, Value>(InstructionKind.EqualInt, target, a, b);
+    public static Instruction NegInt(Value.Register target, Value a) =>
+        new Instruction2<Value.Register, Value>(InstructionKind.NegInt, target, a);
     public static Instruction NotBool(Value.Register target, Value a) =>
         new Instruction2<Value.Register, Value>(InstructionKind.NotBool, target, a);
 }

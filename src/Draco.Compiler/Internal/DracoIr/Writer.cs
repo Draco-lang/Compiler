@@ -77,11 +77,21 @@ internal sealed class InstructionWriter
     // Instruction factories ///////////////////////////////////////////////////
 
     public void Nop() => this.Write(Instruction.Nop());
-    public Value.Register Alloc(Type type) => this.MakeWithRegister(new Type.Ptr(type), target => Instruction.Alloc(target, type));
-    public void Store(Value target, Value src) => this.Write(Instruction.Store(target, src));
-    public Value.Register Load(Value src)
+    public Value Alloc(Type type)
     {
+        if (type == Type.Unit) return Value.Unit.Instance;
+        return this.MakeWithRegister(new Type.Ptr(type), target => Instruction.Alloc(target, type));
+    }
+    public void Store(Value target, Value src)
+    {
+        if (src.Type == Type.Unit) return;
+        this.Write(Instruction.Store(target, src));
+    }
+    public Value Load(Value src)
+    {
+        if (src.Type == Type.Unit) return Value.Unit.Instance;
         if (src.Type is not Type.Ptr ptr) throw new ArgumentException("can not load from non-pointer value");
+        if (ptr.Element == Type.Unit) return Value.Unit.Instance;
         return this.MakeWithRegister(ptr.Element, target => Instruction.Load(target, src));
     }
     public void Ret(Value value) => this.Write(Instruction.Ret(value));

@@ -8,6 +8,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.DracoIr;
+using Draco.Compiler.Internal.DracoIr.Passes;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
@@ -109,6 +110,10 @@ public sealed class Compilation
         Console.WriteLine("IR code");
         var asm = new Assembly(this.AssemblyName ?? "output");
         DracoIrCodegen.Generate(asm, ast);
+        var pass = new AggregatePass();
+        pass.InstructionPasses.Add(new JumpThreading());
+        pass.GlobalPasses.Add(new RemoveUntargetedBlocks());
+        pass.Pass(asm);
         var ir = asm.ToString();
         Console.WriteLine(ir);
         Console.WriteLine("\n=========");

@@ -80,15 +80,26 @@ internal sealed class InstructionWriter
     public void Store(Value target, Value src) => this.Write(Instruction.Store(target, src));
     public Value.Register Load(Value src)
     {
-        if (src.Type is not Type.Ptr ptr) throw new InvalidOperationException("can not load from non-pointer value");
+        if (src.Type is not Type.Ptr ptr) throw new ArgumentException("can not load from non-pointer value");
         return this.MakeWithRegister(ptr.Element, target => Instruction.Load(target, src));
     }
     public void Ret(Value value) => this.Write(Instruction.Ret(value));
     public void Jmp(Label label) => this.Write(Instruction.Jmp(label.Target));
-    public void JmpIf(Value condition, Label thenLabel, Label elsLabel) =>
+    public void JmpIf(Value condition, Label thenLabel, Label elsLabel)
+    {
+        if (condition.Type != Type.Bool) throw new ArgumentException("condition must be bool");
         this.Write(Instruction.JmpIf(condition, thenLabel.Target, elsLabel.Target));
+    }
     public Value.Register AddInt(Value a, Value b) =>
         this.MakeWithRegister(a.Type, target => Instruction.AddInt(target, a, b));
+    public Value.Register LessInt(Value a, Value b) =>
+        this.MakeWithRegister(Type.Bool, target => Instruction.LessInt(target, a, b));
+    public Value.Register LessEqualInt(Value a, Value b) =>
+        this.MakeWithRegister(Type.Bool, target => Instruction.LessEqualInt(target, a, b));
+    public Value.Register EqualInt(Value a, Value b) =>
+        this.MakeWithRegister(Type.Bool, target => Instruction.EqualInt(target, a, b));
+    public Value.Register NotBool(Value a) =>
+        this.MakeWithRegister(Type.Bool, target => Instruction.NotBool(target, a));
 
     private Value.Register MakeWithRegister(Type type, Func<Value.Register, Instruction> make)
     {

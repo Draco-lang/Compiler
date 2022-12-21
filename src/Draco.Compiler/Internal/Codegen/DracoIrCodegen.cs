@@ -115,7 +115,26 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return this.Default;
     }
 
-    public override Value VisitReferenceExpr(Ast.Expr.Reference node) => this.values[node.Symbol];
+    public override Value VisitBinaryExpr(Ast.Expr.Binary node)
+    {
+        var left = this.VisitExpr(node.Left);
+        var right = this.VisitExpr(node.Right);
+        if (node.Operator == Intrinsics.Operators.Add_Int32) return this.writer.AddInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Less_Int32) return this.writer.LessInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Greater_Int32) return this.writer.LessInt(right, left);
+        if (node.Operator == Intrinsics.Operators.LessEqual_Int32) return this.writer.LessEqualInt(left, right);
+        if (node.Operator == Intrinsics.Operators.GreaterEqual_Int32) return this.writer.LessEqualInt(right, left);
+        if (node.Operator == Intrinsics.Operators.Equal_Int32) return this.writer.EqualInt(left, right);
+        if (node.Operator == Intrinsics.Operators.NotEqual_Int32) return this.writer.NotBool(this.writer.EqualInt(left, right));
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override Value VisitReferenceExpr(Ast.Expr.Reference node) => node.Symbol switch
+    {
+        ISymbol.IParameter => this.values[node.Symbol],
+        _ => throw new ArgumentOutOfRangeException(nameof(node)),
+    };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;
     public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Constant(node.Value);
 }

@@ -142,6 +142,26 @@ internal enum InstructionKind
     /// Integer addition.
     /// </summary>
     AddInt,
+
+    /// <summary>
+    /// Integer less-than comparison.
+    /// </summary>
+    LessInt,
+
+    /// <summary>
+    /// Integer less-or-equal comparison.
+    /// </summary>
+    LessEqualInt,
+
+    /// <summary>
+    /// Integer equality comparison.
+    /// </summary>
+    EqualInt,
+
+    /// <summary>
+    /// Boolean negation.
+    /// </summary>
+    NotBool,
 }
 
 // Implementations /////////////////////////////////////////////////////////////
@@ -407,6 +427,14 @@ internal abstract partial class Instruction
         new Instruction3<Value, IReadOnlyBasicBlock, IReadOnlyBasicBlock>(InstructionKind.JmpIf, condition, then, els);
     public static Instruction AddInt(Value.Register target, Value a, Value b) =>
         new Instruction3<Value.Register, Value, Value>(InstructionKind.AddInt, target, a, b);
+    public static Instruction LessInt(Value.Register target, Value a, Value b) =>
+        new Instruction3<Value.Register, Value, Value>(InstructionKind.LessInt, target, a, b);
+    public static Instruction LessEqualInt(Value.Register target, Value a, Value b) =>
+        new Instruction3<Value.Register, Value, Value>(InstructionKind.LessEqualInt, target, a, b);
+    public static Instruction EqualInt(Value.Register target, Value a, Value b) =>
+        new Instruction3<Value.Register, Value, Value>(InstructionKind.EqualInt, target, a, b);
+    public static Instruction NotBool(Value.Register target, Value a) =>
+        new Instruction2<Value.Register, Value>(InstructionKind.NotBool, target, a);
 }
 
 // Implementations

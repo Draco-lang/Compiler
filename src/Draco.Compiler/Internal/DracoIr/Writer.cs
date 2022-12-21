@@ -80,5 +80,13 @@ internal sealed class InstructionWriter
     public void Jmp(Label label) => this.Write(Instruction.Jmp(label.Target));
     public void JmpIf(Value condition, Label thenLabel, Label elsLabel) =>
         this.Write(Instruction.JmpIf(condition, thenLabel.Target, elsLabel.Target));
-    public void AddInt(Value.Register target, Value a, Value b) => this.Write(Instruction.AddInt(target, a, b));
+    public Value.Register AddInt(Value a, Value b) => this.MakeWithRegister(target => Instruction.AddInt(target, a, b));
+
+    private Value.Register MakeWithRegister(Func<Value.Register, Instruction> make)
+    {
+        var result = new Value.Register();
+        var instr = make(result);
+        this.Write(instr);
+        return result;
+    }
 }

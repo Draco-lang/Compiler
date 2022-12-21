@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Utilities;
 
@@ -142,6 +143,12 @@ internal sealed class Assembly : IReadOnlyAssembly
     {
         this.Name = name;
     }
+
+    public override string ToString() => $"""
+        assembly '{this.Name}';
+
+        {string.Join("\n\n", this.Procedures.Values)}
+        """;
 }
 
 /// <summary>
@@ -173,14 +180,25 @@ internal sealed class Procedure : IReadOnlyProcecude
     /// </summary>
     /// <returns>An <see cref="InstructionWriter"/> that can be used to generate code.</returns>
     public InstructionWriter Writer() => new(this);
+
+    public override string ToString() => $"""
+        proc {this.ReturnType} {this.Name}():
+        {string.Join("\n", this.BasicBlocks)}
+        """;
 }
 
 internal sealed class BasicBlock : IReadOnlyBasicBlock
 {
+    private static int idCounter = -1;
+
     public IList<Instruction> Instructions => this.instructions;
     IReadOnlyList<IReadOnlyInstruction> IReadOnlyBasicBlock.Instructions => this.instructions;
 
+    private readonly int id = Interlocked.Increment(ref idCounter);
     private readonly List<Instruction> instructions = new();
+
+    public string ToReferenceString() => $"bb_{this.id}";
+    public override string ToString() => $"{this.ToReferenceString()}:{string.Join("\n  ", this.instructions)}";
 }
 
 /// <summary>
@@ -191,7 +209,14 @@ internal abstract record class Value
     /// <summary>
     /// A register value.
     /// </summary>
-    public sealed record class Register : Value;
+    public sealed record class Register : Value
+    {
+        private static int idCounter = -1;
+
+        private readonly int id = Interlocked.Increment(ref idCounter);
+
+        public override string ToString() => $"reg_{this.id}";
+    }
 }
 
 /// <summary>
@@ -200,10 +225,13 @@ internal abstract record class Value
 internal abstract partial record class Type
 {
     /// <summary>
-    /// A builtin <see cref="Type"/>.
+    /// A builtin <see cref="DracoIr.Type"/>.
     /// </summary>
     /// <param name="Type">The native <see cref="System.Type"/> referenced.</param>
-    public sealed record class Builtin(System.Type Type) : Type;
+    public sealed record class Builtin(System.Type Type) : Type
+    {
+        public override string ToString() => this.Type.FullName ?? this.Type.Name;
+    }
 }
 
 // Builtins
@@ -235,6 +263,20 @@ internal abstract partial class Instruction : IReadOnlyInstruction
 
     public abstract T GetOperandAt<T>(int index);
     public abstract void SetOperandAt<T>(int index, T value);
+
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        result.Append(StringUtils.ToSnakeCase(this.Kind.ToString()));
+        for (var i = 0; i < this.OperandCount; ++i)
+        {
+            if (i == 0) result.Append(' ');
+            else result.Append(", ");
+
+            result.Append(this.GetOperandAt<object>(i));
+        }
+        return result.ToString();
+    }
 }
 
 // Factory

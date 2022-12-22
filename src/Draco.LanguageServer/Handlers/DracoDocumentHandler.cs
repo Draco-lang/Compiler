@@ -76,7 +76,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
 
     private Task PublishDiagnosticsAsync(DocumentUri uri, string text)
     {
-        var parseTree = ParseNode.Parse(text);
+        var parseTree = ParseTree.Parse(text);
         // TODO: Compilation should be shared
         var compilation = Compilation.Create(parseTree);
         var diags = compilation.GetDiagnostics();

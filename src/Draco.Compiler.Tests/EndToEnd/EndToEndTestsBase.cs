@@ -24,7 +24,7 @@ public abstract class EndToEndTestsBase
             {{sourceCode}}
             """;
 
-        var parseTree = ParseNode.Parse(sourceCode);
+        var parseTree = ParseTree.Parse(sourceCode);
         var compilation = Compilation.Create(parseTree);
 
         using var peStream = new MemoryStream();

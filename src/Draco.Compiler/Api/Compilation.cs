@@ -30,10 +30,10 @@ public sealed class Compilation
     /// <summary>
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
-    /// <param name="parseTree">The <see cref="Syntax.ParseNode"/> to compile.</param>
+    /// <param name="parseTree">The <see cref="Syntax.ParseTree"/> to compile.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
-    public static Compilation Create(ParseNode parseTree, string? assemblyName = null) => new(
+    public static Compilation Create(ParseTree parseTree, string? assemblyName = null) => new(
         parseTree: parseTree,
         assemblyName: assemblyName);
 
@@ -42,14 +42,14 @@ public sealed class Compilation
     /// <summary>
     /// The tree that is being compiled.
     /// </summary>
-    public ParseNode ParseTree { get; }
+    public ParseTree ParseTree { get; }
 
     /// <summary>
     /// The name of the output assembly.
     /// </summary>
     public string? AssemblyName { get; }
 
-    private Compilation(ParseNode parseTree, string? assemblyName)
+    private Compilation(ParseTree parseTree, string? assemblyName)
     {
         this.ParseTree = parseTree;
         this.AssemblyName = assemblyName;
@@ -68,7 +68,7 @@ public sealed class Compilation
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced during syntax analysis.</returns>
     public ImmutableArray<Diagnostic> GetSyntaxDiagnostics() =>
-        this.ParseTree.GetAllDiagnostics().ToImmutableArray();
+        this.ParseTree.Root.GetAllDiagnostics().ToImmutableArray();
 
     /// <summary>
     /// Retrieves all <see cref="Diagnostic"/>s that were produced during semantic analysis.
@@ -99,7 +99,7 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        var ast = AstBuilder.ToAst(this.db, this.ParseTree);
+        var ast = AstBuilder.ToAst(this.db, this.ParseTree.Root);
         ast = AstLowering.Lower(this.db, ast);
         var codegen = new CSharpCodegen(csStream);
         codegen.Generate(ast);

@@ -44,8 +44,8 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
     protected override Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
         var content = this.repository.GetDocument(identifier.TextDocument.Uri);
-        var parseTree = ParseNode.Parse(content);
-        var tokens = GetTokens(parseTree);
+        var parseTree = ParseTree.Parse(content);
+        var tokens = GetTokens(parseTree.Root);
         foreach (var token in tokens)
         {
             builder.Push(Translator.ToLsp(token.Range), token.Type, token.Modifiers);

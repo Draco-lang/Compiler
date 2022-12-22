@@ -10,27 +10,52 @@ using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Api.Syntax;
 
-// Utilities for public API
-public abstract partial class ParseNode
+/// <summary>
+/// Represents an entire parse tree.
+/// </summary>
+public sealed partial class ParseTree
+{
+    private ParseNode? root;
+    public ParseNode Root => this.root ??= ParseNode.ToRed(null, green.Root);
+
+    private readonly Internal.Syntax.ParseTree green;
+
+    internal ParseTree(Internal.Syntax.ParseTree green)
+    {
+        this.green = green;
+    }
+}
+
+// Public API utilities
+public sealed partial class ParseTree
 {
     /// <summary>
-    /// Parses the given tree into a <see cref="ParseNode"/>.
+    /// Constructs a <see cref="ParseTree"/> from a <paramref name="root"/> node.
+    /// </summary>
+    /// <param name="root">The root of the tree.</param>
+    /// <returns>A <see cref="ParseTree"/> created from <paramref name="root"/>.</returns>
+    public static ParseTree Create(ParseNode root) => new(green: new(root.Green));
+
+    /// <summary>
+    /// Parses the given tree into a <see cref="ParseTree"/>.
     /// </summary>
     /// <param name="source">The source to parse.</param>
     /// <returns>The parsed tree.</returns>
-    public static ParseNode Parse(string source)
+    public static ParseTree Parse(string source)
     {
         var srcReader = Internal.Syntax.SourceReader.From(source);
         var lexer = new Internal.Syntax.Lexer(srcReader);
         var tokenSource = Internal.Syntax.TokenSource.From(lexer);
         var parser = new Internal.Syntax.Parser(tokenSource);
         var cu = parser.ParseCompilationUnit();
-        return ToRed(null, cu);
+        // TODO
+        throw new NotImplementedException();
+        //return ToRed(null, cu);
     }
 }
 
 /// <summary>
-/// The base class for all nodes in the Draco parse-tree.
+/// The base class for all nodes in the Draco <see cref="ParseTree"/>.
 /// </summary>
 [RedTree(typeof(Internal.Syntax.ParseNode))]
 public abstract partial class ParseNode : IEquatable<ParseNode>

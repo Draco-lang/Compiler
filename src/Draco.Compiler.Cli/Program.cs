@@ -56,7 +56,7 @@ internal class Program
     private static void Run(FileInfo input)
     {
         var sourceText = File.ReadAllText(input.FullName);
-        var parseTree = ParseNode.Parse(sourceText);
+        var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
         var execResult = ScriptingEngine.Execute(compilation);
         if (!execResult.Success)
@@ -70,14 +70,14 @@ internal class Program
     private static void GenerateParseTree(FileInfo input)
     {
         var sourceText = File.ReadAllText(input.FullName);
-        var parseTree = ParseNode.Parse(sourceText);
-        Console.WriteLine(parseTree.ToDebugString());
+        var parseTree = ParseTree.Parse(sourceText);
+        Console.WriteLine(parseTree.Root.ToDebugString());
     }
 
     private static void GenerateCSharp(FileInfo input, FileInfo? emitCS)
     {
         var sourceText = File.ReadAllText(input.FullName);
-        var parseTree = ParseNode.Parse(sourceText);
+        var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
         using var csStream = new MemoryStream();
         var emitResult = compilation.EmitCSharp(csStream);
@@ -95,7 +95,7 @@ internal class Program
     private static void GenerateExe(FileInfo input, FileInfo output)
     {
         var sourceText = File.ReadAllText(input.FullName);
-        var parseTree = ParseNode.Parse(sourceText);
+        var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree, output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(dllStream);

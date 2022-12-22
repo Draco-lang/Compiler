@@ -11,10 +11,10 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 /// </summary>
 internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
 {
-    public static string Print(QueryDatabase db, ParseNode parseTree)
+    public static string Print(QueryDatabase db, ParseTree parseTree)
     {
         var printer = new ScopeTreePrinter(db);
-        printer.PrintTree(parseTree);
+        printer.PrintTree(parseTree.Root);
         return printer.Code;
     }
 

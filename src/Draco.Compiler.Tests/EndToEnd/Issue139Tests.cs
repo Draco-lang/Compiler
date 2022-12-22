@@ -47,7 +47,7 @@ public sealed class Issue139Tests
     [Theory]
     public void DoesNotCrash(string source)
     {
-        var parseTree = ParseNode.Parse(source);
+        var parseTree = ParseTree.Parse(source);
         var compilation = Compilation.Create(parseTree);
         compilation.EmitCSharp(new MemoryStream());
     }

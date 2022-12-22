@@ -14,26 +14,26 @@ namespace Draco.Compiler.Api.Semantics;
 public sealed class SemanticModel
 {
     /// <summary>
-    /// The root of the tree that the semantic model is for.
+    /// The the tree that the semantic model is for.
     /// </summary>
-    public ParseNode Root { get; }
+    public ParseTree Tree { get; }
 
     internal QueryDatabase QueryDatabase => this.db;
 
     private readonly QueryDatabase db;
 
-    internal SemanticModel(QueryDatabase db, ParseNode root)
+    internal SemanticModel(QueryDatabase db, ParseTree tree)
     {
         this.db = db;
-        this.Root = root;
+        this.Tree = tree;
     }
 
     /// <summary>
     /// Prints this model as a scope tree in a DOT graph format.
     /// </summary>
-    /// <returns>The DOT graph of the symbols and scopes of <see cref="Root"/>.</returns>
+    /// <returns>The DOT graph of the symbols and scopes of <see cref="Tree"/>.</returns>
     public string ToScopeTreeDotGraphString() =>
-        ScopeTreePrinter.Print(this.db, this.Root);
+        ScopeTreePrinter.Print(this.db, this.Tree);
 
     /// <summary>
     /// Retrieves all semantic <see cref="Diagnostic"/>s.
@@ -53,7 +53,7 @@ public sealed class SemanticModel
             foreach (var diag in tree.Children.SelectMany(Impl)) yield return diag;
         }
 
-        return Impl(this.Root);
+        return Impl(this.Tree.Root);
     }
 
     // NOTE: These OrNull functions are not too pretty

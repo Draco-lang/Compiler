@@ -84,7 +84,7 @@ public sealed class ParseTreeFormatterTests
 
             """";
 
-        var actual = ParseNode.Parse(input).Format().ToString();
+        var actual = ParseTree.Parse(input).Root.Format().ToString();
 
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }

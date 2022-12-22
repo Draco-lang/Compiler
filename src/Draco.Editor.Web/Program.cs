@@ -63,7 +63,7 @@ public partial class Program
     {
         try
         {
-            var tree = ParseNode.Parse(code);
+            var tree = ParseTree.Parse(code);
             var compilation = Compilation.Create(tree);
             switch (selectedOutputType)
             {

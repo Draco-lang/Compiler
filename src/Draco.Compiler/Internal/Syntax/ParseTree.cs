@@ -9,6 +9,12 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
+/// <param name="Root">The root of this tree.</param>
+internal sealed record class ParseTree(ParseNode Root);
+
+/// <summary>
+/// An individual node in the <see cref="ParseTree"/>.
+/// </summary>
 [GreenTree]
 internal abstract partial record class ParseNode
 {

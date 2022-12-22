@@ -88,6 +88,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         procedure.ReturnType = this.TranslateType(node.ReturnType);
 
         this.VisitBlockExpr(node.Body);
+        if (!this.writer.EndsInBranch) this.writer.Ret(Value.Unit.Instance);
 
         this.writer = oldWriter;
         return this.Default;

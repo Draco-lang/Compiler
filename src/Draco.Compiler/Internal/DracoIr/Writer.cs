@@ -17,6 +17,11 @@ internal readonly record struct Label(BasicBlock Target);
 /// </summary>
 internal sealed class InstructionWriter
 {
+    /// <summary>
+    /// True, if the last instruction was some kind of branching.
+    /// </summary>
+    public bool EndsInBranch => this.currentBasicBlock is null;
+
     private readonly Procedure procedure;
     private BasicBlock? currentBasicBlock;
 

@@ -192,7 +192,14 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         if (node.Operator == Intrinsics.Operators.LessEqual_Int32) return this.writer.LessEqualInt(left, right);
         if (node.Operator == Intrinsics.Operators.GreaterEqual_Int32) return this.writer.LessEqualInt(right, left);
         if (node.Operator == Intrinsics.Operators.Equal_Int32) return this.writer.EqualInt(left, right);
-        if (node.Operator == Intrinsics.Operators.NotEqual_Int32) return this.writer.NotBool(this.writer.EqualInt(left, right));
+        if (node.Operator == Intrinsics.Operators.NotEqual_Int32)
+        {
+            // a != b
+            // <=>
+            // !(a == b)
+            var tmp = this.writer.EqualInt(left, right);
+            return this.writer.NotBool(tmp);
+        }
         // TODO
         throw new NotImplementedException();
     }

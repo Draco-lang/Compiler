@@ -44,7 +44,7 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
     protected override Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
         var content = this.repository.GetDocument(identifier.TextDocument.Uri);
-        var parseTree = ParseTree.Parse(content);
+        var parseTree = ParseNode.Parse(content);
         var tokens = GetTokens(parseTree);
         foreach (var token in tokens)
         {
@@ -77,6 +77,6 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
             Range = true
         };
 
-    private static IEnumerable<SemanticToken> GetTokens(ParseTree tree) => tree.Tokens
+    private static IEnumerable<SemanticToken> GetTokens(ParseNode tree) => tree.Tokens
         .Select(t => Translator.ToLsp(t)!).OfType<SemanticToken>();
 }

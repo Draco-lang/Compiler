@@ -9,9 +9,9 @@ public sealed class ParseTreeFormatterTests
     {
         var input = """"
                 myLabelNonIndented:
-             func  main  ( )  {   
-                    
-            var   x   :  int32   = 5+ 
+             func  main  ( )  {
+
+            var   x   :  int32   = 5+
 
               4  + 5  ;
 
@@ -28,7 +28,7 @@ public sealed class ParseTreeFormatterTests
             x.Function();
               }
                  val  x = 4;
-             var t   = 7    ;     
+             var t   = 7    ;
                if(x > t){
              myLabel:
                 val x = if
@@ -44,7 +44,7 @@ public sealed class ParseTreeFormatterTests
                  4;
              if  ( x >=  7 ) t  =4; else t  = 3
              ;
-            goto   
+            goto
                myLabel ;
              return   x;
             }
@@ -84,7 +84,7 @@ public sealed class ParseTreeFormatterTests
 
             """";
 
-        var actual = ParseTree.Parse(input).Format().ToString();
+        var actual = ParseNode.Parse(input).Format().ToString();
 
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }

@@ -4,8 +4,8 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
-using Token = Draco.Compiler.Internal.Syntax.ParseTree.Token;
-using Trivia = Draco.Compiler.Internal.Syntax.ParseTree.Trivia;
+using Token = Draco.Compiler.Internal.Syntax.ParseNode.Token;
+using Trivia = Draco.Compiler.Internal.Syntax.ParseNode.Trivia;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -18,7 +18,7 @@ internal sealed record class ParseTreeFormatterSettings(string Indentation)
 }
 
 /// <summary>
-/// The formatter for <see cref="ParseTree"/>.
+/// The formatter for <see cref="ParseNode"/>.
 /// </summary>
 internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 {
@@ -46,7 +46,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         this.settings = settings;
     }
 
-    private static IEnumerable<Token> GetTokens(ParseTree tree) =>
+    private static IEnumerable<Token> GetTokens(ParseNode tree) =>
         tree.InOrderTraverse().OfType<Token>();
 
     private Token.Builder AddIndentation(Token.Builder newToken)
@@ -66,11 +66,11 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
     private void RemoveIndentation() => this.indentCount--;
 
     /// <summary>
-    /// Formats the given <see cref="ParseTree"/>.
+    /// Formats the given <see cref="ParseNode"/>.
     /// </summary>
-    /// <param name="tree">The <see cref="ParseTree"/> to be formatted.</param>
+    /// <param name="tree">The <see cref="ParseNode"/> to be formatted.</param>
     /// <returns></returns>
-    public ParseTree Format(ParseTree tree)
+    public ParseNode Format(ParseNode tree)
     {
         this.tokens = GetTokens(tree).GetEnumerator();
         this.lastToken = TokenType.EndOfInput;
@@ -80,7 +80,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         return this.Transform(tree, out _);
     }
 
-    public override ParseTree.Decl.Label TransformLabelDecl(ParseTree.Decl.Label node, out bool changed)
+    public override ParseNode.Decl.Label TransformLabelDecl(ParseNode.Decl.Label node, out bool changed)
     {
         // Labels are indented one less than te rest of the code
         this.RemoveIndentation();
@@ -94,7 +94,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         else this.nextToken = TokenType.EndOfInput;
         changed = identifierChanged || colonTokenChanged;
         if (!changed) return node;
-        return new Draco.Compiler.Internal.Syntax.ParseTree.Decl.Label(trIdentifier, trColonToken);
+        return new Draco.Compiler.Internal.Syntax.ParseNode.Decl.Label(trIdentifier, trColonToken);
     }
 
     public override Token TransformToken(Token token, out bool changed)

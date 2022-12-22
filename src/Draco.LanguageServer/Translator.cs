@@ -34,7 +34,7 @@ internal static class Translator
     public static LspModels.Position ToLsp(CompilerApi.Syntax.Position position) =>
         new(line: position.Line, character: position.Column);
 
-    public static SemanticToken? ToLsp(CompilerApi.Syntax.ParseTree.Token token) => token.Type switch
+    public static SemanticToken? ToLsp(CompilerApi.Syntax.ParseNode.Token token) => token.Type switch
     {
         CompilerApi.Syntax.TokenType.LineStringStart
      or CompilerApi.Syntax.TokenType.LineStringEnd

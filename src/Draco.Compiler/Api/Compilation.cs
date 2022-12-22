@@ -30,10 +30,10 @@ public sealed class Compilation
     /// <summary>
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
-    /// <param name="parseTree">The <see cref="Syntax.ParseTree"/> to compile.</param>
+    /// <param name="parseTree">The <see cref="Syntax.ParseNode"/> to compile.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
-    public static Compilation Create(ParseTree parseTree, string? assemblyName = null) => new(
+    public static Compilation Create(ParseNode parseTree, string? assemblyName = null) => new(
         parseTree: parseTree,
         assemblyName: assemblyName);
 
@@ -42,14 +42,14 @@ public sealed class Compilation
     /// <summary>
     /// The tree that is being compiled.
     /// </summary>
-    public ParseTree ParseTree { get; }
+    public ParseNode ParseTree { get; }
 
     /// <summary>
     /// The name of the output assembly.
     /// </summary>
     public string? AssemblyName { get; }
 
-    private Compilation(ParseTree parseTree, string? assemblyName)
+    private Compilation(ParseNode parseTree, string? assemblyName)
     {
         this.ParseTree = parseTree;
         this.AssemblyName = assemblyName;

@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 /// </summary>
 internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
 {
-    public static string Print(QueryDatabase db, ParseTree parseTree)
+    public static string Print(QueryDatabase db, ParseNode parseTree)
     {
         var printer = new ScopeTreePrinter(db);
         printer.PrintTree(parseTree);
@@ -25,7 +25,7 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
         this.db = db;
     }
 
-    protected override NodeAction GetNodeAction(ParseTree tree) => tree switch
+    protected override NodeAction GetNodeAction(ParseNode tree) => tree switch
     {
         _ when this.GetDefinedScope(tree) is not null
             || this.GetDefinedSymbol(tree) is not null
@@ -33,7 +33,7 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
         _ => NodeAction.Skip,
     };
 
-    protected override void PrintSingle(ParseTree tree)
+    protected override void PrintSingle(ParseNode tree)
     {
         var name = this.GetNodeName(tree);
 
@@ -81,19 +81,19 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
         }
     }
 
-    private static string InferNodeText(ParseTree tree) => tree switch
+    private static string InferNodeText(ParseNode tree) => tree switch
     {
-        ParseTree.Expr.Name name => name.Identifier.Text,
-        ParseTree.TypeExpr.Name name => name.Identifier.Text,
+        ParseNode.Expr.Name name => name.Identifier.Text,
+        ParseNode.TypeExpr.Name name => name.Identifier.Text,
         _ => tree.GetType().Name,
     };
 
-    private IScope? GetDefinedScope(ParseTree tree) =>
+    private IScope? GetDefinedScope(ParseNode tree) =>
         SymbolResolution.GetDefinedScopeOrNull(this.db, tree);
 
-    private ISymbol? GetDefinedSymbol(ParseTree tree) =>
+    private ISymbol? GetDefinedSymbol(ParseNode tree) =>
         SymbolResolution.GetDefinedSymbolOrNull(this.db, tree);
 
-    private ISymbol? GetReferencedSymbol(ParseTree tree) =>
+    private ISymbol? GetReferencedSymbol(ParseNode tree) =>
         SymbolResolution.GetReferencedSymbolOrNull(this.db, tree);
 }

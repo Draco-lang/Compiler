@@ -11,14 +11,14 @@ using Draco.RedGreenTree.Attributes;
 namespace Draco.Compiler.Api.Syntax;
 
 // Utilities for public API
-public abstract partial class ParseTree
+public abstract partial class ParseNode
 {
     /// <summary>
-    /// Parses the given tree into a <see cref="ParseTree"/>.
+    /// Parses the given tree into a <see cref="ParseNode"/>.
     /// </summary>
     /// <param name="source">The source to parse.</param>
     /// <returns>The parsed tree.</returns>
-    public static ParseTree Parse(string source)
+    public static ParseNode Parse(string source)
     {
         var srcReader = Internal.Syntax.SourceReader.From(source);
         var lexer = new Internal.Syntax.Lexer(srcReader);
@@ -32,15 +32,15 @@ public abstract partial class ParseTree
 /// <summary>
 /// The base class for all nodes in the Draco parse-tree.
 /// </summary>
-[RedTree(typeof(Internal.Syntax.ParseTree))]
-public abstract partial class ParseTree : IEquatable<ParseTree>
+[RedTree(typeof(Internal.Syntax.ParseNode))]
+public abstract partial class ParseNode : IEquatable<ParseNode>
 {
-    private readonly Internal.Syntax.ParseTree green;
+    private readonly Internal.Syntax.ParseNode green;
 
     /// <summary>
     /// The parent of this node, if any.
     /// </summary>
-    public ParseTree? Parent { get; }
+    public ParseNode? Parent { get; }
 
     /// <summary>
     /// The text this node was parsed from.
@@ -82,8 +82,8 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     public string ToDotGraphString() => Internal.Syntax.DotParseTreePrinter.Print(this);
 
     // Equality by green nodes
-    public bool Equals(ParseTree? other) => ReferenceEquals(this.Green, other?.Green);
-    public override bool Equals(object? obj) => this.Equals(obj as ParseTree);
+    public bool Equals(ParseNode? other) => ReferenceEquals(this.Green, other?.Green);
+    public override bool Equals(object? obj) => this.Equals(obj as ParseNode);
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this.Green);
 
     public sealed partial class Token
@@ -92,22 +92,22 @@ public abstract partial class ParseTree : IEquatable<ParseTree>
     }
 
     /// <summary>
-    /// Formats the <see cref="ParseTree"/>.
+    /// Formats the <see cref="ParseNode"/>.
     /// </summary>
-    /// <returns>The formatted <see cref="ParseTree"/>.</returns>
-    public ParseTree Format() => ToRed(
+    /// <returns>The formatted <see cref="ParseNode"/>.</returns>
+    public ParseNode Format() => ToRed(
         parent: null,
         green: new Internal.Syntax.ParseTreeFormatter(Internal.Syntax.ParseTreeFormatterSettings.Default).Format(this.Green));
 }
 
 // Traverasal
-public abstract partial class ParseTree
+public abstract partial class ParseNode
 {
     /// <summary>
     /// Traverses this subtree in an in-order fashion, meaning that the order is root, left, right recursively.
     /// </summary>
-    /// <returns>The <see cref="IEnumerable{ParseTree}"/> that gives back nodes in order.</returns>
-    public IEnumerable<ParseTree> InOrderTraverse()
+    /// <returns>The <see cref="IEnumerable{ParseNode}"/> that gives back nodes in order.</returns>
+    public IEnumerable<ParseNode> InOrderTraverse()
     {
         yield return this;
         foreach (var child in this.Children)
@@ -123,13 +123,13 @@ public abstract partial class ParseTree
     /// <param name="index">The index of the child to search for.</param>
     /// <returns>The <paramref name="index"/>th child of type <typeparamref name="TNode"/>.</returns>
     public TNode FindInChildren<TNode>(int index = 0)
-        where TNode : ParseTree => this
+        where TNode : ParseNode => this
         .InOrderTraverse()
         .OfType<TNode>()
         .ElementAt(index);
 }
 
-public abstract partial class ParseTree
+public abstract partial class ParseNode
 {
     internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range)
     {
@@ -199,7 +199,7 @@ public abstract partial class ParseTree
 
     protected virtual IEnumerable<Token> GetTokens() => this.Children.SelectMany(c => c.Tokens);
 
-    private Token? GetPrecedingToken(ParseTree tree)
+    private Token? GetPrecedingToken(ParseNode tree)
     {
         var preceding = null as Token;
         foreach (var child in this.Children)
@@ -261,7 +261,7 @@ public abstract partial class ParseTree
     }
 }
 
-public abstract partial class ParseTree
+public abstract partial class ParseNode
 {
     public sealed partial class Token
     {
@@ -297,7 +297,7 @@ public abstract partial class ParseTree
     }
 }
 
-public abstract partial class ParseTree
+public abstract partial class ParseNode
 {
     public readonly record struct Enclosed<T>(
         Token OpenToken,
@@ -312,78 +312,78 @@ public abstract partial class ParseTree
         ImmutableArray<Punctuated<T>> Elements);
 }
 
-public abstract partial class ParseTree
+public abstract partial class ParseNode
 {
     // Plumbing code for green-red conversion
     // TODO: Can we reduce boilerplate?
 
     [return: NotNullIfNotNull(nameof(token))]
-    internal static Token? ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Token? token) =>
+    internal static Token? ToRed(ParseNode? parent, Internal.Syntax.ParseNode.Token? token) =>
         token is null ? null : new(parent, token);
 
-    private static Trivia ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Trivia trivia) =>
+    private static Trivia ToRed(ParseNode? parent, Internal.Syntax.ParseNode.Trivia trivia) =>
         new(parent, trivia);
 
-    private static IEnumerable<ParseTree> ToRed(ParseTree? parent, IEnumerable<Internal.Syntax.ParseTree> elements) =>
+    private static IEnumerable<ParseNode> ToRed(ParseNode? parent, IEnumerable<Internal.Syntax.ParseNode> elements) =>
         elements.Select(e => ToRed(parent, e));
 
-    private static ImmutableArray<ParseTree> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree> elements) =>
+    private static ImmutableArray<ParseNode> ToRed(ParseNode? parent, ImmutableArray<Internal.Syntax.ParseNode> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
-    private static ImmutableArray<Token> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Token> elements) =>
+    private static ImmutableArray<Token> ToRed(ParseNode? parent, ImmutableArray<Internal.Syntax.ParseNode.Token> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
-    private static ImmutableArray<Trivia> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Trivia> elements) =>
+    private static ImmutableArray<Trivia> ToRed(ParseNode? parent, ImmutableArray<Internal.Syntax.ParseNode.Trivia> elements) =>
         elements.Select(e => ToRed(parent, e)).ToImmutableArray();
 
-    private static ImmutableArray<Decl> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Decl> elements) =>
+    private static ImmutableArray<Decl> ToRed(ParseNode? parent, ImmutableArray<Internal.Syntax.ParseNode.Decl> elements) =>
         elements.Select(e => (Decl)ToRed(parent, e)).ToImmutableArray();
 
-    private static ImmutableArray<Stmt> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.Stmt> elements) =>
+    private static ImmutableArray<Stmt> ToRed(ParseNode? parent, ImmutableArray<Internal.Syntax.ParseNode.Stmt> elements) =>
         elements.Select(e => (Stmt)ToRed(parent, e)).ToImmutableArray();
 
-    private static ImmutableArray<ComparisonElement> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.ComparisonElement> elements) =>
+    private static ImmutableArray<ComparisonElement> ToRed(ParseNode? parent, ImmutableArray<Internal.Syntax.ParseNode.ComparisonElement> elements) =>
         elements.Select(e => (ComparisonElement)ToRed(parent, e)).ToImmutableArray();
 
-    private static ImmutableArray<StringPart> ToRed(ParseTree? parent, ImmutableArray<Internal.Syntax.ParseTree.StringPart> elements) =>
+    private static ImmutableArray<StringPart> ToRed(ParseNode? parent, ImmutableArray<Internal.Syntax.ParseNode.StringPart> elements) =>
         elements.Select(e => (StringPart)ToRed(parent, e)).ToImmutableArray();
 
-    private static Enclosed<PunctuatedList<FuncParam>> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.FuncParam>> enclosed) =>
+    private static Enclosed<PunctuatedList<FuncParam>> ToRed(ParseNode? parent, Internal.Syntax.ParseNode.Enclosed<Internal.Syntax.ParseNode.PunctuatedList<Internal.Syntax.ParseNode.FuncParam>> enclosed) =>
         new(
             ToRed(parent, enclosed.OpenToken),
             ToRed(parent, enclosed.Value),
             ToRed(parent, enclosed.CloseToken));
 
-    private static PunctuatedList<FuncParam> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.FuncParam> elements) =>
+    private static PunctuatedList<FuncParam> ToRed(ParseNode? parent, Internal.Syntax.ParseNode.PunctuatedList<Internal.Syntax.ParseNode.FuncParam> elements) =>
         new(elements.Elements.Select(e => ToRed(parent, e)).ToImmutableArray());
 
-    private static Punctuated<FuncParam> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Punctuated<Internal.Syntax.ParseTree.FuncParam> punctuated) =>
+    private static Punctuated<FuncParam> ToRed(ParseNode? parent, Internal.Syntax.ParseNode.Punctuated<Internal.Syntax.ParseNode.FuncParam> punctuated) =>
         new(
             (FuncParam)ToRed(parent, punctuated.Value),
             ToRed(parent, punctuated.Punctuation));
 
-    private static Enclosed<BlockContents> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.BlockContents> enclosed) =>
+    private static Enclosed<BlockContents> ToRed(ParseNode? parent, Internal.Syntax.ParseNode.Enclosed<Internal.Syntax.ParseNode.BlockContents> enclosed) =>
         new(
             ToRed(parent, enclosed.OpenToken),
             (BlockContents)ToRed(parent, enclosed.Value),
             ToRed(parent, enclosed.CloseToken));
 
-    private static Enclosed<Expr> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.Expr> enclosed) =>
+    private static Enclosed<Expr> ToRed(ParseNode? parent, Internal.Syntax.ParseNode.Enclosed<Internal.Syntax.ParseNode.Expr> enclosed) =>
         new(
             ToRed(parent, enclosed.OpenToken),
             (Expr)ToRed(parent, enclosed.Value),
             ToRed(parent, enclosed.CloseToken));
 
-    private static Enclosed<PunctuatedList<Expr>> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.Expr>> enclosed) =>
+    private static Enclosed<PunctuatedList<Expr>> ToRed(ParseNode? parent, Internal.Syntax.ParseNode.Enclosed<Internal.Syntax.ParseNode.PunctuatedList<Internal.Syntax.ParseNode.Expr>> enclosed) =>
         new(
             ToRed(parent, enclosed.OpenToken),
             ToRed(parent, enclosed.Value),
             ToRed(parent, enclosed.CloseToken));
 
-    private static PunctuatedList<Expr> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.Expr> elements) =>
+    private static PunctuatedList<Expr> ToRed(ParseNode? parent, Internal.Syntax.ParseNode.PunctuatedList<Internal.Syntax.ParseNode.Expr> elements) =>
         new(elements.Elements.Select(e => ToRed(parent, e)).ToImmutableArray());
 
-    private static Punctuated<Expr> ToRed(ParseTree? parent, Internal.Syntax.ParseTree.Punctuated<Internal.Syntax.ParseTree.Expr> punctuated) =>
+    private static Punctuated<Expr> ToRed(ParseNode? parent, Internal.Syntax.ParseNode.Punctuated<Internal.Syntax.ParseNode.Expr> punctuated) =>
         new(
             (Expr)ToRed(parent, punctuated.Value),
             ToRed(parent, punctuated.Punctuation));

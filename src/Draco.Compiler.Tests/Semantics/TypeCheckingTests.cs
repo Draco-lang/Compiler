@@ -31,7 +31,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")), LiteralExpr(0)))))));
 
-        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -59,7 +59,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"), value: LiteralExpr(0)))))));
 
-        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -87,7 +87,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32"))))))));
 
-        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -117,7 +117,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 DeclStmt(VariableDecl(Name("x"))),
                 ExprStmt(BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)))))));
 
-        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -145,7 +145,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(Name("x")))))));
 
-        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -363,8 +363,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel();
 
         var diags = semanticModel.GetAllDiagnostics();
-        var fooDecl = tree.FindInChildren<ParseTree.Decl.Func>(0);
-        var barDecl = tree.FindInChildren<ParseTree.Decl.Func>(1);
+        var fooDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
+        var barDecl = tree.FindInChildren<ParseNode.Decl.Func>(1);
         var fooSymbol = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
         var barSymbol = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(barDecl));
 
@@ -395,8 +395,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     DeclStmt(VariableDecl(Name("x"), value: IfExpr(LiteralExpr(true), LiteralExpr(0), ReturnExpr()))),
                     DeclStmt(VariableDecl(Name("y"), value: IfExpr(LiteralExpr(true), LiteralExpr(0), GotoExpr("start"))))))));
 
-        var xDecl = tree.FindInChildren<ParseTree.Decl.Variable>(0);
-        var yDecl = tree.FindInChildren<ParseTree.Decl.Variable>(1);
+        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
+        var yDecl = tree.FindInChildren<ParseNode.Decl.Variable>(1);
 
         // Act
         var compilation = Compilation.Create(tree);

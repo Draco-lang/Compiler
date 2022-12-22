@@ -144,6 +144,26 @@ internal enum InstructionKind
     AddInt,
 
     /// <summary>
+    /// Integer subtraction.
+    /// </summary>
+    SubInt,
+
+    /// <summary>
+    /// Integer multiplication.
+    /// </summary>
+    MulInt,
+
+    /// <summary>
+    /// Integer division.
+    /// </summary>
+    DivInt,
+
+    /// <summary>
+    /// Integer remainder.
+    /// </summary>
+    RemInt,
+
+    /// <summary>
     /// Integer less-than comparison.
     /// </summary>
     LessInt,
@@ -432,6 +452,14 @@ internal abstract partial class Instruction
         new Instruction3<Value, IReadOnlyBasicBlock, IReadOnlyBasicBlock>(InstructionKind.JmpIf, condition, then, els);
     public static Instruction AddInt(Value.Register target, Value a, Value b) =>
         new Instruction3<Value.Register, Value, Value>(InstructionKind.AddInt, target, a, b);
+    public static Instruction SubInt(Value.Register target, Value a, Value b) =>
+        new Instruction3<Value.Register, Value, Value>(InstructionKind.SubInt, target, a, b);
+    public static Instruction MulInt(Value.Register target, Value a, Value b) =>
+        new Instruction3<Value.Register, Value, Value>(InstructionKind.MulInt, target, a, b);
+    public static Instruction DivInt(Value.Register target, Value a, Value b) =>
+        new Instruction3<Value.Register, Value, Value>(InstructionKind.DivInt, target, a, b);
+    public static Instruction RemInt(Value.Register target, Value a, Value b) =>
+        new Instruction3<Value.Register, Value, Value>(InstructionKind.RemInt, target, a, b);
     public static Instruction LessInt(Value.Register target, Value a, Value b) =>
         new Instruction3<Value.Register, Value, Value>(InstructionKind.LessInt, target, a, b);
     public static Instruction LessEqualInt(Value.Register target, Value a, Value b) =>

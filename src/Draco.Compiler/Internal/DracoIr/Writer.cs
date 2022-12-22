@@ -108,6 +108,14 @@ internal sealed class InstructionWriter
     }
     public Value.Register AddInt(Value a, Value b) =>
         this.MakeWithRegister(a.Type, target => Instruction.AddInt(target, a, b));
+    public Value.Register SubInt(Value a, Value b) =>
+        this.MakeWithRegister(a.Type, target => Instruction.SubInt(target, a, b));
+    public Value.Register MulInt(Value a, Value b) =>
+        this.MakeWithRegister(a.Type, target => Instruction.MulInt(target, a, b));
+    public Value.Register DivInt(Value a, Value b) =>
+        this.MakeWithRegister(a.Type, target => Instruction.DivInt(target, a, b));
+    public Value.Register RemInt(Value a, Value b) =>
+        this.MakeWithRegister(a.Type, target => Instruction.RemInt(target, a, b));
     public Value.Register LessInt(Value a, Value b) =>
         this.MakeWithRegister(Type.Bool, target => Instruction.LessInt(target, a, b));
     public Value.Register LessEqualInt(Value a, Value b) =>

@@ -174,6 +174,19 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         var left = this.VisitExpr(node.Left);
         var right = this.VisitExpr(node.Right);
         if (node.Operator == Intrinsics.Operators.Add_Int32) return this.writer.AddInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Sub_Int32) return this.writer.SubInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Mul_Int32) return this.writer.MulInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Div_Int32) return this.writer.DivInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Rem_Int32) return this.writer.RemInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Mod_Int32)
+        {
+            // a mod b
+            // <=>
+            // (a rem b + b) rem b
+            var tmp1 = this.writer.RemInt(left, right);
+            var tmp2 = this.writer.AddInt(tmp1, right);
+            return this.writer.RemInt(tmp2, right);
+        }
         if (node.Operator == Intrinsics.Operators.Less_Int32) return this.writer.LessInt(left, right);
         if (node.Operator == Intrinsics.Operators.Greater_Int32) return this.writer.LessInt(right, left);
         if (node.Operator == Intrinsics.Operators.LessEqual_Int32) return this.writer.LessEqualInt(left, right);

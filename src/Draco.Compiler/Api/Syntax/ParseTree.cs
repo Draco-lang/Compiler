@@ -15,8 +15,16 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed partial class ParseTree
 {
-    private ParseNode? root;
+    /// <summary>
+    /// The <see cref="Syntax.SourceText"/> this tree was parsed from.
+    /// </summary>
+    public SourceText SourceText => this.green.SourceText;
+
+    /// <summary>
+    /// The root node of this tree.
+    /// </summary>
     public ParseNode Root => this.root ??= ParseNode.ToRed(null, this.green.Root);
+    private ParseNode? root;
 
     /// <summary>
     /// All syntactic <see cref="Diagnostic"/> messages in the tree.
@@ -36,8 +44,8 @@ public sealed partial class ParseTree
     /// Formats the <see cref="ParseTree"/>.
     /// </summary>
     /// <returns>The formatted <see cref="ParseTree"/>.</returns>
-    public ParseTree Format() => new(
-        green: new Internal.Syntax.ParseTreeFormatter(Internal.Syntax.ParseTreeFormatterSettings.Default).Format(this.green));
+    public ParseTree Format() =>
+        new(new Internal.Syntax.ParseTreeFormatter(Internal.Syntax.ParseTreeFormatterSettings.Default).Format(this.green));
 
     /// <summary>
     /// See <see cref="ParseNode.FindInChildren{TNode}(int)"/>.
@@ -54,21 +62,28 @@ public sealed partial class ParseTree
     /// </summary>
     /// <param name="root">The root of the tree.</param>
     /// <returns>A <see cref="ParseTree"/> created from <paramref name="root"/>.</returns>
-    public static ParseTree Create(ParseNode root) => new(green: new(root.Green));
+    public static ParseTree Create(ParseNode root) => new(new(SourceText.None, root.Green));
 
     /// <summary>
-    /// Parses the given tree into a <see cref="ParseTree"/>.
+    /// Parses the given text into a <see cref="ParseTree"/>.
     /// </summary>
     /// <param name="source">The source to parse.</param>
     /// <returns>The parsed tree.</returns>
-    public static ParseTree Parse(string source)
+    public static ParseTree Parse(string source) => Parse(SourceText.FromText(source));
+
+    /// <summary>
+    /// Parses the given <see cref="Syntax.SourceText"/> into a <see cref="ParseTree"/>.
+    /// </summary>
+    /// <param name="source">The source to parse.</param>
+    /// <returns>The parsed tree.</returns>
+    public static ParseTree Parse(SourceText source)
     {
-        var srcReader = Internal.Syntax.SourceReader.From(source);
+        var srcReader = source.SourceReader;
         var lexer = new Internal.Syntax.Lexer(srcReader);
         var tokenSource = Internal.Syntax.TokenSource.From(lexer);
         var parser = new Internal.Syntax.Parser(tokenSource);
         var cu = parser.ParseCompilationUnit();
-        return Create(ParseNode.ToRed(null, cu));
+        return new(new(source, cu));
     }
 }
 

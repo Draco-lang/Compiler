@@ -6,6 +6,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Draco.Compiler.Api.Syntax;
+using System;
 
 namespace Draco.LanguageServer.Handlers;
 
@@ -43,8 +44,10 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
 
     protected override Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier, CancellationToken cancellationToken)
     {
+        var uri = identifier.TextDocument.Uri.ToUri();
         var content = this.repository.GetDocument(identifier.TextDocument.Uri);
-        var parseTree = ParseTree.Parse(content);
+        var sourceText = SourceText.FromText(uri, content.AsMemory());
+        var parseTree = ParseTree.Parse(sourceText);
         var tokens = GetTokens(parseTree.Root);
         foreach (var token in tokens)
         {

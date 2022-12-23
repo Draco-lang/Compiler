@@ -36,7 +36,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         get
         {
             var result = new StringBuilder();
-            for (int i = 0; i < this.indentCount; ++i) result.Append(this.settings.Indentation);
+            for (var i = 0; i < this.indentCount; ++i) result.Append(this.settings.Indentation);
             return result.ToString();
         }
     }
@@ -70,7 +70,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
     /// </summary>
     /// <param name="tree">The <see cref="ParseTree"/> to be formatted.</param>
     /// <returns>The formatted <paramref name="tree"/>.</returns>
-    public ParseTree Format(ParseTree tree) => new(Root: this.Format(tree.Root));
+    public ParseTree Format(ParseTree tree) => new(SourceText: tree.SourceText, Root: this.Format(tree.Root));
 
     /// <summary>
     /// Formats the given <see cref="ParseNode"/>.
@@ -91,7 +91,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
     {
         // Labels are indented one less than te rest of the code
         this.RemoveIndentation();
-        var trIdentifier = this.TransformToken(node.Identifier, out bool identifierChanged);
+        var trIdentifier = this.TransformToken(node.Identifier, out var identifierChanged);
         var trColonToken = Token.Builder.From(node.ColonToken).SetLeadingTrivia(noSpaceTrivia).SetTrailingTrivia(newlineTrivia).Build();
         this.AddIndentation();
         var colonTokenChanged = CheckTriviaEqual(trColonToken, node.ColonToken);
@@ -239,13 +239,13 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
     private static bool CheckTriviaEqual(Token tok1, Token tok2)
     {
         if (tok1.TrailingTrivia.Length != tok2.TrailingTrivia.Length) return false;
-        for (int i = 0; i < tok1.TrailingTrivia.Length; i++)
+        for (var i = 0; i < tok1.TrailingTrivia.Length; i++)
         {
             if (tok1.TrailingTrivia[i].Text != tok2.TrailingTrivia[i].Text) return false;
         }
 
         if (tok1.LeadingTrivia.Length != tok2.LeadingTrivia.Length) return false;
-        for (int i = 0; i < tok1.LeadingTrivia.Length; i++)
+        for (var i = 0; i < tok1.LeadingTrivia.Length; i++)
         {
             if (tok1.LeadingTrivia[i].Text != tok2.LeadingTrivia[i].Text) return false;
         }

@@ -5,12 +5,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Parses a sequence of <see cref="Token"/>s into a <see cref="ParseTree"/>.
+/// Parses a sequence of <see cref="Token"/>s into a <see cref="ParseNode"/>.
 /// </summary>
 internal sealed class Parser
 {
@@ -1003,11 +1003,11 @@ internal sealed class Parser
     /// while a given condition is met.
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
-    /// <returns>The consumed list of <see cref="Token"/>s as <see cref="ParseTree"/>s.</returns>
-    private ImmutableArray<ParseTree> Synchronize(Func<TokenType, bool> keepGoing)
+    /// <returns>The consumed list of <see cref="Token"/>s as <see cref="ParseNode"/>s.</returns>
+    private ImmutableArray<ParseNode> Synchronize(Func<TokenType, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
-        var input = ImmutableArray.CreateBuilder<ParseTree>();
+        var input = ImmutableArray.CreateBuilder<ParseNode>();
         while (true)
         {
             var peek = this.Peek();

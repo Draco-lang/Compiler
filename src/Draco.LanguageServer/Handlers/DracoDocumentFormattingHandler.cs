@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
@@ -22,9 +23,11 @@ internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandler
 
     public override Task<TextEditContainer?> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
     {
+        var uri = request.TextDocument.Uri.ToUri();
         var source = this.repository.GetDocument(request.TextDocument.Uri);
-        var tree = ParseTree.Parse(source);
-        var originalRange = tree.Range;
+        var sourceText = SourceText.FromText(uri, source.AsMemory());
+        var tree = ParseTree.Parse(sourceText);
+        var originalRange = tree.Root.Range;
         tree = tree.Format();
         var edit = new TextEdit()
         {

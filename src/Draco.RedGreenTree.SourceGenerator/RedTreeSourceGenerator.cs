@@ -11,10 +11,18 @@ public sealed class RedTreeSourceGenerator : SourceGeneratorBase<RedTreeGenerato
         INamedTypeSymbol targetType,
         AttributeData attributeData)
     {
-        if (attributeData.ConstructorArguments.Length != 1) return null;
-        var arg = attributeData.ConstructorArguments[0];
-        if (arg.Value is not INamedTypeSymbol greenRootType) return null;
-        return new RedTreeGenerator.Settings(greenRootType, targetType);
+        if (attributeData.ConstructorArguments.Length != 3) return null;
+        var arg0 = attributeData.ConstructorArguments[0];
+        var arg1 = attributeData.ConstructorArguments[1];
+        var arg2 = attributeData.ConstructorArguments[2];
+        if (arg0.Value is not INamedTypeSymbol greenTreeType) return null;
+        if (arg1.Value is not INamedTypeSymbol redTreeType) return null;
+        if (arg2.Value is not INamedTypeSymbol rootType) return null;
+        return new RedTreeGenerator.Settings(
+            greenTreeType: greenTreeType,
+            greenRootType: rootType,
+            redTreeType: redTreeType,
+            redRootType: targetType);
     }
 
     protected override string GenerateCode(RedTreeGenerator.Settings settings) =>

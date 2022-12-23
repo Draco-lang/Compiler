@@ -98,9 +98,9 @@ internal sealed partial class Diagnostic
     /// <summary>
     /// Translates this <see cref="Diagnostic"/> to an <see cref="ApiDiagnostic"/>.
     /// </summary>
-    /// <param name="context">The <see cref="ParseTree"/> node this <see cref="Diagnostic"/> is attached to.</param>
+    /// <param name="context">The <see cref="ParseNode"/> node this <see cref="Diagnostic"/> is attached to.</param>
     /// <returns>The equivalent <see cref="ApiDiagnostic"/> to <paramref name="context"/>.</returns>
-    public ApiDiagnostic ToApiDiagnostic(ParseTree? context) => new(
+    public ApiDiagnostic ToApiDiagnostic(ParseNode? context) => new(
         this,
         this.Location.ToApiLocation(context),
         this.RelatedInformation.Select(i => i.ToApiDiagnosticRelatedInformation(null)).ToImmutableArray());
@@ -120,9 +120,9 @@ internal sealed record class DiagnosticRelatedInformation(
     /// <summary>
     /// Translates this <see cref="DiagnosticRelatedInformation"/> to an <see cref="ApiDiagnosticRelatedInformation"/>.
     /// </summary>
-    /// <param name="context">The <see cref="ParseTree"/> node this <see cref="DiagnosticRelatedInformation"/> is attached to.</param>
+    /// <param name="context">The <see cref="ParseNode"/> node this <see cref="DiagnosticRelatedInformation"/> is attached to.</param>
     /// <returns>The equivalent <see cref="ApiDiagnosticRelatedInformation"/> to <paramref name="context"/>.</returns>
-    public ApiDiagnosticRelatedInformation ToApiDiagnosticRelatedInformation(ParseTree? context) =>
+    public ApiDiagnosticRelatedInformation ToApiDiagnosticRelatedInformation(ParseNode? context) =>
         new(this, this.Location.ToApiLocation(context));
 }
 

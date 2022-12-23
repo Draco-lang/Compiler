@@ -12,20 +12,30 @@ public sealed class RedTreeGenerator : GeneratorBase
 {
     public sealed class Settings
     {
+        public INamedTypeSymbol GreenTreeType { get; set; }
+        public INamedTypeSymbol RedTreeType { get; set; }
         public INamedTypeSymbol GreenRootType { get; set; }
         public INamedTypeSymbol RedRootType { get; set; }
         public bool GenerateGreenProperty { get; set; } = true;
+        public bool GenerateTreeProperty { get; set; } = true;
         public bool GenerateProjectedProperties { get; set; } = true;
         public bool GenerateConstructor { get; set; } = true;
         public bool GenerateToRedMethod { get; set; } = true;
         public Func<INamedTypeSymbol, string> GetRedName { get; set; } = x => x.Name;
         public string GreenPropertyName { get; set; } = "Green";
+        public string TreePropertyName { get; set; } = "Tree";
         public string ParentPropertyName { get; set; } = "Parent";
         public string ToRedMethodName { get; set; } = "ToRed";
 
-        public Settings(INamedTypeSymbol greenRootType, INamedTypeSymbol redRootType)
+        public Settings(
+            INamedTypeSymbol greenTreeType,
+            INamedTypeSymbol greenRootType,
+            INamedTypeSymbol redTreeType,
+            INamedTypeSymbol redRootType)
         {
+            this.GreenTreeType = greenTreeType;
             this.GreenRootType = greenRootType;
+            this.RedTreeType = redTreeType;
             this.RedRootType = redRootType;
         }
     }
@@ -41,14 +51,17 @@ public sealed class RedTreeGenerator : GeneratorBase
     private readonly CodeWriter headerWriter = new();
     private readonly CodeWriter contentWriter = new();
 
-    private INamedTypeSymbol GreenRootType => this.settings.GreenRootType;
     private INamedTypeSymbol RedRootType => this.settings.RedRootType;
+    private INamedTypeSymbol GreenTreeType => this.settings.GreenTreeType;
+    private INamedTypeSymbol GreenRootType => this.settings.GreenRootType;
     private bool DoGenerateGreenProperty => this.settings.GenerateGreenProperty;
     private bool DoGenerateProjectedProperties => this.settings.GenerateProjectedProperties;
     private bool DoGenerateConstructor => this.settings.GenerateConstructor;
     private bool DoGenerateToRedMethod => this.settings.GenerateToRedMethod;
     private string GreenPropertyName => this.settings.GreenPropertyName;
     private string GreenFieldName => ToCamelCase(this.GreenPropertyName);
+    private string TreePropertyName => this.settings.TreePropertyName;
+    private string TreeFieldName => ToCamelCase(this.TreePropertyName);
     private string ParentPropertyName => this.settings.ParentPropertyName;
     private string ToRedMethodName => this.settings.ToRedMethodName;
     private string GetRedClassName(INamedTypeSymbol type) => SymbolEquals(type, this.GreenRootType)
@@ -187,7 +200,7 @@ public sealed class RedTreeGenerator : GeneratorBase
                 .Write("=>")
                 .Write($"this.{cachedRedName}")
                 .Write("??=")
-                .Write($"({redType}){this.ToRedMethodName}(this, this.{this.GreenPropertyName}.{prop.Name});");
+                .Write($"({redType}){this.ToRedMethodName}(this.{this.TreeFieldName}, this, this.{this.GreenPropertyName}.{prop.Name});");
         }
         else
         {
@@ -208,6 +221,8 @@ public sealed class RedTreeGenerator : GeneratorBase
             .Write("internal")
             .Write(this.GetRedClassName(greenType))
             .Write("(")
+            .Write($"{this.GreenTreeType.ToDisplayString()} tree")
+            .Write(", ")
             .Write($"{this.GetRedClassName(this.GreenRootType)}? parent")
             .Write(", ")
             .Write($"{this.GreenRootType.ToDisplayString()} green")
@@ -217,6 +232,7 @@ public sealed class RedTreeGenerator : GeneratorBase
             this.contentWriter
                 .Write($$"""
                 {
+                    this.{{this.TreeFieldName}} = tree;
                     this.{{this.ParentPropertyName}} = parent;
                     this.{{this.GreenFieldName}} = green;
                 }
@@ -224,7 +240,7 @@ public sealed class RedTreeGenerator : GeneratorBase
         }
         else
         {
-            this.contentWriter.Write(": base(parent, green) {}");
+            this.contentWriter.Write(": base(tree, parent, green) {}");
         }
     }
 
@@ -244,6 +260,8 @@ public sealed class RedTreeGenerator : GeneratorBase
             .Write($"{redRoot}?")
             .Write(this.ToRedMethodName)
             .Write("(")
+            .Write($"{this.GreenTreeType.ToDisplayString()} tree")
+            .Write(", ")
             .Write($"{redRoot}? parent")
             .Write(", ")
             .Write($"{this.GreenRootType.ToDisplayString()}? green")
@@ -257,7 +275,7 @@ public sealed class RedTreeGenerator : GeneratorBase
             this.contentWriter
                 .Write(greenType.ToDisplayString())
                 .Write("=>")
-                .Write($"new {this.GetFullRedClassName(greenType)}(parent, green),");
+                .Write($"new {this.GetFullRedClassName(greenType)}(tree, parent, green),");
         }
 
         this.contentWriter

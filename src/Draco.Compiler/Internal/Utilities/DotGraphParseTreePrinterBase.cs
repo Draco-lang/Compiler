@@ -45,10 +45,10 @@ internal abstract class DotGraphParseTreePrinterBase
         """;
 
     protected StringBuilder Builder { get; } = new();
-    private readonly Dictionary<ParseTree, int> nodeNames = new();
+    private readonly Dictionary<ParseNode, int> nodeNames = new();
     private readonly Stack<int> parentStack = new();
 
-    protected int GetNodeName(ParseTree parseTree)
+    protected int GetNodeName(ParseNode parseTree)
     {
         if (!this.nodeNames.TryGetValue(parseTree, out var name))
         {
@@ -61,9 +61,9 @@ internal abstract class DotGraphParseTreePrinterBase
     protected bool TryGetParentName(out int parentName) =>
         this.parentStack.TryPeek(out parentName);
 
-    protected virtual NodeAction GetNodeAction(ParseTree tree) => NodeAction.Print;
+    protected virtual NodeAction GetNodeAction(ParseNode tree) => NodeAction.Print;
 
-    protected void PrintTree(ParseTree tree)
+    protected void PrintTree(ParseNode tree)
     {
         switch (this.GetNodeAction(tree))
         {
@@ -90,5 +90,5 @@ internal abstract class DotGraphParseTreePrinterBase
         }
     }
 
-    protected abstract void PrintSingle(ParseTree tree);
+    protected abstract void PrintSingle(ParseNode tree);
 }

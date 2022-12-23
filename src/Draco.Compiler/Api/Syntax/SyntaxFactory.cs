@@ -101,8 +101,10 @@ public static partial class SyntaxFactory
     public static Expr.String StringExpr(string value) =>
         StringExpr(LineStringStart, ImmutableArray.Create<StringPart>(ContentStringPart(value)), LineStringEnd);
 
-    public static StringPart.Content ContentStringPart(string value) =>
-        new(parent: null, green: new Internal.Syntax.ParseNode.StringPart.Content(
+    public static StringPart.Content ContentStringPart(string value) => new(
+        tree: null!,
+        parent: null,
+        green: new Internal.Syntax.ParseNode.StringPart.Content(
             Value: Internal.Syntax.ParseNode.Token.From(TokenType.StringContent, value),
             Cutoff: 0,
             Diagnostics: ImmutableArray<Internal.Diagnostics.Diagnostic>.Empty));
@@ -134,11 +136,11 @@ public static partial class SyntaxFactory
     public static Token LineStringEnd { get; } = MakeToken(TokenType.LineStringEnd, "\"");
 
     private static Token MakeToken(TokenType tokenType) =>
-        ToRed(parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType));
+        ToRed(tree: null!, parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType));
     private static Token MakeToken(TokenType tokenType, string text) =>
-        ToRed(parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType, text));
+        ToRed(tree: null!, parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType, text));
     private static Token MakeToken(TokenType tokenType, string text, object? value) =>
-        ToRed(parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType, text, value));
+        ToRed(tree: null!, parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType, text, value));
 }
 
 // Plumbing methods

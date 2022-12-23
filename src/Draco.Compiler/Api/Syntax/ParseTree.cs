@@ -97,6 +97,11 @@ public abstract partial class ParseNode : IEquatable<ParseNode>
     private readonly Internal.Syntax.ParseNode green;
 
     /// <summary>
+    /// Tre tree this node belongs to.
+    /// </summary>
+    public ParseTree Tree => new(this.tree);
+
+    /// <summary>
     /// The parent of this node, if any.
     /// </summary>
     public ParseNode? Parent { get; }
@@ -121,7 +126,7 @@ public abstract partial class ParseNode : IEquatable<ParseNode>
     /// <summary>
     /// The location of this node.
     /// </summary>
-    public Location Location => new Location.InFile(this.Range);
+    public Location Location => new Location.InFile(this.Tree.SourceText, this.Range);
 
     /// <summary>
     /// All <see cref="Token"/>s that this subtree consists of.

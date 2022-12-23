@@ -59,7 +59,7 @@ internal abstract partial record class Location
         {
             if (context is null) throw new ArgumentNullException(nameof(context));
             var range = context.TranslateRelativeRange(this.Range);
-            return new ApiLocation.InFile(range);
+            return new ApiLocation.InFile(context.Tree.SourceText, range);
         }
     }
 }

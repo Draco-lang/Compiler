@@ -25,11 +25,10 @@ internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandler
         var source = this.repository.GetDocument(request.TextDocument.Uri);
         var tree = ParseTree.Parse(source);
         var originalRange = tree.Root.Range;
-        // TODO
-        //tree = tree.Root.Format();
+        tree = tree.Format();
         var edit = new TextEdit()
         {
-            NewText = tree.Root.ToString(),
+            NewText = tree.ToString(),
             Range = Translator.ToLsp(originalRange),
         };
         var container = new TextEditContainer(edit);

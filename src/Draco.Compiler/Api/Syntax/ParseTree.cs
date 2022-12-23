@@ -18,6 +18,11 @@ public sealed partial class ParseTree
     private ParseNode? root;
     public ParseNode Root => this.root ??= ParseNode.ToRed(null, this.green.Root);
 
+    /// <summary>
+    /// All syntactic <see cref="Diagnostic"/> messages in the tree.
+    /// </summary>
+    public IEnumerable<Diagnostic> Diagnostics => this.Root.GetAllDiagnostics();
+
     private readonly Internal.Syntax.ParseTree green;
 
     internal ParseTree(Internal.Syntax.ParseTree green)
@@ -33,6 +38,12 @@ public sealed partial class ParseTree
     /// <returns>The formatted <see cref="ParseTree"/>.</returns>
     public ParseTree Format() => new(
         green: new Internal.Syntax.ParseTreeFormatter(Internal.Syntax.ParseTreeFormatterSettings.Default).Format(this.green));
+
+    /// <summary>
+    /// See <see cref="ParseNode.FindInChildren{TNode}(int)"/>.
+    /// </summary>
+    public TNode FindInChildren<TNode>(int index = 0)
+        where TNode : ParseNode => this.Root.FindInChildren<TNode>(index);
 }
 
 // Public API utilities
@@ -105,7 +116,7 @@ public abstract partial class ParseNode : IEquatable<ParseNode>
     /// Retrieves all syntactic <see cref="Diagnostic"/>s within this tree.
     /// </summary>
     /// <returns>The diagnostics inside this tree.</returns>
-    public IEnumerable<Diagnostic> GetAllDiagnostics() =>
+    internal IEnumerable<Diagnostic> GetAllDiagnostics() =>
         this.CollectAllDiagnostics();
 
     private string? text;

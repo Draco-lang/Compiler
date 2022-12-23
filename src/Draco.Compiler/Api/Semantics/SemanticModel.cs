@@ -18,6 +18,11 @@ public sealed class SemanticModel
     /// </summary>
     public ParseTree Tree { get; }
 
+    /// <summary>
+    /// The semantic <see cref="Diagnostic"/>s in this model.
+    /// </summary>
+    public IEnumerable<Diagnostic> Diagnostics => this.GetAllDiagnostics();
+
     internal QueryDatabase QueryDatabase => this.db;
 
     private readonly QueryDatabase db;
@@ -39,7 +44,7 @@ public sealed class SemanticModel
     /// Retrieves all semantic <see cref="Diagnostic"/>s.
     /// </summary>
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
-    public IEnumerable<Diagnostic> GetAllDiagnostics()
+    internal IEnumerable<Diagnostic> GetAllDiagnostics()
     {
         IEnumerable<Diagnostic> Impl(ParseNode tree)
         {

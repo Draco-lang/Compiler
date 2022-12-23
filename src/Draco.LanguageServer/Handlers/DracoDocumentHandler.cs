@@ -79,7 +79,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
         var parseTree = ParseTree.Parse(text);
         // TODO: Compilation should be shared
         var compilation = Compilation.Create(parseTree);
-        var diags = compilation.GetDiagnostics();
+        var diags = compilation.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
         this.server.TextDocument.PublishDiagnostics(new()
         {

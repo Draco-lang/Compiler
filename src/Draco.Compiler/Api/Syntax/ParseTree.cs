@@ -24,6 +24,15 @@ public sealed partial class ParseTree
     {
         this.green = green;
     }
+
+    public override string ToString() => this.Root.ToString();
+
+    /// <summary>
+    /// Formats the <see cref="ParseTree"/>.
+    /// </summary>
+    /// <returns>The formatted <see cref="ParseTree"/>.</returns>
+    public ParseTree Format() => new(
+        green: new Internal.Syntax.ParseTreeFormatter(Internal.Syntax.ParseTreeFormatterSettings.Default).Format(this.green));
 }
 
 // Public API utilities
@@ -48,9 +57,7 @@ public sealed partial class ParseTree
         var tokenSource = Internal.Syntax.TokenSource.From(lexer);
         var parser = new Internal.Syntax.Parser(tokenSource);
         var cu = parser.ParseCompilationUnit();
-        // TODO
-        throw new NotImplementedException();
-        //return ToRed(null, cu);
+        return Create(ParseNode.ToRed(null, cu));
     }
 }
 
@@ -115,14 +122,6 @@ public abstract partial class ParseNode : IEquatable<ParseNode>
     {
         public TokenType Type => this.Green.Type;
     }
-
-    /// <summary>
-    /// Formats the <see cref="ParseNode"/>.
-    /// </summary>
-    /// <returns>The formatted <see cref="ParseNode"/>.</returns>
-    public ParseNode Format() => ToRed(
-        parent: null,
-        green: new Internal.Syntax.ParseTreeFormatter(Internal.Syntax.ParseTreeFormatterSettings.Default).Format(this.Green));
 }
 
 // Traverasal

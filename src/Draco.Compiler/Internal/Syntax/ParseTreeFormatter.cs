@@ -66,10 +66,17 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
     private void RemoveIndentation() => this.indentCount--;
 
     /// <summary>
+    /// Formats the given <see cref="ParseTree"/>.
+    /// </summary>
+    /// <param name="tree">The <see cref="ParseTree"/> to be formatted.</param>
+    /// <returns>The formatted <paramref name="tree"/>.</returns>
+    public ParseTree Format(ParseTree tree) => new(Root: this.Format(tree.Root));
+
+    /// <summary>
     /// Formats the given <see cref="ParseNode"/>.
     /// </summary>
     /// <param name="tree">The <see cref="ParseNode"/> to be formatted.</param>
-    /// <returns></returns>
+    /// <returns>The formatted <paramref name="tree"/>.</returns>
     public ParseNode Format(ParseNode tree)
     {
         this.tokens = GetTokens(tree).GetEnumerator();

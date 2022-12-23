@@ -16,7 +16,7 @@ namespace Draco.Compiler.Api.Syntax;
 public sealed partial class ParseTree
 {
     private ParseNode? root;
-    public ParseNode Root => this.root ??= ParseNode.ToRed(null, green.Root);
+    public ParseNode Root => this.root ??= ParseNode.ToRed(null, this.green.Root);
 
     private readonly Internal.Syntax.ParseTree green;
 

@@ -68,6 +68,24 @@ public sealed class LexerTests
         Assert.Empty(token.Diagnostics);
         Assert.Equal(string.Empty, token.Text);
         Assert.Equal("// Hello, comments", token.LeadingTrivia[0].Text);
+        Assert.Equal(TriviaType.LineComment, token.LeadingTrivia[0].Type);
+    }
+
+    [Fact]
+    [Trait("Feature", "Comments")]
+    public void TestDocumentationComment()
+    {
+        var text = "/// Hello, doc comments";
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Single(token.LeadingTrivia);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+        Assert.Equal(string.Empty, token.Text);
+        Assert.Equal("/// Hello, doc comments", token.LeadingTrivia[0].Text);
+        Assert.Equal(TriviaType.DocumentationComment, token.LeadingTrivia[0].Type);
     }
 
     [Fact]

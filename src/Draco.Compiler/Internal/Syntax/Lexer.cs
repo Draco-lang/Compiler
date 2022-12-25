@@ -784,16 +784,31 @@ internal sealed class Lexer
             result = Trivia.From(TriviaType.Whitespace, this.AdvanceWithText(offset));
             return true;
         }
-        // Line-comment
+        // Comment
         if (ch == '/' && this.Peek(1) == '/')
         {
-            var offset = 2;
-            // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
-            // which means that this will terminate, even if the comment was on the last line of the file
-            // without a line break
-            while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
-            result = Trivia.From(TriviaType.LineComment, this.AdvanceWithText(offset));
-            return true;
+            // Documentation Comment
+            if (this.Peek(2) == '/')
+            {
+                var offset = 3;
+                // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
+                // which means that this will terminate, even if the comment was on the last line of the file
+                // without a line break
+                while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
+                result = Trivia.From(TriviaType.DocumentationComment, this.AdvanceWithText(offset));
+                return true;
+            }
+            // Line Comment
+            else
+            {
+                var offset = 2;
+                // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
+                // which means that this will terminate, even if the comment was on the last line of the file
+                // without a line break
+                while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
+                result = Trivia.From(TriviaType.LineComment, this.AdvanceWithText(offset));
+                return true;
+            }
         }
         // Not trivia
         result = null;

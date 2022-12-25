@@ -32,6 +32,7 @@ internal abstract record class Ast
         public sealed record class Func(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction DeclarationSymbol,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] string? Documentation,
             Expr.Block Body) : Decl
         {
             [Ignore(IgnoreFlags.VisitorVisit | IgnoreFlags.TransformerAll)]
@@ -54,6 +55,7 @@ internal abstract record class Ast
         public sealed record class Variable(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IVariable DeclarationSymbol,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] string? Documentation,
             Expr? Value) : Decl
         {
             [Ignore(IgnoreFlags.TransformerAll)]

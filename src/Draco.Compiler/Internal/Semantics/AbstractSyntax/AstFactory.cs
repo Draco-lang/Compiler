@@ -18,6 +18,7 @@ internal static class AstFactory
     public static Decl Var(ISymbol.IVariable varSymbol, Expr value) => new Decl.Variable(
         ParseTree: null,
         DeclarationSymbol: varSymbol,
+        Documentation: null,
         Value: value);
 
     public static Stmt Stmt(Decl decl) => new Stmt.Decl(

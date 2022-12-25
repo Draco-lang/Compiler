@@ -93,6 +93,8 @@ internal static class Pass
         InstructionPassDelegate passDelegate,
         Predicate<Instruction>? filter = null) => Delegate(assembly =>
     {
+        // TODO: BUG
+        // The Instruction type is mutable, if the delegate returns the original instance mutated, the change will not be detected
         filter ??= _ => true;
         var changed = false;
         foreach (var proc in assembly.Procedures.Values)

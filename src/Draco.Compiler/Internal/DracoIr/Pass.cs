@@ -7,78 +7,151 @@ using System.Threading.Tasks;
 namespace Draco.Compiler.Internal.DracoIr;
 
 /// <summary>
-/// Represents a pass that is applicable to an entire assembly.
+/// Represents some kind of optimization pass.
 /// </summary>
-internal interface IInterproceduralPass
+internal interface IOptimizationPass
 {
-    /// <summary>
-    /// Checks, if the given <see cref="Assembly"/> matches the rule that will be applied.
-    /// </summary>
-    /// <param name="assembly">The assembly to check.</param>
-    /// <returns>True, if the pass is applicable to <paramref name="assembly"/>.</returns>
-    public bool Matches(IReadOnlyAssembly assembly);
-
     /// <summary>
     /// Applies the pass to the given <see cref="Assembly"/>.
     /// </summary>
     /// <param name="assembly">The <see cref="Assembly"/> to apply the pass to.</param>
-    public void Pass(Assembly assembly);
+    /// <returns>True, if the pass changed something.</returns>
+    public bool Apply(Assembly assembly);
 }
 
 /// <summary>
-/// Represents a pass that is applicable to a procedure.
+/// Utilities for <see cref="IOptimizationPass"/>es.
 /// </summary>
-internal interface IGlobalPass
+internal static class Pass
 {
     /// <summary>
-    /// Checks, if the given <see cref="Procedure"/> matches the rule that will be applied.
+    /// Represents a delegate compatible with <see cref="IOptimizationPass.Apply(Assembly)"/>.
     /// </summary>
-    /// <param name="procedure">The procedure to check.</param>
-    /// <returns>True, if the pass is applicable to <paramref name="procedure"/>.</returns>
-    public bool Matches(IReadOnlyProcecude procedure);
+    public delegate bool AssemblyPassDelegate(Assembly assembly);
 
     /// <summary>
-    /// Applies the pass to the given <see cref="Procedure"/>.
+    /// An optimization pass that runs on <see cref="DracoIr.Procedure"/> level for convenience.
     /// </summary>
-    /// <param name="procedure">The <see cref="Procedure"/> to apply the pass to.</param>
-    public void Pass(Procedure procedure);
-}
-
-/// <summary>
-/// Represents a pass that is applicable to a basic-block.
-/// </summary>
-internal interface ILocalPass
-{
-    /// <summary>
-    /// Checks, if the given <see cref="BasicBlock"/> matches the rule that will be applied.
-    /// </summary>
-    /// <param name="basicBlock">The basic block to check.</param>
-    /// <returns>True, if the pass is applicable to <paramref name="basicBlock"/>.</returns>
-    public bool Matches(IReadOnlyBasicBlock basicBlock);
+    public delegate bool ProcedurePassDelegate(Procedure procedure);
 
     /// <summary>
-    /// Applies the pass to the given <see cref="BasicBlock"/>.
+    /// An optimization pass that runs on <see cref="DracoIr.BasicBlock"/> level for convenience.
     /// </summary>
-    /// <param name="procedure">The <see cref="BasicBlock"/> to apply the pass to.</param>
-    public void Pass(BasicBlock basicBlock);
-}
-
-/// <summary>
-/// Represents a pass that is applicable to an individual instruction.
-/// </summary>
-internal interface IInstructionPass
-{
-    /// <summary>
-    /// Checks, if the given <see cref="Instruction"/> matches the rule that will be applied.
-    /// </summary>
-    /// <param name="instruction">The instruction to check.</param>
-    /// <returns>True, if the pass is applicable to <paramref name="instruction"/>.</returns>
-    public bool Matches(IReadOnlyInstruction instruction);
+    public delegate bool BasicBlockPassDelegate(BasicBlock basicBlock);
 
     /// <summary>
-    /// Applies the pass to the given <see cref="Instruction"/>.
+    /// An optimization plass that runs on <see cref="DracoIr.Instruction"/> level for convenience.
     /// </summary>
-    /// <param name="instruction">The <see cref="Instruction"/> to apply the pass to.</param>
-    /// <returns>The new <see cref="Instruction"/>, in case it got replaced.</returns>
-    public Instruction Pass(Instruction instruction);
+    /// <param name="instruction">The instruction to optimize.</param>
+    /// <returns>The replacement <see cref="DracoIr.Instruction"/>.</returns>
+    public delegate Instruction InstructionPassDelegate(Instruction instruction);
+
+    /// <summary>
+    /// Constructs an <see cref="IOptimizationPass"/> from the given delegate.
+    /// </summary>
+    /// <param name="passDelegate">The delegate to apply as the pass.</param>
+    /// <returns>The constructed pass that applies <paramref name="passDelegate"/>.</returns>
+    public static IOptimizationPass Delegate(AssemblyPassDelegate passDelegate) => new DelegatePass(passDelegate);
+
+    /// <summary>
+    /// Constructs an <see cref="IOptimizationPass"/> from the given delegate that works on
+    /// individual <see cref="DracoIr.Procedure"/>s.
+    /// </summary>
+    /// <param name="passDelegate">The delegate to apply as the pass.</param>
+    /// <returns>The constructed pass that applies <paramref name="passDelegate"/>.</returns>
+    public static IOptimizationPass Procedure(ProcedurePassDelegate passDelegate) => Delegate(assembly =>
+    {
+        var changed = false;
+        foreach (var proc in assembly.Procedures.Values) changed = passDelegate(proc) || changed;
+        return changed;
+    });
+
+    /// <summary>
+    /// Constructs an <see cref="IOptimizationPass"/> from the given delegate that works on
+    /// individual <see cref="DracoIr.BasicBlock"/>s.
+    /// </summary>
+    /// <param name="passDelegate">The delegate to apply as the pass.</param>
+    /// <returns>The constructed pass that applies <paramref name="passDelegate"/>.</returns>
+    public static IOptimizationPass BasicBlock(BasicBlockPassDelegate passDelegate) => Delegate(assembly =>
+    {
+        var changed = false;
+        foreach (var proc in assembly.Procedures.Values)
+        {
+            foreach (var bb in proc.BasicBlocks) changed = passDelegate(bb) || changed;
+        }
+        return changed;
+    });
+
+    /// <summary>
+    /// Constructs an <see cref="IOptimizationPass"/> from the given delegate that works on
+    /// individual <see cref="DracoIr.Instruction"/>s.
+    /// </summary>
+    /// <param name="passDelegate">The delegate to apply as the pass.</param>
+    /// <param name="filter">A filter predicate to only apply the pass on certain instructions that matches.</param>
+    /// <returns>The constructed pass that applies <paramref name="passDelegate"/>.</returns>
+    public static IOptimizationPass Instruction(
+        InstructionPassDelegate passDelegate,
+        Predicate<Instruction>? filter = null) => Delegate(assembly =>
+    {
+        filter ??= _ => true;
+        var changed = false;
+        foreach (var proc in assembly.Procedures.Values)
+        {
+            foreach (var bb in proc.BasicBlocks)
+            {
+                for (var i = 0; i < bb.Instructions.Count; ++i)
+                {
+                    var oldInstruction = bb.Instructions[i];
+                    if (!filter(oldInstruction)) continue;
+                    var newInstruction = passDelegate(oldInstruction);
+                    bb.Instructions[i] = newInstruction;
+                    changed = !oldInstruction.Equals(newInstruction);
+                }
+            }
+        }
+        return changed;
+    });
+
+    /// <summary>
+    /// Constructs a fixpoint pass from the underlying <paramref name="pass"/>, that is repeated as long as it causes changes.
+    /// </summary>
+    /// <param name="pass">The pass to repeat.</param>
+    /// <returns>The constructed fixpoint pass that repeats <paramref name="pass"/>.</returns>
+    public static IOptimizationPass Fixpoint(IOptimizationPass pass) => Delegate(assembly =>
+    {
+        var changed = false;
+        while (pass.Apply(assembly)) changed = true;
+        return changed;
+    });
+
+    /// <summary>
+    /// Constructs a pass that applies passes in a sequence.
+    /// </summary>
+    /// <param name="passes">The passes to apply, in their order of application.</param>
+    /// <returns>The constructed pass that applies <paramref name="passes"/> in order.</returns>
+    public static IOptimizationPass Sequence(params IOptimizationPass[] passes) => Sequence(passes.AsEnumerable());
+
+    /// <summary>
+    /// Constructs a pass that applies passes in a sequence.
+    /// </summary>
+    /// <param name="passes">The passes to apply, in their order of application.</param>
+    /// <returns>The constructed pass that applies <paramref name="passes"/> in order.</returns>
+    public static IOptimizationPass Sequence(IEnumerable<IOptimizationPass> passes) => Delegate(assembly =>
+    {
+        var changed = false;
+        foreach (var pass in passes) changed = pass.Apply(assembly) || changed;
+        return changed;
+    });
+
+    private sealed class DelegatePass : IOptimizationPass
+    {
+        private readonly AssemblyPassDelegate passDelegate;
+
+        public DelegatePass(AssemblyPassDelegate passDelegate)
+        {
+            this.passDelegate = passDelegate;
+        }
+
+        public bool Apply(Assembly assembly) => this.passDelegate(assembly);
+    }
 }

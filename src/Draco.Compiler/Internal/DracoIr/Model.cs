@@ -73,7 +73,7 @@ internal interface IReadOnlyBasicBlock
 /// <summary>
 /// Interface for a single instruction.
 /// </summary>
-internal interface IReadOnlyInstruction
+internal interface IReadOnlyInstruction : IEquatable<IReadOnlyInstruction>
 {
     /// <summary>
     /// The kind of this instruction.
@@ -431,6 +431,18 @@ internal abstract partial class Instruction : IReadOnlyInstruction
             result.Append(this.GetOperandAt<object>(i));
         }
         return result.ToString();
+    }
+
+    public bool Equals(IReadOnlyInstruction? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        if (this.OperandCount != other.OperandCount) return false;
+        for (var i = 0; i < this.OperandCount; ++i)
+        {
+            if (!Equals(this.GetOperandAt<object?>(i), other.GetOperandAt<object?>(i))) return false;
+        }
+        return true;
     }
 }
 

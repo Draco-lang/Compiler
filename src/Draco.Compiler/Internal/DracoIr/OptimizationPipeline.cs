@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.DracoIr;
 /// </summary>
 internal static class OptimizationPipeline
 {
-    public static IOptimizationPass Instance { get; } = Pass.Sequence(
-        Pass.Fixpoint(JumpThreading.Instance),
+    public static IOptimizationPass Instance { get; } = OptimizationPass.Sequence(
+        OptimizationPass.Fixpoint(JumpThreading.Instance),
         DeadBlockElimination.Instance);
 }

@@ -30,49 +30,54 @@ namespace Draco.Compiler.Internal.DracoIr.Passes;
 /// </summary>
 internal static class JumpThreading
 {
-    public static IOptimizationPass Instance { get; } = Pass.Instruction(
+    public static IOptimizationPass Instance { get; } = OptimizationPass.Instruction(
         filter: instruction => instruction.Kind is InstructionKind.Jmp or InstructionKind.JmpIf,
-        passDelegate: instruction =>
-        {
-            if (instruction.Kind == InstructionKind.Jmp)
-            {
-                var target = instruction.GetOperandAt<BasicBlock>(0);
-                if (!IsSingleInstruction(target, out var targetIns)) return instruction;
-                if (targetIns.Kind == InstructionKind.Jmp)
-                {
-                    // Case 1
-                    var targetBlock = targetIns.GetOperandAt<IReadOnlyBasicBlock>(0);
-                    instruction.SetOperandAt(0, targetBlock);
-                    return instruction;
-                }
-                else if (targetIns.Kind == InstructionKind.JmpIf)
-                {
-                    // Case 2
-                    return targetIns;
-                }
-                return instruction;
-            }
-            else
-            {
-                Debug.Assert(instruction.Kind == InstructionKind.JmpIf);
+        passDelegate: Apply);
 
-                var thenTarget = instruction.GetOperandAt<BasicBlock>(1);
-                var elsTarget = instruction.GetOperandAt<BasicBlock>(2);
-                if (IsSingleInstruction(thenTarget, out var thenTargetIns) && thenTargetIns.Kind == InstructionKind.Jmp)
-                {
-                    // Case 3 on then branch
-                    var thenTargetBlock = thenTargetIns.GetOperandAt<BasicBlock>(0);
-                    instruction.SetOperandAt(1, thenTargetBlock);
-                }
-                if (IsSingleInstruction(elsTarget, out var elsTargetIns) && elsTargetIns.Kind == InstructionKind.Jmp)
-                {
-                    // Case 3 on else branch
-                    var elsTargetBlock = elsTargetIns.GetOperandAt<BasicBlock>(0);
-                    instruction.SetOperandAt(2, elsTargetBlock);
-                }
-                return instruction;
+    private static bool Apply(ref Instruction instruction)
+    {
+        if (instruction.Kind == InstructionKind.Jmp)
+        {
+            var target = instruction.GetOperandAt<BasicBlock>(0);
+            if (!IsSingleInstruction(target, out var targetIns)) return false;
+            if (targetIns.Kind == InstructionKind.Jmp)
+            {
+                // Case 1
+                var targetBlock = targetIns.GetOperandAt<IReadOnlyBasicBlock>(0);
+                instruction.SetOperandAt(0, targetBlock);
+                return true;
             }
-        });
+            else if (targetIns.Kind == InstructionKind.JmpIf)
+            {
+                // Case 2
+                instruction = targetIns;
+                return true;
+            }
+            return false;
+        }
+        else
+        {
+            Debug.Assert(instruction.Kind == InstructionKind.JmpIf);
+
+            var thenTarget = instruction.GetOperandAt<BasicBlock>(1);
+            var elsTarget = instruction.GetOperandAt<BasicBlock>(2);
+            if (IsSingleInstruction(thenTarget, out var thenTargetIns) && thenTargetIns.Kind == InstructionKind.Jmp)
+            {
+                // Case 3 on then branch
+                var thenTargetBlock = thenTargetIns.GetOperandAt<BasicBlock>(0);
+                instruction.SetOperandAt(1, thenTargetBlock);
+                return true;
+            }
+            if (IsSingleInstruction(elsTarget, out var elsTargetIns) && elsTargetIns.Kind == InstructionKind.Jmp)
+            {
+                // Case 3 on else branch
+                var elsTargetBlock = elsTargetIns.GetOperandAt<BasicBlock>(0);
+                instruction.SetOperandAt(2, elsTargetBlock);
+                return true;
+            }
+            return false;
+        }
+    }
 
     private static bool IsSingleInstruction(BasicBlock bb, [MaybeNullWhen(false)] out Instruction instr)
     {

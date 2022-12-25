@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.DracoIr.Passes;
 /// </summary>
 internal static class DeadBlockElimination
 {
-    public static IOptimizationPass Instance { get; } = Pass.Procedure(procedure =>
+    public static IOptimizationPass Instance { get; } = OptimizationPass.Procedure(procedure =>
     {
         var origCount = procedure.BasicBlocks.Count;
         var referenced = GraphTraversal.DepthFirst(

@@ -22,7 +22,7 @@ internal interface IOptimizationPass
 /// <summary>
 /// Utilities for <see cref="IOptimizationPass"/>es.
 /// </summary>
-internal static class Pass
+internal static class OptimizationPass
 {
     /// <summary>
     /// Represents a delegate compatible with <see cref="IOptimizationPass.Apply(Assembly)"/>.
@@ -41,10 +41,9 @@ internal static class Pass
 
     /// <summary>
     /// An optimization plass that runs on <see cref="DracoIr.Instruction"/> level for convenience.
+    /// To be able to mutate the instruction, it is passed as a ref.
     /// </summary>
-    /// <param name="instruction">The instruction to optimize.</param>
-    /// <returns>The replacement <see cref="DracoIr.Instruction"/>.</returns>
-    public delegate Instruction InstructionPassDelegate(Instruction instruction);
+    public delegate bool InstructionPassDelegate(ref Instruction instruction);
 
     /// <summary>
     /// Constructs an <see cref="IOptimizationPass"/> from the given delegate.
@@ -93,8 +92,6 @@ internal static class Pass
         InstructionPassDelegate passDelegate,
         Predicate<Instruction>? filter = null) => Delegate(assembly =>
     {
-        // TODO: BUG
-        // The Instruction type is mutable, if the delegate returns the original instance mutated, the change will not be detected
         filter ??= _ => true;
         var changed = false;
         foreach (var proc in assembly.Procedures.Values)
@@ -103,11 +100,10 @@ internal static class Pass
             {
                 for (var i = 0; i < bb.Instructions.Count; ++i)
                 {
-                    var oldInstruction = bb.Instructions[i];
-                    if (!filter(oldInstruction)) continue;
-                    var newInstruction = passDelegate(oldInstruction);
-                    bb.Instructions[i] = newInstruction;
-                    changed = !oldInstruction.Equals(newInstruction);
+                    var instr = bb.Instructions[i];
+                    if (!filter(instr)) continue;
+                    changed = passDelegate(ref instr) || changed;
+                    bb.Instructions[i] = instr;
                 }
             }
         }

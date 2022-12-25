@@ -10,11 +10,11 @@ namespace Draco.Compiler.Internal.DracoIr.Passes;
 /// <summary>
 /// We simply remove basic blocks that are never referenced.
 /// </summary>
-internal sealed class RemoveUntargetedBlocks : IGlobalPass
+internal static class DeadBlockElimination
 {
-    public bool Matches(IReadOnlyProcecude procedure) => true;
-    public void Pass(Procedure procedure)
+    public static IOptimizationPass Instance { get; } = Pass.Procedure(procedure =>
     {
+        var origCount = procedure.BasicBlocks.Count;
         var referenced = GraphTraversal.DepthFirst(
             start: procedure.Entry,
             getNeighbors: GetNeighbors).ToHashSet();
@@ -23,7 +23,8 @@ internal sealed class RemoveUntargetedBlocks : IGlobalPass
             if (referenced.Contains(procedure.BasicBlocks[i])) ++i;
             else procedure.BasicBlocks.RemoveAt(i);
         }
-    }
+        return origCount != procedure.BasicBlocks.Count;
+    });
 
     private static IEnumerable<BasicBlock> GetNeighbors(BasicBlock basicBlock)
     {

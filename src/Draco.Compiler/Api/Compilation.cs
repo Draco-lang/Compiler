@@ -110,10 +110,7 @@ public sealed class Compilation
         Console.WriteLine("IR code");
         var asm = new Assembly(this.AssemblyName ?? "output");
         DracoIrCodegen.Generate(asm, ast);
-        var pass = new AggregatePass();
-        pass.InstructionPasses.Add(new JumpThreading());
-        pass.GlobalPasses.Add(new RemoveUntargetedBlocks());
-        pass.Pass(asm);
+        OptimizationPipeline.Instance.Apply(asm);
         var ir = asm.ToString();
         Console.WriteLine(ir);
         Console.WriteLine("\n=========");

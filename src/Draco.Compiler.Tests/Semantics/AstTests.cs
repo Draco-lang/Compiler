@@ -12,8 +12,6 @@ namespace Draco.Compiler.Tests.Semantics;
 
 public sealed class AstTests
 {
-    //private Ast? ast;
-    private IEnumerator<Ast>? astEnumerator;
     private Ast.CompilationUnit? GetAst(string sourceCode)
     {
         var parseTree = ParseTree.Parse(sourceCode);
@@ -21,24 +19,6 @@ public sealed class AstTests
         var db = compilation.GetSemanticModel().QueryDatabase;
         return AstBuilder.ToAst(db, parseTree) as Ast.CompilationUnit;
     }
-
-    private IEnumerator<Ast> GetDeclEnumerator(Ast.CompilationUnit ast)
-    {
-        foreach (var decl in ast.Declarations)
-        {
-            yield return decl;
-        }
-    }
-    private void N<T>(Predicate<T> predicate)
-    {
-        Assert.NotNull(this.astEnumerator);
-        Assert.True(this.astEnumerator!.MoveNext());
-        var node = this.astEnumerator.Current;
-        Assert.IsType<T>(node);
-        Assert.True(predicate((T)(object)node));
-    }
-
-    private void N<T>() => this.N<T>(_ => true);
 
     [Theory]
     [InlineData("/// One Line Doc Comment")]
@@ -62,7 +42,7 @@ public sealed class AstTests
         Assert.Single(ast!.Declarations);
         Assert.IsType<Ast.Decl.Func>(ast!.Declarations[0]);
         var func = ast!.Declarations[0] as Ast.Decl.Func;
-        Assert.NotNull(func.Documentation);
+        Assert.NotNull(func!.Documentation);
         var docCommentsExpected = docComment.Split(
             new string[] { "\r\n", "\r", "\n" },
             StringSplitOptions.None

@@ -57,11 +57,19 @@ internal static class OptimizationPass
     /// individual <see cref="DracoIr.Procedure"/>s.
     /// </summary>
     /// <param name="passDelegate">The delegate to apply as the pass.</param>
+    /// <param name="filter">A filter predicate to only apply the pass on certain procedures that matches.</param>
     /// <returns>The constructed pass that applies <paramref name="passDelegate"/>.</returns>
-    public static IOptimizationPass Procedure(ProcedurePassDelegate passDelegate) => Delegate(assembly =>
+    public static IOptimizationPass Procedure(
+        ProcedurePassDelegate passDelegate,
+        Predicate<Procedure>? filter = null) => Delegate(assembly =>
     {
+        filter ??= _ => true;
         var changed = false;
-        foreach (var proc in assembly.Procedures.Values) changed = passDelegate(proc) || changed;
+        foreach (var proc in assembly.Procedures.Values)
+        {
+            if (!filter(proc)) continue;
+            changed = passDelegate(proc) || changed;
+        }
         return changed;
     });
 

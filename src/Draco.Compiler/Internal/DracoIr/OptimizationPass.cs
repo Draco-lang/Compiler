@@ -78,13 +78,21 @@ internal static class OptimizationPass
     /// individual <see cref="DracoIr.BasicBlock"/>s.
     /// </summary>
     /// <param name="passDelegate">The delegate to apply as the pass.</param>
+    /// <param name="filter">A filter predicate to only apply the pass on certain blocks that matches.</param>
     /// <returns>The constructed pass that applies <paramref name="passDelegate"/>.</returns>
-    public static IOptimizationPass BasicBlock(BasicBlockPassDelegate passDelegate) => Delegate(assembly =>
+    public static IOptimizationPass BasicBlock(
+        BasicBlockPassDelegate passDelegate,
+        Predicate<BasicBlock>? filter = null) => Delegate(assembly =>
     {
+        filter ??= _ => true;
         var changed = false;
         foreach (var proc in assembly.Procedures.Values)
         {
-            foreach (var bb in proc.BasicBlocks) changed = passDelegate(bb) || changed;
+            foreach (var bb in proc.BasicBlocks)
+            {
+                if (!filter(bb)) continue;
+                changed = passDelegate(bb) || changed;
+            }
         }
         return changed;
     });

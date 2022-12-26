@@ -14,5 +14,6 @@ internal static class OptimizationPipeline
 {
     public static IOptimizationPass Instance { get; } = OptimizationPass.Sequence(
         OptimizationPass.Fixpoint(JumpThreading.Instance),
-        DeadBlockElimination.Instance);
+        DeadBlockElimination.Instance,
+        TailCallOptimization.Instance);
 }

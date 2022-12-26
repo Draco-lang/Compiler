@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,6 +42,8 @@ namespace Draco.Compiler.Internal.DracoIr.Passes;
 ///   ...
 ///   jmp start
 ///   ...
+///
+/// IMPORTANTLY, ALL REFERENCES TO ANY OF THE ARGUMENTS HAVE TO BE REPLACED WITH THE MUTABLE ARGUMENT VARIANTS!
 /// </summary>
 internal static class TailCallOptimization
 {
@@ -52,7 +55,83 @@ internal static class TailCallOptimization
 
     private static bool Apply(Procedure procedure)
     {
-        throw new NotImplementedException();
+        // Make a new entry block for the store
+        var oldEntry = procedure.Entry;
+        procedure.BasicBlocks.Insert(0, new());
+
+        // Make each argument mutable by
+        //   x1 = alloc T1
+        //   store x1, a1
+        // pairs
+        var writer = procedure.Writer();
+        writer.Seek(procedure.Entry, 0);
+        var argPointers = new List<Value>();
+        foreach (var param in procedure.Parameters)
+        {
+            var argPtr = writer.Alloc(param.Type);
+            writer.Store(argPtr, param);
+            argPointers.Add(argPtr);
+        }
+        writer.Jmp(oldEntry);
+
+        // Next, we can replace each occurrence of
+        //   tmp2 = call foo [c1, c2, ...]
+        //   ret tmp2
+        // with
+        //   store x1, c1
+        ///  store x2, c2
+        ///  ...
+        ///  jmp start
+
+        foreach (var block in procedure.BasicBlocks.Skip(1))
+        {
+            if (!HasTailCall(procedure, block)) continue;
+
+            var callArgs = block.Instructions[^2].GetOperandAt<IList<Value>>(2);
+            Debug.Assert(callArgs.Count == argPointers.Count);
+
+            // Remove the last two instructions, which are the call and the return
+            block.Instructions.RemoveAt(block.Instructions.Count - 1);
+            block.Instructions.RemoveAt(block.Instructions.Count - 1);
+
+            // Seek, write stores and jump
+            writer.SeekEnd(block);
+            for (var i = 0; i < callArgs.Count; ++i)
+            {
+                var argPtr = argPointers[i];
+                var arg = callArgs[i];
+                writer.Store(argPtr, arg);
+            }
+            writer.Jmp(oldEntry);
+        }
+
+        // Finally, replace all references to the function arguments to the mutable variants
+        // We skip the first one, that's the initial argument assignment
+        foreach (var block in procedure.BasicBlocks.Skip(1))
+        {
+            for (var i = 0; i < block.Instructions.Count; ++i)
+            {
+                var instr = block.Instructions[i];
+                for (var j = 0; j < instr.OperandCount; ++j)
+                {
+                    var operand = instr.GetOperandAt<object>(j);
+                    if (operand is not Value.Parameter param) continue;
+                    var paramIndex = procedure.Parameters.IndexOf(param);
+                    Debug.Assert(paramIndex != -1);
+
+                    // The operand references a parameter
+                    // Seek before the instruction and write a load to the appropriate pointer
+                    writer.Seek(block, i);
+                    var loadedValue = writer.Load(argPointers[paramIndex]);
+                    instr.SetOperandAt(j, loadedValue);
+
+                    // The instruction pointer has been offset by one
+                    ++i;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static bool HasTailCall(Procedure procedure, BasicBlock basicBlock)

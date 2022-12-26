@@ -13,23 +13,78 @@ namespace Draco.Compiler.Internal.DracoIr;
 internal readonly record struct Label(BasicBlock Target);
 
 /// <summary>
-/// Helper to write <see cref="Instruction"/>s to a <see cref="Procedure"/>.
+/// Helper to write <see cref="Instruction"/>s to a <see cref="DracoIr.Procedure"/>.
 /// </summary>
 internal sealed class InstructionWriter
 {
     /// <summary>
+    /// The <see cref="DracoIr.Procedure"/> being written.
+    /// </summary>
+    public Procedure Procedure { get; }
+
+    /// <summary>
+    /// The current <see cref="BasicBlock"/> being written.
+    /// </summary>
+    public BasicBlock CurrentBlock
+    {
+        get => this.currentBlock ?? throw new InvalidOperationException("there is no current basic block");
+        set
+        {
+            this.currentBlock = value;
+            this.instructionIndex = value.Instructions.Count;
+        }
+    }
+
+    /// <summary>
+    /// The index to write instructions to within the <see cref="CurrentBlock"/>.
+    /// </summary>
+    public int Index
+    {
+        get => this.instructionIndex;
+        set
+        {
+            if (this.currentBlock is null) throw new InvalidOperationException("there is no current basic block");
+            if (value < 0 || value > this.currentBlock.Instructions.Count) throw new ArgumentOutOfRangeException(nameof(value));
+            this.instructionIndex = value;
+        }
+    }
+
+    /// <summary>
     /// True, if the last instruction was some kind of branching.
     /// </summary>
-    public bool EndsInBranch => this.currentBasicBlock is null;
+    public bool EndsInBranch => this.currentBlock is null
+                             || (this.currentBlock.Instructions.Count > this.instructionIndex
+                              && this.currentBlock.Instructions[this.instructionIndex].IsBranch);
 
-    private readonly Procedure procedure;
-    private BasicBlock? currentBasicBlock;
+    private BasicBlock? currentBlock;
+    private int instructionIndex;
 
     public InstructionWriter(Procedure procedure)
     {
-        this.procedure = procedure;
-        this.currentBasicBlock = procedure.Entry;
+        this.Procedure = procedure;
+        this.CurrentBlock = procedure.BasicBlocks[^1];
     }
+
+    /// <summary>
+    /// Moves to the given <see cref="BasicBlock"/> and the given instruction index.
+    /// </summary>
+    /// <param name="block">The block to seek to.</param>
+    /// <param name="index">The index within <paramref name="block"/> to seek to.</param>
+    public void Seek(BasicBlock block, int index)
+    {
+        this.currentBlock = block;
+        this.Index = index;
+    }
+
+    /// <summary>
+    /// Seeks to the start of <paramref name="block"/>. See <see cref="Seek(BasicBlock, int)"/>.
+    /// </summary>
+    public void SeekStart(BasicBlock block) => this.Seek(block, 0);
+
+    /// <summary>
+    /// Seeks to the end of <paramref name="block"/>. See <see cref="Seek(BasicBlock, int)"/>.
+    /// </summary>
+    public void SeekEnd(BasicBlock block) => this.Seek(block, block.Instructions.Count);
 
     /// <summary>
     /// Writes an <see cref="Instruction"/> to the current <see cref="BasicBlock"/>.
@@ -38,9 +93,17 @@ internal sealed class InstructionWriter
     public void Write(Instruction instruction)
     {
         // If there is no current block, open one
-        if (this.currentBasicBlock is null) this.PlaceLabel();
-        this.currentBasicBlock!.Instructions.Add(instruction);
-        if (instruction.IsBranch) this.currentBasicBlock = null;
+        if (this.currentBlock is null) this.PlaceLabel();
+        this.currentBlock!.Instructions.Insert(this.instructionIndex, instruction);
+        ++this.instructionIndex;
+        if (instruction.IsBranch)
+        {
+            // Check if there are any instructions to carry over
+            var carryOver = (this.currentBlock?.Instructions.Count - this.instructionIndex) ?? 0;
+            // TODO
+            if (carryOver > 0) throw new NotImplementedException("TODO");
+            this.currentBlock = null;
+        }
     }
 
     /// <summary>
@@ -61,11 +124,15 @@ internal sealed class InstructionWriter
     public void PlaceLabel(Label label)
     {
         // Cleck if this is a duplicate placement
-        if (this.procedure.BasicBlocks.Contains(label.Target)) throw new InvalidOperationException("label already placed");
+        if (this.Procedure.BasicBlocks.Contains(label.Target)) throw new InvalidOperationException("label already placed");
         // Check if we haven't jumped from the previous block
-        if (this.currentBasicBlock is not null) this.Jmp(label);
-        this.currentBasicBlock = label.Target;
-        this.procedure.BasicBlocks.Add(label.Target);
+        if (this.currentBlock is not null) this.Jmp(label);
+        // Check if there are any instructions to carry over
+        var carryOver = (this.currentBlock?.Instructions.Count - this.instructionIndex) ?? 0;
+        // TODO
+        if (carryOver > 0) throw new NotImplementedException("TODO");
+        this.CurrentBlock = label.Target;
+        this.Procedure.BasicBlocks.Add(label.Target);
     }
 
     /// <summary>
@@ -101,8 +168,9 @@ internal sealed class InstructionWriter
     }
     public void Ret(Value value) =>
         this.Write(Instruction.Make(InstructionKind.Ret, value));
-    public void Jmp(Label label) =>
-        this.Write(Instruction.Make(InstructionKind.Jmp, label.Target));
+    public void Jmp(Label label) => this.Jmp(label.Target);
+    public void Jmp(IReadOnlyBasicBlock target) =>
+        this.Write(Instruction.Make(InstructionKind.Jmp, target));
     public void JmpIf(Value condition, Label thenLabel, Label elsLabel)
     {
         if (condition.Type != Type.Bool) throw new ArgumentException("condition must be bool");

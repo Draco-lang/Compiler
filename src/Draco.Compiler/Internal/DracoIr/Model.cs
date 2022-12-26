@@ -57,6 +57,11 @@ internal interface IReadOnlyProcecude
     /// All <see cref="IReadOnlyBasicBlock"/>s in this procedure in the order they were written.
     /// </summary>
     public IReadOnlyList<IReadOnlyBasicBlock> BasicBlocks { get; }
+
+    /// <summary>
+    /// All <see cref="IReadOnlyInstruction"/>s in this procedure in the order of their basic blocks.
+    /// </summary>
+    public IEnumerable<IReadOnlyInstruction> Instructions { get; }
 }
 
 /// <summary>
@@ -188,6 +193,11 @@ internal enum InstructionKind
     /// Boolean negation.
     /// </summary>
     NotBool,
+
+    /// <summary>
+    /// A procedure call.
+    /// </summary>
+    Call,
 }
 
 // Implementations /////////////////////////////////////////////////////////////
@@ -220,20 +230,24 @@ internal sealed class Assembly : IReadOnlyAssembly
     public override string ToString() => $"""
         assembly '{this.Name}';
 
-        {string.Join("\n\n", this.Procedures.Values)}
+        {string.Join("\n\n", this.Procedures.Values.Select(p => p.ToFullString()))}
         """;
 }
 
 /// <summary>
 /// An <see cref="IReadOnlyProcecude"/> implementation.
 /// </summary>
-internal sealed class Procedure : IReadOnlyProcecude
+internal sealed record class Procedure : Value, IReadOnlyProcecude
 {
+    public override Type Type => new Type.Proc(
+        Args: this.Parameters.Select(p => p.Type).ToImmutableArray(),
+        Ret: this.ReturnType);
+
     public string Name { get; }
     public Type ReturnType { get; set; } = Type.Unit;
 
-    public IList<Value.Parameter> Parameters => this.parameters;
-    IReadOnlyList<Value.Parameter> IReadOnlyProcecude.Parameters => this.parameters;
+    public IList<Parameter> Parameters => this.parameters;
+    IReadOnlyList<Parameter> IReadOnlyProcecude.Parameters => this.parameters;
 
     public BasicBlock Entry => this.basicBlocks[0];
     IReadOnlyBasicBlock IReadOnlyProcecude.Entry => this.Entry;
@@ -241,7 +255,10 @@ internal sealed class Procedure : IReadOnlyProcecude
     public IList<BasicBlock> BasicBlocks => this.basicBlocks;
     IReadOnlyList<IReadOnlyBasicBlock> IReadOnlyProcecude.BasicBlocks => this.basicBlocks;
 
-    private readonly List<Value.Parameter> parameters = new();
+    public IEnumerable<Instruction> Instructions => this.basicBlocks.SelectMany(block => block.Instructions);
+    IEnumerable<IReadOnlyInstruction> IReadOnlyProcecude.Instructions => this.Instructions;
+
+    private readonly List<Parameter> parameters = new();
     private readonly List<BasicBlock> basicBlocks = new()
     {
         new(),
@@ -252,9 +269,9 @@ internal sealed class Procedure : IReadOnlyProcecude
         this.Name = name;
     }
 
-    public Value.Parameter DefineParameter(Type type)
+    public Parameter DefineParameter(Type type)
     {
-        var param = new Value.Parameter(type, this.parameters.Count);
+        var param = new Parameter(type, this.parameters.Count);
         this.parameters.Add(param);
         return param;
     }
@@ -265,7 +282,8 @@ internal sealed class Procedure : IReadOnlyProcecude
     /// <returns>An <see cref="InstructionWriter"/> that can be used to generate code.</returns>
     public InstructionWriter Writer() => new(this);
 
-    public override string ToString() => $"""
+    public override string ToString() => this.Name;
+    public string ToFullString() => $"""
         proc {this.ReturnType} {this.Name}({string.Join(", ", this.Parameters.Select(p => p.ToFullString()))}):
         {string.Join("\n", this.BasicBlocks.Select(bb => bb.ToFullString()))}
         """;
@@ -376,6 +394,16 @@ internal abstract partial record class Type
     {
         public override string ToString() => $"{this.Element}*";
     }
+
+    /// <summary>
+    /// A procedure type.
+    /// </summary>
+    /// <param name="Args">The argument types.</param>
+    /// <param name="Ret">The return type.</param>
+    public sealed record class Proc(ImmutableArray<Type> Args, Type Ret) : Type
+    {
+        public override string ToString() => $"proc({string.Join(", ", this.Args)}) -> {this.Ret}";
+    }
 }
 
 // Builtins
@@ -428,7 +456,18 @@ internal abstract partial class Instruction : IReadOnlyInstruction
             if (i == offset) result.Append(' ');
             else result.Append(", ");
 
-            result.Append(this.GetOperandAt<object>(i));
+            var operand = this.GetOperandAt<object>(i);
+            if (operand is IEnumerable<Value> valueList)
+            {
+                result
+                    .Append('[')
+                    .AppendJoin(", ", valueList)
+                    .Append(']');
+            }
+            else
+            {
+                result.Append(operand);
+            }
         }
         return result.ToString();
     }
@@ -454,6 +493,7 @@ internal abstract partial class Instruction
     public static Instruction EqualInt(Value.Register target, Value a, Value b) => Make(InstructionKind.EqualInt, target, a, b);
     public static Instruction NegInt(Value.Register target, Value a) => Make(InstructionKind.NegInt, target, a);
     public static Instruction NotBool(Value.Register target, Value a) => Make(InstructionKind.NotBool, target, a);
+    public static Instruction Call(Value.Register target, Value called, IList<Value> args) => Make(InstructionKind.Call, target, called, args);
 
     private static Instruction Make(InstructionKind kind) => new Instruction0(kind);
     private static Instruction Make<T1>(InstructionKind kind, T1 op1) => new Instruction1<T1>(kind, op1);

@@ -126,6 +126,11 @@ internal sealed class InstructionWriter
         this.MakeWithRegister(a.Type, target => Instruction.NegInt(target, a));
     public Value.Register NotBool(Value a) =>
         this.MakeWithRegister(Type.Bool, target => Instruction.NotBool(target, a));
+    public Value.Register Call(Value called, IList<Value> args)
+    {
+        if (called.Type is not Type.Proc proc) throw new ArgumentException("can call a non-procedure value");
+        return this.MakeWithRegister(proc.Ret, target => Instruction.Call(target, called, args));
+    }
 
     private Value.Register MakeWithRegister(Type type, Func<Value.Register, Instruction> make)
     {

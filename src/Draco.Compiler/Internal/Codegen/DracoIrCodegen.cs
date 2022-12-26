@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -204,6 +205,13 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         throw new NotImplementedException();
     }
 
+    public override Value VisitCallExpr(Ast.Expr.Call node)
+    {
+        var called = this.VisitExpr(node.Called);
+        var args = node.Args.Select(this.VisitExpr).ToList();
+        return this.writer.Call(called, args);
+    }
+
     public override Value VisitAssignExpr(Ast.Expr.Assign node)
     {
         var right = this.VisitExpr(node.Value);
@@ -224,6 +232,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         ISymbol.IParameter => this.values[node.Symbol],
         ISymbol.IVariable => this.writer.Load(this.values[node.Symbol]),
+        ISymbol.IFunction f => this.procedures[f],
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;

@@ -79,9 +79,9 @@ internal static class TailCallOptimization
         //   ret tmp2
         // with
         //   store x1, c1
-        ///  store x2, c2
-        ///  ...
-        ///  jmp start
+        //   store x2, c2
+        //   ...
+        //   jmp start
 
         foreach (var block in procedure.BasicBlocks.Skip(1))
         {

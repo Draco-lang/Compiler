@@ -9,7 +9,7 @@ using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 using DiagnosticTemplate = Draco.Compiler.Api.Diagnostics.DiagnosticTemplate;
 
 namespace Draco.Compiler.Internal.Syntax;

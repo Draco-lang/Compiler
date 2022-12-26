@@ -18,7 +18,7 @@ namespace Draco.Compiler.Internal.Semantics.Types;
 /// <param name="Expressions">The inferred type of expressions.</param>
 internal readonly record struct TypeInferenceResult(
     IReadOnlyDictionary<ISymbol, Type> Symbols,
-    IReadOnlyDictionary<ParseTree.Expr, Type> Expressions,
+    IReadOnlyDictionary<ParseNode.Expr, Type> Expressions,
     ImmutableArray<Diagnostic> Diagnostics);
 
 /// <summary>
@@ -28,7 +28,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 {
     private readonly record struct ReturnContext(
         Type ReturnType,
-        ParseTree.TypeSpecifier? Specifier);
+        ParseNode.TypeSpecifier? Specifier);
 
     private TypeInferenceResult Result => new(
         Symbols: this.symbols.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)),
@@ -46,7 +46,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     private readonly QueryDatabase db;
 
     private readonly Dictionary<ISymbol, Type> symbols = new();
-    private readonly Dictionary<ParseTree.Expr, Type> expressions = new();
+    private readonly Dictionary<ParseNode.Expr, Type> expressions = new();
 
     private readonly Stack<ReturnContext> returnContextStack = new();
 
@@ -55,7 +55,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         this.db = db;
     }
 
-    public TypeInferenceResult Infer(ParseTree tree)
+    public TypeInferenceResult Infer(ParseNode tree)
     {
         this.Visit(tree);
         this.solver.Solve();
@@ -96,7 +96,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return result;
     }
 
-    public override Unit VisitFuncDecl(ParseTree.Decl.Func node)
+    public override Unit VisitFuncDecl(ParseNode.Decl.Func node)
     {
         var context = new ReturnContext(
             ReturnType: node.ReturnType is null ? Type.Unit : TypeChecker.Evaluate(this.db, node.ReturnType.Type),
@@ -108,7 +108,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitVariableDecl(ParseTree.Decl.Variable node)
+    public override Unit VisitVariableDecl(ParseNode.Decl.Variable node)
     {
         // Inference in children
         base.VisitVariableDecl(node);
@@ -161,7 +161,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitInlineBodyFuncBody(ParseTree.FuncBody.InlineBody node)
+    public override Unit VisitInlineBodyFuncBody(ParseNode.FuncBody.InlineBody node)
     {
         // Inference in children
         base.VisitInlineBodyFuncBody(node);
@@ -187,7 +187,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitReturnExpr(ParseTree.Expr.Return node)
+    public override Unit VisitReturnExpr(ParseNode.Expr.Return node)
     {
         // Inference in children
         base.VisitReturnExpr(node);
@@ -212,7 +212,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitUnaryExpr(ParseTree.Expr.Unary node)
+    public override Unit VisitUnaryExpr(ParseNode.Expr.Unary node)
     {
         // Inference in children
         base.VisitUnaryExpr(node);
@@ -235,7 +235,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitBinaryExpr(ParseTree.Expr.Binary node)
+    public override Unit VisitBinaryExpr(ParseNode.Expr.Binary node)
     {
         // Inference in children
         base.VisitBinaryExpr(node);
@@ -283,7 +283,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitIfExpr(ParseTree.Expr.If node)
+    public override Unit VisitIfExpr(ParseNode.Expr.If node)
     {
         // Inference in children
         base.VisitIfExpr(node);
@@ -322,7 +322,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitWhileExpr(ParseTree.Expr.While node)
+    public override Unit VisitWhileExpr(ParseNode.Expr.While node)
     {
         // Inference in children
         base.VisitWhileExpr(node);
@@ -334,7 +334,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitCallExpr(ParseTree.Expr.Call node)
+    public override Unit VisitCallExpr(ParseNode.Expr.Call node)
     {
         // Inference in children
         base.VisitCallExpr(node);
@@ -355,14 +355,14 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     //  - index
     //  - member access
 
-    private static Location ExtractReturnLocation(ParseTree.Expr expr) =>
+    private static Location ExtractReturnLocation(ParseNode.Expr expr) =>
         new Location.TreeReference(ExtractReturnExpression(expr));
 
-    private static ParseTree.Expr ExtractReturnExpression(ParseTree.Expr expr) => expr switch
+    private static ParseNode.Expr ExtractReturnExpression(ParseNode.Expr expr) => expr switch
     {
-        ParseTree.Expr.If @if => ExtractReturnExpression(@if.Then),
-        ParseTree.Expr.While @while => ExtractReturnExpression(@while.Expression),
-        ParseTree.Expr.Block block => block.Enclosed.Value.Value ?? block,
+        ParseNode.Expr.If @if => ExtractReturnExpression(@if.Then),
+        ParseNode.Expr.While @while => ExtractReturnExpression(@while.Expression),
+        ParseNode.Expr.Block block => block.Enclosed.Value.Value ?? block,
         _ => expr,
     };
 }

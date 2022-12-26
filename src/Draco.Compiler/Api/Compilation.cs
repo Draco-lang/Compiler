@@ -49,6 +49,11 @@ public sealed class Compilation
     /// </summary>
     public string? AssemblyName { get; }
 
+    /// <summary>
+    /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
+    /// </summary>
+    public ImmutableArray<Diagnostic> Diagnostics => this.GetDiagnostics();
+
     private Compilation(ParseTree parseTree, string? assemblyName)
     {
         this.ParseTree = parseTree;
@@ -59,7 +64,7 @@ public sealed class Compilation
     /// Retrieves all <see cref="Diagnostic"/>s that were produced before emission.
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced before emission.</returns>
-    public ImmutableArray<Diagnostic> GetDiagnostics() => this.GetSyntaxDiagnostics()
+    internal ImmutableArray<Diagnostic> GetDiagnostics() => this.GetSyntaxDiagnostics()
         .Concat(this.GetSemanticDiagnostics())
         .ToImmutableArray();
 
@@ -68,14 +73,14 @@ public sealed class Compilation
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced during syntax analysis.</returns>
     public ImmutableArray<Diagnostic> GetSyntaxDiagnostics() =>
-        this.ParseTree.GetAllDiagnostics().ToImmutableArray();
+        this.ParseTree.Diagnostics.ToImmutableArray();
 
     /// <summary>
     /// Retrieves all <see cref="Diagnostic"/>s that were produced during semantic analysis.
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     public ImmutableArray<Diagnostic> GetSemanticDiagnostics() =>
-        this.GetSemanticModel().GetAllDiagnostics().ToImmutableArray();
+        this.GetSemanticModel().Diagnostics.ToImmutableArray();
 
     /// <summary>
     /// Retrieves the <see cref="SemanticModel"/> for this compilation.
@@ -99,7 +104,7 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        var ast = AstBuilder.ToAst(this.db, this.ParseTree);
+        var ast = AstBuilder.ToAst(this.db, this.ParseTree.Root);
         ast = AstLowering.Lower(this.db, ast);
         var codegen = new CSharpCodegen(csStream);
         codegen.Generate(ast);

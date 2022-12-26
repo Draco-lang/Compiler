@@ -12,13 +12,13 @@ namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 /// </summary>
 internal abstract record class Ast
 {
-    public abstract ParseTree? ParseTree { get; init; }
+    public abstract ParseNode? ParseNode { get; init; }
 
     /// <summary>
     /// An entire compilation unit.
     /// </summary>
     public sealed record class CompilationUnit(
-        [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+        [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
         ImmutableArray<Decl> Declarations) : Ast;
 
     /// <summary>
@@ -30,7 +30,7 @@ internal abstract record class Ast
         /// A function declaration.
         /// </summary>
         public sealed record class Func(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction DeclarationSymbol,
             [property: Ignore(IgnoreFlags.TransformerTransform)] string? Documentation,
             Expr.Block Body) : Decl
@@ -46,14 +46,14 @@ internal abstract record class Ast
         /// A label declaration.
         /// </summary>
         public sealed record class Label(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel LabelSymbol) : Decl;
 
         /// <summary>
         /// A variable declaration.
         /// </summary>
         public sealed record class Variable(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IVariable DeclarationSymbol,
             [property: Ignore(IgnoreFlags.TransformerTransform)] string? Documentation,
             Expr? Value) : Decl
@@ -78,12 +78,12 @@ internal abstract record class Ast
         /// An expression representing unitary value.
         /// </summary>
         public record class Unit(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree) : Expr
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Expr
         {
             /// <summary>
             /// A default unit value without a parse tree.
             /// </summary>
-            public static Unit Default { get; } = new(ParseTree: null);
+            public static Unit Default { get; } = new(ParseNode: null);
 
             [Ignore(IgnoreFlags.TransformerAll)]
             public override Type EvaluationType => Type.Unit;
@@ -93,7 +93,7 @@ internal abstract record class Ast
         /// A block expression.
         /// </summary>
         public record class Block(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             ImmutableArray<Stmt> Statements,
             Expr Value) : Expr
         {
@@ -105,7 +105,7 @@ internal abstract record class Ast
         /// A literal expression, i.e. a number, string, boolean value, etc.
         /// </summary>
         public sealed record class Literal(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] object? Value,
             [property: Ignore(IgnoreFlags.TransformerTransform)] Type Type) : Expr
         {
@@ -117,7 +117,7 @@ internal abstract record class Ast
         /// An if-expression with an optional else clause.
         /// </summary>
         public sealed record class If(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Condition,
             Expr Then,
             Expr Else) : Expr
@@ -130,7 +130,7 @@ internal abstract record class Ast
         /// A while-expression.
         /// </summary>
         public sealed record class While(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Condition,
             Expr Expression) : Expr
         {
@@ -142,7 +142,7 @@ internal abstract record class Ast
         /// A goto-expression.
         /// </summary>
         public sealed record class Goto(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel Target) : Expr
         {
             // NOTE: Eventually this should be the bottom type
@@ -154,7 +154,7 @@ internal abstract record class Ast
         /// A return-expression.
         /// </summary>
         public sealed record class Return(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Expression) : Expr
         {
             // NOTE: Eventually this should be the bottom type
@@ -166,7 +166,7 @@ internal abstract record class Ast
         /// Any call expression.
         /// </summary>
         public sealed record class Call(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Called,
             ImmutableArray<Expr> Args) : Expr
         {
@@ -179,7 +179,7 @@ internal abstract record class Ast
         /// Any index expression.
         /// </summary>
         public sealed record class Index(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Called,
             ImmutableArray<Expr> Args) : Expr
         {
@@ -192,7 +192,7 @@ internal abstract record class Ast
         /// A member access expression.
         /// </summary>
         public sealed record class MemberAccess(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Object,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IMember Member) : Expr
         {
@@ -205,7 +205,7 @@ internal abstract record class Ast
         /// A unary expression.
         /// </summary>
         public sealed record class Unary(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction Operator,
             Expr Operand) : Expr
         {
@@ -217,7 +217,7 @@ internal abstract record class Ast
         /// A binary expression.
         /// </summary>
         public sealed record class Binary(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Left,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction Operator,
             Expr Right) : Expr
@@ -230,7 +230,7 @@ internal abstract record class Ast
         /// A relational expression chain.
         /// </summary>
         public sealed record class Relational(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Left,
             ImmutableArray<ComparisonElement> Comparisons) : Expr
         {
@@ -243,7 +243,7 @@ internal abstract record class Ast
         /// An assignment expression, including compound assignment.
         /// </summary>
         public sealed record class Assign(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Target,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction? CompoundOperator,
             Expr Value) : Expr
@@ -256,7 +256,7 @@ internal abstract record class Ast
         /// A short-cutting conjunction expression.
         /// </summary>
         public sealed record class And(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Left,
             Expr Right) : Expr
         {
@@ -268,7 +268,7 @@ internal abstract record class Ast
         /// A short-cutting disjunction expression.
         /// </summary>
         public sealed record class Or(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Left,
             Expr Right) : Expr
         {
@@ -280,7 +280,7 @@ internal abstract record class Ast
         /// A string expression composing string content and interpolation.
         /// </summary>
         public sealed record class String(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             ImmutableArray<StringPart> Parts) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
@@ -291,7 +291,7 @@ internal abstract record class Ast
         /// A name reference expression.
         /// </summary>
         public sealed record class Reference(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ITyped Symbol) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
@@ -308,7 +308,7 @@ internal abstract record class Ast
         /// Content part of a string literal.
         /// </summary>
         public sealed record class Content(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] string Value,
             [property: Ignore(IgnoreFlags.TransformerTransform)] int Cutoff) : StringPart;
 
@@ -316,7 +316,7 @@ internal abstract record class Ast
         /// An interpolation hole.
         /// </summary>
         public sealed record class Interpolation(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Expression) : StringPart;
     }
 
@@ -324,7 +324,7 @@ internal abstract record class Ast
     /// A single comparison element in a comparison chain.
     /// </summary>
     public record class ComparisonElement(
-        [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+        [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
         [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction Operator,
         Expr Right) : Ast;
 
@@ -337,26 +337,26 @@ internal abstract record class Ast
         /// Represents an empty statement.
         /// </summary>
         public sealed record class NoOp(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree) : Stmt
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Stmt
         {
             /// <summary>
             /// A default instance to use.
             /// </summary>
-            public static NoOp Default { get; } = new(ParseTree: null);
+            public static NoOp Default { get; } = new(ParseNode: null);
         }
 
         /// <summary>
         /// A declaration statement.
         /// </summary>
         public new sealed record class Decl(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Ast.Decl Declaration) : Stmt;
 
         /// <summary>
         /// An expression statement.
         /// </summary>
         public new sealed record class Expr(
-            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseTree? ParseTree,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Ast.Expr Expression) : Stmt;
     }
 }

@@ -75,9 +75,9 @@ internal abstract partial record class Type
             }
         }
 
-        public ParseTree? Defitition { get; }
+        public ParseNode? Defitition { get; }
 
-        public Variable(ParseTree? defitition)
+        public Variable(ParseNode? defitition)
         {
             this.Defitition = defitition;
         }

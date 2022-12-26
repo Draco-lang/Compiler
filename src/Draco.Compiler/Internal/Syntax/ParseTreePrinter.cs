@@ -4,22 +4,22 @@ using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
-using ApiParseTree = Draco.Compiler.Api.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
+using ApiParseNode = Draco.Compiler.Api.Syntax.ParseNode;
 
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Prints the <see cref="ParseTree"/> as the text it was parsed from.
+/// Prints the <see cref="ParseNode"/> as the text it was parsed from.
 /// </summary>
 internal sealed class CodeParseTreePrinter : ParseTreeVisitorBase<Unit>
 {
     /// <summary>
-    /// Prints the <see cref="ParseTree"/> as the text it was parsed from.
+    /// Prints the <see cref="ParseNode"/> as the text it was parsed from.
     /// </summary>
     /// <param name="tree">The tree to print.</param>
     /// <returns>The <paramref name="tree"/> printed to text, identical to the text it was parsed from.</returns>
-    public static string Print(ParseTree tree)
+    public static string Print(ParseNode tree)
     {
         var printer = new CodeParseTreePrinter();
         printer.Visit(tree);
@@ -51,7 +51,7 @@ internal sealed class DebugParseTreePrinter
     /// </summary>
     /// <param name="tree">The tree to print.</param>
     /// <returns>The <paramref name="tree"/> printed in a debuggable form.</returns>
-    public static string Print(ParseTree tree)
+    public static string Print(ParseNode tree)
     {
         var printer = new DebugParseTreePrinter();
         printer.AppendParseTree(tree);
@@ -68,7 +68,7 @@ internal sealed class DebugParseTreePrinter
     private DebugParseTreePrinter AppendObject(object? obj) => obj switch
     {
         Token t => this.AppendToken(t),
-        ParseTree t => this.AppendParseTree(t),
+        ParseNode t => this.AppendParseTree(t),
         string s => this.Append(s),
         IEnumerable e => this.AppendList(e),
         object o when o.GetType() is var type
@@ -92,7 +92,7 @@ internal sealed class DebugParseTreePrinter
         open: '[',
         close: ']');
 
-    private DebugParseTreePrinter AppendParseTree(ParseTree t) => this.AppendSubtree(t.GetType().Name, t);
+    private DebugParseTreePrinter AppendParseTree(ParseNode t) => this.AppendSubtree(t.GetType().Name, t);
 
     private DebugParseTreePrinter AppendToken(Token t)
     {
@@ -114,7 +114,7 @@ internal sealed class DebugParseTreePrinter
         .AppendIndented(tree
             .GetType()
             .GetProperties()
-            .Where(p => tree is not ParseTree || p.Name != "Children")
+            .Where(p => tree is not ParseNode || p.Name != "Children")
             .Select(p => new KeyValuePair<string?, object?>(p.Name, p.GetValue(tree))),
             open: '{',
             close: '}');
@@ -163,14 +163,14 @@ internal sealed class DebugParseTreePrinter
 /// </summary>
 internal sealed class DotParseTreePrinter : DotGraphParseTreePrinterBase
 {
-    public static string Print(ApiParseTree parseTree)
+    public static string Print(ApiParseNode parseTree)
     {
         var printer = new DotParseTreePrinter();
         printer.PrintTree(parseTree);
         return printer.Code;
     }
 
-    protected override void PrintSingle(ApiParseTree tree)
+    protected override void PrintSingle(ApiParseNode tree)
     {
         var name = this.GetNodeName(tree);
 
@@ -185,9 +185,9 @@ internal sealed class DotParseTreePrinter : DotGraphParseTreePrinterBase
         }
     }
 
-    private static string NodeToString(ApiParseTree tree) => tree switch
+    private static string NodeToString(ApiParseNode tree) => tree switch
     {
-        ApiParseTree.Token token => token.Text,
+        ApiParseNode.Token token => token.Text,
         _ => tree.GetType().Name,
     };
 }

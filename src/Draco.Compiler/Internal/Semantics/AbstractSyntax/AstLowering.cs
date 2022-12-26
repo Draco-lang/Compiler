@@ -191,8 +191,8 @@ internal sealed class AstLowering : AstTransformerBase
         }
 
         // Otherwise compute and store
-        Debug.Assert(expr.ParseTree is ParseTree.Expr);
-        var type = TypeChecker.TypeOf(this.db, (ParseTree.Expr)expr.ParseTree);
+        Debug.Assert(expr.ParseNode is ParseNode.Expr);
+        var type = TypeChecker.TypeOf(this.db, (ParseNode.Expr)expr.ParseNode);
         var symbol = ISymbol.SynthetizeVariable(type: type, isMutable: false);
         var symbolRef = Reference(symbol);
         var assignment = Stmt(Var(

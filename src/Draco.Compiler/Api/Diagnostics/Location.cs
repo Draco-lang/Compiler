@@ -18,6 +18,11 @@ public abstract partial class Location
     public virtual bool IsNone => false;
 
     /// <summary>
+    /// The <see cref="Syntax.SourceText"/> the location represents.
+    /// </summary>
+    public virtual SourceText SourceText => SourceText.None;
+
+    /// <summary>
     /// The range of this location.
     /// </summary>
     public virtual Range? Range => null;
@@ -45,10 +50,12 @@ public abstract partial class Location
     /// </summary>
     internal sealed class InFile : Location
     {
+        public override SourceText SourceText { get; }
         public override Range? Range { get; }
 
-        public InFile(Range range)
+        public InFile(SourceText sourceText, Range range)
         {
+            this.SourceText = sourceText;
             this.Range = range;
         }
 

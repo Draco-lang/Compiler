@@ -46,7 +46,11 @@ public partial class Program
     /// Called when the user changed output type.
     /// </summary>
     /// <param name="value">The new output type.</param>
-    public static async Task OnOutputTypeChange(string value) => selectedOutputType = value;
+    public static Task OnOutputTypeChange(string value)
+    {
+        selectedOutputType = value;
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// Called when the code input changed.

@@ -1,6 +1,6 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Tests.Syntax;
 
@@ -704,10 +704,11 @@ public sealed class LexerTests
     [Trait("Feature", "Strings")]
     public void TestMultilineStringWithLineContinuationWithWhitespaceAfter(string ext)
     {
+        const string trailingSpace = "  ";
         const string quotes = "\"\"\"";
         var text = $""""
         {ext}"""
-            Hello!\{ext}  
+            Hello!\{ext}{trailingSpace}
             Bye!
             """{ext}
         """";
@@ -729,7 +730,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringNewline, token.Type);
-        Assert.Equal($"\\{ext}  \n", token.Text);
+        Assert.Equal($"\\{ext}{trailingSpace}\n", token.Text);
         Assert.Equal(string.Empty, token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 

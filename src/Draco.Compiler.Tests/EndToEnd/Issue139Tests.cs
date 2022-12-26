@@ -18,7 +18,7 @@ public sealed class Issue139Tests
         """)]
     [InlineData("""
         func main() {
-            var i = i + 
+            var i = i +
         }
         """)]
     [InlineData("""

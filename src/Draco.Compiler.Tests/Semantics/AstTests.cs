@@ -46,7 +46,7 @@ public sealed class AstTests
         var docCommentsExpected = docComment.Split(
             new string[] { "\r\n", "\r", "\n" },
             StringSplitOptions.None
-            ).Where(x => x.StartsWith("///")).ToArray();
+            ).Where(x => x.StartsWith("///")).Select(x => x.TrimStart('/')).ToArray();
         var docCommentsActuall = func.Documentation!.Split(
             new string[] { "\r\n", "\r", "\n" },
             StringSplitOptions.None

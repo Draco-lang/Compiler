@@ -41,7 +41,7 @@ internal static class AstBuilder
             decl.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
             null;
         // Concatenate the text of all the doc comments
-        var documentation = trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text)) : null;
+        var documentation = trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.TrimStart('/'))) : null;
         return db.GetOrUpdate(
         decl,
         Ast.Decl (decl) => decl switch

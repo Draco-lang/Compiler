@@ -48,44 +48,27 @@ internal static class TailCallOptimization
         filter: HasTailCalls,
         passDelegate: Apply);
 
-    private static bool HasTailCalls(Procedure procedure)
-    {
-        var lastRecursiveCallResult = null as Value;
-        foreach (var instr in procedure.Instructions)
-        {
-            if (instr.Kind == InstructionKind.Call)
-            {
-                if (instr.GetOperandAt<Value>(1) == procedure)
-                {
-                    lastRecursiveCallResult = instr.GetOperandAt<Value>(0);
-                }
-                else
-                {
-                    lastRecursiveCallResult = null;
-                }
-            }
-            else if (instr.Kind == InstructionKind.Ret)
-            {
-                var returned = instr.GetOperandAt<Value>(0);
-                if (returned == lastRecursiveCallResult)
-                {
-                    return true;
-                }
-                else
-                {
-                    lastRecursiveCallResult = null;
-                }
-            }
-            else
-            {
-                lastRecursiveCallResult = null;
-            }
-        }
-        return false;
-    }
+    private static bool HasTailCalls(Procedure procedure) => procedure.BasicBlocks.Any(bb => HasTailCall(procedure, bb));
 
     private static bool Apply(Procedure procedure)
     {
         throw new NotImplementedException();
+    }
+
+    private static bool HasTailCall(Procedure procedure, BasicBlock basicBlock)
+    {
+        if (basicBlock.Instructions.Count < 2) return false;
+        return IsTailCall(procedure, basicBlock.Instructions[^2], basicBlock.Instructions[^1]);
+    }
+
+    private static bool IsTailCall(Procedure procedure, Instruction first, Instruction second)
+    {
+        if (first.Kind != InstructionKind.Call || second.Kind != InstructionKind.Ret) return false;
+        var target = first.GetOperandAt<Value.Register>(0);
+        var called = first.GetOperandAt<Value>(1);
+        var returned = second.GetOperandAt<Value>(0);
+        if (called != procedure) return false;
+        if (target != returned) return false;
+        return true;
     }
 }

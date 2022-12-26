@@ -1,9 +1,9 @@
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 namespace Draco.Compiler.Internal.Semantics.DFA;
 
-internal sealed record class CFG
+internal abstract record class CFG
 {
     // TODO: add builder
     /// <summary>
@@ -11,7 +11,7 @@ internal sealed record class CFG
     /// </summary>
     /// <param name="Statements">List of statements contained in the <see cref="Block"/>.</param>
     /// <param name="Branches">List of possible <see cref="Branch"/>es.</param>
-    internal sealed record class Block(ImmutableArray<Ast.Stmt> Statements, ImmutableArray<Branch> Branches);
+    internal sealed record class Block(List<Ast.Stmt> Statements, List<Branch> Branches);
 
     /// <summary>
     /// Represents single <see cref="Branch"/>.

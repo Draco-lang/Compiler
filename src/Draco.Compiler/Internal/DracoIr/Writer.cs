@@ -63,7 +63,7 @@ internal sealed class InstructionWriter
         // Cleck if this is a duplicate placement
         if (this.procedure.BasicBlocks.Contains(label.Target)) throw new InvalidOperationException("label already placed");
         // Check if we haven't jumped from the previous block
-        if (this.currentBasicBlock is not null) this.Write(Instruction.Jmp(label.Target));
+        if (this.currentBasicBlock is not null) this.Jmp(label);
         this.currentBasicBlock = label.Target;
         this.procedure.BasicBlocks.Add(label.Target);
     }
@@ -81,55 +81,57 @@ internal sealed class InstructionWriter
 
     // Instruction factories ///////////////////////////////////////////////////
 
-    public void Nop() => this.Write(Instruction.Nop());
+    public void Nop() => this.Write(Instruction.Make(InstructionKind.Nop));
     public Value Alloc(Type type)
     {
         if (type == Type.Unit) return Value.Unit.Instance;
-        return this.MakeWithRegister(new Type.Ptr(type), target => Instruction.Alloc(target, type));
+        return this.MakeWithRegister(new Type.Ptr(type), target => Instruction.Make(InstructionKind.Alloc, target, type));
     }
     public void Store(Value target, Value src)
     {
         if (src.Type == Type.Unit) return;
-        this.Write(Instruction.Store(target, src));
+        this.Write(Instruction.Make(InstructionKind.Store, target, src));
     }
     public Value Load(Value src)
     {
         if (src.Type == Type.Unit) return Value.Unit.Instance;
         if (src.Type is not Type.Ptr ptr) throw new ArgumentException("can not load from non-pointer value");
         if (ptr.Element == Type.Unit) return Value.Unit.Instance;
-        return this.MakeWithRegister(ptr.Element, target => Instruction.Load(target, src));
+        return this.MakeWithRegister(ptr.Element, target => Instruction.Make(InstructionKind.Load, target, src));
     }
-    public void Ret(Value value) => this.Write(Instruction.Ret(value));
-    public void Jmp(Label label) => this.Write(Instruction.Jmp(label.Target));
+    public void Ret(Value value) =>
+        this.Write(Instruction.Make(InstructionKind.Ret, value));
+    public void Jmp(Label label) =>
+        this.Write(Instruction.Make(InstructionKind.Jmp, label.Target));
     public void JmpIf(Value condition, Label thenLabel, Label elsLabel)
     {
         if (condition.Type != Type.Bool) throw new ArgumentException("condition must be bool");
-        this.Write(Instruction.JmpIf(condition, thenLabel.Target, elsLabel.Target));
+        this.Write(Instruction.Make(InstructionKind.JmpIf, condition, thenLabel.Target, elsLabel.Target));
     }
     public Value.Register AddInt(Value a, Value b) =>
-        this.MakeWithRegister(a.Type, target => Instruction.AddInt(target, a, b));
+        this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.AddInt, target, a, b));
     public Value.Register SubInt(Value a, Value b) =>
-        this.MakeWithRegister(a.Type, target => Instruction.SubInt(target, a, b));
+        this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.SubInt, target, a, b));
     public Value.Register MulInt(Value a, Value b) =>
-        this.MakeWithRegister(a.Type, target => Instruction.MulInt(target, a, b));
+        this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.MulInt, target, a, b));
     public Value.Register DivInt(Value a, Value b) =>
-        this.MakeWithRegister(a.Type, target => Instruction.DivInt(target, a, b));
+        this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.DivInt, target, a, b));
     public Value.Register RemInt(Value a, Value b) =>
-        this.MakeWithRegister(a.Type, target => Instruction.RemInt(target, a, b));
+        this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.RemInt, target, a, b));
     public Value.Register LessInt(Value a, Value b) =>
-        this.MakeWithRegister(Type.Bool, target => Instruction.LessInt(target, a, b));
+        this.MakeWithRegister(Type.Bool, target => Instruction.Make(InstructionKind.LessInt, target, a, b));
     public Value.Register LessEqualInt(Value a, Value b) =>
-        this.MakeWithRegister(Type.Bool, target => Instruction.LessEqualInt(target, a, b));
+        this.MakeWithRegister(Type.Bool, target => Instruction.Make(InstructionKind.LessEqualInt, target, a, b));
     public Value.Register EqualInt(Value a, Value b) =>
-        this.MakeWithRegister(Type.Bool, target => Instruction.EqualInt(target, a, b));
+        this.MakeWithRegister(Type.Bool, target => Instruction.Make(InstructionKind.EqualInt, target, a, b));
     public Value.Register NegInt(Value a) =>
-        this.MakeWithRegister(a.Type, target => Instruction.NegInt(target, a));
+        this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.NegInt, target, a));
     public Value.Register NotBool(Value a) =>
-        this.MakeWithRegister(Type.Bool, target => Instruction.NotBool(target, a));
+        this.MakeWithRegister(Type.Bool, target => Instruction.Make(InstructionKind.NotBool, target, a));
     public Value.Register Call(Value called, IList<Value> args)
     {
         if (called.Type is not Type.Proc proc) throw new ArgumentException("can call a non-procedure value");
-        return this.MakeWithRegister(proc.Ret, target => Instruction.Call(target, called, args));
+        return this.MakeWithRegister(proc.Ret, target => Instruction.Make(InstructionKind.Call, target, called, args));
     }
 
     private Value.Register MakeWithRegister(Type type, Func<Value.Register, Instruction> make)

@@ -476,29 +476,10 @@ internal abstract partial class Instruction : IReadOnlyInstruction
 // Factory
 internal abstract partial class Instruction
 {
-    public static Instruction Nop() => Make(InstructionKind.Nop);
-    public static Instruction Alloc(Value.Register target, Type type) => Make(InstructionKind.Alloc, target, type);
-    public static Instruction Store(Value target, Value src) => Make(InstructionKind.Store, target, src);
-    public static Instruction Load(Value.Register target, Value src) => Make(InstructionKind.Load, target, src);
-    public static Instruction Ret(Value value) => Make(InstructionKind.Ret, value);
-    public static Instruction Jmp(IReadOnlyBasicBlock bb) => Make(InstructionKind.Jmp, bb);
-    public static Instruction JmpIf(Value condition, IReadOnlyBasicBlock then, IReadOnlyBasicBlock els) => Make(InstructionKind.JmpIf, condition, then, els);
-    public static Instruction AddInt(Value.Register target, Value a, Value b) => Make(InstructionKind.AddInt, target, a, b);
-    public static Instruction SubInt(Value.Register target, Value a, Value b) => Make(InstructionKind.SubInt, target, a, b);
-    public static Instruction MulInt(Value.Register target, Value a, Value b) => Make(InstructionKind.MulInt, target, a, b);
-    public static Instruction DivInt(Value.Register target, Value a, Value b) => Make(InstructionKind.DivInt, target, a, b);
-    public static Instruction RemInt(Value.Register target, Value a, Value b) => Make(InstructionKind.RemInt, target, a, b);
-    public static Instruction LessInt(Value.Register target, Value a, Value b) => Make(InstructionKind.LessInt, target, a, b);
-    public static Instruction LessEqualInt(Value.Register target, Value a, Value b) => Make(InstructionKind.LessEqualInt, target, a, b);
-    public static Instruction EqualInt(Value.Register target, Value a, Value b) => Make(InstructionKind.EqualInt, target, a, b);
-    public static Instruction NegInt(Value.Register target, Value a) => Make(InstructionKind.NegInt, target, a);
-    public static Instruction NotBool(Value.Register target, Value a) => Make(InstructionKind.NotBool, target, a);
-    public static Instruction Call(Value.Register target, Value called, IList<Value> args) => Make(InstructionKind.Call, target, called, args);
-
-    private static Instruction Make(InstructionKind kind) => new Instruction0(kind);
-    private static Instruction Make<T1>(InstructionKind kind, T1 op1) => new Instruction1<T1>(kind, op1);
-    private static Instruction Make<T1, T2>(InstructionKind kind, T1 op1, T2 op2) => new Instruction2<T1, T2>(kind, op1, op2);
-    private static Instruction Make<T1, T2, T3>(InstructionKind kind, T1 op1, T2 op2, T3 op3) => new Instruction3<T1, T2, T3>(kind, op1, op2, op3);
+    public static Instruction Make(InstructionKind kind) => new Instruction0(kind);
+    public static Instruction Make<T1>(InstructionKind kind, T1 op1) => new Instruction1<T1>(kind, op1);
+    public static Instruction Make<T1, T2>(InstructionKind kind, T1 op1, T2 op2) => new Instruction2<T1, T2>(kind, op1, op2);
+    public static Instruction Make<T1, T2, T3>(InstructionKind kind, T1 op1, T2 op2, T3 op3) => new Instruction3<T1, T2, T3>(kind, op1, op2, op3);
 }
 
 // Implementations

@@ -34,7 +34,7 @@ internal static class AstBuilder
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="decl">The <see cref="ParseNode"/> to construct the <see cref="Ast"/> from.</param>
     /// <returns>The <see cref="Ast"/> form of <paramref name="decl"/>.</returns>
-    public static Ast.Decl ToAst(QueryDatabase db, ParseTree.Decl decl)
+    public static Ast.Decl ToAst(QueryDatabase db, ParseNode.Decl decl)
     {
         // Get all the doc commemts above the declarationh
         var trivia = decl.Tokens.FirstOrDefault() is not null ?

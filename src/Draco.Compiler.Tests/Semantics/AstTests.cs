@@ -17,7 +17,7 @@ public sealed class AstTests
         var parseTree = ParseTree.Parse(sourceCode);
         var compilation = Compilation.Create(parseTree);
         var db = compilation.GetSemanticModel().QueryDatabase;
-        return AstBuilder.ToAst(db, parseTree) as Ast.CompilationUnit;
+        return AstBuilder.ToAst(db, parseTree.Root) as Ast.CompilationUnit;
     }
 
     [Theory]

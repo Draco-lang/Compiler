@@ -269,9 +269,9 @@ internal sealed record class Procedure : Value, IReadOnlyProcedure
         this.Name = name;
     }
 
-    public Parameter DefineParameter(Type type)
+    public Parameter DefineParameter(string name, Type type)
     {
-        var param = new Parameter(type, this.parameters.Count);
+        var param = new Parameter(type, name, this.parameters.Count);
         this.parameters.Add(param);
         return param;
     }
@@ -319,12 +319,12 @@ internal abstract partial record class Value
 
 internal abstract partial record class Value
 {
-    public sealed record class Parameter(Type Type, int Index) : Value
+    public sealed record class Parameter(Type Type, string Name, int Index) : Value
     {
         public override Type Type { get; } = Type;
 
-        public string ToFullString() => $"{this.Type} {this}";
-        public override string ToString() => $"arg_{this.Index}";
+        public string ToFullString() => $"{this.Type} {this.Name}";
+        public override string ToString() => this.Name;
     }
 
     /// <summary>

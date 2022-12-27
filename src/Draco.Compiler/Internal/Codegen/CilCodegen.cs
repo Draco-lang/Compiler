@@ -42,10 +42,12 @@ internal sealed class CilCodegen
         {
         }
 
-        public void Add(T item)
+        public int Add(T item)
         {
-            this.index.Add(item, this.NextRowId);
+            var id = this.NextRowId;
+            this.index.Add(item, id);
             this.rows.Add(item);
+            return id;
         }
     }
 
@@ -148,6 +150,11 @@ internal sealed class CilCodegen
 
         var typeEncoder = encoder.AddParameter();
         this.TranslateSignatureType(typeEncoder.Type(), param.Type);
+
+        this.metadataBuilder.AddParameter(
+            attributes: ParameterAttributes.None,
+            name: this.metadataBuilder.GetOrAddString(param.Name),
+            sequenceNumber: param.Index + 1);
     }
 
     private void TranslateReturnType(ReturnTypeEncoder encoder, Type type)

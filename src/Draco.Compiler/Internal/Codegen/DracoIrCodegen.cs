@@ -83,7 +83,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
         foreach (var param in node.Params)
         {
-            var paramValue = procedure.DefineParameter(this.TranslateType(param.Type));
+            var paramValue = procedure.DefineParameter(param.Name, this.TranslateType(param.Type));
             this.values[param] = paramValue;
         }
         procedure.ReturnType = this.TranslateType(node.ReturnType);

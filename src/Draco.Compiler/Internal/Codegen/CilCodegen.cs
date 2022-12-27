@@ -65,7 +65,7 @@ internal sealed class CilCodegen
     public void CreateFreeFunctionsClass()
     {
         this.metadataBuilder.AddTypeDefinition(
-            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit,
+            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
             @namespace: default,
             name: this.metadataBuilder.GetOrAddString("FreeFunctions"),
             // TODO: System.Object

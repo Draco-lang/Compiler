@@ -26,9 +26,8 @@ internal sealed class CilCodegen
     public static void Generate(IReadOnlyAssembly assembly, Stream peStream)
     {
         var codegen = new CilCodegen(assembly);
-
-        // TODO
-        throw new NotImplementedException();
+        codegen.Translate();
+        codegen.WritePe(peStream);
     }
 
     private readonly struct DefinitionIndex<T>
@@ -69,6 +68,9 @@ internal sealed class CilCodegen
 
     private readonly IReadOnlyAssembly assembly;
 
+    private readonly MetadataBuilder metadataBuilder = new();
+    private readonly BlobBuilder ilBuilder = new();
+
     private readonly DefinitionIndexWithMarker<Value.Parameter, IReadOnlyProcedure> parameterIndex = new();
 
     private CilCodegen(IReadOnlyAssembly assembly)
@@ -76,24 +78,36 @@ internal sealed class CilCodegen
         this.assembly = assembly;
     }
 
-    private void TranslateProcedure(
-        MetadataBuilder metadataBuilder,
-        BlobBuilder ilBuilder,
-        IReadOnlyProcedure procedure)
+    private void Translate()
+    {
+        this.DefineModuleAndAssembly();
+        this.TranslateAssembly();
+        this.DefineFreeFunctionsType();
+    }
+
+    private void TranslateAssembly()
+    {
+        foreach (var proc in this.assembly.Procedures.Values) this.TranslateProcedure(proc);
+    }
+
+    private void TranslateProcedure(IReadOnlyProcedure procedure)
     {
         var signature = new BlobBuilder();
         var signatureEncoder = new BlobEncoder(signature).MethodSignature();
         this.TranslateProcedureSignature(signatureEncoder, procedure);
 
-        var methodBodyStream = new MethodBodyStreamEncoder(ilBuilder);
+        this.ilBuilder.Align(4);
+        var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
         var methodBodyOffset = this.TranslateProcedureBody(methodBodyStream, procedure);
-        metadataBuilder.AddMethodDefinition(
+
+        var parametersStart = this.parameterIndex.GetMark(procedure);
+        this.metadataBuilder.AddMethodDefinition(
             attributes: MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             implAttributes: MethodImplAttributes.IL,
-            name: metadataBuilder.GetOrAddString(procedure.Name),
-            signature: metadataBuilder.GetOrAddBlob(signature),
+            name: this.metadataBuilder.GetOrAddString(procedure.Name),
+            signature: this.metadataBuilder.GetOrAddBlob(signature),
             bodyOffset: methodBodyOffset,
-            parameterList: MetadataTokens.ParameterHandle(this.parameterIndex.GetMark(procedure)));
+            parameterList: MetadataTokens.ParameterHandle(parametersStart));
     }
 
     private int TranslateProcedureBody(MethodBodyStreamEncoder encoder, IReadOnlyProcedure procedure)
@@ -121,6 +135,8 @@ internal sealed class CilCodegen
 
     private void TranslateProcedureSignature(MethodSignatureEncoder encoder, IReadOnlyProcedure procedure)
     {
+        this.parameterIndex.PutMark(procedure);
+
         encoder.Parameters(procedure.Parameters.Count, out var returnTypeEncoder, out var parametersEncoder);
         this.TranslateReturnType(returnTypeEncoder, procedure.ReturnType);
         foreach (var param in procedure.Parameters) this.TranslateParameter(parametersEncoder, param);
@@ -153,10 +169,86 @@ internal sealed class CilCodegen
     private void TranslateBasicBlock(InstructionEncoder encoder, IReadOnlyBasicBlock basicBlock)
     {
         // TODO
+        foreach (var instr in basicBlock.Instructions) this.TranslateInstruction(encoder, instr);
     }
 
     private void TranslateInstruction(InstructionEncoder encoder, IReadOnlyInstruction instruction)
     {
         // TODO
+        encoder.OpCode(ILOpCode.Nop);
+    }
+
+    private void DefineModuleAndAssembly()
+    {
+        this.metadataBuilder.AddModule(
+            generation: 0,
+            moduleName: this.metadataBuilder.GetOrAddString(this.assembly.Name),
+            // TODO: Proper module-version ID
+            mvid: this.metadataBuilder.GetOrAddGuid(Guid.NewGuid()),
+            // TODO: What are these? Encryption?
+            encId: default,
+            encBaseId: default);
+
+        this.metadataBuilder.AddAssembly(
+            name: this.metadataBuilder.GetOrAddString(this.assembly.Name),
+            // TODO: Proper versioning
+            version: new Version(1, 0, 0, 0),
+            culture: default,
+            publicKey: default,
+            flags: 0,
+            hashAlgorithm: AssemblyHashAlgorithm.None);
+    }
+
+    private void DefineFreeFunctionsType()
+    {
+        // TODO: Replace with System.Runtime reference
+        var mscorlibAssemblyRef = this.metadataBuilder.AddAssemblyReference(
+            name: this.metadataBuilder.GetOrAddString("mscorlib"),
+            // TODO: What version?
+            version: new Version(4, 0, 0, 0),
+            culture: default,
+            // TODO: What the hell?
+            publicKeyOrToken: this.metadataBuilder.GetOrAddBlob(new byte[]
+            {
+                0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89,
+            }),
+            flags: default,
+            hashValue: default);
+
+        var systemObjectTypeRef = this.metadataBuilder.AddTypeReference(
+           mscorlibAssemblyRef,
+           this.metadataBuilder.GetOrAddString("System"),
+           this.metadataBuilder.GetOrAddString("Object"));
+
+        // TODO: Factor out constants into settings?
+        this.metadataBuilder.AddTypeDefinition(
+            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
+            @namespace: default,
+            name: this.metadataBuilder.GetOrAddString("FreeFunctions"),
+            baseType: systemObjectTypeRef,
+            // TODO: Again, this should be read up from an index
+            fieldList: MetadataTokens.FieldDefinitionHandle(1),
+            // TODO: This depends on the order of types
+            // we likely want to read this up from an index
+            methodList: MetadataTokens.MethodDefinitionHandle(1));
+    }
+
+    private void WritePe(Stream peStream)
+    {
+        var peHeaderBuilder = new PEHeaderBuilder(
+            imageCharacteristics: Characteristics.Dll);
+        var peBuilder = new ManagedPEBuilder(
+            header: peHeaderBuilder,
+            metadataRootBuilder: new(this.metadataBuilder),
+            ilStream: this.ilBuilder,
+            // TODO: When entry point is exposed from assembly
+            entryPoint: default,
+            flags: CorFlags.ILOnly,
+            // TODO: For deterministic builds
+            deterministicIdProvider: null);
+
+        var peBlob = new BlobBuilder();
+        var contentId = peBuilder.Serialize(peBlob);
+        peBlob.WriteContentTo(peStream);
     }
 }

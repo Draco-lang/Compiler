@@ -76,10 +76,7 @@ internal sealed class CilCodegen
         }
 
         // Actual codegen
-        foreach (var bb in proc.BasicBlocks)
-        {
-            this.Translate(bb);
-        }
+        foreach (var bb in proc.BasicBlocks) this.Translate(bb);
 
         var offset = methodBodyStream.AddMethodBody(this.ilEncoder);
         var handle = this.metadataBuilder.AddMethodDefinition(

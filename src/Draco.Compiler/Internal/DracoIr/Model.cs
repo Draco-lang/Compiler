@@ -25,13 +25,13 @@ internal interface IReadOnlyAssembly
     /// <summary>
     /// The procedures defined in this assembly.
     /// </summary>
-    public IReadOnlyDictionary<string, IReadOnlyProcecude> Procedures { get; }
+    public IReadOnlyDictionary<string, IReadOnlyProcedure> Procedures { get; }
 }
 
 /// <summary>
 /// Interface for a single procedure.
 /// </summary>
-internal interface IReadOnlyProcecude
+internal interface IReadOnlyProcedure
 {
     /// <summary>
     /// The name of this procedure.
@@ -210,8 +210,8 @@ internal sealed class Assembly : IReadOnlyAssembly
     public string Name { get; set; }
 
     public IDictionary<string, Procedure> Procedures => this.procedures;
-    IReadOnlyDictionary<string, IReadOnlyProcecude> IReadOnlyAssembly.Procedures =>
-        new CovariantReadOnlyDictionary<string, Procedure, IReadOnlyProcecude>(this.procedures);
+    IReadOnlyDictionary<string, IReadOnlyProcedure> IReadOnlyAssembly.Procedures =>
+        new CovariantReadOnlyDictionary<string, Procedure, IReadOnlyProcedure>(this.procedures);
 
     private readonly Dictionary<string, Procedure> procedures = new();
 
@@ -235,9 +235,9 @@ internal sealed class Assembly : IReadOnlyAssembly
 }
 
 /// <summary>
-/// An <see cref="IReadOnlyProcecude"/> implementation.
+/// An <see cref="IReadOnlyProcedure"/> implementation.
 /// </summary>
-internal sealed record class Procedure : Value, IReadOnlyProcecude
+internal sealed record class Procedure : Value, IReadOnlyProcedure
 {
     public override Type Type => new Type.Proc(
         Args: this.Parameters.Select(p => p.Type).ToImmutableArray(),
@@ -247,16 +247,16 @@ internal sealed record class Procedure : Value, IReadOnlyProcecude
     public Type ReturnType { get; set; } = Type.Unit;
 
     public IList<Parameter> Parameters => this.parameters;
-    IReadOnlyList<Parameter> IReadOnlyProcecude.Parameters => this.parameters;
+    IReadOnlyList<Parameter> IReadOnlyProcedure.Parameters => this.parameters;
 
     public BasicBlock Entry => this.basicBlocks[0];
-    IReadOnlyBasicBlock IReadOnlyProcecude.Entry => this.Entry;
+    IReadOnlyBasicBlock IReadOnlyProcedure.Entry => this.Entry;
 
     public IList<BasicBlock> BasicBlocks => this.basicBlocks;
-    IReadOnlyList<IReadOnlyBasicBlock> IReadOnlyProcecude.BasicBlocks => this.basicBlocks;
+    IReadOnlyList<IReadOnlyBasicBlock> IReadOnlyProcedure.BasicBlocks => this.basicBlocks;
 
     public IEnumerable<Instruction> Instructions => this.basicBlocks.SelectMany(block => block.Instructions);
-    IEnumerable<IReadOnlyInstruction> IReadOnlyProcecude.Instructions => this.Instructions;
+    IEnumerable<IReadOnlyInstruction> IReadOnlyProcedure.Instructions => this.Instructions;
 
     private readonly List<Parameter> parameters = new();
     private readonly List<BasicBlock> basicBlocks = new()

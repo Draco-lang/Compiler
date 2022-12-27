@@ -209,7 +209,7 @@ internal sealed class Assembly : IReadOnlyAssembly
 {
     public string Name { get; set; }
 
-    public IDictionary<string, Procedure> Procedures { get; } = new Dictionary<string, Procedure>();
+    public IDictionary<string, Procedure> Procedures => this.procedures;
     IReadOnlyDictionary<string, IReadOnlyProcecude> IReadOnlyAssembly.Procedures =>
         new CovariantReadOnlyDictionary<string, Procedure, IReadOnlyProcecude>(this.procedures);
 

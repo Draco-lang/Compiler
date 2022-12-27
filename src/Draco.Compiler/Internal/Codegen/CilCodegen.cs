@@ -27,6 +27,7 @@ internal sealed class CilCodegen
         var codegen = new CilCodegen(assembly);
 
         codegen.CreateModuleAndAssembly();
+        codegen.Translate(assembly);
         codegen.CreateFreeFunctionsClass();
         codegen.GeneratePe(peStream);
     }
@@ -36,9 +37,44 @@ internal sealed class CilCodegen
     private readonly MetadataBuilder metadataBuilder = new();
     private readonly BlobBuilder ilBuilder = new();
 
+    private readonly List<MethodDefinitionHandle> compiledFreeFunctions = new();
+
     private CilCodegen(IReadOnlyAssembly assembly)
     {
         this.assembly = assembly;
+    }
+
+    public void Translate(IReadOnlyAssembly asm)
+    {
+        foreach (var proc in asm.Procedures.Values) this.Translate(proc);
+    }
+
+    public void Translate(IReadOnlyProcecude proc)
+    {
+        var signature = new BlobBuilder();
+        new BlobEncoder(signature)
+            .MethodSignature()
+            .Parameters(
+                parameterCount: 0,
+                returnType: returnType => returnType.Void(),
+                parameters: parameters => { });
+
+        var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
+        var codeBuilder = new BlobBuilder();
+
+        var il = new InstructionEncoder(codeBuilder);
+        il.OpCode(ILOpCode.Ret);
+
+        var offset = methodBodyStream.AddMethodBody(il);
+        var handle = this.metadataBuilder.AddMethodDefinition(
+            attributes: MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
+            implAttributes: MethodImplAttributes.IL,
+            name: this.metadataBuilder.GetOrAddString(proc.Name),
+            signature: this.metadataBuilder.GetOrAddBlob(signature),
+            bodyOffset: offset,
+            parameterList: default);
+
+        this.compiledFreeFunctions.Add(handle);
     }
 
     public void CreateModuleAndAssembly()
@@ -64,16 +100,34 @@ internal sealed class CilCodegen
 
     public void CreateFreeFunctionsClass()
     {
+        var mscorlibAssemblyRef = this.metadataBuilder.AddAssemblyReference(
+            name: this.metadataBuilder.GetOrAddString("mscorlib"),
+            // TODO: What version?
+            version: new Version(4, 0, 0, 0),
+            culture: default,
+            // TODO: What the hell?
+            publicKeyOrToken: this.metadataBuilder.GetOrAddBlob(new byte[]
+            {
+                0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89,
+            }),
+            flags: default,
+            hashValue: default);
+
+        var systemObjectTypeRef = this.metadataBuilder.AddTypeReference(
+            mscorlibAssemblyRef,
+            this.metadataBuilder.GetOrAddString("System"),
+            this.metadataBuilder.GetOrAddString("Object"));
+
         this.metadataBuilder.AddTypeDefinition(
             attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
             @namespace: default,
             name: this.metadataBuilder.GetOrAddString("FreeFunctions"),
-            // TODO: System.Object
-            baseType: default,
+            baseType: systemObjectTypeRef,
             // TODO: What's this?
             fieldList: MetadataTokens.FieldDefinitionHandle(1),
-            // TODO: What's this?
-            methodList: MetadataTokens.MethodDefinitionHandle(1));
+            methodList: this.compiledFreeFunctions.Count == 0
+                ? MetadataTokens.MethodDefinitionHandle(1)
+                : this.compiledFreeFunctions[0]);
     }
 
     public void GeneratePe(Stream peStream)

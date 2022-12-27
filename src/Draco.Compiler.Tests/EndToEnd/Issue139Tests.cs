@@ -49,6 +49,6 @@ public sealed class Issue139Tests
     {
         var parseTree = ParseTree.Parse(source);
         var compilation = Compilation.Create(parseTree);
-        compilation.EmitCSharp(new MemoryStream());
+        compilation.Emit(new MemoryStream());
     }
 }

@@ -74,6 +74,7 @@ internal sealed class CilCodegen
     private readonly BlobBuilder ilBuilder = new();
 
     private readonly DefinitionIndexWithMarker<Value.Parameter, IReadOnlyProcedure> parameterIndex = new();
+    private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
 
     private CilCodegen(IReadOnlyAssembly assembly)
     {
@@ -117,6 +118,9 @@ internal sealed class CilCodegen
         var codeBuilder = new BlobBuilder();
         var controlFlowBuilder = new ControlFlowBuilder();
         var ilEncoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
+
+        // Forward-declare the labels of blocks
+        foreach (var bb in procedure.BasicBlocks) this.labels.Add(bb, ilEncoder.DefineLabel());
 
         // Translate instructions per basic-block
         foreach (var bb in procedure.BasicBlocks) this.TranslateBasicBlock(ilEncoder, bb);
@@ -175,7 +179,7 @@ internal sealed class CilCodegen
 
     private void TranslateBasicBlock(InstructionEncoder encoder, IReadOnlyBasicBlock basicBlock)
     {
-        // TODO
+        encoder.MarkLabel(this.labels[basicBlock]);
         foreach (var instr in basicBlock.Instructions) this.TranslateInstruction(encoder, instr);
     }
 

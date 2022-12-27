@@ -9,6 +9,7 @@ using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.DracoIr;
+using Type = Draco.Compiler.Internal.DracoIr.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -39,6 +40,10 @@ internal sealed class CilCodegen
 
     private readonly List<MethodDefinitionHandle> compiledFreeFunctions = new();
 
+    // Context local to procedures
+    private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labelTranslations = new();
+    private InstructionEncoder ilEncoder;
+
     private CilCodegen(IReadOnlyAssembly assembly)
     {
         this.assembly = assembly;
@@ -62,10 +67,21 @@ internal sealed class CilCodegen
         var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
         var codeBuilder = new BlobBuilder();
 
-        var il = new InstructionEncoder(codeBuilder);
-        il.OpCode(ILOpCode.Ret);
+        this.ilEncoder = new InstructionEncoder(codeBuilder, new ControlFlowBuilder());
 
-        var offset = methodBodyStream.AddMethodBody(il);
+        // "Forward-declare" labels
+        foreach (var bb in proc.BasicBlocks)
+        {
+            this.labelTranslations.Add(bb, this.ilEncoder.DefineLabel());
+        }
+
+        // Actual codegen
+        foreach (var bb in proc.BasicBlocks)
+        {
+            this.Translate(bb);
+        }
+
+        var offset = methodBodyStream.AddMethodBody(this.ilEncoder);
         var handle = this.metadataBuilder.AddMethodDefinition(
             attributes: MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             implAttributes: MethodImplAttributes.IL,
@@ -75,6 +91,40 @@ internal sealed class CilCodegen
             parameterList: default);
 
         this.compiledFreeFunctions.Add(handle);
+    }
+
+    public void Translate(IReadOnlyBasicBlock block)
+    {
+        this.ilEncoder.MarkLabel(this.labelTranslations[block]);
+        foreach (var instr in block.Instructions) this.Translate(instr);
+    }
+
+    public void Translate(IReadOnlyInstruction instr)
+    {
+        switch (instr.Kind)
+        {
+        case InstructionKind.Nop:
+        {
+            this.ilEncoder.OpCode(ILOpCode.Nop);
+            break;
+        }
+        case InstructionKind.Ret:
+        {
+            var returnedValue = instr.GetOperandAt<Value>(0);
+            this.TranslateToStackValue(returnedValue);
+            this.ilEncoder.OpCode(ILOpCode.Ret);
+            break;
+        }
+        default:
+            throw new ArgumentOutOfRangeException(nameof(instr));
+        }
+    }
+
+    private void TranslateToStackValue(Value value)
+    {
+        if (value.Type == Type.Unit) return;
+
+        throw new NotImplementedException();
     }
 
     public void CreateModuleAndAssembly()

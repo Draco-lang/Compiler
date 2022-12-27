@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 namespace Draco.Compiler.Internal.Semantics.DFA;
@@ -11,17 +14,89 @@ internal abstract record class CFG
     /// </summary>
     /// <param name="Statements">List of statements contained in the <see cref="Block"/>.</param>
     /// <param name="Branches">List of possible <see cref="Branch"/>es.</param>
-    internal sealed record class Block(List<Ast.Stmt> Statements, List<Branch> Branches);
+    internal sealed record class Block(ImmutableArray<Ast.Stmt> Statements, ImmutableArray<Branch> Branches) : CFG
+    {
+        internal sealed new record class Builder(List<Ast.Stmt> Statements) : CFG
+        {
+            public Builder() : this(new List<Ast.Stmt>()) { }
+
+            private List<Branch.Builder> branches = new List<Branch.Builder>();
+            public void AddBranch(Branch.Builder branch)
+            {
+                this.branches.Add(branch);
+            }
+
+            public void AddStatement(Ast.Stmt statement)
+            {
+                this.Statements.Add(statement);
+            }
+
+            public Block Build()
+            {
+                if (this.branches.Count == 0) throw new InvalidOperationException("Block must have branches before build.");
+                return new Block(this.Statements.ToImmutableArray(), this.branches.Select(x => x.Build()).ToImmutableArray());
+            }
+        }
+    }
 
     /// <summary>
     /// Represents single <see cref="Branch"/>.
     /// </summary>
     /// <param name="Target">The <see cref="Block"/> targeted by this <see cref="Branch"/>.</param>
     /// <param name="Condition">The condition that must be met so the execution continues to the <paramref name="Target"/>.</param>
-    internal sealed record class Branch(Block Target, Ast.Expr Condition);
-
-    internal sealed record class Builder
+    internal sealed record class Branch(Block Target, Ast.Expr? Condition) : CFG
     {
-        private Stack
+        internal sealed new record class Builder(Ast.Expr? Condition) : CFG
+        {
+            private Block.Builder? block = null;
+            public void AddBlock(Block.Builder block)
+            {
+                this.block = block;
+            }
+
+            public Branch Build()
+            {
+                if (this.block is null) throw new InvalidOperationException("Block must be declared before branch is build.");
+                return new Branch(this.block.Build(), this.Condition);
+            }
+        }
+    }
+
+    internal sealed class Builder
+    {
+        public CFG Current;
+        private Stack<CFG> stack = new Stack<CFG>();
+
+        public Builder(Block.Builder block) => this.Current = block;
+
+        public void PushBlock(Block.Builder block)
+        {
+            if (this.Current is not Branch.Builder brch) throw new InvalidOperationException();
+            brch.AddBlock(block);
+            this.stack.Push(brch);
+            this.Current = block;
+        }
+
+        public void PushStatement(Ast.Stmt statement)
+        {
+            if (this.Current is not Block.Builder blc) throw new InvalidOperationException();
+            blc.AddStatement(statement);
+        }
+
+        public void PushBranch(Branch.Builder block)
+        {
+            if (this.Current is not Block.Builder blc) throw new InvalidOperationException();
+            blc.AddBranch(block);
+            this.stack.Push(blc);
+            this.Current = block;
+        }
+
+        public void PopBlock()
+        {
+            if (this.Current is not Block.Builder blc) throw new InvalidOperationException();
+            this.Current = this.stack.Pop();
+        }
+
+        public Block Build() => (this.stack.First() as Block.Builder)!.Build();
     }
 }

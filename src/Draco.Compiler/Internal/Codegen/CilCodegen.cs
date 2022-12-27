@@ -41,7 +41,9 @@ internal sealed class CilCodegen
     private readonly List<MethodDefinitionHandle> compiledFreeFunctions = new();
 
     // Context local to procedures
-    private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labelTranslations = new();
+    private Dictionary<IReadOnlyBasicBlock, LabelHandle> labelTranslations = new();
+    private Dictionary<Value, int> localTranslations = new();
+    private LocalVariablesEncoder localsEncoder;
     private InstructionEncoder ilEncoder;
 
     private CilCodegen(IReadOnlyAssembly assembly)
@@ -54,8 +56,11 @@ internal sealed class CilCodegen
         foreach (var proc in asm.Procedures.Values) this.Translate(proc);
     }
 
-    public void Translate(IReadOnlyProcecude proc)
+    private void Translate(IReadOnlyProcecude proc)
     {
+        this.labelTranslations.Clear();
+        this.localTranslations.Clear();
+
         var signature = new BlobBuilder();
         new BlobEncoder(signature)
             .MethodSignature()
@@ -64,10 +69,11 @@ internal sealed class CilCodegen
                 returnType: returnType => returnType.Void(),
                 parameters: parameters => { });
 
+        this.ilBuilder.Align(4);
         var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
-        var codeBuilder = new BlobBuilder();
 
-        this.ilEncoder = new InstructionEncoder(codeBuilder, new ControlFlowBuilder());
+        this.localsEncoder = new LocalVariablesEncoder(this.ilBuilder);
+        this.ilEncoder = new InstructionEncoder(this.ilBuilder, new ControlFlowBuilder());
 
         // "Forward-declare" labels
         foreach (var bb in proc.BasicBlocks)
@@ -90,13 +96,13 @@ internal sealed class CilCodegen
         this.compiledFreeFunctions.Add(handle);
     }
 
-    public void Translate(IReadOnlyBasicBlock block)
+    private void Translate(IReadOnlyBasicBlock block)
     {
         this.ilEncoder.MarkLabel(this.labelTranslations[block]);
         foreach (var instr in block.Instructions) this.Translate(instr);
     }
 
-    public void Translate(IReadOnlyInstruction instr)
+    private void Translate(IReadOnlyInstruction instr)
     {
         switch (instr.Kind)
         {
@@ -108,8 +114,19 @@ internal sealed class CilCodegen
         case InstructionKind.Ret:
         {
             var returnedValue = instr.GetOperandAt<Value>(0);
-            this.TranslateToStackValue(returnedValue);
+            this.PushOnStack(returnedValue);
             this.ilEncoder.OpCode(ILOpCode.Ret);
+            break;
+        }
+        case InstructionKind.AddInt:
+        {
+            var result = instr.GetOperandAt<Value>(0);
+            var a = instr.GetOperandAt<Value>(1);
+            var b = instr.GetOperandAt<Value>(2);
+            this.PushOnStack(a);
+            this.PushOnStack(b);
+            this.ilEncoder.OpCode(ILOpCode.Add);
+            this.StoreLocal(result);
             break;
         }
         default:
@@ -117,11 +134,40 @@ internal sealed class CilCodegen
         }
     }
 
-    private void TranslateToStackValue(Value value)
+    private void StoreLocal(Value target)
+    {
+        this.localTranslations.Add(target, this.localTranslations.Count);
+        var typeEncoder = this.localsEncoder
+            .AddVariable()
+            .Type();
+        this.TranslateType(ref typeEncoder, target.Type);
+    }
+
+    private void PushOnStack(Value value)
     {
         if (value.Type == Type.Unit) return;
 
-        throw new NotImplementedException();
+        switch (value)
+        {
+        case Value.Constant c when c.Value is int intValue:
+        {
+            this.ilEncoder.LoadConstantI4(intValue);
+            break;
+        }
+        case Value.Register r:
+        {
+            this.ilEncoder.LoadArgument(this.localTranslations[r]);
+            break;
+        }
+        default:
+            throw new ArgumentOutOfRangeException(nameof(value));
+        }
+    }
+
+    private void TranslateType(ref SignatureTypeEncoder encoder, Type type)
+    {
+        if (type == Type.Int32) encoder.Int32();
+        else throw new NotImplementedException();
     }
 
     public void CreateModuleAndAssembly()

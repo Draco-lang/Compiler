@@ -35,6 +35,9 @@ internal sealed class CilCodegen
     {
         public int NextRowId => this.rows.Count + 1;
 
+        public int this[T value] => this.index[value];
+        public T this[int index] => this.rows[index - 1];
+
         private readonly Dictionary<T, int> index = new(ReferenceEqualityComparer.Instance);
         private readonly List<T> rows = new();
 
@@ -48,6 +51,12 @@ internal sealed class CilCodegen
             this.index.Add(item, id);
             this.rows.Add(item);
             return id;
+        }
+
+        public void Clear()
+        {
+            this.index.Clear();
+            this.rows.Clear();
         }
     }
 
@@ -75,6 +84,7 @@ internal sealed class CilCodegen
 
     private readonly DefinitionIndexWithMarker<Value.Parameter, IReadOnlyProcedure> parameterIndex = new();
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
+    private readonly DefinitionIndex<Value> localIndex = new();
 
     private CilCodegen(IReadOnlyAssembly assembly)
     {
@@ -123,6 +133,7 @@ internal sealed class CilCodegen
         foreach (var bb in procedure.BasicBlocks) this.labels.Add(bb, ilEncoder.DefineLabel());
 
         // Pre-declare all locals necessary
+        this.localIndex.Clear();
         // Calculate how many instructions will allocate
         var localsCount = procedure.Instructions.Count(i => this.TryTranslateLocal(null, i));
         // Actually encode
@@ -163,6 +174,7 @@ internal sealed class CilCodegen
                     .AddVariable()
                     .Type();
                 this.TranslateSignatureType(typeEncoder, targetType.Element);
+                this.localIndex.Add(targetRegister);
             }
             return true;
         case InstructionKind.AddInt:
@@ -173,6 +185,7 @@ internal sealed class CilCodegen
                     .AddVariable()
                     .Type();
                 this.TranslateSignatureType(typeEncoder, targetValue.Type);
+                this.localIndex.Add(targetValue);
             }
             return true;
         default:
@@ -226,8 +239,51 @@ internal sealed class CilCodegen
 
     private void TranslateInstruction(InstructionEncoder encoder, IReadOnlyInstruction instruction)
     {
-        // TODO
-        encoder.OpCode(ILOpCode.Nop);
+        switch (instruction.Kind)
+        {
+        case InstructionKind.Nop:
+        {
+            encoder.OpCode(ILOpCode.Nop);
+            break;
+        }
+        case InstructionKind.Ret:
+        {
+            var returnedValue = instruction.GetOperandAt<Value>(0);
+            this.TranslateValuePush(encoder, returnedValue);
+            encoder.OpCode(ILOpCode.Ret);
+            break;
+        }
+        case InstructionKind.AddInt:
+        {
+            var targetValue = instruction.GetOperandAt<Value>(0);
+            var a = instruction.GetOperandAt<Value>(1);
+            var b = instruction.GetOperandAt<Value>(2);
+            this.TranslateValuePush(encoder, a);
+            this.TranslateValuePush(encoder, b);
+            encoder.OpCode(ILOpCode.Add);
+            encoder.StoreLocal(this.localIndex[targetValue]);
+            break;
+        }
+        default:
+            throw new ArgumentOutOfRangeException(nameof(instruction));
+        }
+    }
+
+    private void TranslateValuePush(InstructionEncoder encoder, Value value)
+    {
+        if (value.Type == Type.Unit) return;
+
+        if (value is Value.Constant constant)
+        {
+            if (constant.Value is int i4) { encoder.LoadConstantI4(i4); return; }
+        }
+        if (value is Value.Register)
+        {
+            encoder.LoadLocal(this.localIndex[value]);
+            return;
+        }
+
+        throw new NotImplementedException();
     }
 
     private void DefineModuleAndAssembly()

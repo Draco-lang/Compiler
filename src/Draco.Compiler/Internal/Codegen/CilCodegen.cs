@@ -318,35 +318,15 @@ internal sealed class CilCodegen
         }
         case InstructionKind.LessInt:
         {
-            // There is no less-than, only with branching so we do
-            //     push 1
-            //     store into target
-            //     jump if less to label 'after'
-            //     push 0
-            //     store into target
-            // label after:
-
             // push 0
             // store into target
             var targetValue = instruction.GetOperandAt<Value.Register>(0);
-            encoder.LoadConstantI4(1);
-            encoder.StoreLocal(this.localIndex[targetValue] - 1);
-
-            // jump if less to label 'after'
-            var label = encoder.DefineLabel();
             var a = instruction.GetOperandAt<Value>(1);
             var b = instruction.GetOperandAt<Value>(2);
             this.TranslateValuePush(encoder, a);
             this.TranslateValuePush(encoder, b);
-            encoder.Branch(ILOpCode.Blt, label);
-
-            // push 0
-            // store into target
-            encoder.LoadConstantI4(0);
+            encoder.OpCode(ILOpCode.Clt);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
-
-            // // label after:
-            encoder.MarkLabel(label);
             break;
         }
         default:

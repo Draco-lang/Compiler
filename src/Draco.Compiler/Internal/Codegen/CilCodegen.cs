@@ -146,18 +146,13 @@ internal sealed class CilCodegen
         // Translate instructions per basic-block
         foreach (var bb in procedure.BasicBlocks) this.TranslateBasicBlock(ilEncoder, bb);
 
-        var methodBody = encoder.AddMethodBody(
-            codeSize: codeBuilder.Count,
+        var methodBodyOffset = encoder.AddMethodBody(
+            instructionEncoder: ilEncoder,
             maxStack: 8,
-            exceptionRegionCount: 0,
-            hasSmallExceptionRegions: false,
             localVariablesSignature: localsHandle,
             attributes: 0,
             hasDynamicStackAllocation: false);
-        var methodBodyWriter = new BlobWriter(methodBody.Instructions);
-        methodBodyWriter.WriteBytes(codeBuilder);
-
-        return methodBody.Offset;
+        return methodBodyOffset;
     }
 
     private bool TryTranslateLocal(LocalVariablesEncoder? encoder, IReadOnlyInstruction instruction)

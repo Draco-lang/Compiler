@@ -294,10 +294,14 @@ internal sealed class CilCodegen
         }
         case InstructionKind.NotBool:
         {
+            // push operand
+            // push 0
+            // compare eq
             var targetValue = instruction.GetOperandAt<Value.Register>(0);
             var a = instruction.GetOperandAt<Value>(1);
             this.TranslateValuePush(encoder, a);
-            encoder.OpCode(ILOpCode.Not);
+            encoder.LoadConstantI4(0);
+            encoder.OpCode(ILOpCode.Ceq);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
             break;
         }

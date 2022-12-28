@@ -84,7 +84,7 @@ internal sealed class CilCodegen
 
     private readonly DefinitionIndexWithMarker<Value.Parameter, IReadOnlyProcedure> parameterIndex = new();
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
-    private readonly DefinitionIndex<Value> localIndex = new();
+    private readonly DefinitionIndex<Value.Register> localIndex = new();
 
     private CilCodegen(IReadOnlyAssembly assembly)
     {
@@ -178,10 +178,12 @@ internal sealed class CilCodegen
             }
             return true;
         case InstructionKind.Load:
+        case InstructionKind.NotBool:
         case InstructionKind.AddInt:
+        case InstructionKind.LessInt:
             if (encoder is not null)
             {
-                var targetValue = instruction.GetOperandAt<Value>(0);
+                var targetValue = instruction.GetOperandAt<Value.Register>(0);
                 var typeEncoder = encoder.Value
                     .AddVariable()
                     .Type();
@@ -255,7 +257,7 @@ internal sealed class CilCodegen
         case InstructionKind.Load:
         {
             // We just implement it by copying to the target local
-            var targetValue = instruction.GetOperandAt<Value>(0);
+            var targetValue = instruction.GetOperandAt<Value.Register>(0);
             var toStore = instruction.GetOperandAt<Value>(1);
             this.TranslateValuePush(encoder, toStore);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
@@ -263,10 +265,29 @@ internal sealed class CilCodegen
         }
         case InstructionKind.Store:
         {
-            var targetValue = instruction.GetOperandAt<Value>(0);
+            var targetValue = instruction.GetOperandAt<Value.Register>(0);
             var toStore = instruction.GetOperandAt<Value>(1);
             this.TranslateValuePush(encoder, toStore);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
+            break;
+        }
+        case InstructionKind.Jmp:
+        {
+            var target = instruction.GetOperandAt<IReadOnlyBasicBlock>(0);
+            encoder.Branch(ILOpCode.Br, this.labels[target]);
+            break;
+        }
+        case InstructionKind.JmpIf:
+        {
+            // push condition
+            // brtrue truthy_branch
+            // br falsy_branch
+            var condition = instruction.GetOperandAt<Value>(0);
+            var thenBranch = instruction.GetOperandAt<IReadOnlyBasicBlock>(1);
+            var elseBranch = instruction.GetOperandAt<IReadOnlyBasicBlock>(2);
+            this.TranslateValuePush(encoder, condition);
+            encoder.Branch(ILOpCode.Brtrue, this.labels[thenBranch]);
+            encoder.Branch(ILOpCode.Br, this.labels[elseBranch]);
             break;
         }
         case InstructionKind.Ret:
@@ -276,14 +297,53 @@ internal sealed class CilCodegen
             encoder.OpCode(ILOpCode.Ret);
             break;
         }
+        case InstructionKind.NotBool:
+        {
+            var targetValue = instruction.GetOperandAt<Value.Register>(0);
+            var a = instruction.GetOperandAt<Value>(1);
+            this.TranslateValuePush(encoder, a);
+            encoder.OpCode(ILOpCode.Not);
+            encoder.StoreLocal(this.localIndex[targetValue] - 1);
+            break;
+        }
         case InstructionKind.AddInt:
         {
-            var targetValue = instruction.GetOperandAt<Value>(0);
+            var targetValue = instruction.GetOperandAt<Value.Register>(0);
             var a = instruction.GetOperandAt<Value>(1);
             var b = instruction.GetOperandAt<Value>(2);
             this.TranslateValuePush(encoder, a);
             this.TranslateValuePush(encoder, b);
             encoder.OpCode(ILOpCode.Add);
+            encoder.StoreLocal(this.localIndex[targetValue] - 1);
+            break;
+        }
+        case InstructionKind.LessInt:
+        {
+            // There is no less-than, only with branching so we do
+            //     push 1
+            //     store into target
+            //     jump if less to label 'after'
+            //     push 0
+            //     store into target
+            // label after:
+
+            // push 0
+            // store into target
+            var targetValue = instruction.GetOperandAt<Value.Register>(0);
+            encoder.LoadConstantI4(1);
+            encoder.StoreLocal(this.localIndex[targetValue] - 1);
+
+            // jump if less to label 'after'
+            var label = encoder.DefineLabel();
+            var a = instruction.GetOperandAt<Value>(1);
+            var b = instruction.GetOperandAt<Value>(2);
+            this.TranslateValuePush(encoder, a);
+            this.TranslateValuePush(encoder, b);
+            encoder.Branch(ILOpCode.Blt, label);
+
+            // push 0
+            // store into target
+            encoder.LoadConstantI4(0);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
             break;
         }
@@ -300,9 +360,14 @@ internal sealed class CilCodegen
         {
             if (constant.Value is int i4) { encoder.LoadConstantI4(i4); return; }
         }
-        if (value is Value.Register)
+        if (value is Value.Register reg)
         {
-            encoder.LoadLocal(this.localIndex[value] - 1);
+            encoder.LoadLocal(this.localIndex[reg] - 1);
+            return;
+        }
+        if (value is Value.Parameter param)
+        {
+            encoder.LoadArgument(this.parameterIndex.Index[param] - 1);
             return;
         }
 

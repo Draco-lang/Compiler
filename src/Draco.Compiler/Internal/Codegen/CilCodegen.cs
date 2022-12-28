@@ -122,17 +122,18 @@ internal sealed class CilCodegen
         // Forward-declare the labels of blocks
         foreach (var bb in procedure.BasicBlocks) this.labels.Add(bb, ilEncoder.DefineLabel());
 
+        // Pre-declare all locals necessary
+        // Calculate how many instructions will allocate
+        var localsCount = procedure.Instructions.Count(i => this.TryTranslateLocal(null, i));
+        // Actually encode
+        var localsBuilder = new BlobBuilder();
+        var localsEncoder = new BlobEncoder(localsBuilder)
+            .LocalVariableSignature(localsCount);
+        foreach (var instr in procedure.Instructions) this.TryTranslateLocal(localsEncoder, instr);
+        var localsHandle = this.metadataBuilder.AddStandaloneSignature(this.metadataBuilder.GetOrAddBlob(localsBuilder));
+
         // Translate instructions per basic-block
         foreach (var bb in procedure.BasicBlocks) this.TranslateBasicBlock(ilEncoder, bb);
-
-        // TODO: Temporary
-        var localsBuilder = new BlobBuilder();
-        new BlobEncoder(localsBuilder)
-            .LocalVariableSignature(1)
-            .AddVariable()
-            .Type()
-            .Int32();
-        var localsHandle = this.metadataBuilder.AddStandaloneSignature(this.metadataBuilder.GetOrAddBlob(localsBuilder));
 
         var methodBody = encoder.AddMethodBody(
             codeSize: codeBuilder.Count,
@@ -146,6 +147,37 @@ internal sealed class CilCodegen
         methodBodyWriter.WriteBytes(codeBuilder);
 
         return methodBody.Offset;
+    }
+
+    private bool TryTranslateLocal(LocalVariablesEncoder? encoder, IReadOnlyInstruction instruction)
+    {
+        switch (instruction.Kind)
+        {
+        case InstructionKind.Alloc:
+            if (encoder is not null)
+            {
+                // Allocation targets a pointer, we erase that
+                var targetRegister = instruction.GetOperandAt<Value.Register>(0);
+                var targetType = (Type.Ptr)targetRegister.Type;
+                var typeEncoder = encoder.Value
+                    .AddVariable()
+                    .Type();
+                this.TranslateSignatureType(typeEncoder, targetType.Element);
+            }
+            return true;
+        case InstructionKind.AddInt:
+            if (encoder is not null)
+            {
+                var targetValue = instruction.GetOperandAt<Value>(0);
+                var typeEncoder = encoder.Value
+                    .AddVariable()
+                    .Type();
+                this.TranslateSignatureType(typeEncoder, targetValue.Type);
+            }
+            return true;
+        default:
+            return false;
+        }
     }
 
     private void TranslateProcedureSignature(MethodSignatureEncoder encoder, IReadOnlyProcedure procedure)

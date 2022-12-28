@@ -125,12 +125,20 @@ internal sealed class CilCodegen
         // Translate instructions per basic-block
         foreach (var bb in procedure.BasicBlocks) this.TranslateBasicBlock(ilEncoder, bb);
 
+        // TODO: Temporary
+        var localsBuilder = new BlobBuilder();
+        new BlobEncoder(localsBuilder)
+            .LocalVariableSignature(1)
+            .AddVariable()
+            .Type()
+            .Int32();
+
         var methodBody = encoder.AddMethodBody(
             codeSize: codeBuilder.Count,
             maxStack: 8,
             exceptionRegionCount: 0,
             hasSmallExceptionRegions: false,
-            localVariablesSignature: default,
+            localVariablesSignature: localsHandle,
             attributes: 0,
             hasDynamicStackAllocation: false);
         var methodBodyWriter = new BlobWriter(methodBody.Instructions);

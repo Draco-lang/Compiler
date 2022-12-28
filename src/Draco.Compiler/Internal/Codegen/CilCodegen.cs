@@ -177,6 +177,7 @@ internal sealed class CilCodegen
                 this.localIndex.Add(targetRegister);
             }
             return true;
+        case InstructionKind.Load:
         case InstructionKind.AddInt:
             if (encoder is not null)
             {
@@ -246,6 +247,28 @@ internal sealed class CilCodegen
             encoder.OpCode(ILOpCode.Nop);
             break;
         }
+        case InstructionKind.Alloc:
+        {
+            // NO-OP, space is pre-allocated
+            break;
+        }
+        case InstructionKind.Load:
+        {
+            // We just implement it by copying to the target local
+            var targetValue = instruction.GetOperandAt<Value>(0);
+            var toStore = instruction.GetOperandAt<Value>(1);
+            this.TranslateValuePush(encoder, toStore);
+            encoder.StoreLocal(this.localIndex[targetValue] - 1);
+            break;
+        }
+        case InstructionKind.Store:
+        {
+            var targetValue = instruction.GetOperandAt<Value>(0);
+            var toStore = instruction.GetOperandAt<Value>(1);
+            this.TranslateValuePush(encoder, toStore);
+            encoder.StoreLocal(this.localIndex[targetValue] - 1);
+            break;
+        }
         case InstructionKind.Ret:
         {
             var returnedValue = instruction.GetOperandAt<Value>(0);
@@ -261,7 +284,7 @@ internal sealed class CilCodegen
             this.TranslateValuePush(encoder, a);
             this.TranslateValuePush(encoder, b);
             encoder.OpCode(ILOpCode.Add);
-            encoder.StoreLocal(this.localIndex[targetValue]);
+            encoder.StoreLocal(this.localIndex[targetValue] - 1);
             break;
         }
         default:
@@ -279,7 +302,7 @@ internal sealed class CilCodegen
         }
         if (value is Value.Register)
         {
-            encoder.LoadLocal(this.localIndex[value]);
+            encoder.LoadLocal(this.localIndex[value] - 1);
             return;
         }
 

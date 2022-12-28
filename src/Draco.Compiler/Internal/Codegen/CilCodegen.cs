@@ -345,6 +345,9 @@ internal sealed class CilCodegen
             // store into target
             encoder.LoadConstantI4(0);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
+
+            // // label after:
+            encoder.MarkLabel(label);
             break;
         }
         default:

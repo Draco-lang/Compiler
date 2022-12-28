@@ -379,6 +379,15 @@ internal sealed class CilCodegen
 
     private void DefineFreeFunctionsType()
     {
+        // Create type definition for the special <Module> type that holds global functions
+        this.metadataBuilder.AddTypeDefinition(
+            attributes: default,
+            @namespace: default,
+            name: this.metadataBuilder.GetOrAddString("<Module>"),
+            baseType: default,
+            fieldList: MetadataTokens.FieldDefinitionHandle(1),
+            methodList: MetadataTokens.MethodDefinitionHandle(1));
+
         // TODO: Replace with System.Runtime reference
         var mscorlibAssemblyRef = this.metadataBuilder.AddAssemblyReference(
             name: this.metadataBuilder.GetOrAddString("mscorlib"),

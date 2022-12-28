@@ -132,6 +132,7 @@ internal sealed class CilCodegen
             .AddVariable()
             .Type()
             .Int32();
+        var localsHandle = this.metadataBuilder.AddStandaloneSignature(this.metadataBuilder.GetOrAddBlob(localsBuilder));
 
         var methodBody = encoder.AddMethodBody(
             codeSize: codeBuilder.Count,

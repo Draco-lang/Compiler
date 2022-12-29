@@ -15,12 +15,6 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands":[
-      {
-        "command": "draco.notebook.switch",
-        "title": "Switch notebook view"
-      }
-    ],
     "languages": [
       {
         "id": "draco",
@@ -39,18 +33,6 @@
         "language": "draco",
         "scopeName": "source.draco",
         "path": "./syntaxes/draco.tmLanguage.json"
-      }
-    ],
-    "notebooks": [
-      {
-        "type": "draco-notebook",
-        "displayName": "Draco Notebook",
-        "priority": "option",
-        "selector": [
-          {
-            "filenamePattern": "*.draco"
-          }
-        ]
       }
     ]
   },

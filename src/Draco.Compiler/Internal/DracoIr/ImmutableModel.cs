@@ -50,6 +50,11 @@ internal interface IReadOnlyProcedure : IInstructionOperand
     public IReadOnlyList<Value.Parameter> Parameters { get; }
 
     /// <summary>
+    /// The locals in this procedure.
+    /// </summary>
+    public IReadOnlyList<Value.Local> Locals { get; }
+
+    /// <summary>
     /// The entry-point of the block.
     /// </summary>
     public IReadOnlyBasicBlock Entry { get; }

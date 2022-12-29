@@ -187,21 +187,47 @@ internal abstract partial class Instruction : IReadOnlyInstruction
         InstructionKind.Call => 2,
         _ => throw new InvalidOperationException(),
     };
+
+    public Instruction(InstructionKind kind, Value.Reg? target)
+    {
+        this.Kind = kind;
+        this.Target = target;
+    }
 }
 
 // Factory
 internal abstract partial class Instruction
 {
-    public static Instruction Make(InstructionKind kind) => new Instruction0(kind);
-    public static Instruction Make<T1>(InstructionKind kind, T1 op1) => new Instruction1<T1>(kind, op1);
-    public static Instruction Make<T1, T2>(InstructionKind kind, T1 op1, T2 op2) => new Instruction2<T1, T2>(kind, op1, op2);
-    public static Instruction Make<T1, T2, T3>(InstructionKind kind, T1 op1, T2 op2, T3 op3) => new Instruction3<T1, T2, T3>(kind, op1, op2, op3);
+    public static Instruction Make(InstructionKind kind) =>
+        new Impl<NoOperand, NoOperand, NoOperand>(kind);
+    public static Instruction Make<T1>(InstructionKind kind, T1 op1)
+        where T1 : IInstructionOperand => new Impl<T1, NoOperand, NoOperand>(kind, op1);
+    public static Instruction Make<T1, T2>(InstructionKind kind, T1 op1, T2 op2)
+        where T1 : IInstructionOperand
+        where T2 : IInstructionOperand => new Impl<T1, T2, NoOperand>(kind, op1, op2);
+    public static Instruction Make<T1, T2, T3>(InstructionKind kind, T1 op1, T2 op2, T3 op3)
+        where T1 : IInstructionOperand
+        where T2 : IInstructionOperand
+        where T3 : IInstructionOperand => new Impl<T1, T2, T3>(kind, op1, op2, op3);
 }
 
 // Implementation
 internal abstract partial class Instruction
 {
     private sealed class Impl<T1, T2, T3> : Instruction
+        where T1 : IInstructionOperand
+        where T2 : IInstructionOperand
+        where T3 : IInstructionOperand
     {
+        public override IInstructionOperand this[int index]
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
+        }
+
+        private Impl(InstructionKind kind, Value.Reg? target)
+            : base(kind, target)
+        {
+        }
     }
 }

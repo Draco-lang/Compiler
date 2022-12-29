@@ -358,8 +358,12 @@ internal abstract partial record class Type
     public static Type Int32 { get; } = new Builtin(typeof(int));
 }
 
+internal readonly record struct NoOperand : IInstructionOperand;
+
 internal static class InstructionOperandExtensions
 {
+    public static bool IsNone(this IInstructionOperand operand) => operand is NoOperand;
+
     public static IReadOnlyBasicBlock AsBlock(this IInstructionOperand operand) => (IReadOnlyBasicBlock)operand;
     public static Local AsLocal(this IInstructionOperand operand) => (Local)operand;
     public static Value AsValue(this IInstructionOperand operand) => (Value)operand;

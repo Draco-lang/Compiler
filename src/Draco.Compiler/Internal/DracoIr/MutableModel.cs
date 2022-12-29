@@ -164,7 +164,7 @@ internal abstract partial class Instruction : IReadOnlyInstruction
             }
         }
     }
-    public abstract IInstructionOperand this[int index] { get; }
+    public abstract IInstructionOperand this[int index] { get; set; }
 
     public bool IsBranch => branchInstructions.Contains(this.Kind);
     public bool HasSideEffects => sideEffectInstructions.Contains(this.Kind);

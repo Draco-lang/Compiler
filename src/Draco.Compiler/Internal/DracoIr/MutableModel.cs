@@ -89,7 +89,7 @@ internal sealed record class Procedure : IReadOnlyProcedure
         return param;
     }
 
-    public Local DefineLocal(string name, Type type)
+    public Local DefineLocal(string? name, Type type)
     {
         var local = new Local(type, name);
         this.locals.Add(local);
@@ -188,10 +188,23 @@ internal abstract partial class Instruction : IReadOnlyInstruction
         _ => throw new InvalidOperationException(),
     };
 
-    public Instruction(InstructionKind kind, Value.Reg? target)
+    protected Instruction(InstructionKind kind, Value.Reg? target)
     {
         this.Kind = kind;
         this.Target = target;
+    }
+
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        if (this.Target is not null) result.Append($"{this.Target.ToFullString()} = ");
+        result.Append(StringUtils.ToSnakeCase(this.Kind.ToString()));
+        if (this.OperandCount > 0)
+        {
+            result.Append(' ');
+            result.AppendJoin(", ", Enumerable.Range(0, this.OperandCount).Select(i => this[i]));
+        }
+        return result.ToString();
     }
 }
 

@@ -28,6 +28,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     }
 
     private readonly Assembly assembly;
+    private Procedure currentProcedure = null!;
     private InstructionWriter writer = null!;
 
     private readonly Dictionary<ISymbol.IFunction, Procedure> procedures = new();
@@ -68,23 +69,25 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return lbl;
     }
 
-    private Value.Reg CompileLvalue(Ast.Expr expr) => expr switch
+    private Local CompileLvalue(Ast.Expr expr) => expr switch
     {
         // TODO: Cast might fail
-        Ast.Expr.Reference r => (Value.Reg)this.values[r.Symbol],
+        // Ast.Expr.Reference r => (Value.Reg)this.values[r.Symbol],
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 
     public override Value VisitFuncDecl(Ast.Decl.Func node)
     {
         var oldWriter = this.writer;
+        var oldProcedure = this.currentProcedure;
         var procedure = this.GetProcedure(node.DeclarationSymbol);
+        this.currentProcedure = procedure;
         this.writer = procedure.Writer();
 
         foreach (var param in node.Params)
         {
             var paramValue = procedure.DefineParameter(param.Name, this.TranslateType(param.Type));
-            this.values[param] = paramValue;
+            this.values[param] = new Value.Param(paramValue);
         }
         procedure.ReturnType = this.TranslateType(node.ReturnType);
 
@@ -92,13 +95,14 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         if (!this.writer.EndsInBranch) this.writer.Ret(Value.Unit.Instance);
 
         this.writer = oldWriter;
+        this.currentProcedure = oldProcedure;
         return this.Default;
     }
 
     public override Value VisitVariableDecl(Ast.Decl.Variable node)
     {
-        var stackSpace = this.writer.Alloc(this.TranslateType(node.Type));
-        this.values[node.DeclarationSymbol] = stackSpace;
+        // TODO: Globals
+        var stackSpace = this.currentProcedure.DefineLocal(node.DeclarationSymbol.Name, this.TranslateType(node.Type));
         if (node.Value is not null)
         {
             var value = this.VisitExpr(node.Value);
@@ -127,7 +131,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         var endLabel = this.writer.DeclareLabel();
 
         // Allcoate value for result
-        var result = this.writer.Alloc(this.TranslateType(node.EvaluationType));
+        var result = this.currentProcedure.DefineLocal(null, this.TranslateType(node.EvaluationType));
 
         var condition = this.VisitExpr(node.Condition);
         this.writer.JmpIf(condition, thenLabel, elseLabel);
@@ -163,9 +167,9 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     public override Value VisitUnaryExpr(Ast.Expr.Unary node)
     {
         var sub = this.VisitExpr(node.Operand);
-        if (node.Operator == Intrinsics.Operators.Not_Bool) return this.writer.NotBool(sub);
+        if (node.Operator == Intrinsics.Operators.Not_Bool) return this.writer.Equal(sub, new Value.Const(false));
         if (node.Operator == Intrinsics.Operators.Pos_Int32) return sub;
-        if (node.Operator == Intrinsics.Operators.Neg_Int32) return this.writer.NegInt(sub);
+        if (node.Operator == Intrinsics.Operators.Neg_Int32) return this.writer.Neg(sub);
         // TODO
         throw new NotImplementedException();
     }
@@ -174,32 +178,40 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         var left = this.VisitExpr(node.Left);
         var right = this.VisitExpr(node.Right);
-        if (node.Operator == Intrinsics.Operators.Add_Int32) return this.writer.AddInt(left, right);
-        if (node.Operator == Intrinsics.Operators.Sub_Int32) return this.writer.SubInt(left, right);
-        if (node.Operator == Intrinsics.Operators.Mul_Int32) return this.writer.MulInt(left, right);
-        if (node.Operator == Intrinsics.Operators.Div_Int32) return this.writer.DivInt(left, right);
-        if (node.Operator == Intrinsics.Operators.Rem_Int32) return this.writer.RemInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Add_Int32) return this.writer.Add(left, right);
+        if (node.Operator == Intrinsics.Operators.Sub_Int32) return this.writer.Sub(left, right);
+        if (node.Operator == Intrinsics.Operators.Mul_Int32) return this.writer.Mul(left, right);
+        if (node.Operator == Intrinsics.Operators.Div_Int32) return this.writer.Div(left, right);
+        if (node.Operator == Intrinsics.Operators.Rem_Int32) return this.writer.Rem(left, right);
         if (node.Operator == Intrinsics.Operators.Mod_Int32)
         {
             // a mod b
             // <=>
             // (a rem b + b) rem b
-            var tmp1 = this.writer.RemInt(left, right);
-            var tmp2 = this.writer.AddInt(tmp1, right);
-            return this.writer.RemInt(tmp2, right);
+            var tmp1 = this.writer.Rem(left, right);
+            var tmp2 = this.writer.Add(tmp1, right);
+            return this.writer.Rem(tmp2, right);
         }
-        if (node.Operator == Intrinsics.Operators.Less_Int32) return this.writer.LessInt(left, right);
-        if (node.Operator == Intrinsics.Operators.Greater_Int32) return this.writer.LessInt(right, left);
-        if (node.Operator == Intrinsics.Operators.LessEqual_Int32) return this.writer.LessEqualInt(left, right);
-        if (node.Operator == Intrinsics.Operators.GreaterEqual_Int32) return this.writer.LessEqualInt(right, left);
-        if (node.Operator == Intrinsics.Operators.Equal_Int32) return this.writer.EqualInt(left, right);
+        if (node.Operator == Intrinsics.Operators.Less_Int32) return this.writer.Less(left, right);
+        if (node.Operator == Intrinsics.Operators.Greater_Int32) return this.writer.Less(right, left);
+        if (node.Operator == Intrinsics.Operators.LessEqual_Int32)
+        {
+            var tmp = this.writer.Less(right, left);
+            return this.writer.Equal(tmp, new Value.Const(false));
+        }
+        if (node.Operator == Intrinsics.Operators.GreaterEqual_Int32)
+        {
+            var tmp = this.writer.Less(left, right);
+            return this.writer.Equal(tmp, new Value.Const(false));
+        }
+        if (node.Operator == Intrinsics.Operators.Equal_Int32) return this.writer.Equal(left, right);
         if (node.Operator == Intrinsics.Operators.NotEqual_Int32)
         {
             // a != b
             // <=>
             // !(a == b)
-            var tmp = this.writer.EqualInt(left, right);
-            return this.writer.NotBool(tmp);
+            var tmp = this.writer.Equal(left, right);
+            return this.writer.Equal(tmp, new Value.Const(false));
         }
         // TODO
         throw new NotImplementedException();
@@ -208,7 +220,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     public override Value VisitCallExpr(Ast.Expr.Call node)
     {
         var called = this.VisitExpr(node.Called);
-        var args = node.Args.Select(this.VisitExpr).ToList();
+        var args = node.Args.Select(this.VisitExpr).ToImmutableArray();
         return this.writer.Call(called, args);
     }
 
@@ -219,7 +231,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         if (node.CompoundOperator is not null)
         {
             var left = this.VisitExpr(node.Target);
-            if (node.CompoundOperator == Intrinsics.Operators.Add_Int32) toStore = this.writer.AddInt(left, right);
+            if (node.CompoundOperator == Intrinsics.Operators.Add_Int32) toStore = this.writer.Add(left, right);
             // TODO
             else throw new NotImplementedException();
         }
@@ -231,7 +243,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     public override Value VisitReferenceExpr(Ast.Expr.Reference node) => node.Symbol switch
     {
         ISymbol.IParameter => this.values[node.Symbol],
-        ISymbol.IVariable => this.writer.Load(this.values[node.Symbol]),
+        //ISymbol.IVariable => this.writer.Load(this.values[node.Symbol]),
         ISymbol.IFunction f => this.procedures[f],
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };

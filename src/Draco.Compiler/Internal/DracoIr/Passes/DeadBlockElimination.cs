@@ -32,12 +32,12 @@ internal static class DeadBlockElimination
         var lastInstr = basicBlock.Instructions[^1];
         if (lastInstr.Kind == InstructionKind.Jmp)
         {
-            yield return lastInstr.GetOperandAt<BasicBlock>(0);
+            yield return lastInstr[0].AsMutableBlock();
         }
         else if (lastInstr.Kind == InstructionKind.JmpIf)
         {
-            yield return lastInstr.GetOperandAt<BasicBlock>(1);
-            yield return lastInstr.GetOperandAt<BasicBlock>(2);
+            yield return lastInstr[1].AsMutableBlock();
+            yield return lastInstr[2].AsMutableBlock();
         }
     }
 }

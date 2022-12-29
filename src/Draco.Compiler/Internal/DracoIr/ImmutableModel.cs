@@ -86,10 +86,10 @@ internal sealed record class Parameter(Type Type, string Name) : IInstructionOpe
 /// </summary>
 /// <param name="Type">The type of the local.</param>
 /// <param name="Name">The name of the local.</param>
-internal sealed record class Local(Type Type, string Name) : IInstructionOperand
+internal sealed record class Local(Type Type, string? Name) : IInstructionOperand
 {
-    public string ToFullString() => $"{this.Type} {this.Name}";
-    public override string ToString() => this.Name;
+    public string ToFullString() => $"{this.Type} {this}";
+    public override string ToString() => this.Name ?? "<unnamed>";
 }
 
 /// <summary>

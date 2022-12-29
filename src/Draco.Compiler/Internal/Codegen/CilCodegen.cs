@@ -155,42 +155,6 @@ internal sealed class CilCodegen
         return methodBodyOffset;
     }
 
-    private bool TryTranslateLocal(LocalVariablesEncoder? encoder, IReadOnlyInstruction instruction)
-    {
-        switch (instruction.Kind)
-        {
-        case InstructionKind.Alloc:
-            if (encoder is not null)
-            {
-                // Allocation targets a pointer, we erase that
-                var targetRegister = instruction.GetOperandAt<Value.Reg>(0);
-                var targetType = (Type.Ptr)targetRegister.Type;
-                var typeEncoder = encoder.Value
-                    .AddVariable()
-                    .Type();
-                this.TranslateSignatureType(typeEncoder, targetType.Element);
-                this.localIndex.Add(targetRegister);
-            }
-            return true;
-        case InstructionKind.Load:
-        case InstructionKind.NotBool:
-        case InstructionKind.AddInt:
-        case InstructionKind.LessInt:
-            if (encoder is not null)
-            {
-                var targetValue = instruction.GetOperandAt<Value.Reg>(0);
-                var typeEncoder = encoder.Value
-                    .AddVariable()
-                    .Type();
-                this.TranslateSignatureType(typeEncoder, targetValue.Type);
-                this.localIndex.Add(targetValue);
-            }
-            return true;
-        default:
-            return false;
-        }
-    }
-
     private void TranslateProcedureSignature(MethodSignatureEncoder encoder, IReadOnlyProcedure procedure)
     {
         this.parameterIndex.PutMark(procedure);
@@ -200,7 +164,7 @@ internal sealed class CilCodegen
         foreach (var param in procedure.Parameters) this.TranslateParameter(parametersEncoder, param);
     }
 
-    private void TranslateParameter(ParametersEncoder encoder, Value.Param param)
+    private void TranslateParameter(ParametersEncoder encoder, DracoIr.Parameter param)
     {
         this.parameterIndex.Index.Add(param);
 
@@ -242,11 +206,6 @@ internal sealed class CilCodegen
         case InstructionKind.Nop:
         {
             encoder.OpCode(ILOpCode.Nop);
-            break;
-        }
-        case InstructionKind.Alloc:
-        {
-            // NO-OP, space is pre-allocated
             break;
         }
         case InstructionKind.Load:

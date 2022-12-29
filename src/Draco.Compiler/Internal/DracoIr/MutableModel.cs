@@ -198,17 +198,34 @@ internal abstract partial class Instruction : IReadOnlyInstruction
 // Factory
 internal abstract partial class Instruction
 {
-    public static Instruction Make(InstructionKind kind) =>
-        new Impl<NoOperand, NoOperand, NoOperand>(kind);
-    public static Instruction Make<T1>(InstructionKind kind, T1 op1)
-        where T1 : IInstructionOperand => new Impl<T1, NoOperand, NoOperand>(kind, op1);
-    public static Instruction Make<T1, T2>(InstructionKind kind, T1 op1, T2 op2)
+    public static Instruction Make0(InstructionKind kind) =>
+        Make(kind, null, default(NoOperand), default(NoOperand), default(NoOperand));
+    public static Instruction Make1<T1>(InstructionKind kind, T1 op1)
+        where T1 : IInstructionOperand => Make(kind, null, op1, default(NoOperand), default(NoOperand));
+    public static Instruction Make2<T1, T2>(InstructionKind kind, T1 op1, T2 op2)
         where T1 : IInstructionOperand
-        where T2 : IInstructionOperand => new Impl<T1, T2, NoOperand>(kind, op1, op2);
-    public static Instruction Make<T1, T2, T3>(InstructionKind kind, T1 op1, T2 op2, T3 op3)
+        where T2 : IInstructionOperand => Make(kind, null, op1, op2, default(NoOperand));
+    public static Instruction Make3<T1, T2, T3>(InstructionKind kind, T1 op1, T2 op2, T3 op3)
         where T1 : IInstructionOperand
         where T2 : IInstructionOperand
-        where T3 : IInstructionOperand => new Impl<T1, T2, T3>(kind, op1, op2, op3);
+        where T3 : IInstructionOperand => Make(kind, null, op1, op2, op3);
+
+    public static Instruction Make0(InstructionKind kind, Value.Reg target) =>
+        Make(kind, target, default(NoOperand), default(NoOperand), default(NoOperand));
+    public static Instruction Make1<T1>(InstructionKind kind, Value.Reg target, T1 op1)
+        where T1 : IInstructionOperand => Make(kind, target, op1, default(NoOperand), default(NoOperand));
+    public static Instruction Make2<T1, T2>(InstructionKind kind, Value.Reg target, T1 op1, T2 op2)
+        where T1 : IInstructionOperand
+        where T2 : IInstructionOperand => Make(kind, target, op1, op2, default(NoOperand));
+    public static Instruction Make3<T1, T2, T3>(InstructionKind kind, Value.Reg target, T1 op1, T2 op2, T3 op3)
+        where T1 : IInstructionOperand
+        where T2 : IInstructionOperand
+        where T3 : IInstructionOperand => Make(kind, target, op1, op2, op3);
+
+    private static Instruction Make<T1, T2, T3>(InstructionKind kind, Value.Reg? target, T1 op1, T2 op2, T3 op3)
+        where T1 : IInstructionOperand
+        where T2 : IInstructionOperand
+        where T3 : IInstructionOperand => new Impl<T1, T2, T3>(kind, target, op1, op2, op3);
 }
 
 // Implementation
@@ -254,7 +271,7 @@ internal abstract partial class Instruction
         private T2 op2;
         private T3 op3;
 
-        private Impl(InstructionKind kind, Value.Reg? target, T1 op1, T2 op2, T3 op3)
+        public Impl(InstructionKind kind, Value.Reg? target, T1 op1, T2 op2, T3 op3)
             : base(kind, target)
         {
             this.op1 = op1;

@@ -87,8 +87,8 @@ internal static class TailCallOptimization
         {
             if (!HasTailCall(procedure, block)) continue;
 
-            var callArgs = block.Instructions[^2].GetOperandAt<IList<Value>>(2);
-            Debug.Assert(callArgs.Count == argPointers.Count);
+            var callArgs = block.Instructions[^2][1].AsArgumentList();
+            Debug.Assert(callArgs.Values.Count == argPointers.Count);
 
             // Remove the last two instructions, which are the call and the return
             block.Instructions.RemoveAt(block.Instructions.Count - 1);

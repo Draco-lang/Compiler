@@ -35,7 +35,7 @@ internal static class InlineSmallBlocks
 
     private static bool Apply(BasicBlock basicBlock)
     {
-        var target = basicBlock.Instructions[^1].GetOperandAt<IReadOnlyBasicBlock>(0);
+        var target = basicBlock.Instructions[^1][0].AsBlock();
         if (target == basicBlock) return false;
         if (target.Instructions.Count > FewInstructionsTreshold) return false;
 

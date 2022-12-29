@@ -100,7 +100,7 @@ internal sealed class CilCodegen
 
     private void TranslateAssembly()
     {
-        foreach (var proc in this.assembly.Procedures.Values) this.TranslateProcedure(proc);
+        foreach (var proc in this.assembly.Procedures) this.TranslateProcedure(proc);
     }
 
     private void TranslateProcedure(IReadOnlyProcedure procedure)

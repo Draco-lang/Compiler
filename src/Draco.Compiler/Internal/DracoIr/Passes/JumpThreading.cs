@@ -38,13 +38,13 @@ internal static class JumpThreading
     {
         if (instruction.Kind == InstructionKind.Jmp)
         {
-            var target = instruction.GetOperandAt<BasicBlock>(0);
+            var target = instruction[0].AsMutableBlock();
             if (!IsSingleInstruction(target, out var targetIns)) return false;
             if (targetIns.Kind == InstructionKind.Jmp)
             {
                 // Case 1
-                var targetBlock = targetIns.GetOperandAt<IReadOnlyBasicBlock>(0);
-                instruction.SetOperandAt(0, targetBlock);
+                var targetBlock = targetIns[0].AsBlock();
+                instruction[0] = targetBlock;
                 return true;
             }
             else if (targetIns.Kind == InstructionKind.JmpIf)
@@ -59,20 +59,20 @@ internal static class JumpThreading
         {
             Debug.Assert(instruction.Kind == InstructionKind.JmpIf);
 
-            var thenTarget = instruction.GetOperandAt<BasicBlock>(1);
-            var elsTarget = instruction.GetOperandAt<BasicBlock>(2);
+            var thenTarget = instruction[1].AsMutableBlock();
+            var elsTarget = instruction[2].AsMutableBlock();
             if (IsSingleInstruction(thenTarget, out var thenTargetIns) && thenTargetIns.Kind == InstructionKind.Jmp)
             {
                 // Case 3 on then branch
-                var thenTargetBlock = thenTargetIns.GetOperandAt<BasicBlock>(0);
-                instruction.SetOperandAt(1, thenTargetBlock);
+                var thenTargetBlock = thenTargetIns[0].AsBlock();
+                instruction[1] = thenTargetBlock;
                 return true;
             }
             if (IsSingleInstruction(elsTarget, out var elsTargetIns) && elsTargetIns.Kind == InstructionKind.Jmp)
             {
                 // Case 3 on else branch
-                var elsTargetBlock = elsTargetIns.GetOperandAt<BasicBlock>(0);
-                instruction.SetOperandAt(2, elsTargetBlock);
+                var elsTargetBlock = elsTargetIns[0].AsBlock();
+                instruction[2] = elsTargetBlock;
                 return true;
             }
             return false;

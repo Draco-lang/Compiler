@@ -369,4 +369,6 @@ internal static class InstructionOperandExtensions
     public static Value AsValue(this IInstructionOperand operand) => (Value)operand;
     public static Type AsType(this IInstructionOperand operand) => (Type)operand;
     public static ArgumentList AsArgumentList(this IInstructionOperand operand) => (ArgumentList)operand;
+
+    public static BasicBlock AsMutableBlock(this IInstructionOperand operand) => (BasicBlock)operand;
 }

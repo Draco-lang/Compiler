@@ -221,13 +221,45 @@ internal abstract partial class Instruction
     {
         public override IInstructionOperand this[int index]
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            get => index switch
+            {
+                0 => this.op1,
+                1 => this.op2,
+                2 => this.op3,
+                _ => default(NoOperand),
+            };
+            set
+            {
+                switch (index)
+                {
+                case 0:
+                    if (value is not T1 v1) throw new ArgumentException(nameof(value));
+                    this.op1 = v1;
+                    break;
+                case 1:
+                    if (value is not T2 v2) throw new ArgumentException(nameof(value));
+                    this.op2 = v2;
+                    break;
+                case 2:
+                    if (value is not T3 v3) throw new ArgumentException(nameof(value));
+                    this.op3 = v3;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                }
+            }
         }
 
-        private Impl(InstructionKind kind, Value.Reg? target)
+        private T1 op1;
+        private T2 op2;
+        private T3 op3;
+
+        private Impl(InstructionKind kind, Value.Reg? target, T1 op1, T2 op2, T3 op3)
             : base(kind, target)
         {
+            this.op1 = op1;
+            this.op2 = op2;
+            this.op3 = op3;
         }
     }
 }

@@ -215,7 +215,25 @@ internal abstract partial record class Value : IInstructionOperand
 
 internal abstract partial record class Value
 {
-    public sealed record class Parameter(Type Type, string Name, int Index) : Value
+    /// <summary>
+    /// A parameter value.
+    /// </summary>
+    /// <param name="Type">The type of the parameter.</param>
+    /// <param name="Name">The name of the parameter.</param>
+    public sealed record class Parameter(Type Type, string Name) : Value
+    {
+        public override Type Type { get; } = Type;
+
+        public string ToFullString() => $"{this.Type} {this.Name}";
+        public override string ToString() => this.Name;
+    }
+
+    /// <summary>
+    /// A local value.
+    /// </summary>
+    /// <param name="Type">The type of the local.</param>
+    /// <param name="Name">The name of the local.</param>
+    public sealed record class Local(Type Type, string Name) : Value
     {
         public override Type Type { get; } = Type;
 

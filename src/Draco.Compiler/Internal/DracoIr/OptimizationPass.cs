@@ -65,7 +65,7 @@ internal static class OptimizationPass
     {
         filter ??= _ => true;
         var changed = false;
-        foreach (var proc in assembly.Procedures.Values)
+        foreach (var proc in assembly.Procedures)
         {
             if (!filter(proc)) continue;
             changed = passDelegate(proc) || changed;
@@ -86,7 +86,7 @@ internal static class OptimizationPass
     {
         filter ??= _ => true;
         var changed = false;
-        foreach (var proc in assembly.Procedures.Values)
+        foreach (var proc in assembly.Procedures)
         {
             foreach (var bb in proc.BasicBlocks)
             {
@@ -110,7 +110,7 @@ internal static class OptimizationPass
     {
         filter ??= _ => true;
         var changed = false;
-        foreach (var proc in assembly.Procedures.Values)
+        foreach (var proc in assembly.Procedures)
         {
             foreach (var bb in proc.BasicBlocks)
             {

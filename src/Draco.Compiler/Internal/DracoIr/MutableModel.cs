@@ -17,11 +17,13 @@ internal sealed class Assembly : IReadOnlyAssembly
 {
     public string Name { get; set; }
 
-    public IDictionary<string, Procedure> Procedures => this.procedures;
-    IReadOnlyDictionary<string, IReadOnlyProcedure> IReadOnlyAssembly.Procedures =>
-        new CovariantReadOnlyDictionary<string, Procedure, IReadOnlyProcedure>(this.procedures);
+    public Procedure? EntryPoint { get; set; }
+    IReadOnlyProcedure? IReadOnlyAssembly.EntryPoint => this.EntryPoint;
 
-    private readonly Dictionary<string, Procedure> procedures = new();
+    public IList<Procedure> Procedures => this.procedures;
+    IReadOnlyList<IReadOnlyProcedure> IReadOnlyAssembly.Procedures => this.procedures;
+
+    private readonly List<Procedure> procedures = new();
 
     public Assembly(string name)
     {
@@ -31,31 +33,33 @@ internal sealed class Assembly : IReadOnlyAssembly
     public Procedure DefineProcedure(string name)
     {
         var proc = new Procedure(name);
-        this.Procedures.Add(name, proc);
+        this.Procedures.Add(proc);
         return proc;
     }
 
-    public override string ToString() => $"""
-        assembly '{this.Name}';
-
-        {string.Join("\n\n", this.Procedures.Values.Select(p => p.ToFullString()))}
-        """;
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        result.AppendLine($"assembly '{this.Name}';");
+        if (this.EntryPoint is not null) result.AppendLine($"entry-point: {this.EntryPoint};");
+        result.AppendJoin(Environment.NewLine, this.Procedures.Select(p => p.ToFullString()));
+        return result.ToString();
+    }
 }
 
 /// <summary>
 /// An <see cref="IReadOnlyProcedure"/> implementation.
 /// </summary>
-internal sealed record class Procedure : Value, IReadOnlyProcedure
+internal sealed record class Procedure : IReadOnlyProcedure
 {
-    public override Type Type => new Type.Proc(
-        Args: this.Parameters.Select(p => p.Type).ToImmutableArray(),
-        Ret: this.ReturnType);
-
     public string Name { get; }
     public Type ReturnType { get; set; } = Type.Unit;
 
     public IList<Parameter> Parameters => this.parameters;
     IReadOnlyList<Parameter> IReadOnlyProcedure.Parameters => this.parameters;
+
+    public IList<Local> Locals => this.locals;
+    IReadOnlyList<Local> IReadOnlyProcedure.Locals => this.locals;
 
     public BasicBlock Entry => this.basicBlocks[0];
     IReadOnlyBasicBlock IReadOnlyProcedure.Entry => this.Entry;
@@ -67,6 +71,7 @@ internal sealed record class Procedure : Value, IReadOnlyProcedure
     IEnumerable<IReadOnlyInstruction> IReadOnlyProcedure.Instructions => this.Instructions;
 
     private readonly List<Parameter> parameters = new();
+    private readonly List<Local> locals = new();
     private readonly List<BasicBlock> basicBlocks = new()
     {
         new(),
@@ -79,9 +84,16 @@ internal sealed record class Procedure : Value, IReadOnlyProcedure
 
     public Parameter DefineParameter(string name, Type type)
     {
-        var param = new Parameter(type, name, this.parameters.Count);
+        var param = new Parameter(type, name);
         this.parameters.Add(param);
         return param;
+    }
+
+    public Local DefineLocal(string name, Type type)
+    {
+        var local = new Local(type, name);
+        this.locals.Add(local);
+        return local;
     }
 
     /// <summary>
@@ -126,51 +138,55 @@ internal abstract partial class Instruction : IReadOnlyInstruction
         InstructionKind.JmpIf,
     };
 
+    private static readonly InstructionKind[] sideEffectInstructions = new[]
+    {
+        InstructionKind.Call,
+        InstructionKind.Store,
+    };
+
     public InstructionKind Kind { get; }
+    public Value.Reg? Target { get; }
+    public IEnumerable<Value.Reg> Dependencies
+    {
+        get
+        {
+            for (var i = 0; i < this.OperandCount; ++i)
+            {
+                var op = this[i];
+                if (op is Value.Reg r) yield return r;
+                if (op is ArgumentList l)
+                {
+                    foreach (var v in l.Values)
+                    {
+                        if (v is Value.Reg r2) yield return r2;
+                    }
+                }
+            }
+        }
+    }
+    public abstract IInstructionOperand this[int index] { get; }
+
     public bool IsBranch => branchInstructions.Contains(this.Kind);
-    public abstract int OperandCount { get; }
-
-    public Instruction(InstructionKind kind)
+    public bool HasSideEffects => sideEffectInstructions.Contains(this.Kind);
+    public int OperandCount => this.Kind switch
     {
-        this.Kind = kind;
-    }
-
-    public abstract T GetOperandAt<T>(int index);
-    public abstract void SetOperandAt<T>(int index, T value);
-
-    public override string ToString()
-    {
-        var result = new StringBuilder();
-        var offset = 0;
-        // If the first argument is a register, we assume it's a target
-        if (this.GetType().GenericTypeArguments.FirstOrDefault() == typeof(Value.Register))
-        {
-            offset = 1;
-            result
-                .Append(this.GetOperandAt<Value.Register>(0).ToFullString())
-                .Append(" = ");
-        }
-        result.Append(StringUtils.ToSnakeCase(this.Kind.ToString()));
-        for (var i = offset; i < this.OperandCount; ++i)
-        {
-            if (i == offset) result.Append(' ');
-            else result.Append(", ");
-
-            var operand = this.GetOperandAt<object>(i);
-            if (operand is IEnumerable<Value> valueList)
-            {
-                result
-                    .Append('[')
-                    .AppendJoin(", ", valueList)
-                    .Append(']');
-            }
-            else
-            {
-                result.Append(operand);
-            }
-        }
-        return result.ToString();
-    }
+        InstructionKind.Nop => 0,
+        InstructionKind.Store => 2,
+        InstructionKind.Load => 1,
+        InstructionKind.Ret => 1,
+        InstructionKind.Jmp => 1,
+        InstructionKind.JmpIf => 3,
+        InstructionKind.Add => 2,
+        InstructionKind.Sub => 2,
+        InstructionKind.Mul => 2,
+        InstructionKind.Div => 2,
+        InstructionKind.Rem => 2,
+        InstructionKind.Less => 2,
+        InstructionKind.Equal => 2,
+        InstructionKind.Neg => 1,
+        InstructionKind.Call => 2,
+        _ => throw new InvalidOperationException(),
+    };
 }
 
 // Factory
@@ -182,149 +198,10 @@ internal abstract partial class Instruction
     public static Instruction Make<T1, T2, T3>(InstructionKind kind, T1 op1, T2 op2, T3 op3) => new Instruction3<T1, T2, T3>(kind, op1, op2, op3);
 }
 
-// Implementations
+// Implementation
 internal abstract partial class Instruction
 {
-    private sealed class Instruction0 : Instruction
+    private sealed class Impl<T1, T2, T3> : Instruction
     {
-        public override int OperandCount => 0;
-
-        public Instruction0(InstructionKind kind)
-            : base(kind)
-        {
-        }
-
-        public override T GetOperandAt<T>(int index) => throw new NotSupportedException("nullary instruction has no operands");
-        public override void SetOperandAt<T>(int index, T value) => throw new NotSupportedException("nullary instruction has no operands");
-    }
-
-    private sealed class Instruction1<T1> : Instruction
-    {
-        public override int OperandCount => 1;
-
-        private T1 operand1;
-
-        public Instruction1(InstructionKind kind, T1 operand1)
-            : base(kind)
-        {
-            this.operand1 = operand1;
-        }
-
-        public override T GetOperandAt<T>(int index)
-        {
-            if (index != 0) throw new ArgumentOutOfRangeException(nameof(index));
-            if (this.operand1 is not T op1) throw new InvalidOperationException("invalid operand type");
-            return op1;
-        }
-
-        public override void SetOperandAt<T>(int index, T value)
-        {
-            if (index != 0) throw new ArgumentOutOfRangeException(nameof(index));
-            if (this.operand1 is not T) throw new InvalidOperationException("invalid operand type");
-            this.operand1 = (T1)(object)value!;
-        }
-    }
-
-    private sealed class Instruction2<T1, T2> : Instruction
-    {
-        public override int OperandCount => 2;
-
-        private T1 operand1;
-        private T2 operand2;
-
-        public Instruction2(InstructionKind kind, T1 operand1, T2 operand2)
-            : base(kind)
-        {
-            this.operand1 = operand1;
-            this.operand2 = operand2;
-        }
-
-        public override T GetOperandAt<T>(int index)
-        {
-            switch (index)
-            {
-            case 0:
-                if (this.operand1 is not T op1) throw new InvalidOperationException("invalid operand type");
-                return op1;
-            case 1:
-                if (this.operand2 is not T op2) throw new InvalidOperationException("invalid operand type");
-                return op2;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-        }
-
-        public override void SetOperandAt<T>(int index, T value)
-        {
-            switch (index)
-            {
-            case 0:
-                if (this.operand1 is not T) throw new InvalidOperationException("invalid operand type");
-                this.operand1 = (T1)(object)value!;
-                break;
-            case 1:
-                if (this.operand2 is not T) throw new InvalidOperationException("invalid operand type");
-                this.operand2 = (T2)(object)value!;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-        }
-    }
-
-    private sealed class Instruction3<T1, T2, T3> : Instruction
-    {
-        public override int OperandCount => 3;
-
-        private T1 operand1;
-        private T2 operand2;
-        private T3 operand3;
-
-        public Instruction3(InstructionKind kind, T1 operand1, T2 operand2, T3 operand3)
-            : base(kind)
-        {
-            this.operand1 = operand1;
-            this.operand2 = operand2;
-            this.operand3 = operand3;
-        }
-
-        public override T GetOperandAt<T>(int index)
-        {
-            switch (index)
-            {
-            case 0:
-                if (this.operand1 is not T op1) throw new InvalidOperationException("invalid operand type");
-                return op1;
-            case 1:
-                if (this.operand2 is not T op2) throw new InvalidOperationException("invalid operand type");
-                return op2;
-            case 2:
-                if (this.operand3 is not T op3) throw new InvalidOperationException("invalid operand type");
-                return op3;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-        }
-
-        public override void SetOperandAt<T>(int index, T value)
-        {
-            switch (index)
-            {
-            case 0:
-                if (this.operand1 is not T) throw new InvalidOperationException("invalid operand type");
-                this.operand1 = (T1)(object)value!;
-                break;
-            case 1:
-                if (this.operand2 is not T) throw new InvalidOperationException("invalid operand type");
-                this.operand2 = (T2)(object)value!;
-                break;
-            case 2:
-                if (this.operand3 is not T) throw new InvalidOperationException("invalid operand type");
-                this.operand3 = (T3)(object)value!;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-        }
     }
 }

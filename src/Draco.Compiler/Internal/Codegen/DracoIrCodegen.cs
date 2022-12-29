@@ -68,10 +68,10 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return lbl;
     }
 
-    private Value.Register CompileLvalue(Ast.Expr expr) => expr switch
+    private Value.Reg CompileLvalue(Ast.Expr expr) => expr switch
     {
         // TODO: Cast might fail
-        Ast.Expr.Reference r => (Value.Register)this.values[r.Symbol],
+        Ast.Expr.Reference r => (Value.Reg)this.values[r.Symbol],
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 
@@ -236,5 +236,5 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;
-    public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Constant(node.Value);
+    public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Const(node.Value);
 }

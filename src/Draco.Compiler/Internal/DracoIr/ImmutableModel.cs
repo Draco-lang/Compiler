@@ -32,7 +32,7 @@ internal interface IReadOnlyAssembly
 /// <summary>
 /// Interface for a single procedure.
 /// </summary>
-internal interface IReadOnlyProcedure : IInstructionOperand
+internal interface IReadOnlyProcedure
 {
     /// <summary>
     /// The name of this procedure.
@@ -47,12 +47,12 @@ internal interface IReadOnlyProcedure : IInstructionOperand
     /// <summary>
     /// The parameters of this procedure.
     /// </summary>
-    public IReadOnlyList<Value.Parameter> Parameters { get; }
+    public IReadOnlyList<Parameter> Parameters { get; }
 
     /// <summary>
     /// The locals in this procedure.
     /// </summary>
-    public IReadOnlyList<Value.Local> Locals { get; }
+    public IReadOnlyList<Local> Locals { get; }
 
     /// <summary>
     /// The entry-point of the block.
@@ -68,6 +68,28 @@ internal interface IReadOnlyProcedure : IInstructionOperand
     /// All <see cref="IReadOnlyInstruction"/>s in this procedure in the order of their basic blocks.
     /// </summary>
     public IEnumerable<IReadOnlyInstruction> Instructions { get; }
+}
+
+/// <summary>
+/// A procedure parameter.
+/// </summary>
+/// <param name="Type">The type of the parameter.</param>
+/// <param name="Name">The name of the parameter.</param>
+internal sealed record class Parameter(Type Type, string Name) : IInstructionOperand
+{
+    public string ToFullString() => $"{this.Type} {this.Name}";
+    public override string ToString() => this.Name;
+}
+
+/// <summary>
+/// A local, mutable value within a procedure.
+/// </summary>
+/// <param name="Type">The type of the local.</param>
+/// <param name="Name">The name of the local.</param>
+internal sealed record class Local(Type Type, string Name) : IInstructionOperand
+{
+    public string ToFullString() => $"{this.Type} {this.Name}";
+    public override string ToString() => this.Name;
 }
 
 /// <summary>
@@ -104,12 +126,12 @@ internal interface IReadOnlyInstruction
     /// <summary>
     /// The values this instruction depends on.
     /// </summary>
-    public IEnumerable<Value.Register> Dependencies { get; }
+    public IEnumerable<Value.Reg> Dependencies { get; }
 
     /// <summary>
     /// The target register, in case the instruction produces a value.
     /// </summary>
-    public Value.Register? Target { get; }
+    public Value.Reg? Target { get; }
 
     /// <summary>
     /// Retrieves the operand at the given index.
@@ -117,6 +139,11 @@ internal interface IReadOnlyInstruction
     /// <param name="index">The 0-based index to retrieve the operand from.</param>
     /// <returns>The operand at <paramref name="index"/>.</returns>
     public IInstructionOperand this[int index] { get; }
+
+    /// <summary>
+    /// The number of operands.
+    /// </summary>
+    public int OperandCount { get; }
 }
 
 /// <summary>
@@ -223,27 +250,26 @@ internal abstract partial record class Value
     /// <summary>
     /// A parameter value.
     /// </summary>
-    /// <param name="Type">The type of the parameter.</param>
-    /// <param name="Name">The name of the parameter.</param>
-    public sealed record class Parameter(Type Type, string Name) : Value
+    /// <param name="Parameter">The referenced parameter.</param>
+    public sealed record class Param(Parameter Parameter) : Value
     {
-        public override Type Type { get; } = Type;
-
-        public string ToFullString() => $"{this.Type} {this.Name}";
-        public override string ToString() => this.Name;
+        public override Type Type => this.Parameter.Type;
     }
 
     /// <summary>
-    /// A local value.
+    /// A register value.
     /// </summary>
-    /// <param name="Type">The type of the local.</param>
-    /// <param name="Name">The name of the local.</param>
-    public sealed record class Local(Type Type, string Name) : Value
+    /// <param name="Type">The <see cref="DracoIr.Type"/> of this <see cref="Reg"/>.</param>
+    public sealed record class Reg(Type Type) : Value
     {
+        private static int idCounter = -1;
+
+        private readonly int id = Interlocked.Increment(ref idCounter);
+
         public override Type Type { get; } = Type;
 
-        public string ToFullString() => $"{this.Type} {this.Name}";
-        public override string ToString() => this.Name;
+        public string ToFullString() => $"{this.Type} {this}";
+        public override string ToString() => $"reg_{this.id}";
     }
 
     /// <summary>
@@ -259,26 +285,10 @@ internal abstract partial record class Value
     }
 
     /// <summary>
-    /// A register value.
-    /// </summary>
-    /// <param name="Type">The <see cref="DracoIr.Type"/> of this <see cref="Register"/>.</param>
-    public sealed record class Register(Type Type) : Value
-    {
-        private static int idCounter = -1;
-
-        private readonly int id = Interlocked.Increment(ref idCounter);
-
-        public override Type Type { get; } = Type;
-
-        public string ToFullString() => $"{this.Type} {this}";
-        public override string ToString() => $"reg_{this.id}";
-    }
-
-    /// <summary>
     ///  A constant value.
     /// </summary>
     /// <param name="Value">The constant value.</param>
-    public sealed record class Constant(object? Value) : Value
+    public sealed record class Const(object? Value) : Value
     {
         public override Type Type => this.Value switch
         {
@@ -289,12 +299,36 @@ internal abstract partial record class Value
 
         public override string ToString() => this.Value?.ToString() ?? "null";
     }
+
+    /// <summary>
+    /// A procedure reference.
+    /// </summary>
+    /// <param name="Procedure">The referenced procedure.</param>
+    public sealed record class Proc(IReadOnlyProcedure Procedure) : Value
+    {
+        public override Type Type => new Type.Proc(
+            Args: this.Procedure.Parameters.Select(p => p.Type).ToImmutableArray(),
+            Ret: this.Procedure.ReturnType);
+
+        public override string ToString() => this.Procedure.Name;
+    }
 }
+
+/// <summary>
+/// An argument list.
+/// </summary>
+/// <param name="Values">The values passed in for the call.</param>
+internal sealed record class ArgumentList(ImmutableArray<Value> Values) : IInstructionOperand;
 
 /// <summary>
 /// Base for all types.
 /// </summary>
 internal abstract partial record class Type : IInstructionOperand
+{
+}
+
+// Implementations
+internal abstract partial record class Type
 {
     /// <summary>
     /// A builtin <see cref="DracoIr.Type"/>.
@@ -303,15 +337,6 @@ internal abstract partial record class Type : IInstructionOperand
     public sealed record class Builtin(System.Type Type) : Type
     {
         public override string ToString() => this.Type.FullName ?? this.Type.Name;
-    }
-
-    /// <summary>
-    /// A pointer type.
-    /// </summary>
-    /// <param name="Element">The pointer element.</param>
-    public sealed record class Ptr(Type Element) : Type
-    {
-        public override string ToString() => $"{this.Element}*";
     }
 
     /// <summary>
@@ -331,4 +356,13 @@ internal abstract partial record class Type
     public static Type Unit { get; } = new Builtin(typeof(void));
     public static Type Bool { get; } = new Builtin(typeof(bool));
     public static Type Int32 { get; } = new Builtin(typeof(int));
+}
+
+internal static class InstructionOperandExtensions
+{
+    public static IReadOnlyBasicBlock AsBlock(this IInstructionOperand operand) => (IReadOnlyBasicBlock)operand;
+    public static Local AsLocal(this IInstructionOperand operand) => (Local)operand;
+    public static Value AsValue(this IInstructionOperand operand) => (Value)operand;
+    public static Type AsType(this IInstructionOperand operand) => (Type)operand;
+    public static ArgumentList AsArgumentList(this IInstructionOperand operand) => (ArgumentList)operand;
 }

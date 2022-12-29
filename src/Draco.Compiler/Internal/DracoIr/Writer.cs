@@ -176,35 +176,35 @@ internal sealed class InstructionWriter
         if (condition.Type != Type.Bool) throw new ArgumentException("condition must be bool");
         this.Write(Instruction.Make(InstructionKind.JmpIf, condition, thenLabel.Target, elsLabel.Target));
     }
-    public Value.Register AddInt(Value a, Value b) =>
+    public Value.Reg AddInt(Value a, Value b) =>
         this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.AddInt, target, a, b));
-    public Value.Register SubInt(Value a, Value b) =>
+    public Value.Reg SubInt(Value a, Value b) =>
         this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.SubInt, target, a, b));
-    public Value.Register MulInt(Value a, Value b) =>
+    public Value.Reg MulInt(Value a, Value b) =>
         this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.MulInt, target, a, b));
-    public Value.Register DivInt(Value a, Value b) =>
+    public Value.Reg DivInt(Value a, Value b) =>
         this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.DivInt, target, a, b));
-    public Value.Register RemInt(Value a, Value b) =>
+    public Value.Reg RemInt(Value a, Value b) =>
         this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.RemInt, target, a, b));
-    public Value.Register LessInt(Value a, Value b) =>
+    public Value.Reg LessInt(Value a, Value b) =>
         this.MakeWithRegister(Type.Bool, target => Instruction.Make(InstructionKind.LessInt, target, a, b));
-    public Value.Register LessEqualInt(Value a, Value b) =>
+    public Value.Reg LessEqualInt(Value a, Value b) =>
         this.MakeWithRegister(Type.Bool, target => Instruction.Make(InstructionKind.LessEqualInt, target, a, b));
-    public Value.Register EqualInt(Value a, Value b) =>
+    public Value.Reg EqualInt(Value a, Value b) =>
         this.MakeWithRegister(Type.Bool, target => Instruction.Make(InstructionKind.EqualInt, target, a, b));
-    public Value.Register NegInt(Value a) =>
+    public Value.Reg NegInt(Value a) =>
         this.MakeWithRegister(a.Type, target => Instruction.Make(InstructionKind.NegInt, target, a));
-    public Value.Register NotBool(Value a) =>
+    public Value.Reg NotBool(Value a) =>
         this.MakeWithRegister(Type.Bool, target => Instruction.Make(InstructionKind.NotBool, target, a));
-    public Value.Register Call(Value called, IList<Value> args)
+    public Value.Reg Call(Value called, IList<Value> args)
     {
         if (called.Type is not Type.Proc proc) throw new ArgumentException("can call a non-procedure value");
         return this.MakeWithRegister(proc.Ret, target => Instruction.Make(InstructionKind.Call, target, called, args));
     }
 
-    private Value.Register MakeWithRegister(Type type, Func<Value.Register, Instruction> make)
+    private Value.Reg MakeWithRegister(Type type, Func<Value.Reg, Instruction> make)
     {
-        var result = new Value.Register(type);
+        var result = new Value.Reg(type);
         var instr = make(result);
         this.Write(instr);
         return result;

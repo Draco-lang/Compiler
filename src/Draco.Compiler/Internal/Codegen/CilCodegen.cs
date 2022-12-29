@@ -82,9 +82,9 @@ internal sealed class CilCodegen
     private readonly MetadataBuilder metadataBuilder = new();
     private readonly BlobBuilder ilBuilder = new();
 
-    private readonly DefinitionIndexWithMarker<Value.Parameter, IReadOnlyProcedure> parameterIndex = new();
+    private readonly DefinitionIndexWithMarker<Value.Param, IReadOnlyProcedure> parameterIndex = new();
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
-    private readonly DefinitionIndex<Value.Register> localIndex = new();
+    private readonly DefinitionIndex<Value.Reg> localIndex = new();
 
     private CilCodegen(IReadOnlyAssembly assembly)
     {
@@ -163,7 +163,7 @@ internal sealed class CilCodegen
             if (encoder is not null)
             {
                 // Allocation targets a pointer, we erase that
-                var targetRegister = instruction.GetOperandAt<Value.Register>(0);
+                var targetRegister = instruction.GetOperandAt<Value.Reg>(0);
                 var targetType = (Type.Ptr)targetRegister.Type;
                 var typeEncoder = encoder.Value
                     .AddVariable()
@@ -178,7 +178,7 @@ internal sealed class CilCodegen
         case InstructionKind.LessInt:
             if (encoder is not null)
             {
-                var targetValue = instruction.GetOperandAt<Value.Register>(0);
+                var targetValue = instruction.GetOperandAt<Value.Reg>(0);
                 var typeEncoder = encoder.Value
                     .AddVariable()
                     .Type();
@@ -200,7 +200,7 @@ internal sealed class CilCodegen
         foreach (var param in procedure.Parameters) this.TranslateParameter(parametersEncoder, param);
     }
 
-    private void TranslateParameter(ParametersEncoder encoder, Value.Parameter param)
+    private void TranslateParameter(ParametersEncoder encoder, Value.Param param)
     {
         this.parameterIndex.Index.Add(param);
 
@@ -252,7 +252,7 @@ internal sealed class CilCodegen
         case InstructionKind.Load:
         {
             // We just implement it by copying to the target local
-            var targetValue = instruction.GetOperandAt<Value.Register>(0);
+            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
             var toStore = instruction.GetOperandAt<Value>(1);
             this.TranslateValuePush(encoder, toStore);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
@@ -260,7 +260,7 @@ internal sealed class CilCodegen
         }
         case InstructionKind.Store:
         {
-            var targetValue = instruction.GetOperandAt<Value.Register>(0);
+            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
             var toStore = instruction.GetOperandAt<Value>(1);
             this.TranslateValuePush(encoder, toStore);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
@@ -297,7 +297,7 @@ internal sealed class CilCodegen
             // push operand
             // push 0
             // compare eq
-            var targetValue = instruction.GetOperandAt<Value.Register>(0);
+            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
             var a = instruction.GetOperandAt<Value>(1);
             this.TranslateValuePush(encoder, a);
             encoder.LoadConstantI4(0);
@@ -307,7 +307,7 @@ internal sealed class CilCodegen
         }
         case InstructionKind.AddInt:
         {
-            var targetValue = instruction.GetOperandAt<Value.Register>(0);
+            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
             var a = instruction.GetOperandAt<Value>(1);
             var b = instruction.GetOperandAt<Value>(2);
             this.TranslateValuePush(encoder, a);
@@ -320,7 +320,7 @@ internal sealed class CilCodegen
         {
             // push 0
             // store into target
-            var targetValue = instruction.GetOperandAt<Value.Register>(0);
+            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
             var a = instruction.GetOperandAt<Value>(1);
             var b = instruction.GetOperandAt<Value>(2);
             this.TranslateValuePush(encoder, a);
@@ -338,16 +338,16 @@ internal sealed class CilCodegen
     {
         if (value.Type == Type.Unit) return;
 
-        if (value is Value.Constant constant)
+        if (value is Value.Const constant)
         {
             if (constant.Value is int i4) { encoder.LoadConstantI4(i4); return; }
         }
-        if (value is Value.Register reg)
+        if (value is Value.Reg reg)
         {
             encoder.LoadLocal(this.localIndex[reg] - 1);
             return;
         }
-        if (value is Value.Parameter param)
+        if (value is Value.Param param)
         {
             encoder.LoadArgument(this.parameterIndex.Index[param] - 1);
             return;

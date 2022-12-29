@@ -115,7 +115,7 @@ internal static class TailCallOptimization
                 for (var j = 0; j < instr.OperandCount; ++j)
                 {
                     var operand = instr.GetOperandAt<object>(j);
-                    if (operand is not Value.Parameter param) continue;
+                    if (operand is not Value.Param param) continue;
                     var paramIndex = procedure.Parameters.IndexOf(param);
                     Debug.Assert(paramIndex != -1);
 
@@ -143,7 +143,7 @@ internal static class TailCallOptimization
     private static bool IsTailCall(Procedure procedure, Instruction first, Instruction second)
     {
         if (first.Kind != InstructionKind.Call || second.Kind != InstructionKind.Ret) return false;
-        var target = first.GetOperandAt<Value.Register>(0);
+        var target = first.GetOperandAt<Value.Reg>(0);
         var called = first.GetOperandAt<Value>(1);
         var returned = second.GetOperandAt<Value>(0);
         if (called != procedure) return false;

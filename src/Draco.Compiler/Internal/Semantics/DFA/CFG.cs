@@ -6,19 +6,18 @@ using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 namespace Draco.Compiler.Internal.Semantics.DFA;
 
-internal abstract record class CFG
+internal abstract record class CFG<TStmt, TCondition>
 {
-    // TODO: add builder
     /// <summary>
     /// Represents a single block in <see cref="CFG"/> consisting non-branching statements, the block ends branching.
     /// </summary>
     /// <param name="Statements">List of statements contained in the <see cref="Block"/>.</param>
     /// <param name="Branches">List of possible <see cref="Branch"/>es.</param>
-    internal sealed record class Block(ImmutableArray<Ast.Stmt> Statements, ImmutableArray<Branch> Branches) : CFG
+    internal sealed record class Block(ImmutableArray<TStmt> Statements, ImmutableArray<Branch> Branches) : CFG<TStmt, TCondition>
     {
-        internal sealed new record class Builder(List<Ast.Stmt> Statements) : CFG
+        internal sealed new record class Builder(List<TStmt> Statements) : CFG<TStmt, TCondition>
         {
-            public Builder() : this(new List<Ast.Stmt>()) { }
+            public Builder() : this(new List<TStmt>()) { }
 
             private List<Branch.Builder> branches = new List<Branch.Builder>();
             public void AddBranch(Branch.Builder branch)
@@ -26,7 +25,7 @@ internal abstract record class CFG
                 this.branches.Add(branch);
             }
 
-            public void AddStatement(Ast.Stmt statement)
+            public void AddStatement(TStmt statement)
             {
                 this.Statements.Add(statement);
             }
@@ -44,9 +43,9 @@ internal abstract record class CFG
     /// </summary>
     /// <param name="Target">The <see cref="Block"/> targeted by this <see cref="Branch"/>.</param>
     /// <param name="Condition">The condition that must be met so the execution continues to the <paramref name="Target"/>.</param>
-    internal sealed record class Branch(Block Target, Ast.Expr? Condition) : CFG
+    internal sealed record class Branch(Block Target, TCondition? Condition) : CFG<TStmt, TCondition>
     {
-        internal sealed new record class Builder(Ast.Expr? Condition) : CFG
+        internal sealed new record class Builder(TCondition? Condition) : CFG<TStmt, TCondition>
         {
             private Block.Builder? block = null;
             public void AddBlock(Block.Builder block)
@@ -64,8 +63,8 @@ internal abstract record class CFG
 
     internal sealed class Builder
     {
-        public CFG Current;
-        private Stack<CFG> stack = new Stack<CFG>();
+        public CFG<TStmt, TCondition> Current;
+        private Stack<CFG<TStmt, TCondition>> stack = new Stack<CFG<TStmt, TCondition>>();
 
         public Builder(Block.Builder block) => this.Current = block;
 
@@ -77,7 +76,7 @@ internal abstract record class CFG
             this.Current = block;
         }
 
-        public void PushStatement(Ast.Stmt statement)
+        public void PushStatement(TStmt statement)
         {
             if (this.Current is not Block.Builder blc) throw new InvalidOperationException();
             blc.AddStatement(statement);
@@ -93,7 +92,13 @@ internal abstract record class CFG
 
         public void PopBlock()
         {
-            if (this.Current is not Block.Builder blc) throw new InvalidOperationException();
+            if (this.Current is not Block.Builder) throw new InvalidOperationException();
+            this.Current = this.stack.Pop();
+        }
+
+        public void PopBranch()
+        {
+            if (this.Current is not Branch.Builder) throw new InvalidOperationException();
             this.Current = this.stack.Pop();
         }
 

@@ -7,12 +7,12 @@ namespace Draco.Compiler.Internal.Semantics.DFA;
 
 internal sealed class CFGBuilder
 {
-    private CFG.Builder? cfg;
-    public CFG.Block BuildCFG(Ast node)
+    private CFG<Ast.Stmt, Ast.Expr>.Builder? cfg;
+    public CFG<Ast.Stmt, Ast.Expr>.Block BuildCFG(Ast node)
     {
         if (node is Ast.Expr.Block)
         {
-            this.cfg = new CFG.Builder(new CFG.Block.Builder());
+            this.cfg = new CFG<Ast.Stmt, Ast.Expr>.Builder(new CFG<Ast.Stmt, Ast.Expr>.Block.Builder());
             this.ToCFG((Ast.Expr.Block)node);
             return this.cfg!.Build();
         }
@@ -40,9 +40,10 @@ internal sealed class CFGBuilder
 
     private void ToCFG(Ast.Expr.If expr)
     {
-        this.cfg!.PushBranch(new CFG.Branch.Builder(expr.Condition));
-        this.cfg.PushBlock(new CFG.Block.Builder());
+        this.cfg!.PushBranch(new CFG<Ast.Stmt, Ast.Expr>.Branch.Builder(expr.Condition));
+        this.cfg.PushBlock(new CFG<Ast.Stmt, Ast.Expr>.Block.Builder());
         this.ToCFG(expr.Then);
+        this.cfg.PopBranch();
         if (expr.Else != Ast.Expr.Unit.Default)
         {
             throw new NotImplementedException();

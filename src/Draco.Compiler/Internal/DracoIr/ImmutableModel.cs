@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.DracoIr;
@@ -17,15 +19,20 @@ internal interface IReadOnlyAssembly
     public string Name { get; }
 
     /// <summary>
+    /// The entry point of the assembly, if any.
+    /// </summary>
+    public IReadOnlyProcedure? EntryPoint { get; }
+
+    /// <summary>
     /// The procedures defined in this assembly.
     /// </summary>
-    public IReadOnlyDictionary<string, IReadOnlyProcedure> Procedures { get; }
+    public IReadOnlyList<IReadOnlyProcedure> Procedures { get; }
 }
 
 /// <summary>
 /// Interface for a single procedure.
 /// </summary>
-internal interface IReadOnlyProcedure
+internal interface IReadOnlyProcedure : IInstructionOperand
 {
     /// <summary>
     /// The name of this procedure.
@@ -61,7 +68,7 @@ internal interface IReadOnlyProcedure
 /// <summary>
 /// The interface for a basic block.
 /// </summary>
-internal interface IReadOnlyBasicBlock
+internal interface IReadOnlyBasicBlock : IInstructionOperand
 {
     /// <summary>
     /// The instructions in this block.
@@ -85,17 +92,33 @@ internal interface IReadOnlyInstruction
     public bool IsBranch { get; }
 
     /// <summary>
-    /// The number of operands.
+    /// True, if this instruction has potential side-effects.
     /// </summary>
-    public int OperandCount { get; }
+    public bool HasSideEffects { get; }
 
     /// <summary>
-    /// Retrieves an operand of this instruction.
+    /// The values this instruction depends on.
     /// </summary>
-    /// <typeparam name="T">The type of the operand.</typeparam>
-    /// <param name="index">The indef of the operand.</param>
-    /// <returns>The operand at index <paramref name="index"/>.</returns>
-    public T GetOperandAt<T>(int index);
+    public IEnumerable<Value.Register> Dependencies { get; }
+
+    /// <summary>
+    /// The target register, in case the instruction produces a value.
+    /// </summary>
+    public Value.Register? Target { get; }
+
+    /// <summary>
+    /// Retrieves the operand at the given index.
+    /// </summary>
+    /// <param name="index">The 0-based index to retrieve the operand from.</param>
+    /// <returns>The operand at <paramref name="index"/>.</returns>
+    public IInstructionOperand this[int index] { get; }
+}
+
+/// <summary>
+/// A marker type for instruction operands.
+/// </summary>
+public interface IInstructionOperand
+{
 }
 
 /// <summary>
@@ -107,11 +130,6 @@ internal enum InstructionKind
     /// No operation.
     /// </summary>
     Nop,
-
-    /// <summary>
-    /// Allocate stack-memory for a local.
-    /// </summary>
-    Alloc,
 
     /// <summary>
     /// Store into a local.
@@ -139,54 +157,44 @@ internal enum InstructionKind
     JmpIf,
 
     /// <summary>
-    /// Integer addition.
+    /// Arithmetic addition.
     /// </summary>
-    AddInt,
+    Add,
 
     /// <summary>
-    /// Integer subtraction.
+    /// Arithmetic subtraction.
     /// </summary>
-    SubInt,
+    Sub,
 
     /// <summary>
-    /// Integer multiplication.
+    /// Arithmetic multiplication.
     /// </summary>
-    MulInt,
+    Mul,
 
     /// <summary>
-    /// Integer division.
+    /// Arithmetic division.
     /// </summary>
-    DivInt,
+    Div,
 
     /// <summary>
-    /// Integer remainder.
+    /// Arithmetic remainder.
     /// </summary>
-    RemInt,
+    Rem,
 
     /// <summary>
-    /// Integer less-than comparison.
+    /// Less-than comparison.
     /// </summary>
-    LessInt,
+    Less,
 
     /// <summary>
-    /// Integer less-or-equal comparison.
+    /// Equality comparison.
     /// </summary>
-    LessEqualInt,
+    Equal,
 
     /// <summary>
-    /// Integer equality comparison.
+    /// Arithmetic negation.
     /// </summary>
-    EqualInt,
-
-    /// <summary>
-    /// Integer negation.
-    /// </summary>
-    NegInt,
-
-    /// <summary>
-    /// Boolean negation.
-    /// </summary>
-    NotBool,
+    Neg,
 
     /// <summary>
     /// A procedure call.
@@ -197,7 +205,7 @@ internal enum InstructionKind
 /// <summary>
 /// Base for all values.
 /// </summary>
-internal abstract partial record class Value
+internal abstract partial record class Value : IInstructionOperand
 {
     /// <summary>
     /// The <see cref="DracoIr.Type"/> of this <see cref="Value"/>.
@@ -263,7 +271,7 @@ internal abstract partial record class Value
 /// <summary>
 /// Base for all types.
 /// </summary>
-internal abstract partial record class Type
+internal abstract partial record class Type : IInstructionOperand
 {
     /// <summary>
     /// A builtin <see cref="DracoIr.Type"/>.

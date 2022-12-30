@@ -40,11 +40,20 @@ internal sealed class DracoGoToDefinitionHandler : DefinitionHandlerBase
         var parseTree = ParseTree.Parse(souceText);
         var compilation = Compilation.Create(parseTree);
         var semanticModel = compilation.GetSemanticModel();
-        return Task.FromResult(new LocationOrLocationLinks(new Location()
+
+        var referencedSymbol = parseTree
+            .TraverseSubtreesAtPosition(cursorPosition)
+            .Select(semanticModel.GetReferencedSymbolOrNull)
+            .LastOrDefault(symbol => symbol is not null);
+
+        if (referencedSymbol is not null && referencedSymbol.Definition is not null)
         {
-            // TODO
-            Uri = null!,
-            Range = null!,
-        }));
+            var location = Translator.ToLsp(referencedSymbol.Definition);
+            return Task.FromResult(new LocationOrLocationLinks(location ?? new()));
+        }
+        else
+        {
+            return Task.FromResult(new LocationOrLocationLinks());
+        }
     }
 }

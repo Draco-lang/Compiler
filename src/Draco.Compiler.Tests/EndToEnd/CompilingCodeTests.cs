@@ -178,4 +178,22 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "foo");
         Assert.Equal(3, x);
     }
+
+    [Fact]
+    public void NonzeroGlobals()
+    {
+        var assembly = Compile("""
+            var x = 123;
+            func bar() { x += 1; }
+            func foo(): int32 {
+                bar();
+                bar();
+                bar();
+                return x;
+            }
+            """);
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(126, x);
+    }
 }

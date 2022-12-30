@@ -1,0 +1,50 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Draco.Compiler.Api;
+using Draco.Compiler.Api.Syntax;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+
+namespace Draco.LanguageServer.Handlers;
+
+internal sealed class DracoGoToDefinitionHandler : DefinitionHandlerBase
+{
+    private readonly DracoDocumentRepository documentRepository;
+
+    public DracoGoToDefinitionHandler(DracoDocumentRepository documentRepository)
+    {
+        this.documentRepository = documentRepository;
+    }
+
+    protected override DefinitionRegistrationOptions CreateRegistrationOptions(
+        DefinitionCapability capability,
+        ClientCapabilities clientCapabilities) => new()
+        {
+            DocumentSelector = new DocumentSelector(new DocumentFilter
+            {
+                Pattern = $"**/*{Constants.DracoSourceExtension}",
+            })
+        };
+
+    public override Task<LocationOrLocationLinks> Handle(DefinitionParams request, CancellationToken cancellationToken)
+    {
+        var cursorPosition = Translator.ToCompiler(request.Position);
+        // TODO: Share compilation
+        var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
+        var parseTree = ParseTree.Parse(souceText);
+        var compilation = Compilation.Create(parseTree);
+        var semanticModel = compilation.GetSemanticModel();
+        return Task.FromResult(new LocationOrLocationLinks(new Location()
+        {
+            // TODO
+            Uri = null!,
+            Range = null!,
+        }));
+    }
+}

@@ -11,6 +11,9 @@ namespace Draco.LanguageServer;
 /// </summary>
 internal static class Translator
 {
+    public static CompilerApi.Syntax.Position ToCompiler(LspModels.Position position) =>
+        new(Line: position.Line, Column: position.Character);
+
     public static LspModels.Diagnostic ToLsp(CompilerApi.Diagnostics.Diagnostic diag) => new()
     {
         Message = diag.Message,

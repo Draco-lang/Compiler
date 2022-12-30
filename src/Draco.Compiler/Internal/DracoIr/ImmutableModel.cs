@@ -315,6 +315,7 @@ internal abstract partial record class Value
         {
             bool => Type.Bool,
             int => Type.Int32,
+            string => Type.String,
             _ => throw new InvalidOperationException(),
         };
 
@@ -377,6 +378,7 @@ internal abstract partial record class Type
     public static Type Unit { get; } = new Builtin(typeof(void));
     public static Type Bool { get; } = new Builtin(typeof(bool));
     public static Type Int32 { get; } = new Builtin(typeof(int));
+    public static Type String { get; } = new Builtin(typeof(string));
 }
 
 internal readonly record struct NoOperand : IInstructionOperand;

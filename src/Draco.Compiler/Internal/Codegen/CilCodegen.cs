@@ -241,14 +241,10 @@ internal sealed class CilCodegen
         encoder.Parameters(procedure.Parameters.Count, out var returnTypeEncoder, out var parametersEncoder);
         this.TranslateReturnType(returnTypeEncoder, procedure.ReturnType);
         var paramIndex = 0;
-        foreach (var param in procedure.Parameters) this.TranslateParameter(parametersEncoder, procedure, param, paramIndex++);
+        foreach (var param in procedure.Parameters) this.TranslateParameter(parametersEncoder, param, paramIndex++);
     }
 
-    private void TranslateParameter(
-        ParametersEncoder encoder,
-        IReadOnlyProcedure procedure,
-        DracoIr.Parameter param,
-        int paramIndex)
+    private void TranslateParameter(ParametersEncoder encoder, DracoIr.Parameter param, int paramIndex)
     {
         this.parameterIndex.Index.Add(param);
 
@@ -272,6 +268,7 @@ internal sealed class CilCodegen
     {
         if (type == Type.Bool) { encoder.Boolean(); return; }
         if (type == Type.Int32) { encoder.Int32(); return; }
+        if (type == Type.String) { encoder.String(); return; }
 
         // TODO
         throw new NotImplementedException();
@@ -429,6 +426,7 @@ internal sealed class CilCodegen
         {
             if (constant.Value is int i4) { encoder.LoadConstantI4(i4); return; }
             if (constant.Value is bool b) { encoder.LoadConstantI4(b ? 1 : 0); return; }
+            if (constant.Value is string s) { encoder.LoadString(this.metadataBuilder.GetOrAddUserString(s)); return; }
         }
         if (value is Value.Reg reg)
         {

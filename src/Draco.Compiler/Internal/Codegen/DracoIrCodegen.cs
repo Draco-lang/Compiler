@@ -49,6 +49,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         if (type == Semantics.Types.Type.Unit) return Type.Unit;
         if (type == Semantics.Types.Type.Bool) return Type.Bool;
         if (type == Semantics.Types.Type.Int32) return Type.Int32;
+        if (type == Semantics.Types.Type.String) return Type.String;
 
         throw new NotImplementedException();
     }
@@ -308,4 +309,17 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;
     public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Const(node.Value);
+    public override Value VisitStringExpr(Ast.Expr.String node)
+    {
+        if (node.Parts.Length == 1 && node.Parts[0] is Ast.StringPart.Content content)
+        {
+            // Simplification
+            return new Value.Const(content.Value);
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
 }

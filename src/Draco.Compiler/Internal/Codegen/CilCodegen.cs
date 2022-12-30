@@ -336,7 +336,7 @@ internal sealed class CilCodegen
         }
         if (value is Value.Param param)
         {
-            encoder.LoadArgument(this.parameterIndex.Index[param] - 1);
+            encoder.LoadArgument(this.parameterIndex[param.Parameter] - 1);
             return;
         }
 

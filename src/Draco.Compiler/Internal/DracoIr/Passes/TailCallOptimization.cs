@@ -65,11 +65,11 @@ internal static class TailCallOptimization
         // pairs
         var writer = procedure.Writer();
         writer.Seek(procedure.Entry, 0);
-        var argPointers = new List<Value>();
+        var argPointers = new List<Local>();
         foreach (var param in procedure.Parameters)
         {
-            var argPtr = writer.Alloc(param.Type);
-            writer.Store(argPtr, param);
+            var argPtr = procedure.DefineLocal(null, param.Type);
+            writer.Store(argPtr, new Value.Param(param));
             argPointers.Add(argPtr);
         }
         writer.Jmp(oldEntry);
@@ -88,7 +88,7 @@ internal static class TailCallOptimization
             if (!HasTailCall(procedure, block)) continue;
 
             var callArgs = block.Instructions[^2][1].AsArgumentList();
-            Debug.Assert(callArgs.Values.Count == argPointers.Count);
+            Debug.Assert(callArgs.Values.Length == argPointers.Count);
 
             // Remove the last two instructions, which are the call and the return
             block.Instructions.RemoveAt(block.Instructions.Count - 1);
@@ -96,10 +96,10 @@ internal static class TailCallOptimization
 
             // Seek, write stores and jump
             writer.SeekEnd(block);
-            for (var i = 0; i < callArgs.Count; ++i)
+            for (var i = 0; i < callArgs.Values.Length; ++i)
             {
                 var argPtr = argPointers[i];
-                var arg = callArgs[i];
+                var arg = callArgs.Values[i];
                 writer.Store(argPtr, arg);
             }
             writer.Jmp(oldEntry);
@@ -114,16 +114,16 @@ internal static class TailCallOptimization
                 var instr = block.Instructions[i];
                 for (var j = 0; j < instr.OperandCount; ++j)
                 {
-                    var operand = instr.GetOperandAt<object>(j);
+                    var operand = instr[j];
                     if (operand is not Value.Param param) continue;
-                    var paramIndex = procedure.Parameters.IndexOf(param);
+                    var paramIndex = procedure.Parameters.IndexOf(param.Parameter);
                     Debug.Assert(paramIndex != -1);
 
                     // The operand references a parameter
                     // Seek before the instruction and write a load to the appropriate pointer
                     writer.Seek(block, i);
                     var loadedValue = writer.Load(argPointers[paramIndex]);
-                    instr.SetOperandAt(j, loadedValue);
+                    instr[j] = loadedValue;
 
                     // The instruction pointer has been offset by one
                     ++i;
@@ -143,10 +143,11 @@ internal static class TailCallOptimization
     private static bool IsTailCall(Procedure procedure, Instruction first, Instruction second)
     {
         if (first.Kind != InstructionKind.Call || second.Kind != InstructionKind.Ret) return false;
-        var target = first.GetOperandAt<Value.Reg>(0);
-        var called = first.GetOperandAt<Value>(1);
-        var returned = second.GetOperandAt<Value>(0);
-        if (called != procedure) return false;
+        var target = first.Target!;
+        var called = first[0].AsValue();
+        if (called is not Value.Proc procValue) return false;
+        var returned = second[0].AsValue();
+        if (!ReferenceEquals(procValue.Procedure, procedure)) return false;
         if (target != returned) return false;
         return true;
     }

@@ -228,7 +228,7 @@ internal sealed class CilCodegen
         var methodBodyOffset = encoder.AddMethodBody(
             instructionEncoder: ilEncoder,
             maxStack: 8,
-            localVariablesSignature: localsHandle,
+            localVariablesSignature: localsCount > 0 ? localsHandle : default,
             attributes: 0,
             hasDynamicStackAllocation: false);
         return methodBodyOffset;
@@ -476,10 +476,10 @@ internal sealed class CilCodegen
             fieldList: MetadataTokens.FieldDefinitionHandle(1),
             methodList: MetadataTokens.MethodDefinitionHandle(1));
 
-        var mscorlibAssemblyRef = this.metadataBuilder.AddAssemblyReference(
+        var systemRuntimeRef = this.metadataBuilder.AddAssemblyReference(
             name: this.metadataBuilder.GetOrAddString("System.Runtime"),
             // TODO: What version?
-            version: new Version(7, 0, 101, 0),
+            version: new Version(1, 0),
             culture: default,
             // TODO: We only need to think about it when we decide to support strong naming
             // Apparently it's not really present in Core
@@ -488,9 +488,9 @@ internal sealed class CilCodegen
             hashValue: default);
 
         var systemObjectTypeRef = this.metadataBuilder.AddTypeReference(
-           mscorlibAssemblyRef,
-           this.metadataBuilder.GetOrAddString("System"),
-           this.metadataBuilder.GetOrAddString("Object"));
+           resolutionScope: systemRuntimeRef,
+           @namespace: this.metadataBuilder.GetOrAddString("System"),
+           name: this.metadataBuilder.GetOrAddString("Object"));
 
         // TODO: Factor out constants into settings?
         this.metadataBuilder.AddTypeDefinition(

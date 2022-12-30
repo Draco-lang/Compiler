@@ -33,7 +33,8 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
     private readonly Dictionary<ISymbol.IFunction, Procedure> procedures = new();
     private readonly Dictionary<ISymbol.ILabel, Label> labels = new();
-    private readonly Dictionary<ISymbol, Value> values = new();
+    private readonly Dictionary<ISymbol.IParameter, Parameter> parameters = new();
+    private readonly Dictionary<ISymbol.IVariable, Local> locals = new();
 
     private DracoIrCodegen(Assembly assembly)
     {
@@ -71,8 +72,12 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
     private Local CompileLvalue(Ast.Expr expr) => expr switch
     {
-        // TODO: Cast might fail
-        // Ast.Expr.Reference r => (Value.Reg)this.values[r.Symbol],
+        Ast.Expr.Reference r => r.Symbol switch
+        {
+            // TODO: Globals?
+            ISymbol.IVariable v => this.locals[v],
+            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+        },
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 
@@ -87,7 +92,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         foreach (var param in node.Params)
         {
             var paramValue = procedure.DefineParameter(param.Name, this.TranslateType(param.Type));
-            this.values[param] = new Value.Param(paramValue);
+            this.parameters.Add(param, paramValue);
         }
         procedure.ReturnType = this.TranslateType(node.ReturnType);
 
@@ -103,6 +108,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         // TODO: Globals
         var stackSpace = this.currentProcedure.DefineLocal(node.DeclarationSymbol.Name, this.TranslateType(node.Type));
+        this.locals.Add(node.DeclarationSymbol, stackSpace);
         if (node.Value is not null)
         {
             var value = this.VisitExpr(node.Value);
@@ -242,9 +248,10 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
     public override Value VisitReferenceExpr(Ast.Expr.Reference node) => node.Symbol switch
     {
-        ISymbol.IParameter => this.values[node.Symbol],
-        //ISymbol.IVariable => this.writer.Load(this.values[node.Symbol]),
-        ISymbol.IFunction f => this.procedures[f],
+        ISymbol.IParameter p => new Value.Param(this.parameters[p]),
+        // TODO: Globals?
+        ISymbol.IVariable v => this.writer.Load(this.locals[v]),
+        ISymbol.IFunction f => new Value.Proc(this.procedures[f]),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;

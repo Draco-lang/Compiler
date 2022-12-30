@@ -33,16 +33,18 @@ internal sealed class CilCodegen
     private readonly struct DefinitionIndex<T>
         where T : class
     {
-        public int NextRowId => this.rows.Count + 1;
+        public int NextRowId => this.rows.Count + this.offset;
 
         public int this[T value] => this.index[value];
-        public T this[int index] => this.rows[index - 1];
+        public T this[int index] => this.rows[index - this.offset];
 
+        private readonly int offset;
         private readonly Dictionary<T, int> index = new(ReferenceEqualityComparer.Instance);
         private readonly List<T> rows = new();
 
-        public DefinitionIndex()
+        public DefinitionIndex(int offset)
         {
+            this.offset = offset;
         }
 
         public int Add(T item)
@@ -66,15 +68,27 @@ internal sealed class CilCodegen
     {
         public DefinitionIndex<TIndexed> Index => this.index;
 
-        private readonly DefinitionIndex<TIndexed> index = new();
+        public int this[TIndexed value] => this.index[value];
+        public int this[TMarker value] => this.markers[value];
+        public TIndexed this[int index] => this.index[index];
+
+        private readonly DefinitionIndex<TIndexed> index;
         private readonly Dictionary<TMarker, int> markers = new(ReferenceEqualityComparer.Instance);
 
-        public DefinitionIndexWithMarker()
+        public DefinitionIndexWithMarker(int offset)
         {
+            this.index = new(offset);
         }
 
-        public void PutMark(TMarker marker) => this.markers.Add(marker, this.index.NextRowId);
-        public int GetMark(TMarker marker) => this.markers[marker];
+        public void Clear()
+        {
+            this.index.Clear();
+            this.markers.Clear();
+        }
+
+        public int Add(TIndexed item) => this.index.Add(item);
+        public void PutMarker(TMarker marker) => this.markers.Add(marker, this.index.NextRowId);
+        public int GetMarker(TMarker marker) => this.markers[marker];
     }
 
     private readonly IReadOnlyAssembly assembly;
@@ -82,9 +96,9 @@ internal sealed class CilCodegen
     private readonly MetadataBuilder metadataBuilder = new();
     private readonly BlobBuilder ilBuilder = new();
 
-    private readonly DefinitionIndexWithMarker<Value.Param, IReadOnlyProcedure> parameterIndex = new();
+    private readonly DefinitionIndexWithMarker<DracoIr.Parameter, IReadOnlyProcedure> parameterIndex = new(offset: 1);
+    private readonly DefinitionIndex<Local> localIndex = new(offset: 0);
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
-    private readonly DefinitionIndex<Value.Reg> localIndex = new();
 
     private CilCodegen(IReadOnlyAssembly assembly)
     {
@@ -113,7 +127,7 @@ internal sealed class CilCodegen
         var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
         var methodBodyOffset = this.TranslateProcedureBody(methodBodyStream, procedure);
 
-        var parametersStart = this.parameterIndex.GetMark(procedure);
+        var parametersStart = this.parameterIndex.GetMarker(procedure);
         this.metadataBuilder.AddMethodDefinition(
             attributes: MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             implAttributes: MethodImplAttributes.IL,

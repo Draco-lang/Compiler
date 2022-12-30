@@ -160,4 +160,22 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             Assert.Equal(results[i], sumi);
         }
     }
+
+    [Fact]
+    public void Globals()
+    {
+        var assembly = Compile("""
+            var x = 0;
+            func bar() { x += 1; }
+            func foo(): int32 {
+                bar();
+                bar();
+                bar();
+                return x;
+            }
+            """);
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(3, x);
+    }
 }

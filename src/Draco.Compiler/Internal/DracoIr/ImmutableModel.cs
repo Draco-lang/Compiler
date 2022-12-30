@@ -82,6 +82,17 @@ internal sealed record class Parameter(Type Type, string Name) : IInstructionOpe
 }
 
 /// <summary>
+/// A global, mutable value within an assembly.
+/// </summary>
+/// <param name="Type">The type of the global.</param>
+/// <param name="Name">The name of the global.</param>
+internal sealed record class Global(Type Type, string? Name) : IInstructionOperand
+{
+    public string ToFullString() => $"{this.Type} {this}";
+    public override string ToString() => this.Name ?? "<unnamed>";
+}
+
+/// <summary>
 /// A local, mutable value within a procedure.
 /// </summary>
 /// <param name="Type">The type of the local.</param>

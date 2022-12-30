@@ -109,7 +109,11 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
     public override Value VisitVariableDecl(Ast.Decl.Variable node)
     {
-        // TODO: Globals
+        if (node.DeclarationSymbol.IsGlobal)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
         var stackSpace = this.currentProcedure.DefineLocal(node.DeclarationSymbol.Name, this.TranslateType(node.Type));
         this.locals.Add(node.DeclarationSymbol, stackSpace);
         if (node.Value is not null)

@@ -150,10 +150,20 @@ internal sealed class InstructionWriter
     // Instruction factories ///////////////////////////////////////////////////
 
     public void Nop() => this.Write(Instruction.Make0(InstructionKind.Nop));
+    public void Store(Global target, Value src)
+    {
+        if (src.Type == Type.Unit) return;
+        this.Write(Instruction.Make2(InstructionKind.Store, target, src));
+    }
     public void Store(Local target, Value src)
     {
         if (src.Type == Type.Unit) return;
         this.Write(Instruction.Make2(InstructionKind.Store, target, src));
+    }
+    public Value Load(Global src)
+    {
+        if (src.Type == Type.Unit) return Value.Unit.Instance;
+        return this.MakeWithRegister(src.Type, r => Instruction.Make1(InstructionKind.Load, r, src));
     }
     public Value Load(Local src)
     {

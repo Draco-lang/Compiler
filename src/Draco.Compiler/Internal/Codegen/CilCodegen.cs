@@ -97,6 +97,7 @@ internal sealed class CilCodegen
     private readonly BlobBuilder ilBuilder = new();
 
     private readonly Dictionary<IReadOnlyProcedure, BlobHandle> procedureSignatures = new();
+    private readonly Dictionary<Global, EntityHandle> globalHandles = new();
     private readonly DefinitionIndexWithMarker<DracoIr.Parameter, IReadOnlyProcedure> parameterIndex = new(offset: 1);
     private readonly DefinitionIndex<object> localIndex = new(offset: 0);
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
@@ -117,6 +118,20 @@ internal sealed class CilCodegen
 
     private void TranslateAssembly()
     {
+        // Forward-declare globals
+        foreach (var glob in this.assembly.Globals)
+        {
+            var signature = new BlobBuilder();
+            var typeEncoder = new BlobEncoder(signature)
+                .Field()
+                .Type();
+            this.TranslateSignatureType(typeEncoder, glob.Type);
+            var handle = this.metadataBuilder.AddFieldDefinition(
+                attributes: FieldAttributes.Public | FieldAttributes.Static,
+                name: this.metadataBuilder.GetOrAddString(glob.Name),
+                signature: this.metadataBuilder.GetOrAddBlob(signature));
+            this.globalHandles.Add(glob, handle);
+        }
         // Forward-declare signatures
         foreach (var proc in this.assembly.Procedures)
         {
@@ -261,17 +276,33 @@ internal sealed class CilCodegen
         {
             // We just implement it by copying to the target local
             var targetValue = instruction.Target!;
-            var toLoad = instruction[0].AsLocal();
-            encoder.LoadLocal(this.localIndex[toLoad]);
+            var toLoad = instruction[0];
+            if (toLoad.IsGlobal())
+            {
+                encoder.OpCode(ILOpCode.Ldsfld);
+                encoder.Token(this.globalHandles[toLoad.AsGlobal()]);
+            }
+            else
+            {
+                encoder.LoadLocal(this.localIndex[toLoad]);
+            }
             encoder.StoreLocal(this.localIndex[targetValue]);
             break;
         }
         case InstructionKind.Store:
         {
-            var target = instruction[0].AsLocal();
+            var target = instruction[0];
             var toStore = instruction[1].AsValue();
             this.TranslateValuePush(encoder, toStore);
-            encoder.StoreLocal(this.localIndex[target]);
+            if (target.IsGlobal())
+            {
+                encoder.OpCode(ILOpCode.Stsfld);
+                encoder.Token(this.globalHandles[target.AsGlobal()]);
+            }
+            else
+            {
+                encoder.StoreLocal(this.localIndex[target]);
+            }
             break;
         }
         case InstructionKind.Jmp:

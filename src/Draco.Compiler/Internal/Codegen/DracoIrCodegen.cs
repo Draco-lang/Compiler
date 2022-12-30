@@ -35,6 +35,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     private readonly Dictionary<ISymbol.ILabel, Label> labels = new();
     private readonly Dictionary<ISymbol.IParameter, Parameter> parameters = new();
     private readonly Dictionary<ISymbol.IVariable, Local> locals = new();
+    private readonly Dictionary<ISymbol.IVariable, Global> globals = new();
 
     private DracoIrCodegen(Assembly assembly)
     {
@@ -70,11 +71,11 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return lbl;
     }
 
-    private Local CompileLvalue(Ast.Expr expr) => expr switch
+    private IInstructionOperand CompileLvalue(Ast.Expr expr) => expr switch
     {
         Ast.Expr.Reference r => r.Symbol switch
         {
-            // TODO: Globals?
+            ISymbol.IVariable v when v.IsGlobal => this.globals[v],
             ISymbol.IVariable v => this.locals[v],
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         },
@@ -111,15 +112,32 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         if (node.DeclarationSymbol.IsGlobal)
         {
-            // TODO
-            throw new NotImplementedException();
+            var global = this.assembly.DefineGlobal(node.DeclarationSymbol.Name, this.TranslateType(node.Type));
+            this.globals.Add(node.DeclarationSymbol, global);
+            if (node.Value is not null)
+            {
+                // TODO: Context juggling again...
+                var oldWriter = this.writer;
+                var oldProcedure = this.currentProcedure;
+                this.writer = this.assembly.GlobalInitializer.Writer();
+
+                var value = this.VisitExpr(node.Value);
+                this.writer.Store(global, value);
+
+                // TODO: Context juggling again...
+                this.writer = oldWriter;
+                this.currentProcedure = oldProcedure;
+            }
         }
-        var stackSpace = this.currentProcedure.DefineLocal(node.DeclarationSymbol.Name, this.TranslateType(node.Type));
-        this.locals.Add(node.DeclarationSymbol, stackSpace);
-        if (node.Value is not null)
+        else
         {
-            var value = this.VisitExpr(node.Value);
-            this.writer.Store(stackSpace, value);
+            var local = this.currentProcedure.DefineLocal(node.DeclarationSymbol.Name, this.TranslateType(node.Type));
+            this.locals.Add(node.DeclarationSymbol, local);
+            if (node.Value is not null)
+            {
+                var value = this.VisitExpr(node.Value);
+                this.writer.Store(local, value);
+            }
         }
         return this.Default;
     }
@@ -251,14 +269,15 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
             else throw new NotImplementedException();
         }
         var target = this.CompileLvalue(node.Target);
-        this.writer.Store(target, toStore);
+        if (target.IsGlobal()) this.writer.Store(target.AsGlobal(), toStore);
+        else this.writer.Store(target.AsLocal(), toStore);
         return right;
     }
 
     public override Value VisitReferenceExpr(Ast.Expr.Reference node) => node.Symbol switch
     {
         ISymbol.IParameter p => new Value.Param(this.parameters[p]),
-        // TODO: Globals?
+        ISymbol.IVariable v when v.IsGlobal => this.writer.Load(this.globals[v]),
         ISymbol.IVariable v => this.writer.Load(this.locals[v]),
         ISymbol.IFunction f => new Value.Proc(this.procedures[f]),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),

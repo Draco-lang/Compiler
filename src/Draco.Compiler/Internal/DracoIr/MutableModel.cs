@@ -17,17 +17,31 @@ internal sealed class Assembly : IReadOnlyAssembly
 {
     public string Name { get; set; }
 
+    public IList<Global> Globals => this.globals;
+    IReadOnlyList<Global> IReadOnlyAssembly.Globals => this.globals;
+
     public Procedure? EntryPoint { get; set; }
     IReadOnlyProcedure? IReadOnlyAssembly.EntryPoint => this.EntryPoint;
+
+    public Procedure GlobalInitializer { get; } = new("@GlobalInitializer");
+    IReadOnlyProcedure IReadOnlyAssembly.GlobalInitializer => this.GlobalInitializer;
 
     public IList<Procedure> Procedures => this.procedures;
     IReadOnlyList<IReadOnlyProcedure> IReadOnlyAssembly.Procedures => this.procedures;
 
+    private readonly List<Global> globals = new();
     private readonly List<Procedure> procedures = new();
 
     public Assembly(string name)
     {
         this.Name = name;
+    }
+
+    public Global DefineGlobal(string name, Type type)
+    {
+        var global = new Global(type, name);
+        if (type != Type.Unit) this.globals.Add(global);
+        return global;
     }
 
     public Procedure DefineProcedure(string name)

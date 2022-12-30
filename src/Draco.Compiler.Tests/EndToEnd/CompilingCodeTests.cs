@@ -196,4 +196,17 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "foo");
         Assert.Equal(126, x);
     }
+
+    [Fact]
+    public void ComplexInitializerGlobals()
+    {
+        var assembly = Compile("""
+            func foo(): int32 = x;
+            var x = add(1, 2) + 1 + 2 + 3;
+            func add(x: int32, y: int32): int32 = 2 * (x + y);
+            """);
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(12, x);
+    }
 }

@@ -84,6 +84,7 @@ internal static class AstBuilder
         expr,
         Ast.Expr (expr) => expr switch
         {
+            ParseTree.Expr.Grouping g => ToAst(db, g.Expression.Value),
             ParseTree.Expr.Return ret => new Ast.Expr.Return(
                 ParseTree: ret,
                 Expression: ret.Expression is null ? Ast.Expr.Unit.Default : ToAst(db, ret.Expression)),

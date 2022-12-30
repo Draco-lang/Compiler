@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -57,6 +58,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         if (!this.procedures.TryGetValue(function, out var proc))
         {
             proc = this.assembly.DefineProcedure(function.Name);
+            proc.ReturnType = this.TranslateType(function.ReturnType);
             this.procedures.Add(function, proc);
         }
         return proc;
@@ -72,11 +74,22 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return lbl;
     }
 
+    private Global GetGlobal(ISymbol.IVariable variable)
+    {
+        Debug.Assert(variable.IsGlobal);
+        if (!this.globals.TryGetValue(variable, out var glob))
+        {
+            glob = this.assembly.DefineGlobal(variable.Name, this.TranslateType(variable.Type));
+            this.globals.Add(variable, glob);
+        }
+        return glob;
+    }
+
     private IInstructionOperand CompileLvalue(Ast.Expr expr) => expr switch
     {
         Ast.Expr.Reference r => r.Symbol switch
         {
-            ISymbol.IVariable v when v.IsGlobal => this.globals[v],
+            ISymbol.IVariable v when v.IsGlobal => this.GetGlobal(v),
             ISymbol.IVariable v => this.locals[v],
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         },
@@ -105,7 +118,6 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
             var paramValue = procedure.DefineParameter(param.Name, this.TranslateType(param.Type));
             this.parameters.Add(param, paramValue);
         }
-        procedure.ReturnType = this.TranslateType(node.ReturnType);
 
         this.VisitBlockExpr(node.Body);
         if (!this.writer.EndsInBranch) this.writer.Ret(Value.Unit.Instance);
@@ -120,8 +132,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         if (node.DeclarationSymbol.IsGlobal)
         {
-            var global = this.assembly.DefineGlobal(node.DeclarationSymbol.Name, this.TranslateType(node.Type));
-            this.globals.Add(node.DeclarationSymbol, global);
+            var global = this.GetGlobal(node.DeclarationSymbol);
             if (node.Value is not null)
             {
                 // TODO: Context juggling again...
@@ -285,9 +296,9 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     public override Value VisitReferenceExpr(Ast.Expr.Reference node) => node.Symbol switch
     {
         ISymbol.IParameter p => new Value.Param(this.parameters[p]),
-        ISymbol.IVariable v when v.IsGlobal => this.writer.Load(this.globals[v]),
+        ISymbol.IVariable v when v.IsGlobal => this.writer.Load(this.GetGlobal(v)),
         ISymbol.IVariable v => this.writer.Load(this.locals[v]),
-        ISymbol.IFunction f => new Value.Proc(this.procedures[f]),
+        ISymbol.IFunction f => new Value.Proc(this.GetProcedure(f)),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;

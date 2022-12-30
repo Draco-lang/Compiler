@@ -188,15 +188,14 @@ internal static class TypeChecker
     /// <returns>The inferrable ancestor of <paramref name="tree"/>.</returns>
     private static ParseTree GetInferrableAncestor(QueryDatabase db, ParseTree tree)
     {
-        var scope = SymbolResolution.GetContainingScopeOrNull(db, tree);
-        Debug.Assert(scope is not null);
-        // Walk up to the nearest scope that's either global or function
-        while (scope.Kind != ScopeKind.Global && scope.Kind != ScopeKind.Function)
+        while (true)
         {
-            scope = scope.Parent;
-            Debug.Assert(scope is not null);
+            var definedSymbol = SymbolResolution.GetDefinedSymbolOrNull(db, tree);
+            if (definedSymbol is ISymbol.IFunction) break;
+            if (definedSymbol is ISymbol.IVariable v && v.IsGlobal) break;
+            Debug.Assert(tree.Parent is not null);
+            tree = tree.Parent;
         }
-        Debug.Assert(scope.Definition is not null);
-        return scope.Definition;
+        return tree;
     }
 }

@@ -60,8 +60,8 @@ public static class ScriptingEngine
         var assembly = Assembly.Load(peBytes);
 
         var mainMethod = assembly
-            .GetType("Program")?
-            .GetMethod("Main");
+            .GetType("FreeFunctions")?
+            .GetMethod("main");
 
         if (mainMethod is null)
         {
@@ -74,7 +74,7 @@ public static class ScriptingEngine
                 Diagnostics: ImmutableArray.Create(diag));
         }
 
-        var result = (TResult?)mainMethod.Invoke(null, new[] { Array.Empty<string>() });
+        var result = (TResult?)mainMethod.Invoke(null, Array.Empty<string>());
         return new(
             Success: true,
             Result: result,

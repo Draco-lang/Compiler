@@ -101,6 +101,11 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         // Finish the global initializer
         var globalWriter = this.assembly.GlobalInitializer.Writer();
         globalWriter.Ret();
+
+        // See, if there is a method called main
+        // If so, set it as the entry point
+        var mainMethod = this.procedures.Values.FirstOrDefault(p => p.Name == "main");
+        if (mainMethod is not null) this.assembly.EntryPoint = mainMethod;
     }
 
     public override Value VisitFuncDecl(Ast.Decl.Func node)

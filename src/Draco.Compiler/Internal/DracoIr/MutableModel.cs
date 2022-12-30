@@ -92,7 +92,7 @@ internal sealed record class Procedure : IReadOnlyProcedure
     public Local DefineLocal(string? name, Type type)
     {
         var local = new Local(type, name);
-        this.locals.Add(local);
+        if (type != Type.Unit) this.locals.Add(local);
         return local;
     }
 

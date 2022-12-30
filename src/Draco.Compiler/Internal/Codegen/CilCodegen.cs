@@ -100,6 +100,8 @@ internal sealed class CilCodegen
     private readonly DefinitionIndex<object> localIndex = new(offset: 0);
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
 
+    private MethodDefinitionHandle entryPointHandle = default;
+
     private CilCodegen(IReadOnlyAssembly assembly)
     {
         this.assembly = assembly;
@@ -128,13 +130,15 @@ internal sealed class CilCodegen
         var methodBodyOffset = this.TranslateProcedureBody(methodBodyStream, procedure);
 
         var parametersStart = this.parameterIndex.GetMarker(procedure);
-        this.metadataBuilder.AddMethodDefinition(
+        var definition = this.metadataBuilder.AddMethodDefinition(
             attributes: MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             implAttributes: MethodImplAttributes.IL,
             name: this.metadataBuilder.GetOrAddString(procedure.Name),
             signature: this.metadataBuilder.GetOrAddBlob(signature),
             bodyOffset: methodBodyOffset,
             parameterList: MetadataTokens.ParameterHandle(parametersStart));
+
+        if (ReferenceEquals(procedure, this.assembly.EntryPoint)) this.entryPointHandle = definition;
     }
 
     private int TranslateProcedureBody(MethodBodyStreamEncoder encoder, IReadOnlyProcedure procedure)
@@ -250,17 +254,17 @@ internal sealed class CilCodegen
         {
             // We just implement it by copying to the target local
             var targetValue = instruction.Target!;
-            var toStore = instruction[0].AsValue();
-            this.TranslateValuePush(encoder, toStore);
-            encoder.StoreLocal(this.localIndex[targetValue] - 1);
+            var toLoad = instruction[0].AsLocal();
+            encoder.LoadLocal(this.localIndex[toLoad]);
+            encoder.StoreLocal(this.localIndex[targetValue]);
             break;
         }
         case InstructionKind.Store:
         {
-            var targetValue = instruction.Target!;
-            var toStore = instruction[0].AsValue();
+            var target = instruction[0].AsLocal();
+            var toStore = instruction[1].AsValue();
             this.TranslateValuePush(encoder, toStore);
-            encoder.StoreLocal(this.localIndex[targetValue] - 1);
+            encoder.StoreLocal(this.localIndex[target]);
             break;
         }
         case InstructionKind.Jmp:
@@ -313,7 +317,7 @@ internal sealed class CilCodegen
                 InstructionKind.Equal => ILOpCode.Ceq,
                 _ => throw new InvalidOperationException(),
             });
-            encoder.StoreLocal(this.localIndex[targetValue] - 1);
+            encoder.StoreLocal(this.localIndex[targetValue]);
             break;
         }
         default:
@@ -328,10 +332,11 @@ internal sealed class CilCodegen
         if (value is Value.Const constant)
         {
             if (constant.Value is int i4) { encoder.LoadConstantI4(i4); return; }
+            if (constant.Value is bool b) { encoder.LoadConstantI4(b ? 1 : 0); return; }
         }
         if (value is Value.Reg reg)
         {
-            encoder.LoadLocal(this.localIndex[reg] - 1);
+            encoder.LoadLocal(this.localIndex[reg]);
             return;
         }
         if (value is Value.Param param)
@@ -415,8 +420,7 @@ internal sealed class CilCodegen
             header: peHeaderBuilder,
             metadataRootBuilder: new(this.metadataBuilder),
             ilStream: this.ilBuilder,
-            // TODO: When entry point is exposed from assembly
-            entryPoint: default,
+            entryPoint: this.entryPointHandle,
             flags: CorFlags.ILOnly,
             // TODO: For deterministic builds
             deterministicIdProvider: null);

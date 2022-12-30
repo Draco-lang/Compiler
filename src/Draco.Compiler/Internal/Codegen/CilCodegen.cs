@@ -97,7 +97,7 @@ internal sealed class CilCodegen
     private readonly BlobBuilder ilBuilder = new();
 
     private readonly DefinitionIndexWithMarker<DracoIr.Parameter, IReadOnlyProcedure> parameterIndex = new(offset: 1);
-    private readonly DefinitionIndex<Local> localIndex = new(offset: 0);
+    private readonly DefinitionIndex<object> localIndex = new(offset: 0);
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
 
     private CilCodegen(IReadOnlyAssembly assembly)
@@ -146,15 +146,34 @@ internal sealed class CilCodegen
         // Forward-declare the labels of blocks
         foreach (var bb in procedure.BasicBlocks) this.labels.Add(bb, ilEncoder.DefineLabel());
 
+        // TODO: This is where the stackification optimization step could help to reduce local allocation
         // Pre-declare all locals necessary
         this.localIndex.Clear();
         // Calculate how many instructions will allocate
-        var localsCount = procedure.Instructions.Count(i => this.TryTranslateLocal(null, i));
+        // It's the sum of actual local variables and the procedures that do produce something
+        var localsCount = procedure.Locals.Count
+                        + procedure.Instructions.Count(i => i.Target is not null);
         // Actually encode
         var localsBuilder = new BlobBuilder();
         var localsEncoder = new BlobEncoder(localsBuilder)
             .LocalVariableSignature(localsCount);
-        foreach (var instr in procedure.Instructions) this.TryTranslateLocal(localsEncoder, instr);
+        foreach (var local in procedure.Locals)
+        {
+            var typeEncoder = localsEncoder
+                .AddVariable()
+                .Type();
+            this.TranslateSignatureType(typeEncoder, local.Type);
+            this.localIndex.Add(local);
+        }
+        foreach (var instr in procedure.Instructions)
+        {
+            if (instr.Target is null) continue;
+            var typeEncoder = localsEncoder
+                .AddVariable()
+                .Type();
+            this.TranslateSignatureType(typeEncoder, instr.Target.Type);
+            this.localIndex.Add(instr.Target);
+        }
         var localsHandle = this.metadataBuilder.AddStandaloneSignature(this.metadataBuilder.GetOrAddBlob(localsBuilder));
 
         // Translate instructions per basic-block
@@ -171,14 +190,19 @@ internal sealed class CilCodegen
 
     private void TranslateProcedureSignature(MethodSignatureEncoder encoder, IReadOnlyProcedure procedure)
     {
-        this.parameterIndex.PutMark(procedure);
+        this.parameterIndex.PutMarker(procedure);
 
         encoder.Parameters(procedure.Parameters.Count, out var returnTypeEncoder, out var parametersEncoder);
         this.TranslateReturnType(returnTypeEncoder, procedure.ReturnType);
-        foreach (var param in procedure.Parameters) this.TranslateParameter(parametersEncoder, param);
+        var paramIndex = 0;
+        foreach (var param in procedure.Parameters) this.TranslateParameter(parametersEncoder, procedure, param, paramIndex++);
     }
 
-    private void TranslateParameter(ParametersEncoder encoder, DracoIr.Parameter param)
+    private void TranslateParameter(
+        ParametersEncoder encoder,
+        IReadOnlyProcedure procedure,
+        DracoIr.Parameter param,
+        int paramIndex)
     {
         this.parameterIndex.Index.Add(param);
 
@@ -188,7 +212,7 @@ internal sealed class CilCodegen
         this.metadataBuilder.AddParameter(
             attributes: ParameterAttributes.None,
             name: this.metadataBuilder.GetOrAddString(param.Name),
-            sequenceNumber: param.Index + 1);
+            sequenceNumber: paramIndex + 1);
     }
 
     private void TranslateReturnType(ReturnTypeEncoder encoder, Type type)
@@ -225,23 +249,23 @@ internal sealed class CilCodegen
         case InstructionKind.Load:
         {
             // We just implement it by copying to the target local
-            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
-            var toStore = instruction.GetOperandAt<Value>(1);
+            var targetValue = instruction.Target!;
+            var toStore = instruction[0].AsValue();
             this.TranslateValuePush(encoder, toStore);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
             break;
         }
         case InstructionKind.Store:
         {
-            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
-            var toStore = instruction.GetOperandAt<Value>(1);
+            var targetValue = instruction.Target!;
+            var toStore = instruction[0].AsValue();
             this.TranslateValuePush(encoder, toStore);
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
             break;
         }
         case InstructionKind.Jmp:
         {
-            var target = instruction.GetOperandAt<IReadOnlyBasicBlock>(0);
+            var target = instruction[0].AsBlock();
             encoder.Branch(ILOpCode.Br, this.labels[target]);
             break;
         }
@@ -250,9 +274,9 @@ internal sealed class CilCodegen
             // push condition
             // brtrue truthy_branch
             // br falsy_branch
-            var condition = instruction.GetOperandAt<Value>(0);
-            var thenBranch = instruction.GetOperandAt<IReadOnlyBasicBlock>(1);
-            var elseBranch = instruction.GetOperandAt<IReadOnlyBasicBlock>(2);
+            var condition = instruction[0].AsValue();
+            var thenBranch = instruction[1].AsBlock();
+            var elseBranch = instruction[2].AsBlock();
             this.TranslateValuePush(encoder, condition);
             encoder.Branch(ILOpCode.Brtrue, this.labels[thenBranch]);
             encoder.Branch(ILOpCode.Br, this.labels[elseBranch]);
@@ -260,45 +284,35 @@ internal sealed class CilCodegen
         }
         case InstructionKind.Ret:
         {
-            var returnedValue = instruction.GetOperandAt<Value>(0);
+            var returnedValue = instruction[0].AsValue();
             this.TranslateValuePush(encoder, returnedValue);
             encoder.OpCode(ILOpCode.Ret);
             break;
         }
-        case InstructionKind.NotBool:
+        case InstructionKind.Add:
+        case InstructionKind.Sub:
+        case InstructionKind.Mul:
+        case InstructionKind.Div:
+        case InstructionKind.Rem:
+        case InstructionKind.Less:
+        case InstructionKind.Equal:
         {
-            // push operand
-            // push 0
-            // compare eq
-            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
-            var a = instruction.GetOperandAt<Value>(1);
-            this.TranslateValuePush(encoder, a);
-            encoder.LoadConstantI4(0);
-            encoder.OpCode(ILOpCode.Ceq);
-            encoder.StoreLocal(this.localIndex[targetValue] - 1);
-            break;
-        }
-        case InstructionKind.AddInt:
-        {
-            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
-            var a = instruction.GetOperandAt<Value>(1);
-            var b = instruction.GetOperandAt<Value>(2);
+            var targetValue = instruction.Target!;
+            var a = instruction[0].AsValue();
+            var b = instruction[1].AsValue();
             this.TranslateValuePush(encoder, a);
             this.TranslateValuePush(encoder, b);
-            encoder.OpCode(ILOpCode.Add);
-            encoder.StoreLocal(this.localIndex[targetValue] - 1);
-            break;
-        }
-        case InstructionKind.LessInt:
-        {
-            // push 0
-            // store into target
-            var targetValue = instruction.GetOperandAt<Value.Reg>(0);
-            var a = instruction.GetOperandAt<Value>(1);
-            var b = instruction.GetOperandAt<Value>(2);
-            this.TranslateValuePush(encoder, a);
-            this.TranslateValuePush(encoder, b);
-            encoder.OpCode(ILOpCode.Clt);
+            encoder.OpCode(instruction.Kind switch
+            {
+                InstructionKind.Add => ILOpCode.Add,
+                InstructionKind.Sub => ILOpCode.Sub,
+                InstructionKind.Mul => ILOpCode.Mul,
+                InstructionKind.Div => ILOpCode.Div,
+                InstructionKind.Rem => ILOpCode.Rem,
+                InstructionKind.Less => ILOpCode.Clt,
+                InstructionKind.Equal => ILOpCode.Ceq,
+                _ => throw new InvalidOperationException(),
+            });
             encoder.StoreLocal(this.localIndex[targetValue] - 1);
             break;
         }

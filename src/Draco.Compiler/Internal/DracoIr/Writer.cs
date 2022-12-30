@@ -198,7 +198,7 @@ internal sealed class InstructionWriter
 
     private Value.Reg MakeWithRegister(Type type, Func<Value.Reg, Instruction> make)
     {
-        var result = new Value.Reg(type);
+        var result = type == Type.Unit ? null! : new Value.Reg(type);
         var instr = make(result);
         this.Write(instr);
         return result;

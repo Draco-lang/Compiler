@@ -218,7 +218,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         {
             // a != b
             // <=>
-            // !(a == b)
+            // (a == b) == false
             var tmp = this.writer.Equal(left, right);
             return this.writer.Equal(tmp, new Value.Const(false));
         }

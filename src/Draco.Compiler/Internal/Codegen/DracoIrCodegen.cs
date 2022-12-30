@@ -241,7 +241,9 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         {
             var left = this.VisitExpr(node.Target);
             if (node.CompoundOperator == Intrinsics.Operators.Add_Int32) toStore = this.writer.Add(left, right);
-            // TODO
+            else if (node.CompoundOperator == Intrinsics.Operators.Sub_Int32) toStore = this.writer.Sub(left, right);
+            else if (node.CompoundOperator == Intrinsics.Operators.Mul_Int32) toStore = this.writer.Mul(left, right);
+            else if (node.CompoundOperator == Intrinsics.Operators.Div_Int32) toStore = this.writer.Div(left, right);
             else throw new NotImplementedException();
         }
         var target = this.CompileLvalue(node.Target);

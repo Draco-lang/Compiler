@@ -293,6 +293,15 @@ internal sealed class CilCodegen
             encoder.OpCode(ILOpCode.Ret);
             break;
         }
+        case InstructionKind.Neg:
+        {
+            var targetValue = instruction.Target!;
+            var a = instruction[0].AsValue();
+            this.TranslateValuePush(encoder, a);
+            encoder.OpCode(ILOpCode.Neg);
+            encoder.StoreLocal(this.localIndex[targetValue]);
+            break;
+        }
         case InstructionKind.Add:
         case InstructionKind.Sub:
         case InstructionKind.Mul:

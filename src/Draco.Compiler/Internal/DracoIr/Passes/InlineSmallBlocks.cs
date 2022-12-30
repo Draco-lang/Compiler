@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.DracoIr.Passes;
 
+// TODO: Buggy, inlining causes duplicate register assignments
 /// <summary>
 /// An optimization pass that inlines small unconditional jump targets.
 /// For example, the following

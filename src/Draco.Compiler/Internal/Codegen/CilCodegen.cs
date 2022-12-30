@@ -96,6 +96,7 @@ internal sealed class CilCodegen
     private readonly MetadataBuilder metadataBuilder = new();
     private readonly BlobBuilder ilBuilder = new();
 
+    private readonly Dictionary<IReadOnlyProcedure, BlobHandle> procedureSignatures = new();
     private readonly DefinitionIndexWithMarker<DracoIr.Parameter, IReadOnlyProcedure> parameterIndex = new(offset: 1);
     private readonly DefinitionIndex<object> localIndex = new(offset: 0);
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
@@ -116,15 +117,21 @@ internal sealed class CilCodegen
 
     private void TranslateAssembly()
     {
+        // Forward-declare signatures
+        foreach (var proc in this.assembly.Procedures)
+        {
+            var signature = new BlobBuilder();
+            var signatureEncoder = new BlobEncoder(signature).MethodSignature();
+            this.TranslateProcedureSignature(signatureEncoder, proc);
+            var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
+            this.procedureSignatures.Add(proc, signatureHandle);
+        }
+        // Compile
         foreach (var proc in this.assembly.Procedures) this.TranslateProcedure(proc);
     }
 
     private void TranslateProcedure(IReadOnlyProcedure procedure)
     {
-        var signature = new BlobBuilder();
-        var signatureEncoder = new BlobEncoder(signature).MethodSignature();
-        this.TranslateProcedureSignature(signatureEncoder, procedure);
-
         this.ilBuilder.Align(4);
         var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
         var methodBodyOffset = this.TranslateProcedureBody(methodBodyStream, procedure);
@@ -134,7 +141,7 @@ internal sealed class CilCodegen
             attributes: MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
             implAttributes: MethodImplAttributes.IL,
             name: this.metadataBuilder.GetOrAddString(procedure.Name),
-            signature: this.metadataBuilder.GetOrAddBlob(signature),
+            signature: this.procedureSignatures[procedure],
             bodyOffset: methodBodyOffset,
             parameterList: MetadataTokens.ParameterHandle(parametersStart));
 
@@ -327,6 +334,35 @@ internal sealed class CilCodegen
                 _ => throw new InvalidOperationException(),
             });
             encoder.StoreLocal(this.localIndex[targetValue]);
+            break;
+        }
+        case InstructionKind.Call:
+        {
+            var targetValue = instruction.Target;
+            var called = instruction[0].AsValue();
+            var args = instruction[1].AsArgumentList();
+            // Arguments
+            foreach (var arg in args.Values) this.TranslateValuePush(encoder, arg);
+            // Call
+            if (called is Value.Proc procValue)
+            {
+                var freeFunctionsType = this.metadataBuilder.AddTypeReference(
+                    resolutionScope: default,
+                    @namespace: default,
+                    name: this.metadataBuilder.GetOrAddString("FreeFunctions"));
+                var method = this.metadataBuilder.AddMemberReference(
+                    parent: freeFunctionsType,
+                    name: this.metadataBuilder.GetOrAddString(procValue.Procedure.Name),
+                    signature: this.procedureSignatures[procValue.Procedure]);
+                encoder.Call(method);
+            }
+            else
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+            // Result
+            if (targetValue is not null) encoder.StoreLocal(this.localIndex[targetValue]);
             break;
         }
         default:

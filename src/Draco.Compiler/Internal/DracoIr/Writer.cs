@@ -170,6 +170,7 @@ internal sealed class InstructionWriter
         if (src.Type == Type.Unit) return Value.Unit.Instance;
         return this.MakeWithRegister(src.Type, r => Instruction.Make1(InstructionKind.Load, r, src));
     }
+    public void Ret() => this.Ret(Value.Unit.Instance);
     public void Ret(Value value) =>
         this.Write(Instruction.Make1(InstructionKind.Ret, value));
     public void Jmp(Label label) => this.Jmp(label.Target);

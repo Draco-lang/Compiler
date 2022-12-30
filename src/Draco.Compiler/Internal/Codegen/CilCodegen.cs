@@ -141,21 +141,41 @@ internal sealed class CilCodegen
             var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
             this.procedureSignatures.Add(proc, signatureHandle);
         }
-        // Compile
+        // Compile static initializer
+        {
+            // Header
+            var signature = new BlobBuilder();
+            var signatureEncoder = new BlobEncoder(signature).MethodSignature();
+            this.TranslateProcedureSignature(signatureEncoder, this.assembly.GlobalInitializer);
+            var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
+            this.procedureSignatures.Add(this.assembly.GlobalInitializer, signatureHandle);
+            // Body
+            this.TranslateProcedure(this.assembly.GlobalInitializer, specialName: ".cctor");
+        }
+        // Compile procedures
         foreach (var proc in this.assembly.Procedures) this.TranslateProcedure(proc);
     }
 
-    private void TranslateProcedure(IReadOnlyProcedure procedure)
+    private void TranslateProcedure(IReadOnlyProcedure procedure, string? specialName = null)
     {
         this.ilBuilder.Align(4);
         var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
         var methodBodyOffset = this.TranslateProcedureBody(methodBodyStream, procedure);
 
         var parametersStart = this.parameterIndex.GetMarker(procedure);
+        var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
+        if (specialName is null)
+        {
+            attributes |= MethodAttributes.Public;
+        }
+        else
+        {
+            attributes |= MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+        }
         var definition = this.metadataBuilder.AddMethodDefinition(
-            attributes: MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
+            attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
-            name: this.metadataBuilder.GetOrAddString(procedure.Name),
+            name: this.metadataBuilder.GetOrAddString(specialName ?? procedure.Name),
             signature: this.procedureSignatures[procedure],
             bodyOffset: methodBodyOffset,
             parameterList: MetadataTokens.ParameterHandle(parametersStart));

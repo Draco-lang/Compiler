@@ -25,6 +25,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     {
         var codegen = new DracoIrCodegen(assembly);
         codegen.Visit(ast);
+        codegen.Finish();
     }
 
     private readonly Assembly assembly;
@@ -81,6 +82,13 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         },
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
+
+    private void Finish()
+    {
+        // Finish the global initializer
+        var globalWriter = this.assembly.GlobalInitializer.Writer();
+        globalWriter.Ret();
+    }
 
     public override Value VisitFuncDecl(Ast.Decl.Func node)
     {

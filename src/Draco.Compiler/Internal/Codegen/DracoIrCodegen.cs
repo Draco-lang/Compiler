@@ -83,8 +83,10 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
     public override Value VisitFuncDecl(Ast.Decl.Func node)
     {
+        // TODO: Maybe introduce context instead of this juggling?
         var oldWriter = this.writer;
         var oldProcedure = this.currentProcedure;
+
         var procedure = this.GetProcedure(node.DeclarationSymbol);
         this.currentProcedure = procedure;
         this.writer = procedure.Writer();
@@ -99,6 +101,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         this.VisitBlockExpr(node.Body);
         if (!this.writer.EndsInBranch) this.writer.Ret(Value.Unit.Instance);
 
+        // TODO: Maybe introduce context instead of this juggling?
         this.writer = oldWriter;
         this.currentProcedure = oldProcedure;
         return this.Default;

@@ -476,17 +476,14 @@ internal sealed class CilCodegen
             fieldList: MetadataTokens.FieldDefinitionHandle(1),
             methodList: MetadataTokens.MethodDefinitionHandle(1));
 
-        // TODO: Replace with System.Runtime reference
         var mscorlibAssemblyRef = this.metadataBuilder.AddAssemblyReference(
-            name: this.metadataBuilder.GetOrAddString("mscorlib"),
+            name: this.metadataBuilder.GetOrAddString("System.Runtime"),
             // TODO: What version?
-            version: new Version(4, 0, 0, 0),
+            version: new Version(7, 0, 101, 0),
             culture: default,
-            // TODO: What the hell?
-            publicKeyOrToken: this.metadataBuilder.GetOrAddBlob(new byte[]
-            {
-                0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89,
-            }),
+            // TODO: We only need to think about it when we decide to support strong naming
+            // Apparently it's not really present in Core
+            publicKeyOrToken: default,
             flags: default,
             hashValue: default);
 

@@ -34,15 +34,7 @@ internal static class AstBuilder
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="decl">The <see cref="ParseNode"/> to construct the <see cref="Ast"/> from.</param>
     /// <returns>The <see cref="Ast"/> form of <paramref name="decl"/>.</returns>
-    public static Ast.Decl ToAst(QueryDatabase db, ParseNode.Decl decl)
-    {
-        // Get all the doc commemts above the declarationh
-        var trivia = decl.Tokens.FirstOrDefault() is not null ?
-            decl.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
-            null;
-        // Concatenate the text of all the doc comments
-        var documentation = trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.TrimStart('/'))) : null;
-        return db.GetOrUpdate(
+    public static Ast.Decl ToAst(QueryDatabase db, ParseNode.Decl decl) => db.GetOrUpdate(
         decl,
         Ast.Decl (decl) => decl switch
         {
@@ -52,7 +44,6 @@ internal static class AstBuilder
             ParseNode.Decl.Func func => new Ast.Decl.Func(
                 ParseNode: func,
                 DeclarationSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.IFunction>(db, func),
-                Documentation: documentation,
                 Body: ToAst(db, func.Body)),
             ParseNode.Decl.Label label => new Ast.Decl.Label(
                 ParseNode: label,
@@ -60,11 +51,9 @@ internal static class AstBuilder
             ParseNode.Decl.Variable var => new Ast.Decl.Variable(
                 ParseNode: var,
                 DeclarationSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.IVariable>(db, var),
-                Documentation: documentation,
                 Value: var.Initializer is null ? null : ToAst(db, var.Initializer.Value)),
             _ => throw new ArgumentOutOfRangeException(nameof(decl)),
         });
-    }
 
     /// <summary>
     /// Builds an <see cref="Ast"/> from the given <see cref="ParseNode"/>.

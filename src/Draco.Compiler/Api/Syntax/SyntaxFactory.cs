@@ -5,10 +5,35 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Syntax;
 using Draco.RedGreenTree.Attributes;
 using static Draco.Compiler.Api.Syntax.ParseNode;
 
 namespace Draco.Compiler.Api.Syntax;
+
+class FirstTokenTransforemer : ParseTreeTransformerBase
+{
+    private bool firstToken = true;
+    private Internal.Syntax.ParseNode.Trivia TriviaToAdd;
+    public FirstTokenTransforemer(Internal.Syntax.ParseNode.Trivia triviaToAdd)
+    {
+        this.TriviaToAdd = triviaToAdd;
+    }
+    public override Internal.Syntax.ParseNode.Token TransformToken(Internal.Syntax.ParseNode.Token token, out bool changed)
+    {
+        if (this.firstToken)
+        {
+            this.firstToken = false;
+            changed = true;
+            var trivia = ImmutableArray.CreateBuilder<Internal.Syntax.ParseNode.Trivia>();
+            trivia.Add(this.TriviaToAdd);
+            return Internal.Syntax.ParseNode.Token.Builder.From(token).SetLeadingTrivia(trivia.ToImmutable()).Build();
+        }
+        changed = false;
+        return token;
+    }
+}
 
 /// <summary>
 /// Factory functions for constructing a <see cref="ParseNode"/>.
@@ -29,6 +54,13 @@ public static partial class SyntaxFactory
         : elements.Length == 0
             ? PunctuatedList(ImmutableArray<Punctuated<T>>.Empty)
             : PunctuatedList(elements.SkipLast(1).Select(e => Punctuated(e, punctuation)).Append(Punctuated(elements[^1], null)));
+
+    public static TNode AddDocumentation<TNode>(TNode node, string docs) where TNode : ParseNode
+    {
+        var trivia = Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, "///" + docs);
+        var greenNode = new FirstTokenTransforemer(trivia).Transform(node.Green, out var _);
+        return (TNode)ToRed(null!, null, greenNode);
+    }
 
     public static CompilationUnit CompilationUnit(ImmutableArray<Decl> decls) => CompilationUnit(decls, EndOfInput);
     public static CompilationUnit CompilationUnit(IEnumerable<Decl> decls) => CompilationUnit(decls.ToImmutableArray());

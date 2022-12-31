@@ -164,6 +164,11 @@ internal partial interface ISymbol
         /// True, if this is a mutable variable.
         /// </summary>
         public bool IsMutable { get; }
+
+        /// <summary>
+        /// Documentation attached to this symbol.
+        /// </summary>
+        public string Documentation { get; }
     }
 }
 
@@ -213,6 +218,11 @@ internal partial interface ISymbol
         /// The type of the function.
         /// </summary>
         public new Type.Function Type { get; }
+
+        /// <summary>
+        /// Documentation attached to this symbol.
+        /// </summary>
+        public string Documentation { get; }
     }
 }
 
@@ -431,6 +441,19 @@ internal partial interface ISymbol
     {
         public override bool IsExternallyVisible => this.IsGlobal;
         public bool IsMutable { get; }
+        public string Documentation
+        {
+            get
+            {
+                var decl = (ParseNode.Decl.Variable)this.Definition;
+                // Get all the doc commemts above the declarationh
+                var trivia = decl.Tokens.FirstOrDefault() is not null ?
+                    decl.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
+                    null;
+                // Concatenate the text of all the doc comments
+                return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.TrimStart('/'))) : string.Empty;
+            }
+        }
         public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
 
         public Variable(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics, bool isMutable)
@@ -454,6 +477,7 @@ internal partial interface ISymbol
     {
         public Type Type { get; }
         public bool IsMutable { get; }
+        public string Documentation { get; } = string.Empty;
 
         public SynthetizedVariable(Type type, bool isMutable)
             : base(GenerateName("variable"))
@@ -475,6 +499,7 @@ internal partial interface ISymbol
     {
         public bool IsMutable => false;
         public Type Type => TypeChecker.TypeOf(this.db, this);
+        public string Documentation { get; } = string.Empty;
 
         public Parameter(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
@@ -496,6 +521,7 @@ internal partial interface ISymbol
     {
         public bool IsMutable => false;
         public Type Type { get; }
+        public string Documentation { get; } = string.Empty;
 
         public SynthetizedParameter(Type type)
             : base(GenerateName("parameter"))
@@ -553,6 +579,19 @@ internal partial interface ISymbol
             this.Parameters.Select(p => p.Type).ToImmutableArray(),
             this.ReturnType);
         Type ITyped.Type => this.Type;
+        public string Documentation
+        {
+            get
+            {
+                var decl = (ParseNode.Decl.Func)this.Definition;
+                // Get all the doc commemts above the declarationh
+                var trivia = decl.Tokens.FirstOrDefault() is not null ?
+                    decl.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
+                    null;
+                // Concatenate the text of all the doc comments
+                return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.TrimStart('/'))) : string.Empty;
+            }
+        }
 
         public Function(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
@@ -599,6 +638,7 @@ internal partial interface ISymbol
             this.Parameters.Select(p => p.Type).ToImmutableArray(),
             this.ReturnType);
         Type ITyped.Type => this.Type;
+        public string Documentation { get; } = string.Empty;
 
         public IntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType)
             : base(name)

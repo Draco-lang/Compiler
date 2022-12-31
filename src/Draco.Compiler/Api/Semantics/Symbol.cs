@@ -43,6 +43,11 @@ public interface IVariableSymbol : ISymbol
     /// True, if this is a mutable variable.
     /// </summary>
     public bool IsMutable { get; }
+
+    /// <summary>
+    /// Documentation attached to this symbol.
+    /// </summary>
+    public string Documentation { get; }
 }
 
 /// <summary>
@@ -64,6 +69,10 @@ public interface IParameterSymbol : IVariableSymbol
 /// </summary>
 public interface IFunctionSymbol : ISymbol
 {
+    /// <summary>
+    /// Documentation attached to this symbol.
+    /// </summary>
+    public string Documentation { get; }
 }
 
 /// <summary>
@@ -121,6 +130,7 @@ internal sealed class ErrorSymbol : SymbolBase<IInternalSymbol>
 internal sealed class VariableSymbol : SymbolBase<IInternalSymbol.IVariable>, IVariableSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
+    public string Documentation => this.Symbol.Documentation;
 
     public VariableSymbol(IInternalSymbol.IVariable variable)
         : base(variable)
@@ -139,6 +149,7 @@ internal sealed class LabelSymbol : SymbolBase<IInternalSymbol.ILabel>, ILabelSy
 internal sealed class ParameterSymbol : SymbolBase<IInternalSymbol.IParameter>, IParameterSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
+    public string Documentation => this.Symbol.Documentation;
 
     public ParameterSymbol(IInternalSymbol.IParameter parameter)
         : base(parameter)
@@ -148,6 +159,7 @@ internal sealed class ParameterSymbol : SymbolBase<IInternalSymbol.IParameter>, 
 
 internal sealed class FunctionSymbol : SymbolBase<IInternalSymbol.IFunction>, IFunctionSymbol
 {
+    public string Documentation => this.Symbol.Documentation;
     public FunctionSymbol(IInternalSymbol.IFunction function)
         : base(function)
     {

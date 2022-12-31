@@ -104,7 +104,7 @@ public sealed class Compilation
         }
 
         // Get AST
-        var ast = AstBuilder.ToAst(this.db, this.ParseTree);
+        var ast = AstBuilder.ToAst(this.db, this.ParseTree.Root);
         // Lower it
         ast = AstLowering.Lower(this.db, ast);
         // Generate Draco IR

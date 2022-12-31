@@ -85,9 +85,9 @@ internal static class AstBuilder
         expr,
         Ast.Expr (expr) => expr switch
         {
-            ParseTree.Expr.Grouping g => ToAst(db, g.Expression.Value),
-            ParseTree.Expr.Return ret => new Ast.Expr.Return(
-                ParseTree: ret,
+            ParseNode.Expr.Grouping g => ToAst(db, g.Expression.Value),
+            ParseNode.Expr.Return ret => new Ast.Expr.Return(
+                ParseNode: ret,
                 Expression: ret.Expression is null ? Ast.Expr.Unit.Default : ToAst(db, ret.Expression)),
             ParseNode.Expr.Name name => new Ast.Expr.Reference(
                 ParseNode: name,
@@ -165,20 +165,20 @@ internal static class AstBuilder
         var lastNewline = true;
         foreach (var part in str.Parts)
         {
-            if (part is ParseTree.StringPart.Content content)
+            if (part is ParseNode.StringPart.Content content)
             {
                 var text = content.Value.ValueText;
                 Debug.Assert(text is not null);
                 builder.Add(new Ast.StringPart.Content(
-                    ParseTree: content,
+                    ParseNode: content,
                     Value: text.Substring(lastNewline ? str.Cutoff : 0)));
                 lastNewline = content.Value.Type == TokenType.StringNewline;
             }
             else
             {
-                var interpolation = (ParseTree.StringPart.Interpolation)part;
+                var interpolation = (ParseNode.StringPart.Interpolation)part;
                 builder.Add(new Ast.StringPart.Interpolation(
-                    ParseTree: interpolation,
+                    ParseNode: interpolation,
                     Expression: ToAst(db, interpolation.Expression)));
                 lastNewline = false;
             }

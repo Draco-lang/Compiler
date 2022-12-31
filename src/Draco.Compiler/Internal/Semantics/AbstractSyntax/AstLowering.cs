@@ -188,7 +188,7 @@ internal sealed class AstLowering : AstTransformerBase
             changed = true;
             var literal = string.Join(string.Empty, node.Parts.Cast<Ast.StringPart.Content>().Select(p => p.Value));
             return new Ast.Expr.Literal(
-                ParseTree: node.ParseTree,
+                ParseNode: node.ParseNode,
                 Value: literal,
                 Type: Type.String);
         }

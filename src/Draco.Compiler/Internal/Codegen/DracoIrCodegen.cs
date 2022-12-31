@@ -309,17 +309,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;
     public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Const(node.Value);
-    public override Value VisitStringExpr(Ast.Expr.String node)
-    {
-        if (node.Parts.Length == 1 && node.Parts[0] is Ast.StringPart.Content content)
-        {
-            // Simplification
-            return new Value.Const(content.Value);
-        }
-        else
-        {
-            // TODO
-            throw new NotImplementedException();
-        }
-    }
+
+    // Should have been desugared
+    public override Value VisitStringExpr(Ast.Expr.String node) => throw new InvalidOperationException();
 }

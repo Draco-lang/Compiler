@@ -5,6 +5,7 @@ using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Api.Syntax;
 using System.Collections.Immutable;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
+using System.Diagnostics;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
@@ -163,21 +164,23 @@ internal static class AstBuilder
         // TODO: Maybe move the cutoff/first-in-line logic into the parser itself?
         // It's a bit misleading to have a nonzero cutoff for parts not at the start of the line
         var builder = ImmutableArray.CreateBuilder<Ast.StringPart>();
-        var firstInLine = true;
         foreach (var part in str.Parts)
         {
-            builder.Add(part switch
+            if (part is ParseTree.StringPart.Content content)
             {
-                ParseTree.StringPart.Content content => new Ast.StringPart.Content(
+                var text = content.Value.ValueText;
+                Debug.Assert(text is not null);
+                builder.Add(new Ast.StringPart.Content(
                     ParseTree: content,
-                    Value: content.Value.ValueText ?? throw new InvalidOperationException(),
-                    Cutoff: firstInLine ? content.Cutoff : 0),
-                ParseTree.StringPart.Interpolation interpolation => new Ast.StringPart.Interpolation(
+                    Value: text.Substring(content.Cutoff)));
+            }
+            else
+            {
+                var interpolation = (ParseTree.StringPart.Interpolation)part;
+                builder.Add(new Ast.StringPart.Interpolation(
                     ParseTree: interpolation,
-                    Expression: ToAst(db, interpolation.Expression)),
-                _ => throw new InvalidOperationException(),
-            });
-            firstInLine = part is ParseTree.StringPart.Content c && c.Value.Type == TokenType.StringNewline;
+                    Expression: ToAst(db, interpolation.Expression)));
+            }
         }
         return new Ast.Expr.String(
             ParseTree: str,

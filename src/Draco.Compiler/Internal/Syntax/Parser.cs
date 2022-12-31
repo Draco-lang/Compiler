@@ -916,7 +916,8 @@ internal sealed class Parser
                         else
                         {
                             // Indentation was ok, reinstantiate to add cutoff
-                            newContent.Add(new StringPart.Content(contentPart.Value, prefix.Length, contentPart.Diagnostics));
+                            var cutoff = nextIsNewline ? prefix.Length : 0;
+                            newContent.Add(new StringPart.Content(contentPart.Value, cutoff, contentPart.Diagnostics));
                         }
                         nextIsNewline = false;
                     }

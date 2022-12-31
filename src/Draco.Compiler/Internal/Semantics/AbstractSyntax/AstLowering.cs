@@ -180,6 +180,26 @@ internal sealed class AstLowering : AstTransformerBase
             value: Reference(varSymbol));
     }
 
+    public override Ast.Expr TransformStringExpr(Ast.Expr.String node, out bool changed)
+    {
+        if (node.Parts.All(p => p is Ast.StringPart.Content))
+        {
+            // It's a single, or multi-line string without interpolation, we make a literal out of it
+            changed = true;
+            var literal = string.Join(string.Empty, node.Parts.Cast<Ast.StringPart.Content>().Select(p => p.Value));
+            return new Ast.Expr.Literal(
+                ParseTree: node.ParseTree,
+                Value: literal,
+                Type: Type.String);
+        }
+        else
+        {
+            // TODO: Desugar into interpolation handler
+            changed = false;
+            return node;
+        }
+    }
+
     // Utility to store an expression to a temporary variable
     private (Ast.Expr Reference, Ast.Stmt Assignment) StoreTemporary(Ast.Expr expr)
     {

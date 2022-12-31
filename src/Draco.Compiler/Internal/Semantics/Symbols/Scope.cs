@@ -17,9 +17,9 @@ internal partial interface IScope
     public static IScope Make(
         QueryDatabase db,
         ScopeKind kind,
-        ParseTree definition,
+        ParseNode definition,
         ImmutableDictionary<string, DeclarationTimeline> timelines,
-        ImmutableDictionary<ParseTree, ISymbol> declarations) => kind switch
+        ImmutableDictionary<ParseNode, ISymbol> declarations) => kind switch
         {
             ScopeKind.Global => MakeGlobal(db, definition, timelines, declarations),
             ScopeKind.Function => MakeFunction(db, definition, timelines, declarations),
@@ -29,23 +29,23 @@ internal partial interface IScope
 
     public static IScope MakeGlobal(
         QueryDatabase db,
-        ParseTree definition,
+        ParseNode definition,
         ImmutableDictionary<string, DeclarationTimeline> timelines,
-        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        ImmutableDictionary<ParseNode, ISymbol> declarations) =>
         new GlobalScope(db, definition, timelines, declarations);
 
     public static IScope MakeFunction(
         QueryDatabase db,
-        ParseTree definition,
+        ParseNode definition,
         ImmutableDictionary<string, DeclarationTimeline> timelines,
-        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        ImmutableDictionary<ParseNode, ISymbol> declarations) =>
         new FunctionScope(db, definition, timelines, declarations);
 
     public static IScope MakeLocal(
         QueryDatabase db,
-        ParseTree definition,
+        ParseNode definition,
         ImmutableDictionary<string, DeclarationTimeline> timelines,
-        ImmutableDictionary<ParseTree, ISymbol> declarations) =>
+        ImmutableDictionary<ParseNode, ISymbol> declarations) =>
         new LocalScope(db, definition, timelines, declarations);
 }
 
@@ -88,9 +88,9 @@ internal partial interface IScope
     public IScope? Parent { get; }
 
     /// <summary>
-    /// The <see cref="ParseTree"/> that introduced this scope.
+    /// The <see cref="ParseNode"/> that introduced this scope.
     /// </summary>
-    public ParseTree? Definition { get; }
+    public ParseNode? Definition { get; }
 
     /// <summary>
     /// The symbol names in this scope associated with their <see cref="DeclarationTimeline"/>s.
@@ -100,7 +100,7 @@ internal partial interface IScope
     /// <summary>
     /// The symbols associated to their declaration.
     /// </summary>
-    public ImmutableDictionary<ParseTree, ISymbol> Declarations { get; }
+    public ImmutableDictionary<ParseNode, ISymbol> Declarations { get; }
 
     /// <summary>
     /// True, if this is the global scope.
@@ -141,17 +141,17 @@ internal partial interface IScope
         public bool IsFunction => this.Kind == ScopeKind.Function;
         public bool IsLocal => this.Kind == ScopeKind.Local;
         public IScope? Parent => SymbolResolution.GetParentScopeOrNull(this.db, this);
-        public ParseTree Definition { get; }
+        public ParseNode Definition { get; }
         public ImmutableDictionary<string, DeclarationTimeline> Timelines { get; }
-        public ImmutableDictionary<ParseTree, ISymbol> Declarations { get; }
+        public ImmutableDictionary<ParseNode, ISymbol> Declarations { get; }
 
         private readonly QueryDatabase db;
 
         protected ScopeBase(
             QueryDatabase db,
-            ParseTree definition,
+            ParseNode definition,
             ImmutableDictionary<string, DeclarationTimeline> timelines,
-            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            ImmutableDictionary<ParseNode, ISymbol> declarations)
         {
             this.db = db;
             this.Definition = definition;
@@ -178,9 +178,9 @@ internal partial interface IScope
 
         public GlobalScope(
             QueryDatabase db,
-            ParseTree definition,
+            ParseNode definition,
             ImmutableDictionary<string, DeclarationTimeline> timelines,
-            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            ImmutableDictionary<ParseNode, ISymbol> declarations)
             : base(db, definition, timelines, declarations)
         {
         }
@@ -198,9 +198,9 @@ internal partial interface IScope
 
         public FunctionScope(
             QueryDatabase db,
-            ParseTree definition,
+            ParseNode definition,
             ImmutableDictionary<string, DeclarationTimeline> timelines,
-            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            ImmutableDictionary<ParseNode, ISymbol> declarations)
             : base(db, definition, timelines, declarations)
         {
         }
@@ -218,9 +218,9 @@ internal partial interface IScope
 
         public LocalScope(
             QueryDatabase db,
-            ParseTree definition,
+            ParseNode definition,
             ImmutableDictionary<string, DeclarationTimeline> timelines,
-            ImmutableDictionary<ParseTree, ISymbol> declarations)
+            ImmutableDictionary<ParseNode, ISymbol> declarations)
             : base(db, definition, timelines, declarations)
         {
         }
@@ -293,7 +293,7 @@ internal readonly record struct Declaration(int Position, ISymbol Symbol)
     /// <summary>
     /// The definition syntax.
     /// </summary>
-    public ParseTree? Definition => this.Symbol.Definition;
+    public ParseNode? Definition => this.Symbol.Definition;
 }
 
 internal partial interface IScope
@@ -304,12 +304,12 @@ internal partial interface IScope
     public sealed class Builder
     {
         public ScopeKind Kind { get; }
-        public ParseTree Tree { get; }
+        public ParseNode Tree { get; }
 
         private readonly QueryDatabase db;
         private readonly Dictionary<string, ImmutableArray<Declaration>.Builder> declarations = new();
 
-        public Builder(QueryDatabase db, ScopeKind kind, ParseTree tree)
+        public Builder(QueryDatabase db, ScopeKind kind, ParseNode tree)
         {
             this.db = db;
             this.Kind = kind;
@@ -329,7 +329,7 @@ internal partial interface IScope
         public IScope Build()
         {
             var timelines = ImmutableDictionary.CreateBuilder<string, DeclarationTimeline>();
-            var declarations = ImmutableDictionary.CreateBuilder<ParseTree, ISymbol>();
+            var declarations = ImmutableDictionary.CreateBuilder<ParseNode, ISymbol>();
 
             void AddDeclaration(ISymbol symbol)
             {

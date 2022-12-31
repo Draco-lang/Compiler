@@ -10,14 +10,14 @@ using TokenType = Draco.Compiler.Api.Syntax.TokenType;
 
 namespace Draco.Compiler.Internal.Syntax;
 
-internal abstract partial record class ParseTree
+internal abstract partial record class ParseNode
 {
     /// <summary>
     /// Represents a piece of source code that has an associated category and can be considered atomic during parsing.
     /// Stores surrounding trivia and lexical errors.
     /// </summary>
     [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
-    internal sealed partial record class Token : ParseTree
+    internal sealed partial record class Token : ParseNode
     {
         /// <summary>
         /// The <see cref="TokenType"/> of this <see cref="Token"/>.
@@ -59,7 +59,7 @@ internal abstract partial record class ParseTree
         /// </summary>
         internal override ImmutableArray<Diagnostic> Diagnostics { get; }
 
-        public override IEnumerable<ParseTree> Children => Enumerable.Empty<ParseTree>();
+        public override IEnumerable<ParseNode> Children => Enumerable.Empty<ParseNode>();
 
         private Token(
             TokenType type,

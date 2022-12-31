@@ -21,25 +21,25 @@ internal partial interface ISymbol
     public static ISymbol MakeReferenceError(string name, ImmutableArray<Diagnostic> diagnostics) =>
         new ReferenceError(name, diagnostics);
 
-    public static ILabel MakeLabel(QueryDatabase db, string name, ParseTree definition) =>
+    public static ILabel MakeLabel(QueryDatabase db, string name, ParseNode definition) =>
         new Label(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static ILabel SynthetizeLabel() =>
         new SynthetizedLabel();
 
-    public static IVariable MakeVariable(QueryDatabase db, string name, ParseTree definition, bool isMutable) =>
+    public static IVariable MakeVariable(QueryDatabase db, string name, ParseNode definition, bool isMutable) =>
         new Variable(db, name, definition, ImmutableArray<Diagnostic>.Empty, isMutable);
 
     public static IVariable SynthetizeVariable(Type type, bool isMutable) =>
         new SynthetizedVariable(type, isMutable);
 
-    public static IParameter MakeParameter(QueryDatabase db, string name, ParseTree definition) =>
+    public static IParameter MakeParameter(QueryDatabase db, string name, ParseNode definition) =>
         new Parameter(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static IParameter SynthetizeParameter(Type type) =>
         new SynthetizedParameter(type);
 
-    public static IFunction MakeFunction(QueryDatabase db, string name, ParseTree definition) =>
+    public static IFunction MakeFunction(QueryDatabase db, string name, ParseNode definition) =>
         new Function(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static IOverloadSet SynthetizeOverloadSet(ImmutableArray<IFunction> functions) =>
@@ -116,9 +116,9 @@ internal partial interface ISymbol
     public IFunction? DefiningFunction { get; }
 
     /// <summary>
-    /// The <see cref="ParseTree"/> this symbol was defined by.
+    /// The <see cref="ParseNode"/> this symbol was defined by.
     /// </summary>
-    public ParseTree? Definition { get; }
+    public ParseNode? Definition { get; }
 
     /// <summary>
     /// True, if the symbol is visible externally.
@@ -272,7 +272,7 @@ internal partial interface ISymbol
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public virtual IScope? DefiningScope => null;
         public virtual IFunction? DefiningFunction => null;
-        public virtual ParseTree? Definition => null;
+        public virtual ParseNode? Definition => null;
         public bool IsExternallyVisible => false;
         public bool IsGlobal => false;
 
@@ -293,7 +293,7 @@ internal partial interface ISymbol
     private abstract class InTreeBase : ISymbol
     {
         public string Name { get; }
-        public ParseTree Definition { get; }
+        public ParseNode Definition { get; }
         public bool IsError => this.Diagnostics.Length > 0;
         public bool IsIntrinsic => false;
         public ImmutableArray<Diagnostic> Diagnostics { get; }
@@ -333,7 +333,7 @@ internal partial interface ISymbol
         protected InTreeBase(
             QueryDatabase db,
             string name,
-            ParseTree definition,
+            ParseNode definition,
             ImmutableArray<Diagnostic> diagnostics)
         {
             this.db = db;
@@ -363,7 +363,7 @@ internal partial interface ISymbol
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
         public IScope? DefiningScope => null;
         public IFunction? DefiningFunction => null;
-        public ParseTree? Definition => null;
+        public ParseNode? Definition => null;
         public virtual bool IsExternallyVisible => false;
         public virtual bool IsGlobal => false;
 
@@ -403,7 +403,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class Label : InTreeBase, ILabel
     {
-        public Label(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+        public Label(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
         {
         }
@@ -441,7 +441,7 @@ internal partial interface ISymbol
         public bool IsMutable { get; }
         public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
 
-        public Variable(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics, bool isMutable)
+        public Variable(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics, bool isMutable)
             : base(db, name, definition, diagnostics)
         {
             this.IsMutable = isMutable;
@@ -484,7 +484,7 @@ internal partial interface ISymbol
         public bool IsMutable => false;
         public Type Type => TypeChecker.TypeOf(this.db, this);
 
-        public Parameter(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+        public Parameter(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
         {
         }
@@ -537,7 +537,7 @@ internal partial interface ISymbol
             get
             {
                 var builder = ImmutableArray.CreateBuilder<IParameter>();
-                var tree = (ParseTree.Decl.Func)this.Definition;
+                var tree = (ParseNode.Decl.Func)this.Definition;
                 foreach (var param in tree.Params.Value.Elements)
                 {
                     var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
@@ -551,7 +551,7 @@ internal partial interface ISymbol
         {
             get
             {
-                var tree = (ParseTree.Decl.Func)this.Definition;
+                var tree = (ParseNode.Decl.Func)this.Definition;
                 return tree.ReturnType is null
                     ? Types.Type.Unit
                     : TypeChecker.Evaluate(this.db, tree.ReturnType.Type);
@@ -562,7 +562,7 @@ internal partial interface ISymbol
             this.ReturnType);
         Type ITyped.Type => this.Type;
 
-        public Function(QueryDatabase db, string name, ParseTree definition, ImmutableArray<Diagnostic> diagnostics)
+        public Function(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
         {
         }

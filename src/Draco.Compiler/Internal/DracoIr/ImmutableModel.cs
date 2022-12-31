@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.DracoIr;
 
@@ -319,7 +320,9 @@ internal abstract partial record class Value
             _ => throw new InvalidOperationException(),
         };
 
-        public override string ToString() => this.Value?.ToString() ?? "null";
+        public override string ToString() => this.Value is string str
+            ? $"\"{StringUtils.Unescape(str)}\""
+            : this.Value?.ToString() ?? "null";
     }
 
     /// <summary>
@@ -340,7 +343,10 @@ internal abstract partial record class Value
 /// An argument list.
 /// </summary>
 /// <param name="Values">The values passed in for the call.</param>
-internal sealed record class ArgumentList(ImmutableArray<Value> Values) : IInstructionOperand;
+internal sealed record class ArgumentList(ImmutableArray<Value> Values) : IInstructionOperand
+{
+    public override string ToString() => $"[{string.Join(", ", this.Values)}]";
+}
 
 /// <summary>
 /// Base for all types.

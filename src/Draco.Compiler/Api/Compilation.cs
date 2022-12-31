@@ -111,7 +111,12 @@ public sealed class Compilation
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(asm);
         // Write the IR, if needed
-        if (dracoIrStream is not null) new StreamWriter(dracoIrStream).Write(asm.ToString());
+        if (dracoIrStream is not null)
+        {
+            var irWriter = new StreamWriter(dracoIrStream);
+            irWriter.Write(asm.ToString());
+            irWriter.Flush();
+        }
         // Generate CIL
         CilCodegen.Generate(asm, peStream);
 

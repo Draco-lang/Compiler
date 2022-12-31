@@ -119,6 +119,8 @@ internal sealed record class Procedure : IReadOnlyProcedure
     public override string ToString() => this.Name;
     public string ToFullString() => $"""
         proc {this.ReturnType} {this.Name}({string.Join(", ", this.Parameters.Select(p => p.ToFullString()))}):
+        locals (
+        {string.Join(",\n", this.Locals.Select(loc => $"  {loc.ToFullString()}"))})
         {string.Join("\n", this.BasicBlocks.Select(bb => bb.ToFullString()))}
         """;
 }

@@ -73,6 +73,9 @@ public partial class Program
             case "Run":
                 await RunScript(compilation);
                 break;
+            case "DracoIR":
+                DisplayDracoIR(compilation);
+                break;
             case "IL":
                 DisplayCompiledIL(compilation);
                 break;
@@ -108,6 +111,25 @@ public partial class Program
         outputText ??= consoleStream.ToString();
         SetOutputText(outputText);
         Console.SetOut(oldOut);
+    }
+
+    private static void DisplayDracoIR(Compilation compilation)
+    {
+        using var irStream = new MemoryStream();
+        var emitResult = compilation.Emit(
+            peStream: new MemoryStream(),
+            dracoIrStream: irStream);
+        if (emitResult.Success)
+        {
+            irStream.Position = 0;
+            var text = new StreamReader(irStream).ReadToEnd();
+            SetOutputText(text);
+        }
+        else
+        {
+            var errors = string.Join("\n", emitResult.Diagnostics);
+            SetOutputText(errors);
+        }
     }
 
     private static void DisplayCompiledIL(Compilation compilation)

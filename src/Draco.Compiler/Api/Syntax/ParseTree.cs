@@ -52,6 +52,13 @@ public sealed partial class ParseTree
     /// </summary>
     public TNode FindInChildren<TNode>(int index = 0)
         where TNode : ParseNode => this.Root.FindInChildren<TNode>(index);
+
+    /// <summary>
+    /// Enumerates this tree, yielding all descendant nodes containing the given position.
+    /// </summary>
+    /// <param name="position">The position that has to be contained.</param>
+    /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
+    public IEnumerable<ParseNode> TraverseSubtreesAtPosition(Position position) => this.Root.TraverseSubtreesAtPosition(position);
 }
 
 // Public API utilities
@@ -183,6 +190,31 @@ public abstract partial class ParseNode
         .InOrderTraverse()
         .OfType<TNode>()
         .ElementAt(index);
+
+    /// <summary>
+    /// Enumerates this subtree, yielding all descendant nodes containing the given position.
+    /// </summary>
+    /// <param name="position">The position that has to be contained.</param>
+    /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
+    public IEnumerable<ParseNode> TraverseSubtreesAtPosition(Position position)
+    {
+        var root = this;
+        while (true)
+        {
+            yield return root;
+            foreach (var child in root.Children)
+            {
+                if (child.Range.Contains(position))
+                {
+                    root = child;
+                    goto found;
+                }
+            }
+            // No child found that contains position.
+            break;
+        found:;
+        }
+    }
 }
 
 public abstract partial class ParseNode

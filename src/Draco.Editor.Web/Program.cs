@@ -6,7 +6,6 @@ using Microsoft.JSInterop;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using System.Text.Json;
-using ICSharpCode.Decompiler.IL;
 
 namespace Draco.Editor.Web;
 
@@ -74,8 +73,8 @@ public partial class Program
             case "Run":
                 await RunScript(compilation);
                 break;
-            case "CSharp":
-                DisplayCompiledCSharp(compilation);
+            case "DracoIR":
+                DisplayDracoIR(compilation);
                 break;
             case "IL":
                 DisplayCompiledIL(compilation);
@@ -100,9 +99,7 @@ public partial class Program
         var outputText = null as string;
         try
         {
-            var execResult = ScriptingEngine.Execute(
-                compilation,
-                csCompilerOptionBuilder: config => config.WithConcurrentBuild(false));
+            var execResult = ScriptingEngine.Execute(compilation);
             if (!execResult.Success) outputText = string.Join("\n", execResult.Diagnostics);
         }
         catch (Exception e)
@@ -116,15 +113,17 @@ public partial class Program
         Console.SetOut(oldOut);
     }
 
-    private static void DisplayCompiledCSharp(Compilation compilation)
+    private static void DisplayDracoIR(Compilation compilation)
     {
-        var csStream = new MemoryStream();
-        var emitResult = compilation.EmitCSharp(csStream);
+        using var irStream = new MemoryStream();
+        var emitResult = compilation.Emit(
+            peStream: new MemoryStream(),
+            dracoIrStream: irStream);
         if (emitResult.Success)
         {
-            csStream.Position = 0;
-            var csText = new StreamReader(csStream).ReadToEnd();
-            SetOutputText(csText);
+            irStream.Position = 0;
+            var text = new StreamReader(irStream).ReadToEnd();
+            SetOutputText(text);
         }
         else
         {
@@ -136,7 +135,7 @@ public partial class Program
     private static void DisplayCompiledIL(Compilation compilation)
     {
         using var inlineDllStream = new MemoryStream();
-        var emitResult = compilation.Emit(inlineDllStream, csCompilerOptionBuilder: config => config.WithConcurrentBuild(false));
+        var emitResult = compilation.Emit(inlineDllStream);
         if (emitResult.Success)
         {
             inlineDllStream.Position = 0;

@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 
@@ -49,6 +44,6 @@ public sealed class Issue139Tests
     {
         var parseTree = ParseTree.Parse(source);
         var compilation = Compilation.Create(parseTree);
-        compilation.EmitCSharp(new MemoryStream());
+        compilation.Emit(new MemoryStream());
     }
 }

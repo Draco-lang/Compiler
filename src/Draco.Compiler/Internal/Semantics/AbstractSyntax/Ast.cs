@@ -307,8 +307,7 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Content(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] string Value,
-            [property: Ignore(IgnoreFlags.TransformerTransform)] int Cutoff) : StringPart;
+            [property: Ignore(IgnoreFlags.TransformerTransform)] string Value) : StringPart;
 
         /// <summary>
         /// An interpolation hole.

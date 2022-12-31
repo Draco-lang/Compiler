@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Draco.Compiler.Tests.EndToEnd;
 
 public sealed class CompilingCodeTests : EndToEndTestsBase
@@ -159,5 +153,54 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             var sumi = Invoke<int>(assembly, "sum", 0, i);
             Assert.Equal(results[i], sumi);
         }
+    }
+
+    [Fact]
+    public void Globals()
+    {
+        var assembly = Compile("""
+            var x = 0;
+            func bar() { x += 1; }
+            func foo(): int32 {
+                bar();
+                bar();
+                bar();
+                return x;
+            }
+            """);
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(3, x);
+    }
+
+    [Fact]
+    public void NonzeroGlobals()
+    {
+        var assembly = Compile("""
+            var x = 123;
+            func bar() { x += 1; }
+            func foo(): int32 {
+                bar();
+                bar();
+                bar();
+                return x;
+            }
+            """);
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(126, x);
+    }
+
+    [Fact]
+    public void ComplexInitializerGlobals()
+    {
+        var assembly = Compile("""
+            func foo(): int32 = x;
+            var x = add(1, 2) + 1 + 2 + 3;
+            func add(x: int32, y: int32): int32 = 2 * (x + y);
+            """);
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(12, x);
     }
 }

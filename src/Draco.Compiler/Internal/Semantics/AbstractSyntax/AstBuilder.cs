@@ -161,8 +161,6 @@ internal static class AstBuilder
 
     private static Ast.Expr ToAst(QueryDatabase db, ParseTree.Expr.String str)
     {
-        // TODO: Maybe move the cutoff/first-in-line logic into the parser itself?
-        // It's a bit misleading to have a nonzero cutoff for parts not at the start of the line
         var builder = ImmutableArray.CreateBuilder<Ast.StringPart>();
         foreach (var part in str.Parts)
         {

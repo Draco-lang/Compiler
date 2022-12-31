@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
@@ -60,18 +57,16 @@ internal class DracoHoverHandler : HoverHandlerBase
                 Value = smb.Documentation
             })
         };
-        else
+        else return new Hover()
         {
-            return new Hover()
+            Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
             {
-                Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                {
-                    Kind = MarkupKind.PlainText,
-                    Value = ""
-                })
-            };
-        }
+                Kind = MarkupKind.PlainText,
+                Value = ""
+            })
+        };
     }
+
     protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new()
     {
         DocumentSelector = new DocumentSelector(new DocumentFilter

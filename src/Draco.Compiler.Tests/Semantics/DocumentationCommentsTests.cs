@@ -1,9 +1,7 @@
 using Draco.Compiler.Api;
-using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
-using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -17,13 +15,13 @@ public class DocumentationCommentsTests : SemanticTestsBase
         // }
 
         // Arrange
-        var DocComment = "This is doc comment";
+        var docComment = "This is doc comment";
         var tree = ParseTree.Create(CompilationUnit(
             AddDocumentation(FuncDecl(
             Name("main"),
             FuncParamList(),
             null,
-            BlockBodyFuncBody(BlockExpr())), "///" + DocComment)));
+            BlockBodyFuncBody(BlockExpr())), "///" + docComment)));
 
         var funcDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
 
@@ -35,7 +33,7 @@ public class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(funcSym.Documentation, DocComment);
+        Assert.Equal(funcSym.Documentation, docComment);
     }
 
     [Fact]
@@ -45,13 +43,13 @@ public class DocumentationCommentsTests : SemanticTestsBase
         // var x = 0;
 
         // Arrange
-        var DocComment = "This is doc comment";
+        var docComment = "This is doc comment";
         var tree = ParseTree.Create(CompilationUnit(
             AddDocumentation(VariableDecl(
             Name("x"),
             null,
             LiteralExpr(0)),
-            "///" + DocComment)));
+            "///" + docComment)));
 
         var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
 
@@ -63,6 +61,6 @@ public class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Documentation, DocComment);
+        Assert.Equal(xSym.Documentation, docComment);
     }
 }

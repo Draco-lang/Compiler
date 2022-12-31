@@ -6,7 +6,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Draco.Compiler.Api.Syntax;
-using System;
 
 namespace Draco.LanguageServer.Handlers;
 

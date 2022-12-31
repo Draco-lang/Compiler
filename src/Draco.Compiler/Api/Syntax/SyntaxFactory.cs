@@ -1,24 +1,20 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Syntax;
 using Draco.RedGreenTree.Attributes;
 using static Draco.Compiler.Api.Syntax.ParseNode;
 
 namespace Draco.Compiler.Api.Syntax;
 
-class FirstTokenTransforemer : ParseTreeTransformerBase
+internal class FirstTokenTransforemer : ParseTreeTransformerBase
 {
     private bool firstToken = true;
-    private Internal.Syntax.ParseNode.Trivia TriviaToAdd;
+    private Internal.Syntax.ParseNode.Trivia triviaToAdd;
     public FirstTokenTransforemer(Internal.Syntax.ParseNode.Trivia triviaToAdd)
     {
-        this.TriviaToAdd = triviaToAdd;
+        this.triviaToAdd = triviaToAdd;
     }
     public override Internal.Syntax.ParseNode.Token TransformToken(Internal.Syntax.ParseNode.Token token, out bool changed)
     {
@@ -27,7 +23,7 @@ class FirstTokenTransforemer : ParseTreeTransformerBase
             this.firstToken = false;
             changed = true;
             var trivia = ImmutableArray.CreateBuilder<Internal.Syntax.ParseNode.Trivia>();
-            trivia.Add(this.TriviaToAdd);
+            trivia.Add(this.triviaToAdd);
             return Internal.Syntax.ParseNode.Token.Builder.From(token).SetLeadingTrivia(trivia.ToImmutable()).Build();
         }
         changed = false;

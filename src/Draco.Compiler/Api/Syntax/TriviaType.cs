@@ -20,7 +20,6 @@ public enum TriviaType
     /// </summary>
     LineComment,
 
-
     /// <summary>
     /// Documentation comment.
     /// </summary>

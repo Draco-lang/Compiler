@@ -104,7 +104,6 @@ public static partial class SyntaxFactory
     public static StringPart.Content ContentStringPart(string value) =>
         new(parent: null, green: new Internal.Syntax.ParseTree.StringPart.Content(
             Value: Internal.Syntax.ParseTree.Token.From(TokenType.StringContent, value),
-            Cutoff: 0,
             Diagnostics: ImmutableArray<Internal.Diagnostics.Diagnostic>.Empty));
 }
 

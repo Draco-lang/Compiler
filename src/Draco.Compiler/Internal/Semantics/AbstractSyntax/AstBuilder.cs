@@ -162,6 +162,7 @@ internal static class AstBuilder
     private static Ast.Expr ToAst(QueryDatabase db, ParseTree.Expr.String str)
     {
         var builder = ImmutableArray.CreateBuilder<Ast.StringPart>();
+        var lastNewline = true;
         foreach (var part in str.Parts)
         {
             if (part is ParseTree.StringPart.Content content)
@@ -170,7 +171,8 @@ internal static class AstBuilder
                 Debug.Assert(text is not null);
                 builder.Add(new Ast.StringPart.Content(
                     ParseTree: content,
-                    Value: text.Substring(content.Cutoff)));
+                    Value: text.Substring(lastNewline ? str.Cutoff : 0)));
+                lastNewline = content.Value.Type == TokenType.StringNewline;
             }
             else
             {
@@ -178,6 +180,7 @@ internal static class AstBuilder
                 builder.Add(new Ast.StringPart.Interpolation(
                     ParseTree: interpolation,
                     Expression: ToAst(db, interpolation.Expression)));
+                lastNewline = false;
             }
         }
         return new Ast.Expr.String(

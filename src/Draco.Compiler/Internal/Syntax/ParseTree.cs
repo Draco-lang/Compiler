@@ -394,6 +394,8 @@ internal partial record class ParseTree
             internal override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
         }
 
+        // TODO: Is it a good idea to encode cutoff like this?
+        // It's not too safe in terms of public API, since it's not directly syntax encoded anymore
         /// <summary>
         /// Content part of a string literal.
         /// </summary>

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
@@ -37,5 +38,10 @@ internal static class Intrinsics
         public static IFunction GreaterEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.GreaterEqual, Type.Int32, Type.Int32, Type.Bool);
         public static IFunction Equal_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.Equal, Type.Int32, Type.Int32, Type.Bool);
         public static IFunction NotEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.NotEqual, Type.Int32, Type.Int32, Type.Bool);
+    }
+
+    public static class Functions
+    {
+        public static IFunction Println { get; } = MakeIntrinsicFunction("println", ImmutableArray.Create(Type.String), Type.Unit);
     }
 }

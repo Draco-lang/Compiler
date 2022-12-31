@@ -438,11 +438,7 @@ internal static class SymbolResolution
 
     private static void InjectIntrinsics(IScope.Builder builder)
     {
-        void Add(ISymbol symbol) =>
-            builder.Add(new(0, symbol));
-
-        void AddBuiltinFunction(string name, ImmutableArray<Type> @params, Type ret) =>
-            Add(ISymbol.MakeIntrinsicFunction(name, @params, ret));
+        void Add(ISymbol symbol) => builder.Add(new(0, symbol));
 
         // Types
         Add(Intrinsics.Types.Unit);
@@ -469,7 +465,6 @@ internal static class SymbolResolution
         Add(Intrinsics.Operators.Equal_Int32);
         Add(Intrinsics.Operators.NotEqual_Int32);
 
-        // TODO: Temporary
-        AddBuiltinFunction("println", ImmutableArray.Create(Type.String), Type.Unit);
+        Add(Intrinsics.Functions.Println);
     }
 }

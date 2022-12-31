@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using Draco.Compiler.Internal.DracoIr;
+using Draco.Compiler.Internal.Semantics.Symbols;
 using Type = Draco.Compiler.Internal.DracoIr.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
@@ -102,6 +103,8 @@ internal sealed class CilCodegen
 
     private MethodDefinitionHandle entryPointHandle = default;
 
+    private MemberReferenceHandle consoleWriteLineHandle = default;
+
     private CilCodegen(IReadOnlyAssembly assembly)
     {
         this.assembly = assembly;
@@ -110,6 +113,7 @@ internal sealed class CilCodegen
     private void Translate()
     {
         this.DefineModuleAndAssembly();
+        this.LoadIntrinsics();
         this.TranslateAssembly();
         this.DefineFreeFunctionsType();
     }
@@ -402,6 +406,12 @@ internal sealed class CilCodegen
                     signature: this.procedureSignatures[procValue.Procedure]);
                 encoder.Call(method);
             }
+            else if (called is Value.Intrinsic intrinsic)
+            {
+                if (intrinsic.Symbol == Intrinsics.Functions.Println) encoder.Call(this.consoleWriteLineHandle);
+                // TODO
+                else throw new NotImplementedException();
+            }
             else
             {
                 // TODO
@@ -499,6 +509,39 @@ internal sealed class CilCodegen
             // TODO: This depends on the order of types
             // we likely want to read this up from an index
             methodList: MetadataTokens.MethodDefinitionHandle(1));
+    }
+
+    private void LoadIntrinsics()
+    {
+        var systemConsoleRef = this.metadataBuilder.AddAssemblyReference(
+            name: this.metadataBuilder.GetOrAddString("System.Console"),
+            // TODO: What version?
+            version: new Version(1, 0),
+            culture: default,
+            // TODO: We only need to think about it when we decide to support strong naming
+            // Apparently it's not really present in Core
+            publicKeyOrToken: default,
+            flags: default,
+            hashValue: default);
+
+        var systemConsoleTypeRef = this.metadataBuilder.AddTypeReference(
+           resolutionScope: systemConsoleRef,
+           @namespace: this.metadataBuilder.GetOrAddString("System"),
+           name: this.metadataBuilder.GetOrAddString("Console"));
+
+        // System.Console.WriteLine(String): Void
+        {
+            var signature = new BlobBuilder();
+            new BlobEncoder(signature)
+                .MethodSignature()
+                .Parameters(1, out var retEncoder, out var paramsEncoder);
+            retEncoder.Void();
+            paramsEncoder.AddParameter().Type().String();
+            this.consoleWriteLineHandle = this.metadataBuilder.AddMemberReference(
+                parent: systemConsoleTypeRef,
+                name: this.metadataBuilder.GetOrAddString("WriteLine"),
+                signature: this.metadataBuilder.GetOrAddBlob(signature));
+        }
     }
 
     private void WritePe(Stream peStream)

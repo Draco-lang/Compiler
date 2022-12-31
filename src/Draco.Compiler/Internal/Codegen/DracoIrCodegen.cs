@@ -49,6 +49,13 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         if (type == Semantics.Types.Type.Int32) return Type.Int32;
         if (type == Semantics.Types.Type.String) return Type.String;
 
+        if (type is Semantics.Types.Type.Function func)
+        {
+            var args = func.Params.Select(this.TranslateType).ToImmutableArray();
+            var ret = this.TranslateType(func.Return);
+            return new Type.Proc(args, ret);
+        }
+
         throw new NotImplementedException();
     }
 
@@ -58,6 +65,11 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         {
             proc = this.assembly.DefineProcedure(function.Name);
             proc.ReturnType = this.TranslateType(function.ReturnType);
+            foreach (var param in function.Parameters)
+            {
+                var paramValue = proc.DefineParameter(param.Name, this.TranslateType(param.Type));
+                this.parameters.Add(param, paramValue);
+            }
             this.procedures.Add(function, proc);
         }
         return proc;
@@ -116,12 +128,6 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         var procedure = this.GetProcedure(node.DeclarationSymbol);
         this.currentProcedure = procedure;
         this.writer = procedure.Writer();
-
-        foreach (var param in node.Params)
-        {
-            var paramValue = procedure.DefineParameter(param.Name, this.TranslateType(param.Type));
-            this.parameters.Add(param, paramValue);
-        }
 
         this.VisitBlockExpr(node.Body);
         if (!this.writer.EndsInBranch) this.writer.Ret(Value.Unit.Instance);
@@ -302,7 +308,9 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         ISymbol.IParameter p => new Value.Param(this.parameters[p]),
         ISymbol.IVariable v when v.IsGlobal => this.writer.Load(this.GetGlobal(v)),
         ISymbol.IVariable v => this.writer.Load(this.locals[v]),
-        ISymbol.IFunction f => new Value.Proc(this.GetProcedure(f)),
+        ISymbol.IFunction f => f.IsIntrinsic
+            ? new Value.Intrinsic(f, this.TranslateType(f.Type))
+            : new Value.Proc(this.GetProcedure(f)),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
     public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;

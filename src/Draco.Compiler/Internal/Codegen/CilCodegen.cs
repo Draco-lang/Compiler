@@ -6,8 +6,6 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Internal.DracoIr;
 using Type = Draco.Compiler.Internal.DracoIr.Type;
 

@@ -7,7 +7,6 @@ using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
-using Draco.Compiler.Internal.Utilities;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;

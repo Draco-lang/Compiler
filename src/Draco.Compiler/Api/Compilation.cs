@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -7,7 +6,6 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.DracoIr;
-using Draco.Compiler.Internal.DracoIr.Passes;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 

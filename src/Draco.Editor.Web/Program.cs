@@ -6,7 +6,6 @@ using Microsoft.JSInterop;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using System.Text.Json;
-using ICSharpCode.Decompiler.IL;
 
 namespace Draco.Editor.Web;
 

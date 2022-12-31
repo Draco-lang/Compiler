@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Linq;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = OmniSharp.Extensions.LanguageServer.Protocol.Models;
 

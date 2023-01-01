@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -7,29 +8,6 @@ using Draco.RedGreenTree.Attributes;
 using static Draco.Compiler.Api.Syntax.ParseNode;
 
 namespace Draco.Compiler.Api.Syntax;
-
-internal class FirstTokenTransforemer : ParseTreeTransformerBase
-{
-    private bool firstToken = true;
-    private Internal.Syntax.ParseNode.Trivia triviaToAdd;
-    public FirstTokenTransforemer(Internal.Syntax.ParseNode.Trivia triviaToAdd)
-    {
-        this.triviaToAdd = triviaToAdd;
-    }
-    public override Internal.Syntax.ParseNode.Token TransformToken(Internal.Syntax.ParseNode.Token token, out bool changed)
-    {
-        if (this.firstToken)
-        {
-            this.firstToken = false;
-            changed = true;
-            var trivia = ImmutableArray.CreateBuilder<Internal.Syntax.ParseNode.Trivia>();
-            trivia.Add(this.triviaToAdd);
-            return Internal.Syntax.ParseNode.Token.Builder.From(token).SetLeadingTrivia(trivia.ToImmutable()).Build();
-        }
-        changed = false;
-        return token;
-    }
-}
 
 /// <summary>
 /// Factory functions for constructing a <see cref="ParseNode"/>.
@@ -51,11 +29,28 @@ public static partial class SyntaxFactory
             ? PunctuatedList(ImmutableArray<Punctuated<T>>.Empty)
             : PunctuatedList(elements.SkipLast(1).Select(e => Punctuated(e, punctuation)).Append(Punctuated(elements[^1], null)));
 
-    public static TNode AddDocumentation<TNode>(TNode node, string docs) where TNode : ParseNode
+    private static TNode WithTrivia<TNode>(TNode node, Internal.Syntax.ParseNode.Trivia trivia) where TNode : ParseNode
     {
-        var trivia = Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, "///" + docs);
-        var greenNode = new FirstTokenTransforemer(trivia).Transform(node.Green, out var _);
+        var greenNode = new FirstTokenTransformer(trivia).Transform(node.Green, out var _);
         return (TNode)ToRed(null!, null, greenNode);
+    }
+
+    public static TNode WithDocumentation<TNode>(TNode node, string docs) where TNode : ParseNode
+    {
+        foreach (var doc in docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
+        {
+            node = WithTrivia(node, Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, "///" + doc));
+        }
+        return node;
+    }
+
+    public static TNode WithComment<TNode>(TNode node, string docs) where TNode : ParseNode
+    {
+        foreach (var doc in docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
+        {
+            node = WithTrivia(node, Internal.Syntax.ParseNode.Trivia.From(TriviaType.LineComment, "//" + doc));
+        }
+        return node;
     }
 
     public static CompilationUnit CompilationUnit(ImmutableArray<Decl> decls) => CompilationUnit(decls, EndOfInput);
@@ -135,6 +130,35 @@ public static partial class SyntaxFactory
         green: new Internal.Syntax.ParseNode.StringPart.Content(
             Value: Internal.Syntax.ParseNode.Token.From(TokenType.StringContent, value),
             Diagnostics: ImmutableArray<Internal.Diagnostics.Diagnostic>.Empty));
+}
+
+// Transformer
+public static partial class SyntaxFactory
+{
+    private class FirstTokenTransformer : ParseTreeTransformerBase
+    {
+        private bool firstToken = true;
+        private readonly Internal.Syntax.ParseNode.Trivia triviaToAdd;
+
+        public FirstTokenTransformer(Internal.Syntax.ParseNode.Trivia triviaToAdd)
+        {
+            this.triviaToAdd = triviaToAdd;
+        }
+
+        public override Internal.Syntax.ParseNode.Token TransformToken(Internal.Syntax.ParseNode.Token token, out bool changed)
+        {
+            if (this.firstToken)
+            {
+                this.firstToken = false;
+                changed = true;
+                var trivia = token.LeadingTrivia.ToBuilder();
+                trivia.Add(this.triviaToAdd);
+                return Internal.Syntax.ParseNode.Token.Builder.From(token).SetLeadingTrivia(trivia.ToImmutable()).Build();
+            }
+            changed = false;
+            return token;
+        }
+    }
 }
 
 // Utilities

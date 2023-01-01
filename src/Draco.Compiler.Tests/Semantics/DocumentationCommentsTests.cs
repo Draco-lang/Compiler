@@ -5,23 +5,24 @@ using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public class DocumentationCommentsTests : SemanticTestsBase
+public sealed class DocumentationCommentsTests : SemanticTestsBase
 {
-    [Fact]
-    public void FunctionDocumentationComment()
+    [Theory]
+    [InlineData("This is doc comment")]
+    [InlineData("This is\r\nmultiline doc comment")]
+    public void FunctionDocumentationComment(string docComment)
     {
         // /// This is doc comment
         // func main() {
         // }
 
         // Arrange
-        var docComment = "This is doc comment";
         var tree = ParseTree.Create(CompilationUnit(
-            AddDocumentation(FuncDecl(
+            WithDocumentation(FuncDecl(
             Name("main"),
             FuncParamList(),
             null,
-            BlockBodyFuncBody(BlockExpr())), "///" + docComment)));
+            BlockBodyFuncBody(BlockExpr())), string.Join('\n', docComment.Split('\n').Select(x => "///" + x)))));
 
         var funcDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
 
@@ -33,23 +34,24 @@ public class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(funcSym.Documentation, docComment);
+        Assert.Equal(docComment, funcSym.Documentation);
     }
 
-    [Fact]
-    public void VariableDocumentationComment()
+    [Theory]
+    [InlineData("This is doc comment")]
+    [InlineData("This is\r\nmultiline doc comment")]
+    public void VariableDocumentationComment(string docComment)
     {
         // /// This is doc comment
         // var x = 0;
 
         // Arrange
-        var docComment = "This is doc comment";
         var tree = ParseTree.Create(CompilationUnit(
-            AddDocumentation(VariableDecl(
+            WithDocumentation(VariableDecl(
             Name("x"),
             null,
             LiteralExpr(0)),
-            "///" + docComment)));
+            string.Join('\n', docComment.Split('\n').Select(x => "///" + x)))));
 
         var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
 
@@ -61,6 +63,38 @@ public class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Documentation, docComment);
+        Assert.Equal(docComment, xSym.Documentation);
+    }
+
+    [Theory]
+    [InlineData("This is doc comment")]
+    [InlineData("This is\r\nmultiline doc comment")]
+    public void LabelDocumentationComment(string docComment)
+    {
+        // func main() {
+        //     /// This is doc comment
+        //     myLabel:        
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(Name("main"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+            WithDocumentation(DeclStmt(LabelDecl("myLabel")),
+            string.Join('\n', docComment.Split('\n').Select(x => "///" + x))))))));
+
+        var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var labelSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(string.Empty, labelSym.Documentation);
     }
 }

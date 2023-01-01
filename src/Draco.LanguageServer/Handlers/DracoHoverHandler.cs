@@ -19,7 +19,15 @@ internal class DracoHoverHandler : HoverHandlerBase
         this.documentRepository = documentRepository;
     }
 
-    public override async Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
+    protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new()
+    {
+        DocumentSelector = new DocumentSelector(new DocumentFilter
+        {
+            Pattern = $"**/*{Constants.DracoSourceExtension}",
+        })
+    };
+
+    public override Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
     {
         var cursorPosition = Translator.ToCompiler(request.Position);
         // TODO: Share compilation
@@ -40,38 +48,15 @@ internal class DracoHoverHandler : HoverHandlerBase
                 .Select(semanticModel.GetDefinedSymbolOrNull)
                 .LastOrDefault(symbol => symbol is not null);
         }
+        string docs = referencedSymbol is null ? string.Empty : referencedSymbol.Documentation;
 
-        if (referencedSymbol is IVariableSymbol symb) return new Hover()
+        return Task.FromResult<Hover?>(new Hover()
         {
             Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
             {
                 Kind = MarkupKind.Markdown,
-                Value = symb.Documentation
+                Value = docs
             })
-        };
-        else if (referencedSymbol is IFunctionSymbol smb) return new Hover()
-        {
-            Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-            {
-                Kind = MarkupKind.Markdown,
-                Value = smb.Documentation
-            })
-        };
-        else return new Hover()
-        {
-            Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-            {
-                Kind = MarkupKind.PlainText,
-                Value = ""
-            })
-        };
+        });
     }
-
-    protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new()
-    {
-        DocumentSelector = new DocumentSelector(new DocumentFilter
-        {
-            Pattern = $"**/*{Constants.DracoSourceExtension}",
-        })
-    };
 }

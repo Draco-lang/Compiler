@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
@@ -11,6 +9,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Draco.LanguageServer.Handlers;
+
 internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
 {
     private readonly DracoDocumentRepository documentRepository;
@@ -44,12 +43,11 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
             .Select(symbol => semanticModel.GetReferencedSymbolOrNull(symbol) ?? semanticModel.GetDefinedSymbolOrNull(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
-        var nodes = parseTree.Root.InOrderTraverse();
         var references = new List<Location>();
 
         if (referencedSymbol is not null)
         {
-            foreach (var node in nodes)
+            foreach (var node in parseTree.Root.InOrderTraverse())
             {
                 if (referencedSymbol.Equals(semanticModel.GetReferencedSymbolOrNull(node)))
                 {

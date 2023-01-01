@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
@@ -47,27 +48,41 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
 
         if (referencedSymbol is not null)
         {
-            foreach (var node in parseTree.Root.InOrderTraverse())
+            var referencingNodes = FindAllReferences(
+                tree: parseTree,
+                semanticModel: semanticModel,
+                symbol: referencedSymbol,
+                includeDeclaration: request.Context.IncludeDeclaration,
+                cancellationToken: cancellationToken);
+            foreach (var node in referencingNodes)
             {
-                if (referencedSymbol.Equals(semanticModel.GetReferencedSymbolOrNull(node)))
-                {
-                    var location = Translator.ToLsp(node.Location);
-                    if (location is not null)
-                    {
-                        references.Add(location);
-                    }
-                }
-                if (request.Context.IncludeDeclaration && referencedSymbol.Equals(semanticModel.GetDefinedSymbolOrNull(node)))
-                {
-                    var location = Translator.ToLsp(node.Location);
-                    if (location is not null)
-                    {
-                        references.Add(location);
-                    }
-                }
+                var location = Translator.ToLsp(node.Location);
+                if (location is not null) references.Add(location);
             }
         }
 
         return Task.FromResult(new LocationContainer(references));
+    }
+
+    private static IEnumerable<ParseNode> FindAllReferences(
+        ParseTree tree,
+        SemanticModel semanticModel,
+        ISymbol symbol,
+        bool includeDeclaration,
+        CancellationToken cancellationToken)
+    {
+        foreach (var node in tree.Root.InOrderTraverse())
+        {
+            if (cancellationToken.IsCancellationRequested) yield break;
+
+            if (symbol.Equals(semanticModel.GetReferencedSymbolOrNull(node)))
+            {
+                yield return node;
+            }
+            if (includeDeclaration && symbol.Equals(semanticModel.GetDefinedSymbolOrNull(node)))
+            {
+                yield return node;
+            }
+        }
     }
 }

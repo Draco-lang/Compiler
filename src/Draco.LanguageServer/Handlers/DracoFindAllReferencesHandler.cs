@@ -24,10 +24,7 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
         ReferenceCapability capability,
         ClientCapabilities clientCapabilities) => new()
         {
-            DocumentSelector = new DocumentSelector(new DocumentFilter
-            {
-                Pattern = $"**/*{Constants.DracoSourceExtension}",
-            })
+            DocumentSelector = Constants.DracoSourceDocumentSelector
         };
 
     public override Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)

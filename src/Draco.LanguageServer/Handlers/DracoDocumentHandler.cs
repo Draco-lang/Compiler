@@ -24,10 +24,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
 
     private readonly ILanguageServerFacade server;
     private readonly DracoDocumentRepository repository;
-    private readonly DocumentSelector documentSelector = new(new DocumentFilter
-    {
-        Pattern = $"**/*{Constants.DracoSourceExtension}",
-    });
+    private readonly DocumentSelector documentSelector = Constants.DracoSourceDocumentSelector;
 
     public DracoDocumentHandler(ILanguageServerFacade server, DracoDocumentRepository repository)
     {

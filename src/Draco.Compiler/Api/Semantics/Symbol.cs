@@ -98,11 +98,10 @@ internal abstract class SymbolBase : ISymbol
         this.Symbol = symbol;
     }
 
-    // TODO
-    public bool Equals(ISymbol? other) => throw new NotImplementedException();
+    public bool Equals(ISymbol? other) => other is SymbolBase o
+                                       && ReferenceEquals(this.Symbol, o.Symbol);
 
-    // TODO
-    public override int GetHashCode() => throw new NotImplementedException();
+    public override int GetHashCode() => this.Symbol.GetHashCode();
 }
 
 internal abstract class SymbolBase<TInternalSymbol> : SymbolBase

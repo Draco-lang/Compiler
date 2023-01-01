@@ -86,7 +86,7 @@ internal partial interface ISymbol
                 vari.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
                 null;
             // Concatenate the text of all the doc comments
-            return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.TrimStart('/'))) : string.Empty;
+            return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;
         }
         else if (definition is ParseNode.Decl.Func func)
         {
@@ -95,7 +95,7 @@ internal partial interface ISymbol
                 func.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
                 null;
             // Concatenate the text of all the doc comments
-            return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.TrimStart('/'))) : string.Empty;
+            return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;
         }
         else return string.Empty;
     }

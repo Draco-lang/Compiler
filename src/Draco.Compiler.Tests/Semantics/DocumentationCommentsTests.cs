@@ -22,7 +22,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             Name("main"),
             FuncParamList(),
             null,
-            BlockBodyFuncBody(BlockExpr())), string.Join('\n', docComment.Split('\n').Select(x => "///" + x)))));
+            BlockBodyFuncBody(BlockExpr())), docComment)));
 
         var funcDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
 
@@ -51,7 +51,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             Name("x"),
             null,
             LiteralExpr(0)),
-            string.Join('\n', docComment.Split('\n').Select(x => "///" + x)))));
+            docComment)));
 
         var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
 
@@ -83,7 +83,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             null,
             BlockBodyFuncBody(BlockExpr(
             WithDocumentation(DeclStmt(LabelDecl("myLabel")),
-            string.Join('\n', docComment.Split('\n').Select(x => "///" + x))))))));
+            docComment))))));
 
         var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
 

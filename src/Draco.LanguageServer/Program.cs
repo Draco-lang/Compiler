@@ -16,6 +16,7 @@ internal class Program
             .WithHandler<DracoSemanticTokensHandler>()
             .WithHandler<DracoDocumentFormattingHandler>()
             .WithHandler<DracoGoToDefinitionHandler>()
+            .WithHandler<DracoFindAllReferencesHandler>()
             .WithHandler<DracoHoverHandler>()
             .WithServices(services => services
                 .AddSingleton<DracoDocumentRepository>()));

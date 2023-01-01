@@ -19,10 +19,7 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
         this.repository = repository;
     }
 
-    private readonly DocumentSelector documentSelector = new(new DocumentFilter
-    {
-        Pattern = $"**/*{Constants.DracoSourceExtension}",
-    });
+    private readonly DocumentSelector documentSelector = Constants.DracoSourceDocumentSelector;
 
     public override async Task<SemanticTokens?> Handle(SemanticTokensParams request, CancellationToken cancellationToken)
     {

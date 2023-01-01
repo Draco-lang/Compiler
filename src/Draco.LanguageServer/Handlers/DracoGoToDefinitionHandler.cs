@@ -25,10 +25,7 @@ internal sealed class DracoGoToDefinitionHandler : DefinitionHandlerBase
         DefinitionCapability capability,
         ClientCapabilities clientCapabilities) => new()
         {
-            DocumentSelector = new DocumentSelector(new DocumentFilter
-            {
-                Pattern = $"**/*{Constants.DracoSourceExtension}",
-            })
+            DocumentSelector = Constants.DracoSourceDocumentSelector
         };
 
     public override Task<LocationOrLocationLinks> Handle(DefinitionParams request, CancellationToken cancellationToken)

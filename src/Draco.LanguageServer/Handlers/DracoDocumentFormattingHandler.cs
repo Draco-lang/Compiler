@@ -11,10 +11,7 @@ namespace Draco.LanguageServer.Handlers;
 internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandlerBase
 {
     private readonly DracoDocumentRepository repository;
-    private readonly DocumentSelector documentSelector = new(new DocumentFilter
-    {
-        Pattern = $"**/*{Constants.DracoSourceExtension}",
-    });
+    private readonly DocumentSelector documentSelector = Constants.DracoSourceDocumentSelector;
 
     public DracoDocumentFormattingHandler(DracoDocumentRepository repository)
     {

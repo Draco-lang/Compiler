@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.RedGreenTree.Attributes;
 
@@ -360,7 +362,24 @@ internal partial record class ParseNode
         public sealed partial record class String(
             Token OpenQuotes,
             ImmutableArray<StringPart> Parts,
-            Token CloseQuotes) : Expr;
+            Token CloseQuotes) : Expr
+        {
+            [Ignore(IgnoreFlags.TransformerAll)]
+            public int Cutoff
+            {
+                get
+                {
+                    // Line strings have no cutoff
+                    if (this.OpenQuotes.Type == TokenType.LineStringStart) return 0;
+                    // Multiline strings
+                    Debug.Assert(this.CloseQuotes.LeadingTrivia.Length <= 2);
+                    if (this.CloseQuotes.LeadingTrivia.Length == 1) return 0;
+                    // The first trivia was newline, the second must be spaces
+                    Debug.Assert(this.CloseQuotes.LeadingTrivia[1].Type == TriviaType.Whitespace);
+                    return this.CloseQuotes.LeadingTrivia[1].Text.Length;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -407,7 +426,6 @@ internal partial record class ParseNode
         [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Content(
             Token Value,
-            int Cutoff,
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>

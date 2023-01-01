@@ -53,4 +53,29 @@ internal static class StringUtils
         }
         return result.ToString();
     }
+
+    /// <summary>
+    /// Converts a PascalCase text to snake_case.
+    /// </summary>
+    /// <param name="text">The text to convert.</param>
+    /// <returns>The <paramref name="text"/> in snake case.</returns>
+    public static string ToSnakeCase(string text)
+    {
+        var result = new StringBuilder();
+        var first = true;
+        foreach (var ch in text)
+        {
+            if (char.IsUpper(ch))
+            {
+                if (!first) result.Append('_');
+                result.Append(char.ToLower(ch));
+            }
+            else
+            {
+                result.Append(ch);
+            }
+            first = false;
+        }
+        return result.ToString();
+    }
 }

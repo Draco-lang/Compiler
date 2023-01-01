@@ -96,6 +96,11 @@ internal partial interface ISymbol
     public bool IsError { get; }
 
     /// <summary>
+    /// True, if this is an intrinsic.
+    /// </summary>
+    public bool IsIntrinsic { get; }
+
+    /// <summary>
     /// The diagnostics attached to this symbol.
     /// </summary>
     public ImmutableArray<Diagnostic> Diagnostics { get; }
@@ -273,6 +278,7 @@ internal partial interface ISymbol
     {
         public string Name { get; }
         public bool IsError => true;
+        public bool IsIntrinsic => false;
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public virtual IScope? DefiningScope => null;
         public virtual IFunction? DefiningFunction => null;
@@ -299,6 +305,7 @@ internal partial interface ISymbol
         public string Name { get; }
         public ParseNode Definition { get; }
         public bool IsError => this.Diagnostics.Length > 0;
+        public bool IsIntrinsic => false;
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public IScope DefiningScope
         {
@@ -362,6 +369,7 @@ internal partial interface ISymbol
 
         public string Name { get; }
         public bool IsError => false;
+        public virtual bool IsIntrinsic => false;
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
         public IScope? DefiningScope => null;
         public IFunction? DefiningFunction => null;
@@ -631,6 +639,7 @@ internal partial interface ISymbol
     private sealed class IntrinsicFunction : SynthetizedBase, IFunction
     {
         public override bool IsExternallyVisible => true;
+        public override bool IsIntrinsic => true;
         public IScope? DefinedScope => null;
         public ImmutableArray<IParameter> Parameters { get; }
         public Type ReturnType { get; }
@@ -660,6 +669,7 @@ internal partial interface ISymbol
     /// </summary>
     private sealed class IntrinsicTypeDefinition : SynthetizedBase, ITypeDefinition
     {
+        public override bool IsIntrinsic => true;
         public Type DefinedType { get; }
 
         public IntrinsicTypeDefinition(string name, Type definedType)

@@ -5,6 +5,7 @@ using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Api.Syntax;
 using System.Collections.Immutable;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
+using System.Diagnostics;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
@@ -84,6 +85,7 @@ internal static class AstBuilder
         expr,
         Ast.Expr (expr) => expr switch
         {
+            ParseNode.Expr.Grouping g => ToAst(db, g.Expression.Value),
             ParseNode.Expr.Return ret => new Ast.Expr.Return(
                 ParseNode: ret,
                 Expression: ret.Expression is null ? Ast.Expr.Unit.Default : ToAst(db, ret.Expression)),
@@ -159,24 +161,27 @@ internal static class AstBuilder
 
     private static Ast.Expr ToAst(QueryDatabase db, ParseNode.Expr.String str)
     {
-        // TODO: Maybe move the cutoff/first-in-line logic into the parser itself?
-        // It's a bit misleading to have a nonzero cutoff for parts not at the start of the line
         var builder = ImmutableArray.CreateBuilder<Ast.StringPart>();
-        var firstInLine = true;
+        var lastNewline = true;
         foreach (var part in str.Parts)
         {
-            builder.Add(part switch
+            if (part is ParseNode.StringPart.Content content)
             {
-                ParseNode.StringPart.Content content => new Ast.StringPart.Content(
+                var text = content.Value.ValueText;
+                Debug.Assert(text is not null);
+                builder.Add(new Ast.StringPart.Content(
                     ParseNode: content,
-                    Value: content.Value.ValueText ?? throw new InvalidOperationException(),
-                    Cutoff: firstInLine ? content.Cutoff : 0),
-                ParseNode.StringPart.Interpolation interpolation => new Ast.StringPart.Interpolation(
+                    Value: text.Substring(lastNewline ? str.Cutoff : 0)));
+                lastNewline = content.Value.Type == TokenType.StringNewline;
+            }
+            else
+            {
+                var interpolation = (ParseNode.StringPart.Interpolation)part;
+                builder.Add(new Ast.StringPart.Interpolation(
                     ParseNode: interpolation,
-                    Expression: ToAst(db, interpolation.Expression)),
-                _ => throw new InvalidOperationException(),
-            });
-            firstInLine = part is ParseNode.StringPart.Content c && c.Value.Type == TokenType.StringNewline;
+                    Expression: ToAst(db, interpolation.Expression)));
+                lastNewline = false;
+            }
         }
         return new Ast.Expr.String(
             ParseNode: str,

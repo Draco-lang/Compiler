@@ -134,7 +134,6 @@ public static partial class SyntaxFactory
         parent: null,
         green: new Internal.Syntax.ParseNode.StringPart.Content(
             Value: Internal.Syntax.ParseNode.Token.From(TokenType.StringContent, value),
-            Cutoff: 0,
             Diagnostics: ImmutableArray<Internal.Diagnostics.Diagnostic>.Empty));
 }
 

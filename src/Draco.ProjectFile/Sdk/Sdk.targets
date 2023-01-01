@@ -4,9 +4,8 @@
         <OutputPath>output\</OutputPath>
     </PropertyGroup>
 
-    <UsingTask TaskName="DracoBuildTask"
-        AssemblyName="Draco.ProjectFile"
-        TaskFactory = "DracoBuildTask"/>
+    <UsingTask TaskName = "DracoBuildTask"
+        AssemblyFile = "..\bin\Debug\net7.0\Draco.ProjectFile.dll"/>
 
     <Target Name="Build">
         <DracoBuildTask/>

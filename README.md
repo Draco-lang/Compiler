@@ -26,9 +26,9 @@ This is the repository for the work-in-progress compiler for the Draco programmi
  * Codegen
    * [x] AST
    * [x] Lowering
-   * [ ] Custom IR
-   * [ ] Writing IL
-   * [ ] Writing PE
- * [ ] Optimization
-   * [ ] TCO
+   * [x] Custom IR
+   * [x] Writing IL
+   * [x] Writing PE
+ * Optimization
+   * [x] TCO
    * [ ] Vectorization

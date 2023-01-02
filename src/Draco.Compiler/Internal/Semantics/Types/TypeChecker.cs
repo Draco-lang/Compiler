@@ -47,7 +47,7 @@ internal static class TypeChecker
             var scope = SymbolResolution.GetDefinedScopeOrNull(db, tree) ?? throw new InvalidOperationException();
             var definition = scope.Definition;
             Debug.Assert(definition is not null);
-            var result = InferLocalTypes(db, definition);
+            var result = InferLocalTypes(db, definition!);
             return result.Diagnostics;
         }
         else
@@ -138,15 +138,15 @@ internal static class TypeChecker
                 {
                     var definition = typed.Definition;
                     Debug.Assert(definition is not null);
-                    var inferenceResult = InferLocalTypes(db, definition);
+                    var inferenceResult = InferLocalTypes(db, definition!);
                     return inferenceResult.Symbols[typed];
                 }
                 else
                 {
                     var definingFunc = typed.DefiningFunction;
                     Debug.Assert(definingFunc is not null);
-                    Debug.Assert(definingFunc.Definition is not null);
-                    var inferenceResult = InferLocalTypes(db, definingFunc.Definition);
+                    Debug.Assert(definingFunc!.Definition is not null);
+                    var inferenceResult = InferLocalTypes(db, definingFunc.Definition!);
                     return inferenceResult.Symbols[typed];
                 }
             });
@@ -193,7 +193,7 @@ internal static class TypeChecker
             if (definedSymbol is ISymbol.IFunction) break;
             if (definedSymbol is ISymbol.IVariable v && v.IsGlobal) break;
             Debug.Assert(tree.Parent is not null);
-            tree = tree.Parent;
+            tree = tree.Parent!;
         }
         return tree;
     }

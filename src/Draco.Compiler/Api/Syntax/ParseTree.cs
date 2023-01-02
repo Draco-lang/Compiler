@@ -281,7 +281,7 @@ public abstract partial class ParseNode
     private Range ComputeRange()
     {
         var start = this.Position;
-        var end = StepPositionByText(start, this.ToString());
+        var end = StepPositionByText(start, this.ToString().AsSpan());
         return new(start, end);
     }
 
@@ -366,13 +366,13 @@ public abstract partial class ParseNode
                 position = precedingToken.Range.End;
                 foreach (var t in precedingToken.TrailingTrivia)
                 {
-                    position = StepPositionByText(position, t.Text);
+                    position = StepPositionByText(position, t.Text.AsSpan());
                 }
             }
             // Offset by leading trivia
             foreach (var t in this.LeadingTrivia)
             {
-                position = StepPositionByText(position, t.Text);
+                position = StepPositionByText(position, t.Text.AsSpan());
             }
             // We are done
             return position;
@@ -473,6 +473,6 @@ public abstract partial class ParseNode
 
     private static Punctuated<Expr> ToRed(Internal.Syntax.ParseTree tree, ParseNode? parent, Internal.Syntax.ParseNode.Punctuated<Internal.Syntax.ParseNode.Expr> punctuated) =>
         new(
-            (Expr)ToRed(tree ,parent, punctuated.Value),
+            (Expr)ToRed(tree, parent, punctuated.Value),
             ToRed(tree, parent, punctuated.Punctuation));
 }

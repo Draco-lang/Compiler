@@ -170,7 +170,7 @@ internal interface IReadOnlyInstruction
 /// <summary>
 /// A marker type for instruction operands.
 /// </summary>
-public interface IInstructionOperand
+internal interface IInstructionOperand
 {
 }
 

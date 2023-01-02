@@ -79,20 +79,11 @@ internal partial interface ISymbol
 
     private static string GetDocumentation(ParseNode? definition)
     {
-        if (definition is ParseNode.Decl.Variable vari)
+        if (definition is ParseNode.Decl.Variable || definition is ParseNode.Decl.Func)
         {
             // Get all the doc commemts above the declarationh
-            var trivia = vari.Tokens.FirstOrDefault() is not null ?
-                vari.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
-                null;
-            // Concatenate the text of all the doc comments
-            return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;
-        }
-        else if (definition is ParseNode.Decl.Func func)
-        {
-            // Get all the doc commemts above the declarationh
-            var trivia = func.Tokens.FirstOrDefault() is not null ?
-                func.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
+            var trivia = definition.Tokens.FirstOrDefault() is not null ?
+                definition.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
                 null;
             // Concatenate the text of all the doc comments
             return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;

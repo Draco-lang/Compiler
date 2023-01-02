@@ -29,29 +29,19 @@ public static partial class SyntaxFactory
             ? PunctuatedList(ImmutableArray<Punctuated<T>>.Empty)
             : PunctuatedList(elements.SkipLast(1).Select(e => Punctuated(e, punctuation)).Append(Punctuated(elements[^1], null)));
 
-    private static TNode WithTrivia<TNode>(TNode node, Internal.Syntax.ParseNode.Trivia trivia) where TNode : ParseNode
+    private static TNode WithLeadingTrivia<TNode>(TNode node, params Internal.Syntax.ParseNode.Trivia[] trivia) where TNode : ParseNode
     {
-        var greenNode = new FirstTokenTransformer(trivia).Transform(node.Green, out var _);
+        var greenNode = new AddLeadingTriviaTransformer(trivia).Transform(node.Green, out var _);
         return (TNode)ToRed(null!, null, greenNode);
     }
 
-    public static TNode WithDocumentation<TNode>(TNode node, string docs) where TNode : ParseNode
-    {
-        foreach (var doc in docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
-        {
-            node = WithTrivia(node, Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, "///" + doc));
-        }
-        return node;
-    }
+    public static TNode WithDocumentation<TNode>(TNode node, string docs) where TNode : ParseNode =>
+        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+            .Select(x => Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, $"///{x}")).ToArray());
 
-    public static TNode WithComment<TNode>(TNode node, string docs) where TNode : ParseNode
-    {
-        foreach (var doc in docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
-        {
-            node = WithTrivia(node, Internal.Syntax.ParseNode.Trivia.From(TriviaType.LineComment, "//" + doc));
-        }
-        return node;
-    }
+    public static TNode WithComments<TNode>(TNode node, string docs) where TNode : ParseNode =>
+        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+            .Select(x => Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, $"//{x}")).ToArray());
 
     public static CompilationUnit CompilationUnit(ImmutableArray<Decl> decls) => CompilationUnit(decls, EndOfInput);
     public static CompilationUnit CompilationUnit(IEnumerable<Decl> decls) => CompilationUnit(decls.ToImmutableArray());
@@ -135,12 +125,12 @@ public static partial class SyntaxFactory
 // Transformer
 public static partial class SyntaxFactory
 {
-    private class FirstTokenTransformer : ParseTreeTransformerBase
+    private sealed class AddLeadingTriviaTransformer : ParseTreeTransformerBase
     {
         private bool firstToken = true;
-        private readonly Internal.Syntax.ParseNode.Trivia triviaToAdd;
+        private readonly Internal.Syntax.ParseNode.Trivia[] triviaToAdd;
 
-        public FirstTokenTransformer(Internal.Syntax.ParseNode.Trivia triviaToAdd)
+        public AddLeadingTriviaTransformer(Internal.Syntax.ParseNode.Trivia[] triviaToAdd)
         {
             this.triviaToAdd = triviaToAdd;
         }
@@ -152,7 +142,7 @@ public static partial class SyntaxFactory
                 this.firstToken = false;
                 changed = true;
                 var trivia = token.LeadingTrivia.ToBuilder();
-                trivia.Add(this.triviaToAdd);
+                trivia.AddRange(this.triviaToAdd);
                 return Internal.Syntax.ParseNode.Token.Builder.From(token).SetLeadingTrivia(trivia.ToImmutable()).Build();
             }
             changed = false;

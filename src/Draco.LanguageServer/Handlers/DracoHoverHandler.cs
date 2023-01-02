@@ -21,10 +21,7 @@ internal class DracoHoverHandler : HoverHandlerBase
 
     protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new()
     {
-        DocumentSelector = new DocumentSelector(new DocumentFilter
-        {
-            Pattern = $"**/*{Constants.DracoSourceExtension}",
-        })
+        DocumentSelector = Constants.DracoSourceDocumentSelector
     };
 
     public override Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
@@ -48,7 +45,7 @@ internal class DracoHoverHandler : HoverHandlerBase
                 .Select(semanticModel.GetDefinedSymbolOrNull)
                 .LastOrDefault(symbol => symbol is not null);
         }
-        string docs = referencedSymbol is null ? string.Empty : referencedSymbol.Documentation;
+        var docs = referencedSymbol is null ? string.Empty : referencedSymbol.Documentation;
 
         return Task.FromResult<Hover?>(new Hover()
         {

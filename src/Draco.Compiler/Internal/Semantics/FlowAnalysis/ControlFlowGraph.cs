@@ -163,10 +163,6 @@ internal sealed class CfgBuilder<TStatement>
 
     private static void Connect(BasicBlock pred, BasicBlock succ)
     {
-        if (pred.Successors.Contains(succ))
-        {
-            var x = 0;
-        }
         pred.Successors.Add(succ);
         succ.Predecessors.Add(pred);
     }

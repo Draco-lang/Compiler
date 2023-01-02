@@ -16,6 +16,7 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
     {
         var translator = new AstToCfg();
         translator.Visit(ast);
+        translator.builder.Exit();
         return translator.builder.Build();
     }
 
@@ -52,7 +53,7 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
     public override Unit VisitExprStmt(Ast.Stmt.Expr node)
     {
         base.VisitExprStmt(node);
-        if (!IsControlFlowExpr(node.Expression)) this.builder.AddStatement(node);
+        if (node.Expression is not Ast.Expr.Block and not Ast.Expr.If) this.builder.AddStatement(node);
         return this.Default;
     }
 
@@ -64,42 +65,27 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
 
     public override Unit VisitGotoExpr(Ast.Expr.Goto node)
     {
-        this.builder.ConnectToLabel(this.GetLabel(node.Target));
+        var label = this.GetLabel(node.Target);
+        this.builder.PlaceLabel(label);
         return this.Default;
     }
 
     public override Unit VisitIfExpr(Ast.Expr.If node)
     {
         this.VisitExpr(node.Condition);
-        this.builder.StartBranching();
-        this.builder.NextBranch();
-        this.VisitExpr(node.Then);
-        this.builder.NextBranch();
-        this.VisitExpr(node.Else);
-        this.builder.EndBranching();
-        return this.Default;
-    }
-
-    public override Unit VisitWhileExpr(Ast.Expr.While node)
-    {
-        var startLabel = this.builder.PlaceLabel();
+        var thenLabel = this.builder.DeclareLabel();
+        var elseLabel = this.builder.DeclareLabel();
         var endLabel = this.builder.DeclareLabel();
-        this.VisitExpr(node.Condition);
-        this.VisitExpr(node.Expression);
-        this.builder.ConnectToLabel(startLabel);
+
+        this.builder.PlaceLabel(thenLabel);
+        this.VisitExpr(node.Then);
+        this.builder.Connect(endLabel);
+
+        this.builder.PlaceLabel(elseLabel);
+        this.VisitExpr(node.Else);
+
         this.builder.PlaceLabel(endLabel);
+
         return this.Default;
     }
-
-    // TODO
-    public override Unit VisitOrExpr(Ast.Expr.Or node) => throw new NotImplementedException();
-    // TODO
-    public override Unit VisitAndExpr(Ast.Expr.And node) => throw new NotImplementedException();
-
-    private static bool IsControlFlowExpr(Ast.Expr node) => node
-        is Ast.Expr.Goto
-        or Ast.Expr.If
-        or Ast.Expr.While
-        or Ast.Expr.Or
-        or Ast.Expr.And;
 }

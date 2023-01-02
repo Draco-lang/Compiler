@@ -37,11 +37,14 @@ internal static class CfgPrinter
         var result = new StringBuilder();
         result.AppendLine("digraph CFG {");
         // Declare blocks
-        foreach (var block in cfg.Blocks) result.AppendLine($"    {GetBlockName(block)} [label=\"{bbToString(block)}\"];");
+        foreach (var block in cfg.Blocks)
+        {
+            result.AppendLine($"    {GetBlockName(block)} [label=\"{StringUtils.Unescape(bbToString(block))}\"];");
+        }
         // Entry
         result.AppendLine($"    {GetBlockName(cfg.Entry)} [xlabel=\"ENTRY\"];");
         // Exit
-        foreach (var exit in cfg.Exit) result.AppendLine($"    {GetBlockName(exit)} [xlabel=\"ENTRY\"];");
+        foreach (var exit in cfg.Exit) result.AppendLine($"    {GetBlockName(exit)} [xlabel=\"EXIT\"];");
         // Connect them up
         foreach (var block in cfg.Blocks)
         {

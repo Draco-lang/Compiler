@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
 namespace Draco.Compiler.Api;
 
@@ -107,6 +108,14 @@ public sealed class Compilation
         var ast = AstBuilder.ToAst(this.db, this.ParseTree.Root);
         // Lower it
         ast = AstLowering.Lower(this.db, ast);
+        // TODO: Temporary
+        {
+            var cfg = AstToCfg.ToCfg(ast);
+            System.Console.WriteLine(CfgPrinter.ToDot(
+                cfg
+                ,bb => string.Join(string.Empty, bb.Statements.Select(stmt => stmt.ParseNode))
+                ));
+        }
         // Generate Draco IR
         var asm = new Assembly(this.AssemblyName ?? "output");
         DracoIrCodegen.Generate(asm, ast);

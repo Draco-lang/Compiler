@@ -26,6 +26,7 @@ internal static class AstBuilder
         ParseNode.Decl decl => ToAst(db, decl),
         ParseNode.Stmt stmt => ToAst(db, stmt),
         ParseNode.Expr expr => ToAst(db, expr),
+        ParseNode.FuncBody body => ToAst(db, body),
         _ => throw new ArgumentOutOfRangeException(nameof(ast)),
     };
 

@@ -35,16 +35,9 @@ internal class DracoHoverHandler : HoverHandlerBase
 
         var referencedSymbol = parseTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(semanticModel.GetReferencedSymbolOrNull)
+            .Select(symbol => semanticModel.GetReferencedSymbolOrNull(symbol) ?? semanticModel.GetDefinedSymbolOrNull(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
-        if (referencedSymbol is null)
-        {
-            referencedSymbol = parseTree
-                .TraverseSubtreesAtPosition(cursorPosition)
-                .Select(semanticModel.GetDefinedSymbolOrNull)
-                .LastOrDefault(symbol => symbol is not null);
-        }
         var docs = referencedSymbol is null ? string.Empty : referencedSymbol.Documentation;
 
         return Task.FromResult<Hover?>(new Hover()

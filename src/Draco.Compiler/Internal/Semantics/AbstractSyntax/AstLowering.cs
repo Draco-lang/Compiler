@@ -48,8 +48,8 @@ internal sealed class AstLowering : AstTransformerBase
 
         changed = true;
 
-        var continueLabel = ISymbol.SynthetizeLabel();
-        var breakLabel = ISymbol.SynthetizeLabel();
+        var continueLabel = Symbol.SynthetizeLabel();
+        var breakLabel = Symbol.SynthetizeLabel();
         var condition = this.TransformExpr(node.Condition, out _);
         var body = this.TransformExpr(node.Expression, out _);
 
@@ -131,7 +131,7 @@ internal sealed class AstLowering : AstTransformerBase
         var left = this.TransformExpr(node.Left, out _);
         var right = this.TransformExpr(node.Right, out _);
 
-        var varSymbol = ISymbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
+        var varSymbol = Symbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
         return Block(
             stmts: new[]
             {
@@ -164,7 +164,7 @@ internal sealed class AstLowering : AstTransformerBase
         var left = this.TransformExpr(node.Left, out _);
         var right = this.TransformExpr(node.Right, out _);
 
-        var varSymbol = ISymbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
+        var varSymbol = Symbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
         return Block(
             stmts: new[]
             {
@@ -212,8 +212,8 @@ internal sealed class AstLowering : AstTransformerBase
 
         // Otherwise compute and store
         Debug.Assert(expr.ParseNode is ParseNode.Expr);
-        var type = TypeChecker.TypeOf(this.db, (ParseNode.Expr)expr.ParseNode);
-        var symbol = ISymbol.SynthetizeVariable(type: type, isMutable: false);
+        var type = TypeChecker.TypeOf(this.db, (ParseNode.Expr)expr.ParseNode!);
+        var symbol = Symbol.SynthetizeVariable(type: type, isMutable: false);
         var symbolRef = Reference(symbol);
         var assignment = Stmt(Var(
             varSymbol: symbol,

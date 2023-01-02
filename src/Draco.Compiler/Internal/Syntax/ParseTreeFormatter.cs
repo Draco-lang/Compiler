@@ -87,7 +87,7 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
         return this.Transform(tree, out _);
     }
 
-    public override ParseNode.Decl.Label TransformLabelDecl(ParseNode.Decl.Label node, out bool changed)
+    public override ParseNode.Decl TransformLabelDecl(ParseNode.Decl.Label node, out bool changed)
     {
         // Labels are indented one less than te rest of the code
         this.RemoveIndentation();

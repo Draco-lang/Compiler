@@ -156,7 +156,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
 
         // Store the inferred type
         Debug.Assert(inferredType is not null);
-        this.symbols[symbol] = inferredType;
+        this.symbols[symbol!] = inferredType!;
 
         return this.Default;
     }

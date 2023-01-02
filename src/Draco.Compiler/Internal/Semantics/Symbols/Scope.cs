@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 // Factory /////////////////////////////////////////////////////////////////////
 
-internal partial interface IScope
+internal static partial class Scope
 {
     public static IScope Make(
         QueryDatabase db,
@@ -75,7 +75,7 @@ internal enum ScopeKind
 /// <summary>
 /// The interface of all scopes.
 /// </summary>
-internal partial interface IScope
+internal interface IScope
 {
     /// <summary>
     /// The kind of this scope.
@@ -129,7 +129,7 @@ internal partial interface IScope
 
 // Implementations /////////////////////////////////////////////////////////////
 
-internal partial interface IScope
+internal static partial class Scope
 {
     /// <summary>
     /// Base class for all scopes.
@@ -167,7 +167,7 @@ internal partial interface IScope
     }
 }
 
-internal partial interface IScope
+internal static partial class Scope
 {
     /// <summary>
     /// Global scope.
@@ -187,7 +187,7 @@ internal partial interface IScope
     }
 }
 
-internal partial interface IScope
+internal static partial class Scope
 {
     /// <summary>
     /// Function scope.
@@ -207,7 +207,7 @@ internal partial interface IScope
     }
 }
 
-internal partial interface IScope
+internal static partial class Scope
 {
     /// <summary>
     /// Local scope.
@@ -296,7 +296,7 @@ internal readonly record struct Declaration(int Position, ISymbol Symbol)
     public ParseNode? Definition => this.Symbol.Definition;
 }
 
-internal partial interface IScope
+internal static partial class Scope
 {
     /// <summary>
     /// A builder type for constructing scopes.
@@ -392,7 +392,7 @@ internal partial interface IScope
                         // Unwrap singular overload
                         var resultSymbol = overloadSet.Count == 1
                             ? overloadSet[0] as ISymbol
-                            : ISymbol.SynthetizeOverloadSet(overloadSet.ToImmutable());
+                            : Symbol.SynthetizeOverloadSet(overloadSet.ToImmutable());
                         // Add to timeline
                         currentTimeline.Add(new(Position: first.Position, resultSymbol));
                     }

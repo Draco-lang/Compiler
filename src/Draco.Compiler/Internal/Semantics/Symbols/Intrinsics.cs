@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
+using static Draco.Compiler.Internal.Semantics.Symbols.Symbol;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;

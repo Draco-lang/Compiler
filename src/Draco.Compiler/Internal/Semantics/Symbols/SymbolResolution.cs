@@ -80,7 +80,7 @@ internal static class SymbolResolution
                     template: SemanticErrors.UndefinedReference,
                     location: new Location.TreeReference(tree),
                     formatArgs: name);
-                symbol = ISymbol.MakeReferenceError(name, ImmutableArray.Create(diag));
+                symbol = Symbol.MakeReferenceError(name, ImmutableArray.Create(diag));
             }
             return symbol;
         });
@@ -130,7 +130,7 @@ internal static class SymbolResolution
             var scopeKind = GetScopeKind(tree);
             if (scopeKind is null) return null;
 
-            var scopeBuilder = new IScope.Builder(db, scopeKind.Value, tree);
+            var scopeBuilder = new Scope.Builder(db, scopeKind.Value, tree);
 
             // We inject intrinsics at global scope
             if (scopeKind == ScopeKind.Global) InjectIntrinsics(scopeBuilder);
@@ -203,20 +203,20 @@ internal static class SymbolResolution
     /// <returns>The <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null.</returns>
     private static ISymbol? ConstructDefinedSymbolOrNull(QueryDatabase db, ParseNode tree) => tree switch
     {
-        ParseNode.Decl.Variable variable => ISymbol.MakeVariable(
+        ParseNode.Decl.Variable variable => Symbol.MakeVariable(
             db: db,
             name: variable.Identifier.Text,
             definition: tree,
             isMutable: variable.Keyword.Type == TokenType.KeywordVar),
-        ParseNode.Decl.Func func => ISymbol.MakeFunction(
+        ParseNode.Decl.Func func => Symbol.MakeFunction(
             db: db,
             name: func.Identifier.Text,
             definition: tree),
-        ParseNode.Decl.Label label => ISymbol.MakeLabel(
+        ParseNode.Decl.Label label => Symbol.MakeLabel(
             db: db,
             name: label.Identifier.Text,
             definition: tree),
-        ParseNode.FuncParam fparam => ISymbol.MakeParameter(
+        ParseNode.FuncParam fparam => Symbol.MakeParameter(
             db: db,
             name: fparam.Identifier.Text,
             definition: tree),
@@ -436,7 +436,7 @@ internal static class SymbolResolution
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    private static void InjectIntrinsics(IScope.Builder builder)
+    private static void InjectIntrinsics(Scope.Builder builder)
     {
         void Add(ISymbol symbol) => builder.Add(new(0, symbol));
 

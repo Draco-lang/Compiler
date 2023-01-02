@@ -74,6 +74,24 @@ internal static class StackExtensions
     }
 }
 
+internal static class QueueExtensions
+{
+    public static bool TryDequeue<T>(this Queue<T> queue, [MaybeNullWhen(false)] out T result)
+    {
+        if (queue.Count > 0)
+        {
+            result = queue.Dequeue();
+            return true;
+        }
+        else
+        {
+            result = default;
+            return false;
+        }
+    }
+}
+
+
 // Source: https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Collections/Generic/ReferenceEqualityComparer.cs
 internal sealed class ReferenceEqualityComparer : IEqualityComparer<object?>, IEqualityComparer
 {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
@@ -27,46 +28,38 @@ internal enum DataFlowDirection
 /// </summary>
 /// <typeparam name="TElement">The element type of the lattices.</typeparam>
 /// <typeparam name="TStatement">The statement type the lattice can handle.</typeparam>
-internal interface ILattice<TElement, TStatement>
+internal interface ILattice<TElement, TStatement> : IEqualityComparer<TElement>
 {
     /// <summary>
     /// The flow direction the lattice is defined for.
     /// </summary>
-    public static abstract DataFlowDirection Direction { get; }
+    public DataFlowDirection Direction { get; }
 
     /// <summary>
     /// The identity element of the lattice (also known as the top element).
     /// </summary>
-    public static abstract TElement Identity { get; }
+    public TElement Identity { get; }
 
     /// <summary>
     /// Deep-clones the given lattice element.
     /// </summary>
     /// <param name="element">The element to clone.</param>
     /// <returns>The clone of <paramref name="element"/>.</returns>
-    public static abstract TElement Clone(TElement element);
-
-    /// <summary>
-    /// Checks, if two lattice elements are equal.
-    /// </summary>
-    /// <param name="lhs">The first lattice element to compare.</param>
-    /// <param name="rhs">The second lattice element to compare.</param>
-    /// <returns>True, if <paramref name="lhs"/> and <paramref name="rhs"/> are equal, false otherwise.</returns>
-    public static abstract bool Equals(TElement lhs, TElement rhs);
+    public TElement Clone(TElement element);
 
     /// <summary>
     /// Transfers the given lattice element through the given statement, according to <see cref="Direction"/>.
     /// </summary>
     /// <param name="element">The element to transfer.</param>
     /// <param name="statement">The statement to use for the transition.</param>
-    public static abstract void Transfer(ref TElement element, TStatement statement);
+    public void Transfer(ref TElement element, TStatement statement);
 
     /// <summary>
     /// Joins up the lattice elements from multiple predecessors.
     /// </summary>
     /// <param name="inputs">The lattice elements to join.</param>
     /// <returns>The resulting lattice element.</returns>
-    public static abstract TElement Meet(IEnumerable<TElement> inputs);
+    public TElement Meet(IEnumerable<TElement> inputs);
 
 }
 
@@ -129,10 +122,10 @@ internal static class DataFlowAnalysis
     {
         var result = ImmutableDictionary.CreateBuilder<IBasicBlock<TStatement>, BlockDataFlowInfo<TElement>>();
 
-        if (TLattice.Direction == DataFlowDirection.Forward)
+        if (lattice.Direction == DataFlowDirection.Forward)
         {
             // Initialize
-            foreach (var b in cfg.Blocks) result[b] = new(@out: TLattice.Identity);
+            foreach (var b in cfg.Blocks) result[b] = new(@out: lattice.Identity);
             result[cfg.Entry].Out = boundaryCondition;
             // Add successors to worklist
             var workList = new Queue<IBasicBlock<TStatement>>();
@@ -141,11 +134,11 @@ internal static class DataFlowAnalysis
             while (workList.TryDequeue(out var b))
             {
                 var info = result[b];
-                info.In = TLattice.Meet(b.Predecessors.Select(p => result[p].Out));
+                info.In = lattice.Meet(b.Predecessors.Select(p => result[p].Out));
                 var oldOut = info.Out;
                 info.Out = Transfer(info.In, b, lattice);
                 // If there was a change, enqueue successors
-                if (!TLattice.Equals(oldOut, info.Out))
+                if (!lattice.Equals(oldOut, info.Out))
                 {
                     foreach (var s in cfg.Entry.Successors) Enqueue(workList, s);
                 }
@@ -154,7 +147,7 @@ internal static class DataFlowAnalysis
         else
         {
             // Initialize
-            foreach (var b in cfg.Blocks) result[b] = new(@in: TLattice.Identity);
+            foreach (var b in cfg.Blocks) result[b] = new(@in: lattice.Identity);
             foreach (var exit in cfg.Exit) result[exit].In = boundaryCondition;
             // Add predecessors to worklist
             var workList = new Queue<IBasicBlock<TStatement>>();
@@ -163,11 +156,11 @@ internal static class DataFlowAnalysis
             while (workList.TryDequeue(out var b))
             {
                 var info = result[b];
-                info.Out = TLattice.Meet(b.Successors.Select(s => result[s].In));
+                info.Out = lattice.Meet(b.Successors.Select(s => result[s].In));
                 var oldIn = info.In;
                 info.In = Transfer(info.Out, b, lattice);
                 // If there was a change, enqueue predecessors
-                if (!TLattice.Equals(oldIn, info.In))
+                if (!lattice.Equals(oldIn, info.In))
                 {
                     foreach (var p in cfg.Entry.Predecessors) Enqueue(workList, p);
                 }
@@ -194,19 +187,19 @@ internal static class DataFlowAnalysis
         TLattice lattice)
         where TLattice : ILattice<TElement, TStatement>
     {
-        var output = TLattice.Clone(input);
-        if (TLattice.Direction == DataFlowDirection.Forward)
+        var output = lattice.Clone(input);
+        if (lattice.Direction == DataFlowDirection.Forward)
         {
             for (var i = 0; i < block.Statements.Count; ++i)
             {
-                TLattice.Transfer(ref output, block.Statements[i]);
+                lattice.Transfer(ref output, block.Statements[i]);
             }
         }
         else
         {
             for (var i = block.Statements.Count - 1; i >= 0; --i)
             {
-                TLattice.Transfer(ref output, block.Statements[i]);
+                lattice.Transfer(ref output, block.Statements[i]);
             }
         }
         return output;

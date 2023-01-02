@@ -10,21 +10,29 @@ namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 /// Represents a control-flow view of some code segment.
 /// </summary>
 /// <typeparam name="TStatement">The individual statement type.</typeparam>
-/// <typeparam name="TEdge">The edge type that goes between the basic-blocks.</typeparam>
-internal interface IControlFlowGraph<TStatement, TEdge>
+internal interface IControlFlowGraph<TStatement>
 {
     /// <summary>
     /// The entry point.
     /// </summary>
-    public IBasicBlock<TStatement, TEdge> Entry { get; }
+    public IBasicBlock<TStatement> Entry { get; }
+
+    /// <summary>
+    /// The exit point.
+    /// </summary>
+    public IBasicBlock<TStatement> Exit { get; }
+
+    /// <summary>
+    /// The basic-blocks within this graph.
+    /// </summary>
+    public IEnumerable<IBasicBlock<TStatement>> Blocks { get; }
 }
 
 /// <summary>
 /// Represents a continuous sequence of <see cref="TStatement"/>s that are guaranteed to be executed one after another.
 /// </summary>
 /// <typeparam name="TStatement">The statement type.</typeparam>
-/// <typeparam name="TEdge">The edge type that goes between blocks.</typeparam>
-internal interface IBasicBlock<TStatement, TEdge>
+internal interface IBasicBlock<TStatement>
 {
     /// <summary>
     /// The statements within this block.
@@ -34,10 +42,10 @@ internal interface IBasicBlock<TStatement, TEdge>
     /// <summary>
     /// The predecessor blocks of this one.
     /// </summary>
-    public IEnumerable<KeyValuePair<TEdge, IBasicBlock<TStatement, TEdge>>> Predecessors { get; }
+    public IEnumerable<IBasicBlock<TStatement>> Predecessors { get; }
 
     /// <summary>
     /// The successor blocks of this one.
     /// </summary>
-    public IEnumerable<KeyValuePair<TEdge, IBasicBlock<TStatement, TEdge>>> Successors { get; }
+    public IEnumerable<IBasicBlock<TStatement>> Successors { get; }
 }

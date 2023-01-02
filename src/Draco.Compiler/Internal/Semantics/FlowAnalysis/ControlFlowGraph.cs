@@ -90,6 +90,7 @@ internal sealed class CfgBuilder<TStatement>
     {
         this.cfg = new();
         this.currentBlock = new();
+        this.cfg.Entry = this.currentBlock;
     }
 
     /// <summary>
@@ -106,13 +107,18 @@ internal sealed class CfgBuilder<TStatement>
     /// Adds a statement to the currently built CFG.
     /// </summary>
     /// <param name="statement">The statement to add.</param>
-    public void AddStatement(TStatement statement) => this.currentBlock.Statements.Add(statement);
+    public void AddStatement(TStatement statement)
+    {
+        this.AssertValidContext();
+        this.currentBlock.Statements.Add(statement);
+    }
 
     /// <summary>
     /// Starts branching in the CFG. Needs to call <see cref="NextBranch"/> before any further <see cref="AddStatement(TStatement)"/>s.
     /// </summary>
     public void StartBranching()
     {
+        this.AssertValidContext();
         this.contextStack.Push(new(this.currentBlock, new()));
         this.currentBlock = null!;
     }
@@ -122,6 +128,7 @@ internal sealed class CfgBuilder<TStatement>
     /// </summary>
     public void EndBranching()
     {
+        this.AssertValidContext();
         if (!this.contextStack.TryPop(out var ctx)) throw new InvalidOperationException("not in branching");
         var successor = new BasicBlock();
         foreach (var block in ctx.Branches) Connect(block, successor);
@@ -140,14 +147,20 @@ internal sealed class CfgBuilder<TStatement>
     }
 
     /// <summary>
+    /// Declares a label that can be placed later.
+    /// </summary>
+    /// <returns>The declared label.</returns>
+    public Label DeclareLabel() => new(new());
+
+    /// <summary>
     /// Marks the current place in the CFG as a potential jump-target.
     /// </summary>
-    /// <returns>The marker for the place.</returns>
-    public Label MarkPlace()
+    /// <returns>The label for the place.</returns>
+    public Label PlaceLabel()
     {
         this.AssertValidContext();
-        var newLabel = new Label(new());
-        this.Jump(newLabel);
+        var newLabel = this.DeclareLabel();
+        this.ConnectToLabel(newLabel);
         return newLabel;
     }
 
@@ -156,7 +169,7 @@ internal sealed class CfgBuilder<TStatement>
     /// The current flow will not jump to the mark.
     /// </summary>
     /// <param name="mark">The mark to connect to.</param>
-    public void Connect(Label mark)
+    public void ConnectToLabel(Label mark)
     {
         this.AssertValidContext();
         Connect(this.currentBlock, mark.Block);
@@ -166,10 +179,10 @@ internal sealed class CfgBuilder<TStatement>
     /// Jumps the current flow of CFG to the given marked place.
     /// </summary>
     /// <param name="mark">The mark to jump to.</param>
-    public void Jump(Label mark)
+    public void PlaceLabel(Label mark)
     {
         this.AssertValidContext();
-        this.Connect(mark);
+        this.ConnectToLabel(mark);
         this.currentBlock = mark.Block;
     }
 

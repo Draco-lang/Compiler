@@ -1,9 +1,27 @@
-namespace Draco.ProjectFile;
+using System;
+using System.IO;
+using Microsoft.Build.Framework;
 
-public class DracoBuildTask : Microsoft.Build.Utilities.Task
+namespace Draco.ProjectFile
 {
-    public override bool Execute()
+    public class DracoBuildTask : Microsoft.Build.Utilities.Task
     {
-        return true;
+        public override bool Execute()
+        {
+            File.WriteAllText(@"C:\users\kubab\downloads\log.txt", this.ProjectDirectory);
+            return true;
+        }
+
+        /// <summary>
+        /// Output type of the given project.
+        /// </summary>
+        //[Required]
+        public string OutputType { get; set; }
+
+        /// <summary>
+        /// The directory the current project is located in.
+        /// </summary>
+        //[Required]
+        public string ProjectDirectory { get; set; }
     }
 }

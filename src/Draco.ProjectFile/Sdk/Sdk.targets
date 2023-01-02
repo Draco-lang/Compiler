@@ -2,12 +2,14 @@
 <Project>
     <PropertyGroup>
         <OutputPath>output\</OutputPath>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
     <UsingTask TaskName = "DracoBuildTask"
-        AssemblyFile = "..\bin\Debug\net7.0\Draco.ProjectFile.dll"/>
+        AssemblyFile = "..\bin\Debug\netstandard2.0\Draco.ProjectFile.dll"/>
 
     <Target Name="Build">
-        <DracoBuildTask/>
+        <DracoBuildTask OutputType="$(OutputType)" ProjectDirectory="$(MSBuildProjectDirectory)"/>
     </Target>
 </Project>

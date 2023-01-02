@@ -77,18 +77,15 @@ internal partial interface ISymbol
     public static ITypeDefinition MakeIntrinsicTypeDefinition(string name, Type type) =>
         new IntrinsicTypeDefinition(name, type);
 
-    private static string GetDocumentation(ParseNode? definition)
+    private static string ExtractDocumentation(ParseNode? definition)
     {
-        if (definition is ParseNode.Decl.Variable || definition is ParseNode.Decl.Func)
-        {
-            // Get all the doc commemts above the declarationh
-            var trivia = definition.Tokens.FirstOrDefault() is not null ?
-                definition.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
-                null;
-            // Concatenate the text of all the doc comments
-            return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;
-        }
-        else return string.Empty;
+        if (definition is null) return string.Empty;
+        // Get all the doc commemts above the declaration
+        var trivia = definition.Tokens.FirstOrDefault() is not null ?
+            definition.Tokens.FirstOrDefault()!.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment) :
+            null;
+        // Concatenate the text of all the doc comments
+        return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;
     }
 }
 
@@ -294,7 +291,7 @@ internal partial interface ISymbol
         public virtual ParseNode? Definition => null;
         public bool IsExternallyVisible => false;
         public bool IsGlobal => false;
-        public string Documentation => GetDocumentation(this.Definition);
+        public string Documentation => string.Empty;
 
         protected ErrorBase(string name, ImmutableArray<Diagnostic> diagnostics)
         {
@@ -347,7 +344,7 @@ internal partial interface ISymbol
         }
         public virtual bool IsExternallyVisible => false;
         public bool IsGlobal => this.DefiningScope.IsGlobal;
-        public string Documentation => GetDocumentation(this.Definition);
+        public string Documentation => string.Empty;
 
         protected readonly QueryDatabase db;
 
@@ -387,7 +384,7 @@ internal partial interface ISymbol
         public ParseNode? Definition => null;
         public virtual bool IsExternallyVisible => false;
         public virtual bool IsGlobal => false;
-        public string Documentation => GetDocumentation(this.Definition);
+        public string Documentation => string.Empty;
 
         protected SynthetizedBase(string name)
         {
@@ -462,6 +459,7 @@ internal partial interface ISymbol
         public override bool IsExternallyVisible => this.IsGlobal;
         public bool IsMutable { get; }
         public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
+        public new string Documentation => ExtractDocumentation(this.Definition);
 
         public Variable(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics, bool isMutable)
             : base(db, name, definition, diagnostics)
@@ -484,6 +482,7 @@ internal partial interface ISymbol
     {
         public Type Type { get; }
         public bool IsMutable { get; }
+        public new string Documentation => ExtractDocumentation(this.Definition);
 
         public SynthetizedVariable(Type type, bool isMutable)
             : base(GenerateName("variable"))
@@ -545,6 +544,7 @@ internal partial interface ISymbol
     private sealed class Function : InTreeBase, IFunction
     {
         public override bool IsExternallyVisible => this.IsGlobal;
+        public new string Documentation => ExtractDocumentation(this.Definition);
         public IScope DefinedScope
         {
             get
@@ -626,6 +626,7 @@ internal partial interface ISymbol
         public IScope? DefinedScope => null;
         public ImmutableArray<IParameter> Parameters { get; }
         public Type ReturnType { get; }
+        public new string Documentation => ExtractDocumentation(this.Definition);
         public Type.Function Type => new(
             this.Parameters.Select(p => p.Type).ToImmutableArray(),
             this.ReturnType);

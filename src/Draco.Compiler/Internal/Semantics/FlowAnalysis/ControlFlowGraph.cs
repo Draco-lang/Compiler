@@ -134,6 +134,9 @@ internal sealed class CfgBuilder<TStatement>
     // TODO: Doc
     public void Connect(Label label) => Connect(this.currentBlock, label.Block);
 
+    // TODO: Doc
+    public void Jump(Label label) => this.currentBlock = label.Block;
+
     /// <summary>
     /// Marks the current point in the CFG as an exit point.
     /// </summary>

@@ -57,22 +57,39 @@ internal interface IBasicBlock<TStatement>
 /// <typeparam name="TStatement">The statement type.</typeparam>
 internal sealed class CfgBuilder<TStatement>
 {
-    private sealed class Cfg : IControlFlowGraph<TStatement>
+    internal sealed class Cfg : IControlFlowGraph<TStatement>
     {
         public IBasicBlock<TStatement> Entry { get; set; } = null!;
-        public IEnumerable<IBasicBlock<TStatement>> Exit { get; set; } = null!;
+        public List<IBasicBlock<TStatement>> Exit { get; } = new();
+        IEnumerable<IBasicBlock<TStatement>> IControlFlowGraph<TStatement>.Exit => this.Exit;
         public IEnumerable<IBasicBlock<TStatement>> Blocks => GraphTraversal.DepthFirst(
             start: this.Entry,
             getNeighbors: b => b.Successors);
     }
 
-    private sealed class BasicBlock : IBasicBlock<TStatement>
+    internal sealed class BasicBlock : IBasicBlock<TStatement>
     {
         public List<TStatement> Statements { get; } = new();
+        public List<IBasicBlock<TStatement>> Predecessors { get; } = new();
+        public List<IBasicBlock<TStatement>> Successors { get; } = new();
 
         IReadOnlyList<TStatement> IBasicBlock<TStatement>.Statements => this.Statements;
-        public IEnumerable<IBasicBlock<TStatement>> Predecessors { get; set; } = null!;
-        public IEnumerable<IBasicBlock<TStatement>> Successors { get; set; } = null!;
+        IEnumerable<IBasicBlock<TStatement>> IBasicBlock<TStatement>.Predecessors => this.Predecessors;
+        IEnumerable<IBasicBlock<TStatement>> IBasicBlock<TStatement>.Successors => this.Successors;
+    }
+
+    public readonly record struct Label(BasicBlock Block);
+
+    private readonly record struct Context(BasicBlock Predecessor, List<BasicBlock> Branches);
+
+    private readonly Cfg cfg;
+    private readonly Stack<Context> contextStack = new();
+    private BasicBlock currentBlock;
+
+    public CfgBuilder()
+    {
+        this.cfg = new();
+        this.currentBlock = new();
     }
 
     /// <summary>
@@ -81,27 +98,23 @@ internal sealed class CfgBuilder<TStatement>
     /// <returns>The built CFG.</returns>
     public IControlFlowGraph<TStatement> Build()
     {
-        // TODO
-        throw new NotImplementedException();
+        if (this.contextStack.Count > 0) throw new InvalidOperationException("not all branching is closed");
+        return this.cfg;
     }
 
     /// <summary>
     /// Adds a statement to the currently built CFG.
     /// </summary>
     /// <param name="statement">The statement to add.</param>
-    public void AddStatement(TStatement statement)
-    {
-        // TODO
-        throw new NotImplementedException();
-    }
+    public void AddStatement(TStatement statement) => this.currentBlock.Statements.Add(statement);
 
     /// <summary>
     /// Starts branching in the CFG. Needs to call <see cref="NextBranch"/> before any further <see cref="AddStatement(TStatement)"/>s.
     /// </summary>
     public void StartBranching()
     {
-        // TODO
-        throw new NotImplementedException();
+        this.contextStack.Push(new(this.currentBlock, new()));
+        this.currentBlock = null!;
     }
 
     /// <summary>
@@ -109,8 +122,10 @@ internal sealed class CfgBuilder<TStatement>
     /// </summary>
     public void EndBranching()
     {
-        // TODO
-        throw new NotImplementedException();
+        if (!this.contextStack.TryPop(out var ctx)) throw new InvalidOperationException("not in branching");
+        var successor = new BasicBlock();
+        foreach (var block in ctx.Branches) Connect(block, successor);
+        this.currentBlock = successor;
     }
 
     /// <summary>
@@ -118,28 +133,44 @@ internal sealed class CfgBuilder<TStatement>
     /// </summary>
     public void NextBranch()
     {
-        // TODO
-        throw new NotImplementedException();
+        if (!this.contextStack.TryPeek(out var ctx)) throw new InvalidOperationException("not in branching");
+        if (this.currentBlock is not null) ctx.Branches.Add(this.currentBlock);
+        this.currentBlock = new BasicBlock();
+        Connect(ctx.Predecessor, this.currentBlock);
     }
 
     /// <summary>
     /// Marks the current place in the CFG as a potential jump-target.
     /// </summary>
     /// <returns>The marker for the place.</returns>
-    public object MarkPlace()
+    public Label MarkPlace()
     {
-        // TODO
-        throw new NotImplementedException();
+        this.AssertValidContext();
+        var newLabel = new Label(new());
+        this.Jump(newLabel);
+        return newLabel;
     }
 
     /// <summary>
     /// Connects the current flow of CFG to the given marked place.
+    /// The current flow will not jump to the mark.
     /// </summary>
     /// <param name="mark">The mark to connect to.</param>
-    public void Jump(object mark)
+    public void Connect(Label mark)
     {
-        // TODO
-        throw new NotImplementedException();
+        this.AssertValidContext();
+        Connect(this.currentBlock, mark.Block);
+    }
+
+    /// <summary>
+    /// Jumps the current flow of CFG to the given marked place.
+    /// </summary>
+    /// <param name="mark">The mark to jump to.</param>
+    public void Jump(Label mark)
+    {
+        this.AssertValidContext();
+        this.Connect(mark);
+        this.currentBlock = mark.Block;
     }
 
     /// <summary>
@@ -147,7 +178,21 @@ internal sealed class CfgBuilder<TStatement>
     /// </summary>
     public void Exit()
     {
-        // TODO
-        throw new NotImplementedException();
+        this.AssertValidContext();
+        this.cfg.Exit.Add(this.currentBlock);
+    }
+
+    private void AssertValidContext()
+    {
+        if (this.currentBlock is null)
+        {
+            throw new InvalidOperationException("no branches opened after branching operation");
+        }
+    }
+
+    private static void Connect(BasicBlock pred, BasicBlock succ)
+    {
+        pred.Successors.Add(succ);
+        succ.Predecessors.Add(pred);
     }
 }

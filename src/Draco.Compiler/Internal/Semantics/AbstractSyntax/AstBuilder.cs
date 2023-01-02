@@ -171,7 +171,7 @@ internal static class AstBuilder
                 Debug.Assert(text is not null);
                 builder.Add(new Ast.StringPart.Content(
                     ParseNode: content,
-                    Value: text.Substring(lastNewline ? str.Cutoff : 0)));
+                    Value: text![(lastNewline ? str.Cutoff : 0)..]));
                 lastNewline = content.Value.Type == TokenType.StringNewline;
             }
             else

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
 using static Draco.Compiler.Api.Syntax.ParseNode;
 

@@ -15,66 +15,66 @@ namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 // Factory /////////////////////////////////////////////////////////////////////
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     // TODO: Maybe error factories could construct the diags themselves?
     public static ISymbol MakeReferenceError(string name, ImmutableArray<Diagnostic> diagnostics) =>
         new ReferenceError(name, diagnostics);
 
-    public static ILabel MakeLabel(QueryDatabase db, string name, ParseNode definition) =>
+    public static ISymbol.ILabel MakeLabel(QueryDatabase db, string name, ParseNode definition) =>
         new Label(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
-    public static ILabel SynthetizeLabel() =>
+    public static ISymbol.ILabel SynthetizeLabel() =>
         new SynthetizedLabel();
 
-    public static IVariable MakeVariable(QueryDatabase db, string name, ParseNode definition, bool isMutable) =>
+    public static ISymbol.IVariable MakeVariable(QueryDatabase db, string name, ParseNode definition, bool isMutable) =>
         new Variable(db, name, definition, ImmutableArray<Diagnostic>.Empty, isMutable);
 
-    public static IVariable SynthetizeVariable(Type type, bool isMutable) =>
+    public static ISymbol.IVariable SynthetizeVariable(Type type, bool isMutable) =>
         new SynthetizedVariable(type, isMutable);
 
-    public static IParameter MakeParameter(QueryDatabase db, string name, ParseNode definition) =>
+    public static ISymbol.IParameter MakeParameter(QueryDatabase db, string name, ParseNode definition) =>
         new Parameter(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
-    public static IParameter SynthetizeParameter(Type type) =>
+    public static ISymbol.IParameter SynthetizeParameter(Type type) =>
         new SynthetizedParameter(type);
 
-    public static IFunction MakeFunction(QueryDatabase db, string name, ParseNode definition) =>
+    public static ISymbol.IFunction MakeFunction(QueryDatabase db, string name, ParseNode definition) =>
         new Function(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
-    public static IOverloadSet SynthetizeOverloadSet(ImmutableArray<IFunction> functions) =>
+    public static ISymbol.IOverloadSet SynthetizeOverloadSet(ImmutableArray<ISymbol.IFunction> functions) =>
         new OverloadSet(functions[0].Name, functions);
 
-    public static IOverloadSet SynthetizeOverloadSet(IOverloadSet f1, ImmutableArray<IFunction> f2)
+    public static ISymbol.IOverloadSet SynthetizeOverloadSet(ISymbol.IOverloadSet f1, ImmutableArray<ISymbol.IFunction> f2)
     {
         Debug.Assert(f2.All(f => f1.Name == f.Name));
         return new OverloadSet(f1.Name, f1.Functions.AddRange(f2));
     }
 
-    public static IFunction MakeIntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType) =>
+    public static ISymbol.IFunction MakeIntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType) =>
         new IntrinsicFunction(name, paramTypes, returnType);
 
-    public static IFunction MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
+    public static ISymbol.IFunction MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetUnaryOperatorName(op),
             ImmutableArray.Create(operandType),
             resultType);
 
-    public static IFunction MakeIntrinsicBinaryOperator(
+    public static ISymbol.IFunction MakeIntrinsicBinaryOperator(
         TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetBinaryOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
             ImmutableArray.Create(leftOperandType, rightrOperandType),
             resultType);
 
-    public static IFunction MakeIntrinsicRelationalOperator(
+    public static ISymbol.IFunction MakeIntrinsicRelationalOperator(
         TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetRelationalOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
             ImmutableArray.Create(leftOperandType, rightrOperandType),
             resultType);
 
-    public static ITypeDefinition MakeIntrinsicTypeDefinition(string name, Type type) =>
+    public static ISymbol.ITypeDefinition MakeIntrinsicTypeDefinition(string name, Type type) =>
         new IntrinsicTypeDefinition(name, type);
 
     private static string ExtractDocumentation(ParseNode? definition)
@@ -82,9 +82,7 @@ internal partial interface ISymbol
         if (definition is null) return string.Empty;
         // Get all the doc commemts above the declaration
         var token = definition.Tokens.FirstOrDefault();
-        var trivia = token is not null
-            ? token.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment)
-            : null;
+        var trivia = token?.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment);
         // Concatenate the text of all the doc comments
         return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;
     }
@@ -278,7 +276,7 @@ internal partial interface ISymbol
 
 // Implementations /////////////////////////////////////////////////////////////
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     // Base for errors
     private abstract class ErrorBase : ISymbol
@@ -288,7 +286,7 @@ internal partial interface ISymbol
         public bool IsIntrinsic => false;
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public virtual IScope? DefiningScope => null;
-        public virtual IFunction? DefiningFunction => null;
+        public virtual ISymbol.IFunction? DefiningFunction => null;
         public virtual ParseNode? Definition => null;
         public bool IsExternallyVisible => false;
         public bool IsGlobal => false;
@@ -305,7 +303,7 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     // Base helper class for symbols that are materialized in the tree
     private abstract class InTreeBase : ISymbol
@@ -321,10 +319,10 @@ internal partial interface ISymbol
             {
                 var result = SymbolResolution.GetContainingScopeOrNull(this.db, this.Definition);
                 Debug.Assert(result is not null);
-                return result;
+                return result!;
             }
         }
-        public virtual IFunction? DefiningFunction
+        public virtual ISymbol.IFunction? DefiningFunction
         {
             get
             {
@@ -339,7 +337,7 @@ internal partial interface ISymbol
                 var funcDef = scope.Definition;
                 Debug.Assert(funcDef is not null);
 
-                var funcSymbol = SymbolResolution.GetDefinedSymbolExpected<ISymbol.IFunction>(this.db, funcDef);
+                var funcSymbol = SymbolResolution.GetDefinedSymbolExpected<ISymbol.IFunction>(this.db, funcDef!);
                 return funcSymbol;
             }
         }
@@ -366,7 +364,7 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     // Base helper class for symbols that are synthetized
     private abstract class SynthetizedBase : ISymbol
@@ -381,7 +379,7 @@ internal partial interface ISymbol
         public virtual bool IsIntrinsic => false;
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
         public IScope? DefiningScope => null;
-        public IFunction? DefiningFunction => null;
+        public ISymbol.IFunction? DefiningFunction => null;
         public ParseNode? Definition => null;
         public virtual bool IsExternallyVisible => false;
         public virtual bool IsGlobal => false;
@@ -397,12 +395,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for a reference error.
     /// </summary>
-    private sealed class ReferenceError : ErrorBase, ITyped
+    private sealed class ReferenceError : ErrorBase, ISymbol.ITyped
     {
         public Type Type => Type.Error.Empty;
 
@@ -416,12 +414,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for user-defined labels.
     /// </summary>
-    private sealed class Label : InTreeBase, ILabel
+    private sealed class Label : InTreeBase, ISymbol.ILabel
     {
         public Label(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
@@ -434,12 +432,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for synthetized labels.
     /// </summary>
-    private sealed class SynthetizedLabel : SynthetizedBase, ILabel
+    private sealed class SynthetizedLabel : SynthetizedBase, ISymbol.ILabel
     {
         public SynthetizedLabel()
             : base(GenerateName("label"))
@@ -450,12 +448,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for user-defined variables.
     /// </summary>
-    private sealed class Variable : InTreeBase, IVariable
+    private sealed class Variable : InTreeBase, ISymbol.IVariable
     {
         public override bool IsExternallyVisible => this.IsGlobal;
         public bool IsMutable { get; }
@@ -474,12 +472,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for synthetized variables.
     /// </summary>
-    private sealed class SynthetizedVariable : SynthetizedBase, IVariable
+    private sealed class SynthetizedVariable : SynthetizedBase, ISymbol.IVariable
     {
         public Type Type { get; }
         public bool IsMutable { get; }
@@ -496,12 +494,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for user-defined parameters.
     /// </summary>
-    private sealed class Parameter : InTreeBase, IParameter
+    private sealed class Parameter : InTreeBase, ISymbol.IParameter
     {
         public bool IsMutable => false;
         public Type Type => TypeChecker.TypeOf(this.db, this);
@@ -517,12 +515,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for synthetized parameters.
     /// </summary>
-    private sealed class SynthetizedParameter : SynthetizedBase, IParameter
+    private sealed class SynthetizedParameter : SynthetizedBase, ISymbol.IParameter
     {
         public bool IsMutable => false;
         public Type Type { get; }
@@ -537,12 +535,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for user-defined functions.
     /// </summary>
-    private sealed class Function : InTreeBase, IFunction
+    private sealed class Function : InTreeBase, ISymbol.IFunction
     {
         public override bool IsExternallyVisible => this.IsGlobal;
         public new string Documentation => ExtractDocumentation(this.Definition);
@@ -552,20 +550,20 @@ internal partial interface ISymbol
             {
                 var scope = SymbolResolution.GetDefinedScopeOrNull(this.db, this.Definition);
                 Debug.Assert(scope is not null);
-                return scope;
+                return scope!;
             }
         }
-        public ImmutableArray<IParameter> Parameters
+        public ImmutableArray<ISymbol.IParameter> Parameters
         {
             get
             {
-                var builder = ImmutableArray.CreateBuilder<IParameter>();
+                var builder = ImmutableArray.CreateBuilder<ISymbol.IParameter>();
                 var tree = (ParseNode.Decl.Func)this.Definition;
                 foreach (var param in tree.Params.Value.Elements)
                 {
                     var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
-                    Debug.Assert(symbol is IParameter);
-                    builder.Add((IParameter)symbol);
+                    Debug.Assert(symbol is ISymbol.IParameter);
+                    builder.Add((ISymbol.IParameter)symbol!);
                 }
                 return builder.ToImmutable();
             }
@@ -583,7 +581,7 @@ internal partial interface ISymbol
         public Type.Function Type => new(
             this.Parameters.Select(p => p.Type).ToImmutableArray(),
             this.ReturnType);
-        Type ITyped.Type => this.Type;
+        Type ISymbol.ITyped.Type => this.Type;
 
         public Function(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
@@ -596,16 +594,16 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A set of overloaded functions.
     /// </summary>
-    private sealed class OverloadSet : SynthetizedBase, IOverloadSet
+    private sealed class OverloadSet : SynthetizedBase, ISymbol.IOverloadSet
     {
-        public ImmutableArray<IFunction> Functions { get; }
+        public ImmutableArray<ISymbol.IFunction> Functions { get; }
 
-        public OverloadSet(string name, ImmutableArray<IFunction> functions)
+        public OverloadSet(string name, ImmutableArray<ISymbol.IFunction> functions)
             : base(name)
         {
             this.Functions = functions;
@@ -615,23 +613,23 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// A symbol for intrinsic functions implemented by the compiler.
     /// </summary>
-    private sealed class IntrinsicFunction : SynthetizedBase, IFunction
+    private sealed class IntrinsicFunction : SynthetizedBase, ISymbol.IFunction
     {
         public override bool IsExternallyVisible => true;
         public override bool IsIntrinsic => true;
         public IScope? DefinedScope => null;
-        public ImmutableArray<IParameter> Parameters { get; }
+        public ImmutableArray<ISymbol.IParameter> Parameters { get; }
         public Type ReturnType { get; }
         public new string Documentation => ExtractDocumentation(this.Definition);
         public Type.Function Type => new(
             this.Parameters.Select(p => p.Type).ToImmutableArray(),
             this.ReturnType);
-        Type ITyped.Type => this.Type;
+        Type ISymbol.ITyped.Type => this.Type;
 
         public IntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType)
             : base(name)
@@ -646,12 +644,12 @@ internal partial interface ISymbol
     }
 }
 
-internal partial interface ISymbol
+internal static partial class Symbol
 {
     /// <summary>
     /// Intrinsic primitive types.
     /// </summary>
-    private sealed class IntrinsicTypeDefinition : SynthetizedBase, ITypeDefinition
+    private sealed class IntrinsicTypeDefinition : SynthetizedBase, ISymbol.ITypeDefinition
     {
         public override bool IsIntrinsic => true;
         public Type DefinedType { get; }

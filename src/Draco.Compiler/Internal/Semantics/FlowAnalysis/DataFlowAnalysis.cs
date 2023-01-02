@@ -155,7 +155,7 @@ internal static class DataFlowAnalysis
         {
             // Initialize
             foreach (var b in cfg.Blocks) result[b] = new(@in: TLattice.Identity);
-            result[cfg.Entry].In = boundaryCondition;
+            foreach (var exit in cfg.Exit) result[exit].In = boundaryCondition;
             // Add predecessors to worklist
             var workList = new Queue<IBasicBlock<TStatement>>();
             foreach (var p in cfg.Entry.Predecessors) workList.Enqueue(p);

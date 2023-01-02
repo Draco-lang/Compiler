@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
@@ -18,9 +19,9 @@ internal interface IControlFlowGraph<TStatement>
     public IBasicBlock<TStatement> Entry { get; }
 
     /// <summary>
-    /// The exit point.
+    /// The exit point(s).
     /// </summary>
-    public IBasicBlock<TStatement> Exit { get; }
+    public IEnumerable<IBasicBlock<TStatement>> Exit { get; }
 
     /// <summary>
     /// The basic-blocks within this graph.
@@ -56,6 +57,24 @@ internal interface IBasicBlock<TStatement>
 /// <typeparam name="TStatement">The statement type.</typeparam>
 internal sealed class CfgBuilder<TStatement>
 {
+    private sealed class Cfg : IControlFlowGraph<TStatement>
+    {
+        public IBasicBlock<TStatement> Entry { get; set; } = null!;
+        public IEnumerable<IBasicBlock<TStatement>> Exit { get; set; } = null!;
+        public IEnumerable<IBasicBlock<TStatement>> Blocks => GraphTraversal.DepthFirst(
+            start: this.Entry,
+            getNeighbors: b => b.Successors);
+    }
+
+    private sealed class BasicBlock : IBasicBlock<TStatement>
+    {
+        public List<TStatement> Statements { get; } = new();
+
+        IReadOnlyList<TStatement> IBasicBlock<TStatement>.Statements => this.Statements;
+        public IEnumerable<IBasicBlock<TStatement>> Predecessors { get; set; } = null!;
+        public IEnumerable<IBasicBlock<TStatement>> Successors { get; set; } = null!;
+    }
+
     /// <summary>
     /// Builds the control-flow graph.
     /// </summary>

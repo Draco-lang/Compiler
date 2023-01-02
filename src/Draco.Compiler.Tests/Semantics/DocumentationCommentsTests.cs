@@ -9,7 +9,10 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 {
     [Theory]
     [InlineData("This is doc comment")]
-    [InlineData("This is\r\nmultiline doc comment")]
+    [InlineData("""
+        This is
+        multiline doc comment
+        """)]
     public void FunctionDocumentationComment(string docComment)
     {
         // /// This is doc comment
@@ -34,12 +37,15 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, funcSym.Documentation);
+        Assert.Equal(docComment, funcSym.Documentation, ignoreLineEndingDifferences: true);
     }
 
     [Theory]
     [InlineData("This is doc comment")]
-    [InlineData("This is\r\nmultiline doc comment")]
+    [InlineData("""
+        This is
+        multiline doc comment
+        """)]
     public void VariableDocumentationComment(string docComment)
     {
         // /// This is doc comment
@@ -63,12 +69,15 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, xSym.Documentation);
+        Assert.Equal(docComment, xSym.Documentation, ignoreLineEndingDifferences: true);
     }
 
     [Theory]
     [InlineData("This is doc comment")]
-    [InlineData("This is\r\nmultiline doc comment")]
+    [InlineData("""
+        This is
+        multiline doc comment
+        """)]
     public void LabelDocumentationComment(string docComment)
     {
         // func main() {
@@ -95,6 +104,6 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(string.Empty, labelSym.Documentation);
+        Assert.Equal(string.Empty, labelSym.Documentation, ignoreLineEndingDifferences: true);
     }
 }

@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Internal.Syntax;
 using Draco.RedGreenTree.Attributes;
 using static Draco.Compiler.Api.Syntax.ParseNode;
 
@@ -26,6 +28,20 @@ public static partial class SyntaxFactory
         : elements.Length == 0
             ? PunctuatedList(ImmutableArray<Punctuated<T>>.Empty)
             : PunctuatedList(elements.SkipLast(1).Select(e => Punctuated(e, punctuation)).Append(Punctuated(elements[^1], null)));
+
+    private static TNode WithLeadingTrivia<TNode>(TNode node, params Internal.Syntax.ParseNode.Trivia[] trivia) where TNode : ParseNode
+    {
+        var greenNode = new AddLeadingTriviaTransformer(trivia).Transform(node.Green, out var _);
+        return (TNode)ToRed(null!, null, greenNode);
+    }
+
+    public static TNode WithDocumentation<TNode>(TNode node, string docs) where TNode : ParseNode =>
+        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+            .Select(x => Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, $"///{x}")).ToArray());
+
+    public static TNode WithComments<TNode>(TNode node, string docs) where TNode : ParseNode =>
+        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+            .Select(x => Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, $"//{x}")).ToArray());
 
     public static CompilationUnit CompilationUnit(ImmutableArray<Decl> decls) => CompilationUnit(decls, EndOfInput);
     public static CompilationUnit CompilationUnit(IEnumerable<Decl> decls) => CompilationUnit(decls.ToImmutableArray());
@@ -104,6 +120,35 @@ public static partial class SyntaxFactory
         green: new Internal.Syntax.ParseNode.StringPart.Content(
             Value: Internal.Syntax.ParseNode.Token.From(TokenType.StringContent, value),
             Diagnostics: ImmutableArray<Internal.Diagnostics.Diagnostic>.Empty));
+}
+
+// Transformer
+public static partial class SyntaxFactory
+{
+    private sealed class AddLeadingTriviaTransformer : ParseTreeTransformerBase
+    {
+        private bool firstToken = true;
+        private readonly Internal.Syntax.ParseNode.Trivia[] triviaToAdd;
+
+        public AddLeadingTriviaTransformer(Internal.Syntax.ParseNode.Trivia[] triviaToAdd)
+        {
+            this.triviaToAdd = triviaToAdd;
+        }
+
+        public override Internal.Syntax.ParseNode.Token TransformToken(Internal.Syntax.ParseNode.Token token, out bool changed)
+        {
+            if (this.firstToken)
+            {
+                this.firstToken = false;
+                changed = true;
+                var trivia = token.LeadingTrivia.ToBuilder();
+                trivia.AddRange(this.triviaToAdd);
+                return Internal.Syntax.ParseNode.Token.Builder.From(token).SetLeadingTrivia(trivia.ToImmutable()).Build();
+            }
+            changed = false;
+            return token;
+        }
+    }
 }
 
 // Utilities

@@ -17,6 +17,7 @@ internal class Program
             .WithHandler<DracoDocumentFormattingHandler>()
             .WithHandler<DracoGoToDefinitionHandler>()
             .WithHandler<DracoFindAllReferencesHandler>()
+            .WithHandler<DracoHoverHandler>()
             .WithServices(services => services
                 .AddSingleton<DracoDocumentRepository>()));
         await server.WaitForExit;

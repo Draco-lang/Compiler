@@ -32,6 +32,11 @@ public interface ISymbol : IEquatable<ISymbol>
     /// The location where this symbol was defined.
     /// </summary>
     public Location? Definition { get; }
+
+    /// <summary>
+    /// Documentation attached to this symbol.
+    /// </summary>
+    public string Documentation { get; }
 }
 
 /// <summary>
@@ -86,6 +91,7 @@ internal abstract class SymbolBase : ISymbol
         .ToImmutableArray();
 
     public Location? Definition => this.Symbol.Definition?.Location;
+    public string Documentation => this.Symbol.Documentation;
 
     public SymbolBase(IInternalSymbol symbol)
     {

@@ -82,8 +82,12 @@ internal sealed class CfgBuilder<TStatement>
 
     private readonly record struct Context(BasicBlock Predecessor, List<BasicBlock> Branches);
 
+    public Label CurrentLabel => this.currentBlock is null
+        ? throw new InvalidOperationException()
+        : new(this.currentBlock);
+
     private readonly Cfg cfg;
-    private BasicBlock currentBlock;
+    private BasicBlock? currentBlock;
 
     public CfgBuilder()
     {
@@ -102,7 +106,11 @@ internal sealed class CfgBuilder<TStatement>
     /// Adds a statement to the currently built CFG.
     /// </summary>
     /// <param name="statement">The statement to add.</param>
-    public void AddStatement(TStatement statement) => this.currentBlock.Statements.Add(statement);
+    public void AddStatement(TStatement statement)
+    {
+        if (this.currentBlock is null) return;
+        this.currentBlock.Statements.Add(statement);
+    }
 
     /// <summary>
     /// Declares a label that can be placed later.
@@ -127,23 +135,38 @@ internal sealed class CfgBuilder<TStatement>
     /// <param name="label">The label to jump to.</param>
     public void PlaceLabel(Label label)
     {
-        Connect(this.currentBlock, label.Block);
-        this.currentBlock = label.Block;
+        if (this.currentBlock is not null) Connect(this.currentBlock, label.Block);
+        this.Jump(label);
     }
 
     // TODO: Doc
-    public void Connect(Label label) => Connect(this.currentBlock, label.Block);
+    public void Connect(Label label)
+    {
+        if (this.currentBlock is null) return;
+        Connect(this.currentBlock, label.Block);
+    }
 
     // TODO: Doc
     public void Jump(Label label) => this.currentBlock = label.Block;
 
+    // TODO: Doc
+    public void Disjoin() => this.currentBlock = null;
+
     /// <summary>
     /// Marks the current point in the CFG as an exit point.
     /// </summary>
-    public void Exit() => this.cfg.Exit.Add(this.currentBlock);
+    public void Exit()
+    {
+        if (this.currentBlock is null) return;
+        this.cfg.Exit.Add(this.currentBlock);
+    }
 
     private static void Connect(BasicBlock pred, BasicBlock succ)
     {
+        if (pred.Successors.Contains(succ))
+        {
+            var x = 0;
+        }
         pred.Successors.Add(succ);
         succ.Predecessors.Add(pred);
     }

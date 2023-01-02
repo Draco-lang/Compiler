@@ -59,13 +59,15 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
     public override Unit VisitGotoExpr(Ast.Expr.Goto node)
     {
         var label = this.GetLabel(node.Target);
-        this.builder.Jump(label);
+        this.builder.Connect(label);
+        this.builder.Disjoin();
         return this.Default;
     }
 
     public override Unit VisitIfExpr(Ast.Expr.If node)
     {
         this.VisitExpr(node.Condition);
+        var start = this.builder.CurrentLabel;
         var thenLabel = this.builder.DeclareLabel();
         var elseLabel = this.builder.DeclareLabel();
         var endLabel = this.builder.DeclareLabel();
@@ -76,7 +78,7 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
         this.VisitExpr(node.Then);
         this.builder.Connect(endLabel);
 
-        this.builder.PlaceLabel(elseLabel);
+        this.builder.Jump(elseLabel);
         this.VisitExpr(node.Else);
 
         this.builder.PlaceLabel(endLabel);

@@ -6,6 +6,28 @@ using System.Text;
 
 namespace Draco.Compiler.Internal.Utilities;
 
+internal static class DotAttribs
+{
+    public enum RankDir
+    {
+        TopToBottom,
+        LeftToRight,
+        BottomToTop,
+        RightToLeft,
+    }
+
+    public enum Shape
+    {
+        None,
+        Ellipse,
+        Circle,
+        Point,
+        Rectangle,
+        Square,
+        Diamond,
+    }
+}
+
 /// <summary>
 /// Builds DOT graphs with a safe API.
 /// </summary>
@@ -27,6 +49,7 @@ internal sealed class DotGraphBuilder<TVertex>
             return this;
         }
 
+        public VertexBuilder WithShape(DotAttribs.Shape shape) => this.WithAttribute("shape", shape);
         public VertexBuilder WithLabel(string? value) => this.WithAttribute("label", value);
         public VertexBuilder WithXLabel(string? value) => this.WithAttribute("xlabel", value);
     }
@@ -46,6 +69,7 @@ internal sealed class DotGraphBuilder<TVertex>
             return this;
         }
 
+        public EdgeBuilder WithShape(DotAttribs.Shape shape) => this.WithAttribute("shape", shape);
         public EdgeBuilder WithLabel(string? value) => this.WithAttribute("label", value);
     }
 
@@ -110,6 +134,8 @@ internal sealed class DotGraphBuilder<TVertex>
         if (value is not null) this.attributes[name] = value;
         return this;
     }
+
+    public DotGraphBuilder<TVertex> WithRankDir(DotAttribs.RankDir value) => this.WithAttribute("rankdir", value);
 
     public VertexBuilder AllVertices() => new(this.allVertices);
     public EdgeBuilder AllEdges() => new(this.allEdges);
@@ -226,6 +252,15 @@ internal sealed class DotGraphBuilder<TVertex>
         bool b => b ? "true" : "false",
         string s => $"\"{StringUtils.Unescape(s)}\"",
         HtmlText t => $"<{t.Html}>",
+        DotAttribs.Shape s => s.ToString().ToLower(),
+        DotAttribs.RankDir d => d switch
+        {
+            DotAttribs.RankDir.LeftToRight => "LR",
+            DotAttribs.RankDir.RightToLeft => "RL",
+            DotAttribs.RankDir.TopToBottom => "TB",
+            DotAttribs.RankDir.BottomToTop => "BT",
+            _ => "LR",
+        },
         _ => value.ToString(),
     };
 }

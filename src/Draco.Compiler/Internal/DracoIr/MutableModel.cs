@@ -84,14 +84,15 @@ internal sealed record class Procedure : IReadOnlyProcedure
 
     private readonly List<Parameter> parameters = new();
     private readonly List<Local> locals = new();
-    private readonly List<BasicBlock> basicBlocks = new()
-    {
-        new(),
-    };
+    private readonly List<BasicBlock> basicBlocks;
 
     public Procedure(string name)
     {
         this.Name = name;
+        this.basicBlocks = new()
+        {
+            new(this),
+        };
     }
 
     public Parameter DefineParameter(string name, Type type)
@@ -127,11 +128,19 @@ internal sealed class BasicBlock : IReadOnlyBasicBlock
 {
     private static int idCounter = -1;
 
+    public Procedure Procedure { get; }
+    IReadOnlyProcedure IReadOnlyBasicBlock.Procedure => this.Procedure;
+
     public IList<Instruction> Instructions => this.instructions;
     IReadOnlyList<IReadOnlyInstruction> IReadOnlyBasicBlock.Instructions => this.instructions;
 
     private readonly int id = Interlocked.Increment(ref idCounter);
     private readonly List<Instruction> instructions = new();
+
+    public BasicBlock(Procedure procedure)
+    {
+        this.Procedure = procedure;
+    }
 
     public override string ToString() => $"bb_{this.id}";
     public string ToFullString() => $"""

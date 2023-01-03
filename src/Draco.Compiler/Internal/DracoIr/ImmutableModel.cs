@@ -119,6 +119,11 @@ internal sealed record class Local(Type Type, string? Name) : IInstructionOperan
 internal interface IReadOnlyBasicBlock : IInstructionOperand
 {
     /// <summary>
+    /// The owning procedure.
+    /// </summary>
+    public IReadOnlyProcedure Procedure { get; }
+
+    /// <summary>
     /// The instructions in this block.
     /// </summary>
     public IReadOnlyList<IReadOnlyInstruction> Instructions { get; }
@@ -345,6 +350,8 @@ internal abstract partial record class Value
     public sealed record class Intrinsic(ISymbol.ITyped Symbol, Type Type) : Value
     {
         public override Type Type { get; } = Type;
+
+        public override string ToString() => $"intrinsic {this.Symbol.Name}";
     }
 }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -122,6 +123,14 @@ public sealed class Compilation
         // Optimize the IR
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(asm);
+        // TODO: Temporary
+        {
+            var cfg = DracoIrToCfg.ToCfg(asm.Procedures[0]);
+            System.Console.WriteLine(CfgPrinter.ToDot(
+                cfg
+                , bb => string.Join(Environment.NewLine, bb.Statements)
+                ));
+        }
         // Write the IR, if needed
         if (dracoIrStream is not null)
         {

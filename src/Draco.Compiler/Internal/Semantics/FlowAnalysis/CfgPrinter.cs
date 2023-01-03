@@ -23,6 +23,7 @@ internal static class CfgPrinter
     {
         var graph = new DotGraphBuilder<IBasicBlock<TStatement>>(isDirected: true);
         graph.WithName("CFG");
+        graph.AllVertices().WithShape(DotAttribs.Shape.Rectangle);
 
         // Add label, if needed
         if (bbToString is not null)

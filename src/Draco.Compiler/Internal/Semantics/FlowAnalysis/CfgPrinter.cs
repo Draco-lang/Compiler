@@ -21,36 +21,25 @@ internal static class CfgPrinter
         IControlFlowGraph<TStatement> cfg,
         Func<IBasicBlock<TStatement>, string>? bbToString = null)
     {
-        var bbIds = new Dictionary<IBasicBlock<TStatement>, string>();
-        bbToString ??= bb => bbIds[bb];
+        var graph = new DotGraphBuilder<IBasicBlock<TStatement>>(isDirected: true);
+        graph.WithName("CFG");
 
-        string GetBlockName(IBasicBlock<TStatement> block)
+        // Add label, if needed
+        if (bbToString is not null)
         {
-            if (!bbIds!.TryGetValue(block, out var name))
-            {
-                name = $"bb_{StringUtils.IndexToExcelColumnName(bbIds.Count)}";
-                bbIds.Add(block, name);
-            }
-            return name;
+            foreach (var block in cfg.Blocks) graph.AddVertex(block).WithLabel(bbToString(block));
         }
 
-        var result = new StringBuilder();
-        result.AppendLine("digraph CFG {");
-        // Declare blocks
+        // Connect blocks
         foreach (var block in cfg.Blocks)
         {
-            result.AppendLine($"    {GetBlockName(block)} [label=\"{StringUtils.Unescape(bbToString(block))}\"];");
+            foreach (var succ in block.Successors) graph.AddEdge(block, succ);
         }
-        // Entry
-        result.AppendLine($"    {GetBlockName(cfg.Entry)} [xlabel=\"ENTRY\"];");
-        // Exit
-        foreach (var exit in cfg.Exit) result.AppendLine($"    {GetBlockName(exit)} [xlabel=\"EXIT\"];");
-        // Connect them up
-        foreach (var block in cfg.Blocks)
-        {
-            foreach (var succ in block.Successors) result.AppendLine($"    {GetBlockName(block)} -> {GetBlockName(succ)};");
-        }
-        result.AppendLine("}");
-        return result.ToString();
+
+        // Label entry and exits
+        graph.AddVertex(cfg.Entry).WithXLabel("ENTRY");
+        foreach (var exit in cfg.Exit) graph.AddVertex(exit).WithXLabel("EXIT");
+
+        return graph.ToDot();
     }
 }

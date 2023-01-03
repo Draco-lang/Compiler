@@ -108,6 +108,8 @@ public sealed class Compilation
 
         // TODO: Temporary
         {
+            Console.WriteLine(Internal.Syntax.ParseTreePrinter.ToCodeWithoutSurroundingTrivia(this.ParseTree.Root.Green));
+            Console.WriteLine(Internal.Syntax.ParseTreePrinter.ToDot(this.ParseTree.Root.Green));
             Console.WriteLine(ScopeTreePrinter.ToDot(this.db, this.ParseTree));
         }
 

@@ -27,6 +27,8 @@ internal abstract partial record class ParseNode
     internal RelativeRange Range => new(Offset: 0, Width: this.Width);
     internal Location Location => new Location.RelativeToTree(Range: this.Range);
 
+    internal IEnumerable<Token> Tokens => this.InOrderTraverse().OfType<Token>();
+
     /// <summary>
     /// The diagnostics attached to this tree node.
     /// </summary>

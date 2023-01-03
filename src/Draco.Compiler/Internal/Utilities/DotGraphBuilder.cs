@@ -56,6 +56,8 @@ internal sealed class DotGraphBuilder<TVertex>
     private sealed record class HtmlText(string Html);
 
     private readonly Dictionary<string, object> attributes = new();
+    private readonly VertexInfo allVertices = new(-1, new());
+    private readonly EdgeInfo allEdges = new(new());
     private readonly Dictionary<TVertex, VertexInfo> vertices;
     private readonly Dictionary<(int From, int To), List<EdgeInfo>> edges = new();
     private readonly bool isDirected;
@@ -109,6 +111,9 @@ internal sealed class DotGraphBuilder<TVertex>
         return this;
     }
 
+    public VertexBuilder AllVertices() => new(this.allVertices);
+    public EdgeBuilder AllEdges() => new(this.allEdges);
+
     public VertexBuilder AddVertex(TVertex vertex) => new(this.GetVertexInfo(vertex));
     public EdgeBuilder AddEdge(TVertex from, TVertex to)
     {
@@ -147,18 +152,17 @@ internal sealed class DotGraphBuilder<TVertex>
         writer.Write(this.name);
         writer.WriteLine(" {");
         // Graph-level attributes
-        foreach (var (name, value) in this.attributes)
-        {
-            writer.Write(indentation);
-            WriteAttribute(writer, name, value);
-            writer.WriteLine(';');
-        }
+        WriteNamedAttributeList(writer, "graph", this.attributes);
+        // Vertex-level attributes
+        WriteNamedAttributeList(writer, "node", this.allVertices.Attributes);
+        // Edge-level attributes
+        WriteNamedAttributeList(writer, "edge", this.allEdges.Attributes);
         // Vertices
         foreach (var vertexInfo in this.vertices.Values)
         {
             writer.Write(indentation);
             writer.Write(vertexInfo.Id);
-            WriteAttributeList(writer, vertexInfo.Attributes);
+            WriteInlineAttributeList(writer, vertexInfo.Attributes);
             writer.WriteLine(';');
         }
         // Edges
@@ -170,7 +174,7 @@ internal sealed class DotGraphBuilder<TVertex>
                 writer.Write(fromId);
                 writer.Write(this.isDirected ? " -> " : " -- ");
                 writer.Write(toId);
-                WriteAttributeList(writer, edgeInfo.Attributes);
+                WriteInlineAttributeList(writer, edgeInfo.Attributes);
                 writer.WriteLine(';');
             }
         }
@@ -179,7 +183,24 @@ internal sealed class DotGraphBuilder<TVertex>
         writer.Flush();
     }
 
-    private static void WriteAttributeList(StreamWriter writer, Dictionary<string, object> attributes)
+    private static void WriteNamedAttributeList(StreamWriter writer, string listName, Dictionary<string, object> attributes)
+    {
+        if (attributes.Count == 0) return;
+        writer.Write(indentation);
+        writer.Write(listName);
+        writer.WriteLine(" [");
+        foreach (var (name, value) in attributes)
+        {
+            writer.Write(indentation);
+            writer.Write(indentation);
+            WriteAttribute(writer, name, value);
+            writer.WriteLine(';');
+        }
+        writer.Write(indentation);
+        writer.WriteLine("];");
+    }
+
+    private static void WriteInlineAttributeList(StreamWriter writer, Dictionary<string, object> attributes)
     {
         if (attributes.Count == 0) return;
         writer.Write(" [");

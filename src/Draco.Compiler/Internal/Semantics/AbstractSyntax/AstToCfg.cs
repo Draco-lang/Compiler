@@ -37,6 +37,12 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
         return label;
     }
 
+    public override Unit VisitVariableDecl(Ast.Decl.Variable node)
+    {
+        this.builder.AddStatement(node);
+        return this.Default;
+    }
+
     public override Unit VisitLabelDecl(Ast.Decl.Label node)
     {
         this.builder.PlaceLabel(this.GetLabel(node.LabelSymbol));
@@ -67,7 +73,6 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
     public override Unit VisitIfExpr(Ast.Expr.If node)
     {
         this.VisitExpr(node.Condition);
-        var start = this.builder.CurrentLabel;
         var thenLabel = this.builder.DeclareLabel();
         var elseLabel = this.builder.DeclareLabel();
         var endLabel = this.builder.DeclareLabel();
@@ -86,7 +91,22 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
         return this.Default;
     }
 
+    public override Unit VisitWhileExpr(Ast.Expr.While node)
+    {
+        var startLabel = this.builder.PlaceLabel();
+        var endLabel = this.builder.DeclareLabel();
+        this.VisitExpr(node.Condition);
+        this.builder.Connect(endLabel);
+        this.builder.PlaceLabel();
+        this.VisitExpr(node.Expression);
+        this.builder.Connect(startLabel);
+        this.builder.Jump(endLabel);
+
+        return this.Default;
+    }
+
     private static bool IsCompoundExpr(Ast.Expr expr) => expr
         is Ast.Expr.Block
-        or Ast.Expr.If;
+        or Ast.Expr.If
+        or Ast.Expr.While;
 }

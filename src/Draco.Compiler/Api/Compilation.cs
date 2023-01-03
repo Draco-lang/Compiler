@@ -106,16 +106,16 @@ public sealed class Compilation
 
         // Get AST
         var ast = AstBuilder.ToAst(this.db, this.ParseTree.Root);
-        // Lower it
-        ast = AstLowering.Lower(this.db, ast);
         // TODO: Temporary
         {
             var cfg = AstToCfg.ToCfg(ast);
             System.Console.WriteLine(CfgPrinter.ToDot(
                 cfg
-                ,bb => string.Join(string.Empty, bb.Statements.Select(stmt => stmt.ParseNode))
+                , bb => string.Join(string.Empty, bb.Statements.Select(stmt => stmt.ParseNode))
                 ));
         }
+        // Lower it
+        ast = AstLowering.Lower(this.db, ast);
         // Generate Draco IR
         var asm = new Assembly(this.AssemblyName ?? "output");
         DracoIrCodegen.Generate(asm, ast);

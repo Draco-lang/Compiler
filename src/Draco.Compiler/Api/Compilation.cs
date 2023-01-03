@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.FlowAnalysis;
+using Draco.Compiler.Internal.Semantics.Symbols;
 
 namespace Draco.Compiler.Api;
 
@@ -103,6 +104,11 @@ public sealed class Compilation
             return new(
                 Success: false,
                 Diagnostics: existingDiags);
+        }
+
+        // TODO: Temporary
+        {
+            Console.WriteLine(ScopeTreePrinter.ToDot(this.db, this.ParseTree));
         }
 
         // Get AST

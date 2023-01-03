@@ -6,7 +6,7 @@ using Draco.Compiler.Internal.Utilities;
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
 /// <summary>
-/// Printting utilities for <see cref="IControlFlowGraph{TStatement}"/>s.
+/// Printing utilities for <see cref="IControlFlowGraph{TStatement}"/>s.
 /// </summary>
 internal static class CfgPrinter
 {

@@ -34,13 +34,6 @@ public sealed class SemanticModel
     }
 
     /// <summary>
-    /// Prints this model as a scope tree in a DOT graph format.
-    /// </summary>
-    /// <returns>The DOT graph of the symbols and scopes of <see cref="Tree"/>.</returns>
-    public string ToScopeTreeDotGraphString() =>
-        ScopeTreePrinter.Print(this.db, this.Tree);
-
-    /// <summary>
     /// Retrieves all semantic <see cref="Diagnostic"/>s.
     /// </summary>
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>

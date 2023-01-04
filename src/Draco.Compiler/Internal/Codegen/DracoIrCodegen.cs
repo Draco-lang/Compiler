@@ -130,7 +130,6 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         this.writer = procedure.Writer();
 
         this.VisitBlockExpr(node.Body);
-        if (!this.writer.EndsInBranch) this.writer.Ret(Value.Unit.Instance);
 
         // TODO: Maybe introduce context instead of this juggling?
         this.writer = oldWriter;

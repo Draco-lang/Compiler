@@ -16,7 +16,6 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
     {
         var translator = new AstToCfg();
         translator.Visit(ast);
-        translator.builder.Exit();
         return translator.builder.Build();
     }
 
@@ -56,9 +55,11 @@ internal sealed class AstToCfg : AstVisitorBase<Unit>
         return this.Default;
     }
 
-    public override Unit VisitNoOpStmt(Ast.Stmt.NoOp node)
+    public override Unit VisitReturnExpr(Ast.Expr.Return node)
     {
-        this.builder.AddStatement(node);
+        base.VisitReturnExpr(node);
+        this.builder.Exit();
+        this.builder.Disjoin();
         return this.Default;
     }
 

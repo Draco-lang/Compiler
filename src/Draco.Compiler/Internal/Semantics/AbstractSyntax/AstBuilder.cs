@@ -26,7 +26,6 @@ internal static class AstBuilder
         ParseNode.Decl decl => ToAst(db, decl),
         ParseNode.Stmt stmt => ToAst(db, stmt),
         ParseNode.Expr expr => ToAst(db, expr),
-        ParseNode.FuncBody body => ToAst(db, body),
         _ => throw new ArgumentOutOfRangeException(nameof(ast)),
     };
 
@@ -139,19 +138,53 @@ internal static class AstBuilder
         funcBody,
         Ast.Expr.Block (funcBody) => funcBody switch
         {
-            ParseNode.FuncBody.BlockBody blockBody => (Ast.Expr.Block)ToAst(db, blockBody.Block),
-            // Desugar here into a simple return statement inside a block
-            ParseNode.FuncBody.InlineBody inlineBody => new(
-                ParseNode: inlineBody,
-                Statements: ImmutableArray.Create<Ast.Stmt>(
-                    new Ast.Stmt.Expr(
-                        ParseNode: inlineBody,
-                        Expression: new Ast.Expr.Return(
-                            ParseNode: inlineBody,
-                            Expression: ToAst(db, inlineBody.Expression)))),
-                Value: Ast.Expr.Unit.Default),
+            ParseNode.FuncBody.BlockBody blockBody => ToAst(db, blockBody),
+            ParseNode.FuncBody.InlineBody inlineBody => ToAst(db, inlineBody),
             _ => throw new ArgumentOutOfRangeException(nameof(funcBody)),
         });
+
+    private static Ast.Expr.Block ToAst(QueryDatabase db, ParseNode.FuncBody.BlockBody body)
+    {
+        var block = body.Block.Enclosed.Value;
+        var statements = ImmutableArray.CreateBuilder<Ast.Stmt>();
+        foreach (var stmt in block.Statements) statements.Add(ToAst(db, stmt));
+        if (block.Value is not null)
+        {
+            // Desugar it into a statement
+            statements.Add(new Ast.Stmt.Expr(
+                ParseNode: block.Value,
+                Expression: ToAst(db, block.Value)));
+        }
+        // If the return type is Unit, append an implicit return statement
+        Debug.Assert(body.Parent is ParseNode.Decl.Func);
+        var definedSymbol = SymbolResolution.GetDefinedSymbolOrNull(db, body.Parent!);
+        Debug.Assert(definedSymbol is ISymbol.IFunction);
+        var funcSymbol = (ISymbol.IFunction)definedSymbol!;
+        if (funcSymbol.ReturnType.Equals(Type.Unit))
+        {
+            // Unit return-type, implicit return
+            statements.Add(new Ast.Stmt.Expr(
+                ParseNode: null,
+                Expression: new Ast.Expr.Return(
+                    ParseNode: null,
+                    Expression: Ast.Expr.Unit.Default)));
+        }
+        return new(
+            ParseNode: body,
+            Statements: statements.ToImmutable(),
+            Value: Ast.Expr.Unit.Default);
+    }
+
+    // Desugar here into a simple return statement inside a block
+    private static Ast.Expr.Block ToAst(QueryDatabase db, ParseNode.FuncBody.InlineBody body) => new(
+        ParseNode: body,
+        Statements: ImmutableArray.Create<Ast.Stmt>(
+            new Ast.Stmt.Expr(
+                ParseNode: body,
+                Expression: new Ast.Expr.Return(
+                    ParseNode: body,
+                    Expression: ToAst(db, body.Expression)))),
+        Value: Ast.Expr.Unit.Default);
 
     private static Ast.ComparisonElement ToAst(QueryDatabase db, ParseNode.ComparisonElement ce) => db.GetOrUpdate(
         ce,

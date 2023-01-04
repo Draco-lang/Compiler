@@ -139,6 +139,10 @@ public sealed class Compilation
                 , bb => string.Join(Environment.NewLine, bb.Statements)
                 ));
         }
+        // TODO: Temporary
+        {
+            Console.WriteLine(asm.ToString());
+        }
         // Write the IR, if needed
         if (dracoIrStream is not null)
         {

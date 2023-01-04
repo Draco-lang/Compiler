@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Utilities;
 
@@ -10,26 +11,38 @@ namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 /// </summary>
 internal static class CfgPrinter
 {
-    /// <summary>
-    /// Converts the given CFG to a dot-graph representation.
-    /// </summary>
-    /// <typeparam name="TStatement">The statement type.</typeparam>
-    /// <param name="cfg">The CFG to convert.</param>
-    /// <param name="bbToString">The function to stringify the basic-blocks.</param>
-    /// <returns>The CFG as a DOT graph.</returns>
-    public static string ToDot<TStatement>(
+    // TODO: Doc
+    public static string ToDot(IControlFlowGraph<DracoIr.IReadOnlyInstruction> cfg) => ToDot(
+        cfg: cfg,
+        stmtToString: instr => instr.ToString());
+
+    // TODO: Doc
+    public static string ToDot(IControlFlowGraph<AbstractSyntax.Ast> cfg) => ToDot(
+        cfg: cfg,
+        stmtToString: AstToString);
+
+    private static string AstToString(AbstractSyntax.Ast ast) => ast switch
+    {
+        AbstractSyntax.Ast.Expr.If @if => $"if ({@if.Condition.ParseNode})",
+        AbstractSyntax.Ast.Expr.While @while => $"if ({@while.Condition.ParseNode})",
+        _ => ast.ParseNode?.ToString() ?? string.Empty,
+    };
+
+    private static string ToDot<TStatement>(
         IControlFlowGraph<TStatement> cfg,
-        Func<IBasicBlock<TStatement>, string>? bbToString = null)
+        Func<TStatement, string> stmtToString) =>
+        ToDot(cfg, bb => string.Join(string.Empty, bb.Statements.Select(s => $"{stmtToString(s)}\n")));
+
+    private static string ToDot<TStatement>(
+        IControlFlowGraph<TStatement> cfg,
+        Func<IBasicBlock<TStatement>, string> bbToString)
     {
         var graph = new DotGraphBuilder<IBasicBlock<TStatement>>(isDirected: true);
         graph.WithName("CFG");
         graph.AllVertices().WithShape(DotAttribs.Shape.Rectangle);
 
-        // Add label, if needed
-        if (bbToString is not null)
-        {
-            foreach (var block in cfg.Blocks) graph.AddVertex(block).WithLabel(bbToString(block));
-        }
+        // Add labels
+        foreach (var block in cfg.Blocks) graph.AddVertex(block).WithLabel(bbToString(block));
 
         // Connect blocks
         foreach (var block in cfg.Blocks)

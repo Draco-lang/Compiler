@@ -118,10 +118,7 @@ public sealed class Compilation
         // TODO: Temporary
         {
             var cfg = AstToCfg.ToCfg(ast);
-            System.Console.WriteLine(CfgPrinter.ToDot(
-                cfg
-                , bb => string.Join(string.Empty, bb.Statements.Select(stmt => stmt.ParseNode))
-                ));
+            Console.WriteLine(CfgPrinter.ToDot(cfg));
         }
         // Lower it
         ast = AstLowering.Lower(this.db, ast);
@@ -134,10 +131,7 @@ public sealed class Compilation
         // TODO: Temporary
         {
             var cfg = DracoIrToCfg.ToCfg(asm.Procedures[0]);
-            System.Console.WriteLine(CfgPrinter.ToDot(
-                cfg
-                , bb => string.Join(Environment.NewLine, bb.Statements)
-                ));
+            Console.WriteLine(CfgPrinter.ToDot(cfg));
         }
         // TODO: Temporary
         {

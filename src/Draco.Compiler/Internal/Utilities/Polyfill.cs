@@ -109,7 +109,6 @@ internal static class StringBuilderExtensions
     }
 }
 
-
 // Source: https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Collections/Generic/ReferenceEqualityComparer.cs
 internal sealed class ReferenceEqualityComparer : IEqualityComparer<object?>, IEqualityComparer
 {

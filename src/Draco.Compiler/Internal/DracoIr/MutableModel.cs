@@ -54,7 +54,7 @@ internal sealed class Assembly : IReadOnlyAssembly
         var result = new StringBuilder();
         result.AppendLine($"assembly '{this.Name}';");
         if (this.EntryPoint is not null) result.AppendLine($"entry-point: {this.EntryPoint};");
-        result.Append(string.Join(Environment.NewLine, this.Procedures.Select(p => p.ToFullString())));
+        result.AppendJoin(Environment.NewLine, this.Procedures.Select(p => p.ToFullString()));
         return result.ToString();
     }
 }
@@ -225,7 +225,7 @@ internal abstract partial class Instruction : IReadOnlyInstruction
         if (this.OperandCount > 0)
         {
             result.Append(' ');
-            result.Append(string.Join(", ", Enumerable.Range(0, this.OperandCount).Select(i => this[i])));
+            result.AppendJoin(", ", Enumerable.Range(0, this.OperandCount).Select(i => this[i]));
         }
         return result.ToString();
     }

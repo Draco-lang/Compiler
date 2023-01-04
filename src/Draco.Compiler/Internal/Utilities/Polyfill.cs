@@ -91,6 +91,24 @@ internal static class QueueExtensions
     }
 }
 
+internal static class StringBuilderExtensions
+{
+    public static StringBuilder AppendJoin<T>(this StringBuilder builder, string? separator, IEnumerable<T> values)
+    {
+        var enumerator = values.GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            builder.Append(enumerator.Current);
+            while (enumerator.MoveNext())
+            {
+                builder.Append(separator);
+                builder.Append(enumerator.Current);
+            }
+        }
+        return builder;
+    }
+}
+
 
 // Source: https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Collections/Generic/ReferenceEqualityComparer.cs
 internal sealed class ReferenceEqualityComparer : IEqualityComparer<object?>, IEqualityComparer

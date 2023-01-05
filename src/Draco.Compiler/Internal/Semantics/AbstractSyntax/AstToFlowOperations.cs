@@ -21,6 +21,9 @@ internal sealed class AstToFlowOperations : AstVisitorBase<FlowOperation?>
         return visitor.entry;
     }
 
+    // TODO: All created blocks should be noted, otherwise we can lose info on detached blocks
+    // And keeping detached blocks would be the most trivial way to detect dead code
+
     private readonly BasicBlock entry;
     private readonly Dictionary<ISymbol.ILabel, BasicBlock> labels = new();
     private BasicBlock currentBlock;
@@ -78,7 +81,7 @@ internal sealed class AstToFlowOperations : AstVisitorBase<FlowOperation?>
             // TODO
             throw new NotImplementedException();
         }
-        var target = this.GetLvalue(node);
+        var target = this.GetLvalue(node.Target);
         var value = this.VisitExpr(node.Value);
         var assignment = new FlowOperation.Assign(
             Ast: node,
@@ -201,11 +204,24 @@ internal sealed class AstToFlowOperations : AstVisitorBase<FlowOperation?>
     {
         this.currentBlock.Control = new FlowControlOperation.Goto(
             Target: this.GetBlock(node.Target));
-        this.currentBlock = new BasicBlock();
+        this.currentBlock = new();
         return this.Default;
     }
 
+    public override FlowOperation? VisitReturnExpr(Ast.Expr.Return node)
+    {
+        var value = this.VisitExpr(node.Expression);
+        this.currentBlock.Control = new FlowControlOperation.Return(value!);
+        this.currentBlock = new();
+        return this.Default;
+    }
+
+    public override FlowOperation VisitReferenceExpr(Ast.Expr.Reference node) => new FlowOperation.Reference(
+        Ast: node,
+        Symbol: node.Symbol);
+
     public override FlowOperation VisitLiteralExpr(Ast.Expr.Literal node) => new FlowOperation.Constant(Ast: node);
+    public override FlowOperation VisitUnitExpr(Ast.Expr.Unit node) => new FlowOperation.Constant(Ast: node);
 
     // TODO: Implement
     public override FlowOperation VisitAndExpr(Ast.Expr.And node) => throw new NotImplementedException();

@@ -22,7 +22,7 @@ internal static class CfgPrinter
         stmtToString: FlowOperationToString);
 
     private static string FlowOperationToString(AbstractSyntax.FlowOperation flowOp) =>
-        flowOp.ToString();
+        flowOp.GetType().Name.ToString();
 
     private static string ToDot<TStatement>(
         IControlFlowGraph<TStatement> cfg,

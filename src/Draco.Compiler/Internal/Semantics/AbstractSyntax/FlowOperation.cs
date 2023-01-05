@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Semantics.Types;
@@ -15,6 +16,8 @@ internal sealed class BasicBlock
 
     public IList<FlowOperation> Operations { get; } = new List<FlowOperation>();
     public FlowControlOperation? Control { get; set; }
+
+    public IEnumerable<BasicBlock> Successors => this.Control?.AllTargets ?? Enumerable.Empty<BasicBlock>();
 }
 
 /// <summary>
@@ -67,22 +70,49 @@ internal abstract record class FlowOperation
 internal abstract record class FlowControlOperation
 {
     /// <summary>
+    /// All the possible places the control can jump to.
+    /// </summary>
+    public abstract IEnumerable<BasicBlock> AllTargets { get; }
+
+    /// <summary>
     /// Conditional jump.
     /// </summary>
     public sealed record class IfElse(
         FlowOperation Condition,
         BasicBlock Then,
-        BasicBlock Else) : FlowControlOperation;
+        BasicBlock Else) : FlowControlOperation
+    {
+        public override IEnumerable<BasicBlock> AllTargets
+        {
+            get
+            {
+                yield return this.Then;
+                yield return this.Else;
+            }
+        }
+    }
 
     /// <summary>
     /// Unconditional jump.
     /// </summary>
     public sealed record class Goto(
-        BasicBlock Target) : FlowControlOperation;
+        BasicBlock Target) : FlowControlOperation
+    {
+        public override IEnumerable<BasicBlock> AllTargets
+        {
+            get
+            {
+                yield return this.Target;
+            }
+        }
+    }
 
     /// <summary>
     /// Return from the method.
     /// </summary>
     public sealed record class Return(
-        FlowOperation Value) : FlowControlOperation;
+        FlowOperation Value) : FlowControlOperation
+    {
+        public override IEnumerable<BasicBlock> AllTargets => Enumerable.Empty<BasicBlock>();
+    }
 }

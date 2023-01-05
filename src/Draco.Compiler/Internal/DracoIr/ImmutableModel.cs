@@ -280,6 +280,8 @@ internal abstract partial record class Value
     public sealed record class Param(Parameter Parameter) : Value
     {
         public override Type Type => this.Parameter.Type;
+
+        public override string ToString() => this.Parameter.ToString();
     }
 
     /// <summary>

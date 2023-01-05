@@ -114,7 +114,7 @@ public sealed class Compilation
         }
 
         // Get AST
-        var ast = AstBuilder.ToAst(this.db, this.ParseTree.Root);
+        var ast = ParseTreeToAst.ToAst(this.db, this.ParseTree.Root);
         // TODO: Temporary
         {
             var cfg = AstToCfg.ToCfg(ast);

@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 /// <summary>
 /// Computations for building the AST.
 /// </summary>
-internal static class AstBuilder
+internal static class ParseTreeToAst
 {
     /// <summary>
     /// Builds an <see cref="Ast"/> from the given <see cref="ParseNode"/>.

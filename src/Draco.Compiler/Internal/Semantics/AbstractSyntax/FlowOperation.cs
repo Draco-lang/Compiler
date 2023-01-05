@@ -9,9 +9,13 @@ namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 /// <summary>
 /// A continuous sequence of <see cref="FlowOperation"/>s.
 /// </summary>
-internal sealed record class BasicBlock(
-    ImmutableArray<FlowOperation> Operations,
-    FlowControlOperation Control);
+internal sealed class BasicBlock
+{
+    // NOTE: This is mutable for simplicity (of building), but analysis will take the readonly interfaces anyway
+
+    public IList<FlowOperation> Operations { get; } = new List<FlowOperation>();
+    public FlowControlOperation? Control { get; set; }
+}
 
 /// <summary>
 /// A single operation in the <see cref="Ast"/> represented for flow analysis.

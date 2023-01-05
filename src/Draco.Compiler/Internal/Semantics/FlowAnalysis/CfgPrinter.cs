@@ -17,16 +17,12 @@ internal static class CfgPrinter
         stmtToString: instr => instr.ToString());
 
     // TODO: Doc
-    public static string ToDot(IControlFlowGraph<AbstractSyntax.Ast> cfg) => ToDot(
+    public static string ToDot(IControlFlowGraph<AbstractSyntax.FlowOperation> cfg) => ToDot(
         cfg: cfg,
-        stmtToString: AstToString);
+        stmtToString: FlowOperationToString);
 
-    private static string AstToString(AbstractSyntax.Ast ast) => ast switch
-    {
-        AbstractSyntax.Ast.Expr.If @if => $"if ({@if.Condition.ParseNode})",
-        AbstractSyntax.Ast.Expr.While @while => $"if ({@while.Condition.ParseNode})",
-        _ => ast.ParseNode?.ToString() ?? string.Empty,
-    };
+    private static string FlowOperationToString(AbstractSyntax.FlowOperation flowOp) =>
+        flowOp.ToString();
 
     private static string ToDot<TStatement>(
         IControlFlowGraph<TStatement> cfg,

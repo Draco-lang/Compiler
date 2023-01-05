@@ -117,7 +117,8 @@ public sealed class Compilation
         var ast = ParseTreeToAst.ToAst(this.db, this.ParseTree.Root);
         // TODO: Temporary
         {
-            var cfg = AstToCfg.ToCfg(ast);
+            var flow = AstToFlowOperations.ToFlowOperations((Ast.Decl.Func)((Ast.CompilationUnit)ast).Declarations[0]);
+            var cfg = FlowOperationsToCfg.ToCfg(flow);
             Console.WriteLine(CfgPrinter.ToDot(cfg));
         }
         // Lower it

@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.Semantics.Types;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
@@ -28,8 +28,7 @@ internal abstract record class FlowOperation
     /// Any value deemed to be atomic or literal from flow-analysis perspective.
     /// </summary>
     public sealed record class Constant(
-        Ast Ast,
-        Ast.Expr Value) : FlowOperation;
+        Ast Ast) : FlowOperation;
 
     /// <summary>
     /// A symbol reference.
@@ -43,7 +42,7 @@ internal abstract record class FlowOperation
     /// </summary>
     public sealed record class Call(
         Ast Ast,
-        ISymbol.IFunction Function,
+        Type.Function FunctionType,
         ImmutableArray<FlowOperation> Args) : FlowOperation;
 
     /// <summary>
@@ -53,6 +52,13 @@ internal abstract record class FlowOperation
         Ast Ast,
         ISymbol.IVariable Target,
         FlowOperation Value) : FlowOperation;
+
+    /// <summary>
+    /// A value potentially originating from multiple alternative branches.
+    /// </summary>
+    public sealed record class Phi(
+        Ast Ast,
+        ImmutableArray<KeyValuePair<BasicBlock, FlowOperation>> Sources) : FlowOperation;
 }
 
 /// <summary>
@@ -60,13 +66,10 @@ internal abstract record class FlowOperation
 /// </summary>
 internal abstract record class FlowControlOperation
 {
-    public abstract Ast Ast { get; init; }
-
     /// <summary>
     /// Conditional jump.
     /// </summary>
     public sealed record class IfElse(
-        Ast Ast,
         FlowOperation Condition,
         BasicBlock Then,
         BasicBlock Else) : FlowControlOperation;
@@ -75,13 +78,11 @@ internal abstract record class FlowControlOperation
     /// Unconditional jump.
     /// </summary>
     public sealed record class Goto(
-        Ast Ast,
         BasicBlock Target) : FlowControlOperation;
 
     /// <summary>
     /// Return from the method.
     /// </summary>
     public sealed record class Return(
-        Ast Ast,
         FlowOperation Value) : FlowControlOperation;
 }

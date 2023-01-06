@@ -48,24 +48,22 @@ internal sealed class AstLowering : AstTransformerBase
 
         changed = true;
 
-        var continueLabel = Symbol.SynthetizeLabel();
-        var breakLabel = Symbol.SynthetizeLabel();
         var condition = this.TransformExpr(node.Condition, out _);
         var body = this.TransformExpr(node.Expression, out _);
 
         return Block(
             // continue_label:
-            Stmt(Label(continueLabel)),
+            Stmt(Label(node.ContinueLabel)),
             // if (!condition) goto break_label;
             If(
                 condition: Not(condition),
-                then: Goto(breakLabel)),
+                then: Goto(node.BreakLabel)),
             // body...
             Stmt(body),
             // goto continue_label;
-            Stmt(Goto(continueLabel)),
+            Stmt(Goto(node.ContinueLabel)),
             // break_label:
-            Stmt(Label(breakLabel)));
+            Stmt(Label(node.BreakLabel)));
     }
 
     public override Ast.Expr TransformRelationalExpr(Ast.Expr.Relational node, out bool changed)

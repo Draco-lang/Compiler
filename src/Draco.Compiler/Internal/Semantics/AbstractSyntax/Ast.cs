@@ -130,7 +130,9 @@ internal abstract record class Ast
         public sealed record class While(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Condition,
-            Expr Expression) : Expr
+            Expr Expression,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel BreakLabel,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel ContinueLabel) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
             public override Type EvaluationType => Type.Unit;

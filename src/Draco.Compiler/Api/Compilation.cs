@@ -117,9 +117,7 @@ public sealed class Compilation
         var ast = ParseTreeToAst.ToAst(this.db, this.ParseTree.Root);
         // TODO: Temporary
         {
-            var flow = AstToFlowOperations.ToFlowOperations((Ast.Decl.Func)((Ast.CompilationUnit)ast).Declarations[0]);
-            var cfg = FlowOperationsToCfg.ToCfg(flow);
-            Console.WriteLine(CfgPrinter.ToDot(cfg));
+            // TODO
         }
         // Lower it
         ast = AstLowering.Lower(this.db, ast);
@@ -129,15 +127,6 @@ public sealed class Compilation
         // Optimize the IR
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(asm);
-        // TODO: Temporary
-        {
-            var cfg = DracoIrToCfg.ToCfg(asm.Procedures[0]);
-            Console.WriteLine(CfgPrinter.ToDot(cfg));
-        }
-        // TODO: Temporary
-        {
-            Console.WriteLine(asm.ToString());
-        }
         // Write the IR, if needed
         if (dracoIrStream is not null)
         {

@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.FlowAnalysis;
+using Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
 using Draco.Compiler.Internal.Semantics.Symbols;
 
 namespace Draco.Compiler.Api;
@@ -106,15 +107,13 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        // TODO: Temporary
-        {
-            Console.WriteLine(Internal.Syntax.ParseTreePrinter.ToCodeWithoutSurroundingTrivia(this.ParseTree.Root.Green));
-            Console.WriteLine(Internal.Syntax.ParseTreePrinter.ToDot(this.ParseTree.Root.Green));
-            Console.WriteLine(ScopeTreePrinter.ToDot(this.db, this.ParseTree));
-        }
-
         // Get AST
         var ast = ParseTreeToAst.ToAst(this.db, this.ParseTree.Root);
+        // TODO: Temporary
+        {
+            var func = ((Ast.Decl.Func)((Ast.CompilationUnit)ast).Declarations[0]).Body;
+            DataFlowAnalysis.Analyze(new ReturnsOnAllPaths(), func);
+        }
         // Lower it
         ast = AstLowering.Lower(this.db, ast);
         // Generate Draco IR

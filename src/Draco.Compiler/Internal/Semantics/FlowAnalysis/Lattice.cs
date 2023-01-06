@@ -28,7 +28,7 @@ internal enum FlowDirection
 /// Represents a lattice made up of a certain type of elements.
 /// </summary>
 /// <typeparam name="TElement">The element type of the lattices.</typeparam>
-internal interface ILattice<TElement> : IEqualityComparer<TElement>
+internal interface ILattice<TElement>
 {
     /// <summary>
     /// The flow direction the lattice is defined for.
@@ -41,52 +41,54 @@ internal interface ILattice<TElement> : IEqualityComparer<TElement>
     public TElement Identity { get; }
 
     /// <summary>
-    /// Deep-clones the given lattice element.
+    /// Deep-copies a lattice element.
     /// </summary>
-    /// <param name="element">The element to clone.</param>
-    /// <returns>The clone of <paramref name="element"/>.</returns>
+    /// <param name="element">The lattoce element to deep-copy.</param>
+    /// <returns>A copy of <paramref name="element"/>.</returns>
     public TElement Clone(TElement element);
 
     /// <summary>
     /// Joins up the lattice elements from multiple predecessors.
     /// </summary>
+    /// <param name="result">The lattice elements to join to.</param>
     /// <param name="inputs">The lattice elements to join.</param>
-    /// <returns>The resulting lattice element.</returns>
-    public TElement Meet(IEnumerable<TElement> inputs);
+    /// <returns>True, if there was a change in the result.</returns>
+    public bool Meet(ref TElement result, IEnumerable<TElement> inputs);
 
     // Join functions
 
-    public TElement Join(ref TElement element, Ast.Decl.Variable node);
-    public TElement Join(ref TElement element, Ast.Expr.Return node);
-    public TElement Join(ref TElement element, Ast.Expr.Call node);
-    public TElement Join(ref TElement element, Ast.Expr.Index node);
-    public TElement Join(ref TElement element, Ast.Expr.Unary node);
-    public TElement Join(ref TElement element, Ast.Expr.Binary node);
-    public TElement Join(ref TElement element, Ast.Expr.Relational node);
-    public TElement Join(ref TElement element, Ast.Expr.Assign node);
-    public TElement Join(ref TElement element, Ast.Expr.And node);
-    public TElement Join(ref TElement element, Ast.Expr.Or node);
+    public bool Join(ref TElement element, Ast.Decl.Variable node);
+    public bool Join(ref TElement element, Ast.Expr.Return node);
+    public bool Join(ref TElement element, Ast.Expr.Call node);
+    public bool Join(ref TElement element, Ast.Expr.Index node);
+    public bool Join(ref TElement element, Ast.Expr.Unary node);
+    public bool Join(ref TElement element, Ast.Expr.Binary node);
+    public bool Join(ref TElement element, Ast.Expr.Relational node);
+    public bool Join(ref TElement element, Ast.Expr.Assign node);
+    public bool Join(ref TElement element, Ast.Expr.And node);
+    public bool Join(ref TElement element, Ast.Expr.Or node);
 }
 
+/// <summary>
+/// Utility base class for lattices.
+/// </summary>
+/// <typeparam name="TElement">The element type of the lattices.</typeparam>
 internal abstract class LatticeBase<TElement> : ILattice<TElement>
 {
     public abstract FlowDirection Direction { get; }
     public abstract TElement Identity { get; }
 
     public abstract TElement Clone(TElement element);
-    public abstract bool Equals(TElement x, TElement y);
-    public abstract int GetHashCode(TElement obj);
+    public abstract bool Meet(ref TElement result, IEnumerable<TElement> inputs);
 
-    public abstract TElement Meet(IEnumerable<TElement> inputs);
-
-    public virtual TElement Join(ref TElement element, Ast.Decl.Variable node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.Return node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.Call node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.Index node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.Unary node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.Binary node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.Relational node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.Assign node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.And node) => element;
-    public virtual TElement Join(ref TElement element, Ast.Expr.Or node) => element;
+    public virtual bool Join(ref TElement element, Ast.Decl.Variable node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.Return node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.Call node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.Index node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.Unary node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.Binary node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.Relational node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.Assign node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.And node) => false;
+    public virtual bool Join(ref TElement element, Ast.Expr.Or node) => false;
 }

@@ -41,6 +41,37 @@ internal static partial class EnumerableExtensions
             ++index;
         }
     }
+
+    public static TSource? MinBy<TSource, TKey>(
+        this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector,
+        IComparer<TKey>? comparer = null)
+    {
+        comparer ??= Comparer<TKey>.Default;
+        var enumerator = source.GetEnumerator();
+
+        if (!enumerator.MoveNext())
+        {
+            if (default(TSource) is null) return default;
+            else throw new InvalidOperationException("sequence contains no elements");
+        }
+
+        var minValue = enumerator.Current;
+        var minKey = keySelector(minValue);
+
+        while (enumerator.MoveNext())
+        {
+            var value = enumerator.Current;
+            var key = keySelector(value);
+            if (comparer.Compare(key, minKey) < 0)
+            {
+                minValue = value;
+                minKey = key;
+            }
+        }
+
+        return minValue;
+    }
 }
 
 internal static class StackExtensions

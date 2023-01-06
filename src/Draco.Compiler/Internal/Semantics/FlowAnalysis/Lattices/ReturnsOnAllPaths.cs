@@ -28,7 +28,7 @@ internal sealed class ReturnsOnAllPaths : LatticeBase<ReturnStatus>
         return result != oldResult;
     }
 
-    public override bool Join(ref ReturnStatus element, Ast.Expr.Return node)
+    public override bool Transfer(ref ReturnStatus element, Ast.Expr.Return node)
     {
         var oldElement = element;
         element = ReturnStatus.Returns;

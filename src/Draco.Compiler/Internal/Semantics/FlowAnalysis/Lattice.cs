@@ -51,18 +51,18 @@ internal interface ILattice<TElement>
 
     public bool Meet(ref TElement result, TElement input);
 
-    // Join functions
+    // Transfer functions
 
-    public bool Join(ref TElement element, Ast.Decl.Variable node);
-    public bool Join(ref TElement element, Ast.Expr.Return node);
-    public bool Join(ref TElement element, Ast.Expr.Call node);
-    public bool Join(ref TElement element, Ast.Expr.Index node);
-    public bool Join(ref TElement element, Ast.Expr.Unary node);
-    public bool Join(ref TElement element, Ast.Expr.Binary node);
-    public bool Join(ref TElement element, Ast.Expr.Relational node);
-    public bool Join(ref TElement element, Ast.Expr.Assign node);
-    public bool Join(ref TElement element, Ast.Expr.And node);
-    public bool Join(ref TElement element, Ast.Expr.Or node);
+    public bool Transfer(ref TElement element, Ast.Decl.Variable node);
+    public bool Transfer(ref TElement element, Ast.Expr.Return node);
+    public bool Transfer(ref TElement element, Ast.Expr.Call node);
+    public bool Transfer(ref TElement element, Ast.Expr.Index node);
+    public bool Transfer(ref TElement element, Ast.Expr.Unary node);
+    public bool Transfer(ref TElement element, Ast.Expr.Binary node);
+    public bool Transfer(ref TElement element, Ast.Expr.Relational node);
+    public bool Transfer(ref TElement element, Ast.Expr.Assign node);
+    public bool Transfer(ref TElement element, Ast.Expr.And node);
+    public bool Transfer(ref TElement element, Ast.Expr.Or node);
 }
 
 /// <summary>
@@ -77,14 +77,14 @@ internal abstract class LatticeBase<TElement> : ILattice<TElement>
     public abstract TElement Clone(TElement element);
     public abstract bool Meet(ref TElement result, TElement input);
 
-    public virtual bool Join(ref TElement element, Ast.Decl.Variable node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.Return node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.Call node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.Index node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.Unary node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.Binary node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.Relational node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.Assign node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.And node) => false;
-    public virtual bool Join(ref TElement element, Ast.Expr.Or node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Decl.Variable node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.Return node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.Call node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.Index node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.Unary node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.Binary node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.Relational node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.Assign node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.And node) => false;
+    public virtual bool Transfer(ref TElement element, Ast.Expr.Or node) => false;
 }

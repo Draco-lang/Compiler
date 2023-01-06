@@ -2,151 +2,210 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
 /// <summary>
-/// Performs data-flow analysis based on a lattice.
+/// Utilities for invoking data-flow analysis.
 /// </summary>
 internal static class DataFlowAnalysis
 {
-    public static void Analyze<TElement>(ILattice<TElement> lattice, Ast ast)
+    // TODO: Doc
+    public static void Analyze<TElement>(ILattice<TElement> lattice, Ast ast) =>
+        DataFlowAnalysis<TElement>.Analyze(lattice, ast);
+}
+
+/// <summary>
+/// Performs data-flow analysis using a lattice.
+/// </summary>
+/// <typeparam name="TElement">The lattice element type.</typeparam>
+internal sealed class DataFlowAnalysis<TElement>
+{
+    // TODO: Doc
+    public static void Analyze(ILattice<TElement> lattice, Ast ast)
     {
-        var scheme = new RecursionScheme<TElement>(lattice);
-        // Loop until no change
-        while (scheme.Pass(ast)) ;
-        // TODO: return something?
+        var analyzer = new DataFlowAnalysis<TElement>(lattice);
+        while (analyzer.Pass(ast)) ;
+        // TODO: What to return?
     }
 
-    private sealed class RecursionScheme<TElement>
+    private sealed class FlowInfo
     {
-        private sealed class FlowInfo
-        {
-            // NOTE: Field because we pass by ref
-            public TElement Element;
-
-            public FlowInfo(TElement element)
-            {
-                this.Element = element;
-            }
-        }
+        public bool Changed { get; set; }
+        // NOTE: field so we can pass by ref
+        public TElement Element;
 
         private readonly ILattice<TElement> lattice;
-        private readonly FlowDirection direction;
-        private readonly Dictionary<object, FlowInfo> blockElements = new(ReferenceEqualityComparer.Instance);
-        private readonly FlowInfo initialInfo;
 
-        private bool hasChanged;
-
-        public RecursionScheme(ILattice<TElement> lattice)
+        public FlowInfo(ILattice<TElement> lattice, TElement element)
         {
             this.lattice = lattice;
-            this.direction = lattice.Direction;
-            this.initialInfo = new(lattice.Identity);
+            this.Element = element;
         }
 
-        public bool Pass(Ast ast)
+        public void Meet(FlowInfo other)
         {
-            this.hasChanged = false;
-            this.Visit(this.initialInfo, ast);
-            return this.hasChanged;
+            this.Changed = this.lattice.Meet(ref this.Element, other.Element) || this.Changed;
         }
 
-        private void Meet(FlowInfo incoming, Ast ast)
+        public void Transfer(Ast node)
         {
-            if (!this.blockElements.TryGetValue(ast, out var info))
-            {
-                info = new(this.lattice.Identity);
-                this.blockElements.Add(ast, info);
-            }
-            this.hasChanged = this.lattice.Meet(ref info.Element, incoming.Element) || this.hasChanged;
+            // TODO: Ugly hack
+            this.Changed = this.lattice.Transfer(ref this.Element, node as dynamic) || this.Changed;
         }
 
-        private Unit Visit(FlowInfo info, Ast ast) => ast switch
-        {
-            Ast.Decl.Variable var => this.Visit(info, var),
-            Ast.Stmt.Decl decl => this.Visit(info, decl.Declaration),
-            Ast.Stmt.Expr expr => this.Visit(info, expr.Expression),
-            Ast.Expr.Block block => this.Visit(info, block),
-            Ast.Expr.If @if => this.Visit(info, @if),
-            Ast.Expr.While @while => this.Visit(info, @while),
-            Ast.Expr.Return @return => this.Visit(info, @return),
-            Ast.Expr.Literal => default,
-            Ast.Expr.Unit => default,
-            _ => throw new ArgumentOutOfRangeException(nameof(ast)),
-        };
+        public FlowInfo Clone() =>
+            new(lattice: this.lattice, element: this.lattice.Clone(this.Element));
+    }
 
-        private Unit Visit(FlowInfo info, Ast.Decl.Variable var)
+    // The lattice driving the analysis
+    private readonly ILattice<TElement> lattice;
+    // The initial info
+    private readonly FlowInfo initialInfo;
+    // Back-referenced states that need to be recalled
+    private readonly Dictionary<ISymbol.ILabel, FlowInfo> backReferences = new();
+
+    private DataFlowAnalysis(ILattice<TElement> lattice)
+    {
+        this.lattice = lattice;
+        this.initialInfo = new(this.lattice, lattice.Identity);
+
+        if (lattice.Direction != FlowDirection.Forward) throw new NotImplementedException();
+    }
+
+    private FlowInfo GetInfo(ISymbol.ILabel label)
+    {
+        if (!this.backReferences.TryGetValue(label, out var info))
         {
-            if (var.Value is not null) this.Visit(info, var.Value);
-            this.hasChanged = this.lattice.Join(ref info.Element, var) || this.hasChanged;
-            return default;
+            info = new(this.lattice, this.lattice.Identity);
+            this.backReferences.Add(label, info);
         }
+        return info;
+    }
 
-        private Unit Visit(FlowInfo info, Ast.Expr.Block block)
-        {
-            if (this.direction == FlowDirection.Forward)
-            {
-                foreach (var stmt in block.Statements) this.Visit(info, stmt);
-                this.Visit(info, block.Value);
-            }
-            else
-            {
-                this.Visit(info, block.Value);
-                for (var i = block.Statements.Length - 1; i >= 0; --i) this.Visit(info, block.Statements[i]);
-            }
-            return default;
-        }
+    private bool Pass(Ast node)
+    {
+        // Reset changed info
+        this.initialInfo.Changed = false;
+        foreach (var info in this.backReferences.Values) info.Changed = false;
 
-        private Unit Visit(FlowInfo info, Ast.Expr.If @if)
-        {
-            if (this.direction == FlowDirection.Forward)
-            {
-                // Condition is always execuded
-                this.Visit(info, @if.Condition);
+        // Perform pass
+        this.Visit(this.initialInfo, node);
 
-                // Clone the info, as there are two alternative paths
-                var altInfo = new FlowInfo(this.lattice.Clone(info.Element));
+        // Aggregate status
+        return this.initialInfo.Changed
+            || this.backReferences.Values.Any(i => i.Changed);
+    }
 
-                // Take the alternative paths
-                this.Visit(info, @if.Then);
-                this.Visit(altInfo, @if.Else);
+    private Unit Visit(FlowInfo prev, Ast node) => node switch
+    {
+        Ast.Decl.Variable n => this.Visit(prev, n),
+        Ast.Decl.Label n => this.Visit(prev, n),
+        Ast.Stmt.Decl n => this.Visit(prev, n.Declaration),
+        Ast.Stmt.Expr n => this.Visit(prev, n.Expression),
+        Ast.Expr.Block n => this.Visit(prev, n),
+        Ast.Expr.Goto n => this.Visit(prev, n),
+        Ast.Expr.Return n => this.Visit(prev, n),
+        Ast.Expr.If n => this.Visit(prev, n),
+        Ast.Expr.While n => this.Visit(prev, n),
+        // NOTE: Not relevant for flow analysis
+        Ast.Expr.Literal or Ast.Expr.Unit => default,
+        _ => throw new ArgumentOutOfRangeException(nameof(node)),
+    };
 
-                // Merge
-                this.hasChanged = this.lattice.Meet(ref info.Element, altInfo.Element) || this.hasChanged;
-            }
-            else
-            {
-                // Clone the info, as there are two alternative paths
-                var altInfo = new FlowInfo(this.lattice.Clone(info.Element));
+    private Unit Visit(FlowInfo prev, Ast.Decl.Label node)
+    {
+        // We need to recall the place and meet into the current state
+        var labelInfo = this.GetInfo(node.LabelSymbol);
+        prev.Meet(labelInfo);
 
-                // Take the alternative paths
-                this.Visit(info, @if.Then);
-                this.Visit(altInfo, @if.Else);
+        return default;
+    }
 
-                // Merge
-                this.hasChanged = this.lattice.Meet(ref info.Element, altInfo.Element) || this.hasChanged;
+    private Unit Visit(FlowInfo prev, Ast.Expr.Goto node)
+    {
+        // We merge the current flow into the referenced section
+        var labelInfo = this.GetInfo(node.Target);
+        labelInfo.Meet(prev);
+        return default;
+    }
 
-                // Condition is always execuded
-                this.Visit(info, @if.Condition);
-            }
-            return default;
-        }
+    private Unit Visit(FlowInfo prev, Ast.Expr.While node)
+    {
+        var continueInfo = this.GetInfo(node.ContinueLabel);
+        var breakInfo = this.GetInfo(node.BreakLabel);
 
-        private Unit Visit(FlowInfo info, Ast.Expr.While @while)
-        {
-            // TODO
-            throw new NotImplementedException();
-            return default;
-        }
+        // The info from continue meets into the current flow
+        prev.Meet(continueInfo);
 
-        private Unit Visit(FlowInfo info, Ast.Expr.Return @return)
-        {
-            this.Visit(info, @return.Expression);
-            this.hasChanged = this.lattice.Join(ref info.Element, @return) || this.hasChanged;
-            return default;
-        }
+        // We run the condition
+        this.Visit(prev, node.Condition);
+
+        // Based on the condition, we have two alternative paths,
+        // we either go straight to the break label, or go through the body, then meet into the continue label
+
+        // First, the break
+        breakInfo.Meet(prev);
+
+        // Now, the body, and then meet into continue
+        this.Visit(prev, node.Expression);
+        continueInfo.Meet(prev);
+
+        // Finally after the body, the flow can meet into the break label
+        prev.Meet(breakInfo);
+
+        return default;
+    }
+
+    private Unit Visit(FlowInfo prev, Ast.Expr.If node)
+    {
+        // The condition is always ran
+        this.Visit(prev, node.Condition);
+
+        // Now we either run then or else case, for that we clone the lattices
+        // Note, that cloning won't track the info in backReferences, but that should not matter here
+        var prevAlt = prev.Clone();
+
+        // Run the two alternatives
+        this.Visit(prev, node.Then);
+        this.Visit(prevAlt, node.Else);
+
+        // They can finally meet
+        prev.Meet(prevAlt);
+
+        return default;
+    }
+
+    private Unit Visit(FlowInfo prev, Ast.Expr.Block node)
+    {
+        // Blocks are not relevant for flow, we unroll them simply without any action
+        foreach (var stmt in node.Statements) this.Visit(prev, stmt);
+        this.Visit(prev, node.Value);
+
+        return default;
+    }
+
+    private Unit Visit(FlowInfo prev, Ast.Decl.Variable node)
+    {
+        // The initializer happens before everything, if present
+        if (node.Value is not null) this.Visit(prev, node.Value);
+        // Now we can transfer on the variable declaration
+        prev.Transfer(node);
+
+        return default;
+    }
+
+    private Unit Visit(FlowInfo prev, Ast.Expr.Return node)
+    {
+        // Return value evaluated first
+        this.Visit(prev, node.Expression);
+        // Now we can transfer on the return itself
+        prev.Transfer(node);
+
+        return default;
     }
 }

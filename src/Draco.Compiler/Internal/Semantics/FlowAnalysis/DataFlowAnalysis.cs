@@ -35,7 +35,6 @@ internal sealed class DataFlowAnalysis<TElement>
 
     private sealed class FlowInfo
     {
-        public bool Changed { get; set; }
         // NOTE: field so we can pass by ref
         public TElement Element;
 
@@ -47,16 +46,12 @@ internal sealed class DataFlowAnalysis<TElement>
             this.Element = element;
         }
 
-        public void Meet(FlowInfo other)
-        {
-            this.Changed = this.lattice.Meet(ref this.Element, other.Element) || this.Changed;
-        }
+        public void Meet(FlowInfo other) =>
+            this.lattice.Meet(ref this.Element, other.Element);
 
-        public void Transfer(Ast node)
-        {
+        public void Transfer(Ast node) =>
             // TODO: Ugly hack
-            this.Changed = this.lattice.Transfer(ref this.Element, node as dynamic) || this.Changed;
-        }
+            this.lattice.Transfer(ref this.Element, node as dynamic);
 
         public FlowInfo Clone() =>
             new(lattice: this.lattice, element: this.lattice.Clone(this.Element));
@@ -89,16 +84,17 @@ internal sealed class DataFlowAnalysis<TElement>
 
     private bool Pass(Ast node)
     {
-        // Reset changed info
-        this.initialInfo.Changed = false;
-        foreach (var info in this.backReferences.Values) info.Changed = false;
+        // Clone
+        var oldInitial = this.initialInfo.Clone();
+        var oldBackrefs = this.backReferences.ToDictionary(kv => kv.Key, kv => kv.Value.Clone());
 
         // Perform pass
         this.Visit(this.initialInfo, node);
 
         // Aggregate status
-        return this.initialInfo.Changed
-            || this.backReferences.Values.Any(i => i.Changed);
+        return !this.lattice.Equals(this.initialInfo.Element, oldInitial.Element)
+            || this.backReferences.Count != oldBackrefs.Count
+            || this.backReferences.Any(br => !this.lattice.Equals(br.Value.Element, oldBackrefs[br.Key].Element));
     }
 
     private Unit Visit(FlowInfo prev, Ast node) => node switch

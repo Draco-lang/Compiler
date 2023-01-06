@@ -19,19 +19,13 @@ internal sealed class ReturnsOnAllPaths : LatticeBase<ReturnStatus>
     public override FlowDirection Direction => FlowDirection.Forward;
     public override ReturnStatus Identity => ReturnStatus.DoesNotReturn;
 
+    public override bool Equals(ReturnStatus x, ReturnStatus y) => x == y;
+    public override int GetHashCode(ReturnStatus obj) => obj.GetHashCode();
     public override ReturnStatus Clone(ReturnStatus element) => element;
 
-    public override bool Meet(ref ReturnStatus result, ReturnStatus input)
-    {
-        var oldResult = result;
+    public override void Meet(ref ReturnStatus result, ReturnStatus input) =>
         result = (int)result < (int)input ? result : input;
-        return result != oldResult;
-    }
 
-    public override bool Transfer(ref ReturnStatus element, Ast.Expr.Return node)
-    {
-        var oldElement = element;
+    public override void Transfer(ref ReturnStatus element, Ast.Expr.Return node) =>
         element = ReturnStatus.Returns;
-        return element != oldElement;
-    }
 }

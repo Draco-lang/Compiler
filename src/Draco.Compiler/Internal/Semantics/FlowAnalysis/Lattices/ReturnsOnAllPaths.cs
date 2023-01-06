@@ -21,10 +21,10 @@ internal sealed class ReturnsOnAllPaths : LatticeBase<ReturnStatus>
 
     public override ReturnStatus Clone(ReturnStatus element) => element;
 
-    public override bool Meet(ref ReturnStatus result, IEnumerable<ReturnStatus> inputs)
+    public override bool Meet(ref ReturnStatus result, ReturnStatus input)
     {
         var oldResult = result;
-        result = inputs.MinBy(r => (int)r);
+        result = (int)result < (int)input ? result : input;
         return result != oldResult;
     }
 

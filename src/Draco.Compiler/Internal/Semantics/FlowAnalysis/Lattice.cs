@@ -47,13 +47,9 @@ internal interface ILattice<TElement>
     /// <returns>A copy of <paramref name="element"/>.</returns>
     public TElement Clone(TElement element);
 
-    /// <summary>
-    /// Joins up the lattice elements from multiple predecessors.
-    /// </summary>
-    /// <param name="result">The lattice elements to join to.</param>
-    /// <param name="inputs">The lattice elements to join.</param>
-    /// <returns>True, if there was a change in the result.</returns>
-    public bool Meet(ref TElement result, IEnumerable<TElement> inputs);
+    // Meet function
+
+    public bool Meet(ref TElement result, TElement input);
 
     // Join functions
 
@@ -79,7 +75,7 @@ internal abstract class LatticeBase<TElement> : ILattice<TElement>
     public abstract TElement Identity { get; }
 
     public abstract TElement Clone(TElement element);
-    public abstract bool Meet(ref TElement result, IEnumerable<TElement> inputs);
+    public abstract bool Meet(ref TElement result, TElement input);
 
     public virtual bool Join(ref TElement element, Ast.Decl.Variable node) => false;
     public virtual bool Join(ref TElement element, Ast.Expr.Return node) => false;

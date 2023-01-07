@@ -41,53 +41,25 @@ internal interface ILattice<TElement> : IEqualityComparer<TElement>
     public TElement Identity { get; }
 
     /// <summary>
-    /// Deep-copies a lattice element.
+    /// Merges two lattice elements from two alternative paths.
     /// </summary>
-    /// <param name="element">The lattoce element to deep-copy.</param>
-    /// <returns>A copy of <paramref name="element"/>.</returns>
-    public TElement Clone(TElement element);
+    /// <param name="a">The first lattice element to merge.</param>
+    /// <param name="b">The second lattice element to merge.</param>
+    /// <returns>The merged lattice element of <paramref name="a"/> and <paramref name="b"/>.</returns>
+    public TElement Meet(TElement a, TElement b);
 
-    // Meet function
+    /// <summary>
+    /// Joins two lattice elements in a sequence.
+    /// </summary>
+    /// <param name="a">The first lattice element in the sequence.</param>
+    /// <param name="b">The second lattice element in the sequence.</param>
+    /// <returns>The merged lattice element that represents <paramref name="a"/> then <paramref name="b"/>.</returns>
+    public TElement Join(TElement a, TElement b);
 
-    public void Meet(ref TElement result, TElement input);
-
-    // Transfer functions
-
-    public void Transfer(ref TElement element, Ast.Decl.Variable node);
-    public void Transfer(ref TElement element, Ast.Expr.Return node);
-    public void Transfer(ref TElement element, Ast.Expr.Call node);
-    public void Transfer(ref TElement element, Ast.Expr.Index node);
-    public void Transfer(ref TElement element, Ast.Expr.Unary node);
-    public void Transfer(ref TElement element, Ast.Expr.Binary node);
-    public void Transfer(ref TElement element, Ast.Expr.Relational node);
-    public void Transfer(ref TElement element, Ast.Expr.Assign node);
-    public void Transfer(ref TElement element, Ast.Expr.And node);
-    public void Transfer(ref TElement element, Ast.Expr.Or node);
-}
-
-/// <summary>
-/// Utility base class for lattices.
-/// </summary>
-/// <typeparam name="TElement">The element type of the lattices.</typeparam>
-internal abstract class LatticeBase<TElement> : ILattice<TElement>
-{
-    public abstract FlowDirection Direction { get; }
-    public abstract TElement Identity { get; }
-
-    public abstract bool Equals(TElement x, TElement y);
-    public abstract int GetHashCode(TElement obj);
-    public abstract TElement Clone(TElement element);
-
-    public abstract void Meet(ref TElement result, TElement input);
-
-    public virtual void Transfer(ref TElement element, Ast.Decl.Variable node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.Return node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.Call node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.Index node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.Unary node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.Binary node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.Relational node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.Assign node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.And node) { }
-    public virtual void Transfer(ref TElement element, Ast.Expr.Or node) { }
+    /// <summary>
+    /// Retrieves the lattice element that corresponds to transfering over <paramref name="node"/> from the identity element.
+    /// </summary>
+    /// <param name="node">The node that is being transfered through.</param>
+    /// <returns>The lattice element that is produced by transfering <see cref="Identity"/> over <paramref name="node"/>.</returns>
+    public TElement Transfer(Ast node);
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
@@ -14,9 +15,37 @@ namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 /// </summary>
 internal static class DataFlowAnalysis
 {
-    // TODO: Doc
-    public static void Analyze<TElement>(ILattice<TElement> lattice, Ast ast) =>
+    /// <summary>
+    /// Performs data-flow analysis on the given AST.
+    /// </summary>
+    /// <param name="lattice">The lattice to use for analysis.</param>
+    /// <param name="ast">The AST subtree to perform the analysis over.</param>
+    /// <returns>The AST nodes associated with their inferred information.</returns>
+    public static ImmutableDictionary<Ast, DataFlowInfo<TElement>> Analyze<TElement>(ILattice<TElement> lattice, Ast ast) =>
         DataFlowAnalysis<TElement>.Analyze(lattice, ast);
+}
+
+/// <summary>
+/// Stores information about the in and out state during data flow analysis.
+/// </summary>
+/// <typeparam name="TElement">The lattice element type.</typeparam>
+internal sealed class DataFlowInfo<TElement>
+{
+    /// <summary>
+    /// The input, before the corresponding element.
+    /// </summary>
+    public TElement In { get; set; }
+
+    /// <summary>
+    /// The output, after the corresponding element.
+    /// </summary>
+    public TElement Out { get; set; }
+
+    public DataFlowInfo(TElement @in, TElement @out)
+    {
+        this.In = @in;
+        this.Out = @out;
+    }
 }
 
 /// <summary>
@@ -25,183 +54,96 @@ internal static class DataFlowAnalysis
 /// <typeparam name="TElement">The lattice element type.</typeparam>
 internal sealed class DataFlowAnalysis<TElement>
 {
-    // TODO: Doc
-    public static void Analyze(ILattice<TElement> lattice, Ast ast)
+    /// <summary>
+    /// Performs data-flow analysis on the given AST.
+    /// </summary>
+    /// <param name="lattice">The lattice to use for analysis.</param>
+    /// <param name="ast">The AST subtree to perform the analysis over.</param>
+    /// <returns>The AST nodes associated with their inferred information.</returns>
+    public static ImmutableDictionary<Ast, DataFlowInfo<TElement>> Analyze(ILattice<TElement> lattice, Ast ast)
     {
         var analyzer = new DataFlowAnalysis<TElement>(lattice);
         while (analyzer.Pass(ast)) ;
-        // TODO: What to return?
+        return analyzer.info.ToImmutable();
     }
 
-    private sealed class FlowInfo
-    {
-        // NOTE: field so we can pass by ref
-        public TElement Element;
-
-        private readonly ILattice<TElement> lattice;
-
-        public FlowInfo(ILattice<TElement> lattice, TElement element)
-        {
-            this.lattice = lattice;
-            this.Element = element;
-        }
-
-        public void Meet(FlowInfo other) =>
-            this.lattice.Meet(ref this.Element, other.Element);
-
-        public void Transfer(Ast node) =>
-            // TODO: Ugly hack
-            this.lattice.Transfer(ref this.Element, node as dynamic);
-
-        public FlowInfo Clone() =>
-            new(lattice: this.lattice, element: this.lattice.Clone(this.Element));
-    }
-
-    // The lattice driving the analysis
     private readonly ILattice<TElement> lattice;
-    // The initial info
-    private readonly FlowInfo initialInfo;
-    // Back-referenced states that need to be recalled
-    private readonly Dictionary<ISymbol.ILabel, FlowInfo> backReferences = new();
+    private readonly ImmutableDictionary<Ast, DataFlowInfo<TElement>>.Builder info =
+        ImmutableDictionary.CreateBuilder<Ast, DataFlowInfo<TElement>>(ReferenceEqualityComparer.Instance);
+    private bool hasChanged;
 
     private DataFlowAnalysis(ILattice<TElement> lattice)
     {
         this.lattice = lattice;
-        this.initialInfo = new(this.lattice, lattice.Identity);
-
-        if (lattice.Direction != FlowDirection.Forward) throw new NotImplementedException();
     }
 
-    private FlowInfo GetInfo(ISymbol.ILabel label)
+    private FlowDirection Direction => this.lattice.Direction;
+    private TElement Identity => this.lattice.Identity;
+    private TElement Meet(TElement a, TElement b) => this.lattice.Meet(a, b);
+    private TElement Join(TElement a, TElement b) => this.lattice.Join(a, b);
+
+    private DataFlowInfo<TElement> GetInfo(Ast node)
     {
-        if (!this.backReferences.TryGetValue(label, out var info))
+        if (!this.info.TryGetValue(node, out var info))
         {
-            info = new(this.lattice, this.lattice.Identity);
-            this.backReferences.Add(label, info);
+            var passed = this.lattice.Transfer(node);
+            info = this.Direction == FlowDirection.Forward
+                ? new(@in: this.Identity, @out: passed)
+                : new(@in: passed, @out: this.Identity);
+            this.info.Add(node, info);
         }
         return info;
     }
 
     private bool Pass(Ast node)
     {
-        // Clone
-        var oldInitial = this.initialInfo.Clone();
-        var oldBackrefs = this.backReferences.ToDictionary(kv => kv.Key, kv => kv.Value.Clone());
-
-        // Perform pass
-        this.Visit(this.initialInfo, node);
-
-        // Aggregate status
-        return !this.lattice.Equals(this.initialInfo.Element, oldInitial.Element)
-            || this.backReferences.Count != oldBackrefs.Count
-            || this.backReferences.Any(br => !this.lattice.Equals(br.Value.Element, oldBackrefs[br.Key].Element));
+        this.hasChanged = false;
+        this.Visit(node);
+        return this.hasChanged;
     }
 
-    private Unit Visit(FlowInfo prev, Ast node) => node switch
+    private TElement Visit(Ast node)
     {
-        Ast.Decl.Variable n => this.Visit(prev, n),
-        Ast.Decl.Label n => this.Visit(prev, n),
-        Ast.Stmt.Decl n => this.Visit(prev, n.Declaration),
-        Ast.Stmt.Expr n => this.Visit(prev, n.Expression),
+        var info = this.GetInfo(node);
+        if (this.Direction == FlowDirection.Forward)
+        {
+            var @out = this.Visit(info.In, node);
+            this.hasChanged = !Equals(@out, info.Out) || this.hasChanged;
+            info.Out = @out;
+            return @out;
+        }
+        else
+        {
+            var @in = this.Visit(info.Out, node);
+            this.hasChanged = !Equals(@in, info.In) || this.hasChanged;
+            info.In = @in;
+            return @in;
+        }
+    }
+
+    private TElement Visit(TElement prev, Ast node) => node switch
+    {
         Ast.Expr.Block n => this.Visit(prev, n),
-        Ast.Expr.Goto n => this.Visit(prev, n),
-        Ast.Expr.Return n => this.Visit(prev, n),
-        Ast.Expr.If n => this.Visit(prev, n),
-        Ast.Expr.While n => this.Visit(prev, n),
-        // NOTE: Not relevant for flow analysis
-        Ast.Expr.Literal or Ast.Expr.Unit => default,
+        Ast.Expr.Unit => prev,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 
-    private Unit Visit(FlowInfo prev, Ast.Decl.Label node)
+    private TElement Visit(TElement prev, Ast.Expr.Block node)
     {
-        // We need to recall the place and meet into the current state
-        var labelInfo = this.GetInfo(node.LabelSymbol);
-        prev.Meet(labelInfo);
-
-        return default;
-    }
-
-    private Unit Visit(FlowInfo prev, Ast.Expr.Goto node)
-    {
-        // We merge the current flow into the referenced section
-        var labelInfo = this.GetInfo(node.Target);
-        labelInfo.Meet(prev);
-        return default;
-    }
-
-    private Unit Visit(FlowInfo prev, Ast.Expr.While node)
-    {
-        var continueInfo = this.GetInfo(node.ContinueLabel);
-        var breakInfo = this.GetInfo(node.BreakLabel);
-
-        // The info from continue meets into the current flow
-        prev.Meet(continueInfo);
-
-        // We run the condition
-        this.Visit(prev, node.Condition);
-
-        // Based on the condition, we have two alternative paths,
-        // we either go straight to the break label, or go through the body, then meet into the continue label
-
-        // First, the break
-        breakInfo.Meet(prev);
-
-        // Now, the body, and then meet into continue
-        this.Visit(prev, node.Expression);
-        continueInfo.Meet(prev);
-
-        // Finally after the body, the flow can meet into the break label
-        prev.Meet(breakInfo);
-
-        return default;
-    }
-
-    private Unit Visit(FlowInfo prev, Ast.Expr.If node)
-    {
-        // The condition is always ran
-        this.Visit(prev, node.Condition);
-
-        // Now we either run then or else case, for that we clone the lattices
-        // Note, that cloning won't track the info in backReferences, but that should not matter here
-        var prevAlt = prev.Clone();
-
-        // Run the two alternatives
-        this.Visit(prev, node.Then);
-        this.Visit(prevAlt, node.Else);
-
-        // They can finally meet
-        prev.Meet(prevAlt);
-
-        return default;
-    }
-
-    private Unit Visit(FlowInfo prev, Ast.Expr.Block node)
-    {
-        // Blocks are not relevant for flow, we unroll them simply without any action
-        foreach (var stmt in node.Statements) this.Visit(prev, stmt);
-        this.Visit(prev, node.Value);
-
-        return default;
-    }
-
-    private Unit Visit(FlowInfo prev, Ast.Decl.Variable node)
-    {
-        // The initializer happens before everything, if present
-        if (node.Value is not null) this.Visit(prev, node.Value);
-        // Now we can transfer on the variable declaration
-        prev.Transfer(node);
-
-        return default;
-    }
-
-    private Unit Visit(FlowInfo prev, Ast.Expr.Return node)
-    {
-        // Return value evaluated first
-        this.Visit(prev, node.Expression);
-        // Now we can transfer on the return itself
-        prev.Transfer(node);
-
-        return default;
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // Statements first
+            foreach (var stmt in node.Statements) prev = this.Join(prev, this.Visit(stmt));
+            // Then value
+            prev = this.Join(prev, this.Visit(node.Value));
+        }
+        else
+        {
+            // Value first
+            prev = this.Join(this.Visit(node.Value), prev);
+            // Then statements in reverse order
+            foreach (var stmt in node.Statements.Reverse()) prev = this.Join(this.Visit(stmt), prev);
+        }
+        return prev;
     }
 }

@@ -14,18 +14,18 @@ internal enum ReturnStatus
     Returns = 1,
 }
 
-internal sealed class ReturnsOnAllPaths : LatticeBase<ReturnStatus>
+internal sealed class ReturnsOnAllPaths : ILattice<ReturnStatus>
 {
-    public override FlowDirection Direction => FlowDirection.Forward;
-    public override ReturnStatus Identity => ReturnStatus.DoesNotReturn;
+    public FlowDirection Direction => FlowDirection.Forward;
+    public ReturnStatus Identity => ReturnStatus.DoesNotReturn;
 
-    public override bool Equals(ReturnStatus x, ReturnStatus y) => x == y;
-    public override int GetHashCode(ReturnStatus obj) => obj.GetHashCode();
-    public override ReturnStatus Clone(ReturnStatus element) => element;
+    public bool Equals(ReturnStatus x, ReturnStatus y) => x == y;
+    public int GetHashCode(ReturnStatus obj) => obj.GetHashCode();
 
-    public override void Meet(ref ReturnStatus result, ReturnStatus input) =>
-        result = (int)result < (int)input ? result : input;
+    public ReturnStatus Join(ReturnStatus a, ReturnStatus b) => (ReturnStatus)Math.Max((int)a, (int)b);
+    public ReturnStatus Meet(ReturnStatus a, ReturnStatus b) => (ReturnStatus)Math.Min((int)a, (int)b);
 
-    public override void Transfer(ref ReturnStatus element, Ast.Expr.Return node) =>
-        element = ReturnStatus.Returns;
+    public ReturnStatus Transfer(Ast node) => node is Ast.Expr.Return
+        ? ReturnStatus.Returns
+        : ReturnStatus.DoesNotReturn;
 }

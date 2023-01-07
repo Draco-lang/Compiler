@@ -112,7 +112,9 @@ public sealed class Compilation
         // TODO: Temporary
         {
             var func = ((Ast.Decl.Func)((Ast.CompilationUnit)ast).Declarations[0]).Body;
-            DataFlowAnalysis.Analyze(new ReturnsOnAllPaths(), func);
+            var analysis = DataFlowAnalysis.Analyze(new ReturnsOnAllPaths(), func);
+            var o = analysis[func].Out;
+            Console.WriteLine(o);
         }
         // Lower it
         ast = AstLowering.Lower(this.db, ast);

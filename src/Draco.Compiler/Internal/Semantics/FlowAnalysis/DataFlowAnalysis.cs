@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Utilities;
+using static Draco.Compiler.Internal.Syntax.Lexer;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
@@ -97,6 +98,13 @@ internal sealed class DataFlowAnalysis<TElement>
         return info;
     }
 
+    private void UpdateInfo(DataFlowInfo<TElement> info, TElement @in, TElement @out)
+    {
+        this.hasChanged = !Equals(@in, info.In) || !Equals(@out, info.Out) || this.hasChanged;
+        info.In = @in;
+        info.Out = @out;
+    }
+
     private bool Pass(Ast node)
     {
         this.hasChanged = false;
@@ -104,25 +112,29 @@ internal sealed class DataFlowAnalysis<TElement>
         return this.hasChanged;
     }
 
+    // NOTE: We are doing this, because 'Unit' is shared by reference, which means it would poison the whole flow
+    // in case there are multiple units in the AST (which is extemely likely)
+    private static bool IsIrrelevant(Ast node) => node
+        is Ast.Expr.Unit
+        or Ast.Expr.Literal;
+
     private TElement Visit(TElement prev, Ast node)
     {
+        if (IsIrrelevant(node)) return prev;
+
         var info = this.GetInfo(node);
         if (this.Direction == FlowDirection.Forward)
         {
             var @in = this.Join(prev, info.In);
             var @out = this.Join(this.VisitImpl(@in, node), info.Out);
-            this.hasChanged = !Equals(@in, info.In) || !Equals(@out, info.Out) || this.hasChanged;
-            info.In = @in;
-            info.Out = @out;
+            this.UpdateInfo(info, @in, @out);
             return @out;
         }
         else
         {
             var @out = this.Join(prev, info.Out);
             var @in = this.Join(this.VisitImpl(@out, node), info.In);
-            this.hasChanged = !Equals(@in, info.In) || !Equals(@out, info.Out) || this.hasChanged;
-            info.In = @in;
-            info.Out = @out;
+            this.UpdateInfo(info, @in, @out);
             return @in;
         }
     }
@@ -132,7 +144,7 @@ internal sealed class DataFlowAnalysis<TElement>
         Ast.Stmt.Expr n => this.Visit(prev, n.Expression),
         Ast.Expr.Return n => this.VisitImpl(prev, n),
         Ast.Expr.Block n => this.VisitImpl(prev, n),
-        Ast.Expr.Unit or Ast.Expr.Literal => prev,
+        Ast.Expr.If n => this.VisitImpl(prev, n),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 
@@ -141,7 +153,44 @@ internal sealed class DataFlowAnalysis<TElement>
 
     private TElement VisitImpl(TElement prev, Ast.Expr.Block node)
     {
-        foreach (var stmt in node.Statements) prev = this.Visit(prev, stmt);
-        return this.Visit(prev, node.Value);
+        if (this.Direction == FlowDirection.Forward)
+        {
+            foreach (var stmt in node.Statements) prev = this.Visit(prev, stmt);
+            return this.Visit(prev, node.Value);
+        }
+        else
+        {
+            prev = this.Visit(prev, node.Value);
+            foreach (var stmt in node.Statements.Reverse()) prev = this.Visit(prev, stmt);
+            return prev;
+        }
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.If node)
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // Condition is always evaluated
+            prev = this.Visit(prev, node.Condition);
+
+            // Then there are two alternative futures, depending on which branch runs
+            var thenPrev = this.Visit(prev, node.Then);
+            var elsePrev = this.Visit(prev, node.Else);
+
+            // Merge futures
+            return this.Meet(thenPrev, elsePrev);
+        }
+        else
+        {
+            // Two alternative predecessors
+            var thenPrev = this.Visit(prev, node.Then);
+            var elsePrev = this.Visit(prev, node.Else);
+
+            // Merge them
+            prev = this.Meet(thenPrev, elsePrev);
+
+            // Condition always runs
+            return this.Visit(prev, node.Condition);
+        }
     }
 }

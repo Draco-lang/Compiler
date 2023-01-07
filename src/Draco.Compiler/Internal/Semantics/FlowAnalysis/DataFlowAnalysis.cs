@@ -80,6 +80,7 @@ internal sealed class DataFlowAnalysis<TElement>
 
     private FlowDirection Direction => this.lattice.Direction;
     private TElement Identity => this.lattice.Identity;
+    private bool Equals(TElement a, TElement b) => this.lattice.Equals(a, b);
     private TElement Meet(TElement a, TElement b) => this.lattice.Meet(a, b);
     private TElement Join(TElement a, TElement b) => this.Direction == FlowDirection.Forward
         ? this.lattice.Join(a, b)
@@ -98,11 +99,13 @@ internal sealed class DataFlowAnalysis<TElement>
         return info;
     }
 
-    private void UpdateInfo(DataFlowInfo<TElement> info, TElement @in, TElement @out)
+    private bool UpdateInfo(DataFlowInfo<TElement> info, TElement @in, TElement @out)
     {
-        this.hasChanged = !Equals(@in, info.In) || !Equals(@out, info.Out) || this.hasChanged;
+        var infoChanged = !this.Equals(@in, info.In) || !this.Equals(@out, info.Out);
+        this.hasChanged = infoChanged || this.hasChanged;
         info.In = @in;
         info.Out = @out;
+        return infoChanged;
     }
 
     private bool Pass(Ast node)
@@ -145,6 +148,7 @@ internal sealed class DataFlowAnalysis<TElement>
         Ast.Expr.Return n => this.VisitImpl(prev, n),
         Ast.Expr.Block n => this.VisitImpl(prev, n),
         Ast.Expr.If n => this.VisitImpl(prev, n),
+        Ast.Expr.While n => this.VisitImpl(prev, n),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 
@@ -192,5 +196,30 @@ internal sealed class DataFlowAnalysis<TElement>
             // Condition always runs
             return this.Visit(prev, node.Condition);
         }
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.While node)
+    {
+    start:
+        // NOTE: Since this is cyclic, the direction should not matter that much here
+        var beforeCondition = prev;
+
+        // Condition is always evaluated
+        prev = this.Visit(prev, node.Condition);
+
+        // Then there are two alternative futures, depending on if the while body runs
+        var bodyRanPrev = this.Visit(prev, node.Expression);
+
+        // Merge them
+        prev = this.Meet(prev, bodyRanPrev);
+
+        // Loop it back to before the condition
+        var prevLoop = this.Join(prev, beforeCondition);
+        if (!this.Equals(prevLoop, beforeCondition))
+        {
+            prev = prevLoop;
+            goto start;
+        }
+        return prev;
     }
 }

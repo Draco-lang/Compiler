@@ -80,7 +80,9 @@ internal sealed class DataFlowAnalysis<TElement>
     private FlowDirection Direction => this.lattice.Direction;
     private TElement Identity => this.lattice.Identity;
     private TElement Meet(TElement a, TElement b) => this.lattice.Meet(a, b);
-    private TElement Join(TElement a, TElement b) => this.lattice.Join(a, b);
+    private TElement Join(TElement a, TElement b) => this.Direction == FlowDirection.Forward
+        ? this.lattice.Join(a, b)
+        : this.lattice.Join(b, a);
 
     private DataFlowInfo<TElement> GetInfo(Ast node)
     {
@@ -98,52 +100,48 @@ internal sealed class DataFlowAnalysis<TElement>
     private bool Pass(Ast node)
     {
         this.hasChanged = false;
-        this.Visit(node);
+        this.Visit(this.lattice.Identity, node);
         return this.hasChanged;
     }
 
-    private TElement Visit(Ast node)
+    private TElement Visit(TElement prev, Ast node)
     {
         var info = this.GetInfo(node);
         if (this.Direction == FlowDirection.Forward)
         {
-            var @out = this.Visit(info.In, node);
-            this.hasChanged = !Equals(@out, info.Out) || this.hasChanged;
+            var @in = this.Join(prev, info.In);
+            var @out = this.Join(this.VisitImpl(@in, node), info.Out);
+            this.hasChanged = !Equals(@in, info.In) || !Equals(@out, info.Out) || this.hasChanged;
+            info.In = @in;
             info.Out = @out;
             return @out;
         }
         else
         {
-            var @in = this.Visit(info.Out, node);
-            this.hasChanged = !Equals(@in, info.In) || this.hasChanged;
+            var @out = this.Join(prev, info.Out);
+            var @in = this.Join(this.VisitImpl(@out, node), info.In);
+            this.hasChanged = !Equals(@in, info.In) || !Equals(@out, info.Out) || this.hasChanged;
             info.In = @in;
+            info.Out = @out;
             return @in;
         }
     }
 
-    private TElement Visit(TElement prev, Ast node) => node switch
+    private TElement VisitImpl(TElement prev, Ast node) => node switch
     {
-        Ast.Expr.Block n => this.Visit(prev, n),
-        Ast.Expr.Unit => prev,
+        Ast.Stmt.Expr n => this.Visit(prev, n.Expression),
+        Ast.Expr.Return n => this.VisitImpl(prev, n),
+        Ast.Expr.Block n => this.VisitImpl(prev, n),
+        Ast.Expr.Unit or Ast.Expr.Literal => prev,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 
-    private TElement Visit(TElement prev, Ast.Expr.Block node)
+    private TElement VisitImpl(TElement prev, Ast.Expr.Return node) =>
+        this.Visit(prev, node.Expression);
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.Block node)
     {
-        if (this.Direction == FlowDirection.Forward)
-        {
-            // Statements first
-            foreach (var stmt in node.Statements) prev = this.Join(prev, this.Visit(stmt));
-            // Then value
-            prev = this.Join(prev, this.Visit(node.Value));
-        }
-        else
-        {
-            // Value first
-            prev = this.Join(this.Visit(node.Value), prev);
-            // Then statements in reverse order
-            foreach (var stmt in node.Statements.Reverse()) prev = this.Join(this.Visit(stmt), prev);
-        }
-        return prev;
+        foreach (var stmt in node.Statements) prev = this.Visit(prev, stmt);
+        return this.Visit(prev, node.Value);
     }
 }

@@ -548,7 +548,7 @@ internal sealed class CilCodegen
     private void WritePe(Stream peStream)
     {
         var peHeaderBuilder = new PEHeaderBuilder(
-            imageCharacteristics: Characteristics.Dll);
+            imageCharacteristics: Characteristics.Dll | Characteristics.ExecutableImage);
         var peBuilder = new ManagedPEBuilder(
             header: peHeaderBuilder,
             metadataRootBuilder: new(this.metadataBuilder),

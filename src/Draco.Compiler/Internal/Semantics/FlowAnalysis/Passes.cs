@@ -40,11 +40,11 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
 
     private void CheckReturnsOnAllPaths(Ast.Decl.Func node)
     {
-        var op = AstToDataFlowOperation.ToDataFlowOperation(node.Body);
+        var graph = AstToDataFlowGraph.ToDataFlowGraph(node.Body);
         // TODO: Temporary
-        Console.WriteLine(DataFlowOperationPrinter.ToDot(op));
-        var infos = DataFlowAnalysis.Analyze(ReturnsOnAllPaths.Instance, op);
-        var info = infos[op.Node];
+        Console.WriteLine(DataFlowGraphPrinter.ToDot(graph));
+        var infos = DataFlowAnalysis.Analyze(ReturnsOnAllPaths.Instance, graph);
+        var info = infos[graph.Entry.Node];
         if (info.Out != ReturnsOnAllPaths.Status.Returns)
         {
             // Does not return on all paths

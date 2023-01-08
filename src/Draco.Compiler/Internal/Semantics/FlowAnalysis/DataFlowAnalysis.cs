@@ -43,11 +43,6 @@ internal static class DataFlowAnalysis
         if (!queue.Contains(item)) queue.Enqueue(item);
     }
 
-    private static IEnumerable<DataFlowOperation> EnumerateFlowOperations(
-        DataFlowOperation entry) => GraphTraversal.DepthFirst(
-            start: entry,
-            getNeighbors: op => op.Successors.Concat(op.Predecessors));
-
     private static TElement Meet<TElement>(
         ILattice<TElement> lattice,
         ISet<DataFlowOperation> ops,
@@ -60,7 +55,7 @@ internal static class DataFlowAnalysis
 
     public static ImmutableDictionary<Ast, DataFlowInfo<TElement>> Analyze<TElement>(
         ILattice<TElement> lattice,
-        DataFlowOperation entry)
+        DataFlowGraph graph)
     {
         var result = ImmutableDictionary.CreateBuilder<Ast, DataFlowInfo<TElement>>(ReferenceEqualityComparer.Instance);
 
@@ -68,7 +63,7 @@ internal static class DataFlowAnalysis
         {
             // Initialize
             var workList = new Queue<DataFlowOperation>();
-            foreach (var op in EnumerateFlowOperations(entry))
+            foreach (var op in graph.Operations)
             {
                 result[op.Node] = new(
                     @in: lattice.Identity,

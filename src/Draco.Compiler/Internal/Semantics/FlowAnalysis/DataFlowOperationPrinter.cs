@@ -8,13 +8,13 @@ namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 /// <summary>
 /// Utility for visualizing data-flow.
 /// </summary>
-internal static class DataFlowOperationPrinter
+internal static class DataFlowGraphPrinter
 {
-    public static string ToDot(DataFlowOperation entry)
+    public static string ToDot(DataFlowGraph dfg)
     {
         var graph = new DotGraphBuilder<DataFlowOperation>(isDirected: true);
 
-        foreach (var op in GraphTraversal.DepthFirst(start: entry, getNeighbors: n => n.Successors))
+        foreach (var op in dfg.Operations)
         {
             // Add vertex
             graph.AddVertex(op).WithLabel(op.Node.ParseNode?.ToString() ?? "No-op");

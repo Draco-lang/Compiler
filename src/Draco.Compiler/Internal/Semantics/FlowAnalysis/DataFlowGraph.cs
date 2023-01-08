@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,23 @@ using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
+
+/// <summary>
+/// A graph of <see cref="DataFlowOperation"/>s for analysis.
+/// </summary>
+/// <param name="Entry">The entry point.</param>
+/// <param name="Exit">The exit points.</param>
+internal sealed record class DataFlowGraph(
+    DataFlowOperation Entry,
+    ImmutableArray<DataFlowOperation> Exit)
+{
+    /// <summary>
+    /// All <see cref="DataFlowOperation"/>s in this graph.
+    /// </summary>
+    public IEnumerable<DataFlowOperation> Operations => GraphTraversal.DepthFirst(
+        start: this.Entry,
+        getNeighbors: op => op.Predecessors.Concat(op.Successors).Distinct());
+}
 
 /// <summary>
 /// Represents a single operation during DFA.

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -9,20 +10,23 @@ using Draco.Compiler.Internal.Semantics.Symbols;
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
 /// <summary>
-/// Translates an <see cref="Ast"/> to <see cref="DataFlowOperation"/>s.
+/// Translates an <see cref="Ast"/> to a <see cref="AstToDataFlowGraph"/>.
 /// </summary>
-internal sealed class AstToDataFlowOperation
+internal sealed class AstToDataFlowGraph
 {
-    public static DataFlowOperation ToDataFlowOperation(Ast ast)
+    public static DataFlowGraph ToDataFlowGraph(Ast ast)
     {
-        var converter = new AstToDataFlowOperation();
+        var converter = new AstToDataFlowGraph();
         converter.Translate(ast);
-        return converter.First;
+        return new(
+            Entry: converter.First,
+            Exit: converter.exits.ToImmutable());
     }
 
     private DataFlowOperation First => this.first ?? new(NoOp());
 
     private readonly Dictionary<ISymbol.ILabel, DataFlowOperation> labels = new();
+    private readonly ImmutableArray<DataFlowOperation>.Builder exits = ImmutableArray.CreateBuilder<DataFlowOperation>();
     private DataFlowOperation? first = null;
     private DataFlowOperation? prev = null;
 
@@ -121,7 +125,12 @@ internal sealed class AstToDataFlowOperation
     private DataFlowOperation? Translate(Ast.Expr.Return node)
     {
         this.Translate(node.Expression);
-        return this.Append(node);
+        var op = this.Append(node);
+        this.exits.Add(op);
+
+        // Disjoin flow
+        this.Disjoin();
+        return null;
     }
 
     private DataFlowOperation? Translate(Ast.Expr.Goto node)
@@ -171,6 +180,8 @@ internal sealed class AstToDataFlowOperation
 
     private DataFlowOperation? Translate(Ast.Expr.While node)
     {
+        if (this.prev is null) this.Append(NoOp());
+
         var beforeCondition = this.Append(node);
 
         // Condition always runs

@@ -211,7 +211,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(IfExpr(LiteralExpr(true), BlockExpr())))))));
 

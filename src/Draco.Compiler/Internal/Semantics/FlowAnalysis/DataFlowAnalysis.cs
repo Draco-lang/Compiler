@@ -78,10 +78,12 @@ internal sealed class DataFlowAnalysis<TElement>
         this.lattice = lattice;
     }
 
+    // Propagate from lattice
     private FlowDirection Direction => this.lattice.Direction;
     private TElement Identity => this.lattice.Identity;
     private bool Equals(TElement a, TElement b) => this.lattice.Equals(a, b);
     private TElement Meet(TElement a, TElement b) => this.lattice.Meet(a, b);
+    // We always join one way, we flip args here
     private TElement Join(TElement a, TElement b) => this.Direction == FlowDirection.Forward
         ? this.lattice.Join(a, b)
         : this.lattice.Join(b, a);

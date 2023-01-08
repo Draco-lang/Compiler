@@ -80,4 +80,88 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // Assert
         Assert.Empty(diags);
     }
+
+    [Fact]
+    public void ReturnInOnlyOneBranchOfIf()
+    {
+        // func foo(b: bool): int32 {
+        //     if (b) return 1;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(IfExpr(
+                    condition: NameExpr("b"),
+                    then: ReturnExpr(LiteralExpr(1)))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void ReturnInBothBranchesOfIf()
+    {
+        // func foo(b: bool): int32 {
+        //     if (b) return 1;
+        //     else return 2;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(IfExpr(
+                    condition: NameExpr("b"),
+                    then: ReturnExpr(LiteralExpr(1)),
+                    @else: ReturnExpr(LiteralExpr(2)))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void ReturnInWhileBody()
+    {
+        // func foo(): int32 {
+        //     while (false) {
+        //         return 0;
+        //     }
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(WhileExpr(
+                    condition: LiteralExpr(false),
+                    body: ReturnExpr(LiteralExpr(0)))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
 }

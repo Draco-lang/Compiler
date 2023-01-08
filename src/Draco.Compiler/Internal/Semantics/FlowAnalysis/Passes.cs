@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
@@ -34,7 +35,10 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
 
     public override Unit VisitFuncDecl(Ast.Decl.Func node)
     {
+        base.VisitFuncDecl(node);
+
         this.CheckReturnsOnAllPaths(node);
+
         return this.Default;
     }
 
@@ -43,9 +47,11 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         var graph = AstToDataFlowGraph.ToDataFlowGraph(node.Body);
         // TODO: Temporary
         Console.WriteLine(DataFlowGraphPrinter.ToDot(graph));
-        var infos = DataFlowAnalysis.Analyze(ReturnsOnAllPaths.Instance, graph);
-        var info = infos[graph.Entry.Node];
-        if (info.Out != ReturnsOnAllPaths.Status.Returns)
+        // We check if all operations without a successor are a return
+        var allReturns = graph.Operations
+            .Where(op => op.Successors.Count == 0)
+            .All(op => op.Node is Ast.Expr.Return);
+        if (!allReturns)
         {
             // Does not return on all paths
             this.diagnostics.Add(Diagnostic.Create(

@@ -77,13 +77,14 @@ internal sealed class AstToDataFlowGraph
         Ast.Expr.Relational n => this.Translate(n),
         Ast.Expr.Call n => this.Translate(n),
         Ast.Expr.Reference n => this.Append(n),
+        Ast.StringPart.Interpolation i => this.Translate(i.Expression),
         Ast.Expr.Unexpected or Ast.Expr.Unit or Ast.Expr.Literal => null,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 
     private DataFlowOperation? Translate(Ast.Decl.Variable node)
     {
-        if (node.Value is not null) this.Translate(node);
+        if (node.Value is not null) this.Translate(node.Value);
         return this.Append(node);
     }
 

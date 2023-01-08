@@ -134,6 +134,8 @@ internal sealed class DataFlowAnalysis<TElement>
         is Ast.Expr.Unit
         or Ast.Expr.Literal;
 
+    private static bool IsMultiEntryNode(Ast node) => node is Ast.Decl.Label;
+
     private TElement Visit(TElement prev, Ast node)
     {
         if (IsIrrelevant(node)) return prev;
@@ -141,14 +143,18 @@ internal sealed class DataFlowAnalysis<TElement>
         var info = this.GetInfo(node);
         if (this.Direction == FlowDirection.Forward)
         {
-            var @in = this.Join(prev, info.In);
+            var @in = IsMultiEntryNode(node)
+                ? this.Meet(prev, info.In)
+                : this.Join(prev, info.In);
             var @out = this.Join(this.VisitImpl(@in, node), info.Out);
             this.UpdateInfo(info, @in, @out);
             return @out;
         }
         else
         {
-            var @out = this.Join(prev, info.Out);
+            var @out = IsMultiEntryNode(node)
+                ? this.Meet(prev, info.Out)
+                : this.Join(prev, info.Out);
             var @in = this.Join(this.VisitImpl(@out, node), info.In);
             this.UpdateInfo(info, @in, @out);
             return @in;
@@ -160,6 +166,7 @@ internal sealed class DataFlowAnalysis<TElement>
         Ast.Stmt.Expr n => this.Visit(prev, n.Expression),
         Ast.Stmt.Decl n => this.Visit(prev, n.Declaration),
         Ast.Decl.Variable n => this.VisitImpl(prev, n),
+        Ast.Decl.Label n => this.VisitImpl(prev, n),
         Ast.Expr.Return n => this.VisitImpl(prev, n),
         Ast.Expr.Goto n => this.VisitImpl(prev, n),
         Ast.Expr.Block n => this.VisitImpl(prev, n),
@@ -175,7 +182,6 @@ internal sealed class DataFlowAnalysis<TElement>
         Ast.Expr.Call n => this.VisitImpl(prev, n),
         // Keep it here so it gets an entry
         Ast.Expr.Reference => prev,
-        Ast.Decl.Label => prev,
         // We can't infer any better
         Ast.Expr.Unexpected => prev,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
@@ -185,6 +191,13 @@ internal sealed class DataFlowAnalysis<TElement>
     {
         if (node.Value is not null) prev = this.Visit(prev, node.Value);
         return prev;
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Decl.Label node)
+    {
+        // The accumulated input and the current flow meets here
+        var info = this.GetInfo(node.LabelSymbol);
+        return this.Meet(prev, info.In);
     }
 
     private TElement VisitImpl(TElement prev, Ast.Expr.Unary node) =>
@@ -245,8 +258,8 @@ internal sealed class DataFlowAnalysis<TElement>
             @in: this.Join(prev, targetInfo.In),
             @out: targetInfo.Out);
 
-        // Otherwise, the current flow receives no new info
-        return prev;
+        // The flow gets reset
+        return this.lattice.Identity;
     }
 
     private TElement VisitImpl(TElement prev, Ast.Expr.Block node)

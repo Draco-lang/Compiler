@@ -12,20 +12,21 @@ public class DracoBuildTask : Microsoft.Build.Utilities.ToolTask
     public override bool Execute()
     {
         var files = Directory.EnumerateFiles(this.ProjectDirectory, "*.draco", SearchOption.TopDirectoryOnly).Where(x => x == Path.Combine(this.ProjectDirectory, "main.draco"));
-        if (files.Count() == 0) return false;
+        if (files.Count() == 0)
+        {
+            this.Log.LogError("File main.draco was not found");
+            return false;
+        }
         var mainFile = files.First();
-        var output = $"{this.ProjectName}.exe";
-
         this.ExecuteTool(this.GenerateFullPathToTool(), "", $"compile {mainFile} {this.OutputFile.ToCliFlag("output")}");
-        // TODO: Only emit if there were no errors while compiling
-        //File.WriteAllText($"{this.ProjectName}.runtimeconfig.json", this.GenerateRuntimeConfigContents());
         // TODO: Retarget standard output and show diags as errors/warnings/messages in the correct colors
+        if (this.HasLoggedErrors) return false;
         return true;
     }
 
     protected override string GenerateFullPathToTool() => Path.GetFullPath(Path.Combine(Assembly.GetExecutingAssembly().Location, @"..\..\..\..\..\Draco.Compiler.Cli\bin\Debug\net7.0\Draco.Compiler.Cli.exe"));
 
-    // TODO: change the target frameword based on users choise
+    // TODO: change the target framework based on users choise
     private string GenerateRuntimeConfigContents() => """
             {
               "runtimeOptions": {
@@ -37,6 +38,9 @@ public class DracoBuildTask : Microsoft.Build.Utilities.ToolTask
               }
             }
             """;
+
+    protected override void LogEventsFromTextOutput(string singleLine, MessageImportance messageImportance) => this.Log.LogError(singleLine);
+
     /// <summary>
     /// Output type of the given project.
     /// </summary>

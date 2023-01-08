@@ -13,7 +13,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate IllegalCharacterLiteral = DiagnosticTemplate.Create(
         title: "illegal character literal",
         severity: DiagnosticSeverity.Error,
-        format: "illegal character literal (code: {0})");
+        format: "illegal character literal (code: {0})",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 1));
 
     /// <summary>
     /// The character literal closing quote was missing.
@@ -21,7 +22,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate UnclosedCharacterLiteral = DiagnosticTemplate.Create(
         title: "unclosed character literal",
         severity: DiagnosticSeverity.Error,
-        format: "unclosed character literal");
+        format: "unclosed character literal",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 2));
 
     /// <summary>
     /// A \u{...} construct was left empty.
@@ -29,7 +31,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate ZeroLengthUnicodeCodepoint = DiagnosticTemplate.Create(
         title: "zero length unicode codepoint",
         severity: DiagnosticSeverity.Error,
-        format: "zero length unicode codepoint");
+        format: "zero length unicode codepoint",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 3));
 
     /// <summary>
     /// A \u{...} construct was left unclosed.
@@ -37,7 +40,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate UnclosedUnicodeCodepoint = DiagnosticTemplate.Create(
         title: "unclosed unicode codepoint escape sequence",
         severity: DiagnosticSeverity.Error,
-        format: "unclosed unicode codepoint escape sequence");
+        format: "unclosed unicode codepoint escape sequence",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 4));
 
     /// <summary>
     /// An illegal escape character after '\'.
@@ -45,7 +49,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate IllegalEscapeCharacter = DiagnosticTemplate.Create(
         title: "illegal escape character",
         severity: DiagnosticSeverity.Error,
-        format: "illegal escape character '{0}'");
+        format: "illegal escape character '{0}'",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 5));
 
     /// <summary>
     /// A certain kind of token was expected while parsing.
@@ -53,7 +58,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate ExpectedToken = DiagnosticTemplate.Create(
         title: "expected token",
         severity: DiagnosticSeverity.Error,
-        format: "expected token {0}");
+        format: "expected token {0}",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 6));
 
     /// <summary>
     /// Some kind of unexpected input while parsing.
@@ -61,7 +67,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate UnexpectedInput = DiagnosticTemplate.Create(
         title: "unexpected input",
         severity: DiagnosticSeverity.Error,
-        format: "unexpected input while parsing {0}");
+        format: "unexpected input while parsing {0}",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 7));
 
     /// <summary>
     /// Insufficient indentation in a multiline string.
@@ -69,7 +76,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate InsufficientIndentationInMultiLinString = DiagnosticTemplate.Create(
         title: "insufficient indentation",
         severity: DiagnosticSeverity.Error,
-        format: "insufficient indentation in multiline string");
+        format: "insufficient indentation in multiline string",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 8));
 
     /// <summary>
     /// There are extra tokens inline with the opening quotes of a multiline string.
@@ -77,7 +85,8 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate ExtraTokensInlineWithOpenQuotesOfMultiLineString = DiagnosticTemplate.Create(
         title: "illegal tokens",
         severity: DiagnosticSeverity.Error,
-        format: "illegal tokens inline with opening quotes of multiline string");
+        format: "illegal tokens inline with opening quotes of multiline string",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 9));
 
     /// <summary>
     /// The closing quotes of a multiline string are not on a new line.
@@ -85,5 +94,6 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate ClosingQuotesOfMultiLineStringNotOnNewLine = DiagnosticTemplate.Create(
         title: "closing quotes are not on a new line",
         severity: DiagnosticSeverity.Error,
-        format: "closing quotes are not on a new line of multiline string");
+        format: "closing quotes are not on a new line of multiline string",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 10));
 }

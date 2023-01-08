@@ -13,7 +13,8 @@ internal static class SemanticErrors
     public static readonly DiagnosticTemplate UndefinedReference = DiagnosticTemplate.Create(
         title: "undefined reference",
         severity: DiagnosticSeverity.Error,
-        format: "undefined reference to {0}");
+        format: "undefined reference to {0}",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(2, 1));
 
     /// <summary>
     /// The type of something could not be inferred.
@@ -21,7 +22,8 @@ internal static class SemanticErrors
     public static readonly DiagnosticTemplate CouldNotInferType = DiagnosticTemplate.Create(
         title: "could not infer type",
         severity: DiagnosticSeverity.Error,
-        format: "could not infer type of {0}");
+        format: "could not infer type of {0}",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(3, 1));
 
     /// <summary>
     /// A type mismatch error.
@@ -29,7 +31,8 @@ internal static class SemanticErrors
     public static readonly DiagnosticTemplate TypeMismatch = DiagnosticTemplate.Create(
         title: "type mismatch",
         severity: DiagnosticSeverity.Error,
-        format: "type mismatch between {0} and {1}");
+        format: "type mismatch between {0} and {1}",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(3, 2));
 
     /// <summary>
     /// A shadowing error.
@@ -37,5 +40,6 @@ internal static class SemanticErrors
     public static readonly DiagnosticTemplate IllegalShadowing = DiagnosticTemplate.Create(
         title: "illegal shadowing",
         severity: DiagnosticSeverity.Error,
-        format: "symbol {0} illegally shadows symbol with the same name");
+        format: "symbol {0} illegally shadows symbol with the same name",
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(2, 2));
 }

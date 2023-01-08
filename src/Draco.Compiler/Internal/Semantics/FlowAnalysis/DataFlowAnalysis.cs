@@ -151,8 +151,14 @@ internal sealed class DataFlowAnalysis<TElement>
         Ast.Expr.Block n => this.VisitImpl(prev, n),
         Ast.Expr.If n => this.VisitImpl(prev, n),
         Ast.Expr.While n => this.VisitImpl(prev, n),
+        Ast.Expr.Unary n => this.VisitImpl(prev, n),
         Ast.Expr.Binary n => this.VisitImpl(prev, n),
+        Ast.Expr.Assign n => this.VisitImpl(prev, n),
         Ast.Expr.String n => this.VisitImpl(prev, n),
+        Ast.Expr.And n => this.VisitImpl(prev, n),
+        Ast.Expr.Or n => this.VisitImpl(prev, n),
+        Ast.Expr.Relational n => this.VisitImpl(prev, n),
+        Ast.Expr.Call n => this.VisitImpl(prev, n),
         // Keep it here so it gets an entry
         Ast.Expr.Reference => prev,
         // We can't infer any better
@@ -166,6 +172,9 @@ internal sealed class DataFlowAnalysis<TElement>
         return prev;
     }
 
+    private TElement VisitImpl(TElement prev, Ast.Expr.Unary node) =>
+        this.Visit(prev, node.Operand);
+
     private TElement VisitImpl(TElement prev, Ast.Expr.Binary node)
     {
         if (this.Direction == FlowDirection.Forward)
@@ -177,6 +186,20 @@ internal sealed class DataFlowAnalysis<TElement>
         {
             prev = this.Visit(prev, node.Right);
             return this.Visit(prev, node.Left);
+        }
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.Assign node)
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            prev = this.Visit(prev, node.Target);
+            return this.Visit(prev, node.Value);
+        }
+        else
+        {
+            prev = this.Visit(prev, node.Value);
+            return this.Visit(prev, node.Target);
         }
     }
 
@@ -264,5 +287,85 @@ internal sealed class DataFlowAnalysis<TElement>
             goto start;
         }
         return prev;
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.And node)
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // First one is guaranteed to evaluate
+            prev = this.Visit(prev, node.Left);
+            // The second one is optional
+            var prevAlt = this.Visit(prev, node.Right);
+            return this.Meet(prev, prevAlt);
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.Or node)
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // First one is guaranteed to evaluate
+            prev = this.Visit(prev, node.Left);
+            // The second one is optional
+            var prevAlt = this.Visit(prev, node.Right);
+            return this.Meet(prev, prevAlt);
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.Relational node)
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // The first 2 are guaranteed to evaluate, the rest are optional
+            // First, chain the first 2
+            prev = this.Visit(prev, node.Left);
+            prev = this.Visit(prev, node.Comparisons[0].Right);
+
+            // Now each one is optional, accumulate
+            var end = prev;
+            foreach (var element in node.Comparisons.Skip(1).Select(c => c.Right))
+            {
+                prev = this.Visit(prev, element);
+                end = this.Meet(prev, end);
+            }
+
+            return end;
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.Call node)
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // First the called method
+            prev = this.Visit(prev, node.Called);
+            // Then the parameters left to right
+            foreach (var arg in node.Args) prev = this.Visit(prev, arg);
+            return prev;
+        }
+        else
+        {
+            // First the arguments right to left
+            foreach (var arg in node.Args.Reverse()) prev = this.Visit(prev, arg);
+            // Then the called method
+            prev = this.Visit(prev, node.Called);
+            return prev;
+        }
     }
 }

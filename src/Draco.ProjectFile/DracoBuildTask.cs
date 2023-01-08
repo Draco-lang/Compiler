@@ -1,13 +1,11 @@
-using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 
 namespace Draco.ProjectFile;
 
-public class DracoBuildTask : Microsoft.Build.Utilities.ToolTask
+public class DracoBuildTask : ToolTask
 {
     public override bool Execute()
     {

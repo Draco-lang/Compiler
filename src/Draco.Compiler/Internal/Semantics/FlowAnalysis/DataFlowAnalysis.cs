@@ -7,7 +7,6 @@ using System.Xml.Linq;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.Lexer;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 

@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
 
+// TODO: Decommission, not needed anymore
 /// <summary>
 /// A lattice for checking, if the function returns on all paths.
 /// </summary>

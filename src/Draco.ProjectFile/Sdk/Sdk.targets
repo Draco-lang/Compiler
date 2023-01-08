@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
-    <PropertyGroup>
-        <OutputPath>output\</OutputPath>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    </PropertyGroup>
-
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
     <UsingTask TaskName = "DracoBuildTask"
         AssemblyFile = "..\bin\Debug\netstandard2.0\Draco.ProjectFile.dll"/>
 
-    <Target Name="Build">
+    <Target Name="CoreCompile"  DependsOnTargets="$(CoreCompileDependsOn)">
         <DracoBuildTask OutputType="$(OutputType)" ProjectDirectory="$(MSBuildProjectDirectory)" ProjectName="$(MSBuildProjectName)"/>
     </Target>
+
+    <Target Name="CreateManifestResourceNames"/>
 </Project>

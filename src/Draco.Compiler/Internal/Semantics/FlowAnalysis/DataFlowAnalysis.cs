@@ -145,12 +145,39 @@ internal sealed class DataFlowAnalysis<TElement>
     private TElement VisitImpl(TElement prev, Ast node) => node switch
     {
         Ast.Stmt.Expr n => this.Visit(prev, n.Expression),
+        Ast.Stmt.Decl n => this.Visit(prev, n.Declaration),
+        Ast.Decl.Variable n => this.VisitImpl(prev, n),
         Ast.Expr.Return n => this.VisitImpl(prev, n),
         Ast.Expr.Block n => this.VisitImpl(prev, n),
         Ast.Expr.If n => this.VisitImpl(prev, n),
         Ast.Expr.While n => this.VisitImpl(prev, n),
+        Ast.Expr.Binary n => this.VisitImpl(prev, n),
+        // Keep it here so it gets an entry
+        Ast.Expr.Reference => prev,
+        // We can't infer any better
+        Ast.Expr.Unexpected => prev,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
+
+    private TElement VisitImpl(TElement prev, Ast.Decl.Variable node)
+    {
+        if (node.Value is not null) prev = this.Visit(prev, node.Value);
+        return prev;
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.Binary node)
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            prev = this.Visit(prev, node.Left);
+            return this.Visit(prev, node.Right);
+        }
+        else
+        {
+            prev = this.Visit(prev, node.Right);
+            return this.Visit(prev, node.Left);
+        }
+    }
 
     private TElement VisitImpl(TElement prev, Ast.Expr.Return node) =>
         this.Visit(prev, node.Expression);

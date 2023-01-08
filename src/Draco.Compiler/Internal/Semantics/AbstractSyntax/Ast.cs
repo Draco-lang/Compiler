@@ -73,9 +73,18 @@ internal abstract record class Ast
         public abstract Type EvaluationType { get; }
 
         /// <summary>
+        /// An unexpected expression.
+        /// </summary>
+        public sealed record class Unexpected(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Expr
+        {
+            public override Type EvaluationType => Type.Error.Empty;
+        }
+
+        /// <summary>
         /// An expression representing unitary value.
         /// </summary>
-        public record class Unit(
+        public sealed record class Unit(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Expr
         {
             /// <summary>
@@ -90,7 +99,7 @@ internal abstract record class Ast
         /// <summary>
         /// A block expression.
         /// </summary>
-        public record class Block(
+        public sealed record class Block(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             ImmutableArray<Stmt> Statements,
             Expr Value) : Expr
@@ -322,7 +331,7 @@ internal abstract record class Ast
     /// <summary>
     /// A single comparison element in a comparison chain.
     /// </summary>
-    public record class ComparisonElement(
+    public sealed record class ComparisonElement(
         [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
         [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction Operator,
         Expr Right) : Ast;

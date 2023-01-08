@@ -85,6 +85,7 @@ internal static class ParseTreeToAst
         expr,
         Ast.Expr (expr) => expr switch
         {
+            ParseNode.Expr.Unexpected u => new Ast.Expr.Unexpected(u),
             ParseNode.Expr.Grouping g => ToAst(db, g.Expression.Value),
             ParseNode.Expr.Return ret => new Ast.Expr.Return(
                 ParseNode: ret,

@@ -65,12 +65,13 @@ internal sealed class DataFlowAnalysis<TElement>
     {
         var analyzer = new DataFlowAnalysis<TElement>(lattice);
         while (analyzer.Pass(ast)) ;
-        return analyzer.info.ToImmutable();
+        return analyzer.nodeInfos.ToImmutable();
     }
 
     private readonly ILattice<TElement> lattice;
-    private readonly ImmutableDictionary<Ast, DataFlowInfo<TElement>>.Builder info =
+    private readonly ImmutableDictionary<Ast, DataFlowInfo<TElement>>.Builder nodeInfos =
         ImmutableDictionary.CreateBuilder<Ast, DataFlowInfo<TElement>>(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<ISymbol.ILabel, DataFlowInfo<TElement>> labelInfos = new();
     private bool hasChanged;
 
     private DataFlowAnalysis(ILattice<TElement> lattice)
@@ -88,13 +89,25 @@ internal sealed class DataFlowAnalysis<TElement>
 
     private DataFlowInfo<TElement> GetInfo(Ast node)
     {
-        if (!this.info.TryGetValue(node, out var info))
+        // NOTE: Labels get special treatment
+        if (node is Ast.Decl.Label label) return this.GetInfo(label.LabelSymbol);
+        if (!this.nodeInfos.TryGetValue(node, out var info))
         {
             var passed = this.lattice.Transfer(node);
             info = this.Direction == FlowDirection.Forward
                 ? new(@in: this.Identity, @out: passed)
                 : new(@in: passed, @out: this.Identity);
-            this.info.Add(node, info);
+            this.nodeInfos.Add(node, info);
+        }
+        return info;
+    }
+
+    private DataFlowInfo<TElement> GetInfo(ISymbol.ILabel label)
+    {
+        if (!this.labelInfos.TryGetValue(label, out var info))
+        {
+            info = new DataFlowInfo<TElement>(@in: this.Identity, @out: this.Identity);
+            this.labelInfos.Add(label, info);
         }
         return info;
     }
@@ -148,6 +161,7 @@ internal sealed class DataFlowAnalysis<TElement>
         Ast.Stmt.Decl n => this.Visit(prev, n.Declaration),
         Ast.Decl.Variable n => this.VisitImpl(prev, n),
         Ast.Expr.Return n => this.VisitImpl(prev, n),
+        Ast.Expr.Goto n => this.VisitImpl(prev, n),
         Ast.Expr.Block n => this.VisitImpl(prev, n),
         Ast.Expr.If n => this.VisitImpl(prev, n),
         Ast.Expr.While n => this.VisitImpl(prev, n),
@@ -161,6 +175,7 @@ internal sealed class DataFlowAnalysis<TElement>
         Ast.Expr.Call n => this.VisitImpl(prev, n),
         // Keep it here so it gets an entry
         Ast.Expr.Reference => prev,
+        Ast.Decl.Label => prev,
         // We can't infer any better
         Ast.Expr.Unexpected => prev,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
@@ -220,6 +235,19 @@ internal sealed class DataFlowAnalysis<TElement>
 
     private TElement VisitImpl(TElement prev, Ast.Expr.Return node) =>
         this.Visit(prev, node.Expression);
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.Goto node)
+    {
+        // We join the current flow into the jump target
+        var targetInfo = this.GetInfo(node.Target);
+        this.UpdateInfo(
+            info: targetInfo,
+            @in: this.Join(prev, targetInfo.In),
+            @out: targetInfo.Out);
+
+        // Otherwise, the current flow receives no new info
+        return prev;
+    }
 
     private TElement VisitImpl(TElement prev, Ast.Expr.Block node)
     {

@@ -4,9 +4,12 @@
     <BaseOutputPath>output\</BaseOutputPath>
     <BaseIntermediateOutputPath>output\obj\</BaseIntermediateOutputPath>
   </PropertyGroup>
+  
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  
   <PropertyGroup>
-    <TargetFramework>net70</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
 </Project>

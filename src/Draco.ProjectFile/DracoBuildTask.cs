@@ -16,9 +16,9 @@ public class DracoBuildTask : Microsoft.Build.Utilities.ToolTask
         var mainFile = files.First();
         var output = $"{this.ProjectName}.exe";
 
-        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"compile {mainFile} {output.ToCliFlag("output")}");
+        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"compile {mainFile} {this.OutputFile.ToCliFlag("output")}");
         // TODO: Only emit if there were no errors while compiling
-        File.WriteAllText($"{this.ProjectName}.runtimeconfig.json", this.GenerateRuntimeConfigContents());
+        //File.WriteAllText($"{this.ProjectName}.runtimeconfig.json", this.GenerateRuntimeConfigContents());
         // TODO: Retarget standard output and show diags as errors/warnings/messages in the correct colors
         return true;
     }
@@ -51,6 +51,11 @@ public class DracoBuildTask : Microsoft.Build.Utilities.ToolTask
     /// Name of the current project.
     /// </summary>
     public string ProjectName { get; set; }
+
+    /// <summary>
+    /// Output file, it will be located in obj folder and copied by msbuild to bin.
+    /// </summary>
+    public string OutputFile { get; set; }
 
     protected override string ToolName => "Draco.Compiler.Cli.exe";
 }

@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
-    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
     <UsingTask TaskName = "DracoBuildTask"
         AssemblyFile = "..\bin\Debug\netstandard2.0\Draco.ProjectFile.dll"/>
 
     <Target Name="CoreCompile"  DependsOnTargets="$(CoreCompileDependsOn)">
-        <DracoBuildTask OutputType="$(OutputType)" ProjectDirectory="$(MSBuildProjectDirectory)" ProjectName="$(MSBuildProjectName)"/>
+        <DracoBuildTask
+            OutputType="$(OutputType)"
+            ProjectDirectory="$(MSBuildProjectDirectory)"
+            ProjectName="$(MSBuildProjectName)"
+            OutputFile="$(IntermediateOutputPath)$(TargetName)$(TargetExt)"/>
     </Target>
+    
+    <PropertyGroup>
+        <_SourceItemsToCopyToOutputDirectory></_SourceItemsToCopyToOutputDirectory>
+    </PropertyGroup>
+    
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
+    <!--TODO: Should do something, don't know what yet-->
     <Target Name="CreateManifestResourceNames"/>
 </Project>

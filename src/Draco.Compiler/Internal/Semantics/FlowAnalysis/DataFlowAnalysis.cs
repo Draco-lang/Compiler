@@ -152,6 +152,7 @@ internal sealed class DataFlowAnalysis<TElement>
         Ast.Expr.If n => this.VisitImpl(prev, n),
         Ast.Expr.While n => this.VisitImpl(prev, n),
         Ast.Expr.Binary n => this.VisitImpl(prev, n),
+        Ast.Expr.String n => this.VisitImpl(prev, n),
         // Keep it here so it gets an entry
         Ast.Expr.Reference => prev,
         // We can't infer any better
@@ -177,6 +178,21 @@ internal sealed class DataFlowAnalysis<TElement>
             prev = this.Visit(prev, node.Right);
             return this.Visit(prev, node.Left);
         }
+    }
+
+    private TElement VisitImpl(TElement prev, Ast.Expr.String node)
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // We only care about interpolated parts
+            foreach (var part in node.Parts.OfType<Ast.StringPart.Expr>()) prev = this.Visit(prev, part);
+        }
+        else
+        {
+            // We only care about interpolated parts in reverse order
+            foreach (var part in node.Parts.OfType<Ast.StringPart.Expr>().Reverse()) prev = this.Visit(prev, part);
+        }
+        return prev;
     }
 
     private TElement VisitImpl(TElement prev, Ast.Expr.Return node) =>

@@ -90,6 +90,9 @@ internal static class ParseTreeToAst
             ParseNode.Expr.Return ret => new Ast.Expr.Return(
                 ParseNode: ret,
                 Expression: ret.Expression is null ? Ast.Expr.Unit.Default : ToAst(db, ret.Expression)),
+            ParseNode.Expr.Goto g => new Ast.Expr.Goto(
+                ParseNode: g,
+                Target: SymbolResolution.GetReferencedSymbolExpected<ISymbol.ILabel>(db, g.Target)),
             ParseNode.Expr.Name name => new Ast.Expr.Reference(
                 ParseNode: name,
                 Symbol: SymbolResolution.GetReferencedSymbolExpected<ISymbol.ITyped>(db, name)),

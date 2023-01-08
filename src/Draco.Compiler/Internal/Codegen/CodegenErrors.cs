@@ -11,5 +11,5 @@ internal static class CodegenErrors
         title: "no main method found",
         severity: DiagnosticSeverity.Error,
         format: "no main method found in compiled assembly",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(4, 1));
+        errorCode: DiagnosticTemplate.SyntaxErrorCode(5, 1));
 }

@@ -2,9 +2,13 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Diagnostics;
+using System.Linq;
 
 namespace Draco.Compiler.Cli;
 
@@ -16,8 +20,9 @@ internal class Program
     private static RootCommand ConfigureCommands()
     {
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
-        var emitIROutput = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
-        var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
+        var emitIROutputOption = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
+        var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), description: "Specifies the output file");
+        var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in msbuild diagnostic format");
         var runCommand = new Command("run", "Runs specified draco file")
         {
             fileArgument,
@@ -34,16 +39,17 @@ internal class Program
         var generateIRCommand = new Command("codegen", "Generates DracoIR from specified draco file and displays it to the console")
         {
             fileArgument,
-            emitIROutput,
+            emitIROutputOption,
         };
-        generateIRCommand.SetHandler(GenerateDracoIR, fileArgument, emitIROutput);
+        generateIRCommand.SetHandler(GenerateDracoIR, fileArgument, emitIROutputOption);
 
         var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
         {
             fileArgument,
             outputOption,
+            msbuildDiagOption,
         };
-        generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption);
+        generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption, msbuildDiagOption);
 
         var rootCommand = new RootCommand("CLI for the draco compiler");
         rootCommand.AddCommand(runCommand);
@@ -94,7 +100,7 @@ internal class Program
         if (emitCS is not null) File.WriteAllText(emitCS.FullName, generatedIr);
     }
 
-    private static void GenerateExe(FileInfo input, FileInfo output)
+    private static void GenerateExe(FileInfo input, FileInfo output, bool jsonOutput)
     {
         var sourceText = SourceText.FromFile(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
@@ -103,7 +109,12 @@ internal class Program
         var emitResult = compilation.Emit(dllStream);
         if (!emitResult.Success)
         {
-            foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
+            if (jsonOutput) foreach (var diag in emitResult.Diagnostics) if (diag.Location.IsNone) Console.WriteLine($"{diag.Severity.ToString().ToLower()} 000 : {diag.Message}");
+                    else Console.WriteLine($"""
+                        {diag.Location.SourceText.Path!.OriginalString}({diag.Location.Range!.Value.Start.Line + 1}, {diag.Location.Range!.Value.Start.Column + 1},
+                        {diag.Location.Range!.Value.End.Line + 1}, {diag.Location.Range!.Value.End.Column + 1}) : {diag.Severity.ToString().ToLower()} {diag.ErrorCode} : {diag.Message}
+                        """.ReplaceLineEndings(""));
+            else foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
         }
     }
 }

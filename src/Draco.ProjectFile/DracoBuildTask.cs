@@ -18,28 +18,12 @@ public class DracoBuildTask : Microsoft.Build.Utilities.ToolTask
             return false;
         }
         var mainFile = files.First();
-        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"compile {mainFile} {this.OutputFile.ToCliFlag("output")}");
-        // TODO: Retarget standard output and show diags as errors/warnings/messages in the correct colors
+        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"compile {mainFile} --output {this.OutputFile} --msbuild-diags");
         if (this.HasLoggedErrors) return false;
         return true;
     }
 
     protected override string GenerateFullPathToTool() => Path.GetFullPath(Path.Combine(Assembly.GetExecutingAssembly().Location, @"..\..\..\..\..\Draco.Compiler.Cli\bin\Debug\net7.0\Draco.Compiler.Cli.exe"));
-
-    // TODO: change the target framework based on users choise
-    private string GenerateRuntimeConfigContents() => """
-            {
-              "runtimeOptions": {
-                "tfm": "net7.0",
-                "framework": {
-                  "name": "Microsoft.NETCore.App",
-                  "version": "7.0.0"
-                }
-              }
-            }
-            """;
-
-    protected override void LogEventsFromTextOutput(string singleLine, MessageImportance messageImportance) => this.Log.LogError(singleLine);
 
     /// <summary>
     /// Output type of the given project.
@@ -62,8 +46,4 @@ public class DracoBuildTask : Microsoft.Build.Utilities.ToolTask
     public string OutputFile { get; set; }
 
     protected override string ToolName => "Draco.Compiler.Cli.exe";
-}
-internal static class CliFlag
-{
-    public static string ToCliFlag(this object flagValue, string flagName) => $"--{flagName} {flagValue}";
 }

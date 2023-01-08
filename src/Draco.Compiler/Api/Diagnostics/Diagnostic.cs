@@ -50,7 +50,8 @@ public sealed record class DiagnosticTemplate
     // 1 - Syntax error
     // 2 - Symbol resolution error
     // 3 - Type checking error
-    // 4 - Codegen error
+    // 4 - Dataflow error
+    // 5 - Codegen error
 
     /// <summary>
     /// Creates error code for draco error.

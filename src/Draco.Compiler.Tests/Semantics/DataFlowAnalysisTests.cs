@@ -164,4 +164,65 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
     }
+
+    [Fact]
+    public void GotoOverReturn()
+    {
+        // func foo(): int32 {
+        //     goto after;
+        //     return 0;
+        // after:
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(GotoExpr("after")),
+                ExprStmt(ReturnExpr(LiteralExpr(0))),
+                DeclStmt(LabelDecl("after")))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void GotoOverReturnThenJumpBack()
+    {
+        // func foo(): int32 {
+        //     goto after;
+        // before:
+        //     return 0;
+        // after:
+        //     goto before;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(GotoExpr("after")),
+                DeclStmt(LabelDecl("before")),
+                ExprStmt(ReturnExpr(LiteralExpr(0))),
+                DeclStmt(LabelDecl("after")),
+                ExprStmt(GotoExpr("before")))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
 }

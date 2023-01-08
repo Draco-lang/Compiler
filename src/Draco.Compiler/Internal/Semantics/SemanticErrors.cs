@@ -38,4 +38,12 @@ internal static class SemanticErrors
         title: "illegal shadowing",
         severity: DiagnosticSeverity.Error,
         format: "symbol {0} illegally shadows symbol with the same name");
+
+    /// <summary>
+    /// A function does not return on all paths.
+    /// </summary>
+    public static readonly DiagnosticTemplate DoesNotReturn = DiagnosticTemplate.Create(
+        title: "does not return",
+        severity: DiagnosticSeverity.Error,
+        format: "the function {0} does not return on all paths");
 }

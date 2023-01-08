@@ -3,6 +3,8 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Semantics.FlowAnalysis;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Semantics.Types;
 
@@ -39,7 +41,7 @@ public sealed class SemanticModel
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     internal IEnumerable<Diagnostic> GetAllDiagnostics()
     {
-        IEnumerable<Diagnostic> Impl(ParseNode tree)
+        IEnumerable<Diagnostic> GetSymbolAndTypeErrors(ParseNode tree)
         {
             // Symbol
             foreach (var diag in SymbolResolution.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
@@ -48,10 +50,14 @@ public sealed class SemanticModel
             foreach (var diag in TypeChecker.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
 
             // Children
-            foreach (var diag in tree.Children.SelectMany(Impl)) yield return diag;
+            foreach (var diag in tree.Children.SelectMany(GetSymbolAndTypeErrors)) yield return diag;
         }
 
-        return Impl(this.Tree.Root);
+        IEnumerable<Diagnostic> GetDataFlowErrors(ParseNode tree) =>
+            DataFlowPasses.Analyze(ParseTreeToAst.ToAst(this.db, tree));
+
+        return GetSymbolAndTypeErrors(this.Tree.Root)
+            .Concat(GetDataFlowErrors(this.Tree.Root));
     }
 
     // NOTE: These OrNull functions are not too pretty

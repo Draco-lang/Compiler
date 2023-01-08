@@ -8,24 +8,33 @@ using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
 
-internal enum ReturnStatus
+/// <summary>
+/// A lattice for checking, if the function returns on all paths.
+/// </summary>
+internal sealed class ReturnsOnAllPaths : ILattice<ReturnsOnAllPaths.Status>
 {
-    DoesNotReturn = 0,
-    Returns = 1,
-}
+    public enum Status
+    {
+        DoesNotReturn = 0,
+        Returns = 1,
+    }
 
-internal sealed class ReturnsOnAllPaths : ILattice<ReturnStatus>
-{
+    public static ReturnsOnAllPaths Instance { get; } = new();
+
     public FlowDirection Direction => FlowDirection.Forward;
-    public ReturnStatus Identity => ReturnStatus.DoesNotReturn;
+    public Status Identity => Status.DoesNotReturn;
 
-    public bool Equals(ReturnStatus x, ReturnStatus y) => x == y;
-    public int GetHashCode(ReturnStatus obj) => obj.GetHashCode();
+    private ReturnsOnAllPaths()
+    {
+    }
 
-    public ReturnStatus Join(ReturnStatus a, ReturnStatus b) => (ReturnStatus)Math.Max((int)a, (int)b);
-    public ReturnStatus Meet(ReturnStatus a, ReturnStatus b) => (ReturnStatus)Math.Min((int)a, (int)b);
+    public bool Equals(Status x, Status y) => x == y;
+    public int GetHashCode(Status obj) => obj.GetHashCode();
 
-    public ReturnStatus Transfer(Ast node) => node is Ast.Expr.Return
-        ? ReturnStatus.Returns
-        : ReturnStatus.DoesNotReturn;
+    public Status Join(Status a, Status b) => (Status)Math.Max((int)a, (int)b);
+    public Status Meet(Status a, Status b) => (Status)Math.Min((int)a, (int)b);
+
+    public Status Transfer(Ast node) => node is Ast.Expr.Return
+        ? Status.Returns
+        : Status.DoesNotReturn;
 }

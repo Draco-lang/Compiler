@@ -24,6 +24,9 @@ public readonly record struct EmitResult(
     bool Success,
     ImmutableArray<Diagnostic> Diagnostics);
 
+// TODO: We are not exposing data-flow in any form of API yet
+// That's going to be quite a bit of work, but eventually needs to be done
+
 /// <summary>
 /// Represents a single compilation session.
 /// </summary>
@@ -109,13 +112,6 @@ public sealed class Compilation
 
         // Get AST
         var ast = ParseTreeToAst.ToAst(this.db, this.ParseTree.Root);
-        // TODO: Temporary
-        {
-            var func = ((Ast.Decl.Func)((Ast.CompilationUnit)ast).Declarations[0]).Body;
-            var analysis = DataFlowAnalysis.Analyze(new ReturnsOnAllPaths(), func);
-            var o = analysis[func].Out;
-            Console.WriteLine(o);
-        }
         // Lower it
         ast = AstLowering.Lower(this.db, ast);
         // Generate Draco IR

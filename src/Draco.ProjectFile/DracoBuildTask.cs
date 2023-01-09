@@ -17,11 +17,8 @@ public sealed class DracoBuildTask : ToolTask
             return false;
         }
         this.ExecuteTool(this.GenerateFullPathToTool(), "", $"compile {mainFile} --output {this.OutputFile} --msbuild-diags");
-        if (this.HasLoggedErrors) return false;
-        return true;
+        return !this.HasLoggedErrors;
     }
-
-    protected override string GenerateFullPathToTool() => Path.GetFullPath(Path.Combine(Assembly.GetExecutingAssembly().Location, @"..\..\..\..\..\Draco.Compiler.Cli\bin\Debug\net7.0\Draco.Compiler.Cli.exe"));
 
     /// <summary>
     /// Output type of the given project.
@@ -44,4 +41,6 @@ public sealed class DracoBuildTask : ToolTask
     public string OutputFile { get; set; }
 
     protected override string ToolName => "Draco.Compiler.Cli.exe";
+
+    protected override string GenerateFullPathToTool() => Path.GetFullPath(Path.Combine(Assembly.GetExecutingAssembly().Location, @"..\..\..\..\..\Draco.Compiler.Cli\bin\Debug\net7.0\Draco.Compiler.Cli.exe"));
 }

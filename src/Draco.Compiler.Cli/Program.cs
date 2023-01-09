@@ -2,7 +2,9 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
+using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 
@@ -103,21 +105,17 @@ internal class Program
         var compilation = Compilation.Create(parseTree, output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(dllStream);
-        if (!emitResult.Success)
+        if (!emitResult.Success) foreach (var diag in emitResult.Diagnostics.Select(x => msbuildDiags ? MakeMsbuildDiag(x) : x.ToString())) Console.WriteLine(diag);
+    }
+
+    private static string MakeMsbuildDiag(Diagnostic original)
+    {
+        var file = string.Empty;
+        if (!original.Location.IsNone && original.Location.SourceText.Path is not null)
         {
-            if (msbuildDiags) foreach (var diag in emitResult.Diagnostics)
-                    if (diag.Location.IsNone)
-                    {
-                        Console.WriteLine($"{diag.Severity.ToString().ToLower()} 000 : {diag.Message}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"""
-                        {diag.Location.SourceText.Path!.OriginalString}({diag.Location.Range!.Value.Start.Line + 1}, {diag.Location.Range!.Value.Start.Column + 1},
-                        {diag.Location.Range!.Value.End.Line + 1}, {diag.Location.Range!.Value.End.Column + 1}) : {diag.Severity.ToString().ToLower()} {diag.ErrorCode} : {diag.Message}
-                        """.ReplaceLineEndings(""));
-                    }
-            else foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
+            var range = original.Location.Range!.Value;
+            file = $"{original.Location.SourceText.Path.OriginalString}({range.Start.Line + 1},{range.Start.Column + 1},{range.End.Line + 1},{range.End.Column + 1})";
         }
+        return $"{file} : {original.Severity.ToString().ToLower()} {original.Template.ErrorCode} : {original.Message}";
     }
 }

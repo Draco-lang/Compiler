@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -22,7 +21,7 @@ internal static class Translator
         Severity = LspModels.DiagnosticSeverity.Error,
         // TODO: Is there a no-range option?
         Range = ToLsp(diag.Location.Range) ?? new(),
-        Code = new DiagnosticCode(diag.ErrorCode),
+        Code = new LspModels.DiagnosticCode(diag.Template.ErrorCode),
         RelatedInformation = diag.RelatedInformation
             .Select(ToLsp)
             .OfType<LspModels.DiagnosticRelatedInformation>()

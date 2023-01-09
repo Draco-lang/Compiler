@@ -64,7 +64,7 @@ public sealed record class DiagnosticTemplate
     /// </summary>
     /// <param name="category">Category of the error.</param>
     /// <param name="index">Index of the error.</param>
-    /// <returns></returns>
+    /// <returns>The constructed error code.</returns>
     internal static string CreateErrorCode(ErrorCategories category, int index) => $"DR{(int)category}{index:D3}";
 
     /// <summary>
@@ -145,11 +145,6 @@ public sealed class Diagnostic
     public DiagnosticTemplate Template { get; }
 
     /// <summary>
-    /// The error code of the error.
-    /// </summary>
-    public string ErrorCode { get; }
-
-    /// <summary>
     /// A short title for the message.
     /// </summary>
     public string Title => this.Template.Title;
@@ -202,7 +197,6 @@ public sealed class Diagnostic
         this.FormatArgs = formatArgs;
         this.Location = location;
         this.RelatedInformation = relatedInformation;
-        this.ErrorCode = template.ErrorCode;
     }
 
     public override string ToString()

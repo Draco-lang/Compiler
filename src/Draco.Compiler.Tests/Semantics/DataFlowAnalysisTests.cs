@@ -225,4 +225,187 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // Assert
         Assert.Empty(diags);
     }
+
+    [Fact]
+    public void ReferenceUninitializedVariable()
+    {
+        // func foo() {
+        //     var x: int32;
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
+                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void ReferenceInitializedVariable()
+    {
+        // func foo() {
+        //     var x: int32 = 0;
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")), LiteralExpr(0))),
+                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void ReferenceInitializedVariableAssignedLater()
+    {
+        // func foo() {
+        //     var x: int32;
+        //     x = 0;
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
+                ExprStmt(BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0))),
+                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void ReferenceVariableInitializedOnlyInOneBranch()
+    {
+        // func foo() {
+        //     var x: int32;
+        //     if (false) {
+        //         x = 0;
+        //     }
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
+                ExprStmt(IfExpr(
+                    condition: LiteralExpr(false),
+                    then: BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)))),
+                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void ReferenceVariableInitializedInBothBranches()
+    {
+        // func foo() {
+        //     var x: int32;
+        //     if (false) {
+        //         x = 0;
+        //     }
+        //     else {
+        //         x = 1;
+        //     }
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
+                ExprStmt(IfExpr(
+                    condition: LiteralExpr(false),
+                    then: BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)),
+                    @else: BinaryExpr(NameExpr("x"), Assign, LiteralExpr(1)))),
+                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void ReferenceVariableInitializedOnlyInLoopBody()
+    {
+        // func foo() {
+        //     var x: int32;
+        //     while (false) {
+        //         x = 0;
+        //     }
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(),
+            null,
+            BlockBodyFuncBody(BlockExpr(
+                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
+                ExprStmt(WhileExpr(
+                    condition: LiteralExpr(false),
+                    body: BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)))),
+                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+    }
 }

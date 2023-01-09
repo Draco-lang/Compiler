@@ -73,19 +73,13 @@ internal sealed class DefiniteAssignment : ILattice<ImmutableDictionary<ISymbol.
 
     public ImmutableDictionary<ISymbol.IVariable, Status> Transfer(Ast node) => node switch
     {
-        Ast.Decl.Variable v when v.Value is not null => ImmutableDictionary.CreateRange(new[]
-        {
-            new KeyValuePair<ISymbol.IVariable, Status>(v.DeclarationSymbol, Status.Initialized),
-        }),
-        Ast.Decl.Variable v when v.Value is null => ImmutableDictionary.CreateRange(new[]
-        {
-            new KeyValuePair<ISymbol.IVariable, Status>(v.DeclarationSymbol, Status.NotInitialized),
-        }),
+        Ast.Decl.Variable v when v.Value is not null => CreateDictionary(v.DeclarationSymbol, Status.Initialized),
+        Ast.Decl.Variable v when v.Value is null => CreateDictionary(v.DeclarationSymbol, Status.NotInitialized),
         Ast.Expr.Assign a when a.Target is Ast.Expr.Reference r
-                            && r.Symbol is ISymbol.IVariable v => ImmutableDictionary.CreateRange(new[]
-        {
-            new KeyValuePair<ISymbol.IVariable, Status>(v, Status.Initialized),
-        }),
+                            && r.Symbol is ISymbol.IVariable v => CreateDictionary(v, Status.Initialized),
         _ => ImmutableDictionary<ISymbol.IVariable, Status>.Empty,
     };
+
+    private static ImmutableDictionary<ISymbol.IVariable, Status> CreateDictionary(ISymbol.IVariable symbol, Status status) =>
+        ImmutableDictionary.Create<ISymbol.IVariable, Status>().Add(symbol, status);
 }

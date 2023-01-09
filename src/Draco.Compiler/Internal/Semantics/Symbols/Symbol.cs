@@ -400,7 +400,7 @@ internal static partial class Symbol
     /// <summary>
     /// A symbol for a reference error.
     /// </summary>
-    private sealed class ReferenceError : ErrorBase, ISymbol.ITyped
+    private sealed class ReferenceError : ErrorBase, ISymbol.ITyped, ISymbol.ILabel
     {
         public Type Type => Type.Error.Empty;
 

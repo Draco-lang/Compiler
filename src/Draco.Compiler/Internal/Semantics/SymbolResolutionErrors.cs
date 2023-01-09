@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal static class SymbolResolutionErrors
 {
-    private static string SymbolResolutionErrorCode(int index) => DiagnosticTemplate.CreateErrorCode(ErrorCategories.SymbolResolutionError, index);
+    private static string ErrorCode(int index) => DiagnosticTemplate.CreateErrorCode(ErrorCategories.SymbolResolutionError, index);
 
     /// <summary>
     /// An undefined reference.
@@ -16,7 +16,7 @@ internal static class SymbolResolutionErrors
         title: "undefined reference",
         severity: DiagnosticSeverity.Error,
         format: "undefined reference to {0}",
-        errorCode: SymbolResolutionErrorCode(1));
+        errorCode: ErrorCode(1));
 
     /// <summary>
     /// A shadowing error.
@@ -25,6 +25,6 @@ internal static class SymbolResolutionErrors
         title: "illegal shadowing",
         severity: DiagnosticSeverity.Error,
         format: "symbol {0} illegally shadows symbol with the same name",
-        errorCode: SymbolResolutionErrorCode(2));
+        errorCode: ErrorCode(2));
 }
 

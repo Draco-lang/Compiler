@@ -9,7 +9,8 @@
             OutputType="$(OutputType)"
             ProjectDirectory="$(MSBuildProjectDirectory)"
             ProjectName="$(MSBuildProjectName)"
-            OutputFile="$(IntermediateOutputPath)$(TargetName)$(TargetExt)"/>
+            OutputFile="$(IntermediateOutputPath)$(TargetName)$(TargetExt)"
+            Compile="@(Compile)"/>
     </Target>
     
     <PropertyGroup>

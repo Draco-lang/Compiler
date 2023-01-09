@@ -105,7 +105,10 @@ internal class Program
         var compilation = Compilation.Create(parseTree, output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(dllStream);
-        if (!emitResult.Success) foreach (var diag in emitResult.Diagnostics.Select(x => msbuildDiags ? MakeMsbuildDiag(x) : x.ToString())) Console.WriteLine(diag);
+        if (!emitResult.Success)
+        {
+            foreach (var diag in emitResult.Diagnostics.Select(x => msbuildDiags ? MakeMsbuildDiag(x) : x.ToString())) Console.WriteLine(diag);
+        }
     }
 
     private static string MakeMsbuildDiag(Diagnostic original)

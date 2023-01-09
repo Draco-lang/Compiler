@@ -5,5 +5,10 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <DefaultLanguageSourceExtension>.draco</DefaultLanguageSourceExtension>
+    <Language>Draco</Language>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
   </PropertyGroup>
+  
+  
 </Project>

@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal static class TypeCheckingErrors
 {
-    private static string TypeCheckingErrorCode(int index) => DiagnosticTemplate.CreateErrorCode(ErrorCategories.TypeCheckingError, index);
+    private static string ErrorCode(int index) => DiagnosticTemplate.CreateErrorCode(ErrorCategories.TypeCheckingError, index);
 
     /// <summary>
     /// The type of something could not be inferred.
@@ -16,7 +16,7 @@ internal static class TypeCheckingErrors
         title: "could not infer type",
         severity: DiagnosticSeverity.Error,
         format: "could not infer type of {0}",
-        errorCode: TypeCheckingErrorCode(1));
+        errorCode: ErrorCode(1));
 
     /// <summary>
     /// A type mismatch error.
@@ -25,6 +25,6 @@ internal static class TypeCheckingErrors
         title: "type mismatch",
         severity: DiagnosticSeverity.Error,
         format: "type mismatch between {0} and {1}",
-        errorCode: TypeCheckingErrorCode(2));
+        errorCode: ErrorCode(2));
 }
 

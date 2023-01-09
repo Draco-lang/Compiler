@@ -9,8 +9,7 @@ public sealed class DracoBuildTask : ToolTask
 {
     public override bool Execute()
     {
-        var files = Directory.EnumerateFiles(this.ProjectDirectory, "*.draco", SearchOption.AllDirectories);
-        var mainFile = files.FirstOrDefault(f => f == Path.Combine(this.ProjectDirectory, "main.draco"));
+        var mainFile = this.Compile.FirstOrDefault(f => f == "main.draco");
         if (mainFile is null)
         {
             this.Log.LogError("File main.draco was not found");
@@ -39,6 +38,11 @@ public sealed class DracoBuildTask : ToolTask
     /// Output file, it will be located in obj folder and copied by msbuild to bin.
     /// </summary>
     public string OutputFile { get; set; }
+
+    /// <summary>
+    /// Array of files that should be compiled.
+    /// </summary>
+    public string[] Compile { get; set; }
 
     protected override string ToolName => "Draco.Compiler.Cli.exe";
 

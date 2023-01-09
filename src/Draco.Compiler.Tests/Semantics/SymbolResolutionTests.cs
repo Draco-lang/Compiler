@@ -401,4 +401,82 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.True(ReferenceEquals(varDeclSym, varRefSym));
     }
+
+    [Fact]
+    public void NestedLabelCanBeAccessed()
+    {
+        // func foo() {
+        //     if (false) {
+        //     lbl:
+        //     }
+        //     goto lbl;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    ExprStmt(IfExpr(
+                        condition: LiteralExpr(false),
+                        then: BlockExpr(DeclStmt(LabelDecl("lbl"))))),
+                    ExprStmt(GotoExpr("lbl")))))));
+
+        var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
+        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var labelDeclSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
+        var labelRefSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(labelRef));
+
+        // Assert
+        Assert.True(ReferenceEquals(labelDeclSym, labelRefSym));
+    }
+
+    [Fact]
+    public void LabelInOtherFunctionCanNotBeAccessed()
+    {
+        // func foo() {
+        // lbl:
+        // }
+        //
+        // func bar() {
+        //     goto lbl;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    DeclStmt(LabelDecl("lbl"))))),
+            FuncDecl(
+                Name("bar"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    ExprStmt(GotoExpr("lbl")))))));
+
+        var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
+        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var labelDeclSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
+        var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
+
+        // Assert
+        Assert.False(ReferenceEquals(labelDeclSym, labelRefSym));
+        Assert.False(labelDeclSym.IsError);
+        Assert.True(labelRefSym.IsError);
+    }
 }

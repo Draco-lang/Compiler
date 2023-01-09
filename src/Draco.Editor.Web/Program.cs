@@ -145,7 +145,7 @@ public partial class Program
     private static MemoryStream? GetAssemblyStream(Compilation compilation)
     {
         var inlineDllStream = new MemoryStream();
-        var emitResult = compilation.Emit(inlineDllStream, csCompilerOptionBuilder: config => config.WithConcurrentBuild(false));
+        var emitResult = compilation.Emit(inlineDllStream);
         if (!emitResult.Success)
         {
             inlineDllStream.Dispose();

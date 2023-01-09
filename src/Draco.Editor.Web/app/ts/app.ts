@@ -131,6 +131,9 @@ compilerWorker.onmessage = async (ev) => {
         message: string;
     };
     switch (msg.type) {
+    case 'setOutputText':
+        outputEditor.getModel().setValue(msg.message);
+        break;
     case 'runtimeAssembly': {
         if(runtimeWorker != undefined) {
             runtimeWorker.terminate();

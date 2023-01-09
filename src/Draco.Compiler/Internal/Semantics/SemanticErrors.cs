@@ -46,4 +46,12 @@ internal static class SemanticErrors
         title: "does not return",
         severity: DiagnosticSeverity.Error,
         format: "the function {0} does not return on all paths");
+
+    /// <summary>
+    /// A variable is used before it's initialized.
+    /// </summary>
+    public static readonly DiagnosticTemplate VariableUsedBeforeInit = DiagnosticTemplate.Create(
+        title: "use of uninitialized variable",
+        severity: DiagnosticSeverity.Error,
+        format: "the variable {0} is used before initialized");
 }

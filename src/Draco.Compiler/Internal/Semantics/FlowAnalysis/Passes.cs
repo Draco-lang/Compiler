@@ -6,6 +6,7 @@ using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
+using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
@@ -37,16 +38,19 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
     {
         base.VisitFuncDecl(node);
 
-        this.CheckReturnsOnAllPaths(node);
+        var graph = AstToDataFlowGraph.ToDataFlowGraph(node.Body);
+
+        // TODO: Temporary
+        // Console.WriteLine(DataFlowGraphPrinter.ToDot(graph));
+
+        this.CheckReturnsOnAllPaths(node, graph);
+        this.CheckIfOnlyInitializedVariablesAreUsed(graph);
 
         return this.Default;
     }
 
-    private void CheckReturnsOnAllPaths(Ast.Decl.Func node)
+    private void CheckReturnsOnAllPaths(Ast.Decl.Func node, DataFlowGraph graph)
     {
-        var graph = AstToDataFlowGraph.ToDataFlowGraph(node.Body);
-        // TODO: Temporary
-        Console.WriteLine(DataFlowGraphPrinter.ToDot(graph));
         // We check if all operations without a successor are a return
         var allReturns = graph.Operations
             .Where(op => op.Successors.Count == 0)
@@ -58,6 +62,27 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
                 template: SemanticErrors.DoesNotReturn,
                 location: node.DeclarationSymbol.Definition?.Location ?? Location.None,
                 formatArgs: node.DeclarationSymbol.Name));
+        }
+    }
+
+    private void CheckIfOnlyInitializedVariablesAreUsed(DataFlowGraph graph)
+    {
+        var infos = DataFlowAnalysis.Analyze(
+            lattice: DefiniteAssignment.Instance,
+            graph: graph);
+        foreach (var (node, info) in infos)
+        {
+            // We only care about references that reference local variables
+            if (node is not Ast.Expr.Reference r || r.Symbol is not ISymbol.IVariable var || var.IsGlobal) continue;
+
+            if (info.In[var] != DefiniteAssignment.Status.Initialized)
+            {
+                // Use of uninitialized variable
+                this.diagnostics.Add(Diagnostic.Create(
+                template: SemanticErrors.VariableUsedBeforeInit,
+                location: node.ParseNode?.Location ?? Location.None,
+                formatArgs: var.Name));
+            }
         }
     }
 }

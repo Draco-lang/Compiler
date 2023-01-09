@@ -7,6 +7,8 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal static class SyntaxErrors
 {
+    private static string ErrorCode(int index) => DiagnosticTemplate.CreateErrorCode(ErrorCategories.SyntaxError, index);
+
     /// <summary>
     /// An illegal character appears in a character literal.
     /// </summary>
@@ -14,7 +16,7 @@ internal static class SyntaxErrors
         title: "illegal character literal",
         severity: DiagnosticSeverity.Error,
         format: "illegal character literal (code: {0})",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 1));
+        errorCode: ErrorCode(1));
 
     /// <summary>
     /// The character literal closing quote was missing.
@@ -23,7 +25,7 @@ internal static class SyntaxErrors
         title: "unclosed character literal",
         severity: DiagnosticSeverity.Error,
         format: "unclosed character literal",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 2));
+        errorCode: ErrorCode(2));
 
     /// <summary>
     /// A \u{...} construct was left empty.
@@ -32,7 +34,7 @@ internal static class SyntaxErrors
         title: "zero length unicode codepoint",
         severity: DiagnosticSeverity.Error,
         format: "zero length unicode codepoint",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 3));
+        errorCode: ErrorCode(3));
 
     /// <summary>
     /// A \u{...} construct was left unclosed.
@@ -41,7 +43,7 @@ internal static class SyntaxErrors
         title: "unclosed unicode codepoint escape sequence",
         severity: DiagnosticSeverity.Error,
         format: "unclosed unicode codepoint escape sequence",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 4));
+        errorCode: ErrorCode(4));
 
     /// <summary>
     /// An illegal escape character after '\'.
@@ -50,7 +52,7 @@ internal static class SyntaxErrors
         title: "illegal escape character",
         severity: DiagnosticSeverity.Error,
         format: "illegal escape character '{0}'",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 5));
+        errorCode: ErrorCode(5));
 
     /// <summary>
     /// A certain kind of token was expected while parsing.
@@ -59,7 +61,7 @@ internal static class SyntaxErrors
         title: "expected token",
         severity: DiagnosticSeverity.Error,
         format: "expected token {0}",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 6));
+        errorCode: ErrorCode(6));
 
     /// <summary>
     /// Some kind of unexpected input while parsing.
@@ -68,7 +70,7 @@ internal static class SyntaxErrors
         title: "unexpected input",
         severity: DiagnosticSeverity.Error,
         format: "unexpected input while parsing {0}",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 7));
+        errorCode: ErrorCode(7));
 
     /// <summary>
     /// Insufficient indentation in a multiline string.
@@ -77,7 +79,7 @@ internal static class SyntaxErrors
         title: "insufficient indentation",
         severity: DiagnosticSeverity.Error,
         format: "insufficient indentation in multiline string",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 8));
+        errorCode: ErrorCode(8));
 
     /// <summary>
     /// There are extra tokens inline with the opening quotes of a multiline string.
@@ -86,7 +88,7 @@ internal static class SyntaxErrors
         title: "illegal tokens",
         severity: DiagnosticSeverity.Error,
         format: "illegal tokens inline with opening quotes of multiline string",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 9));
+        errorCode: ErrorCode(9));
 
     /// <summary>
     /// The closing quotes of a multiline string are not on a new line.
@@ -95,5 +97,5 @@ internal static class SyntaxErrors
         title: "closing quotes are not on a new line",
         severity: DiagnosticSeverity.Error,
         format: "closing quotes are not on a new line of multiline string",
-        errorCode: DiagnosticTemplate.SyntaxErrorCode(1, 10));
+        errorCode: ErrorCode(10));
 }

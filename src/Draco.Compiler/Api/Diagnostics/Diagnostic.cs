@@ -25,6 +25,19 @@ public enum DiagnosticSeverity
     Error,
 }
 
+/// <summary>
+/// Possible categories of errors.
+/// </summary>
+internal enum ErrorCategories
+{
+    InternalCompilerError = 0,
+    SyntaxError = 1,
+    SymbolResolutionError = 2,
+    TypeCheckingError = 3,
+    DataflowError = 4,
+    CodegenError = 5,
+}
+
 // NOTE: Eventually we'd want error codes too. For now it's way too early for that.
 /// <summary>
 /// A template for creating <see cref="Diagnostic"/> messages.
@@ -34,24 +47,17 @@ public sealed record class DiagnosticTemplate
     /// <summary>
     /// Creates a new <see cref="DiagnosticTemplate"/>.
     /// </summary>
+    /// <param name="errorCode">The error code of the error.</param>
     /// <param name="title">A short title for the message.</param>
     /// <param name="severity">The severity of the message.</param>
     /// <param name="format">The format string that describes the diagnostic in detail.</param>
-    /// <param name="errorCode">The error code of the error.</param>
     /// <returns>The constructed <see cref="DiagnosticTemplate"/>.</returns>
-    public static DiagnosticTemplate Create(string title, DiagnosticSeverity severity, string format, string errorCode) =>
-        new(title: title, severity: severity, format: format, errorCode: errorCode);
+    public static DiagnosticTemplate Create(string errorCode, string title, DiagnosticSeverity severity, string format) =>
+        new(errorCode: errorCode, title: title, severity: severity, format: format);
 
     // NOTE: error codes are using format DRX###
     // where X is category of the error in form of number and ### is index of the error,
     // every category starts indexing from 1 except of internal compiler error
-    // Categories:
-    // 0 - Internal compiler error
-    // 1 - Syntax error
-    // 2 - Symbol resolution error
-    // 3 - Type checking error
-    // 4 - Dataflow error
-    // 5 - Codegen error
 
     /// <summary>
     /// Creates error code for draco error.
@@ -59,7 +65,12 @@ public sealed record class DiagnosticTemplate
     /// <param name="category">Category of the error.</param>
     /// <param name="index">Index of the error.</param>
     /// <returns></returns>
-    public static string SyntaxErrorCode(int category, int index) => $"DR{category}{index:D3}";
+    internal static string CreateErrorCode(ErrorCategories category, int index) => $"DR{(int)category}{index:D3}";
+
+    /// <summary>
+    /// The error code of the error.
+    /// </summary>
+    public string ErrorCode { get; }
 
     /// <summary>
     /// A short title for the message.
@@ -76,21 +87,16 @@ public sealed record class DiagnosticTemplate
     /// </summary>
     public string Format { get; }
 
-    /// <summary>
-    /// The error code of the error.
-    /// </summary>
-    public string ErrorCode { get; }
-
     private DiagnosticTemplate(
+        string errorCode,
         string title,
         DiagnosticSeverity severity,
-        string format,
-        string errorCode)
+        string format)
     {
+        this.ErrorCode = errorCode;
         this.Title = title;
         this.Severity = severity;
         this.Format = format;
-        this.ErrorCode = errorCode;
     }
 }
 
@@ -139,6 +145,11 @@ public sealed class Diagnostic
     public DiagnosticTemplate Template { get; }
 
     /// <summary>
+    /// The error code of the error.
+    /// </summary>
+    public string ErrorCode { get; }
+
+    /// <summary>
     /// A short title for the message.
     /// </summary>
     public string Title => this.Template.Title;
@@ -167,11 +178,6 @@ public sealed class Diagnostic
     /// The assoicated location of the message.
     /// </summary>
     public Location Location { get; }
-
-    /// <summary>
-    /// The error code of the error.
-    /// </summary>
-    public string ErrorCode { get; }
 
     /// <summary>
     /// Related information to this diagnostic.

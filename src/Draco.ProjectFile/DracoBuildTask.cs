@@ -5,17 +5,17 @@ using Microsoft.Build.Utilities;
 
 namespace Draco.ProjectFile;
 
-public class DracoBuildTask : ToolTask
+public sealed class DracoBuildTask : ToolTask
 {
     public override bool Execute()
     {
-        var files = Directory.EnumerateFiles(this.ProjectDirectory, "*.draco", SearchOption.TopDirectoryOnly).Where(x => x == Path.Combine(this.ProjectDirectory, "main.draco"));
-        if (files.Count() == 0)
+        var files = Directory.EnumerateFiles(this.ProjectDirectory, "*.draco", SearchOption.AllDirectories);
+        var mainFile = files.FirstOrDefault(f => f == Path.Combine(this.ProjectDirectory, "main.draco"));
+        if (mainFile is null)
         {
             this.Log.LogError("File main.draco was not found");
             return false;
         }
-        var mainFile = files.First();
         this.ExecuteTool(this.GenerateFullPathToTool(), "", $"compile {mainFile} --output {this.OutputFile} --msbuild-diags");
         if (this.HasLoggedErrors) return false;
         return true;

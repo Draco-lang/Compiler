@@ -105,11 +105,18 @@ internal class Program
         var emitResult = compilation.Emit(dllStream);
         if (!emitResult.Success)
         {
-            if (msbuildDiags) foreach (var diag in emitResult.Diagnostics) if (diag.Location.IsNone) Console.WriteLine($"{diag.Severity.ToString().ToLower()} 000 : {diag.Message}");
-                    else Console.WriteLine($"""
+            if (msbuildDiags) foreach (var diag in emitResult.Diagnostics)
+                    if (diag.Location.IsNone)
+                    {
+                        Console.WriteLine($"{diag.Severity.ToString().ToLower()} 000 : {diag.Message}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"""
                         {diag.Location.SourceText.Path!.OriginalString}({diag.Location.Range!.Value.Start.Line + 1}, {diag.Location.Range!.Value.Start.Column + 1},
                         {diag.Location.Range!.Value.End.Line + 1}, {diag.Location.Range!.Value.End.Column + 1}) : {diag.Severity.ToString().ToLower()} {diag.ErrorCode} : {diag.Message}
                         """.ReplaceLineEndings(""));
+                    }
             else foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
         }
     }

@@ -73,7 +73,9 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         foreach (var (node, info) in infos)
         {
             // We only care about references that reference local variables
-            if (node is not Ast.Expr.Reference r || r.Symbol is not ISymbol.IVariable var || var.IsGlobal) continue;
+            if (node is not Ast.Expr.Reference r) continue;
+            if (r.Symbol is not ISymbol.IVariable var) continue;
+            if (var.IsGlobal || var is ISymbol.IParameter) continue;
 
             if (info.In[var] != DefiniteAssignment.Status.Initialized)
             {

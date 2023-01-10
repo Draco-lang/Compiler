@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
@@ -118,13 +119,17 @@ internal interface IScope
     public bool IsLocal { get; }
 
     /// <summary>
-    /// Attempts to look up a <see cref="Declaration"/> with a given name.
+    /// Attempts to look up a <see cref="ISymbol"/> with a given name, using a given predicate projection.
     /// </summary>
+    /// <typeparam name="TSymbol">The symbol type the projection returns.</typeparam>
     /// <param name="name">The name of the <see cref="Declaration"/> to look for.</param>
     /// <param name="referencedPosition">The position we allow lookup up until.</param>
-    /// <returns>The <see cref="Declaration"/> that has name <paramref name="name"/> and is visible from
-    /// position <paramref name="referencedPosition"/>, or null if there is none such.</returns>
-    public Declaration? LookUp(string name, int referencedPosition);
+    /// <param name="projection">The projection to select the result with.</param>
+    /// <returns>The <typeparamref name="TSymbol"/> that has name <paramref name="name"/>, is visible from
+    /// position <paramref name="referencedPosition"/> and <paramref name="projection"/> didn't return default for it,
+    /// or the default value, if there is none such.</returns>
+    public TSymbol? LookUp<TSymbol>(string name, int referencedPosition, Func<ISymbol, TSymbol?> projection)
+        where TSymbol : ISymbol;
 }
 
 // Implementations /////////////////////////////////////////////////////////////
@@ -159,10 +164,11 @@ internal static partial class Scope
             this.Declarations = declarations;
         }
 
-        public Declaration? LookUp(string name, int referencedPosition)
+        public TSymbol? LookUp<TSymbol>(string name, int referencedPosition, Func<ISymbol, TSymbol?> projection)
+            where TSymbol : ISymbol
         {
-            if (!this.Timelines.TryGetValue(name, out var timeline)) return null;
-            return timeline.LookUp(referencedPosition);
+            if (!this.Timelines.TryGetValue(name, out var timeline)) return default;
+            return timeline.LookUp(referencedPosition, projection);
         }
     }
 }
@@ -250,30 +256,32 @@ internal readonly struct DeclarationTimeline
     }
 
     /// <summary>
-    /// Looks up a <see cref="Declaration"/> in this timeline.
+    /// Looks up a <see cref="ISymbol"/> in this timeline using a predicate projection.
     /// </summary>
+    /// <typeparam name="TSymbol">The symbol type returned by the projection.</typeparam>
     /// <param name="referencedPosition">The position we are trying to reference in the timeline.</param>
-    /// <returns>The <see cref="Declaration"/> that is the latest, but at most at
-    /// <paramref name="referencedPosition"/>, or null if there is none such declaration.</returns>
-    public Declaration? LookUp(int referencedPosition)
+    /// <returns>The <typeparamref name="TSymbol"/> that is the latest, but at most at
+    /// <paramref name="referencedPosition"/> and <paramref name="projection"/> returned a non-default value for it,
+    /// or null if there is no such declaration.</returns>
+    public TSymbol? LookUp<TSymbol>(int referencedPosition, Func<ISymbol, TSymbol?> projection)
     {
         var comparer = Comparer<Declaration>.Create((d1, d2) => d1.Position - d2.Position);
         var searchKey = new Declaration(referencedPosition, null!);
         var index = this.Declarations.BinarySearch(searchKey, comparer);
-        if (index >= 0)
+        index = index >= 0
+            // Exact position
+            ? index
+            // We are in-between, step one back
+            : ~index - 1;
+        for (var i = index; i >= 0; --i)
         {
-            // Exact match, can reference
-            return this.Declarations[index];
+            // Project
+            var projected = projection(this.Declarations[i].Symbol);
+            // If not null, found
+            if (projected is not null) return projected;
         }
-        else
-        {
-            // We are in-between, we need to get the previous one, which is defined
-            index = ~index - 1;
-            // Not found
-            if (index < 0) return null;
-            // Found one
-            return this.Declarations[index];
-        }
+        // Not found in this timeline
+        return default;
     }
 }
 

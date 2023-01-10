@@ -268,9 +268,9 @@ internal static class SymbolResolution
             if (scope is null) return null;
             // Compute reference position
             var referencePositon = GetPosition(ancestor, tree);
-            // Look up declaration
-            var declaration = scope.LookUp(name, referencePositon);
-            if (declaration is not null) return declaration.Value.Symbol;
+            // Look up symbol
+            var symbol = scope.LookUp(name, referencePositon, x => x);
+            if (symbol is not null) return symbol;
             // Not found, try in ancestor
             return ReferenceSymbolOrNull(db, ancestor, name);
         });

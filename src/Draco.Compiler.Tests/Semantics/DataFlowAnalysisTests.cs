@@ -327,7 +327,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
                 ExprStmt(IfExpr(
                     condition: LiteralExpr(false),
-                    then: BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)))),
+                    then: BlockExpr(ExprStmt(BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)))))),
                 DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
 
         // Act

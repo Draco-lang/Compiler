@@ -42,6 +42,7 @@ internal static class ParseTreeToAst
             // TODO: Eliminate the ?? pattern everywhere by making the API use optional
             // TODO: Eliminate the null ? null : ... pattern everywhere by making the API use optional
 
+            ParseNode.Decl.Unexpected u => new Ast.Decl.Unexpected(u),
             ParseNode.Decl.Func func => new Ast.Decl.Func(
                 ParseNode: func,
                 DeclarationSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.IFunction>(db, func),

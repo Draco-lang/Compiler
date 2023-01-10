@@ -27,6 +27,12 @@ internal abstract record class Ast
     public abstract record class Decl : Ast
     {
         /// <summary>
+        /// An unexpected declaration.
+        /// </summary>
+        public sealed record class Unexpected(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Decl;
+
+        /// <summary>
         /// A function declaration.
         /// </summary>
         public sealed record class Func(

@@ -6,7 +6,8 @@ using System.Linq;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.Symbols;
-using Type = Draco.Compiler.Internal.DracoIr.Type;
+using SemanticType = Draco.Compiler.Internal.Semantics.Types.Type;
+using IrType = Draco.Compiler.Internal.DracoIr.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -42,18 +43,18 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         this.assembly = assembly;
     }
 
-    private Type TranslateType(Semantics.Types.Type type)
+    private IrType TranslateType(Semantics.Types.Type type)
     {
-        if (type == Semantics.Types.Type.Unit) return Type.Unit;
-        if (type == Semantics.Types.Type.Bool) return Type.Bool;
-        if (type == Semantics.Types.Type.Int32) return Type.Int32;
-        if (type == Semantics.Types.Type.String) return Type.String;
+        if (type == Semantics.Types.Type.Unit) return IrType.Unit;
+        if (type == Semantics.Types.Type.Bool) return IrType.Bool;
+        if (type == Semantics.Types.Type.Int32) return IrType.Int32;
+        if (type == Semantics.Types.Type.String) return IrType.String;
 
         if (type is Semantics.Types.Type.Function func)
         {
             var args = func.Params.Select(this.TranslateType).ToImmutableArray();
             var ret = this.TranslateType(func.Return);
-            return new Type.Proc(args, ret);
+            return new IrType.Proc(args, ret);
         }
 
         throw new NotImplementedException();
@@ -182,6 +183,11 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         var result = this.currentProcedure.DefineLocal(null, this.TranslateType(node.EvaluationType));
 
         var condition = this.VisitExpr(node.Condition);
+        // In case the condition is a never type, we don't bother writing out the then and else bodies,
+        // as they can not be evaluated
+        // Note, that for side-effects we still emit the condition code
+        if (node.Condition.EvaluationType.Equals(SemanticType.Never_)) return Value.Unit.Instance;
+
         this.writer.JmpIf(condition, thenLabel, elseLabel);
 
         this.writer.PlaceLabel(thenLabel);

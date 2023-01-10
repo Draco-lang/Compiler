@@ -160,9 +160,8 @@ internal abstract record class Ast
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel Target) : Expr
         {
-            // NOTE: Eventually this should be the bottom type
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => Type.Unit;
+            public override Type EvaluationType => Type.Never_;
         }
 
         /// <summary>
@@ -172,9 +171,8 @@ internal abstract record class Ast
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Expression) : Expr
         {
-            // NOTE: Eventually this should be the bottom type
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => Type.Unit;
+            public override Type EvaluationType => Type.Never_;
         }
 
         /// <summary>
@@ -249,9 +247,8 @@ internal abstract record class Ast
             Expr Left,
             ImmutableArray<ComparisonElement> Comparisons) : Expr
         {
-            // TODO
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => throw new NotImplementedException();
+            public override Type EvaluationType => this.Comparisons[0].Operator.ReturnType;
         }
 
         /// <summary>

@@ -309,6 +309,11 @@ internal static class ParseTreeToAst
             ParseNode: lit,
             Value: lit.Value.Value,
             Type: Type.Int32),
+        TokenType.LiteralFloat => new Ast.Expr.Literal(
+            ParseNode: lit,
+            Value: lit.Value.Value,
+            // NOTE: There is no agreement currently on float literal type
+            Type: Type.Float64),
         TokenType.KeywordTrue => new Ast.Expr.Literal(
             ParseNode: lit,
             Value: true,

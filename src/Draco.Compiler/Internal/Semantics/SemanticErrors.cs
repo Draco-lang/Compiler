@@ -54,4 +54,12 @@ internal static class SemanticErrors
         title: "use of uninitialized variable",
         severity: DiagnosticSeverity.Error,
         format: "the variable {0} is used before initialized");
+
+    /// <summary>
+    /// Illegal value on left side of assignment.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalLValue = DiagnosticTemplate.Create(
+        title: "illegal lvaule",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal value on the left side of assignment");
 }

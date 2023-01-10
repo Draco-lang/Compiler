@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Syntax;
 using System.Collections.Immutable;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 using System.Diagnostics;
+using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
@@ -152,7 +153,11 @@ internal static class ParseTreeToAst
             ParseNode.Expr.Name name => new Ast.LValue.Reference(
                 ParseNode: name,
                 Symbol: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IVariable>(db, name)),
-            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+            _ => new Ast.LValue.Illegal(
+                ParseNode: expr,
+                Diagnostics: ImmutableArray.Create(Diagnostic.Create(
+                    template: SemanticErrors.IllegalLValue,
+                    location: expr.Location))),
         });
 
     private static Ast.CompilationUnit ToAstCompilationUnit(QueryDatabase db, ParseNode.CompilationUnit cu) => db.GetOrUpdate(

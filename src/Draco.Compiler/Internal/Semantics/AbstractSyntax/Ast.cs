@@ -4,15 +4,31 @@ using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Api.Syntax;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 using Draco.RedGreenTree.Attributes;
+using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 /// <summary>
 /// An immutable structure representing semantic information about source code.
 /// </summary>
-internal abstract record class Ast
+internal abstract partial record class Ast
 {
+    /// <summary>
+    /// The <see cref="Diagnostic"/>s on this node, not including the ones on <see cref="ParseNode"/>.
+    /// </summary>
+    public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+
+    /// <summary>
+    /// The <see cref="Syntax.ParseNode"/> this AST node was produced from.
+    /// </summary>
     public abstract ParseNode? ParseNode { get; init; }
+
+    /// <summary>
+    /// Retrieves all <see cref="Diagnostic"/>s on this subtree.
+    /// </summary>
+    /// <returns>All <see cref="Diagnostic"/> messages in this subtree.</returns>
+    public ImmutableArray<Diagnostic> GetAllDiagnostics() => ErrorCollector.Collect(this);
 
     /// <summary>
     /// An entire compilation unit.
@@ -332,6 +348,19 @@ internal abstract record class Ast
         }
 
         /// <summary>
+        /// An illegal lvalue.
+        /// </summary>
+        public sealed record class Illegal(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
+            ImmutableArray<Diagnostic> Diagnostics) : LValue
+        {
+            [Ignore(IgnoreFlags.TransformerTransform | IgnoreFlags.VisitorVisit)]
+            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+
+            public override Type EvaluationType => Type.Error.Empty;
+        }
+
+        /// <summary>
         /// A name reference.
         /// </summary>
         public sealed record class Reference(
@@ -400,5 +429,30 @@ internal abstract record class Ast
         public new sealed record class Expr(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Ast.Expr Expression) : Stmt;
+    }
+}
+
+// Error collector
+internal abstract partial record class Ast
+{
+    private sealed class ErrorCollector : AstVisitorBase<Unit>
+    {
+        public static ImmutableArray<Diagnostic> Collect(Ast ast)
+        {
+            var collector = new ErrorCollector();
+            collector.Visit(ast);
+            return collector.diagnostics.ToImmutable();
+        }
+
+        private readonly ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+
+        private ErrorCollector() { }
+
+        public override Unit VisitIllegalLValue(LValue.Illegal node)
+        {
+            base.VisitIllegalLValue(node);
+            this.diagnostics.AddRange(node.Diagnostics);
+            return this.Default;
+        }
     }
 }

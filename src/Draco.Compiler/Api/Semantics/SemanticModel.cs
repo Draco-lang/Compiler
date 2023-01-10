@@ -53,11 +53,14 @@ public sealed class SemanticModel
             foreach (var diag in tree.Children.SelectMany(GetSymbolAndTypeErrors)) yield return diag;
         }
 
-        IEnumerable<Diagnostic> GetDataFlowErrors(ParseNode tree) =>
-            DataFlowPasses.Analyze(ParseTreeToAst.ToAst(this.db, tree));
+        var ast = ParseTreeToAst.ToAst(this.db, this.Tree.Root);
+
+        IEnumerable<Diagnostic> GetAstErrors() => ast!.GetAllDiagnostics();
+        IEnumerable<Diagnostic> GetDataFlowErrors() => DataFlowPasses.Analyze(ast);
 
         return GetSymbolAndTypeErrors(this.Tree.Root)
-            .Concat(GetDataFlowErrors(this.Tree.Root));
+            .Concat(GetAstErrors())
+            .Concat(GetDataFlowErrors());
     }
 
     // NOTE: These OrNull functions are not too pretty

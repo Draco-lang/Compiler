@@ -80,7 +80,7 @@ internal sealed class AstToDataFlowGraph
         Ast.LValue.Reference n => this.Append(n),
         Ast.StringPart.Interpolation i => this.Translate(i.Expression),
         Ast.Expr.Unexpected or Ast.Expr.Unit or Ast.Expr.Literal => null,
-        Ast.LValue.Unexpected => null,
+        Ast.LValue.Unexpected or Ast.LValue.Illegal => null,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 

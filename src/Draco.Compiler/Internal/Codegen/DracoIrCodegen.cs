@@ -96,17 +96,6 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return glob;
     }
 
-    private IInstructionOperand CompileLvalue(Ast.Expr expr) => expr switch
-    {
-        Ast.Expr.Reference r => r.Symbol switch
-        {
-            ISymbol.IVariable v when v.IsGlobal => this.GetGlobal(v),
-            ISymbol.IVariable v => this.locals[v],
-            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-        },
-        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-    };
-
     private void Finish()
     {
         // Finish the global initializer
@@ -285,18 +274,18 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
     public override Value VisitAssignExpr(Ast.Expr.Assign node)
     {
+        var target = this.CompileLValue(node.Target);
         var right = this.VisitExpr(node.Value);
         var toStore = right;
         if (node.CompoundOperator is not null)
         {
-            var left = this.VisitExpr(node.Target);
+            var left = this.LoadLValue(target);
             if (node.CompoundOperator == Intrinsics.Operators.Add_Int32) toStore = this.writer.Add(left, right);
             else if (node.CompoundOperator == Intrinsics.Operators.Sub_Int32) toStore = this.writer.Sub(left, right);
             else if (node.CompoundOperator == Intrinsics.Operators.Mul_Int32) toStore = this.writer.Mul(left, right);
             else if (node.CompoundOperator == Intrinsics.Operators.Div_Int32) toStore = this.writer.Div(left, right);
             else throw new NotImplementedException();
         }
-        var target = this.CompileLvalue(node.Target);
         if (target.IsGlobal()) this.writer.Store(target.AsGlobal(), toStore);
         else this.writer.Store(target.AsLocal(), toStore);
         return right;
@@ -317,4 +306,24 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
 
     // Should have been desugared
     public override Value VisitStringExpr(Ast.Expr.String node) => throw new InvalidOperationException();
+
+    public override Value VisitLValue(Ast.LValue node) => throw new InvalidOperationException("use CompileLValue instead");
+
+    private Value LoadLValue(IInstructionOperand lvalue) => lvalue switch
+    {
+        Local loc => this.writer.Load(loc),
+        Global glob => this.writer.Load(glob),
+        _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
+    };
+
+    private IInstructionOperand CompileLValue(Ast.LValue expr) => expr switch
+    {
+        Ast.LValue.Reference reference => reference.Symbol switch
+        {
+            ISymbol.IVariable v when v.IsGlobal => this.GetGlobal(v),
+            ISymbol.IVariable v => this.locals[v],
+            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+        },
+        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+    };
 }

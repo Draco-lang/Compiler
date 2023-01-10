@@ -75,7 +75,7 @@ internal sealed class DefiniteAssignment : ILattice<ImmutableDictionary<ISymbol.
     {
         Ast.Decl.Variable v when v.Value is not null => CreateDictionary(v.DeclarationSymbol, Status.Initialized),
         Ast.Decl.Variable v when v.Value is null => CreateDictionary(v.DeclarationSymbol, Status.NotInitialized),
-        Ast.Expr.Assign a when a.Target is Ast.Expr.Reference r
+        Ast.Expr.Assign a when a.Target is Ast.LValue.Reference r
                             && r.Symbol is ISymbol.IVariable v => CreateDictionary(v, Status.Initialized),
         _ => ImmutableDictionary<ISymbol.IVariable, Status>.Empty,
     };

@@ -253,7 +253,7 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Assign(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
-            Expr Target,
+            LValue Target,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction? CompoundOperator,
             Expr Value) : Expr
         {
@@ -304,6 +304,37 @@ internal abstract record class Ast
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ITyped Symbol) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
+            public override Type EvaluationType => this.Symbol.Type;
+        }
+    }
+
+    /// <summary>
+    /// A value appearing on the left side of assignment.
+    /// </summary>
+    public abstract record class LValue : Ast
+    {
+        /// <summary>
+        /// The type the lvalue references.
+        /// </summary>
+        [Ignore(IgnoreFlags.TransformerAll)]
+        public abstract Type EvaluationType { get; }
+
+        /// <summary>
+        /// An unexpected lvalue.
+        /// </summary>
+        public sealed record class Unexpected(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : LValue
+        {
+            public override Type EvaluationType => Type.Error.Empty;
+        }
+
+        /// <summary>
+        /// A name reference.
+        /// </summary>
+        public sealed record class Reference(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IVariable Symbol) : LValue
+        {
             public override Type EvaluationType => this.Symbol.Type;
         }
     }

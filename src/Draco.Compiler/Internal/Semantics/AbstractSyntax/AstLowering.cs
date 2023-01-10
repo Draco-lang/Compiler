@@ -140,7 +140,7 @@ internal sealed class AstLowering : AstTransformerBase
                 // if (expr1) result = expr2;
                 If(
                     condition: left,
-                    then: Assign(Reference(varSymbol), right)),
+                    then: Assign(LValueReference(varSymbol), right)),
             },
             value: Reference(varSymbol));
     }
@@ -173,7 +173,7 @@ internal sealed class AstLowering : AstTransformerBase
                 // if (!expr1) result = expr2;
                 If(
                     condition: Not(left),
-                    then: Assign(Reference(varSymbol), right)),
+                    then: Assign(LValueReference(varSymbol), right)),
             },
             value: Reference(varSymbol));
     }

@@ -22,20 +22,20 @@ internal static class ParseTreeToAst
     /// <returns>The <see cref="Ast"/> form of <paramref name="ast"/>.</returns>
     public static Ast ToAst(QueryDatabase db, ParseNode ast) => ast switch
     {
-        ParseNode.CompilationUnit cu => ToAst(db, cu),
-        ParseNode.Decl decl => ToAst(db, decl),
-        ParseNode.Stmt stmt => ToAst(db, stmt),
-        ParseNode.Expr expr => ToAst(db, expr),
+        ParseNode.CompilationUnit cu => ToAstCompilationUnit(db, cu),
+        ParseNode.Decl decl => ToAstDecl(db, decl),
+        ParseNode.Stmt stmt => ToAstStmt(db, stmt),
+        ParseNode.Expr expr => ToAstExpr(db, expr),
         _ => throw new ArgumentOutOfRangeException(nameof(ast)),
     };
 
     /// <summary>
-    /// Builds an <see cref="Ast"/> from the given <see cref="ParseNode"/>.
+    /// Builds an <see cref="Ast.Decl"/> from the given <see cref="ParseNode"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="decl">The <see cref="ParseNode"/> to construct the <see cref="Ast"/> from.</param>
     /// <returns>The <see cref="Ast"/> form of <paramref name="decl"/>.</returns>
-    public static Ast.Decl ToAst(QueryDatabase db, ParseNode.Decl decl) => db.GetOrUpdate(
+    public static Ast.Decl ToAstDecl(QueryDatabase db, ParseNode.Decl decl) => db.GetOrUpdate(
         decl,
         Ast.Decl (decl) => decl switch
         {
@@ -45,51 +45,51 @@ internal static class ParseTreeToAst
             ParseNode.Decl.Func func => new Ast.Decl.Func(
                 ParseNode: func,
                 DeclarationSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.IFunction>(db, func),
-                Body: ToAst(db, func.Body)),
+                Body: ToAstFuncBody(db, func.Body)),
             ParseNode.Decl.Label label => new Ast.Decl.Label(
                 ParseNode: label,
                 LabelSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.ILabel>(db, label)),
             ParseNode.Decl.Variable var => new Ast.Decl.Variable(
                 ParseNode: var,
                 DeclarationSymbol: SymbolResolution.GetDefinedSymbolExpected<ISymbol.IVariable>(db, var),
-                Value: var.Initializer is null ? null : ToAst(db, var.Initializer.Value)),
+                Value: var.Initializer is null ? null : ToAstExpr(db, var.Initializer.Value)),
             _ => throw new ArgumentOutOfRangeException(nameof(decl)),
         });
 
     /// <summary>
-    /// Builds an <see cref="Ast"/> from the given <see cref="ParseNode"/>.
+    /// Builds an <see cref="Ast.Stmt"/> from the given <see cref="ParseNode"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="stmt">The <see cref="ParseNode"/> to construct the <see cref="Ast"/> from.</param>
     /// <returns>The <see cref="Ast"/> form of <paramref name="stmt"/>.</returns>
-    public static Ast.Stmt ToAst(QueryDatabase db, ParseNode.Stmt stmt) => db.GetOrUpdate(
+    public static Ast.Stmt ToAstStmt(QueryDatabase db, ParseNode.Stmt stmt) => db.GetOrUpdate(
         stmt,
         Ast.Stmt (stmt) => stmt switch
         {
             ParseNode.Stmt.Decl d => new Ast.Stmt.Decl(
                 ParseNode: d,
-                Declaration: ToAst(db, d.Declaration)),
+                Declaration: ToAstDecl(db, d.Declaration)),
             ParseNode.Stmt.Expr expr => new Ast.Stmt.Expr(
                 ParseNode: expr,
-                Expression: ToAst(db, expr.Expression)),
+                Expression: ToAstExpr(db, expr.Expression)),
             _ => throw new ArgumentOutOfRangeException(nameof(stmt)),
         });
 
     /// <summary>
-    /// Builds an <see cref="Ast"/> from the given <see cref="ParseNode"/>.
+    /// Builds an <see cref="Ast.Expr"/> from the given <see cref="ParseNode"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="expr">The <see cref="ParseNode"/> to construct the <see cref="Ast"/> from.</param>
     /// <returns>The <see cref="Ast"/> form of <paramref name="expr"/>.</returns>
-    public static Ast.Expr ToAst(QueryDatabase db, ParseNode.Expr expr) => db.GetOrUpdate(
+    public static Ast.Expr ToAstExpr(QueryDatabase db, ParseNode.Expr expr) => db.GetOrUpdate(
         expr,
         Ast.Expr (expr) => expr switch
         {
             ParseNode.Expr.Unexpected u => new Ast.Expr.Unexpected(u),
-            ParseNode.Expr.Grouping g => ToAst(db, g.Expression.Value),
+            ParseNode.Expr.Grouping g => ToAstExpr(db, g.Expression.Value),
             ParseNode.Expr.Return ret => new Ast.Expr.Return(
                 ParseNode: ret,
-                Expression: ret.Expression is null ? Ast.Expr.Unit.Default : ToAst(db, ret.Expression)),
+                Expression: ret.Expression is null ? Ast.Expr.Unit.Default : ToAstExpr(db, ret.Expression)),
             ParseNode.Expr.Goto g => new Ast.Expr.Goto(
                 ParseNode: g,
                 Target: SymbolResolution.GetReferencedSymbolExpected<ISymbol.ILabel>(db, g.Target)),
@@ -98,13 +98,13 @@ internal static class ParseTreeToAst
                 Symbol: SymbolResolution.GetReferencedSymbolExpected<ISymbol.ITyped>(db, name)),
             ParseNode.Expr.If @if => new Ast.Expr.If(
                 ParseNode: @if,
-                Condition: ToAst(db, @if.Condition.Value),
-                Then: ToAst(db, @if.Then),
-                Else: @if.Else is null ? Ast.Expr.Unit.Default : ToAst(db, @if.Else.Expression)),
+                Condition: ToAstExpr(db, @if.Condition.Value),
+                Then: ToAstExpr(db, @if.Then),
+                Else: @if.Else is null ? Ast.Expr.Unit.Default : ToAstExpr(db, @if.Else.Expression)),
             ParseNode.Expr.While @while => new Ast.Expr.While(
                 ParseNode: @while,
-                Condition: ToAst(db, @while.Condition.Value),
-                Expression: ToAst(db, @while.Expression),
+                Condition: ToAstExpr(db, @while.Condition.Value),
+                Expression: ToAstExpr(db, @while.Expression),
                 // TODO: This needs to come from symbol resolution, but currently the assumption was one symbol defined per construct,
                 // and while needs two
                 // For now, these labels are simply not accessible from the outside
@@ -112,57 +112,74 @@ internal static class ParseTreeToAst
                 ContinueLabel: Symbol.SynthetizeLabel()),
             ParseNode.Expr.Block block => new Ast.Expr.Block(
                 ParseNode: block,
-                Statements: block.Enclosed.Value.Statements.Select(s => ToAst(db, s)).ToImmutableArray(),
-                Value: block.Enclosed.Value.Value is null ? Ast.Expr.Unit.Default : ToAst(db, block.Enclosed.Value.Value)),
+                Statements: block.Enclosed.Value.Statements.Select(s => ToAstStmt(db, s)).ToImmutableArray(),
+                Value: block.Enclosed.Value.Value is null ? Ast.Expr.Unit.Default : ToAstExpr(db, block.Enclosed.Value.Value)),
             ParseNode.Expr.Call call => new Ast.Expr.Call(
                 ParseNode: call,
-                Called: ToAst(db, call.Called),
-                Args: call.Args.Value.Elements.Select(a => ToAst(db, a.Value)).ToImmutableArray()),
+                Called: ToAstExpr(db, call.Called),
+                Args: call.Args.Value.Elements.Select(a => ToAstExpr(db, a.Value)).ToImmutableArray()),
             ParseNode.Expr.Relational rel => new Ast.Expr.Relational(
                 ParseNode: rel,
-                Left: ToAst(db, rel.Left),
-                Comparisons: rel.Comparisons.Select(c => ToAst(db, c)).ToImmutableArray()),
+                Left: ToAstExpr(db, rel.Left),
+                Comparisons: rel.Comparisons.Select(c => ToAstComparisonElement(db, c)).ToImmutableArray()),
             ParseNode.Expr.Unary ury => new Ast.Expr.Unary(
                 ParseNode: ury,
                 Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, ury),
-                Operand: ToAst(db, ury.Operand)),
-            ParseNode.Expr.Binary bin => ToAst(db, bin),
-            ParseNode.Expr.Literal lit => ToAst(lit),
-            ParseNode.Expr.String str => ToAst(db, str),
+                Operand: ToAstExpr(db, ury.Operand)),
+            ParseNode.Expr.Binary bin => ToAstExpr(db, bin),
+            ParseNode.Expr.Literal lit => ToAstExpr(lit),
+            ParseNode.Expr.String str => ToAstExpr(db, str),
             // We desugar unit statements into { stmt; }
             ParseNode.Expr.UnitStmt stmt => new Ast.Expr.Block(
                 ParseNode: stmt,
-                Statements: ImmutableArray.Create(ToAst(db, stmt.Statement)),
+                Statements: ImmutableArray.Create(ToAstStmt(db, stmt.Statement)),
                 Value: Ast.Expr.Unit.Default),
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         });
 
-    private static Ast.CompilationUnit ToAst(QueryDatabase db, ParseNode.CompilationUnit cu) => db.GetOrUpdate(
+    /// <summary>
+    /// Builds an <see cref="Ast.LValue"/> from the given <see cref="ParseNode"/>.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="expr">The <see cref="ParseNode"/> to construct the <see cref="Ast"/> from.</param>
+    /// <returns>The <see cref="Ast"/> form of <paramref name="expr"/>.</returns>
+    public static Ast.LValue ToAstLValue(QueryDatabase db, ParseNode.Expr expr) => db.GetOrUpdate(
+        expr,
+        Ast.LValue (expr) => expr switch
+        {
+            ParseNode.Expr.Unexpected u => new Ast.LValue.Unexpected(u),
+            ParseNode.Expr.Name name => new Ast.LValue.Reference(
+                ParseNode: name,
+                Symbol: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IVariable>(db, name)),
+            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+        });
+
+    private static Ast.CompilationUnit ToAstCompilationUnit(QueryDatabase db, ParseNode.CompilationUnit cu) => db.GetOrUpdate(
         cu,
         Ast.CompilationUnit (cu) => new(
             ParseNode: cu,
-            Declarations: cu.Declarations.Select(d => ToAst(db, d)).ToImmutableArray()));
+            Declarations: cu.Declarations.Select(d => ToAstDecl(db, d)).ToImmutableArray()));
 
-    private static Ast.Expr.Block ToAst(QueryDatabase db, ParseNode.FuncBody funcBody) => db.GetOrUpdate(
+    private static Ast.Expr.Block ToAstFuncBody(QueryDatabase db, ParseNode.FuncBody funcBody) => db.GetOrUpdate(
         funcBody,
         Ast.Expr.Block (funcBody) => funcBody switch
         {
-            ParseNode.FuncBody.BlockBody blockBody => ToAst(db, blockBody),
-            ParseNode.FuncBody.InlineBody inlineBody => ToAst(db, inlineBody),
+            ParseNode.FuncBody.BlockBody blockBody => ToAstFuncBody(db, blockBody),
+            ParseNode.FuncBody.InlineBody inlineBody => ToAstFuncBody(db, inlineBody),
             _ => throw new ArgumentOutOfRangeException(nameof(funcBody)),
         });
 
-    private static Ast.Expr.Block ToAst(QueryDatabase db, ParseNode.FuncBody.BlockBody body)
+    private static Ast.Expr.Block ToAstFuncBody(QueryDatabase db, ParseNode.FuncBody.BlockBody body)
     {
         var block = body.Block.Enclosed.Value;
         var statements = ImmutableArray.CreateBuilder<Ast.Stmt>();
-        foreach (var stmt in block.Statements) statements.Add(ToAst(db, stmt));
+        foreach (var stmt in block.Statements) statements.Add(ToAstStmt(db, stmt));
         if (block.Value is not null)
         {
             // Desugar it into a statement
             statements.Add(new Ast.Stmt.Expr(
                 ParseNode: block.Value,
-                Expression: ToAst(db, block.Value)));
+                Expression: ToAstExpr(db, block.Value)));
         }
         // If the return type is Unit, append an implicit return statement
         Debug.Assert(body.Parent is ParseNode.Decl.Func);
@@ -185,24 +202,24 @@ internal static class ParseTreeToAst
     }
 
     // Desugar here into a simple return statement inside a block
-    private static Ast.Expr.Block ToAst(QueryDatabase db, ParseNode.FuncBody.InlineBody body) => new(
+    private static Ast.Expr.Block ToAstFuncBody(QueryDatabase db, ParseNode.FuncBody.InlineBody body) => new(
         ParseNode: body,
         Statements: ImmutableArray.Create<Ast.Stmt>(
             new Ast.Stmt.Expr(
                 ParseNode: body,
                 Expression: new Ast.Expr.Return(
                     ParseNode: body,
-                    Expression: ToAst(db, body.Expression)))),
+                    Expression: ToAstExpr(db, body.Expression)))),
         Value: Ast.Expr.Unit.Default);
 
-    private static Ast.ComparisonElement ToAst(QueryDatabase db, ParseNode.ComparisonElement ce) => db.GetOrUpdate(
+    private static Ast.ComparisonElement ToAstComparisonElement(QueryDatabase db, ParseNode.ComparisonElement ce) => db.GetOrUpdate(
         ce,
         Ast.ComparisonElement (ce) => new(
             ParseNode: ce,
             Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, ce),
-            Right: ToAst(db, ce.Right)));
+            Right: ToAstExpr(db, ce.Right)));
 
-    private static Ast.Expr ToAst(QueryDatabase db, ParseNode.Expr.String str)
+    private static Ast.Expr ToAstExpr(QueryDatabase db, ParseNode.Expr.String str)
     {
         var builder = ImmutableArray.CreateBuilder<Ast.StringPart>();
         var lastNewline = true;
@@ -222,7 +239,7 @@ internal static class ParseTreeToAst
                 var interpolation = (ParseNode.StringPart.Interpolation)part;
                 builder.Add(new Ast.StringPart.Interpolation(
                     ParseNode: interpolation,
-                    Expression: ToAst(db, interpolation.Expression)));
+                    Expression: ToAstExpr(db, interpolation.Expression)));
                 lastNewline = false;
             }
         }
@@ -231,14 +248,13 @@ internal static class ParseTreeToAst
             builder.ToImmutableArray());
     }
 
-    private static Ast.Expr ToAst(QueryDatabase db, ParseNode.Expr.Binary bin)
+    private static Ast.Expr ToAstExpr(QueryDatabase db, ParseNode.Expr.Binary bin)
     {
-        var left = ToAst(db, bin.Left);
-        var right = ToAst(db, bin.Right);
-
         // Binary tree either becomes an assignment or a binary expr
         if (Syntax.TokenTypeExtensions.IsCompoundAssignmentOperator(bin.Operator.Type))
         {
+            var left = ToAstLValue(db, bin.Left);
+            var right = ToAstExpr(db, bin.Right);
             var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, bin);
             return new Ast.Expr.Assign(
                 ParseNode: bin,
@@ -248,6 +264,8 @@ internal static class ParseTreeToAst
         }
         else if (bin.Operator.Type == TokenType.Assign)
         {
+            var left = ToAstLValue(db, bin.Left);
+            var right = ToAstExpr(db, bin.Right);
             return new Ast.Expr.Assign(
                 ParseNode: bin,
                 Target: left,
@@ -256,6 +274,8 @@ internal static class ParseTreeToAst
         }
         else if (bin.Operator.Type == TokenType.KeywordAnd)
         {
+            var left = ToAstExpr(db, bin.Left);
+            var right = ToAstExpr(db, bin.Right);
             return new Ast.Expr.And(
                 ParseNode: bin,
                 Left: left,
@@ -263,6 +283,8 @@ internal static class ParseTreeToAst
         }
         else if (bin.Operator.Type == TokenType.KeywordOr)
         {
+            var left = ToAstExpr(db, bin.Left);
+            var right = ToAstExpr(db, bin.Right);
             return new Ast.Expr.Or(
                 ParseNode: bin,
                 Left: left,
@@ -270,6 +292,8 @@ internal static class ParseTreeToAst
         }
         else
         {
+            var left = ToAstExpr(db, bin.Left);
+            var right = ToAstExpr(db, bin.Right);
             var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, bin);
             return new Ast.Expr.Binary(
                 ParseNode: bin,
@@ -279,7 +303,7 @@ internal static class ParseTreeToAst
         }
     }
 
-    private static Ast.Expr ToAst(ParseNode.Expr.Literal lit) => lit.Value.Type switch
+    private static Ast.Expr ToAstExpr(ParseNode.Expr.Literal lit) => lit.Value.Type switch
     {
         TokenType.LiteralInteger => new Ast.Expr.Literal(
             ParseNode: lit,

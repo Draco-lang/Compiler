@@ -403,7 +403,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void NestedLabelCanBeAccessed()
+    public void NestedLabelCanNotBeAccessed()
     {
         // func foo() {
         //     if (false) {
@@ -432,10 +432,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel();
 
         var labelDeclSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
-        var labelRefSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(labelRef));
+        var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
         // Assert
-        Assert.True(ReferenceEquals(labelDeclSym, labelRefSym));
+        Assert.False(ReferenceEquals(labelDeclSym, labelRefSym));
+        Assert.False(labelDeclSym.IsError);
+        Assert.True(labelRefSym.IsError);
     }
 
     [Fact]

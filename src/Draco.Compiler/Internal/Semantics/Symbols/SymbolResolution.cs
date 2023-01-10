@@ -53,6 +53,8 @@ internal static class SymbolResolution
             .Concat(definedSymbolDiags);
     }
 
+    // Referenced symbol ///////////////////////////////////////////////////////
+
     /// <summary>
     /// Checks, if the given subtree references a symbol.
     /// </summary>
@@ -84,144 +86,6 @@ internal static class SymbolResolution
             }
             return symbol;
         });
-
-    /// <summary>
-    /// Retrieves the parent <see cref="Scope"/> of another scope.
-    /// </summary>
-    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="scope">The scope to retieve the parent of.</param>
-    /// <returns>The parent scope of <paramref name="scope"/>.</returns>
-    public static IScope? GetParentScopeOrNull(QueryDatabase db, IScope scope)
-    {
-        if (scope.Definition is null) throw new InvalidOperationException();
-        var ancestor = GetScopeDefiningAncestor(scope.Definition);
-        if (ancestor is null) return null;
-        return GetDefinedScopeOrNull(db, ancestor);
-    }
-
-    /// <summary>
-    /// Retrieves the containing <see cref="Scope"/> of a <see cref="ParseNode"/>.
-    /// </summary>
-    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that we need the surrounding <see cref="Scope"/> of.</param>
-    /// <returns>The surrounding <see cref="Scope"/> of <paramref name="tree"/>.</returns>
-    public static IScope? GetContainingScopeOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
-        tree,
-        IScope? (tree) =>
-        {
-            var parent = GetScopeDefiningAncestor(tree);
-            if (parent is null) return null;
-            return GetDefinedScopeOrNull(db, parent);
-        });
-
-    /// <summary>
-    /// Retrieves the <see cref="Scope"/> that is introduced by a <see cref="ParseNode"/> node.
-    /// </summary>
-    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> to retrieve the <see cref="Scope"/> for.</param>
-    /// <returns>The <see cref="Scope"/> associated with <paramref name="tree"/>, or null
-    /// if it does not define a scope.</returns>
-    public static IScope? GetDefinedScopeOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
-        tree,
-        IScope? (tree) =>
-        {
-            // First get the kind of scope this tree can define
-            // If the kind is null, this node simply does not define a scope
-            var scopeKind = GetScopeKind(tree);
-            if (scopeKind is null) return null;
-
-            var scopeBuilder = new Scope.Builder(db, scopeKind.Value, tree);
-
-            // We inject intrinsics at global scope
-            if (scopeKind == ScopeKind.Global) InjectIntrinsics(scopeBuilder);
-
-            foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
-            {
-                // See if the child defines any symbol
-                var symbol = ConstructDefinedSymbolOrNull(db, subtree);
-                if (symbol is null) continue;
-
-                // Yes, calculate position and add it
-                var symbolPosition = GetBindingKind(scopeKind.Value, symbol) switch
-                {
-                    // Order independent always just gets thrown to the beginning
-                    BindingKind.OrderIndependent => 0,
-                    // Recursive ones stay in-place
-                    BindingKind.Recursive => position,
-                    // Non-recursive ones simply get shifted after the subtree
-                    BindingKind.NonRecursive => position + subtree.Width,
-                    _ => throw new InvalidOperationException(),
-                };
-
-                // Add to timeline pre-declarations
-                scopeBuilder.Add(new(Position: symbolPosition, Symbol: symbol));
-            }
-
-            // Construct the scope
-            return scopeBuilder.Build();
-        });
-
-    /// <summary>
-    /// Utility for internal API to expect a symbol defined by a certain type of tree.
-    /// See <see cref="GetDefinedSymbolOrNull(QueryDatabase, ParseNode)"/>.
-    /// </summary>
-    public static TSymbol GetDefinedSymbolExpected<TSymbol>(QueryDatabase db, ParseNode tree)
-        where TSymbol : ISymbol
-    {
-        var symbol = GetDefinedSymbolOrNull(db, tree);
-        if (symbol is null) throw new InvalidOperationException("The parse tree does not define a symbol");
-        if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree defines a differen kind of symbol");
-        return tSymbol;
-    }
-
-    /// <summary>
-    /// Retrieves the <see cref="ISymbol"/> defined by the given <see cref="ParseNode"/>.
-    /// </summary>
-    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that is asked if it defines a <see cref="ISymbol"/>.</param>
-    /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> defines, or null if
-    /// it does not define any symbol.</returns>
-    public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
-        tree,
-        ISymbol? (tree) =>
-        {
-            var scopeDefiningAncestor = GetScopeDefiningAncestor(tree);
-            if (scopeDefiningAncestor is null) return null;
-            var scope = GetDefinedScopeOrNull(db, scopeDefiningAncestor);
-            if (scope is null) return null;
-            return scope.Declarations.TryGetValue(tree, out var symbol)
-                ? symbol
-                : null;
-        });
-
-    /// <summary>
-    /// Constructs the <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null, if
-    /// it defines no symbol.
-    /// </summary>
-    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that is asked for the defined <see cref="ISymbol"/>.</param>
-    /// <returns>The <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null.</returns>
-    private static ISymbol? ConstructDefinedSymbolOrNull(QueryDatabase db, ParseNode tree) => tree switch
-    {
-        ParseNode.Decl.Variable variable => Symbol.MakeVariable(
-            db: db,
-            name: variable.Identifier.Text,
-            definition: tree,
-            isMutable: variable.Keyword.Type == TokenType.KeywordVar),
-        ParseNode.Decl.Func func => Symbol.MakeFunction(
-            db: db,
-            name: func.Identifier.Text,
-            definition: tree),
-        ParseNode.Decl.Label label => Symbol.MakeLabel(
-            db: db,
-            name: label.Identifier.Text,
-            definition: tree),
-        ParseNode.FuncParam fparam => Symbol.MakeParameter(
-            db: db,
-            name: fparam.Identifier.Text,
-            definition: tree),
-        _ => null,
-    };
 
     /// <summary>
     /// Utility for internal API to expect a symbol referenced by a certain type of tree.
@@ -312,6 +176,179 @@ internal static class SymbolResolution
         }
     }
 
+    // Defined symbol //////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Utility for internal API to expect a symbol defined by a certain type of tree.
+    /// See <see cref="GetDefinedSymbolOrNull(QueryDatabase, ParseNode)"/>.
+    /// </summary>
+    public static TSymbol GetDefinedSymbolExpected<TSymbol>(QueryDatabase db, ParseNode tree)
+        where TSymbol : ISymbol
+    {
+        var symbol = GetDefinedSymbolOrNull(db, tree);
+        if (symbol is null) throw new InvalidOperationException("The parse tree does not define a symbol");
+        if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree defines a differen kind of symbol");
+        return tSymbol;
+    }
+
+    /// <summary>
+    /// Retrieves the <see cref="ISymbol"/> defined by the given <see cref="ParseNode"/>.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseNode"/> that is asked if it defines a <see cref="ISymbol"/>.</param>
+    /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> defines, or null if
+    /// it does not define any symbol.</returns>
+    public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
+        tree,
+        ISymbol? (tree) =>
+        {
+            var scopeDefiningAncestor = GetScopeDefiningAncestor(tree);
+            if (scopeDefiningAncestor is null) return null;
+            var scope = GetDefinedScopeOrNull(db, scopeDefiningAncestor);
+            if (scope is null) return null;
+            return scope.Declarations.TryGetValue(tree, out var symbol)
+                ? symbol
+                : null;
+        });
+
+    /// <summary>
+    /// Constructs the <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null, if
+    /// it defines no symbol.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseNode"/> that is asked for the defined <see cref="ISymbol"/>.</param>
+    /// <returns>The <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null.</returns>
+    private static ISymbol? ConstructDefinedSymbolOrNull(QueryDatabase db, ParseNode tree) => tree switch
+    {
+        ParseNode.Decl.Variable variable => Symbol.MakeVariable(
+            db: db,
+            name: variable.Identifier.Text,
+            definition: tree,
+            isMutable: variable.Keyword.Type == TokenType.KeywordVar),
+        ParseNode.Decl.Func func => Symbol.MakeFunction(
+            db: db,
+            name: func.Identifier.Text,
+            definition: tree),
+        ParseNode.Decl.Label label => Symbol.MakeLabel(
+            db: db,
+            name: label.Identifier.Text,
+            definition: tree),
+        ParseNode.FuncParam fparam => Symbol.MakeParameter(
+            db: db,
+            name: fparam.Identifier.Text,
+            definition: tree),
+        _ => null,
+    };
+
+    // Scope ///////////////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Retrieves the parent <see cref="Scope"/> of another scope.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="scope">The scope to retieve the parent of.</param>
+    /// <returns>The parent scope of <paramref name="scope"/>.</returns>
+    public static IScope? GetParentScopeOrNull(QueryDatabase db, IScope scope)
+    {
+        if (scope.Definition is null) throw new InvalidOperationException();
+        var ancestor = GetScopeDefiningAncestor(scope.Definition);
+        if (ancestor is null) return null;
+        return GetDefinedScopeOrNull(db, ancestor);
+    }
+
+    /// <summary>
+    /// Retrieves the containing <see cref="Scope"/> of a <see cref="ParseNode"/>.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseNode"/> that we need the surrounding <see cref="Scope"/> of.</param>
+    /// <returns>The surrounding <see cref="Scope"/> of <paramref name="tree"/>.</returns>
+    public static IScope? GetContainingScopeOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
+        tree,
+        IScope? (tree) =>
+        {
+            var parent = GetScopeDefiningAncestor(tree);
+            if (parent is null) return null;
+            return GetDefinedScopeOrNull(db, parent);
+        });
+
+    /// <summary>
+    /// Retrieves the <see cref="Scope"/> that is introduced by a <see cref="ParseNode"/> node.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseNode"/> to retrieve the <see cref="Scope"/> for.</param>
+    /// <returns>The <see cref="Scope"/> associated with <paramref name="tree"/>, or null
+    /// if it does not define a scope.</returns>
+    public static IScope? GetDefinedScopeOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
+        tree,
+        IScope? (tree) =>
+        {
+            // First get the kind of scope this tree can define
+            // If the kind is null, this node simply does not define a scope
+            var scopeKind = GetScopeKind(tree);
+            if (scopeKind is null) return null;
+
+            var scopeBuilder = new Scope.Builder(db, scopeKind.Value, tree);
+
+            // We inject intrinsics at global scope
+            if (scopeKind == ScopeKind.Global) InjectIntrinsics(scopeBuilder);
+
+            foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
+            {
+                // See if the child defines any symbol
+                var symbol = ConstructDefinedSymbolOrNull(db, subtree);
+                if (symbol is null) continue;
+
+                // Yes, calculate position and add it
+                var symbolPosition = GetBindingKind(scopeKind.Value, symbol) switch
+                {
+                    // Order independent always just gets thrown to the beginning
+                    BindingKind.OrderIndependent => 0,
+                    // Recursive ones stay in-place
+                    BindingKind.Recursive => position,
+                    // Non-recursive ones simply get shifted after the subtree
+                    BindingKind.NonRecursive => position + subtree.Width,
+                    _ => throw new InvalidOperationException(),
+                };
+
+                // Add to timeline pre-declarations
+                scopeBuilder.Add(new(Position: symbolPosition, Symbol: symbol));
+            }
+
+            // Construct the scope
+            return scopeBuilder.Build();
+        });
+
+    /// <summary>
+    /// Retrieves the closest ancestor of <paramref name="tree"/> that defines a scope.
+    /// </summary>
+    /// <param name="tree">The tree to get the scope defining ancestor of.</param>
+    /// <returns>The closest ancestor of <paramref name="tree"/> that defines a scope.</returns>
+    private static ParseNode? GetScopeDefiningAncestor(ParseNode tree)
+    {
+        while (true)
+        {
+            if (tree.Parent is null) return null;
+            tree = tree.Parent;
+
+            if (GetScopeKind(tree) is not null) return tree;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the kind of scope that a tree node defines.
+    /// </summary>
+    /// <param name="tree">The tree to get the <see cref="ScopeKind"/> for.</param>
+    /// <returns>The <see cref="ScopeKind"/> for the scope that <paramref name="tree"/> defines, or null if it does not define a scope.</returns>
+    private static ScopeKind? GetScopeKind(ParseNode tree) => tree switch
+    {
+        _ when tree.Parent is null => ScopeKind.Global,
+        ParseNode.Expr.Block => ScopeKind.Local,
+        ParseNode.Decl.Func => ScopeKind.Function,
+        _ => null,
+    };
+
+    // General utilities ///////////////////////////////////////////////////////
+
     /// <summary>
     /// Retrieves the relative position of a tree node.
     /// </summary>
@@ -362,22 +399,6 @@ internal static class SymbolResolution
     }
 
     /// <summary>
-    /// Retrieves the closest ancestor of <paramref name="tree"/> that defines a scope.
-    /// </summary>
-    /// <param name="tree">The tree to get the scope defining ancestor of.</param>
-    /// <returns>The closest ancestor of <paramref name="tree"/> that defines a scope.</returns>
-    private static ParseNode? GetScopeDefiningAncestor(ParseNode tree)
-    {
-        while (true)
-        {
-            if (tree.Parent is null) return null;
-            tree = tree.Parent;
-
-            if (GetScopeKind(tree) is not null) return tree;
-        }
-    }
-
-    /// <summary>
     /// Retrieves the <see cref="BindingKind"/> a symbol introduces.
     /// </summary>
     /// <param name="scopeKind">The <see cref="ScopeKind"/> that <paramref name="symbol"/> is defined in.</param>
@@ -390,19 +411,6 @@ internal static class SymbolResolution
         ISymbol.IVariable when scopeKind == ScopeKind.Global => BindingKind.OrderIndependent,
         ISymbol.IVariable => BindingKind.NonRecursive,
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
-    };
-
-    /// <summary>
-    /// Retrieves the kind of scope that a tree node defines.
-    /// </summary>
-    /// <param name="tree">The tree to get the <see cref="ScopeKind"/> for.</param>
-    /// <returns>The <see cref="ScopeKind"/> for the scope that <paramref name="tree"/> defines, or null if it does not define a scope.</returns>
-    private static ScopeKind? GetScopeKind(ParseNode tree) => tree switch
-    {
-        _ when tree.Parent is null => ScopeKind.Global,
-        ParseNode.Expr.Block => ScopeKind.Local,
-        ParseNode.Decl.Func => ScopeKind.Function,
-        _ => null,
     };
 
     internal static string GetUnaryOperatorName(TokenType op) => op switch

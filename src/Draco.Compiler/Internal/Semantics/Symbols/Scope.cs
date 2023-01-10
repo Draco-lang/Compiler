@@ -385,7 +385,7 @@ internal static partial class Scope
                             .SelectMany(d => d)
                             .Select(d => d.Definition?.Parent)
                             .Where(t => t is not null)
-                            .Select(t => SymbolResolution.ReferenceSymbolOrNull(this.db, t!, name))
+                            .Select(t => SymbolResolution.ReferenceSymbolOrNull<ISymbol>(this.db, t!, name))
                             .FirstOrDefault();
                         if (symbolInParent is ISymbol.IFunction f)
                         {

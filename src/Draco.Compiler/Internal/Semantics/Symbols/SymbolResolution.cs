@@ -69,36 +69,16 @@ internal static class SymbolResolution
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseNode"/> that references a symbol.</param>
     /// <returns>The referenced <see cref="ISymbol"/>, which can represent a reference error.</returns>
-    public static ISymbol GetReferencedSymbol(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
-        tree,
-        ISymbol (tree) =>
-        {
-            if (!TryGetReferencedSymbolName(tree, out var name)) throw new InvalidOperationException();
-            var symbol = ReferenceSymbolOrNull(db, tree, name);
-            if (symbol is null)
-            {
-                // Emplace an error
-                var diag = Diagnostic.Create(
-                    template: SemanticErrors.UndefinedReference,
-                    location: new Location.TreeReference(tree),
-                    formatArgs: name);
-                symbol = Symbol.MakeReferenceError(name, ImmutableArray.Create(diag));
-            }
-            return symbol;
-        });
-
-    /// <summary>
-    /// Utility for internal API to expect a symbol referenced by a certain type of tree.
-    /// See <see cref="GetReferencedSymbolOrNull(QueryDatabase, ParseNode)"/>.
-    /// </summary>
-    public static TSymbol GetReferencedSymbolExpected<TSymbol>(QueryDatabase db, ParseNode tree)
-        where TSymbol : ISymbol
+    public static ISymbol GetReferencedSymbol(QueryDatabase db, ParseNode tree) => tree switch
     {
-        var symbol = GetReferencedSymbol(db, tree);
-        if (symbol is null) throw new InvalidOperationException("The parse tree does not reference a symbol");
-        if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree references a differen kind of symbol");
-        return tSymbol;
-    }
+        ParseNode.Expr.Name => GetReferencedSymbol<ISymbol.ITyped>(db, tree),
+        ParseNode.TypeExpr.Name => GetReferencedSymbol<ISymbol.ITypeDefinition>(db, tree),
+        ParseNode.LabelName => GetReferencedSymbol<ISymbol.ILabel>(db, tree),
+        ParseNode.Expr.Unary or ParseNode.Expr.Binary or ParseNode.ComparisonElement =>
+            // NOTE: Names are not type-able, we can rely on any symbol
+            GetReferencedSymbol<ISymbol>(db, tree),
+        _ => throw new InvalidOperationException(),
+    };
 
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> referenced by the given <see cref="ParseNode"/>.
@@ -107,22 +87,69 @@ internal static class SymbolResolution
     /// <param name="tree">The <see cref="ParseNode"/> that references a <see cref="ISymbol"/>.</param>
     /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> references, or null if
     /// it does not reference any.</returns>
-    public static ISymbol? GetReferencedSymbolOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
+    public static ISymbol? GetReferencedSymbolOrNull(QueryDatabase db, ParseNode tree) => tree switch
+    {
+        ParseNode.Expr.Name => GetReferencedSymbolOrNull<ISymbol.ITyped>(db, tree),
+        ParseNode.TypeExpr.Name => GetReferencedSymbolOrNull<ISymbol.ITypeDefinition>(db, tree),
+        ParseNode.Expr.Unary or ParseNode.Expr.Binary or ParseNode.ComparisonElement =>
+            // NOTE: Names are not type-able, we can rely on any symbol
+            GetReferencedSymbolOrNull<ISymbol>(db, tree),
+        _ => null,
+    };
+
+    /// <summary>
+    /// Retrieves the referenced symbol of a subtree.
+    /// </summary>
+    /// <typeparam name="TSymbol">The symbol type to look up.</typeparam>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseNode"/> that references a symbol.</param>
+    /// <returns>The referenced <see cref="ISymbol"/>, which can represent a reference error.</returns>
+    public static TSymbol GetReferencedSymbol<TSymbol>(QueryDatabase db, ParseNode tree)
+         where TSymbol : class, ISymbol => db.GetOrUpdate(
+        tree,
+        TSymbol (tree) =>
+        {
+            if (!TryGetReferencedSymbolName(tree, out var name)) throw new InvalidOperationException();
+            var symbol = ReferenceSymbolOrNull<TSymbol>(db, tree, name);
+            if (symbol is null)
+            {
+                // Emplace an error
+                var diag = Diagnostic.Create(
+                    template: SemanticErrors.UndefinedReference,
+                    location: new Location.TreeReference(tree),
+                    formatArgs: name);
+                symbol = (TSymbol)Symbol.MakeReferenceError(name, ImmutableArray.Create(diag));
+            }
+            return symbol;
+        });
+
+    /// <summary>
+    /// Retrieves the <see cref="ISymbol"/> referenced by the given <see cref="ParseNode"/>.
+    /// </summary>
+    /// <typeparam name="TSymbol">The symbol type to look up.</typeparam>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The <see cref="ParseNode"/> that references a <see cref="ISymbol"/>.</param>
+    /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> references, or null if
+    /// it does not reference any.</returns>
+    public static TSymbol? GetReferencedSymbolOrNull<TSymbol>(QueryDatabase db, ParseNode tree)
+        where TSymbol : class, ISymbol => db.GetOrUpdate(
         tree,
         tree => TryGetReferencedSymbolName(tree, out var name)
-            ? ReferenceSymbolOrNull(db, tree, name)
+            ? ReferenceSymbolOrNull<TSymbol>(db, tree, name)
             : null);
 
     /// <summary>
     /// Resolves a <see cref="ISymbol"/> reference.
     /// </summary>
+    /// <typeparam name="TSymbol">The symbol type to look up.</typeparam>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
     /// <param name="tree">The <see cref="ParseNode"/> that references a <see cref="ISymbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
     /// <returns>The referenced <see cref="ISymbol"/>, or null if not resolved.</returns>
-    public static ISymbol? ReferenceSymbolOrNull(QueryDatabase db, ParseNode tree, string name) => db.GetOrUpdate(
+    public static TSymbol? ReferenceSymbolOrNull<TSymbol>(QueryDatabase db, ParseNode tree, string name)
+        where TSymbol : class, ISymbol => db.GetOrUpdate(
         (tree, name),
-        ISymbol? (tree, name) =>
+        TSymbol? (tree, name) =>
         {
             // Walk up the tree for the scope owner
             var ancestor = GetScopeDefiningAncestor(tree);
@@ -133,10 +160,10 @@ internal static class SymbolResolution
             // Compute reference position
             var referencePositon = GetPosition(ancestor, tree);
             // Look up symbol
-            var symbol = scope.LookUp(name, referencePositon, x => x);
+            var symbol = scope.LookUp(name, referencePositon, x => x as TSymbol);
             if (symbol is not null) return symbol;
             // Not found, try in ancestor
-            return ReferenceSymbolOrNull(db, ancestor, name);
+            return ReferenceSymbolOrNull<TSymbol>(db, ancestor, name);
         });
 
     /// <summary>
@@ -155,6 +182,10 @@ internal static class SymbolResolution
 
         case ParseNode.TypeExpr.Name nameTypeExpr:
             name = nameTypeExpr.Identifier.Text;
+            return true;
+
+        case ParseNode.LabelName labelName:
+            name = labelName.Identifier.Text;
             return true;
 
         case ParseNode.Expr.Unary uryExpr:

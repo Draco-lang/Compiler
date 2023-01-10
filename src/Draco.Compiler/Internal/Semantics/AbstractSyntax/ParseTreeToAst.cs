@@ -94,10 +94,10 @@ internal static class ParseTreeToAst
                 Expression: ret.Expression is null ? Ast.Expr.Unit.Default : ToAstExpr(db, ret.Expression)),
             ParseNode.Expr.Goto g => new Ast.Expr.Goto(
                 ParseNode: g,
-                Target: SymbolResolution.GetReferencedSymbolExpected<ISymbol.ILabel>(db, g.Target)),
+                Target: SymbolResolution.GetReferencedSymbol<ISymbol.ILabel>(db, g.Target)),
             ParseNode.Expr.Name name => new Ast.Expr.Reference(
                 ParseNode: name,
-                Symbol: SymbolResolution.GetReferencedSymbolExpected<ISymbol.ITyped>(db, name)),
+                Symbol: SymbolResolution.GetReferencedSymbol<ISymbol.ITyped>(db, name)),
             ParseNode.Expr.If @if => new Ast.Expr.If(
                 ParseNode: @if,
                 Condition: ToAstExpr(db, @if.Condition.Value),
@@ -126,7 +126,7 @@ internal static class ParseTreeToAst
                 Comparisons: rel.Comparisons.Select(c => ToAstComparisonElement(db, c)).ToImmutableArray()),
             ParseNode.Expr.Unary ury => new Ast.Expr.Unary(
                 ParseNode: ury,
-                Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, ury),
+                Operator: SymbolResolution.GetReferencedSymbol<ISymbol.IFunction>(db, ury),
                 Operand: ToAstExpr(db, ury.Operand)),
             ParseNode.Expr.Binary bin => ToAstExpr(db, bin),
             ParseNode.Expr.Literal lit => ToAstExpr(lit),
@@ -152,7 +152,7 @@ internal static class ParseTreeToAst
             ParseNode.Expr.Unexpected u => new Ast.LValue.Unexpected(u),
             ParseNode.Expr.Name name => new Ast.LValue.Reference(
                 ParseNode: name,
-                Symbol: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IVariable>(db, name)),
+                Symbol: SymbolResolution.GetReferencedSymbol<ISymbol.IVariable>(db, name)),
             _ => new Ast.LValue.Illegal(
                 ParseNode: expr,
                 Diagnostics: ImmutableArray.Create(Diagnostic.Create(
@@ -222,7 +222,7 @@ internal static class ParseTreeToAst
         ce,
         Ast.ComparisonElement (ce) => new(
             ParseNode: ce,
-            Operator: SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, ce),
+            Operator: SymbolResolution.GetReferencedSymbol<ISymbol.IFunction>(db, ce),
             Right: ToAstExpr(db, ce.Right)));
 
     private static Ast.Expr ToAstExpr(QueryDatabase db, ParseNode.Expr.String str)
@@ -261,7 +261,7 @@ internal static class ParseTreeToAst
         {
             var left = ToAstLValue(db, bin.Left);
             var right = ToAstExpr(db, bin.Right);
-            var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, bin);
+            var @operator = SymbolResolution.GetReferencedSymbol<ISymbol.IFunction>(db, bin);
             return new Ast.Expr.Assign(
                 ParseNode: bin,
                 Target: left,
@@ -300,7 +300,7 @@ internal static class ParseTreeToAst
         {
             var left = ToAstExpr(db, bin.Left);
             var right = ToAstExpr(db, bin.Right);
-            var @operator = SymbolResolution.GetReferencedSymbolExpected<ISymbol.IFunction>(db, bin);
+            var @operator = SymbolResolution.GetReferencedSymbol<ISymbol.IFunction>(db, bin);
             return new Ast.Expr.Binary(
                 ParseNode: bin,
                 Left: left,

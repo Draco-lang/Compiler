@@ -107,7 +107,7 @@ public static partial class SyntaxFactory
     public static Expr.Call CallExpr(Expr called, params Expr[] args) => CallExpr(called, args.ToImmutableArray());
 
     public static Expr.Return ReturnExpr(Expr? value = null) => ReturnExpr(KeywordReturn, value);
-    public static Expr.Goto GotoExpr(string label) => GotoExpr(KeywordGoto, NameExpr(label));
+    public static Expr.Goto GotoExpr(string label) => GotoExpr(KeywordGoto, LabelName(Name(label)));
 
     public static Expr.Name NameExpr(string name) => NameExpr(Name(name));
     public static Expr.Literal LiteralExpr(int value) => LiteralExpr(Integer(value));

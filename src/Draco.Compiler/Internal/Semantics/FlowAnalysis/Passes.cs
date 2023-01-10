@@ -74,6 +74,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         {
             // We only care about references that reference local variables
             if (node is not Ast.Expr.Reference r) continue;
+            if (r.Symbol.IsError) continue;
             if (r.Symbol is not ISymbol.IVariable var) continue;
             if (var.IsGlobal || var is ISymbol.IParameter) continue;
 

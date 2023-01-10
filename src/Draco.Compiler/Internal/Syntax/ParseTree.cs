@@ -287,7 +287,7 @@ internal partial record class ParseNode
         /// </summary>
         public sealed partial record class Goto(
             Token GotoKeyword,
-            Expr.Name Target) : Expr;
+            LabelName Target) : Expr;
 
         /// <summary>
         /// A return-expression.
@@ -383,6 +383,12 @@ internal partial record class ParseNode
             }
         }
     }
+
+    /// <summary>
+    /// A label name.
+    /// </summary>
+    public sealed partial record class LabelName(
+        Token Identifier) : ParseNode;
 
     /// <summary>
     /// The else clause of an if-expression.

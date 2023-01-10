@@ -91,7 +91,6 @@ async function main() {
         csOnMessage = exports.Draco.Editor.Web.Interop.OnMessage;
     }
 
-
     initResolve();
     await dotnet.run();
 }

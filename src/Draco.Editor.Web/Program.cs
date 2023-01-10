@@ -103,7 +103,7 @@ public partial class Program
                 }
             }
         }
-        return processedAssemblyNames.Where(s => s != assembly).Select(s => s.GetName().Name+".dll")!;
+        return processedAssemblyNames.Where(s => s != assembly).Select(s => $"{s.GetName().Name}.dll")!;
     }
 
     private static void RunScript(Compilation compilation)
@@ -115,7 +115,7 @@ public partial class Program
             var buffer = stream.ToArray();
             var assembly = Assembly.Load(buffer);
             var references = GetAllReferencedAssemblyNames(assembly);
-            SendAssembly(assembly.GetName().Name! + ".dll", buffer, references.ToArray());
+            SendAssembly($"{assembly.GetName().Name!}.dll", buffer, references.ToArray());
         }
         catch (Exception e)
         {
@@ -180,8 +180,7 @@ public partial class Program
         Interop.SendMessage("setOutputText", text);
     }
 
-    private static void SendAssembly(string assemblyName, byte[] assembly, string[] referencedAssemblies)
-    {
+    private static void SendAssembly(string assemblyName, byte[] assembly, string[] referencedAssemblies) =>
         Interop.SendMessage("runtimeAssembly",
             JsonSerializer.Serialize(new
             {
@@ -192,21 +191,16 @@ public partial class Program
                     behavior = "assembly",
                     name = s,
                     buffer = (byte[]?)default
-                }).Append(
-                    new
-                    {
-                        behavior = "assembly",
-                        name = assemblyName,
-                        buffer = (byte[]?)assembly
-                    }
-                ).Append(
-                    new
-                    {
-                        behavior = "dotnetwasm",
-                        name = "dotnet.wasm",
-                        buffer = (byte[]?)default
-                    }
-                ).ToArray()
+                }).Append(new
+                {
+                    behavior = "assembly",
+                    name = assemblyName,
+                    buffer = (byte[]?)assembly
+                }).Append(new
+                {
+                    behavior = "dotnetwasm",
+                    name = "dotnet.wasm",
+                    buffer = (byte[]?)default
+                }).ToArray()
             }));
-    }
 }

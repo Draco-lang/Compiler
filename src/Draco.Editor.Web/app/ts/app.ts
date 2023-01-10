@@ -11,7 +11,7 @@ import { stdout } from 'process';
 // This run before blazor load, and will tell blazor to start.
 
 const compilerWorker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
-let runtimeWorker : Worker | undefined;
+let runtimeWorker: Worker | undefined;
 let stdoutBuffer = 'Loading Compiler\'s .NET Runtime...';
 self.MonacoEnvironment = {
     // Web Workers need to start a new script, by url.

@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal static class SyntaxErrors
 {
-    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategories.Syntax, index);
+    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.Syntax, index);
 
     /// <summary>
     /// An illegal character appears in a character literal.

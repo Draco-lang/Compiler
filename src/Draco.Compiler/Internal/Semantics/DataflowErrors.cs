@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal static class DataflowErrors
 {
-    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategories.Dataflow, index);
+    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.Dataflow, index);
 
     /// <summary>
     /// A function does not return on all paths.

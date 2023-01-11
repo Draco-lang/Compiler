@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal static class SymbolResolutionErrors
 {
-    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategories.SymbolResolution, index);
+    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.SymbolResolution, index);
 
     /// <summary>
     /// An undefined reference.

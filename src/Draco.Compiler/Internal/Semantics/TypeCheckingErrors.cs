@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal static class TypeCheckingErrors
 {
-    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategories.TypeChecking, index);
+    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.TypeChecking, index);
 
     /// <summary>
     /// The type of something could not be inferred.

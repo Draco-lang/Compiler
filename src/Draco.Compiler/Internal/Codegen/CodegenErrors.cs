@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.Codegen;
 
 internal static class CodegenErrors
 {
-    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategories.Codegen, index);
+    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.Codegen, index);
 
     /// <summary>
     /// Scripting engine could not find main.

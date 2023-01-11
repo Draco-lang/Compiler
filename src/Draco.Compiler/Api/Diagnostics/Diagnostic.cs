@@ -28,7 +28,7 @@ public enum DiagnosticSeverity
 /// <summary>
 /// Possible categories of diagnostic.
 /// </summary>
-internal enum DiagnosticCategories
+internal enum DiagnosticCategory
 {
     InternalCompiler = 0,
     Syntax = 1,
@@ -64,7 +64,7 @@ public sealed record class DiagnosticTemplate
     /// <param name="category">Category of the diagnostic.</param>
     /// <param name="index">Index of the diagnostic.</param>
     /// <returns>The constructed diagnostic code.</returns>
-    internal static string CreateDiagnosticCode(DiagnosticCategories category, int index) => $"DR{(int)category}{index:D3}";
+    internal static string CreateDiagnosticCode(DiagnosticCategory category, int index) => $"DR{(int)category}{index:D3}";
 
     /// <summary>
     /// The code of the diagnostic.

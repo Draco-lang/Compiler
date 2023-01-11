@@ -87,7 +87,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
                 ? null
                 : SymbolResolution.GetDefinedSymbolOrNull(this.db, v.Defitition);
             var diag = Diagnostic.Create(
-                template: SemanticErrors.CouldNotInferType,
+                template: TypeCheckingErrors.CouldNotInferType,
                 location: v.Defitition is null ? Location.None : new Location.TreeReference(v.Defitition),
                 formatArgs: symbol?.Name);
             return new Type.Error(ImmutableArray.Create(diag));

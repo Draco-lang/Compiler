@@ -373,7 +373,7 @@ internal static partial class Scope
                                 // TODO: Provide other definitions position?
                                 // Error, wrap it up
                                 var diag = Diagnostic.Create(
-                                    template: SemanticErrors.IllegalShadowing,
+                                    template: SymbolResolutionErrors.IllegalShadowing,
                                     location: decl.Definition is null ? Location.None : new Location.TreeReference(decl.Definition),
                                     formatArgs: name);
                                 var errorSymbol = decl.Symbol.WithDiagnostics(ImmutableArray.Create(diag));
@@ -416,7 +416,7 @@ internal static partial class Scope
                             // TODO: Provide other definitions position?
                             // Error, wrap it up
                             var diag = Diagnostic.Create(
-                                template: SemanticErrors.IllegalShadowing,
+                                template: SymbolResolutionErrors.IllegalShadowing,
                                 location: other.Definition is null ? Location.None : new Location.TreeReference(other.Definition),
                                 formatArgs: name);
                             var errorSymbol = other.Symbol.WithDiagnostics(ImmutableArray.Create(diag));

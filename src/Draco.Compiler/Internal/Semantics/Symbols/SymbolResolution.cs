@@ -115,7 +115,7 @@ internal static class SymbolResolution
             {
                 // Emplace an error
                 var diag = Diagnostic.Create(
-                    template: SemanticErrors.UndefinedReference,
+                    template: SymbolResolutionErrors.UndefinedReference,
                     location: new Location.TreeReference(tree),
                     formatArgs: name);
                 symbol = (TSymbol)Symbol.MakeReferenceError(name, ImmutableArray.Create(diag));

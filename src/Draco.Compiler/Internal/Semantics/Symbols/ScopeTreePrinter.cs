@@ -52,9 +52,9 @@ internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
                 .Append(@"\n")
                 .Append(scope.Kind.ToString())
                 .Append(" { ")
-                .AppendJoin(", ", scope.Timelines
+                .Append(string.Join(", ", scope.Timelines
                     .SelectMany(t => t.Value.Declarations)
-                    .Select(d => d.Name))
+                    .Select(d => d.Name)))
                 .Append(" }");
         }
         if (definedSymbol is not null)

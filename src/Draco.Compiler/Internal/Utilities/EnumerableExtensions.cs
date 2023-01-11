@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.Utilities;
 /// <summary>
 /// Extensions for <see cref="IEnumerable{T}"/>s.
 /// </summary>
-internal static class EnumerableExtensions
+internal static partial class EnumerableExtensions
 {
     /// <summary>
     /// Checks if a given sequence is ordered in ascending order.

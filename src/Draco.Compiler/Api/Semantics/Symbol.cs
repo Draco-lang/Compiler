@@ -32,6 +32,11 @@ public interface ISymbol : IEquatable<ISymbol>
     /// The location where this symbol was defined.
     /// </summary>
     public Location? Definition { get; }
+
+    /// <summary>
+    /// Documentation attached to this symbol.
+    /// </summary>
+    public string Documentation { get; }
 }
 
 /// <summary>
@@ -86,17 +91,17 @@ internal abstract class SymbolBase : ISymbol
         .ToImmutableArray();
 
     public Location? Definition => this.Symbol.Definition?.Location;
+    public string Documentation => this.Symbol.Documentation;
 
     public SymbolBase(IInternalSymbol symbol)
     {
         this.Symbol = symbol;
     }
 
-    // TODO
-    public bool Equals(ISymbol? other) => throw new NotImplementedException();
+    public bool Equals(ISymbol? other) => other is SymbolBase o
+                                       && ReferenceEquals(this.Symbol, o.Symbol);
 
-    // TODO
-    public override int GetHashCode() => throw new NotImplementedException();
+    public override int GetHashCode() => this.Symbol.GetHashCode();
 }
 
 internal abstract class SymbolBase<TInternalSymbol> : SymbolBase

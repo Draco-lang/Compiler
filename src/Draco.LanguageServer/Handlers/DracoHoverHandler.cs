@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
@@ -9,23 +10,21 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Draco.LanguageServer.Handlers;
 
-internal sealed class DracoGoToDefinitionHandler : DefinitionHandlerBase
+internal class DracoHoverHandler : HoverHandlerBase
 {
     private readonly DracoDocumentRepository documentRepository;
 
-    public DracoGoToDefinitionHandler(DracoDocumentRepository documentRepository)
+    public DracoHoverHandler(DracoDocumentRepository documentRepository)
     {
         this.documentRepository = documentRepository;
     }
 
-    protected override DefinitionRegistrationOptions CreateRegistrationOptions(
-        DefinitionCapability capability,
-        ClientCapabilities clientCapabilities) => new()
-        {
-            DocumentSelector = Constants.DracoSourceDocumentSelector
-        };
+    protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new()
+    {
+        DocumentSelector = Constants.DracoSourceDocumentSelector
+    };
 
-    public override Task<LocationOrLocationLinks> Handle(DefinitionParams request, CancellationToken cancellationToken)
+    public override Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
     {
         var cursorPosition = Translator.ToCompiler(request.Position);
         // TODO: Share compilation
@@ -36,17 +35,18 @@ internal sealed class DracoGoToDefinitionHandler : DefinitionHandlerBase
 
         var referencedSymbol = parseTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(semanticModel.GetReferencedSymbolOrNull)
+            .Select(symbol => semanticModel.GetReferencedSymbolOrNull(symbol) ?? semanticModel.GetDefinedSymbolOrNull(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
-        if (referencedSymbol is not null && referencedSymbol.Definition is not null)
+        var docs = referencedSymbol is null ? string.Empty : referencedSymbol.Documentation;
+
+        return Task.FromResult<Hover?>(new Hover()
         {
-            var location = Translator.ToLsp(referencedSymbol.Definition);
-            return Task.FromResult(new LocationOrLocationLinks(location ?? new()));
-        }
-        else
-        {
-            return Task.FromResult(new LocationOrLocationLinks());
-        }
+            Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+            {
+                Kind = MarkupKind.Markdown,
+                Value = docs
+            })
+        });
     }
 }

@@ -51,7 +51,7 @@ internal abstract partial record class Type
         private static int idCounter = -1;
 
         public override Type UnwrapTypeVariable =>
-            this.substitution ?? throw new InvalidOperationException();
+            this.substitution ?? this;
 
         private readonly int id = Interlocked.Increment(ref idCounter);
         private Type? substitution;

@@ -68,6 +68,47 @@ public sealed class LexerTests
         Assert.Empty(token.Diagnostics);
         Assert.Equal(string.Empty, token.Text);
         Assert.Equal("// Hello, comments", token.LeadingTrivia[0].Text);
+        Assert.Equal(TriviaType.LineComment, token.LeadingTrivia[0].Type);
+    }
+
+    [Fact]
+    [Trait("Feature", "Comments")]
+    public void TestMultilineDocumentationComment()
+    {
+        var text = """
+        /// Hello,
+        /// multiline doc comments
+        """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        // Second trivia is newline
+        Assert.Equal(3, token.LeadingTrivia.Length);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+        Assert.Equal(string.Empty, token.Text);
+        Assert.Equal("/// Hello,", token.LeadingTrivia[0].Text);
+        Assert.Equal("/// multiline doc comments", token.LeadingTrivia[2].Text);
+        Assert.Equal(TriviaType.DocumentationComment, token.LeadingTrivia[0].Type);
+        Assert.Equal(TriviaType.DocumentationComment, token.LeadingTrivia[2].Type);
+    }
+
+    [Fact]
+    [Trait("Feature", "Comments")]
+    public void TestSinglelineDocumentationComment()
+    {
+        var text = "/// Hello, doc comments";
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Single(token.LeadingTrivia);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+        Assert.Equal(string.Empty, token.Text);
+        Assert.Equal("/// Hello, doc comments", token.LeadingTrivia[0].Text);
+        Assert.Equal(TriviaType.DocumentationComment, token.LeadingTrivia[0].Type);
     }
 
     [Fact]

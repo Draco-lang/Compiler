@@ -155,7 +155,7 @@ internal static class SymbolResolution
             var ancestor = GetScopeDefiningAncestor(tree);
             if (ancestor is null) return null;
             // Get the scope
-            var scope = GetDefinedScopeOrNull(db, ancestor); ;
+            var scope = GetDefinedScopeOrNull(db, ancestor);
             if (scope is null) return null;
             // Compute reference position
             var referencePositon = GetPosition(ancestor, tree);
@@ -337,7 +337,7 @@ internal static class SymbolResolution
                     // Recursive ones stay in-place
                     BindingKind.Recursive => position,
                     // Non-recursive ones simply get shifted after the subtree
-                    BindingKind.NonRecursive => position + subtree.Width,
+                    BindingKind.NonRecursive => position + EnumerateNodesInSameScope(subtree).Count(),
                     _ => throw new InvalidOperationException(),
                 };
 
@@ -407,26 +407,37 @@ internal static class SymbolResolution
         // This method must be called on a scope-owning subtree
         Debug.Assert(GetScopeKind(tree) is not null);
 
-        static IEnumerable<(ParseNode Tree, int Position)> Impl(ParseNode tree, int offset)
+        // We just append each relevant node an index
+        var offset = 0;
+        foreach (var child in EnumerateNodesInSameScope(tree))
         {
-            // We go through each child of the current tree
-            foreach (var child in tree.Children)
+            // Yield the child with the given offset
+            yield return (child, offset);
+            // Increase offset
+            ++offset;
+        }
+    }
+
+    /// <summary>
+    /// Enumerates the subtree of a given node without crossing scope boundaries.
+    /// </summary>
+    /// <param name="tree">The root of the subtree to enumerate.</param>
+    /// <returns>An enumerable containing all subtree nodes without including the children of the ones that define a scope.</returns>
+    private static IEnumerable<ParseNode> EnumerateNodesInSameScope(ParseNode tree)
+    {
+        // We go through each child of the current tree
+        foreach (var child in tree.Children)
+        {
+            // We yield the child first
+            yield return child;
+
+            // If the child defines a scope, we don't recurse
+            if (GetScopeKind(child) is null)
             {
-                // We yield the child first
-                yield return (child, offset);
-
-                // If the child defines a scope, we don't recurse
-                if (GetScopeKind(child) is null)
-                {
-                    // Otherwise, we can recurse
-                    foreach (var item in Impl(child, offset)) yield return item;
-                }
-
-                offset += child.Width;
+                // Otherwise, we can recurse
+                foreach (var item in EnumerateNodesInSameScope(child)) yield return item;
             }
         }
-
-        return Impl(tree, 0);
     }
 
     /// <summary>

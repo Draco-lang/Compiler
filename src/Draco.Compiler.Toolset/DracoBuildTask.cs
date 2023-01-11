@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Build.Utilities;
 
-namespace Draco.ProjectFile;
+namespace Draco.Compiler.Toolset;
 
 public sealed class DracoBuildTask : ToolTask
 {

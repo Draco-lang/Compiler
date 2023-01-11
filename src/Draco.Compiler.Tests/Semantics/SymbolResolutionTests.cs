@@ -481,4 +481,60 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(labelDeclSym.IsError);
         Assert.True(labelRefSym.IsError);
     }
+
+    [Fact]
+    public void GlobalCanNotReferenceGlobal()
+    {
+        // var x = 0;
+        // var y = x;
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            VariableDecl(Name("x"), null, LiteralExpr(0)),
+            VariableDecl(Name("y"), null, NameExpr("x"))));
+
+        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
+        var xRef = tree.FindInChildren<ParseNode.Expr.Name>(0);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var xDeclSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xRefSym = semanticModel.GetReferencedSymbol(xRef);
+
+        // Assert
+        Assert.False(ReferenceEquals(xDeclSym, xRefSym));
+        Assert.False(xDeclSym.IsError);
+        Assert.True(xRefSym.IsError);
+    }
+
+    [Fact]
+    public void GlobalCanReferenceFunction()
+    {
+        // var x = foo();
+        // func foo(): int32 = 0;
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            VariableDecl(Name("x"), null, CallExpr(NameExpr("foo"))),
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                NameTypeExpr(Name("int32")),
+                InlineBodyFuncBody(LiteralExpr(0)))));
+
+        var fooDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
+        var fooRef = tree.FindInChildren<ParseNode.Expr.Name>(0);
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var fooDeclSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
+        var fooRefSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(fooRef));
+
+        // Assert
+        Assert.True(ReferenceEquals(fooDeclSym, fooRefSym));
+    }
 }

@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Semantics;
 /// </summary>
 internal static class DataflowErrors
 {
-    private static string ErrorCode(int index) => DiagnosticTemplate.CreateErrorCode(ErrorCategories.DataflowError, index);
+    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategories.Dataflow, index);
 
     /// <summary>
     /// A function does not return on all paths.
@@ -19,7 +19,7 @@ internal static class DataflowErrors
         title: "does not return",
         severity: DiagnosticSeverity.Error,
         format: "the function {0} does not return on all paths",
-        errorCode: ErrorCode(1));
+        code: Code(1));
 
     /// <summary>
     /// A variable is used before it's initialized.
@@ -28,7 +28,7 @@ internal static class DataflowErrors
         title: "use of uninitialized variable",
         severity: DiagnosticSeverity.Error,
         format: "the variable {0} is used before initialized",
-        errorCode: ErrorCode(2));
+        code: Code(2));
 
     // TODO: Is this really a dataflow error?
     /// <summary>
@@ -38,7 +38,7 @@ internal static class DataflowErrors
         title: "illegal lvaule",
         severity: DiagnosticSeverity.Error,
         format: "illegal value on the left side of assignment",
-        errorCode: ErrorCode(3));
+        code: Code(3));
 
     /// <summary>
     /// Immutable variable must be initialized at declaration site.
@@ -47,7 +47,7 @@ internal static class DataflowErrors
         title: "immutable variable must be initialized",
         severity: DiagnosticSeverity.Error,
         format: "the immutable variable {0} must be initialized",
-        errorCode: ErrorCode(4));
+        code: Code(4));
 
     /// <summary>
     /// Immutable variable can not be assigned to.
@@ -56,5 +56,5 @@ internal static class DataflowErrors
         title: "immutable variable can not be assigned to",
         severity: DiagnosticSeverity.Error,
         format: "the immutable variable {0} can not be assigned to, it is read only",
-        errorCode: ErrorCode(5));
+        code: Code(5));
 }

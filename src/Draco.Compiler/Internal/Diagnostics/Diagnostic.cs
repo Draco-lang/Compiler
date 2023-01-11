@@ -54,6 +54,11 @@ internal sealed partial class Diagnostic
     public DiagnosticTemplate Template { get; }
 
     /// <summary>
+    /// The code of the diagnostic.
+    /// </summary>
+    public string Code => this.Template.Code;
+
+    /// <summary>
     /// A short title for the message.
     /// </summary>
     public string Title => this.Template.Title;

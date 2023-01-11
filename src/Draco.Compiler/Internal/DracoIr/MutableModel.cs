@@ -54,7 +54,7 @@ internal sealed class Assembly : IReadOnlyAssembly
         var result = new StringBuilder();
         result.AppendLine($"assembly '{this.Name}';");
         if (this.EntryPoint is not null) result.AppendLine($"entry-point: {this.EntryPoint};");
-        result.Append(string.Join(Environment.NewLine, this.Procedures.Select(p => p.ToFullString())));
+        result.AppendJoin(Environment.NewLine, this.Procedures.Select(p => p.ToFullString()));
         return result.ToString();
     }
 }
@@ -84,14 +84,15 @@ internal sealed record class Procedure : IReadOnlyProcedure
 
     private readonly List<Parameter> parameters = new();
     private readonly List<Local> locals = new();
-    private readonly List<BasicBlock> basicBlocks = new()
-    {
-        new(),
-    };
+    private readonly List<BasicBlock> basicBlocks;
 
     public Procedure(string name)
     {
         this.Name = name;
+        this.basicBlocks = new()
+        {
+            new(this),
+        };
     }
 
     public Parameter DefineParameter(string name, Type type)
@@ -127,11 +128,19 @@ internal sealed class BasicBlock : IReadOnlyBasicBlock
 {
     private static int idCounter = -1;
 
+    public Procedure Procedure { get; }
+    IReadOnlyProcedure IReadOnlyBasicBlock.Procedure => this.Procedure;
+
     public IList<Instruction> Instructions => this.instructions;
     IReadOnlyList<IReadOnlyInstruction> IReadOnlyBasicBlock.Instructions => this.instructions;
 
     private readonly int id = Interlocked.Increment(ref idCounter);
     private readonly List<Instruction> instructions = new();
+
+    public BasicBlock(Procedure procedure)
+    {
+        this.Procedure = procedure;
+    }
 
     public override string ToString() => $"bb_{this.id}";
     public string ToFullString() => $"""
@@ -216,7 +225,7 @@ internal abstract partial class Instruction : IReadOnlyInstruction
         if (this.OperandCount > 0)
         {
             result.Append(' ');
-            result.Append(string.Join(", ", Enumerable.Range(0, this.OperandCount).Select(i => this[i])));
+            result.AppendJoin(", ", Enumerable.Range(0, this.OperandCount).Select(i => this[i]));
         }
         return result.ToString();
     }

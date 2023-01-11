@@ -39,6 +39,69 @@ public sealed class Issue139Tests
         var x = 0;
         var x = 0;
         """)]
+    [InlineData("""
+        func main(a: int32) {}
+        """)]
+    [InlineData("""
+        var b = "2";
+        func b(b: string): string { return b; }
+        """)]
+    [InlineData("""
+        func a(a: string): string {}
+        """)]
+    [InlineData("""
+        func main() {
+            var 
+            foo();
+        }
+        foo() {}
+        """)]
+    [InlineData("""
+        func main() {
+            int32 = 0;
+        }
+        """)]
+    [InlineData("""
+        func main(): int32 {
+            return int32;
+        }
+        """)]
+    [InlineData("""
+        val x = x;
+        """)]
+    [InlineData("""
+        func main() {
+            foo(0.1);
+        }
+        """)]
+    [InlineData("""
+        func main() {
+            1 = 1;
+        }
+        """)]
+    [InlineData("""
+        func foo(): int32 {
+            if ({ return 4 }) {
+                if (true) {
+                    return 0;
+                }
+                else {
+                    return 1;
+                }
+            }
+        }
+        """)]
+    [InlineData("""
+        func foo() {
+            if (false) {
+            lbl:
+                return;
+            }
+            while (false) {
+                goto lbl;
+            }
+        }
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

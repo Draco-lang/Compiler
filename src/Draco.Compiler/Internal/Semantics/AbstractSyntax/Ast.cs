@@ -4,15 +4,31 @@ using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Api.Syntax;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 using Draco.RedGreenTree.Attributes;
+using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 /// <summary>
 /// An immutable structure representing semantic information about source code.
 /// </summary>
-internal abstract record class Ast
+internal abstract partial record class Ast
 {
+    /// <summary>
+    /// The <see cref="Diagnostic"/>s on this node, not including the ones on <see cref="ParseNode"/>.
+    /// </summary>
+    public virtual ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
+
+    /// <summary>
+    /// The <see cref="Syntax.ParseNode"/> this AST node was produced from.
+    /// </summary>
     public abstract ParseNode? ParseNode { get; init; }
+
+    /// <summary>
+    /// Retrieves all <see cref="Diagnostic"/>s on this subtree.
+    /// </summary>
+    /// <returns>All <see cref="Diagnostic"/> messages in this subtree.</returns>
+    public ImmutableArray<Diagnostic> GetAllDiagnostics() => ErrorCollector.Collect(this);
 
     /// <summary>
     /// An entire compilation unit.
@@ -26,6 +42,12 @@ internal abstract record class Ast
     /// </summary>
     public abstract record class Decl : Ast
     {
+        /// <summary>
+        /// An unexpected declaration.
+        /// </summary>
+        public sealed record class Unexpected(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Decl;
+
         /// <summary>
         /// A function declaration.
         /// </summary>
@@ -73,9 +95,18 @@ internal abstract record class Ast
         public abstract Type EvaluationType { get; }
 
         /// <summary>
+        /// An unexpected expression.
+        /// </summary>
+        public sealed record class Unexpected(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Expr
+        {
+            public override Type EvaluationType => Type.Error.Empty;
+        }
+
+        /// <summary>
         /// An expression representing unitary value.
         /// </summary>
-        public record class Unit(
+        public sealed record class Unit(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Expr
         {
             /// <summary>
@@ -90,7 +121,7 @@ internal abstract record class Ast
         /// <summary>
         /// A block expression.
         /// </summary>
-        public record class Block(
+        public sealed record class Block(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             ImmutableArray<Stmt> Statements,
             Expr Value) : Expr
@@ -130,7 +161,9 @@ internal abstract record class Ast
         public sealed record class While(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Condition,
-            Expr Expression) : Expr
+            Expr Expression,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel BreakLabel,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel ContinueLabel) : Expr
         {
             [Ignore(IgnoreFlags.TransformerAll)]
             public override Type EvaluationType => Type.Unit;
@@ -143,9 +176,8 @@ internal abstract record class Ast
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.ILabel Target) : Expr
         {
-            // NOTE: Eventually this should be the bottom type
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => Type.Unit;
+            public override Type EvaluationType => Type.Never_;
         }
 
         /// <summary>
@@ -155,9 +187,8 @@ internal abstract record class Ast
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Expr Expression) : Expr
         {
-            // NOTE: Eventually this should be the bottom type
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => Type.Unit;
+            public override Type EvaluationType => Type.Never_;
         }
 
         /// <summary>
@@ -232,9 +263,8 @@ internal abstract record class Ast
             Expr Left,
             ImmutableArray<ComparisonElement> Comparisons) : Expr
         {
-            // TODO
             [Ignore(IgnoreFlags.TransformerAll)]
-            public override Type EvaluationType => throw new NotImplementedException();
+            public override Type EvaluationType => this.Comparisons[0].Operator.ReturnType;
         }
 
         /// <summary>
@@ -242,7 +272,7 @@ internal abstract record class Ast
         /// </summary>
         public sealed record class Assign(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
-            Expr Target,
+            LValue Target,
             [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction? CompoundOperator,
             Expr Value) : Expr
         {
@@ -298,6 +328,50 @@ internal abstract record class Ast
     }
 
     /// <summary>
+    /// A value appearing on the left side of assignment.
+    /// </summary>
+    public abstract record class LValue : Ast
+    {
+        /// <summary>
+        /// The type the lvalue references.
+        /// </summary>
+        [Ignore(IgnoreFlags.TransformerAll)]
+        public abstract Type EvaluationType { get; }
+
+        /// <summary>
+        /// An unexpected lvalue.
+        /// </summary>
+        public sealed record class Unexpected(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : LValue
+        {
+            public override Type EvaluationType => Type.Error.Empty;
+        }
+
+        /// <summary>
+        /// An illegal lvalue.
+        /// </summary>
+        public sealed record class Illegal(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
+            ImmutableArray<Diagnostic> Diagnostics) : LValue
+        {
+            [Ignore(IgnoreFlags.TransformerTransform | IgnoreFlags.VisitorVisit)]
+            public override ImmutableArray<Diagnostic> Diagnostics { get; } = Diagnostics;
+
+            public override Type EvaluationType => Type.Error.Empty;
+        }
+
+        /// <summary>
+        /// A name reference.
+        /// </summary>
+        public sealed record class Reference(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IVariable Symbol) : LValue
+        {
+            public override Type EvaluationType => this.Symbol.Type;
+        }
+    }
+
+    /// <summary>
     /// Part of a string literal/expression.
     /// </summary>
     public abstract record class StringPart : Ast
@@ -320,7 +394,7 @@ internal abstract record class Ast
     /// <summary>
     /// A single comparison element in a comparison chain.
     /// </summary>
-    public record class ComparisonElement(
+    public sealed record class ComparisonElement(
         [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
         [property: Ignore(IgnoreFlags.TransformerTransform)] ISymbol.IFunction Operator,
         Expr Right) : Ast;
@@ -355,5 +429,30 @@ internal abstract record class Ast
         public new sealed record class Expr(
             [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode,
             Ast.Expr Expression) : Stmt;
+    }
+}
+
+// Error collector
+internal abstract partial record class Ast
+{
+    private sealed class ErrorCollector : AstVisitorBase<Unit>
+    {
+        public static ImmutableArray<Diagnostic> Collect(Ast ast)
+        {
+            var collector = new ErrorCollector();
+            collector.Visit(ast);
+            return collector.diagnostics.ToImmutable();
+        }
+
+        private readonly ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+
+        private ErrorCollector() { }
+
+        public override Unit VisitIllegalLValue(LValue.Illegal node)
+        {
+            base.VisitIllegalLValue(node);
+            this.diagnostics.AddRange(node.Diagnostics);
+            return this.Default;
+        }
     }
 }

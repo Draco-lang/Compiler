@@ -54,7 +54,7 @@ internal static class TailCallOptimization
     {
         // Make a new entry block for the store
         var oldEntry = procedure.Entry;
-        procedure.BasicBlocks.Insert(0, new());
+        procedure.BasicBlocks.Insert(0, new(procedure));
 
         // Make each argument mutable by
         //   x1 = alloc T1

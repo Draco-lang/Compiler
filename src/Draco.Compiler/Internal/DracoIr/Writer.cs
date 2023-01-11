@@ -109,7 +109,7 @@ internal sealed class InstructionWriter
     /// <returns>The declared <see cref="Label"/>.</returns>
     public Label DeclareLabel()
     {
-        var newBasicBlock = new BasicBlock();
+        var newBasicBlock = new BasicBlock(this.Procedure);
         var label = new Label(newBasicBlock);
         return label;
     }

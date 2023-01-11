@@ -38,4 +38,28 @@ internal static class SemanticErrors
         title: "illegal shadowing",
         severity: DiagnosticSeverity.Error,
         format: "symbol {0} illegally shadows symbol with the same name");
+
+    /// <summary>
+    /// A function does not return on all paths.
+    /// </summary>
+    public static readonly DiagnosticTemplate DoesNotReturn = DiagnosticTemplate.Create(
+        title: "does not return",
+        severity: DiagnosticSeverity.Error,
+        format: "the function {0} does not return on all paths");
+
+    /// <summary>
+    /// A variable is used before it's initialized.
+    /// </summary>
+    public static readonly DiagnosticTemplate VariableUsedBeforeInit = DiagnosticTemplate.Create(
+        title: "use of uninitialized variable",
+        severity: DiagnosticSeverity.Error,
+        format: "the variable {0} is used before initialized");
+
+    /// <summary>
+    /// Illegal value on left side of assignment.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalLValue = DiagnosticTemplate.Create(
+        title: "illegal lvaule",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal value on the left side of assignment");
 }

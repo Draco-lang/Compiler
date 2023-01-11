@@ -93,6 +93,8 @@ internal static class TypeChecker
         ParseNode.Expr.Literal lit => lit.Value.Type switch
         {
             TokenType.LiteralInteger => Type.Int32,
+            // NOTE: There is no agreement currently on float literal type
+            TokenType.LiteralFloat => Type.Float64,
             TokenType.KeywordTrue or TokenType.KeywordFalse => Type.Bool,
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         },

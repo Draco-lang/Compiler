@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,9 @@ using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Semantics.FlowAnalysis;
+using Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
+using Draco.Compiler.Internal.Semantics.Symbols;
 
 namespace Draco.Compiler.Api;
 
@@ -19,6 +23,9 @@ namespace Draco.Compiler.Api;
 public readonly record struct EmitResult(
     bool Success,
     ImmutableArray<Diagnostic> Diagnostics);
+
+// TODO: We are not exposing data-flow in any form of API yet
+// That's going to be quite a bit of work, but eventually needs to be done
 
 /// <summary>
 /// Represents a single compilation session.
@@ -104,7 +111,7 @@ public sealed class Compilation
         }
 
         // Get AST
-        var ast = AstBuilder.ToAst(this.db, this.ParseTree.Root);
+        var ast = ParseTreeToAst.ToAst(this.db, this.ParseTree.Root);
         // Lower it
         ast = AstLowering.Lower(this.db, ast);
         // Generate Draco IR

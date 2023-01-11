@@ -61,7 +61,7 @@ internal static class AstFactory
         Operator: op,
         Right: right);
 
-    public static Expr Assign(Expr target, Expr value) => new Expr.Assign(
+    public static Expr Assign(LValue target, Expr value) => new Expr.Assign(
         ParseNode: null,
         Target: target,
         CompoundOperator: null,
@@ -89,4 +89,8 @@ internal static class AstFactory
         ParseNode: null,
         Value: value,
         Type: Type.Bool);
+
+    public static LValue LValueReference(ISymbol.IVariable symbol) => new LValue.Reference(
+        ParseNode: null,
+        Symbol: symbol);
 }

@@ -211,7 +211,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(IfExpr(LiteralExpr(true), BlockExpr())))))));
 
@@ -235,7 +235,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(IfExpr(LiteralExpr(1), BlockExpr())))))));
 
@@ -260,7 +260,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(WhileExpr(LiteralExpr(true), BlockExpr())))))));
 
@@ -284,7 +284,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(WhileExpr(LiteralExpr(1), BlockExpr())))))));
 
@@ -309,7 +309,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(
                     Name("x"),

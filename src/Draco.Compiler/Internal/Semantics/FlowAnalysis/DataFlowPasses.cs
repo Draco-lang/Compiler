@@ -71,7 +71,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
 
         // Not initialized
         this.diagnostics.Add(Diagnostic.Create(
-            template: SemanticErrors.ImmutableVariableMustBeInitialized,
+            template: DataflowErrors.ImmutableVariableMustBeInitialized,
             // TODO: This pattern pops up a ton, maybe allow null to be passed in and then default within the function?
             location: node.ParseNode?.Location ?? Location.None,
             formatArgs: node.DeclarationSymbol.Name));
@@ -84,7 +84,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
 
         // Immutable and modified
         this.diagnostics.Add(Diagnostic.Create(
-            template: SemanticErrors.ImmutableVariableCanNotBeAssignedTo,
+            template: DataflowErrors.ImmutableVariableCanNotBeAssignedTo,
             // TODO: This pattern pops up a ton, maybe allow null to be passed in and then default within the function?
             location: node.ParseNode?.Location ?? Location.None,
             formatArgs: reference.Symbol.Name));
@@ -100,7 +100,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         {
             // Does not return on all paths
             this.diagnostics.Add(Diagnostic.Create(
-                template: SemanticErrors.DoesNotReturn,
+                template: DataflowErrors.DoesNotReturn,
                 location: node.DeclarationSymbol.Definition?.Location ?? Location.None,
                 formatArgs: node.DeclarationSymbol.Name));
         }
@@ -123,7 +123,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
             {
                 // Use of uninitialized variable
                 this.diagnostics.Add(Diagnostic.Create(
-                    template: SemanticErrors.VariableUsedBeforeInit,
+                    template: DataflowErrors.VariableUsedBeforeInit,
                     location: node.ParseNode?.Location ?? Location.None,
                     formatArgs: var.Name));
             }

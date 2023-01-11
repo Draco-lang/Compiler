@@ -156,7 +156,7 @@ internal static class ParseTreeToAst
             _ => new Ast.LValue.Illegal(
                 ParseNode: expr,
                 Diagnostics: ImmutableArray.Create(Diagnostic.Create(
-                    template: SemanticErrors.IllegalLValue,
+                    template: DataflowErrors.IllegalLValue,
                     location: expr.Location))),
         });
 

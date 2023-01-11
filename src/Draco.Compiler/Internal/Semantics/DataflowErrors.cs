@@ -1,0 +1,60 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Draco.Compiler.Api.Diagnostics;
+
+namespace Draco.Compiler.Internal.Semantics;
+
+/// <summary>
+/// Holds constants for dataflow resolution errors.
+/// </summary>
+internal static class DataflowErrors
+{
+    private static string ErrorCode(int index) => DiagnosticTemplate.CreateErrorCode(ErrorCategories.DataflowError, index);
+
+    /// <summary>
+    /// A function does not return on all paths.
+    /// </summary>
+    public static readonly DiagnosticTemplate DoesNotReturn = DiagnosticTemplate.Create(
+        title: "does not return",
+        severity: DiagnosticSeverity.Error,
+        format: "the function {0} does not return on all paths",
+        errorCode: ErrorCode(1));
+
+    /// <summary>
+    /// A variable is used before it's initialized.
+    /// </summary>
+    public static readonly DiagnosticTemplate VariableUsedBeforeInit = DiagnosticTemplate.Create(
+        title: "use of uninitialized variable",
+        severity: DiagnosticSeverity.Error,
+        format: "the variable {0} is used before initialized",
+        errorCode: ErrorCode(2));
+
+    // TODO: Is this really a dataflow error?
+    /// <summary>
+    /// Illegal value on left side of assignment.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalLValue = DiagnosticTemplate.Create(
+        title: "illegal lvaule",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal value on the left side of assignment",
+        errorCode: ErrorCode(3));
+
+    /// <summary>
+    /// Immutable variable must be initialized at declaration site.
+    /// </summary>
+    public static readonly DiagnosticTemplate ImmutableVariableMustBeInitialized = DiagnosticTemplate.Create(
+        title: "immutable variable must be initialized",
+        severity: DiagnosticSeverity.Error,
+        format: "the immutable variable {0} must be initialized",
+        errorCode: ErrorCode(4));
+
+    /// <summary>
+    /// Immutable variable can not be assigned to.
+    /// </summary>
+    public static readonly DiagnosticTemplate ImmutableVariableCanNotBeAssignedTo = DiagnosticTemplate.Create(
+        title: "immutable variable can not be assigned to",
+        severity: DiagnosticSeverity.Error,
+        format: "the immutable variable {0} can not be assigned to, it is read only",
+        errorCode: ErrorCode(5));
+}

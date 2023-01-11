@@ -151,19 +151,30 @@ internal static class SymbolResolution
         (tree, name),
         TSymbol? (tree, name) =>
         {
-            // Walk up the tree for the scope owner
-            var ancestor = GetScopeDefiningAncestor(tree);
-            if (ancestor is null) return null;
-            // Get the scope
-            var scope = GetDefinedScopeOrNull(db, ancestor);
-            if (scope is null) return null;
-            // Compute reference position
-            var referencePositon = GetPosition(ancestor, tree);
-            // Look up symbol
-            var symbol = scope.LookUp(name, referencePositon, x => x as TSymbol);
-            if (symbol is not null) return symbol;
-            // Not found, try in ancestor
-            return ReferenceSymbolOrNull<TSymbol>(db, ancestor, name);
+            static TSymbol? NonVariable(TSymbol? symbol) => symbol is ISymbol.IVariable ? null : symbol;
+
+            var crossedFunctionBoundary = false;
+            while (true)
+            {
+                // Walk up the tree for the scope owner
+                var ancestor = GetScopeDefiningAncestor(tree);
+                if (ancestor is null) return null;
+                // Get the scope
+                var scope = GetDefinedScopeOrNull(db, ancestor);
+                if (scope is null) return null;
+                crossedFunctionBoundary = crossedFunctionBoundary || scope.Kind == ScopeKind.Function;
+                // Compute reference position
+                var referencePositon = GetPosition(ancestor, tree);
+                // Look up symbol
+                var symbol = scope.Kind == ScopeKind.Global && !crossedFunctionBoundary
+                    // We have hit global scope from a global context, we can't reference other globals
+                    ? scope.LookUp(name, referencePositon, x => NonVariable(x as TSymbol))
+                    // Anything of type plays
+                    : scope.LookUp(name, referencePositon, x => x as TSymbol);
+                if (symbol is not null) return symbol;
+                // Not found, try in ancestor
+                tree = ancestor;
+            }
         });
 
     /// <summary>

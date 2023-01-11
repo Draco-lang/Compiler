@@ -62,4 +62,20 @@ internal static class SemanticErrors
         title: "illegal lvaule",
         severity: DiagnosticSeverity.Error,
         format: "illegal value on the left side of assignment");
+
+    /// <summary>
+    /// Immutable variable must be initialized at declaration site.
+    /// </summary>
+    public static readonly DiagnosticTemplate ImmutableVariableMustBeInitialized = DiagnosticTemplate.Create(
+        title: "immutable variable must be initialized",
+        severity: DiagnosticSeverity.Error,
+        format: "the immutable variable {0} must be initialized");
+
+    /// <summary>
+    /// Immutable variable can not be assigned to.
+    /// </summary>
+    public static readonly DiagnosticTemplate ImmutableVariableCanNotBeAssignedTo = DiagnosticTemplate.Create(
+        title: "immutable variable can not be assigned to",
+        severity: DiagnosticSeverity.Error,
+        format: "the immutable variable {0} can not be assigned to, it is read only");
 }

@@ -34,19 +34,60 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
     {
     }
 
+    public override Unit VisitVariableDecl(Ast.Decl.Variable node)
+    {
+        base.VisitVariableDecl(node);
+
+        this.CheckIfValIsInitialized(node);
+
+        return this.Default;
+    }
+
+    public override Unit VisitAssignExpr(Ast.Expr.Assign node)
+    {
+        base.VisitAssignExpr(node);
+
+        this.CheckIsValIsNotAssigned(node);
+
+        return this.Default;
+    }
+
     public override Unit VisitFuncDecl(Ast.Decl.Func node)
     {
         base.VisitFuncDecl(node);
 
         var graph = AstToDataFlowGraph.ToDataFlowGraph(node.Body);
 
-        // TODO: Temporary
-        // Console.WriteLine(DataFlowGraphPrinter.ToDot(graph));
-
         this.CheckReturnsOnAllPaths(node, graph);
         this.CheckIfOnlyInitializedVariablesAreUsed(graph);
 
         return this.Default;
+    }
+
+    private void CheckIfValIsInitialized(Ast.Decl.Variable node)
+    {
+        if (node.DeclarationSymbol.IsMutable) return;
+        if (node.Value is not null) return;
+
+        // Not initialized
+        this.diagnostics.Add(Diagnostic.Create(
+            template: SemanticErrors.ImmutableVariableMustBeInitialized,
+            // TODO: This pattern pops up a ton, maybe allow null to be passed in and then default within the function?
+            location: node.ParseNode?.Location ?? Location.None,
+            formatArgs: node.DeclarationSymbol.Name));
+    }
+
+    private void CheckIsValIsNotAssigned(Ast.Expr.Assign node)
+    {
+        if (node.Target is not Ast.LValue.Reference reference) return;
+        if (reference.Symbol.IsMutable) return;
+
+        // Immutable and modified
+        this.diagnostics.Add(Diagnostic.Create(
+            template: SemanticErrors.ImmutableVariableCanNotBeAssignedTo,
+            // TODO: This pattern pops up a ton, maybe allow null to be passed in and then default within the function?
+            location: node.ParseNode?.Location ?? Location.None,
+            formatArgs: reference.Symbol.Name));
     }
 
     private void CheckReturnsOnAllPaths(Ast.Decl.Func node, DataFlowGraph graph)
@@ -82,9 +123,9 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
             {
                 // Use of uninitialized variable
                 this.diagnostics.Add(Diagnostic.Create(
-                template: SemanticErrors.VariableUsedBeforeInit,
-                location: node.ParseNode?.Location ?? Location.None,
-                formatArgs: var.Name));
+                    template: SemanticErrors.VariableUsedBeforeInit,
+                    location: node.ParseNode?.Location ?? Location.None,
+                    formatArgs: var.Name));
             }
         }
     }

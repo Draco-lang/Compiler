@@ -68,6 +68,13 @@ public static partial class SyntaxFactory
         value is null ? null : ValueInitializer(Assign, value),
         Semicolon);
 
+    public static Decl.Variable ImmutableVariableDecl(Token name, TypeExpr? type = null, Expr? value = null) => VariableDecl(
+        KeywordVal,
+        name,
+        type is null ? null : TypeSpecifier(Colon, type),
+        value is null ? null : ValueInitializer(Assign, value),
+        Semicolon);
+
     public static Decl.Label LabelDecl(string name) => LabelDecl(Name(name), Colon);
 
     public static Enclosed<PunctuatedList<FuncParam>> FuncParamList(ImmutableArray<FuncParam> ps) => Enclosed(

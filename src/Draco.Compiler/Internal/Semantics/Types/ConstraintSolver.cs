@@ -51,7 +51,7 @@ internal partial interface IConstraint
             if (error is not null)
             {
                 this.Diagnostic.WithMessage(
-                    template: SemanticErrors.TypeMismatch,
+                    template: TypeCheckingErrors.TypeMismatch,
                     args: new[] { this.First, this.Second });
             }
         }

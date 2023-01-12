@@ -24,7 +24,7 @@ internal sealed partial class Diagnostic
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
-        Location location,
+        Location? location,
         ImmutableArray<DiagnosticRelatedInformation> relatedInformation,
         params object?[] formatArgs) => new(
             template: template,
@@ -41,7 +41,7 @@ internal sealed partial class Diagnostic
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
-        Location location,
+        Location? location,
         params object?[] formatArgs) => Create(
             template: template,
             location: location,
@@ -91,12 +91,12 @@ internal sealed partial class Diagnostic
     private Diagnostic(
         DiagnosticTemplate template,
         object?[] formatArgs,
-        Location location,
+        Location? location,
         ImmutableArray<DiagnosticRelatedInformation> relatedInformation)
     {
         this.Template = template;
         this.FormatArgs = formatArgs;
-        this.Location = location;
+        this.Location = location ?? Location.None;
         this.RelatedInformation = relatedInformation;
     }
 
@@ -157,7 +157,7 @@ internal sealed partial class Diagnostic
             }
             result = Create(
                 template: this.Template,
-                location: this.Location ?? Location.None,
+                location: this.Location,
                 formatArgs: this.FormatArgs ?? Array.Empty<object?>(),
                 relatedInformation: this.RelatedInformation?.ToImmutable() ?? ImmutableArray<DiagnosticRelatedInformation>.Empty);
             return true;

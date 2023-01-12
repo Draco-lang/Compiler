@@ -19,10 +19,10 @@ internal sealed class GraphTraversal
     public static IEnumerable<TVertex> DepthFirst<TVertex>(
         TVertex start,
         Func<TVertex, IEnumerable<TVertex>> getNeighbors,
-        IComparer<TVertex>? comparer = null)
+        IEqualityComparer<TVertex>? comparer = null)
     {
-        comparer ??= Comparer<TVertex>.Default;
-        var labeled = new HashSet<TVertex>();
+        comparer ??= EqualityComparer<TVertex>.Default;
+        var labeled = new HashSet<TVertex>(comparer);
         var stk = new Stack<TVertex>();
         stk.Push(start);
         while (stk.TryPop(out var v))

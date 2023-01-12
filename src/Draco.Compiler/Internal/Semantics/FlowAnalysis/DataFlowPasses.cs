@@ -11,6 +11,10 @@ using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
+// TODO: This is definitely not incremental
+// We don't care for now, but later the flow graph construction and the passes should become incremental
+// It should not be a big code-shift
+
 /// <summary>
 /// Accumulates all data-flow passes as one.
 /// </summary>

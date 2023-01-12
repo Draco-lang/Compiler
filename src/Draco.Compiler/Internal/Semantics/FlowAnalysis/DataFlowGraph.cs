@@ -1,12 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using System.Xml.Linq;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
-using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;

@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Codegen;

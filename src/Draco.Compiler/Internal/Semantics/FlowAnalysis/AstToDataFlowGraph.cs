@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.Symbols;
 

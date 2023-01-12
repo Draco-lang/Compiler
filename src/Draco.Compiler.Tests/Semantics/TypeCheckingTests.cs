@@ -1,5 +1,4 @@
 using Draco.Compiler.Api;
-using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Semantics;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;

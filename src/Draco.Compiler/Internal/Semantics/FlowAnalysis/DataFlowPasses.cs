@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;

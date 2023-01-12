@@ -18,6 +18,7 @@ internal class Program
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
         var emitIROutput = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
+
         var runCommand = new Command("run", "Runs specified draco file")
         {
             fileArgument,

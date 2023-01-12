@@ -17,6 +17,7 @@ internal sealed class AstToDataFlowGraph
     {
         var converter = new AstToDataFlowGraph();
         converter.Translate(ast);
+        converter.FillNullNodes();
         return new(
             Entry: converter.First,
             Exit: converter.exits.ToImmutable());
@@ -40,6 +41,16 @@ internal sealed class AstToDataFlowGraph
             this.labels.Add(label, op);
         }
         return op;
+    }
+
+    private void FillNullNodes()
+    {
+        // In case there are things like unreferenced labels, we have nulls
+        // We promise no nulls, so we fill them
+        foreach (var op in this.labels.Values)
+        {
+            if (op.Node is null) op.Node = NoOp();
+        }
     }
 
     [return: NotNullIfNotNull(nameof(next))]
@@ -78,8 +89,11 @@ internal sealed class AstToDataFlowGraph
         Ast.Expr.Reference n => this.Append(n),
         Ast.LValue.Reference n => this.Append(n),
         Ast.StringPart.Interpolation i => this.Translate(i.Expression),
-        Ast.Expr.Unexpected or Ast.Expr.Unit or Ast.Expr.Literal => null,
-        Ast.LValue.Unexpected or Ast.LValue.Illegal => null,
+        // For a complete flow, even inert nodes are added
+        Ast.Expr.Unexpected or Ast.Expr.Literal => this.Append(node),
+        Ast.LValue.Unexpected or Ast.LValue.Illegal => this.Append(node),
+        // To avoid reference-equality problems
+        Ast.Expr.Unit => this.Append(NoOp()),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 

@@ -1,11 +1,11 @@
+using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Microsoft.Build.Utilities;
 
 namespace Draco.Compiler.Toolset;
 
-public sealed class DracoBuildTask : ToolTask
+public sealed class DracoCompiler : ToolTask
 {
     public override bool Execute()
     {
@@ -15,7 +15,8 @@ public sealed class DracoBuildTask : ToolTask
             this.Log.LogError("File main.draco was not found");
             return false;
         }
-        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"compile {mainFile} --output {this.OutputFile} --msbuild-diags");
+
+        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"exec \"{this.DracoCompilerPath}\" compile {mainFile} --output {this.OutputFile} --msbuild-diags");
         return !this.HasLoggedErrors;
     }
 
@@ -44,7 +45,25 @@ public sealed class DracoBuildTask : ToolTask
     /// </summary>
     public string[] Compile { get; set; }
 
-    protected override string ToolName => "Draco.Compiler.Cli.exe";
+    /// <summary>
+    /// Path to the DLL implementing the draco compiler commandline.
+    /// </summary>
+    public string DracoCompilerPath { get; set; }
 
-    protected override string GenerateFullPathToTool() => Path.GetFullPath(Path.Combine(Assembly.GetExecutingAssembly().Location, @"..\..\..\..\..\Draco.Compiler.Cli\bin\Debug\net7.0\Draco.Compiler.Cli.exe"));
+    private string GetDotNetPath()
+    {
+        const string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
+
+        var path = Environment.GetEnvironmentVariable(DotNetHostPathEnvironmentName);
+        if (string.IsNullOrEmpty(path))
+        {
+            throw new InvalidOperationException($"{DotNetHostPathEnvironmentName} is not set");
+        }
+
+        return path;
+    }
+
+    protected override string ToolName => Path.GetFileName(this.GetDotNetPath());
+
+    protected override string GenerateFullPathToTool() => Path.GetFullPath(this.GetDotNetPath());
 }

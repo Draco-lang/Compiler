@@ -24,9 +24,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.LanguageServer", "Draco.LanguageServer\Draco.LanguageServer.csproj", "{715FB0AC-561D-4958-8D79-0ACD516BA89B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Toolset", "Draco.Compiler.Toolset\Draco.Compiler.Toolset.csproj", "{A64DCB77-5783-447A-AD3B-F2E0D5BA6470}"
-EndProject
 Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "Draco.Sdk", "Draco.Sdk\Draco.Sdk.msbuildproj", "{48C755B9-6BC9-47E7-BDF1-393E07B1A001}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Tasks", "Draco.Compiler.Tasks\Draco.Compiler.Tasks.csproj", "{30B6DB14-2A2B-4356-868D-6EB7161D686B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Toolset", "Draco.Compiler.Toolset\Draco.Compiler.Toolset.csproj", "{82765FD8-0985-475F-BDE6-3A27254FF457}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,18 +85,24 @@ Global
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A64DCB77-5783-447A-AD3B-F2E0D5BA6470}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A64DCB77-5783-447A-AD3B-F2E0D5BA6470}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A64DCB77-5783-447A-AD3B-F2E0D5BA6470}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
-		{A64DCB77-5783-447A-AD3B-F2E0D5BA6470}.Nuget|Any CPU.Build.0 = Debug|Any CPU
-		{A64DCB77-5783-447A-AD3B-F2E0D5BA6470}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A64DCB77-5783-447A-AD3B-F2E0D5BA6470}.Release|Any CPU.Build.0 = Release|Any CPU
 		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
 		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Nuget|Any CPU.Build.0 = Release|Any CPU
 		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
-      
     <!-- Workaround for project system bug -->
     <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
   </PropertyGroup>

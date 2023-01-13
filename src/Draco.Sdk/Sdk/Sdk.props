@@ -1,13 +1,8 @@
-<?xml version="1.0" encoding="utf-8" ?>
 <Project>
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <DefaultLanguageSourceExtension>.draco</DefaultLanguageSourceExtension>
-    <Language>Draco</Language>
-    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
-  </PropertyGroup>
-
+  <ItemGroup>
+    <PackageReference Include="Draco.Compiler.Toolset" Version="1.0.0" />
+  </ItemGroup>
+  
 </Project>

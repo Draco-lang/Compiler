@@ -3,23 +3,10 @@ using System.IO;
 using System.Linq;
 using Microsoft.Build.Utilities;
 
-namespace Draco.Compiler.Toolset;
+namespace Draco.Compiler.Tasks;
 
 public sealed class DracoCompiler : ToolTask
 {
-    public override bool Execute()
-    {
-        var mainFile = this.Compile.FirstOrDefault(f => f == "main.draco");
-        if (mainFile is null)
-        {
-            this.Log.LogError("File main.draco was not found");
-            return false;
-        }
-
-        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"exec \"{this.DracoCompilerPath}\" compile {mainFile} --output {this.OutputFile} --msbuild-diags");
-        return !this.HasLoggedErrors;
-    }
-
     /// <summary>
     /// Output type of the given project.
     /// </summary>
@@ -49,6 +36,21 @@ public sealed class DracoCompiler : ToolTask
     /// Path to the DLL implementing the draco compiler commandline.
     /// </summary>
     public string DracoCompilerPath { get; set; }
+
+    public override bool Execute()
+    {
+        var mainFile = this.Compile.FirstOrDefault(f => f == "main.draco");
+        if (mainFile is null)
+        {
+            this.Log.LogError("File main.draco was not found");
+            return false;
+        }
+
+        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"exec \"{this.DracoCompilerPath}\" compile {mainFile} --output {this.OutputFile} --msbuild-diags");
+        return !this.HasLoggedErrors;
+    }
+
+    // If the targets do not set the ToolPath and ToolExe, we fall back to the below logic.
 
     private string GetDotNetPath()
     {

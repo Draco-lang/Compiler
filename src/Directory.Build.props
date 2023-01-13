@@ -1,4 +1,9 @@
 <Project>
+  <PropertyGroup>
+    <Version>0.0.1-alpha</Version>
+    <DracoToolsTargetFramework>net7.0</DracoToolsTargetFramework>
+  </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1" PrivateAssets="All"/>
   </ItemGroup>

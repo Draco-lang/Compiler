@@ -1,8 +1,13 @@
 <Project>
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
 
+  <PropertyGroup>
+    <!-- Ideally, we'd have some clever way to keep this in sync with in-use version of the SDK itself. -->
+    <DracoToolsetVersion>0.0.1-alpha</DracoToolsetVersion>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Draco.Compiler.Toolset" Version="1.0.0" />
+    <PackageReference Include="Draco.Compiler.Toolset" Version="$(DracoToolsetVersion)" />
   </ItemGroup>
   
 </Project>

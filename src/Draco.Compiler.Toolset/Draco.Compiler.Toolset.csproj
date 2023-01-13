@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>$(DracoToolsTargetFramework)</TargetFramework>
     <HasRuntimeOutput>true</HasRuntimeOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>    
@@ -31,9 +31,9 @@
     <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
 
-  <Target Name="GetFilesToPackage">
+  <Target Name="GetFilesToPackage">    
     <ItemGroup>
-      <_File Include="$(OutDir)\**\*.*" TargetDir="tools\$(TargetFramework)" Exclude="$(OutDir)\tasks\*.*" />
+      <_File Include="$(OutDir)\**\*.*" TargetDir="tools\$(DracoToolsTargetFramework)" Exclude="$(OutDir)\tasks\*.*" />
       <_File Include="$(OutDir)\tasks\*.*" TargetDir="tasks" />
       
       <_File Include="$(MSBuildProjectDirectory)\build\**\*.*" TargetDir="build" />

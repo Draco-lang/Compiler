@@ -152,7 +152,7 @@ compilerWorker.onmessage = async (ev) => {
             };
             switch(runtimeMsg.type) {
             case 'stdout':
-                stdoutBuffer += runtimeMsg.message;
+                stdoutBuffer += runtimeMsg.message + '\n';
                 outputEditor.getModel().setValue(stdoutBuffer);
                 break;
             default:

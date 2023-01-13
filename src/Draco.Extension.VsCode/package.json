@@ -25,7 +25,11 @@
         "extensions": [
           ".draco"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./resources/light-icon.svg",
+          "dark": "./resources/dark-icon.svg"
+        }
       }
     ],
     "grammars": [

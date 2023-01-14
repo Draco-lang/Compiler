@@ -5,7 +5,6 @@
     <HasRuntimeOutput>true</HasRuntimeOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>    
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetFilesToPackage</TargetsForTfmSpecificContentInPackage>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <NoWarn>$(NoWarn);NU5100</NoWarn>
   </PropertyGroup>
@@ -31,14 +30,14 @@
     <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
 
-  <Target Name="GetFilesToPackage">    
+  <Target Name="GetFilesToPackage" BeforeTargets="CoreCompile">    
     <ItemGroup>
-      <_File Include="$(OutDir)\**\*.*" TargetDir="tools\$(DracoToolsTargetFramework)" Exclude="$(OutDir)\tasks\*.*" />
+      <_File Include="$(OutDir)\**\*.*" TargetDir="tools" Exclude="$(OutDir)\tasks\*.*" />
       <_File Include="$(OutDir)\tasks\*.*" TargetDir="tasks" />
       
       <_File Include="$(MSBuildProjectDirectory)\build\**\*.*" TargetDir="build" />
 
-      <TfmSpecificPackageFile Include="@(_File)" PackagePath="%(_File.TargetDir)/%(_File.RecursiveDir)%(_File.FileName)%(_File.Extension)" />
+      <None Include="@(_File)" Pack="True" PackagePath="%(_File.TargetDir)/%(_File.RecursiveDir)%(_File.FileName)%(_File.Extension)" />
     </ItemGroup>
   </Target>
 

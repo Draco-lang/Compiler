@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackSdkWithReplacedVersion</TargetsForTfmSpecificContentInPackage>
       
     <!-- Workaround for project system bug -->
     <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
@@ -13,19 +12,19 @@
     <None Include="Sdk\**" />
   </ItemGroup>
     
-  <Target Name="PackSdkWithReplacedVersion">
+  <Target Name="PackSdkWithReplacedVersion" BeforeTargets="CoreCompile">
     <ItemGroup>
-      <SdkFile Include="Sdk\**\*.*" />
+      <_File Include="Sdk\**\*.*" />
     </ItemGroup>
       
-    <WriteLinesToFile File="$(BaseIntermediateOutputPath)SdkOutput\%(SdkFile.Filename)%(SdkFile.Extension)"
-                      Lines="$([System.IO.File]::ReadAllText('%(SdkFile.FullPath)').Replace('#{DRACO_VERSION}', '$(Version)'))"
+    <WriteLinesToFile File="$(BaseIntermediateOutputPath)SdkOutput\%(_File.Filename)%(_File.Extension)"
+                      Lines="$([System.IO.File]::ReadAllText('%(_File.FullPath)').Replace('#{DRACO_VERSION}', '$(Version)'))"
                       Overwrite="true"
                       Encoding="UTF-8" />
       
     <ItemGroup>
-      <TfmSpecificPackageFile Include="$(BaseIntermediateOutputPath)SdkOutput\**\*.*" PackagePath="Sdk" />
-    </ItemGroup>
+      <None Include="$(BaseIntermediateOutputPath)SdkOutput\**\*.*" Pack="true" PackagePath="Sdk" />
+    </ItemGroup>    
   </Target>
     
 </Project>

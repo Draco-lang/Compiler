@@ -102,6 +102,22 @@ public sealed class Issue139Tests
             }
         }
         """)]
+    [InlineData(""""
+        func foo() {
+            bar("""Hello""");
+            bar("""
+            Hello""");
+            bar("""Hello
+            """);
+            bar("""
+        Hello
+            """);
+            bar("""
+            Hello
+            """);
+        }
+        func bar(s: string) {}
+        """")]
     [Theory]
     public void DoesNotCrash(string source)
     {

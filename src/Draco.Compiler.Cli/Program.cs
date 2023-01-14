@@ -20,28 +20,28 @@ internal class Program
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
         var emitIROutputOption = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), description: "Specifies the output file");
-        var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in msbuild diagnostic format");
-        var runCommand = new Command("run", "Runs specified draco file")
+        var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
+        var runCommand = new Command("run", "Runs specified Draco file")
         {
             fileArgument,
             outputOption,
         };
         runCommand.SetHandler(Run, fileArgument);
 
-        var generateParseTreeCommand = new Command("parse", "Generates parse tree from specified draco file")
+        var generateParseTreeCommand = new Command("parse", "Generates parse tree from specified Draco file")
         {
             fileArgument,
         };
         generateParseTreeCommand.SetHandler((file) => GenerateParseTree(file), fileArgument);
 
-        var generateIRCommand = new Command("codegen", "Generates DracoIR from specified draco file and displays it to the console")
+        var generateIRCommand = new Command("codegen", "Generates DracoIR from specified Draco file and displays it to the console")
         {
             fileArgument,
             emitIROutputOption,
         };
         generateIRCommand.SetHandler(GenerateDracoIR, fileArgument, emitIROutputOption);
 
-        var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
+        var generateExeCommand = new Command("compile", "Generates executable from specified Draco file")
         {
             fileArgument,
             outputOption,
@@ -49,7 +49,7 @@ internal class Program
         };
         generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption, msbuildDiagOption);
 
-        var rootCommand = new RootCommand("CLI for the draco compiler");
+        var rootCommand = new RootCommand("CLI for the Draco compiler");
         rootCommand.AddCommand(runCommand);
         rootCommand.AddCommand(generateParseTreeCommand);
         rootCommand.AddCommand(generateIRCommand);

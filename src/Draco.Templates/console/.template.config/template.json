@@ -1,9 +1,10 @@
 {
     "$schema": "http://json.schemastore.org/template",
-    "name": "Draco Console App",
-    "shortName": "draco-console",
-    "sourceName": "DracoConsole",
     "identity": "Draco.Console",
+    "groupIdentity": "Microsoft.Common.Console",
+    "name": "Console App",
+    "shortName": "console",
+    "sourceName": "DracoConsole",
     "classifications": [
         "Console",
         "Common"
@@ -40,7 +41,7 @@
     },
     "primaryOutputs": [
         {
-            "path": "./Program.cs"
+            "path": "./main.draco"
         },
         {
             "path": "./DracoConsole.dracoproj"

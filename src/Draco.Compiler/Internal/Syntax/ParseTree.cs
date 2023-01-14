@@ -27,6 +27,8 @@ internal abstract partial record class ParseNode
     internal RelativeRange Range => new(Offset: 0, Width: this.Width);
     internal Location Location => new Location.RelativeToTree(Range: this.Range);
 
+    internal IEnumerable<Token> Tokens => this.InOrderTraverse().OfType<Token>();
+
     /// <summary>
     /// The diagnostics attached to this tree node.
     /// </summary>
@@ -285,7 +287,7 @@ internal partial record class ParseNode
         /// </summary>
         public sealed partial record class Goto(
             Token GotoKeyword,
-            Expr.Name Target) : Expr;
+            LabelName Target) : Expr;
 
         /// <summary>
         /// A return-expression.
@@ -381,6 +383,12 @@ internal partial record class ParseNode
             }
         }
     }
+
+    /// <summary>
+    /// A label name.
+    /// </summary>
+    public sealed partial record class LabelName(
+        Token Identifier) : ParseNode;
 
     /// <summary>
     /// The else clause of an if-expression.

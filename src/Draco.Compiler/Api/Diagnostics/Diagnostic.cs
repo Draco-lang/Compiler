@@ -26,19 +26,18 @@ public enum DiagnosticSeverity
 }
 
 /// <summary>
-/// Possible categories of errors.
+/// Possible categories of diagnostic.
 /// </summary>
-internal enum ErrorCategories
+internal enum DiagnosticCategory
 {
-    InternalCompilerError = 0,
-    SyntaxError = 1,
-    SymbolResolutionError = 2,
-    TypeCheckingError = 3,
-    DataflowError = 4,
-    CodegenError = 5,
+    InternalCompiler = 0,
+    Syntax = 1,
+    SymbolResolution = 2,
+    TypeChecking = 3,
+    Dataflow = 4,
+    Codegen = 5,
 }
 
-// NOTE: Eventually we'd want error codes too. For now it's way too early for that.
 /// <summary>
 /// A template for creating <see cref="Diagnostic"/> messages.
 /// </summary>
@@ -47,30 +46,30 @@ public sealed record class DiagnosticTemplate
     /// <summary>
     /// Creates a new <see cref="DiagnosticTemplate"/>.
     /// </summary>
-    /// <param name="errorCode">The error code of the error.</param>
+    /// <param name="code">The code of the diagnostic.</param>
     /// <param name="title">A short title for the message.</param>
     /// <param name="severity">The severity of the message.</param>
     /// <param name="format">The format string that describes the diagnostic in detail.</param>
     /// <returns>The constructed <see cref="DiagnosticTemplate"/>.</returns>
-    public static DiagnosticTemplate Create(string errorCode, string title, DiagnosticSeverity severity, string format) =>
-        new(errorCode: errorCode, title: title, severity: severity, format: format);
+    public static DiagnosticTemplate Create(string code, string title, DiagnosticSeverity severity, string format) =>
+        new(code: code, title: title, severity: severity, format: format);
 
-    // NOTE: error codes are using format DRX###
-    // where X is category of the error in form of number and ### is index of the error,
-    // every category starts indexing from 1 except of internal compiler error
-
-    /// <summary>
-    /// Creates error code for draco error.
-    /// </summary>
-    /// <param name="category">Category of the error.</param>
-    /// <param name="index">Index of the error.</param>
-    /// <returns>The constructed error code.</returns>
-    internal static string CreateErrorCode(ErrorCategories category, int index) => $"DR{(int)category}{index:D3}";
+    // NOTE: diagnostic codes are using format DRX###
+    // where X is category of the diagnostic in the form of a digit and ### is index of the diagnostic,
+    // every category starts indexing from 1 except of internal compiler errors
 
     /// <summary>
-    /// The error code of the error.
+    /// Creates a diagnostic code for a Draco diagnostic.
     /// </summary>
-    public string ErrorCode { get; }
+    /// <param name="category">Category of the diagnostic.</param>
+    /// <param name="index">Index of the diagnostic.</param>
+    /// <returns>The constructed diagnostic code.</returns>
+    internal static string CreateDiagnosticCode(DiagnosticCategory category, int index) => $"DR{(int)category}{index:D3}";
+
+    /// <summary>
+    /// The code of the diagnostic.
+    /// </summary>
+    public string Code { get; }
 
     /// <summary>
     /// A short title for the message.
@@ -88,12 +87,12 @@ public sealed record class DiagnosticTemplate
     public string Format { get; }
 
     private DiagnosticTemplate(
-        string errorCode,
+        string code,
         string title,
         DiagnosticSeverity severity,
         string format)
     {
-        this.ErrorCode = errorCode;
+        this.Code = code;
         this.Title = title;
         this.Severity = severity;
         this.Format = format;
@@ -115,7 +114,7 @@ public sealed class Diagnostic
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
-        Location location,
+        Location? location,
         ImmutableArray<DiagnosticRelatedInformation> relatedInformation,
         params object?[] formatArgs) => new(
             template: template,
@@ -132,7 +131,7 @@ public sealed class Diagnostic
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
-        Location location,
+        Location? location,
         params object?[] formatArgs) => Create(
             template: template,
             location: location,
@@ -143,6 +142,11 @@ public sealed class Diagnostic
     /// The template for this message.
     /// </summary>
     public DiagnosticTemplate Template { get; }
+
+    /// <summary>
+    /// The code of the diagnostic.
+    /// </summary>
+    public string Code => this.Template.Code;
 
     /// <summary>
     /// A short title for the message.
@@ -190,12 +194,12 @@ public sealed class Diagnostic
     private Diagnostic(
         DiagnosticTemplate template,
         object?[] formatArgs,
-        Location location,
+        Location? location,
         ImmutableArray<DiagnosticRelatedInformation> relatedInformation)
     {
         this.Template = template;
         this.FormatArgs = formatArgs;
-        this.Location = location;
+        this.Location = location ?? Location.None;
         this.RelatedInformation = relatedInformation;
     }
 

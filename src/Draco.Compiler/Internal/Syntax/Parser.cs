@@ -672,7 +672,7 @@ internal sealed class Parser
         {
             var gotoKeyword = this.Advance();
             var labelName = this.Expect(TokenType.Identifier);
-            return new Expr.Goto(gotoKeyword, new Expr.Name(labelName));
+            return new Expr.Goto(gotoKeyword, new LabelName(labelName));
         }
 
         default:

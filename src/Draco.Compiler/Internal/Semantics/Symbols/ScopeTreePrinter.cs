@@ -1,5 +1,5 @@
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Utilities;
@@ -7,93 +7,59 @@ using Draco.Compiler.Internal.Utilities;
 namespace Draco.Compiler.Internal.Semantics.Symbols;
 
 /// <summary>
-/// Utility for printing the result of symbol resolution in a DOT graph.
+/// Utility for printing the result of symbol resolution.
 /// </summary>
-internal sealed class ScopeTreePrinter : DotGraphParseTreePrinterBase
+internal static class ScopeTreePrinter
 {
-    public static string Print(QueryDatabase db, ParseTree parseTree)
+    /// <summary>
+    /// Constructs a DOT graph representation of the scope tree.
+    /// </summary>
+    /// <param name="db">The query database used for computations.</param>
+    /// <param name="parseTree">The parse tree to print the tree for.</param>
+    /// <returns>The DOT graph for the scope tree of <paramref name="parseTree"/>.</returns>
+    public static string ToDot(QueryDatabase db, ParseTree parseTree)
     {
-        var printer = new ScopeTreePrinter(db);
-        printer.PrintTree(parseTree.Root);
-        return printer.Code;
+        var graph = new DotGraphBuilder<IScope>(isDirected: true);
+        graph
+            .WithName("ScopeTree")
+            .WithRankDir(DotAttribs.RankDir.BottomToTop);
+        graph.AllVertices().WithShape(DotAttribs.Shape.Rectangle);
+
+        foreach (var node in parseTree.Root.InOrderTraverse())
+        {
+            // TODO: Somehow show illegal references?
+
+            var scope = SymbolResolution.GetDefinedScopeOrNull(db, node);
+            var referencedSymbol = SymbolResolution.GetReferencedSymbolOrNull(db, node);
+            if (scope is null && referencedSymbol is null) continue;
+
+            if (scope is not null)
+            {
+                // Scope, connect up to parent scope
+                Debug.Assert(referencedSymbol is null);
+                if (scope.Parent is not null) graph.GetOrAddEdge(scope, scope.Parent);
+                // Also write all the symbols defined here
+                graph
+                    .AddVertex(scope)
+                    .WithLabel($"{scope.Kind}: {string.Join(", ", scope.Declarations.Values.Select(s => s.Name))}");
+            }
+            else
+            {
+                // Reference, go from the referencing scope up to the defining scope
+                Debug.Assert(referencedSymbol is not null);
+                var referencingScope = SymbolResolution.GetContainingScopeOrNull(db, node);
+                Debug.Assert(referencingScope is not null);
+                if (referencedSymbol!.DefiningScope is not null)
+                {
+                    graph
+                        .AddEdge(referencingScope!, referencedSymbol.DefiningScope)
+                        .WithLabel(referencedSymbol.Name)
+                        .WithAttribute("color", "grey")
+                        .WithAttribute("style", "dashed");
+                }
+            }
+        }
+
+        return graph.ToDot();
     }
-
-    private readonly QueryDatabase db;
-
-    private ScopeTreePrinter(QueryDatabase db)
-    {
-        this.db = db;
-    }
-
-    protected override NodeAction GetNodeAction(ParseNode tree) => tree switch
-    {
-        _ when this.GetDefinedScope(tree) is not null
-            || this.GetDefinedSymbol(tree) is not null
-            || this.GetReferencedSymbol(tree) is not null => NodeAction.Print,
-        _ => NodeAction.Skip,
-    };
-
-    protected override void PrintSingle(ParseNode tree)
-    {
-        var name = this.GetNodeName(tree);
-
-        // Query relevant data
-        var scope = this.GetDefinedScope(tree);
-        var definedSymbol = this.GetDefinedSymbol(tree);
-        var referencedSymbol = this.GetReferencedSymbol(tree);
-
-        // Node text
-        var textBuilder = new StringBuilder();
-        textBuilder.Append(InferNodeText(tree));
-        if (scope is not null)
-        {
-            // Append scope
-            textBuilder
-                .Append(@"\n")
-                .Append(scope.Kind.ToString())
-                .Append(" { ")
-                .Append(string.Join(", ", scope.Timelines
-                    .SelectMany(t => t.Value.Declarations)
-                    .Select(d => d.Name)))
-                .Append(" }");
-        }
-        if (definedSymbol is not null)
-        {
-            // Append defined symbol
-            textBuilder
-                .Append(@"\n")
-                .Append("define ")
-                .Append(definedSymbol.Name);
-        }
-        if (referencedSymbol is not null && referencedSymbol.Definition is not null)
-        {
-            // Append reference info
-            var referencedName = this.GetNodeName(referencedSymbol.Definition);
-            this.Builder.AppendLine($"  {name} -> {referencedName}");
-        }
-
-        this.Builder.AppendLine($"  {name} [label=\"{textBuilder}\"]");
-
-        // Parent relation
-        if (this.TryGetParentName(out var parentName))
-        {
-            this.Builder.AppendLine($"  {name} -> {parentName} [dir=none]");
-        }
-    }
-
-    private static string InferNodeText(ParseNode tree) => tree switch
-    {
-        ParseNode.Expr.Name name => name.Identifier.Text,
-        ParseNode.TypeExpr.Name name => name.Identifier.Text,
-        _ => tree.GetType().Name,
-    };
-
-    private IScope? GetDefinedScope(ParseNode tree) =>
-        SymbolResolution.GetDefinedScopeOrNull(this.db, tree);
-
-    private ISymbol? GetDefinedSymbol(ParseNode tree) =>
-        SymbolResolution.GetDefinedSymbolOrNull(this.db, tree);
-
-    private ISymbol? GetReferencedSymbol(ParseNode tree) =>
-        SymbolResolution.GetReferencedSymbolOrNull(this.db, tree);
 }

@@ -41,6 +41,37 @@ internal static partial class EnumerableExtensions
             ++index;
         }
     }
+
+    public static TSource? MinBy<TSource, TKey>(
+        this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector,
+        IComparer<TKey>? comparer = null)
+    {
+        comparer ??= Comparer<TKey>.Default;
+        var enumerator = source.GetEnumerator();
+
+        if (!enumerator.MoveNext())
+        {
+            if (default(TSource) is null) return default;
+            else throw new InvalidOperationException("sequence contains no elements");
+        }
+
+        var minValue = enumerator.Current;
+        var minKey = keySelector(minValue);
+
+        while (enumerator.MoveNext())
+        {
+            var value = enumerator.Current;
+            var key = keySelector(value);
+            if (comparer.Compare(key, minKey) < 0)
+            {
+                minValue = value;
+                minKey = key;
+            }
+        }
+
+        return minValue;
+    }
 }
 
 internal static class StackExtensions
@@ -71,6 +102,41 @@ internal static class StackExtensions
             result = default;
             return false;
         }
+    }
+}
+
+internal static class QueueExtensions
+{
+    public static bool TryDequeue<T>(this Queue<T> queue, [MaybeNullWhen(false)] out T result)
+    {
+        if (queue.Count > 0)
+        {
+            result = queue.Dequeue();
+            return true;
+        }
+        else
+        {
+            result = default;
+            return false;
+        }
+    }
+}
+
+internal static class StringBuilderExtensions
+{
+    public static StringBuilder AppendJoin<T>(this StringBuilder builder, string? separator, IEnumerable<T> values)
+    {
+        var enumerator = values.GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            builder.Append(enumerator.Current);
+            while (enumerator.MoveNext())
+            {
+                builder.Append(separator);
+                builder.Append(enumerator.Current);
+            }
+        }
+        return builder;
     }
 }
 

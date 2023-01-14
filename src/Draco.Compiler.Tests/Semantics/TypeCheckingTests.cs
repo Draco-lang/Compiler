@@ -1,6 +1,6 @@
 using Draco.Compiler.Api;
-using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Semantics;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
@@ -149,7 +149,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
         Assert.True(xSym.Type.IsError);
     }
 
@@ -175,7 +175,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(IfExpr(LiteralExpr(true), BlockExpr())))))));
 
@@ -235,7 +235,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(IfExpr(LiteralExpr(1), BlockExpr())))))));
 
@@ -246,7 +246,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -260,7 +260,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(WhileExpr(LiteralExpr(true), BlockExpr())))))));
 
@@ -284,7 +284,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(WhileExpr(LiteralExpr(1), BlockExpr())))))));
 
@@ -295,7 +295,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
             FuncParamList(),
-            NameTypeExpr(Name("int32")),
+            null,
             BlockBodyFuncBody(BlockExpr(
                 DeclStmt(VariableDecl(
                     Name("x"),
@@ -325,7 +325,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        Assert.True(diags.First().Severity == DiagnosticSeverity.Error);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     // TODO: Unspecified if we want this

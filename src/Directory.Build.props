@@ -7,7 +7,7 @@
   <!-- Package metadata -->
   <PropertyGroup>
     <PackageIcon>PackageIcon.png</PackageIcon>
-    <Authors>Draco compiler team</Authors>
+    <Authors>Draco-lang</Authors>
     <Description>Compiler tools for the Draco programming language.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>Draco, compiler, language</PackageTags>

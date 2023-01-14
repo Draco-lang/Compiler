@@ -19,7 +19,7 @@ internal class Program
         var emitIROutput = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
 
-        var runCommand = new Command("run", "Runs specified draco file")
+        var runCommand = new Command("run", "Runs specified Draco file")
         {
             fileArgument,
             outputOption,
@@ -33,14 +33,14 @@ internal class Program
         };
         generateIRCommand.SetHandler(GenerateDracoIR, fileArgument, emitIROutput);
 
-        var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
+        var generateExeCommand = new Command("compile", "Generates executable from specified Draco file")
         {
             fileArgument,
             outputOption,
         };
         generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption);
 
-        var rootCommand = new RootCommand("CLI for the draco compiler");
+        var rootCommand = new RootCommand("CLI for the Draco compiler");
         rootCommand.AddCommand(runCommand);
         rootCommand.AddCommand(generateIRCommand);
         rootCommand.AddCommand(generateExeCommand);

@@ -10,7 +10,7 @@
 
     <DracoCompiler ToolPath="$(DotNetHostDirectory)"
                    ToolExe="$(DotNetHostFileName)"
-                   DracoCompilerPath="$(MSBuildThisFileDirectory)..\tools\net7.0\Draco.Compiler.Cli.dll"
+                   DracoCompilerPath="$(MSBuildThisFileDirectory)..\tools\Draco.Compiler.Cli.dll"
                    OutputType="$(OutputType)"
                    ProjectDirectory="$(MSBuildProjectDirectory)"
                    ProjectName="$(MSBuildProjectName)"

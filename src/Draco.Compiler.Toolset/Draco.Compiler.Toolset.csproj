@@ -36,6 +36,7 @@
       <_File Include="$(OutDir)\tasks\*.*" TargetDir="tasks" />
       
       <_File Include="$(MSBuildProjectDirectory)\build\**\*.*" TargetDir="build" />
+      <_File Include="$(MSBuildProjectDirectory)\buildMultiTargeting\**\*.*" TargetDir="buildMultiTargeting" />
 
       <None Include="@(_File)" Pack="True" PackagePath="%(_File.TargetDir)/%(_File.RecursiveDir)%(_File.FileName)%(_File.Extension)" />
     </ItemGroup>

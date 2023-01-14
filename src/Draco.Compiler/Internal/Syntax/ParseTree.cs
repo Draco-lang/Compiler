@@ -375,6 +375,9 @@ internal partial record class ParseNode
                     if (this.OpenQuotes.Type == TokenType.LineStringStart) return 0;
                     // Multiline strings
                     Debug.Assert(this.CloseQuotes.LeadingTrivia.Length <= 2);
+                    // If this is true, we have malformed input
+                    if (this.CloseQuotes.LeadingTrivia.Length == 0) return 0;
+                    // If this is true, there's only newline, no spaces before
                     if (this.CloseQuotes.LeadingTrivia.Length == 1) return 0;
                     // The first trivia was newline, the second must be spaces
                     Debug.Assert(this.CloseQuotes.LeadingTrivia[1].Type == TriviaType.Whitespace);

@@ -231,7 +231,9 @@ internal static class ParseTreeToAst
         var lastNewline = true;
         foreach (var part in str.Parts)
         {
-            if (part is ParseNode.StringPart.Content content)
+            switch (part)
+            {
+            case ParseNode.StringPart.Content content:
             {
                 var text = content.Value.ValueText;
                 Debug.Assert(text is not null);
@@ -239,14 +241,23 @@ internal static class ParseTreeToAst
                     ParseNode: content,
                     Value: text![(lastNewline ? str.Cutoff : 0)..]));
                 lastNewline = content.Value.Type == TokenType.StringNewline;
+                break;
             }
-            else
+            case ParseNode.StringPart.Interpolation interpolation:
             {
-                var interpolation = (ParseNode.StringPart.Interpolation)part;
                 builder.Add(new Ast.StringPart.Interpolation(
                     ParseNode: interpolation,
                     Expression: ToAstExpr(db, interpolation.Expression)));
                 lastNewline = false;
+                break;
+            }
+            case ParseNode.StringPart.Unexpected unexpected:
+            {
+                // They are likely stray tokens in a multiline string
+                break;
+            }
+            default:
+                throw new InvalidOperationException("unknown string part");
             }
         }
         return new Ast.Expr.String(

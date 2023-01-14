@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.DracoIr.Passes;

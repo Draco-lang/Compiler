@@ -21,7 +21,7 @@ internal static class Translator
         Severity = LspModels.DiagnosticSeverity.Error,
         // TODO: Is there a no-range option?
         Range = ToLsp(diag.Location.Range) ?? new(),
-        Code = new LspModels.DiagnosticCode(diag.Template.ErrorCode),
+        Code = new LspModels.DiagnosticCode(diag.Template.Code),
         RelatedInformation = diag.RelatedInformation
             .Select(ToLsp)
             .OfType<LspModels.DiagnosticRelatedInformation>()

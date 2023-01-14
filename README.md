@@ -23,7 +23,7 @@ This is the repository for the work-in-progress compiler for the Draco programmi
    * [x] Symbol resolution
    * [x] Type checking
    * [x] Type inference
-   * [ ] Dataflow analysis
+   * [x] Dataflow analysis
  * Codegen
    * [x] AST
    * [x] Lowering

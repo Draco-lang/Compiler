@@ -69,12 +69,11 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     /// <returns>The equivalent of <paramref name="type"/> without any variable substitutions.</returns>
     private Type RemoveSubstitutions(Type type) => type switch
     {
-        Type.Error e => e,
+        Type.Error or Type.Builtin or Type.Never => type,
         Type.Variable v => this.UnwrapTypeVariable(v),
         Type.Function f => new Type.Function(
             Params: f.Params.Select(this.RemoveSubstitutions).ToImmutableArray(),
             Return: this.RemoveSubstitutions(f.Return)),
-        Type.Builtin => type,
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 

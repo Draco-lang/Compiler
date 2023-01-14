@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.RedGreenTree.Attributes;
 
@@ -116,7 +115,7 @@ public abstract partial class ParseNode : IEquatable<ParseNode>
     /// <summary>
     /// The text this node was parsed from.
     /// </summary>
-    public string TextIncludingTrivia => Internal.Syntax.CodeParseTreePrinter.Print(this.Green);
+    public string TextIncludingTrivia => Internal.Syntax.ParseTreePrinter.ToCode(this.Green);
 
     private Position? position;
     /// <summary>
@@ -138,7 +137,7 @@ public abstract partial class ParseNode : IEquatable<ParseNode>
     /// <summary>
     /// All <see cref="Token"/>s that this subtree consists of.
     /// </summary>
-    public IEnumerable<Token> Tokens => this.GetTokens();
+    public IEnumerable<Token> Tokens => this.InOrderTraverse().OfType<Token>();
 
     /// <summary>
     /// Retrieves all syntactic <see cref="Diagnostic"/>s within this tree.
@@ -148,9 +147,7 @@ public abstract partial class ParseNode : IEquatable<ParseNode>
         this.CollectAllDiagnostics();
 
     private string? text;
-    public override string ToString() => this.text ??= this.ComputeTextWithoutSurroundingTrivia();
-    public string ToDebugString() => Internal.Syntax.DebugParseTreePrinter.Print(this.Green);
-    public string ToDotGraphString() => Internal.Syntax.DotParseTreePrinter.Print(this);
+    public override string ToString() => this.text ??= Internal.Syntax.ParseTreePrinter.ToCodeWithoutSurroundingTrivia(this.Green);
 
     // Equality by green nodes
     public bool Equals(ParseNode? other) => ReferenceEquals(this.Green, other?.Green);
@@ -237,35 +234,6 @@ public abstract partial class ParseNode
         foreach (var diag in this.Children.SelectMany(c => c.CollectAllDiagnostics())) yield return diag;
     }
 
-    protected virtual string ComputeTextWithoutSurroundingTrivia()
-    {
-        var sb = new StringBuilder();
-        // We simply print the text of all tokens except the first and last ones
-        // For the first, we ignore leading trivia, for the last we ignore trailing trivia
-        var lastTrailingTrivia = ImmutableArray<Trivia>.Empty;
-        using var tokenEnumerator = this.Tokens.GetEnumerator();
-        // The first token just gets it's content printed
-        // That ignores the leading trivia, trailing will only be printed if there are following tokens
-        var hasFirstToken = tokenEnumerator.MoveNext();
-        if (!hasFirstToken) return string.Empty;
-        var firstToken = tokenEnumerator.Current;
-        sb.Append(firstToken.Text);
-        lastTrailingTrivia = firstToken.TrailingTrivia;
-        while (tokenEnumerator.MoveNext())
-        {
-            var token = tokenEnumerator.Current;
-            // Last trailing trivia
-            foreach (var t in lastTrailingTrivia) sb.Append(t.Text);
-            // Leading trivia
-            foreach (var t in token.LeadingTrivia) sb.Append(t.Text);
-            // Content
-            sb.Append(token.Text);
-            // Trailing trivia
-            lastTrailingTrivia = token.TrailingTrivia;
-        }
-        return sb.ToString();
-    }
-
     protected virtual Position ComputePosition()
     {
         // For simplicity we try to propagte to the first token
@@ -284,8 +252,6 @@ public abstract partial class ParseNode
         var end = StepPositionByText(start, this.ToString().AsSpan());
         return new(start, end);
     }
-
-    protected virtual IEnumerable<Token> GetTokens() => this.Children.SelectMany(c => c.Tokens);
 
     private Token? GetPrecedingToken(ParseNode tree)
     {
@@ -353,8 +319,6 @@ public abstract partial class ParseNode
 {
     public sealed partial class Token
     {
-        protected override string ComputeTextWithoutSurroundingTrivia() => this.Text;
-
         protected override Position ComputePosition()
         {
             var position = new Position(Line: 0, Column: 0);
@@ -376,11 +340,6 @@ public abstract partial class ParseNode
             }
             // We are done
             return position;
-        }
-
-        protected override IEnumerable<Token> GetTokens()
-        {
-            yield return this;
         }
     }
 }

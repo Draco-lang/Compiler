@@ -1,11 +1,10 @@
-using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Codegen;
 
 internal static class CodegenErrors
 {
-    private static string ErrorCode(int index) => DiagnosticTemplate.CreateErrorCode(ErrorCategories.CodegenError, index);
+    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.Codegen, index);
 
     /// <summary>
     /// Scripting engine could not find main.
@@ -14,5 +13,5 @@ internal static class CodegenErrors
         title: "no main method found",
         severity: DiagnosticSeverity.Error,
         format: "no main method found in compiled assembly",
-        errorCode: ErrorCode(1));
+        code: Code(1));
 }

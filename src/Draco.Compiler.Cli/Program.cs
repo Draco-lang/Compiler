@@ -18,9 +18,9 @@ internal class Program
     private static RootCommand ConfigureCommands()
     {
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
-        var emitIROutputOption = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
-        var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), description: "Specifies the output file");
-        var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
+        var emitIROutput = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
+        var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
+
         var runCommand = new Command("run", "Runs specified Draco file")
         {
             fileArgument,
@@ -28,13 +28,7 @@ internal class Program
         };
         runCommand.SetHandler(Run, fileArgument);
 
-        var generateParseTreeCommand = new Command("parse", "Generates parse tree from specified Draco file")
-        {
-            fileArgument,
-        };
-        generateParseTreeCommand.SetHandler((file) => GenerateParseTree(file), fileArgument);
-
-        var generateIRCommand = new Command("codegen", "Generates DracoIR from specified Draco file and displays it to the console")
+        var generateIRCommand = new Command("codegen", "Generates DracoIR from specified draco file and displays it to the console")
         {
             fileArgument,
             emitIROutputOption,
@@ -51,7 +45,6 @@ internal class Program
 
         var rootCommand = new RootCommand("CLI for the Draco compiler");
         rootCommand.AddCommand(runCommand);
-        rootCommand.AddCommand(generateParseTreeCommand);
         rootCommand.AddCommand(generateIRCommand);
         rootCommand.AddCommand(generateExeCommand);
         return rootCommand;
@@ -69,13 +62,6 @@ internal class Program
             return;
         }
         Console.WriteLine($"Result: {execResult.Result}");
-    }
-
-    private static void GenerateParseTree(FileInfo input)
-    {
-        var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        Console.WriteLine(parseTree.Root.ToDebugString());
     }
 
     private static void GenerateDracoIR(FileInfo input, FileInfo? emitCS)

@@ -68,6 +68,13 @@ public static partial class SyntaxFactory
         value is null ? null : ValueInitializer(Assign, value),
         Semicolon);
 
+    public static Decl.Variable ImmutableVariableDecl(Token name, TypeExpr? type = null, Expr? value = null) => VariableDecl(
+        KeywordVal,
+        name,
+        type is null ? null : TypeSpecifier(Colon, type),
+        value is null ? null : ValueInitializer(Assign, value),
+        Semicolon);
+
     public static Decl.Label LabelDecl(string name) => LabelDecl(Name(name), Colon);
 
     public static Enclosed<PunctuatedList<FuncParam>> FuncParamList(ImmutableArray<FuncParam> ps) => Enclosed(
@@ -107,7 +114,7 @@ public static partial class SyntaxFactory
     public static Expr.Call CallExpr(Expr called, params Expr[] args) => CallExpr(called, args.ToImmutableArray());
 
     public static Expr.Return ReturnExpr(Expr? value = null) => ReturnExpr(KeywordReturn, value);
-    public static Expr.Goto GotoExpr(string label) => GotoExpr(KeywordGoto, NameExpr(label));
+    public static Expr.Goto GotoExpr(string label) => GotoExpr(KeywordGoto, LabelName(Name(label)));
 
     public static Expr.Name NameExpr(string name) => NameExpr(Name(name));
     public static Expr.Literal LiteralExpr(int value) => LiteralExpr(Integer(value));
@@ -119,7 +126,10 @@ public static partial class SyntaxFactory
         tree: null!,
         parent: null,
         green: new Internal.Syntax.ParseNode.StringPart.Content(
-            Value: Internal.Syntax.ParseNode.Token.From(TokenType.StringContent, value),
+            Value: Internal.Syntax.ParseNode.Token.From(
+                type: TokenType.StringContent,
+                text: value,
+                value: value),
             Diagnostics: ImmutableArray<Internal.Diagnostics.Diagnostic>.Empty));
 }
 

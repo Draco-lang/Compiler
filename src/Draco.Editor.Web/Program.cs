@@ -1,4 +1,3 @@
-using Draco.Compiler.Api.Scripting;
 using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler;

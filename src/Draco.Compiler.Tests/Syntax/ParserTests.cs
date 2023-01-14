@@ -1058,7 +1058,7 @@ public sealed class ParserTests
         this.N<Expr.Goto>();
         {
             this.T(TokenType.KeywordGoto);
-            this.N<Expr.Name>();
+            this.N<LabelName>();
             {
                 this.T(TokenType.Identifier);
             }
@@ -1076,7 +1076,7 @@ public sealed class ParserTests
             this.N<Expr.Goto>();
             {
                 this.T(TokenType.KeywordGoto);
-                this.N<Expr.Name>();
+                this.N<LabelName>();
                 {
                     this.MissingT(TokenType.Identifier);
                 }

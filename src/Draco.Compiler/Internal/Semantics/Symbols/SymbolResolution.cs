@@ -282,7 +282,12 @@ internal static class SymbolResolution
         _ => null,
     };
 
-    // TODO: Doc
+    /// <summary>
+    /// Retrieves the break and continue label symbols for the given loop.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The loop node.</param>
+    /// <returns>The break and continue <see cref="ISymbol.ILabel"/>s for <paramref name="tree"/>.</returns>
     public static (ISymbol.ILabel Break, ISymbol.ILabel Continue) GetBreakAndContinueLabels(
         QueryDatabase db,
         ParseNode.Expr.While tree) => db.GetOrUpdate(

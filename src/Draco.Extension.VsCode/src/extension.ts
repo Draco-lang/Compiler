@@ -7,7 +7,7 @@ let languageClient: lsp.LanguageClient;
 export function activate(context: vscode.ExtensionContext) {
     // Path for the server
 	let serverPath = context.asAbsolutePath(path.join('out', 'Draco.LanguageServer.exe'));
-
+	context.subscriptions.push(vscode.commands.registerCommand("draco.run", runDraco));
     // Server options
 	let serverOptions: lsp.ServerOptions = {
 		command: serverPath,
@@ -33,4 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate(): Thenable<void> | undefined {
 	if (!languageClient) return undefined;
 	return languageClient.stop();
+}
+
+function runDraco(){
+	vscode.window.showErrorMessage("hi from run");
 }

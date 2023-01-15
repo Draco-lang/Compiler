@@ -38,7 +38,21 @@
         "scopeName": "source.draco",
         "path": "./syntaxes/draco.tmLanguage.json"
       }
-    ]
+    ],
+    "commands":[
+      {
+        "command": "draco.run",
+        "title": "Run draco file",
+        "icon":"$(run)"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "draco.run"
+        }
+      ]
+    }
   },
   "scripts": {
     "copy-grammar": "copyfiles --up --flat ../Draco.SyntaxHighlighting/draco.tmLanguage.json syntaxes",

@@ -118,31 +118,17 @@ internal sealed class AstLowering : AstTransformerBase
         //
         // =>
         //
-        // {
-        //     var result = false;
-        //     if (expr1) result = expr2;
-        //     result
-        // }
+        // if (expr1) expr2 else false
 
         changed = true;
 
         var left = this.TransformExpr(node.Left, out _);
         var right = this.TransformExpr(node.Right, out _);
 
-        var varSymbol = Symbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
-        return Block(
-            stmts: new[]
-            {
-                // var result = false;
-                Stmt(Var(
-                    varSymbol: varSymbol,
-                    value: Bool(false))),
-                // if (expr1) result = expr2;
-                If(
-                    condition: left,
-                    then: Assign(LValueReference(varSymbol), right)),
-            },
-            value: Reference(varSymbol));
+        return If(
+            condition: left,
+            then: right,
+            @else: Bool(false));
     }
 
     public override Ast.Expr TransformOrExpr(Ast.Expr.Or node, out bool changed)
@@ -151,31 +137,17 @@ internal sealed class AstLowering : AstTransformerBase
         //
         // =>
         //
-        // {
-        //     var result = true;
-        //     if (!expr1) result = expr2;
-        //     result
-        // }
+        // if (expr1) true else expr2
 
         changed = true;
 
         var left = this.TransformExpr(node.Left, out _);
         var right = this.TransformExpr(node.Right, out _);
 
-        var varSymbol = Symbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
-        return Block(
-            stmts: new[]
-            {
-                // var result = false;
-                Stmt(Var(
-                    varSymbol: varSymbol,
-                    value: Bool(true))),
-                // if (!expr1) result = expr2;
-                If(
-                    condition: Not(left),
-                    then: Assign(LValueReference(varSymbol), right)),
-            },
-            value: Reference(varSymbol));
+        return If(
+            condition: left,
+            then: Bool(true),
+            @else: right);
     }
 
     public override Ast.Expr TransformStringExpr(Ast.Expr.String node, out bool changed)

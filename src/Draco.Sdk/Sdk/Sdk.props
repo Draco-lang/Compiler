@@ -9,5 +9,4 @@
   <ItemGroup>
     <PackageReference Include="Draco.Compiler.Toolset" Version="$(DracoToolsetVersion)" />
   </ItemGroup>
-  
 </Project>

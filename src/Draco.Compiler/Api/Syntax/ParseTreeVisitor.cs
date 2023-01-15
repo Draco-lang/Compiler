@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.RedGreenTree.Attributes;
-using static Draco.Compiler.Api.Syntax.ParseTree;
+using static Draco.Compiler.Api.Syntax.ParseNode;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -11,11 +11,11 @@ namespace Draco.Compiler.Api.Syntax;
 /// to recurse in the tree.
 /// </summary>
 /// <typeparam name="T">The return type of the visitor.</typeparam>
-[VisitorBase(typeof(Internal.Syntax.ParseTree), typeof(ParseTree))]
+[VisitorBase(typeof(Internal.Syntax.ParseNode), typeof(ParseNode))]
 public abstract partial class ParseTreeVisitorBase<T>
 {
     protected T VisitImmutableArray<TElement>(ImmutableArray<TElement> elements)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         foreach (var item in elements) this.Visit(item);
         return this.Default;
@@ -24,14 +24,14 @@ public abstract partial class ParseTreeVisitorBase<T>
     protected virtual T VisitImmutableArray(ImmutableArray<Diagnostic> diags) => this.Default;
 
     protected T VisitPunctuatedList<TElement>(PunctuatedList<TElement> list)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         foreach (var item in list.Elements) this.VisitPunctuated(item);
         return this.Default;
     }
 
     protected T VisitPunctuated<TElement>(Punctuated<TElement> punctuated)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         this.Visit(punctuated.Value);
         if (punctuated.Punctuation is not null) this.VisitToken(punctuated.Punctuation);
@@ -39,7 +39,7 @@ public abstract partial class ParseTreeVisitorBase<T>
     }
 
     protected T VisitEnclosed<TElement>(Enclosed<TElement> enclosed)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         this.VisitToken(enclosed.OpenToken);
         this.Visit(enclosed.Value);
@@ -48,7 +48,7 @@ public abstract partial class ParseTreeVisitorBase<T>
     }
 
     protected T VisitEnclosed<TElement>(Enclosed<PunctuatedList<TElement>> enclosed)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         this.VisitToken(enclosed.OpenToken);
         this.VisitPunctuatedList(enclosed.Value);

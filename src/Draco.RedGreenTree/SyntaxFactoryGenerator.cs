@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Draco.RedGreenTree.Attributes;
 using Microsoft.CodeAnalysis;
 
@@ -172,7 +171,7 @@ public sealed class SyntaxFactoryGenerator : GeneratorBase
                 .Write(this.RedRootType)
                 .Write(".")
                 .Write(this.ToRedMethodName)
-                .Write("(null,");
+                .Write("(null!, null,");
             this.contentWriter
                 .Write("new")
                 .Write(greenType)

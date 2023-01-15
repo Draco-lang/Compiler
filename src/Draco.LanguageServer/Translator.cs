@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -10,6 +11,9 @@ namespace Draco.LanguageServer;
 /// </summary>
 internal static class Translator
 {
+    public static CompilerApi.Syntax.Position ToCompiler(LspModels.Position position) =>
+        new(Line: position.Line, Column: position.Character);
+
     public static LspModels.Diagnostic ToLsp(CompilerApi.Diagnostics.Diagnostic diag) => new()
     {
         Message = diag.Message,
@@ -17,12 +21,30 @@ internal static class Translator
         Severity = LspModels.DiagnosticSeverity.Error,
         // TODO: Is there a no-range option?
         Range = ToLsp(diag.Location.Range) ?? new(),
-        // TODO: Map related information
-        // For now we are not mapping it because Location does not actually map to a file
-        //RelatedInformation = diag.RelatedInformation
-        //    .Select(ToLsp)
-        //    .ToList(),
+        Code = new LspModels.DiagnosticCode(diag.Template.Code),
+        RelatedInformation = diag.RelatedInformation
+            .Select(ToLsp)
+            .OfType<LspModels.DiagnosticRelatedInformation>()
+            .ToList(),
     };
+
+    public static LspModels.DiagnosticRelatedInformation? ToLsp(
+        CompilerApi.Diagnostics.DiagnosticRelatedInformation info) => ToLsp(info.Location) is { } location
+        ? new()
+        {
+            Location = location,
+            Message = info.Message,
+        }
+        : null;
+
+    public static LspModels.Location? ToLsp(CompilerApi.Diagnostics.Location location) => location.SourceText.Path is null
+        ? null
+        : new()
+        {
+            // TODO: Is there a no-range option?
+            Range = ToLsp(location.Range) ?? new(),
+            Uri = DocumentUri.From(location.SourceText.Path),
+        };
 
     public static LspModels.Range? ToLsp(CompilerApi.Syntax.Range? range) => range is null
         ? null
@@ -34,7 +56,7 @@ internal static class Translator
     public static LspModels.Position ToLsp(CompilerApi.Syntax.Position position) =>
         new(line: position.Line, character: position.Column);
 
-    public static SemanticToken? ToLsp(CompilerApi.Syntax.ParseTree.Token token) => token.Type switch
+    public static SemanticToken? ToLsp(CompilerApi.Syntax.ParseNode.Token token) => token.Type switch
     {
         CompilerApi.Syntax.TokenType.LineStringStart
      or CompilerApi.Syntax.TokenType.LineStringEnd

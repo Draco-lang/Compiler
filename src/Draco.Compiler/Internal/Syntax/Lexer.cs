@@ -9,7 +9,7 @@ using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 using DiagnosticTemplate = Draco.Compiler.Api.Diagnostics.DiagnosticTemplate;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -254,7 +254,7 @@ internal sealed class Lexer
                 while (char.IsDigit(this.Peek(offset))) ++offset;
                 var floatView = this.Advance(offset);
                 // TODO: Parsing into an float32 might not be the best idea
-                var floatValue = float.Parse(floatView.Span, provider: CultureInfo.InvariantCulture);
+                var floatValue = float.Parse(floatView.Span.ToString(), provider: CultureInfo.InvariantCulture);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralFloat)
                     .SetText(floatView.ToString())
@@ -265,7 +265,7 @@ internal sealed class Lexer
             // Regular integer
             var intView = this.Advance(offset);
             // TODO: Parsing into an int32 might not be the best idea
-            var intValue = int.Parse(intView.Span);
+            var intValue = int.Parse(intView.Span.ToString());
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
                 .SetText(intView.ToString())
@@ -283,23 +283,23 @@ internal sealed class Lexer
             // TODO: Any better/faster way?
             var tokenType = ident switch
             {
-                var _ when ident.Span.SequenceEqual("and") => TokenType.KeywordAnd,
-                var _ when ident.Span.SequenceEqual("else") => TokenType.KeywordElse,
-                var _ when ident.Span.SequenceEqual("false") => TokenType.KeywordFalse,
-                var _ when ident.Span.SequenceEqual("from") => TokenType.KeywordFrom,
-                var _ when ident.Span.SequenceEqual("func") => TokenType.KeywordFunc,
-                var _ when ident.Span.SequenceEqual("goto") => TokenType.KeywordGoto,
-                var _ when ident.Span.SequenceEqual("if") => TokenType.KeywordIf,
-                var _ when ident.Span.SequenceEqual("import") => TokenType.KeywordImport,
-                var _ when ident.Span.SequenceEqual("mod") => TokenType.KeywordMod,
-                var _ when ident.Span.SequenceEqual("not") => TokenType.KeywordNot,
-                var _ when ident.Span.SequenceEqual("or") => TokenType.KeywordOr,
-                var _ when ident.Span.SequenceEqual("rem") => TokenType.KeywordRem,
-                var _ when ident.Span.SequenceEqual("return") => TokenType.KeywordReturn,
-                var _ when ident.Span.SequenceEqual("true") => TokenType.KeywordTrue,
-                var _ when ident.Span.SequenceEqual("val") => TokenType.KeywordVal,
-                var _ when ident.Span.SequenceEqual("var") => TokenType.KeywordVar,
-                var _ when ident.Span.SequenceEqual("while") => TokenType.KeywordWhile,
+                var _ when ident.Span.SequenceEqual("and".AsSpan()) => TokenType.KeywordAnd,
+                var _ when ident.Span.SequenceEqual("else".AsSpan()) => TokenType.KeywordElse,
+                var _ when ident.Span.SequenceEqual("false".AsSpan()) => TokenType.KeywordFalse,
+                var _ when ident.Span.SequenceEqual("from".AsSpan()) => TokenType.KeywordFrom,
+                var _ when ident.Span.SequenceEqual("func".AsSpan()) => TokenType.KeywordFunc,
+                var _ when ident.Span.SequenceEqual("goto".AsSpan()) => TokenType.KeywordGoto,
+                var _ when ident.Span.SequenceEqual("if".AsSpan()) => TokenType.KeywordIf,
+                var _ when ident.Span.SequenceEqual("import".AsSpan()) => TokenType.KeywordImport,
+                var _ when ident.Span.SequenceEqual("mod".AsSpan()) => TokenType.KeywordMod,
+                var _ when ident.Span.SequenceEqual("not".AsSpan()) => TokenType.KeywordNot,
+                var _ when ident.Span.SequenceEqual("or".AsSpan()) => TokenType.KeywordOr,
+                var _ when ident.Span.SequenceEqual("rem".AsSpan()) => TokenType.KeywordRem,
+                var _ when ident.Span.SequenceEqual("return".AsSpan()) => TokenType.KeywordReturn,
+                var _ when ident.Span.SequenceEqual("true".AsSpan()) => TokenType.KeywordTrue,
+                var _ when ident.Span.SequenceEqual("val".AsSpan()) => TokenType.KeywordVal,
+                var _ when ident.Span.SequenceEqual("var".AsSpan()) => TokenType.KeywordVar,
+                var _ when ident.Span.SequenceEqual("while".AsSpan()) => TokenType.KeywordWhile,
                 _ => TokenType.Identifier,
             };
             // Return the appropriate token
@@ -784,15 +784,23 @@ internal sealed class Lexer
             result = Trivia.From(TriviaType.Whitespace, this.AdvanceWithText(offset));
             return true;
         }
-        // Line-comment
+        // Comment
         if (ch == '/' && this.Peek(1) == '/')
         {
+            // Line Comment
             var offset = 2;
+            var commentType = TriviaType.LineComment;
+            // Documentation Comment
+            if (this.Peek(2) == '/')
+            {
+                offset = 3;
+                commentType = TriviaType.DocumentationComment;
+            }
             // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
             // which means that this will terminate, even if the comment was on the last line of the file
             // without a line break
             while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
-            result = Trivia.From(TriviaType.LineComment, this.AdvanceWithText(offset));
+            result = Trivia.From(commentType, this.AdvanceWithText(offset));
             return true;
         }
         // Not trivia

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.RedGreenTree.Attributes;
 
@@ -9,14 +11,23 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// An immutable structure representing a parsed source text with information about concrete syntax.
 /// </summary>
+/// <param name="SourceText">The source text this tree was parsed from.</param>
+/// <param name="Root">The root of this tree.</param>
+internal sealed record class ParseTree(Api.Syntax.SourceText SourceText, ParseNode Root);
+
+/// <summary>
+/// An individual node in the <see cref="ParseTree"/>.
+/// </summary>
 [GreenTree]
-internal abstract partial record class ParseTree
+internal abstract partial record class ParseNode
 {
     public abstract int Width { get; }
-    public abstract IEnumerable<ParseTree> Children { get; }
+    public abstract IEnumerable<ParseNode> Children { get; }
 
     internal RelativeRange Range => new(Offset: 0, Width: this.Width);
     internal Location Location => new Location.RelativeToTree(Range: this.Range);
+
+    internal IEnumerable<Token> Tokens => this.InOrderTraverse().OfType<Token>();
 
     /// <summary>
     /// The diagnostics attached to this tree node.
@@ -25,13 +36,13 @@ internal abstract partial record class ParseTree
 }
 
 // Traverasal
-internal abstract partial record class ParseTree
+internal abstract partial record class ParseNode
 {
     /// <summary>
     /// Traverses this subtree in an in-order fashion, meaning that the order is root, left, right recursively.
     /// </summary>
-    /// <returns>The <see cref="IEnumerable{ParseTree}"/> that gives back nodes in order.</returns>
-    public IEnumerable<ParseTree> InOrderTraverse()
+    /// <returns>The <see cref="IEnumerable{ParseNode}"/> that gives back nodes in order.</returns>
+    public IEnumerable<ParseNode> InOrderTraverse()
     {
         yield return this;
         foreach (var child in this.Children)
@@ -42,7 +53,7 @@ internal abstract partial record class ParseTree
 }
 
 // Nodes
-internal partial record class ParseTree
+internal partial record class ParseNode
 {
     /// <summary>
     /// A node enclosed by two tokens.
@@ -70,19 +81,19 @@ internal partial record class ParseTree
     /// </summary>
     public sealed partial record class CompilationUnit(
         ImmutableArray<Decl> Declarations,
-        Token End) : ParseTree;
+        Token End) : ParseNode;
 
     /// <summary>
     /// A declaration, either top-level or as a statement.
     /// </summary>
-    public abstract partial record class Decl : ParseTree
+    public abstract partial record class Decl : ParseNode
     {
         /// <summary>
         /// Unexpected input in declaration context.
         /// </summary>
         [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
-            ImmutableArray<ParseTree> Elements,
+            ImmutableArray<ParseNode> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Decl
         {
             /// <inheritdoc/>
@@ -122,26 +133,26 @@ internal partial record class ParseTree
     /// </summary>
     public sealed partial record class FuncParam(
         Token Identifier,
-        TypeSpecifier Type) : ParseTree;
+        TypeSpecifier Type) : ParseNode;
 
     /// <summary>
     /// A value initializer construct.
     /// </summary>
     public sealed partial record class ValueInitializer(
         Token AssignToken,
-        Expr Value) : ParseTree;
+        Expr Value) : ParseNode;
 
     /// <summary>
     /// A function body, either a block or in-line.
     /// </summary>
-    public abstract partial record class FuncBody : ParseTree
+    public abstract partial record class FuncBody : ParseNode
     {
         /// <summary>
         /// Unexpected input in function body context.
         /// </summary>
         [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
-            ImmutableArray<ParseTree> Elements,
+            ImmutableArray<ParseNode> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : FuncBody
         {
             /// <inheritdoc/>
@@ -166,14 +177,14 @@ internal partial record class ParseTree
     /// <summary>
     /// A type expression, i.e. a reference to a type.
     /// </summary>
-    public abstract partial record class TypeExpr : ParseTree
+    public abstract partial record class TypeExpr : ParseNode
     {
         /// <summary>
         /// Unexpected input in type context.
         /// </summary>
         [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
-            ImmutableArray<ParseTree> Elements,
+            ImmutableArray<ParseNode> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : TypeExpr
         {
             /// <inheritdoc/>
@@ -192,19 +203,19 @@ internal partial record class ParseTree
     /// </summary>
     public sealed partial record class TypeSpecifier(
         Token ColonToken,
-        TypeExpr Type) : ParseTree;
+        TypeExpr Type) : ParseNode;
 
     /// <summary>
     /// A statement in a block.
     /// </summary>
-    public abstract partial record class Stmt : ParseTree
+    public abstract partial record class Stmt : ParseNode
     {
         /// <summary>
         /// Unexpected input in statement context.
         /// </summary>
         [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
-            ImmutableArray<ParseTree> Elements,
+            ImmutableArray<ParseNode> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Stmt
         {
             /// <inheritdoc/>
@@ -215,27 +226,27 @@ internal partial record class ParseTree
         /// A declaration statement.
         /// </summary>
         public new sealed partial record class Decl(
-            ParseTree.Decl Declaration) : Stmt;
+            ParseNode.Decl Declaration) : Stmt;
 
         /// <summary>
         /// An expression statement.
         /// </summary>
         public new sealed partial record class Expr(
-            ParseTree.Expr Expression,
+            ParseNode.Expr Expression,
             Token? Semicolon) : Stmt;
     }
 
     /// <summary>
     /// An expression.
     /// </summary>
-    public abstract partial record class Expr : ParseTree
+    public abstract partial record class Expr : ParseNode
     {
         /// <summary>
         /// Unexpected input in expression context.
         /// </summary>
         [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
-            ImmutableArray<ParseTree> Elements,
+            ImmutableArray<ParseNode> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : Expr
         {
             /// <inheritdoc/>
@@ -276,7 +287,7 @@ internal partial record class ParseTree
         /// </summary>
         public sealed partial record class Goto(
             Token GotoKeyword,
-            Expr.Name Target) : Expr;
+            LabelName Target) : Expr;
 
         /// <summary>
         /// A return-expression.
@@ -353,41 +364,67 @@ internal partial record class ParseTree
         public sealed partial record class String(
             Token OpenQuotes,
             ImmutableArray<StringPart> Parts,
-            Token CloseQuotes) : Expr;
+            Token CloseQuotes) : Expr
+        {
+            [Ignore(IgnoreFlags.TransformerAll)]
+            public int Cutoff
+            {
+                get
+                {
+                    // Line strings have no cutoff
+                    if (this.OpenQuotes.Type == TokenType.LineStringStart) return 0;
+                    // Multiline strings
+                    Debug.Assert(this.CloseQuotes.LeadingTrivia.Length <= 2);
+                    // If this is true, we have malformed input
+                    if (this.CloseQuotes.LeadingTrivia.Length == 0) return 0;
+                    // If this is true, there's only newline, no spaces before
+                    if (this.CloseQuotes.LeadingTrivia.Length == 1) return 0;
+                    // The first trivia was newline, the second must be spaces
+                    Debug.Assert(this.CloseQuotes.LeadingTrivia[1].Type == TriviaType.Whitespace);
+                    return this.CloseQuotes.LeadingTrivia[1].Text.Length;
+                }
+            }
+        }
     }
+
+    /// <summary>
+    /// A label name.
+    /// </summary>
+    public sealed partial record class LabelName(
+        Token Identifier) : ParseNode;
 
     /// <summary>
     /// The else clause of an if-expression.
     /// </summary>
     public sealed partial record class ElseClause(
         Token ElseToken,
-        Expr Expression) : ParseTree;
+        Expr Expression) : ParseNode;
 
     /// <summary>
     /// The contents of a block.
     /// </summary>
     public sealed partial record class BlockContents(
         ImmutableArray<Stmt> Statements,
-        Expr? Value) : ParseTree;
+        Expr? Value) : ParseNode;
 
     /// <summary>
     /// A single comparison element in a comparison chain.
     /// </summary>
     public sealed partial record class ComparisonElement(
         Token Operator,
-        Expr Right) : ParseTree;
+        Expr Right) : ParseNode;
 
     /// <summary>
     /// Part of a string literal/expression.
     /// </summary>
-    public abstract partial record class StringPart : ParseTree
+    public abstract partial record class StringPart : ParseNode
     {
         /// <summary>
         /// Unexpected tokens in a string.
         /// </summary>
         [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Unexpected(
-            ImmutableArray<ParseTree> Elements,
+            ImmutableArray<ParseNode> Elements,
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>
@@ -400,7 +437,6 @@ internal partial record class ParseTree
         [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
         public sealed partial record class Content(
             Token Value,
-            int Cutoff,
             ImmutableArray<Diagnostic> Diagnostics) : StringPart
         {
             /// <inheritdoc/>
@@ -417,43 +453,43 @@ internal partial record class ParseTree
     }
 }
 
-internal abstract partial record class ParseTree
+internal abstract partial record class ParseNode
 {
     // Plumbing code for width generation
     private static int GetWidth(int x) => 0;
     private static int GetWidth(ImmutableArray<Diagnostic> diags) => 0;
-    private static int GetWidth(ParseTree? tree) => tree?.Width ?? 0;
+    private static int GetWidth(ParseNode? tree) => tree?.Width ?? 0;
     private static int GetWidth<TElement>(ImmutableArray<TElement> elements)
-        where TElement : ParseTree => elements.Sum(e => e.Width);
+        where TElement : ParseNode => elements.Sum(e => e.Width);
     private static int GetWidth<TElement>(Enclosed<TElement> element)
-        where TElement : ParseTree =>
+        where TElement : ParseNode =>
         element.OpenToken.Width + element.Value.Width + element.CloseToken.Width;
     private static int GetWidth<TElement>(Enclosed<PunctuatedList<TElement>> element)
-        where TElement : ParseTree =>
+        where TElement : ParseNode =>
         element.OpenToken.Width + GetWidth(element.Value) + element.CloseToken.Width;
     private static int GetWidth<TElement>(PunctuatedList<TElement> elements)
-        where TElement : ParseTree => elements.Elements.Sum(GetWidth);
+        where TElement : ParseNode => elements.Elements.Sum(GetWidth);
     private static int GetWidth<TElement>(Punctuated<TElement> element)
-        where TElement : ParseTree => element.Value.Width + (element.Punctuation?.Width ?? 0);
+        where TElement : ParseNode => element.Value.Width + (element.Punctuation?.Width ?? 0);
 
     // Plumbing code for children
-    private static IEnumerable<ParseTree> GetChildren(int x) => Enumerable.Empty<ParseTree>();
-    private static IEnumerable<ParseTree> GetChildren(ImmutableArray<Diagnostic> diags) => Enumerable.Empty<ParseTree>();
-    private static IEnumerable<ParseTree> GetChildren(ParseTree? tree)
+    private static IEnumerable<ParseNode> GetChildren(int x) => Enumerable.Empty<ParseNode>();
+    private static IEnumerable<ParseNode> GetChildren(ImmutableArray<Diagnostic> diags) => Enumerable.Empty<ParseNode>();
+    private static IEnumerable<ParseNode> GetChildren(ParseNode? tree)
     {
         if (tree is not null) yield return tree;
     }
-    private static IEnumerable<ParseTree> GetChildren<TElement>(ImmutableArray<TElement> elements)
-        where TElement : ParseTree => elements.Cast<ParseTree>();
-    private static IEnumerable<ParseTree> GetChildren<TElement>(Enclosed<TElement> element)
-        where TElement : ParseTree
+    private static IEnumerable<ParseNode> GetChildren<TElement>(ImmutableArray<TElement> elements)
+        where TElement : ParseNode => elements.Cast<ParseNode>();
+    private static IEnumerable<ParseNode> GetChildren<TElement>(Enclosed<TElement> element)
+        where TElement : ParseNode
     {
         yield return element.OpenToken;
         yield return element.Value;
         yield return element.CloseToken;
     }
-    private static IEnumerable<ParseTree> GetChildren<TElement>(PunctuatedList<TElement> elements)
-        where TElement : ParseTree
+    private static IEnumerable<ParseNode> GetChildren<TElement>(PunctuatedList<TElement> elements)
+        where TElement : ParseNode
     {
         foreach (var p in elements.Elements)
         {
@@ -461,8 +497,8 @@ internal abstract partial record class ParseTree
             if (p.Punctuation is not null) yield return p.Punctuation;
         }
     }
-    private static IEnumerable<ParseTree> GetChildren<TElement>(Enclosed<PunctuatedList<TElement>> enclosed)
-        where TElement : ParseTree
+    private static IEnumerable<ParseNode> GetChildren<TElement>(Enclosed<PunctuatedList<TElement>> enclosed)
+        where TElement : ParseNode
     {
         yield return enclosed.OpenToken;
         foreach (var p in enclosed.Value.Elements)

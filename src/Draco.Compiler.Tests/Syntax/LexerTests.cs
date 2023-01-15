@@ -1,6 +1,6 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Tests.Syntax;
 
@@ -68,6 +68,47 @@ public sealed class LexerTests
         Assert.Empty(token.Diagnostics);
         Assert.Equal(string.Empty, token.Text);
         Assert.Equal("// Hello, comments", token.LeadingTrivia[0].Text);
+        Assert.Equal(TriviaType.LineComment, token.LeadingTrivia[0].Type);
+    }
+
+    [Fact]
+    [Trait("Feature", "Comments")]
+    public void TestMultilineDocumentationComment()
+    {
+        var text = """
+        /// Hello,
+        /// multiline doc comments
+        """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        // Second trivia is newline
+        Assert.Equal(3, token.LeadingTrivia.Length);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+        Assert.Equal(string.Empty, token.Text);
+        Assert.Equal("/// Hello,", token.LeadingTrivia[0].Text);
+        Assert.Equal("/// multiline doc comments", token.LeadingTrivia[2].Text);
+        Assert.Equal(TriviaType.DocumentationComment, token.LeadingTrivia[0].Type);
+        Assert.Equal(TriviaType.DocumentationComment, token.LeadingTrivia[2].Type);
+    }
+
+    [Fact]
+    [Trait("Feature", "Comments")]
+    public void TestSinglelineDocumentationComment()
+    {
+        var text = "/// Hello, doc comments";
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Single(token.LeadingTrivia);
+        Assert.Empty(token.TrailingTrivia);
+        Assert.Empty(token.Diagnostics);
+        Assert.Equal(string.Empty, token.Text);
+        Assert.Equal("/// Hello, doc comments", token.LeadingTrivia[0].Text);
+        Assert.Equal(TriviaType.DocumentationComment, token.LeadingTrivia[0].Type);
     }
 
     [Fact]
@@ -686,10 +727,11 @@ public sealed class LexerTests
     [Trait("Feature", "Strings")]
     public void TestMultilineStringWithLineContinuationWithWhitespaceAfter(string ext)
     {
+        const string trailingSpace = "  ";
         const string quotes = "\"\"\"";
         var text = $""""
         {ext}"""
-            Hello!\{ext}  
+            Hello!\{ext}{trailingSpace}
             Bye!
             """{ext}
         """";
@@ -711,7 +753,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringNewline, token.Type);
-        Assert.Equal($"\\{ext}  \n", token.Text);
+        Assert.Equal($"\\{ext}{trailingSpace}\n", token.Text);
         Assert.Equal(string.Empty, token.ValueText);
         AssertNoTriviaOrDiagnostics(token);
 

@@ -24,7 +24,7 @@ internal sealed partial class Diagnostic
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
-        Location location,
+        Location? location,
         ImmutableArray<DiagnosticRelatedInformation> relatedInformation,
         params object?[] formatArgs) => new(
             template: template,
@@ -41,7 +41,7 @@ internal sealed partial class Diagnostic
     /// <returns>The constructed <see cref="Diagnostic"/>.</returns>
     public static Diagnostic Create(
         DiagnosticTemplate template,
-        Location location,
+        Location? location,
         params object?[] formatArgs) => Create(
             template: template,
             location: location,
@@ -52,6 +52,11 @@ internal sealed partial class Diagnostic
     /// The template for this message.
     /// </summary>
     public DiagnosticTemplate Template { get; }
+
+    /// <summary>
+    /// The code of the diagnostic.
+    /// </summary>
+    public string Code => this.Template.Code;
 
     /// <summary>
     /// A short title for the message.
@@ -86,21 +91,21 @@ internal sealed partial class Diagnostic
     private Diagnostic(
         DiagnosticTemplate template,
         object?[] formatArgs,
-        Location location,
+        Location? location,
         ImmutableArray<DiagnosticRelatedInformation> relatedInformation)
     {
         this.Template = template;
         this.FormatArgs = formatArgs;
-        this.Location = location;
+        this.Location = location ?? Location.None;
         this.RelatedInformation = relatedInformation;
     }
 
     /// <summary>
     /// Translates this <see cref="Diagnostic"/> to an <see cref="ApiDiagnostic"/>.
     /// </summary>
-    /// <param name="context">The <see cref="ParseTree"/> node this <see cref="Diagnostic"/> is attached to.</param>
+    /// <param name="context">The <see cref="ParseNode"/> node this <see cref="Diagnostic"/> is attached to.</param>
     /// <returns>The equivalent <see cref="ApiDiagnostic"/> to <paramref name="context"/>.</returns>
-    public ApiDiagnostic ToApiDiagnostic(ParseTree? context) => new(
+    public ApiDiagnostic ToApiDiagnostic(ParseNode? context) => new(
         this,
         this.Location.ToApiLocation(context),
         this.RelatedInformation.Select(i => i.ToApiDiagnosticRelatedInformation(null)).ToImmutableArray());
@@ -120,9 +125,9 @@ internal sealed record class DiagnosticRelatedInformation(
     /// <summary>
     /// Translates this <see cref="DiagnosticRelatedInformation"/> to an <see cref="ApiDiagnosticRelatedInformation"/>.
     /// </summary>
-    /// <param name="context">The <see cref="ParseTree"/> node this <see cref="DiagnosticRelatedInformation"/> is attached to.</param>
+    /// <param name="context">The <see cref="ParseNode"/> node this <see cref="DiagnosticRelatedInformation"/> is attached to.</param>
     /// <returns>The equivalent <see cref="ApiDiagnosticRelatedInformation"/> to <paramref name="context"/>.</returns>
-    public ApiDiagnosticRelatedInformation ToApiDiagnosticRelatedInformation(ParseTree? context) =>
+    public ApiDiagnosticRelatedInformation ToApiDiagnosticRelatedInformation(ParseNode? context) =>
         new(this, this.Location.ToApiLocation(context));
 }
 
@@ -152,7 +157,7 @@ internal sealed partial class Diagnostic
             }
             result = Create(
                 template: this.Template,
-                location: this.Location ?? Location.None,
+                location: this.Location,
                 formatArgs: this.FormatArgs ?? Array.Empty<object?>(),
                 relatedInformation: this.RelatedInformation?.ToImmutable() ?? ImmutableArray<DiagnosticRelatedInformation>.Empty);
             return true;

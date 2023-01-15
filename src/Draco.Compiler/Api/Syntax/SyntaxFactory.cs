@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Utilities;
 using Draco.RedGreenTree.Attributes;
-using static Draco.Compiler.Api.Syntax.ParseTree;
+using static Draco.Compiler.Api.Syntax.ParseNode;
 
 namespace Draco.Compiler.Api.Syntax;
 
 /// <summary>
-/// Factory functions for constructing a <see cref="ParseTree"/>.
+/// Factory functions for constructing a <see cref="ParseNode"/>.
 /// </summary>
-[SyntaxFactory(typeof(Internal.Syntax.ParseTree), typeof(ParseTree))]
+[SyntaxFactory(typeof(Internal.Syntax.ParseNode), typeof(ParseNode))]
 public static partial class SyntaxFactory
 {
     public static Token Name(string text) => MakeToken(TokenType.Identifier, text);
@@ -29,6 +29,20 @@ public static partial class SyntaxFactory
         : elements.Length == 0
             ? PunctuatedList(ImmutableArray<Punctuated<T>>.Empty)
             : PunctuatedList(elements.SkipLast(1).Select(e => Punctuated(e, punctuation)).Append(Punctuated(elements[^1], null)));
+
+    private static TNode WithLeadingTrivia<TNode>(TNode node, params Internal.Syntax.ParseNode.Trivia[] trivia) where TNode : ParseNode
+    {
+        var greenNode = new AddLeadingTriviaTransformer(trivia).Transform(node.Green, out var _);
+        return (TNode)ToRed(null!, null, greenNode);
+    }
+
+    public static TNode WithDocumentation<TNode>(TNode node, string docs) where TNode : ParseNode =>
+        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+            .Select(x => Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, $"///{x}")).ToArray());
+
+    public static TNode WithComments<TNode>(TNode node, string docs) where TNode : ParseNode =>
+        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+            .Select(x => Internal.Syntax.ParseNode.Trivia.From(TriviaType.DocumentationComment, $"//{x}")).ToArray());
 
     public static CompilationUnit CompilationUnit(ImmutableArray<Decl> decls) => CompilationUnit(decls, EndOfInput);
     public static CompilationUnit CompilationUnit(IEnumerable<Decl> decls) => CompilationUnit(decls.ToImmutableArray());
@@ -49,6 +63,13 @@ public static partial class SyntaxFactory
 
     public static Decl.Variable VariableDecl(Token name, TypeExpr? type = null, Expr? value = null) => VariableDecl(
         KeywordVar,
+        name,
+        type is null ? null : TypeSpecifier(Colon, type),
+        value is null ? null : ValueInitializer(Assign, value),
+        Semicolon);
+
+    public static Decl.Variable ImmutableVariableDecl(Token name, TypeExpr? type = null, Expr? value = null) => VariableDecl(
+        KeywordVal,
         name,
         type is null ? null : TypeSpecifier(Colon, type),
         value is null ? null : ValueInitializer(Assign, value),
@@ -93,7 +114,7 @@ public static partial class SyntaxFactory
     public static Expr.Call CallExpr(Expr called, params Expr[] args) => CallExpr(called, args.ToImmutableArray());
 
     public static Expr.Return ReturnExpr(Expr? value = null) => ReturnExpr(KeywordReturn, value);
-    public static Expr.Goto GotoExpr(string label) => GotoExpr(KeywordGoto, NameExpr(label));
+    public static Expr.Goto GotoExpr(string label) => GotoExpr(KeywordGoto, LabelName(Name(label)));
 
     public static Expr.Name NameExpr(string name) => NameExpr(Name(name));
     public static Expr.Literal LiteralExpr(int value) => LiteralExpr(Integer(value));
@@ -101,11 +122,44 @@ public static partial class SyntaxFactory
     public static Expr.String StringExpr(string value) =>
         StringExpr(LineStringStart, ImmutableArray.Create<StringPart>(ContentStringPart(value)), LineStringEnd);
 
-    public static StringPart.Content ContentStringPart(string value) =>
-        new(parent: null, green: new Internal.Syntax.ParseTree.StringPart.Content(
-            Value: Internal.Syntax.ParseTree.Token.From(TokenType.StringContent, value),
-            Cutoff: 0,
+    public static StringPart.Content ContentStringPart(string value) => new(
+        tree: null!,
+        parent: null,
+        green: new Internal.Syntax.ParseNode.StringPart.Content(
+            Value: Internal.Syntax.ParseNode.Token.From(
+                type: TokenType.StringContent,
+                text: value,
+                value: value),
             Diagnostics: ImmutableArray<Internal.Diagnostics.Diagnostic>.Empty));
+}
+
+// Transformer
+public static partial class SyntaxFactory
+{
+    private sealed class AddLeadingTriviaTransformer : ParseTreeTransformerBase
+    {
+        private bool firstToken = true;
+        private readonly Internal.Syntax.ParseNode.Trivia[] triviaToAdd;
+
+        public AddLeadingTriviaTransformer(Internal.Syntax.ParseNode.Trivia[] triviaToAdd)
+        {
+            this.triviaToAdd = triviaToAdd;
+        }
+
+        public override Internal.Syntax.ParseNode.Token TransformToken(Internal.Syntax.ParseNode.Token token, out bool changed)
+        {
+            if (this.firstToken)
+            {
+                this.firstToken = false;
+                changed = true;
+                var trivia = token.LeadingTrivia.ToBuilder();
+                trivia.AddRange(this.triviaToAdd);
+                return Internal.Syntax.ParseNode.Token.Builder.From(token).SetLeadingTrivia(trivia.ToImmutable()).Build();
+            }
+            changed = false;
+            return token;
+        }
+    }
 }
 
 // Utilities
@@ -134,42 +188,42 @@ public static partial class SyntaxFactory
     public static Token LineStringEnd { get; } = MakeToken(TokenType.LineStringEnd, "\"");
 
     private static Token MakeToken(TokenType tokenType) =>
-        ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType));
+        ToRed(tree: null!, parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType));
     private static Token MakeToken(TokenType tokenType, string text) =>
-        ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType, text));
+        ToRed(tree: null!, parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType, text));
     private static Token MakeToken(TokenType tokenType, string text, object? value) =>
-        ToRed(parent: null, token: Internal.Syntax.ParseTree.Token.From(tokenType, text, value));
+        ToRed(tree: null!, parent: null, token: Internal.Syntax.ParseNode.Token.From(tokenType, text, value));
 }
 
 // Plumbing methods
 public static partial class SyntaxFactory
 {
     [return: NotNullIfNotNull(nameof(tree))]
-    private static Internal.Syntax.ParseTree? ToGreen(ParseTree? tree) => tree?.Green;
+    private static Internal.Syntax.ParseNode? ToGreen(ParseNode? tree) => tree?.Green;
     [return: NotNullIfNotNull(nameof(token))]
-    private static Internal.Syntax.ParseTree.Token? ToGreen(Token? token) => token?.Green;
-    private static ImmutableArray<Internal.Syntax.ParseTree.Decl> ToGreen(ImmutableArray<Decl> decls) =>
+    private static Internal.Syntax.ParseNode.Token? ToGreen(Token? token) => token?.Green;
+    private static ImmutableArray<Internal.Syntax.ParseNode.Decl> ToGreen(ImmutableArray<Decl> decls) =>
         decls.Select(d => d.Green).ToImmutableArray();
-    private static ImmutableArray<Internal.Syntax.ParseTree.ComparisonElement> ToGreen(ImmutableArray<ComparisonElement> elements) =>
+    private static ImmutableArray<Internal.Syntax.ParseNode.ComparisonElement> ToGreen(ImmutableArray<ComparisonElement> elements) =>
         elements.Select(d => d.Green).ToImmutableArray();
-    private static ImmutableArray<Internal.Syntax.ParseTree.StringPart> ToGreen(ImmutableArray<StringPart> elements) =>
+    private static ImmutableArray<Internal.Syntax.ParseNode.StringPart> ToGreen(ImmutableArray<StringPart> elements) =>
         elements.Select(d => d.Green).ToImmutableArray();
-    private static ImmutableArray<Internal.Syntax.ParseTree.Stmt> ToGreen(ImmutableArray<Stmt> elements) =>
+    private static ImmutableArray<Internal.Syntax.ParseNode.Stmt> ToGreen(ImmutableArray<Stmt> elements) =>
         elements.Select(d => d.Green).ToImmutableArray();
-    private static Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.Expr> ToGreen(Enclosed<Expr> enclosed) =>
+    private static Internal.Syntax.ParseNode.Enclosed<Internal.Syntax.ParseNode.Expr> ToGreen(Enclosed<Expr> enclosed) =>
         new(enclosed.OpenToken.Green, enclosed.Value.Green, enclosed.CloseToken.Green);
-    private static Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.BlockContents> ToGreen(Enclosed<BlockContents> enclosed) =>
+    private static Internal.Syntax.ParseNode.Enclosed<Internal.Syntax.ParseNode.BlockContents> ToGreen(Enclosed<BlockContents> enclosed) =>
         new(enclosed.OpenToken.Green, enclosed.Value.Green, enclosed.CloseToken.Green);
-    private static Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.FuncParam>> ToGreen(Enclosed<PunctuatedList<FuncParam>> enclosed) =>
+    private static Internal.Syntax.ParseNode.Enclosed<Internal.Syntax.ParseNode.PunctuatedList<Internal.Syntax.ParseNode.FuncParam>> ToGreen(Enclosed<PunctuatedList<FuncParam>> enclosed) =>
         new(enclosed.OpenToken.Green, ToGreen(enclosed.Value), enclosed.CloseToken.Green);
-    private static Internal.Syntax.ParseTree.Enclosed<Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.Expr>> ToGreen(Enclosed<PunctuatedList<Expr>> enclosed) =>
+    private static Internal.Syntax.ParseNode.Enclosed<Internal.Syntax.ParseNode.PunctuatedList<Internal.Syntax.ParseNode.Expr>> ToGreen(Enclosed<PunctuatedList<Expr>> enclosed) =>
         new(enclosed.OpenToken.Green, ToGreen(enclosed.Value), enclosed.CloseToken.Green);
-    private static Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.FuncParam> ToGreen(PunctuatedList<FuncParam> elements) =>
+    private static Internal.Syntax.ParseNode.PunctuatedList<Internal.Syntax.ParseNode.FuncParam> ToGreen(PunctuatedList<FuncParam> elements) =>
         new(elements.Elements.Select(ToGreen).ToImmutableArray());
-    private static Internal.Syntax.ParseTree.PunctuatedList<Internal.Syntax.ParseTree.Expr> ToGreen(PunctuatedList<Expr> elements) =>
+    private static Internal.Syntax.ParseNode.PunctuatedList<Internal.Syntax.ParseNode.Expr> ToGreen(PunctuatedList<Expr> elements) =>
         new(elements.Elements.Select(ToGreen).ToImmutableArray());
-    private static Internal.Syntax.ParseTree.Punctuated<Internal.Syntax.ParseTree.FuncParam> ToGreen(Punctuated<FuncParam> punctuated) =>
+    private static Internal.Syntax.ParseNode.Punctuated<Internal.Syntax.ParseNode.FuncParam> ToGreen(Punctuated<FuncParam> punctuated) =>
         new(punctuated.Value.Green, punctuated.Punctuation?.Green);
-    private static Internal.Syntax.ParseTree.Punctuated<Internal.Syntax.ParseTree.Expr> ToGreen(Punctuated<Expr> punctuated) =>
+    private static Internal.Syntax.ParseNode.Punctuated<Internal.Syntax.ParseNode.Expr> ToGreen(Punctuated<Expr> punctuated) =>
         new(punctuated.Value.Green, punctuated.Punctuation?.Green);
 }

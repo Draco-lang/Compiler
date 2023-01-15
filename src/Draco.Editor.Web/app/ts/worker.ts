@@ -5,7 +5,6 @@ declare global { // Blazor does not provide types, so we have our own to please 
     }
 }
 
-
 let firstMessageResolve;
 let firstMessagePromise = new Promise(
     resolve => firstMessageResolve = resolve
@@ -40,7 +39,7 @@ onmessage = async (e: MessageEvent<unknown>) => {
     while (messages.length > 0) {
         const currMessage = messages[0];
         try {
-            await csOnMessage(currMessage['type'], JSON.stringify(currMessage['payload']));
+            csOnMessage(currMessage['type'], JSON.stringify(currMessage['payload']));
         } catch (err) {
             console.log(err);
             throw err;
@@ -50,8 +49,6 @@ onmessage = async (e: MessageEvent<unknown>) => {
 };
 
 function sendMessage(type: string, message: string) {
-    console.log(type);
-    console.log(message);
     postMessage({
         type: type,
         message: message
@@ -61,27 +58,39 @@ function sendMessage(type: string, message: string) {
 async function main() {
     console.log('Worker starting...');
     const monoCfg = await firstMessagePromise;
-    console.log('Received boot config.');
     console.log(monoCfg);
+    console.log('Received boot config.');
+    monoCfg['assets'].forEach(s => {
+        if (s['buffer'] != undefined) {
+            s['buffer'] = Uint8Array.from(atob(s['buffer']), c => c.charCodeAt(0));
+        }
+    });
     firstMessagePromise = undefined;
     const dotnet = self.dotnet.dotnet;
+
     dotnet.moduleConfig.configSrc = null;
     const { setModuleImports, getAssemblyExports, } = await dotnet
-        .withDiagnosticTracing(true)
         .withConfig(
             monoCfg
-        )
+        ).withModuleConfig({
+            print: (txt: string) => sendMessage('stdout', txt)
+        })
         .create();
-    setModuleImports(
-        'worker.js',
-        {
-            Interop: {
-                sendMessage
+
+    if (monoCfg['disableInterop'] !== true) {
+        console.log('Enabling interop');
+        setModuleImports(
+            'worker.js',
+            {
+                Interop: {
+                    sendMessage
+                }
             }
-        }
-    );
-    const exports = await getAssemblyExports(monoCfg['mainAssemblyName']);
-    csOnMessage = exports.Draco.Editor.Web.Interop.OnMessage;
+        );
+        const exports = await getAssemblyExports(monoCfg['mainAssemblyName']);
+        csOnMessage = exports.Draco.Editor.Web.Interop.OnMessage;
+    }
+
     initResolve();
     await dotnet.run();
 }

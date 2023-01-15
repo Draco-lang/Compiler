@@ -22,14 +22,6 @@ internal partial interface IConstraint
     public void Solve();
 }
 
-// Utility functions
-internal partial interface IConstraint
-{
-    private static Type UnwrapTypeVariable(Type type) => type is Type.Variable v
-        ? v.Substitution
-        : type;
-}
-
 internal partial interface IConstraint
 {
     /// <summary>
@@ -59,7 +51,7 @@ internal partial interface IConstraint
             if (error is not null)
             {
                 this.Diagnostic.WithMessage(
-                    template: SemanticErrors.TypeMismatch,
+                    template: TypeCheckingErrors.TypeMismatch,
                     args: new[] { this.First, this.Second });
             }
         }
@@ -69,8 +61,8 @@ internal partial interface IConstraint
             static UnificationError? Ok() => null;
             static UnificationError? Error(UnificationError err) => err;
 
-            left = UnwrapTypeVariable(left);
-            right = UnwrapTypeVariable(right);
+            left = left.UnwrapTypeVariable;
+            right = right.UnwrapTypeVariable;
 
             switch (left, right)
             {

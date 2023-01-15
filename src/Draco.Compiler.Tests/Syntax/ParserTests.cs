@@ -1,5 +1,5 @@
 using Draco.Compiler.Internal.Syntax;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 using TokenType = Draco.Compiler.Api.Syntax.TokenType;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -15,7 +15,7 @@ public sealed class ParserTests
         return func(parser);
     }
 
-    private IEnumerator<ParseTree>? treeEnumerator;
+    private IEnumerator<ParseNode>? treeEnumerator;
 
     private void ParseCompilationUnit(string text)
     {
@@ -288,7 +288,7 @@ public sealed class ParserTests
     {
         this.ParseExpression($""""
             """
-            Hello, \    
+            Hello, \
             World!
             """
             """");
@@ -371,16 +371,17 @@ public sealed class ParserTests
     [Fact]
     public void TestMultilineStringUnclosedInterpolation()
     {
-        this.ParseExpression(""""
+        const string trailingSpace = " ";
+        this.ParseExpression($$""""
             """
-            Hello, 
+            Hello,{{trailingSpace}}
             \{"World!"
             """
             """");
         this.N<Expr.String>();
         {
             this.T(TokenType.MultiLineStringStart);
-            this.StringContent("Hello, ");
+            this.StringContent($"Hello,{trailingSpace}");
             this.StringNewline();
             this.N<StringPart.Interpolation>();
             {
@@ -1057,7 +1058,7 @@ public sealed class ParserTests
         this.N<Expr.Goto>();
         {
             this.T(TokenType.KeywordGoto);
-            this.N<Expr.Name>();
+            this.N<LabelName>();
             {
                 this.T(TokenType.Identifier);
             }
@@ -1075,7 +1076,7 @@ public sealed class ParserTests
             this.N<Expr.Goto>();
             {
                 this.T(TokenType.KeywordGoto);
-                this.N<Expr.Name>();
+                this.N<LabelName>();
                 {
                     this.MissingT(TokenType.Identifier);
                 }

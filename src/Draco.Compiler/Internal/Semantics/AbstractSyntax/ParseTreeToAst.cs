@@ -68,6 +68,8 @@ internal static class ParseTreeToAst
         stmt,
         Ast.Stmt (stmt) => stmt switch
         {
+            ParseNode.Stmt.Unexpected u => new Ast.Stmt.Unexpected(
+                ParseNode: u),
             ParseNode.Stmt.Decl d => new Ast.Stmt.Decl(
                 ParseNode: d,
                 Declaration: ToAstDecl(db, d.Declaration)),
@@ -170,6 +172,7 @@ internal static class ParseTreeToAst
         funcBody,
         Ast.Expr.Block (funcBody) => funcBody switch
         {
+            ParseNode.FuncBody.Unexpected unexpectedBody => ToAstFuncBody(unexpectedBody),
             ParseNode.FuncBody.BlockBody blockBody => ToAstFuncBody(db, blockBody),
             ParseNode.FuncBody.InlineBody inlineBody => ToAstFuncBody(db, inlineBody),
             _ => throw new ArgumentOutOfRangeException(nameof(funcBody)),
@@ -217,6 +220,11 @@ internal static class ParseTreeToAst
                     ParseNode: body,
                     Expression: ToAstExpr(db, body.Expression)))),
         Value: Ast.Expr.Unit.Default);
+
+    private static Ast.Expr.Block ToAstFuncBody(ParseNode.FuncBody.Unexpected body) => new(
+            ParseNode: body,
+            Statements: ImmutableArray<Ast.Stmt>.Empty,
+            Value: Ast.Expr.Unit.Default);
 
     private static Ast.ComparisonElement ToAstComparisonElement(QueryDatabase db, ParseNode.ComparisonElement ce) => db.GetOrUpdate(
         ce,

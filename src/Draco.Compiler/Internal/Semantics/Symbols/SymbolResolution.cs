@@ -299,6 +299,27 @@ internal static class SymbolResolution
                 return (breakLabel, continueLabel);
             });
 
+    /// <summary>
+    /// Checks, if the given tree-node is the body of a while-expression.
+    /// </summary>
+    /// <param name="tree">The tree to check.</param>
+    /// <param name="while">The while-node gets written here, in case the parent is a while-loop and <paramref name="tree"/>
+    /// is the body.</param>
+    /// <returns>True, if <paramref name="tree"/> is the body of a while-loop.</returns>
+    private static bool IsWhileBody(ParseNode tree, [MaybeNullWhen(false)] out ParseNode.Expr.While @while)
+    {
+        if (tree.Parent is ParseNode.Expr.While parentWhile && ReferenceEquals(tree.Green, parentWhile.Expression.Green))
+        {
+            @while = parentWhile;
+            return true;
+        }
+        else
+        {
+            @while = null;
+            return false;
+        }
+    }
+
     // Scope ///////////////////////////////////////////////////////////////////
 
     /// <summary>
@@ -351,7 +372,7 @@ internal static class SymbolResolution
             // We inject intrinsics at global scope
             if (scopeKind == ScopeKind.Global) InjectIntrinsics(scopeBuilder);
 
-            if (tree.Parent is ParseNode.Expr.While whileParent)
+            if (IsWhileBody(tree, out var whileParent))
             {
                 // We inject break and continue
                 var (breakLabel, continueLabel) = GetBreakAndContinueLabels(db, whileParent);
@@ -412,7 +433,7 @@ internal static class SymbolResolution
         ParseNode.Expr.Block => ScopeKind.Local,
         ParseNode.Decl.Func => ScopeKind.Function,
         // We wrap up loop bodies in a scope, so the labels get defined in a proper, sanitized scope
-        _ when tree.Parent is ParseNode.Expr.While => ScopeKind.Local,
+        _ when IsWhileBody(tree, out _) => ScopeKind.Local,
         _ => null,
     };
 

@@ -3,6 +3,7 @@ using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 using IInternalScope = Draco.Compiler.Internal.Semantics.Symbols.IScope;
+using System.Collections.Immutable;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -564,5 +565,182 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.True(labelRefSym.IsError);
+    }
+
+    [Fact]
+    public void GotoBreakLabelInCondition()
+    {
+        // func foo() {
+        //     while ({ goto break; false }) {}
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    ExprStmt(WhileExpr(
+                        condition: BlockExpr(ImmutableArray.Create(ExprStmt(GotoExpr("break"))), LiteralExpr(false)),
+                        body: BlockExpr())))))));
+
+        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
+
+        // Assert
+        Assert.True(labelRefSym.IsError);
+    }
+
+    [Fact]
+    public void GotoBreakLabelInInlineBody()
+    {
+        // func foo() {
+        //     while (true) goto break;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    ExprStmt(WhileExpr(
+                        condition: LiteralExpr(false),
+                        body: GotoExpr("break"))))))));
+
+        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var labelRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(labelRef));
+
+        // Assert
+        Assert.False(labelRefSym.IsError);
+    }
+
+    [Fact]
+    public void GotoBreakLabelInBlockBody()
+    {
+        // func foo() {
+        //     while (true) { goto break; }
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    ExprStmt(WhileExpr(
+                        condition: LiteralExpr(false),
+                        body: BlockExpr(ExprStmt(GotoExpr("break"))))))))));
+
+        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var labelRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(labelRef));
+
+        // Assert
+        Assert.False(labelRefSym.IsError);
+    }
+
+    [Fact]
+    public void GotoBreakLabelOutsideOfBody()
+    {
+        // func foo() {
+        //     while (true) {}
+        //     goto break;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    ExprStmt(WhileExpr(
+                        condition: LiteralExpr(false),
+                        body: BlockExpr())),
+                    ExprStmt(GotoExpr("break")))))));
+
+        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
+
+        // Assert
+        Assert.True(labelRefSym.IsError);
+    }
+
+    [Fact]
+    public void NestedLoopLabels()
+    {
+        // func foo() {
+        //     while (true) {
+        //         goto continue;
+        //         while (true) {
+        //             goto break;
+        //             goto continue;
+        //         }
+        //         goto break;
+        //     }
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    ExprStmt(WhileExpr(
+                        condition: LiteralExpr(true),
+                        body: BlockExpr(
+                            ExprStmt(GotoExpr("continue")),
+                            ExprStmt(WhileExpr(
+                                condition: LiteralExpr(true),
+                                body: BlockExpr(
+                                    ExprStmt(GotoExpr("break")),
+                                    ExprStmt(GotoExpr("continue"))))),
+                            ExprStmt(GotoExpr("break"))))))))));
+
+        var outerContinueRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+        var innerBreakRef = tree.FindInChildren<ParseNode.Expr.Goto>(1).Target;
+        var innerContinueRef = tree.FindInChildren<ParseNode.Expr.Goto>(2).Target;
+        var outerBreakRef = tree.FindInChildren<ParseNode.Expr.Goto>(3).Target;
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var outerContinueRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(outerContinueRef));
+        var innerBreakRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(innerBreakRef));
+        var innerContinueRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(innerContinueRef));
+        var outerBreakRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(outerBreakRef));
+
+        // Assert
+        Assert.False(outerContinueRefSym.IsError);
+        Assert.False(innerBreakRefSym.IsError);
+        Assert.False(innerContinueRefSym.IsError);
+        Assert.False(outerBreakRefSym.IsError);
+        Assert.False(ReferenceEquals(innerBreakRefSym, outerBreakRefSym));
+        Assert.False(ReferenceEquals(innerContinueRefSym, outerContinueRefSym));
     }
 }

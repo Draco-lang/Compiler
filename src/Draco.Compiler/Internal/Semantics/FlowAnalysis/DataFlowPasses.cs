@@ -59,6 +59,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         base.VisitFuncDecl(node);
 
         var graph = AstToDataFlowGraph.ToDataFlowGraph(node.Body);
+        Console.WriteLine(DataFlowGraphPrinter.ToDot(graph));
 
         this.CheckReturnsOnAllPaths(node, graph);
         this.CheckIfOnlyInitializedVariablesAreUsed(graph);

@@ -24,8 +24,8 @@ internal static partial class Symbol
     public static ISymbol.ILabel MakeLabel(QueryDatabase db, string name, ParseNode definition) =>
         new Label(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
-    public static ISymbol.ILabel SynthetizeLabel() =>
-        new SynthetizedLabel();
+    public static ISymbol.ILabel SynthetizeLabel(string? name = null) =>
+        new SynthetizedLabel(name);
 
     public static ISymbol.IVariable MakeVariable(QueryDatabase db, string name, ParseNode definition, bool isMutable) =>
         new Variable(db, name, definition, ImmutableArray<Diagnostic>.Empty, isMutable);
@@ -428,7 +428,7 @@ internal static partial class Symbol
         {
         }
 
-        public override IApiSymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
+        public override IApiSymbol ToApiSymbol() => new LabelSymbol(this);
         public override ISymbol WithDiagnostics(ImmutableArray<Diagnostic> diagnostics) =>
             new Label(this.db, this.Name, this.Definition, this.Diagnostics.Concat(diagnostics).ToImmutableArray());
     }
@@ -441,8 +441,8 @@ internal static partial class Symbol
     /// </summary>
     private sealed class SynthetizedLabel : SynthetizedBase, ISymbol.ILabel
     {
-        public SynthetizedLabel()
-            : base(GenerateName("label"))
+        public SynthetizedLabel(string? name)
+            : base(name ?? GenerateName("label"))
         {
         }
 

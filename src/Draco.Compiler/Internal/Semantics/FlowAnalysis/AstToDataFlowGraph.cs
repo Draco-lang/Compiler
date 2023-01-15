@@ -23,12 +23,17 @@ internal sealed class AstToDataFlowGraph
             Exit: converter.exits.ToImmutable());
     }
 
-    private DataFlowOperation First => this.first ?? new(NoOp());
+    private DataFlowOperation First => this.first;
 
     private readonly Dictionary<ISymbol.ILabel, DataFlowOperation> labels = new();
     private readonly ImmutableArray<DataFlowOperation>.Builder exits = ImmutableArray.CreateBuilder<DataFlowOperation>();
-    private DataFlowOperation? first = null;
-    private DataFlowOperation? prev = null;
+    private readonly DataFlowOperation first = new(NoOp());
+    private DataFlowOperation? prev;
+
+    private AstToDataFlowGraph()
+    {
+        this.prev = this.first;
+    }
 
     private static Ast NoOp() => new Ast.Stmt.NoOp(ParseNode: null);
 
@@ -36,8 +41,10 @@ internal sealed class AstToDataFlowGraph
     {
         if (!this.labels.TryGetValue(label, out var op))
         {
-            // NOTE: Filled out later
-            op = new(null!);
+            // NOTE: AST node filled out later
+            // For error labels, we jump to the beginning for safety
+            // This pervents most flow-errors to cascade
+            op = label.IsError ? this.first : new(null!);
             this.labels.Add(label, op);
         }
         return op;
@@ -47,17 +54,13 @@ internal sealed class AstToDataFlowGraph
     {
         // In case there are things like unreferenced labels, we have nulls
         // We promise no nulls, so we fill them
-        foreach (var op in this.labels.Values)
-        {
-            if (op.Node is null) op.Node = NoOp();
-        }
+        foreach (var op in this.labels.Values) op.Node ??= NoOp();
     }
 
     [return: NotNullIfNotNull(nameof(next))]
     private DataFlowOperation? Append(DataFlowOperation? next)
     {
         if (next is null) return null;
-        this.first ??= next;
         if (this.prev is not null) DataFlowOperation.Join(this.prev, next);
         this.prev = next;
         return next;
@@ -196,9 +199,9 @@ internal sealed class AstToDataFlowGraph
 
     private DataFlowOperation? Translate(Ast.Expr.While node)
     {
-        if (this.prev is null) this.Append(NoOp());
-
-        var beforeCondition = this.Append(node);
+        // Connect up continue label
+        var continueOp = this.GetLabel(node.ContinueLabel);
+        this.Append(continueOp);
 
         // Condition always runs
         this.Translate(node.Condition);
@@ -206,14 +209,14 @@ internal sealed class AstToDataFlowGraph
 
         // The first alternative is that after the condition the body evaluates then jumps back
         this.Translate(node.Expression);
-        this.Append(beforeCondition);
+        this.Append(continueOp);
 
-        // Allocate a no-op for after
-        var noOp = this.Append(NoOp());
+        // Break label
+        var breakOp = this.GetLabel(node.BreakLabel);
 
-        // The other alternatice is that after the condition we exit
+        // The other alternative is that after the condition we exit
         this.prev = afterCondition;
-        this.Append(noOp);
+        this.Append(breakOp);
 
         return null;
     }

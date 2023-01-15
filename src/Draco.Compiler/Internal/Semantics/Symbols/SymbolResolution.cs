@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
@@ -281,6 +282,18 @@ internal static class SymbolResolution
         _ => null,
     };
 
+    // TODO: Doc
+    public static (ISymbol.ILabel Break, ISymbol.ILabel Continue) GetBreakAndContinueLabels(
+        QueryDatabase db,
+        ParseNode.Expr.While tree) => db.GetOrUpdate(
+            tree,
+            (ISymbol.ILabel Break, ISymbol.ILabel Continue) (ParseNode.Expr.While tree) =>
+            {
+                var breakLabel = Symbol.SynthetizeLabel("break");
+                var continueLabel = Symbol.SynthetizeLabel("continue");
+                return (breakLabel, continueLabel);
+            });
+
     // Scope ///////////////////////////////////////////////////////////////////
 
     /// <summary>
@@ -332,6 +345,14 @@ internal static class SymbolResolution
 
             // We inject intrinsics at global scope
             if (scopeKind == ScopeKind.Global) InjectIntrinsics(scopeBuilder);
+
+            if (tree.Parent is ParseNode.Expr.While whileParent)
+            {
+                // We inject break and continue
+                var (breakLabel, continueLabel) = GetBreakAndContinueLabels(db, whileParent);
+                scopeBuilder.Add(new(Position: 0, Symbol: breakLabel));
+                scopeBuilder.Add(new(Position: 0, Symbol: continueLabel));
+            }
 
             foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
             {
@@ -385,6 +406,8 @@ internal static class SymbolResolution
         _ when tree.Parent is null => ScopeKind.Global,
         ParseNode.Expr.Block => ScopeKind.Local,
         ParseNode.Decl.Func => ScopeKind.Function,
+        // We wrap up loop bodies in a scope, so the labels get defined in a proper, sanitized scope
+        _ when tree.Parent is ParseNode.Expr.While => ScopeKind.Local,
         _ => null,
     };
 

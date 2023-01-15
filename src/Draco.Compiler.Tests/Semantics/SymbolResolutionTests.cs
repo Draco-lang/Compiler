@@ -537,4 +537,32 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.True(ReferenceEquals(fooDeclSym, fooRefSym));
     }
+
+    [Fact]
+    public void GotoToNonExistingLabel()
+    {
+        // func foo() {
+        //     goto not_existing;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(
+            FuncDecl(
+                Name("foo"),
+                FuncParamList(),
+                null,
+                BlockBodyFuncBody(BlockExpr(
+                    ExprStmt(GotoExpr("non_existing")))))));
+
+        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+
+        var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
+
+        // Assert
+        Assert.True(labelRefSym.IsError);
+    }
 }

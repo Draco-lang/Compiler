@@ -16,4 +16,7 @@ public abstract class SemanticTestsBase
 
     private protected static void AssertDiagnostic(IEnumerable<Diagnostic> diagnostics, DiagnosticTemplate diagTemplate) =>
         Assert.Contains(diagnostics, d => d.Code == diagTemplate.Code);
+
+    private protected static void AssertNotDiagnostic(IEnumerable<Diagnostic> diagnostics, DiagnosticTemplate diagTemplate) =>
+        Assert.DoesNotContain(diagnostics, d => d.Code == diagTemplate.Code);
 }

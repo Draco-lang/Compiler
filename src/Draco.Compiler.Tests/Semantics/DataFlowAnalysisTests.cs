@@ -1,4 +1,5 @@
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Semantics;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
@@ -143,7 +144,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // Arrange
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
-            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(WhileExpr(
@@ -172,7 +173,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // Arrange
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
-            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(GotoExpr("after")),
@@ -203,7 +204,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // Arrange
         var tree = ParseTree.Create(CompilationUnit(FuncDecl(
             Name("foo"),
-            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
+            FuncParamList(),
             NameTypeExpr(Name("int32")),
             BlockBodyFuncBody(BlockExpr(
                 ExprStmt(GotoExpr("after")),
@@ -219,6 +220,33 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void GotoToNonExistingLabelDoesNotCascadeDataflowErrors()
+    {
+        // func foo(): int32 {
+        //     goto non_existing;
+        //     return 0;
+        // }
+
+        // Arrange
+        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
+            Name("foo"),
+            FuncParamList(),
+            NameTypeExpr(Name("int32")),
+            BlockBodyFuncBody(BlockExpr(
+                ExprStmt(GotoExpr("non_existing")),
+                ExprStmt(ReturnExpr(LiteralExpr(0))))))));
+
+        // Act
+        var compilation = Compilation.Create(tree);
+        var semanticModel = compilation.GetSemanticModel();
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertNotDiagnostic(diags, DataflowErrors.DoesNotReturn);
     }
 
     [Fact]

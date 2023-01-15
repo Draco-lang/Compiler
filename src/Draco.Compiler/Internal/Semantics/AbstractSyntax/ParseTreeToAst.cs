@@ -107,11 +107,9 @@ internal static class ParseTreeToAst
                 ParseNode: @while,
                 Condition: ToAstExpr(db, @while.Condition.Value),
                 Expression: ToAstExpr(db, @while.Expression),
-                // TODO: This needs to come from symbol resolution, but currently the assumption was one symbol defined per construct,
-                // and while needs two
-                // For now, these labels are simply not accessible from the outside
-                BreakLabel: Symbol.SynthetizeLabel(),
-                ContinueLabel: Symbol.SynthetizeLabel()),
+                // TODO: maybe solve it with one call
+                BreakLabel: SymbolResolution.GetBreakAndContinueLabels(db, @while).Break,
+                ContinueLabel: SymbolResolution.GetBreakAndContinueLabels(db, @while).Continue),
             ParseNode.Expr.Block block => new Ast.Expr.Block(
                 ParseNode: block,
                 Statements: block.Enclosed.Value.Statements.Select(s => ToAstStmt(db, s)).ToImmutableArray(),

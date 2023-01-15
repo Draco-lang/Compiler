@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Query;
@@ -281,6 +282,44 @@ internal static class SymbolResolution
         _ => null,
     };
 
+    /// <summary>
+    /// Retrieves the break and continue label symbols for the given loop.
+    /// </summary>
+    /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
+    /// <param name="tree">The loop node.</param>
+    /// <returns>The break and continue <see cref="ISymbol.ILabel"/>s for <paramref name="tree"/>.</returns>
+    public static (ISymbol.ILabel Break, ISymbol.ILabel Continue) GetBreakAndContinueLabels(
+        QueryDatabase db,
+        ParseNode.Expr.While tree) => db.GetOrUpdate(
+            tree,
+            (ISymbol.ILabel Break, ISymbol.ILabel Continue) (ParseNode.Expr.While tree) =>
+            {
+                var breakLabel = Symbol.SynthetizeLabel("break");
+                var continueLabel = Symbol.SynthetizeLabel("continue");
+                return (breakLabel, continueLabel);
+            });
+
+    /// <summary>
+    /// Checks, if the given tree-node is the body of a while-expression.
+    /// </summary>
+    /// <param name="tree">The tree to check.</param>
+    /// <param name="while">The while-node gets written here, in case the parent is a while-loop and <paramref name="tree"/>
+    /// is the body.</param>
+    /// <returns>True, if <paramref name="tree"/> is the body of a while-loop.</returns>
+    private static bool IsWhileBody(ParseNode tree, [MaybeNullWhen(false)] out ParseNode.Expr.While @while)
+    {
+        if (tree.Parent is ParseNode.Expr.While parentWhile && ReferenceEquals(tree.Green, parentWhile.Expression.Green))
+        {
+            @while = parentWhile;
+            return true;
+        }
+        else
+        {
+            @while = null;
+            return false;
+        }
+    }
+
     // Scope ///////////////////////////////////////////////////////////////////
 
     /// <summary>
@@ -332,6 +371,14 @@ internal static class SymbolResolution
 
             // We inject intrinsics at global scope
             if (scopeKind == ScopeKind.Global) InjectIntrinsics(scopeBuilder);
+
+            if (IsWhileBody(tree, out var whileParent))
+            {
+                // We inject break and continue
+                var (breakLabel, continueLabel) = GetBreakAndContinueLabels(db, whileParent);
+                scopeBuilder.Add(new(Position: 0, Symbol: breakLabel));
+                scopeBuilder.Add(new(Position: 0, Symbol: continueLabel));
+            }
 
             foreach (var (subtree, position) in EnumerateSubtreeInScope(tree))
             {
@@ -385,6 +432,8 @@ internal static class SymbolResolution
         _ when tree.Parent is null => ScopeKind.Global,
         ParseNode.Expr.Block => ScopeKind.Local,
         ParseNode.Decl.Func => ScopeKind.Function,
+        // We wrap up loop bodies in a scope, so the labels get defined in a proper, sanitized scope
+        _ when IsWhileBody(tree, out _) => ScopeKind.Local,
         _ => null,
     };
 

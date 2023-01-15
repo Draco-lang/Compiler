@@ -12,7 +12,7 @@
     <None Include="Sdk\**" />
   </ItemGroup>
     
-  <Target Name="PackSdkWithReplacedVersion" BeforeTargets="CoreCompile">
+  <Target Name="PackSdkWithReplacedVersion" BeforeTargets="Build">
     <ItemGroup>
       <_File Include="Sdk\**\*.*" />
     </ItemGroup>

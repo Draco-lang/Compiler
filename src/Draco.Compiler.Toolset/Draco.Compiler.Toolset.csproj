@@ -1,4 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
     <TargetFramework>$(DracoToolsTargetFramework)</TargetFramework>
@@ -7,6 +8,7 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>    
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <NoWarn>$(NoWarn);NU5100</NoWarn>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,18 +21,7 @@
     </ProjectReference>
   </ItemGroup>
 
-  <!-- Don't actually create binaries for this project. -->
-  <Target Name="CoreCompile" />
-  <Target Name="CreateManifestResourceNames" />
-
-  <!-- And don't try to copy them to the build output either. -->
-  <PropertyGroup>
-    <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
-    <GenerateDependencyFile>false</GenerateDependencyFile>
-    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
-  </PropertyGroup>
-
-  <Target Name="GetFilesToPackage" BeforeTargets="CoreCompile">    
+  <Target Name="GetFilesToPackage" BeforeTargets="Build">    
     <ItemGroup>
       <_File Include="$(OutDir)\**\*.*" TargetDir="tools" Exclude="$(OutDir)\tasks\*.*" />
       <_File Include="$(OutDir)\tasks\*.*" TargetDir="tasks" />
@@ -42,4 +33,16 @@
     </ItemGroup>
   </Target>
 
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+  <!-- Don't actually create binaries for this project. -->
+  <Target Name="CoreCompile" />
+  <Target Name="CreateManifestResourceNames" />
+
+  <!-- And don't try to copy them to the build output either. -->
+  <PropertyGroup>
+    <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
 </Project>

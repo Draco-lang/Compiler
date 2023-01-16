@@ -1,0 +1,24 @@
+<Project>
+    
+  <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
+
+    <PropertyGroup Condition="'$(DOTNET_HOST_PATH)' == ''">
+        <DotNetHostDirectory>$(NetCoreRoot)</DotNetHostDirectory>
+        <DotNetHostFileName>dotnet</DotNetHostFileName>
+        <DotNetHostFileName Condition="'$(OS)' == 'Windows_NT'">dotnet.exe</DotNetHostFileName>
+    </PropertyGroup>
+
+    <DracoCompiler ToolPath="$(DotNetHostDirectory)"
+                   ToolExe="$(DotNetHostFileName)"
+                   DracoCompilerPath="$(MSBuildThisFileDirectory)..\tools\Draco.Compiler.Cli.dll"
+                   OutputType="$(OutputType)"
+                   ProjectDirectory="$(MSBuildProjectDirectory)"
+                   ProjectName="$(MSBuildProjectName)"
+                   OutputFile="$(IntermediateOutputPath)$(TargetName)$(TargetExt)"
+                   Compile="@(Compile)"/>
+  </Target>
+    
+  <!--TODO: Should do something, don't know what yet-->
+  <Target Name="CreateManifestResourceNames" />
+
+</Project>

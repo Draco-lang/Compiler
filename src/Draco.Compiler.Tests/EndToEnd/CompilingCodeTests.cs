@@ -58,14 +58,14 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Negate()
     {
         var assembly = Compile("""
-            func negate(n: int32) : int32 = if (n < 0) n else n * -1;
+            func negate(n: int32) : int32 = if (n < 0) n else -n;
             """);
 
         var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };
         foreach (var n in inputs)
         {
             var neg = Invoke<int>(assembly, "negate", n);
-            Assert.Equal(n < 0 ? n : n * -1, neg);
+            Assert.Equal(n < 0 ? n : -n, neg);
         }
     }
 

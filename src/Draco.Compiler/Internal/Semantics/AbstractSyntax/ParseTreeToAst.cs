@@ -222,9 +222,9 @@ internal static class ParseTreeToAst
         Value: Ast.Expr.Unit.Default);
 
     private static Ast.Expr.Block ToAstFuncBody(ParseNode.FuncBody.Unexpected body) => new(
-            ParseNode: body,
-            Statements: ImmutableArray<Ast.Stmt>.Empty,
-            Value: Ast.Expr.Unit.Default);
+        ParseNode: body,
+        Statements: ImmutableArray<Ast.Stmt>.Empty,
+        Value: Ast.Expr.Unit.Default);
 
     private static Ast.ComparisonElement ToAstComparisonElement(QueryDatabase db, ParseNode.ComparisonElement ce) => db.GetOrUpdate(
         ce,

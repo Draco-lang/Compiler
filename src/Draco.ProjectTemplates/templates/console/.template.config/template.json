@@ -44,7 +44,7 @@
             "path": "./main.draco"
         },
         {
-            "path": "./DracoConsole.dracoproj"
+            "path": "./ConsoleApplication.dracoproj"
         }
     ]
 }

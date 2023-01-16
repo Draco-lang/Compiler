@@ -13,8 +13,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="templates\**\*" Exclude="templates\**\bin\**;templates\**\obj\**" />
     <Compile Remove="**\*" />
   </ItemGroup>
+
+  <Target Name="PackTemplatesWithReplacedVersion" BeforeTargets="Build">
+    <ItemGroup>
+      <_File Include="templates\**\*.*" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(BaseIntermediateOutputPath)templates\%(_File.Filename)%(_File.Extension)"
+                      Lines="$([System.IO.File]::ReadAllText('%(_File.FullPath)').Replace('#{DRACO_VERSION}', '$(Version)'))"
+                      Overwrite="true"
+                      Encoding="UTF-8" />
+
+    <ItemGroup>
+      <None Include="$(BaseIntermediateOutputPath)templates\**\*.*" Pack="true" PackagePath="templates\%(RecursiveDir)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

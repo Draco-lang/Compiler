@@ -58,7 +58,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Negate()
     {
         var assembly = Compile("""
-            func negate(n: int32) : int32 = if (n < 0) n else -n;
+            func negate(n: int32): int32 = if (n < 0) n else -n;
             """);
 
         var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };
@@ -73,7 +73,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Power()
     {
         var assembly = Compile("""
-            func power(n: int32, exponent: int32) : int32 = {
+            func power(n: int32, exponent: int32): int32 = {
                 var i = 1;
                 var result = n;
                 while (i < exponent){

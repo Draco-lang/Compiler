@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <PackageType>Template</PackageType>
-    <PackageId>Draco.ProjectTemplates</PackageId>
-    <Title>Draco Project Templates</Title>
     <Description>Default Draco project templates.</Description>
     <PackageTags>dotnet-new;templates;Draco</PackageTags>
     <TargetFramework>netstandard2.0</TargetFramework>

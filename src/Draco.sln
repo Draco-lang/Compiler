@@ -31,7 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Tasks", "Dra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Toolset", "Draco.Compiler.Toolset\Draco.Compiler.Toolset.csproj", "{82765FD8-0985-475F-BDE6-3A27254FF457}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.ProjectTemplates", "Draco.ProjectTemplates\Draco.ProjectTemplates.csproj", "{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}"
+Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "Draco.ProjectTemplates", "Draco.ProjectTemplates\Draco.ProjectTemplates.msbuildproj", "{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

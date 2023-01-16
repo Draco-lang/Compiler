@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
 
   <PropertyGroup>
     <PackageType>Template</PackageType>
@@ -6,28 +6,25 @@
     <PackageTags>dotnet-new;templates;Draco</PackageTags>
     <TargetFramework>netstandard2.0</TargetFramework>
 
-    <IncludeContentInPack>true</IncludeContentInPack>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <ContentTargetFolders>content</ContentTargetFolders>
     <NoWarn>$(NoWarn);NU5128</NoWarn>
-  </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="**\*" />
-  </ItemGroup>
+    <!-- Workaround for project system bug -->
+    <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
+  </PropertyGroup>
 
   <Target Name="PackTemplatesWithReplacedVersion" BeforeTargets="Build">
     <ItemGroup>
       <_File Include="templates\**\*.*" />
     </ItemGroup>
 
-    <WriteLinesToFile File="$(BaseIntermediateOutputPath)templates\%(_File.Filename)%(_File.Extension)"
+    <WriteLinesToFile File="$(BaseIntermediateOutputPath)templates\%(_File.RecursiveDir)%(_File.Filename)%(_File.Extension)"
                       Lines="$([System.IO.File]::ReadAllText('%(_File.FullPath)').Replace('#{DRACO_VERSION}', '$(Version)'))"
                       Overwrite="true"
                       Encoding="UTF-8" />
 
     <ItemGroup>
-      <None Include="$(BaseIntermediateOutputPath)templates\**\*.*" Pack="true" PackagePath="templates\%(RecursiveDir)" />
+      <None Include="$(BaseIntermediateOutputPath)templates\**\*.*" Pack="true" PackagePath="templates" />
     </ItemGroup>
   </Target>
 

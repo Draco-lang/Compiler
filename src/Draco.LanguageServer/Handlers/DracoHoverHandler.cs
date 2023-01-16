@@ -9,7 +9,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Draco.LanguageServer.Handlers;
 
-internal class DracoHoverHandler : HoverHandlerBase
+internal sealed class DracoHoverHandler : HoverHandlerBase
 {
     private readonly DracoDocumentRepository documentRepository;
 

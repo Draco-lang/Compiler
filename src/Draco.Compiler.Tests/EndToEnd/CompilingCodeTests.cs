@@ -203,4 +203,25 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "foo");
         Assert.Equal(12, x);
     }
+
+    [Fact]
+    public void BreakAndContinue()
+    {
+        var assembly = Compile("""
+            func foo(): int32 {
+                var s = 0;
+                var i = 0;
+                while (true) {
+                    if (s > 30) goto break;
+                    i += 1;
+                    if (i mod 2 == 1) goto continue;
+                    s += i;
+                }
+                return s;
+            }
+            """);
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(42, x);
+    }
 }

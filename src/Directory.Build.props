@@ -1,4 +1,26 @@
 <Project>
+  <PropertyGroup>
+    <Version>0.0.1-alpha</Version>
+    <DracoToolsTargetFramework>net7.0</DracoToolsTargetFramework>
+  </PropertyGroup>
+
+  <!-- Package metadata -->
+  <PropertyGroup>
+    <PackageIcon>PackageIcon.png</PackageIcon>
+    <Authors>Draco-lang</Authors>
+    <Description>Compiler tools for the Draco programming language.</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageTags>Draco, compiler, language</PackageTags>
+    <Copyright>Copyright (c) 2023 Draco team</Copyright>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Draco-lang/Compiler</RepositoryUrl>
+  </PropertyGroup>
+
+  <!-- Pack the icon -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\resources\PackageIcon.png" Pack="true" PackagePath="\" Visible="false"/>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1" PrivateAssets="All"/>
   </ItemGroup>

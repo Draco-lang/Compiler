@@ -93,7 +93,7 @@ internal sealed class AstToDataFlowGraph
         Ast.LValue.Reference n => this.Append(n),
         Ast.StringPart.Interpolation i => this.Translate(i.Expression),
         // For a complete flow, even inert nodes are added
-        Ast.Expr.Unexpected or Ast.Expr.Literal => this.Append(node),
+        Ast.Stmt.Unexpected or Ast.Expr.Unexpected or Ast.Expr.Literal => this.Append(node),
         Ast.LValue.Unexpected or Ast.LValue.Illegal => this.Append(node),
         // To avoid reference-equality problems
         Ast.Expr.Unit => this.Append(NoOp()),

@@ -118,6 +118,15 @@ public sealed class Issue139Tests
         }
         func bar(s: string) {}
         """")]
+    [InlineData(""""
+        func main() {
+            ;
+        }
+        """")]
+    [InlineData(""""
+        func main()
+        }
+        """")]
     [Theory]
     public void DoesNotCrash(string source)
     {

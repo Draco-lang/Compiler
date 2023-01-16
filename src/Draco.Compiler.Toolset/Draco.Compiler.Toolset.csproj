@@ -12,13 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Draco.Compiler.Tasks\Draco.Compiler.Tasks.csproj">
-      <DestinationSubDirectory>tasks\</DestinationSubDirectory>
-    </ProjectReference>
+    <ProjectReference Include="..\Draco.Compiler.Tasks\Draco.Compiler.Tasks.csproj"
+                      DestinationSubDirectory="tasks\" />
 
-    <ProjectReference Include="..\Draco.Compiler.Cli\Draco.Compiler.Cli.csproj">
-      <Properties>UseAppHost=false</Properties>
-    </ProjectReference>
+    <ProjectReference Include="..\Draco.Compiler.Cli\Draco.Compiler.Cli.csproj" />
   </ItemGroup>
 
   <Target Name="GetFilesToPackage" BeforeTargets="Build">    

@@ -58,7 +58,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Negate()
     {
         var assembly = Compile("""
-            func negate(n: int32) : int32 = if (n < 0) n else n * -1;
+            func negate(n: int32): int32 = if (n < 0) n else n * -1;
             """);
 
         var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };

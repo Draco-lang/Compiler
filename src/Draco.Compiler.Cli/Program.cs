@@ -16,46 +16,40 @@ internal class Program
     private static RootCommand ConfigureCommands()
     {
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
-        var emitCSharpOutput = new Option<FileInfo>("--output-cs", description: "Specifies output file for generated c#, if not specified, generated code is not saved to the disk");
+        var emitIROutput = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
-        var runCommand = new Command("run", "Runs specified draco file")
+
+        var runCommand = new Command("run", "Runs specified Draco file")
         {
             fileArgument,
             outputOption,
         };
         runCommand.SetHandler(Run, fileArgument);
 
-        var generateParseTreeCommand = new Command("parse", "Generates parse tree from specified draco file")
+        var generateIRCommand = new Command("codegen", "Generates DracoIR from specified draco file and displays it to the console")
         {
             fileArgument,
+            emitIROutput,
         };
-        generateParseTreeCommand.SetHandler((file) => GenerateParseTree(file), fileArgument);
+        generateIRCommand.SetHandler(GenerateDracoIR, fileArgument, emitIROutput);
 
-        var generateCSCommand = new Command("codegen", "Generates c# from specified draco file and displays it to the console")
-        {
-            fileArgument,
-            emitCSharpOutput,
-        };
-        generateCSCommand.SetHandler(GenerateCSharp, fileArgument, emitCSharpOutput);
-
-        var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
+        var generateExeCommand = new Command("compile", "Generates executable from specified Draco file")
         {
             fileArgument,
             outputOption,
         };
         generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption);
 
-        var rootCommand = new RootCommand("CLI for the draco compiler");
+        var rootCommand = new RootCommand("CLI for the Draco compiler");
         rootCommand.AddCommand(runCommand);
-        rootCommand.AddCommand(generateParseTreeCommand);
-        rootCommand.AddCommand(generateCSCommand);
+        rootCommand.AddCommand(generateIRCommand);
         rootCommand.AddCommand(generateExeCommand);
         return rootCommand;
     }
 
     private static void Run(FileInfo input)
     {
-        var sourceText = File.ReadAllText(input.FullName);
+        var sourceText = SourceText.FromFile(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
         var execResult = ScriptingEngine.Execute(compilation);
@@ -67,34 +61,29 @@ internal class Program
         Console.WriteLine($"Result: {execResult.Result}");
     }
 
-    private static void GenerateParseTree(FileInfo input)
+    private static void GenerateDracoIR(FileInfo input, FileInfo? emitCS)
     {
-        var sourceText = File.ReadAllText(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        Console.WriteLine(parseTree.ToDebugString());
-    }
-
-    private static void GenerateCSharp(FileInfo input, FileInfo? emitCS)
-    {
-        var sourceText = File.ReadAllText(input.FullName);
+        var sourceText = SourceText.FromFile(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
-        using var csStream = new MemoryStream();
-        var emitResult = compilation.EmitCSharp(csStream);
+        using var irStream = new MemoryStream();
+        var emitResult = compilation.Emit(
+            peStream: new MemoryStream(),
+            dracoIrStream: irStream);
         if (!emitResult.Success)
         {
             foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
             return;
         }
-        csStream.Position = 0;
-        var generatedCs = new StreamReader(csStream).ReadToEnd();
-        Console.WriteLine(generatedCs);
-        if (emitCS is not null) File.WriteAllText(emitCS.FullName, generatedCs);
+        irStream.Position = 0;
+        var generatedIr = new StreamReader(irStream).ReadToEnd();
+        Console.WriteLine(generatedIr);
+        if (emitCS is not null) File.WriteAllText(emitCS.FullName, generatedIr);
     }
 
     private static void GenerateExe(FileInfo input, FileInfo output)
     {
-        var sourceText = File.ReadAllText(input.FullName);
+        var sourceText = SourceText.FromFile(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree, output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);

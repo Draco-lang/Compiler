@@ -1,3 +1,5 @@
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+
 namespace Draco.LanguageServer;
 
 /// <summary>
@@ -14,4 +16,17 @@ internal static class Constants
     /// The language source file extension.
     /// </summary>
     public const string DracoSourceExtension = ".draco";
+
+    /// <summary>
+    /// The document filter for Draco source files.
+    /// </summary>
+    public static DocumentFilter DracoSourceDocumentFilter { get; } = new DocumentFilter
+    {
+        Pattern = $"**/*{DracoSourceExtension}",
+    };
+
+    /// <summary>
+    /// The document selector for Draco source files.
+    /// </summary>
+    public static DocumentSelector DracoSourceDocumentSelector { get; } = new(DracoSourceDocumentFilter);
 }

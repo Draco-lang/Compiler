@@ -19,4 +19,9 @@ public enum TriviaType
     /// Single line comments.
     /// </summary>
     LineComment,
+
+    /// <summary>
+    /// Documentation comment.
+    /// </summary>
+    DocumentationComment,
 }

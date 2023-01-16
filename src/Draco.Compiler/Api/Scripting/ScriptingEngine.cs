@@ -4,7 +4,6 @@ using System.IO;
 using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Codegen;
-using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 
 namespace Draco.Compiler.Api.Scripting;
 
@@ -29,30 +28,22 @@ public static class ScriptingEngine
     /// Executes the code of the given compilation.
     /// </summary>
     /// <param name="compilation">The <see cref="Compilation"/> to execute.</param>
-    /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
     /// <returns>The result of the execution.</returns>
     public static ExecutionResult<object?> Execute(
-        Compilation compilation,
-        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null) =>
-        Execute<object?>(compilation, csCompilerOptionBuilder);
+        Compilation compilation) =>
+        Execute<object?>(compilation);
 
     /// <summary>
     /// Executes the code of the given compilation.
     /// </summary>
     /// <typeparam name="TResult">The expected result type.</typeparam>
     /// <param name="compilation">The <see cref="Compilation"/> to execute.</param>
-    /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
     /// <returns>The result of the execution.</returns>
     public static ExecutionResult<TResult> Execute<TResult>(
-        Compilation compilation,
-        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null)
+        Compilation compilation)
     {
         using var peStream = new MemoryStream();
-        var options = new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary);
-        if (csCompilerOptionBuilder is not null) options = csCompilerOptionBuilder(options);
-        var emitResult = compilation.Emit(
-            peStream,
-            csCompilerOptionBuilder: opt => options);
+        var emitResult = compilation.Emit(peStream);
 
         // Check emission results
         if (!emitResult.Success)
@@ -69,8 +60,8 @@ public static class ScriptingEngine
         var assembly = Assembly.Load(peBytes);
 
         var mainMethod = assembly
-            .GetType("Program")?
-            .GetMethod("Main");
+            .GetType("FreeFunctions")?
+            .GetMethod("main");
 
         if (mainMethod is null)
         {
@@ -83,7 +74,7 @@ public static class ScriptingEngine
                 Diagnostics: ImmutableArray.Create(diag));
         }
 
-        var result = (TResult?)mainMethod.Invoke(null, new[] { Array.Empty<string>() });
+        var result = (TResult?)mainMethod.Invoke(null, Array.Empty<string>());
         return new(
             Success: true,
             Result: result,

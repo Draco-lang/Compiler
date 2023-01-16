@@ -1,6 +1,6 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Internal.Syntax;
 

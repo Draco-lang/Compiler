@@ -1,15 +1,13 @@
-using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using Basic.Reference.Assemblies;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
+using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
-using CSharpCompilationOptions = Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions;
 
 namespace Draco.Compiler.Api;
 
@@ -21,6 +19,9 @@ namespace Draco.Compiler.Api;
 public readonly record struct EmitResult(
     bool Success,
     ImmutableArray<Diagnostic> Diagnostics);
+
+// TODO: We are not exposing data-flow in any form of API yet
+// That's going to be quite a bit of work, but eventually needs to be done
 
 /// <summary>
 /// Represents a single compilation session.
@@ -49,6 +50,11 @@ public sealed class Compilation
     /// </summary>
     public string? AssemblyName { get; }
 
+    /// <summary>
+    /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
+    /// </summary>
+    public ImmutableArray<Diagnostic> Diagnostics => this.GetDiagnostics();
+
     private Compilation(ParseTree parseTree, string? assemblyName)
     {
         this.ParseTree = parseTree;
@@ -59,7 +65,7 @@ public sealed class Compilation
     /// Retrieves all <see cref="Diagnostic"/>s that were produced before emission.
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced before emission.</returns>
-    public ImmutableArray<Diagnostic> GetDiagnostics() => this.GetSyntaxDiagnostics()
+    internal ImmutableArray<Diagnostic> GetDiagnostics() => this.GetSyntaxDiagnostics()
         .Concat(this.GetSemanticDiagnostics())
         .ToImmutableArray();
 
@@ -68,14 +74,14 @@ public sealed class Compilation
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced during syntax analysis.</returns>
     public ImmutableArray<Diagnostic> GetSyntaxDiagnostics() =>
-        this.ParseTree.GetAllDiagnostics().ToImmutableArray();
+        this.ParseTree.Diagnostics.ToImmutableArray();
 
     /// <summary>
     /// Retrieves all <see cref="Diagnostic"/>s that were produced during semantic analysis.
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     public ImmutableArray<Diagnostic> GetSemanticDiagnostics() =>
-        this.GetSemanticModel().GetAllDiagnostics().ToImmutableArray();
+        this.GetSemanticModel().Diagnostics.ToImmutableArray();
 
     /// <summary>
     /// Retrieves the <see cref="SemanticModel"/> for this compilation.
@@ -85,11 +91,12 @@ public sealed class Compilation
         new(this.db, this.ParseTree);
 
     /// <summary>
-    /// Emits compiled C# code to a <see cref="Stream"/>.
+    /// Emits compiled binary to a <see cref="Stream"/>.
     /// </summary>
-    /// <param name="csStream">The stream to write the C# code to.</param>
+    /// <param name="peStream">The stream to write the PE to.</param>
+    /// <param name="dracoIrStream">The stream to write a textual representation of the Draco IR to.</param>
     /// <returns>The result of the emission.</returns>
-    public EmitResult EmitCSharp(Stream csStream)
+    public EmitResult Emit(Stream peStream, Stream? dracoIrStream = null)
     {
         var existingDiags = this.GetDiagnostics();
         if (existingDiags.Length > 0)
@@ -99,61 +106,25 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        var ast = AstBuilder.ToAst(this.db, this.ParseTree);
+        // Get AST
+        var ast = ParseTreeToAst.ToAst(this.db, this.ParseTree.Root);
+        // Lower it
         ast = AstLowering.Lower(this.db, ast);
-        var codegen = new CSharpCodegen(csStream);
-        codegen.Generate(ast);
-
-        return new(
-            Success: true,
-            Diagnostics: ImmutableArray<Diagnostic>.Empty);
-    }
-
-    /// <summary>
-    /// Emits compiled binary to a <see cref="Stream"/>.
-    /// </summary>
-    /// <param name="peStream">The stream to write the binary to.</param>
-    /// <param name="csStream">The stream to write the compiled C# code to.</param>
-    /// <param name="csCompilerOptionBuilder">Option builder for the underlying C# compiler.</param>
-    /// <returns>The result of the emission.</returns>
-    public EmitResult Emit(
-        Stream peStream,
-        Stream? csStream = null,
-        Func<CSharpCompilationOptions, CSharpCompilationOptions>? csCompilerOptionBuilder = null)
-    {
-        csStream ??= new MemoryStream();
-        var csEmitResult = this.EmitCSharp(csStream);
-        if (!csEmitResult.Success) return csEmitResult;
-
-        csStream.Position = 0;
-        using var csStreamReader = new StreamReader(csStream);
-        var csText = csStreamReader.ReadToEnd();
-
-        var options = new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
-        if (csCompilerOptionBuilder is not null) options = csCompilerOptionBuilder(options);
-
-        var cSharpCompilation = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(
-            assemblyName: this.AssemblyName ?? "output",
-            syntaxTrees: new[] { Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(csText) },
-            references: ReferenceAssemblies.Net60,
-            options: options);
-        var emitResult = cSharpCompilation.Emit(peStream);
-
-        if (!emitResult.Success)
+        // Generate Draco IR
+        var asm = new Assembly(this.AssemblyName ?? "output");
+        DracoIrCodegen.Generate(asm, ast);
+        // Optimize the IR
+        // TODO: Options for optimization
+        OptimizationPipeline.Instance.Apply(asm);
+        // Write the IR, if needed
+        if (dracoIrStream is not null)
         {
-            var diags = ImmutableArray.CreateBuilder<Diagnostic>();
-            foreach (var diag in emitResult.Diagnostics)
-            {
-                var translatedDiag = Diagnostic.Create(
-                    template: CodegenErrors.Roslyn,
-                    location: Location.None,
-                    formatArgs: diag.GetMessage());
-                diags.Add(translatedDiag);
-            }
-            return new(
-                Success: false,
-                Diagnostics: diags.ToImmutable());
+            var irWriter = new StreamWriter(dracoIrStream);
+            irWriter.Write(asm.ToString());
+            irWriter.Flush();
         }
+        // Generate CIL
+        CilCodegen.Generate(asm, peStream);
 
         return new(
             Success: true,

@@ -5,13 +5,13 @@ using Draco.RedGreenTree.Attributes;
 
 namespace Draco.Compiler.Internal.Syntax;
 
-internal abstract partial record class ParseTree
+internal abstract partial record class ParseNode
 {
     /// <summary>
     /// Represents single trivia.
     /// </summary>
     [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
-    internal sealed partial record class Trivia : ParseTree
+    internal sealed partial record class Trivia : ParseNode
     {
         /// <summary>
         /// The <see cref="TriviaType"/> of this <see cref="Trivia"/>.
@@ -28,7 +28,7 @@ internal abstract partial record class ParseTree
         /// </summary>
         public override int Width => this.Text.Length;
 
-        public override IEnumerable<ParseTree> Children => Enumerable.Empty<ParseTree>();
+        public override IEnumerable<ParseNode> Children => Enumerable.Empty<ParseNode>();
 
         private Trivia(TriviaType type, string text)
         {

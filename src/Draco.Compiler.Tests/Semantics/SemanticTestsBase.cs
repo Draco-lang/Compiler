@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 
@@ -17,4 +13,10 @@ public abstract class SemanticTestsBase
         var symbolBase = (SymbolBase)symbol!;
         return (TSymbol)symbolBase.Symbol;
     }
+
+    private protected static void AssertDiagnostic(IEnumerable<Diagnostic> diagnostics, DiagnosticTemplate diagTemplate) =>
+        Assert.Contains(diagnostics, d => d.Code == diagTemplate.Code);
+
+    private protected static void AssertNotDiagnostic(IEnumerable<Diagnostic> diagnostics, DiagnosticTemplate diagTemplate) =>
+        Assert.DoesNotContain(diagnostics, d => d.Code == diagTemplate.Code);
 }

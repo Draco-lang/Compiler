@@ -405,6 +405,12 @@ internal abstract partial record class Ast
     public abstract record class Stmt : Ast
     {
         /// <summary>
+        /// An unexpected statement.
+        /// </summary>
+        public sealed record class Unexpected(
+            [property: Ignore(IgnoreFlags.TransformerTransform)] ParseNode? ParseNode) : Stmt;
+
+        /// <summary>
         /// Represents an empty statement.
         /// </summary>
         public sealed record class NoOp(

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
+    
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+      
+    <!-- Workaround for project system bug -->
+    <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
+  </PropertyGroup>
+    
+  <ItemGroup>
+    <None Include="Sdk\**" />
+  </ItemGroup>
+    
+  <Target Name="PackSdkWithReplacedVersion" BeforeTargets="Build">
+    <ItemGroup>
+      <_File Include="Sdk\**\*.*" />
+    </ItemGroup>
+      
+    <WriteLinesToFile File="$(BaseIntermediateOutputPath)SdkOutput\%(_File.Filename)%(_File.Extension)"
+                      Lines="$([System.IO.File]::ReadAllText('%(_File.FullPath)').Replace('#{DRACO_VERSION}', '$(Version)'))"
+                      Overwrite="true"
+                      Encoding="UTF-8" />
+      
+    <ItemGroup>
+      <None Include="$(BaseIntermediateOutputPath)SdkOutput\**\*.*" Pack="true" PackagePath="Sdk" />
+    </ItemGroup>    
+  </Target>
+    
+</Project>

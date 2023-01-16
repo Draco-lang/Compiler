@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
+
+  <PropertyGroup>
+    <PackageType>Template</PackageType>
+    <Description>Default Draco project templates.</Description>
+    <PackageTags>dotnet-new;templates;Draco</PackageTags>
+    <TargetFramework>netstandard2.0</TargetFramework>
+
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+
+    <!-- Workaround for project system bug -->
+    <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
+  </PropertyGroup>
+
+  <Target Name="PackTemplatesWithReplacedVersion" BeforeTargets="Build">
+    <ItemGroup>
+      <_File Include="templates\**\*.*" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(BaseIntermediateOutputPath)templates\%(_File.RecursiveDir)%(_File.Filename)%(_File.Extension)"
+                      Lines="$([System.IO.File]::ReadAllText('%(_File.FullPath)').Replace('#{DRACO_VERSION}', '$(Version)'))"
+                      Overwrite="true"
+                      Encoding="UTF-8" />
+
+    <ItemGroup>
+      <None Include="$(BaseIntermediateOutputPath)templates\**\*.*" Pack="true" PackagePath="templates" />
+    </ItemGroup>
+  </Target>
+
+</Project>

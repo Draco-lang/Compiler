@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Version>0.0.1-alpha</Version>
+    <Version>0.1.0-pre</Version>
     <DracoToolsTargetFramework>net7.0</DracoToolsTargetFramework>
   </PropertyGroup>
 
@@ -10,7 +10,7 @@
     <Authors>Draco-lang</Authors>
     <Description>Compiler tools for the Draco programming language.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageTags>Draco, compiler, language</PackageTags>
+    <PackageTags>Draco;compiler;language</PackageTags>
     <Copyright>Copyright (c) 2023 Draco team</Copyright>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Draco-lang/Compiler</RepositoryUrl>

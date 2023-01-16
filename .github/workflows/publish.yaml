@@ -1,0 +1,48 @@
+# Publish everything to NuGet
+
+name: 'Publish packages'
+
+on:
+  release:
+    types: [published]
+
+env:
+  DOTNET_VERSION: '7.0.x'   # The .NET SDK version to use
+  CONFIGURATION: 'Release'  # The configuration to use
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+
+jobs:
+  deployment:
+    runs-on: windows-latest
+    steps:
+    - name: Clone the repo
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3.5.1
+      with:
+        node-version: 18
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Install dependencies
+      run: dotnet restore ./src
+
+    - name: Build
+      run: dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
+
+    - name: Package
+      run: dotnet pack ./src /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ github.event.release.tag_name }}"
+
+    - name: Upload to GitHub
+      uses: actions/upload-artifact@v2
+      with:
+        name: Draco
+        path: src/**/*${{ github.event.release.tag_name }}.nupkg
+
+    - name: Upload to NuGet.org
+      run: dotnet nuget push src/**/*${{ github.event.release.tag_name }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols true

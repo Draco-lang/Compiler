@@ -45,4 +45,4 @@ jobs:
         path: src/**/*${{ github.event.release.tag_name }}.nupkg
 
     - name: Upload to NuGet.org
-      run: dotnet nuget push src/**/*${{ github.event.release.tag_name }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols true
+      run: dotnet nuget push src/**/*${{ github.event.release.tag_name }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace Draco.RedGreenTree.Attributes;
 
@@ -11,6 +12,7 @@ public enum IgnoreFlags
     SyntaxFactoryConstruct = 1 << 3,
 }
 
+[Conditional("DRACO_SOURCEGENERATOR_ATTRIBUTE")]
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Class)]
 public sealed class IgnoreAttribute : Attribute
 {

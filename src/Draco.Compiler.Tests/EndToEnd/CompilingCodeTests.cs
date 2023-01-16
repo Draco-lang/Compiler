@@ -55,6 +55,44 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void Negate()
+    {
+        var assembly = Compile("""
+            func negate(n: int32): int32 = if (n < 0) n else -n;
+            """);
+
+        var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };
+        foreach (var n in inputs)
+        {
+            var neg = Invoke<int>(assembly, "negate", n);
+            Assert.Equal(n < 0 ? n : -n, neg);
+        }
+    }
+
+    [Fact]
+    public void Power()
+    {
+        var assembly = Compile("""
+            func power(n: int32, exponent: int32): int32 = {
+                var i = 1;
+                var result = n;
+                while (i < exponent){
+                    result *= n;
+                    i += 1;
+                }
+                result
+            };
+            """);
+
+        var inputs = new[] { (1, 3), (5, 2), (-2, 4), (3, 3), (8, 2) };
+        foreach (var (n, exp) in inputs)
+        {
+            var pow = Invoke<int>(assembly, "power", n, exp);
+            Assert.Equal(Math.Pow(n, exp), pow);
+        }
+    }
+
+    [Fact]
     public void LazyAnd()
     {
         var assembly = Compile("""

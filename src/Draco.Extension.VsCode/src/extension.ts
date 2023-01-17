@@ -1,9 +1,12 @@
 import * as vscode from 'vscode';
 import * as lsp from 'vscode-languageclient/node';
+import * as settings from './settings';
 
 let languageClient: lsp.LanguageClient;
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+    const _ = await settings.getLanguageServerOptions();
+
     // Server options
 	let serverOptions: lsp.ServerOptions = {
 		command: 'draco-langserver',

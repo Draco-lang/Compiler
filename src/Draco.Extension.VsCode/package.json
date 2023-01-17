@@ -38,7 +38,32 @@
         "scopeName": "source.draco",
         "path": "./syntaxes/draco.tmLanguage.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Draco configuration",
+      "properties": {
+        "draco.dotnetCommand": {
+          "type": "string",
+          "default": "dotnet",
+          "description": "The command to invoke the dotnet tool."
+        },
+        "draco.dracoSdkVersion": {
+          "type": "string",
+          "default": "*",
+          "description": "The package version pattern for the Draco SDK to use."
+        },
+        "draco.promptOpenSettings": {
+          "type": "boolean",
+          "default": true,
+          "description": "In case of a setting error, should the settings file be prompted for opening."
+        },
+        "draco.promptInstallDracoLangserver": {
+          "type": "boolean",
+          "default": true,
+          "description": "In case the Draco Language Server was not found, should it be prompted for installation."
+        }
+      }
+    }
   },
   "scripts": {
     "copy-grammar": "copyfiles --up --flat ../Draco.SyntaxHighlighting/draco.tmLanguage.json syntaxes",

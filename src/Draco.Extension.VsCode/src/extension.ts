@@ -5,13 +5,9 @@ import * as settings from "./settings";
 let languageClient: lsp.LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-    const _ = await settings.getLanguageServerOptions();
-
     // Server options
-	let serverOptions: lsp.ServerOptions = {
-		command: 'draco-langserver',
-		transport: lsp.TransportKind.stdio,
-	};
+	let serverOptions = await settings.getLanguageServerOptions();
+    if (serverOptions === undefined) return;
 
 	// Client options
 	let clientOptions: lsp.LanguageClientOptions = {

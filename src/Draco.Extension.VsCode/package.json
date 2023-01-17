@@ -3,6 +3,12 @@
   "displayName": "Draco Language Support",
   "description": "Visual Studio Language support for the Draco programming language.",
   "version": "0.0.1",
+  "icon": "resources/extension-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Draco-lang/Compiler"
+  },
+  "publisher": "Draco language team",
   "engines": {
     "vscode": "^1.72.0"
   },
@@ -11,7 +17,8 @@
   ],
   "activationEvents": [
     "onLanguage:draco",
-    "workspaceContains:**/*.draco"
+    "workspaceContains:**/*.draco",
+    "workspaceContains:**/*.dracoproj"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -27,8 +34,8 @@
         ],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./resources/light-icon.svg",
-          "dark": "./resources/dark-icon.svg"
+          "light": "./resources/draco-source-icon-light.svg",
+          "dark": "./resources/draco-source-icon-dark.svg"
         }
       }
     ],
@@ -79,7 +86,7 @@
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "16.x",
-    "@types/vscode": "^1.73.0",
+    "@types/vscode": "^1.72.0",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "@typescript-eslint/parser": "^5.31.0",
     "@vscode/test-electron": "^2.1.5",

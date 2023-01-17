@@ -1,6 +1,6 @@
 import * as proc from "child_process";
 import { ServerOptions } from "https";
-import { ConfigurationTarget, window, workspace, WorkspaceConfiguration } from "vscode";
+import { ConfigurationTarget, MessageItem, window, workspace, WorkspaceConfiguration } from "vscode";
 
 /**
  * Reads options for the language server.
@@ -23,6 +23,38 @@ export async function getLanguageServerOptions(): Promise<ServerOptions | undefi
     return { };
 }
 
+async function askUserToOpenSettings(reason: string): Promise<void> {
+
+}
+
+/**
+ * Prompts the user for opening the settings. Does not actually open the settings.
+ * @param message The message to display in the prompt.
+ * @returns The chosen @see PromptResult.
+ */
+async function promptOpenSettings(message: string): Promise<PromptResult> {
+    const config = workspace.getConfiguration('draco');
+
+    // If we don't allow the settings to be opened, don't bother
+    if (!config.get<boolean>('promptOpenSettings')) {
+        return PromptResult.disable;
+    }
+
+    // Actually ask the user
+    const result = await prompt(
+        message,
+        { title: 'Yes', result: PromptResult.yes },
+        { title: 'No', result: PromptResult.no },
+        { title: "Don't Ask Again", result: PromptResult.disable });
+
+    // In case the user wants to disable it, save that option
+    if (result === PromptResult.disable) {
+        await config.update('promptOpenSettings', false, ConfigurationTarget.Workspace);
+    }
+
+    return result;
+}
+
 /**
  * Writes a useful set of default settings.
  * @param target The @see ConfigurationTarget to write the defaults to.
@@ -36,6 +68,55 @@ function writeDefaultSettings(target: ConfigurationTarget): Promise<void[]> {
     const config = workspace.getConfiguration('draco');
     return Promise.all(settingsToInclude.map(setting =>
         config.update(setting, config.get(setting), target)));
+}
+
+/**
+ * Represents user choices in a prompt.
+ */
+enum PromptResult {
+    /**
+     * Positive answer.
+     */
+    yes,
+
+    /**
+     * Negative answer.
+     */
+    no,
+
+    /**
+     * Close without choosing.
+     */
+    cancel,
+
+    /**
+     * Negative answer, don't ask again.
+     */
+    disable,
+}
+
+/**
+ * A single item in a prompt.
+ */
+interface PromptItem extends MessageItem {
+    /**
+     * The result that is returned, when the item is chosen.
+     */
+    result: PromptResult;
+}
+
+/**
+ * Prompts the user.
+ * @param message The message to print in the prompt.
+ * @param items The @see PromptItems to choose from.
+ * @returns The promise with the chosen @see PromptResult.
+ * If the user closes the prompt without choosing an item, @see PromptResult.cancel is returned.
+ */
+async function prompt(message: string, ...items: PromptItem[]): Promise<PromptResult> {
+    // Show the prompt
+    const result = await window.showErrorMessage(message, ...items);
+    // Map value
+    return result?.result ?? PromptResult.cancel;
 }
 
 /**

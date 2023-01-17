@@ -1,6 +1,6 @@
 import { start } from "repl";
 import * as vscode from "vscode";
-import { workspace } from "vscode";
+import { window, workspace } from "vscode";
 import * as lsp from "vscode-languageclient/node";
 import { prompt, PromptResult } from "./prompt";
 import * as settings from "./settings";
@@ -44,14 +44,15 @@ async function stopLanguageServer() {
 }
 
 async function startLanguageServer(): Promise<void> {
+    // If there's a client running already, stop it
+    await stopLanguageServer();
+
     // Server options
 	let serverOptions = await settings.getLanguageServerOptions();
     if (serverOptions === undefined) {
+        await window.showErrorMessage('Could not start Draco language server.');
         return;
     }
-
-    // If there's a client running already, stop it
-    await stopLanguageServer();
 
     // Client options
 	let clientOptions: lsp.LanguageClientOptions = {

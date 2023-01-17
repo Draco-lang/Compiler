@@ -4,6 +4,7 @@ import * as fs from "fs/promises";
 import * as lsp from "vscode-languageclient/node";
 import { ConfigurationTarget, MessageItem, TextEditor, Uri, window, workspace, WorkspaceConfiguration } from "vscode";
 import { FatalError } from "./errors";
+import { prompt, PromptResult } from "./prompt";
 
 /**
  * The language server package name.
@@ -212,58 +213,9 @@ function writeDefaultSettings(target: ConfigurationTarget): Promise<void[]> {
  * @param uri The @see Uri of the document to open.
  * @returns The promise of the opened editor.
  */
-function openDocument(uri: Uri): Thenable<TextEditor> {
-    return workspace.openTextDocument(uri)
-        .then(window.showTextDocument);
-}
-
-/**
- * Represents user choices in a prompt.
- */
-enum PromptResult {
-    /**
-     * Positive answer.
-     */
-    yes,
-
-    /**
-     * Negative answer.
-     */
-    no,
-
-    /**
-     * Close without choosing.
-     */
-    cancel,
-
-    /**
-     * Negative answer, don't ask again.
-     */
-    disable,
-}
-
-/**
- * A single item in a prompt.
- */
-interface PromptItem extends MessageItem {
-    /**
-     * The result that is returned, when the item is chosen.
-     */
-    result: PromptResult;
-}
-
-/**
- * Prompts the user.
- * @param message The message to print in the prompt.
- * @param items The @see PromptItems to choose from.
- * @returns The promise with the chosen @see PromptResult.
- * If the user closes the prompt without choosing an item, @see PromptResult.cancel is returned.
- */
-async function prompt(message: string, ...items: PromptItem[]): Promise<PromptResult> {
-    // Show the prompt
-    const result = await window.showErrorMessage(message, ...items);
-    // Map value
-    return result?.result ?? PromptResult.cancel;
+async function openDocument(uri: Uri): Promise<TextEditor> {
+    const textDocument = await workspace.openTextDocument(uri);
+    return window.showTextDocument(textDocument);
 }
 
 /**

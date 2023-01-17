@@ -10,13 +10,20 @@ let languageClient: lsp.LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // Subscribe to setting changes, and prompt the user if the language server should be restarted
     const listener = workspace.onDidChangeConfiguration(async event => {
-        if (event.affectsConfiguration('draco') && languageClient !== undefined) {
-            const promptResult = await prompt(
-                'Settings changed. Restart Draco language server?',
-                { title: 'Yes', result: PromptResult.yes },
-                { title: 'No', result: PromptResult.no });
-            if (promptResult == PromptResult.yes) {
-                startLanguageServer();
+        if (event.affectsConfiguration('draco')) {
+            if (languageClient !== undefined) {
+                // Langserver is already running, ask if it should be restarted
+                const promptResult = await prompt(
+                    'Settings changed. Restart Draco language server?',
+                    { title: 'Yes', result: PromptResult.yes },
+                    { title: 'No', result: PromptResult.no });
+                if (promptResult == PromptResult.yes) {
+                    await startLanguageServer();
+                }
+            } else {
+                // Just start the language server, it was not running
+                // NOTE: Is this a good idea?
+                await startLanguageServer();
             }
         }
     });

@@ -5,12 +5,9 @@ import * as lsp from 'vscode-languageclient/node';
 let languageClient: lsp.LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
-    // Path for the server
-	let serverPath = context.asAbsolutePath(path.join('out', 'Draco.LanguageServer.exe'));
-
     // Server options
 	let serverOptions: lsp.ServerOptions = {
-		command: serverPath,
+		command: 'draco-langserver',
 		transport: lsp.TransportKind.stdio,
 	};
 

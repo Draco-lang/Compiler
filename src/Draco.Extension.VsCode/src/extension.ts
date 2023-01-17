@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
-import * as lsp from 'vscode-languageclient/node';
-import * as settings from './settings';
+import * as vscode from "vscode";
+import * as lsp from "vscode-languageclient/node";
+import * as settings from "./settings";
 
 let languageClient: lsp.LanguageClient;
 

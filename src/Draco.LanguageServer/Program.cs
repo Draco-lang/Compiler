@@ -9,10 +9,11 @@ namespace Draco.LanguageServer;
 
 internal enum TransportKind
 {
-    Stdio = 0,
-    Ipc = 1,
-    Pipe = 2,
-    Socket = 3,
+    Unknown = 0,
+    Stdio = 1,
+    Ipc = 2,
+    Pipe = 3,
+    Socket = 4,
 }
 
 internal static class Program
@@ -49,7 +50,7 @@ internal static class Program
 
     private static TransportKind GetTransportKind(bool stdioFlag) => stdioFlag
         ? TransportKind.Stdio
-        : throw new NotImplementedException();
+        : TransportKind.Unknown;
 
     private static LanguageServerOptions ConfigureTransportKind(this LanguageServerOptions options, TransportKind transportKind)
     {
@@ -61,6 +62,8 @@ internal static class Program
             return options;
         }
 
-        throw new NotSupportedException($"The transport kind {transportKind} is not yet supported");
+        Console.Error.WriteLine($"The transport kind {transportKind} is not yet supported");
+        Environment.Exit(1);
+        return options;
     }
 }

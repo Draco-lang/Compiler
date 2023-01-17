@@ -5,7 +5,11 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>11</LangVersion>
-    <IsPackable>false</IsPackable>
+
+    <!-- Dotnet tool -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>draco-langserver</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,13 +20,5 @@
     <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.6" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <ItemGroup>
-      <FilesToCopy Include="$(TargetDir)**\*" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(SolutionDir)Draco.Extension.VsCode\out" SkipUnchangedFiles="true" />
-  </Target>
 
 </Project>

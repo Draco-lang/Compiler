@@ -11,6 +11,7 @@ env:
   CONFIGURATION: 'Release'  # The configuration to use
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+  RELEASE_TAG: ${{ github.event.release.tag_name }}
 
 jobs:
   deployment:
@@ -36,13 +37,13 @@ jobs:
       run: dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
 
     - name: Package
-      run: dotnet pack ./src /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ github.event.release.tag_name }}"
+      run: dotnet pack ./src /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ RELEASE_TAG }}"
 
     - name: Upload to GitHub
       uses: actions/upload-artifact@v2
       with:
         name: Draco
-        path: src/**/*${{ github.event.release.tag_name }}.nupkg
+        path: src/**/*${{ RELEASE_TAG }}.nupkg
 
     - name: Upload to NuGet.org
-      run: dotnet nuget push src/**/*${{ github.event.release.tag_name }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
+      run: dotnet nuget push src/**/*${{ RELEASE_TAG }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols

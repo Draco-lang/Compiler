@@ -18,7 +18,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Clone the repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v3.5.1
@@ -26,7 +26,7 @@ jobs:
         node-version: 18
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -40,10 +40,15 @@ jobs:
       run: dotnet pack ./src /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ RELEASE_TAG }}"
 
     - name: Upload to GitHub
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Draco
         path: src/**/*${{ RELEASE_TAG }}.nupkg
+
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: src/**/*${{ RELEASE_TAG }}.nupkg
 
     - name: Upload to NuGet.org
       run: dotnet nuget push src/**/*${{ RELEASE_TAG }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
@@ -52,7 +57,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Clone the repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v3.5.1
@@ -72,10 +77,15 @@ jobs:
       run: vsce package
 
     - name: Upload to GitHub
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Draco.VscExtension
         path: ./**/*.vsix
+
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./**/*.vsix
 
     - name: Publish extension
       run: vsce publish

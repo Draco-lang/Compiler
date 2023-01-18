@@ -1,8 +1,14 @@
 using System;
 using System.CommandLine;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.LanguageServer.Handlers;
 using Microsoft.Extensions.DependencyInjection;
+using NuGet.Common;
+using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
 using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Draco.LanguageServer;
@@ -21,11 +27,19 @@ internal static class Program
     internal static async Task Main(string[] args)
     {
         var stdioFlag = new Option<bool>(name: "--stdio", description: "A flag to set the transportation option to stdio");
-        var rootCommand = new RootCommand("Language Server for Draco")
+
+        var runCommand = new Command("run", "Runs the language server")
         {
             stdioFlag,
         };
-        rootCommand.SetHandler(RunServerAsync, stdioFlag);
+        runCommand.SetHandler(RunServerAsync, stdioFlag);
+
+        var checkForUpdatesCommand = new Command("check-for-updates", "Checks for language server updates");
+        checkForUpdatesCommand.SetHandler(CheckForUpdatesAsync);
+
+        var rootCommand = new RootCommand("Language Server for Draco");
+        rootCommand.AddCommand(runCommand);
+        rootCommand.AddCommand(checkForUpdatesCommand);
 
         await rootCommand.InvokeAsync(args);
     }
@@ -46,6 +60,40 @@ internal static class Program
                 .AddSingleton<DracoDocumentRepository>()));
 
         await server.WaitForExit;
+    }
+
+    internal static async Task CheckForUpdatesAsync()
+    {
+        // Retrieve the latest and current version
+        var cache = new SourceCacheContext();
+        var repository = Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json");
+        var resource = await repository.GetResourceAsync<FindPackageByIdResource>();
+        var versions = await resource.GetAllVersionsAsync(
+            "Draco.LanguageServer",
+            cache,
+            NullLogger.Instance,
+            CancellationToken.None);
+        var latest = versions.Max();
+        var current = Assembly.GetExecutingAssembly().GetName().Version;
+
+        // If either are null, bail out
+        if (latest is null || current is null)
+        {
+            Environment.Exit(0);
+            return;
+        }
+
+        // Otherwise, compare
+        if (latest.Version > current)
+        {
+            // We have a newer version, signal with an exit code of 1
+            Environment.Exit(1);
+            return;
+        }
+
+        // Not newer
+        Environment.Exit(0);
+        return;
     }
 
     private static TransportKind GetTransportKind(bool stdioFlag) => stdioFlag

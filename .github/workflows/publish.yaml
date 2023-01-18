@@ -14,7 +14,7 @@ env:
   RELEASE_TAG: ${{ github.event.release.tag_name }}
 
 jobs:
-  deployment:
+  deploy-sdk-and-langserver:
     runs-on: windows-latest
     steps:
     - name: Clone the repo
@@ -47,3 +47,35 @@ jobs:
 
     - name: Upload to NuGet.org
       run: dotnet nuget push src/**/*${{ RELEASE_TAG }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
+
+  deploy-vsc-extension:
+    runs-on: windows-latest
+    steps:
+    - name: Clone the repo
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3.5.1
+      with:
+        node-version: 18
+
+    - name: Install VSCE
+      run: npm install -g @vscode/vsce
+
+    - name: Navigate into extension folder
+      run: cd .src/Draco.Extension.VsCode
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Package extension
+      run: vsce package
+
+    - name: Upload to GitHub
+      uses: actions/upload-artifact@v2
+      with:
+        name: Draco.VscExtension
+        path: ./**/*.vsix
+
+    - name: Publish extension
+      run: vsce publish

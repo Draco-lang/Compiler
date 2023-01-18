@@ -36,5 +36,14 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 function runDraco(){
-	vscode.window.showErrorMessage("hi from run");
+	vscode.workspace.textDocuments.forEach(x => x.save());
+	const terminal = typeof(vscode.window.activeTerminal) === "undefined" 
+	? vscode.window.createTerminal()
+	: vscode.window.activeTerminal;
+	terminal.show(true);
+	var project = "";
+	if(typeof vscode.workspace.workspaceFolders !== "undefined" && vscode.workspace.workspaceFolders.length > 0){
+		project = `--project ${vscode.workspace.workspaceFolders[0].uri.fsPath}`
+	}
+	terminal.sendText(`dotnet run ${project}`, true);
 }

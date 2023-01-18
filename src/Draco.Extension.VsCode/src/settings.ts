@@ -59,8 +59,10 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
         }
     }
 
+    // TODO: Check for updates
+
     return {
-        command: DracoLangserverCommandName,
+        command: `${DracoLangserverCommandName} run`,
 		transport: lsp.TransportKind.stdio,
     };
 }

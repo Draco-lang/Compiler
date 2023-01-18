@@ -1,0 +1,6 @@
+<Project Sdk="Draco.Sdk/#{DRACO_VERSION}">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>{TargetFramework}</TargetFramework>
+  </PropertyGroup>
+</Project>

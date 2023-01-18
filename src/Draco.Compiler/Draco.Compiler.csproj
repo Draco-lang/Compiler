@@ -18,7 +18,10 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 
-    <ProjectReference Include="..\Draco.RedGreenTree.Attributes\Draco.RedGreenTree.Attributes.csproj" />
+    <ProjectReference Include="..\Draco.RedGreenTree.Attributes\Draco.RedGreenTree.Attributes.csproj">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </ProjectReference>
     <ProjectReference Include="..\Draco.RedGreenTree.SourceGenerator\Draco.RedGreenTree.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
   </ItemGroup>
 

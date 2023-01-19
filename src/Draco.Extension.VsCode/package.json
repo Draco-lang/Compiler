@@ -47,7 +47,7 @@
       }
     ],
     "configuration": {
-      "title": "Draco configuration",
+      "title": "Draco",
       "properties": {
         "draco.dotnetCommand": {
           "type": "string",

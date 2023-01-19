@@ -1,48 +1,112 @@
-# Publish everything to NuGet
-
 name: 'Publish packages'
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      deploy-sdk:
+        type: boolean
+        description: Deploy components of the SDK (Compiler, Toolset, Sdk, ProjectTemplates)
+      deploy-langserver:
+        type: boolean
+        description: Deploy the language server (Compiler, LanguageServer)
+      deploy-vscext:
+        type: boolean
+        description: Deploy the VS Code extension
+      version:
+        type: string
+        description: The version number to deploy with
+        required: true
+      prerelease:
+        type: boolean
+        description: The deployed version is pre-release
 
 env:
   DOTNET_VERSION: '7.0.x'   # The .NET SDK version to use
   CONFIGURATION: 'Release'  # The configuration to use
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+  VSC_MARKETPLACE_TOKEN: ${{ secrets.VSC_MARKETPLACE_TOKEN }}
+  VERSION: ${{ github.event.inputs.version }}
+  PRERELEASE: ${{ github.event.inputs.prerelease }}
 
 jobs:
-  deployment:
+  deploy:
     runs-on: windows-latest
     steps:
+      # Set up environment
     - name: Clone the repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v3.5.1
       with:
         node-version: 18
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+    - name: Install VSCE
+      run: npm install -g @vscode/vsce
+
+      # Build and packaging
+    - name: Recurse into src
+      run: cd src
+
+    - name: Package .NET portion
+      run: |
+        $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
+        $langserverProjects = "Compiler", "LanguageServer"
+        $projects = @()
+
+        if ($${{ github.event.inputs.deploy-sdk }}) { $projects += $sdkProjects; }
+        if ($${{ github.event.inputs.deploy-langserver }}) { $projects += $langserverProjects; }
+
+        $version = "${{ env.VERSION }}"
+        if ($${{ env.PRERELEASE }}) { $version += "-pre"; }
+
+        foreach ($project in $projects)
+        {
+          $project = "Draco.$project"
+          dotnet restore $project
+          dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore /p:Version="$version"
+          dotnet pack $project
+        }
+
+    - name: Package VS Code extension
+      run: |
+        cd Draco.Extension.VsCode
+        if ($${{ github.event.inputs.deploy-vscext }})
+        {
+          Copy-Item "../../LICENSE" -Destination "LICENSE"
+          npm install
+          npm version "${{ env.VERSION }}"
+          if ($${{ env.PRERELEASE }}) { npm pkg set preview=true --json }
+          vsce package
+        }
+        cd ..
+
+      # Publishing
+    - name: Upload artifacts to GitHub
+      uses: actions/upload-artifact@v3
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Install dependencies
-      run: dotnet restore ./src
-
-    - name: Build
-      run: dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
-
-    - name: Package
-      run: dotnet pack ./src /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ github.event.release.tag_name }}"
-
-    - name: Upload to GitHub
-      uses: actions/upload-artifact@v2
-      with:
-        name: Draco
-        path: src/**/*${{ github.event.release.tag_name }}.nupkg
+        name: NuGet-packages
+        path: |
+          ./**/*.nupkg
+          ./**/*.vsix
 
     - name: Upload to NuGet.org
-      run: dotnet nuget push src/**/*${{ github.event.release.tag_name }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
+      run: |
+        $packages = Get-ChildItem -Recurse | Where { $_.Name -like "*.nupkg" -and $_.Name -notlike "*symbols*" }
+        foreach ($package in $packages)
+        {
+          dotnet nuget push $package.FullName --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols --skip-duplicate
+        }
+
+    - name: Upload to VS Code Marketplace
+      run: |
+        if ($${{ github.event.inputs.deploy-vscext }})
+        {
+          vsce publish --pat ${{ env.VSC_MARKETPLACE_TOKEN }}
+        }

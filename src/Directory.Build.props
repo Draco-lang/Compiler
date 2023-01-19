@@ -1,6 +1,5 @@
 <Project>
   <PropertyGroup>
-    <Version>0.1.1-pre</Version>
     <DracoToolsTargetFramework>net7.0</DracoToolsTargetFramework>
   </PropertyGroup>
 
@@ -16,8 +15,9 @@
     <RepositoryUrl>https://github.com/Draco-lang/Compiler</RepositoryUrl>
   </PropertyGroup>
 
-  <!-- Pack the icon -->
+  <!-- Pack the README and the package icon -->
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" Visible="false"/>
     <None Include="$(MSBuildThisFileDirectory)..\resources\PackageIcon.png" Pack="true" PackagePath="\" Visible="false"/>
   </ItemGroup>
 

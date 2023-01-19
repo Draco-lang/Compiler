@@ -33,7 +33,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export async function deactivate(): Promise<void> {
-	await stopLanguageServer();
+    await stopLanguageServer();
 }
 
 async function stopLanguageServer() {
@@ -48,24 +48,24 @@ async function startLanguageServer(): Promise<void> {
     await stopLanguageServer();
 
     // Server options
-	let serverOptions = await settings.getLanguageServerOptions();
+    let serverOptions = await settings.getLanguageServerOptions();
     if (serverOptions === undefined) {
         await window.showErrorMessage('Could not start Draco language server.');
         return;
     }
 
     // Client options
-	let clientOptions: lsp.LanguageClientOptions = {
-		documentSelector: [{ scheme: 'file', language: 'draco' }],
-	};
+    let clientOptions: lsp.LanguageClientOptions = {
+        documentSelector: [{ scheme: 'file', language: 'draco' }],
+    };
 
     languageClient = new lsp.LanguageClient(
-		"dracoLanguageServer",
-		'Draco Language Server',
-		serverOptions,
-		clientOptions,
-	);
+        "dracoLanguageServer",
+        'Draco Language Server',
+        serverOptions,
+        clientOptions,
+    );
 
-	// Start the client, which also starts the server
-	await languageClient.start();
+    // Start the client, which also starts the server
+    await languageClient.start();
 }

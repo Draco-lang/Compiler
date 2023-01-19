@@ -104,4 +104,8 @@ jobs:
       run: dotnet nuget push ./**/*.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
 
     - name: Upload to VS Code Marketplace
-      run: vsce publish --pat ${{ env.VSC_MARKETPLACE_TOKEN }}
+      run: |
+        if ($${{ github.event.inputs.deploy-vscext }})
+        {
+          vsce publish --pat ${{ env.VSC_MARKETPLACE_TOKEN }}
+        }

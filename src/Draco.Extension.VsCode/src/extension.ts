@@ -72,7 +72,7 @@ async function startLanguageServer(): Promise<void> {
 }
 
 async function runDraco(){
-	if (!settings.isDotnetInstalled()) {
+	if (!await settings.isDotnetInstalled()) {
         await settings.askUserToOpenSettings('Could not run the project, because the dotnet tool could not be located.');
         return;
     }
@@ -80,10 +80,6 @@ async function runDraco(){
 	const terminal = vscode.window.activeTerminal === undefined
 		? vscode.window.createTerminal()
 		: vscode.window.activeTerminal;
-	terminal.show(true);
-	var project = "";
-	if(vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0){
-		project = `--project ${settings.getWorkspaceUri().fsPath}`
-	}
-	terminal.sendText(`dotnet run ${project}`, true);
+	terminal.show(false);
+	terminal.sendText(`dotnet run --project ${settings.getWorkspaceUri().fsPath}`, true);
 }

@@ -27,7 +27,7 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
 
     // First off, check if the dotnet command is available by checking the version
     const dotnetCommand = config.get<string>('dotnetCommand');
-    if (!isDotnetInstalled()) {
+    if (!await isDotnetInstalled()) {
         await askUserToOpenSettings('Could not locate the dotnet tool.');
         return undefined;
     }

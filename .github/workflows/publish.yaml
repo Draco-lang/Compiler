@@ -27,7 +27,7 @@ env:
   NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
   VSC_MARKETPLACE_TOKEN: ${{ secrets.VSC_MARKETPLACE_TOKEN }}
   VERSION: ${{ github.event.inputs.version }}
-  PRERELEASE: ${{ github.event.inputs.prerelease == 'true' }}
+  PRERELEASE: ${{ github.event.inputs.prerelease }}
 
 jobs:
   deploy:
@@ -60,11 +60,11 @@ jobs:
         $langserverProjects = "Compiler", "LanguageServer"
         $projects = @()
 
-        if (${{ github.event.inputs.deploy-sdk == 'true' }}) { $projects += $sdkProjects; }
-        if (${{ github.event.inputs.deploy-langserver == 'true' }}) { $projects += $langserverProjects; }
+        if ($${{ github.event.inputs.deploy-sdk }}) { $projects += $sdkProjects; }
+        if ($${{ github.event.inputs.deploy-langserver }}) { $projects += $langserverProjects; }
 
         $version = "${{ env.VERSION }}"
-        if (${{ env.PRERELEASE == 'true' }}) { $version += "-pre"; }
+        if ($${{ env.PRERELEASE }}) { $version += "-pre"; }
 
         foreach ($project in $projects)
         {
@@ -77,11 +77,11 @@ jobs:
     - name: Package VS Code extension
       run: |
         cd Draco.Extension.VsCode
-        if (${{ github.event.inputs.deploy-vscext == 'true' }})
+        if ($${{ github.event.inputs.deploy-vscext }})
         {
           npm install
           npm version "${{ env.VERSION }}"
-          if (${{ env.PRERELEASE }}) { npm pkg set preview=true --json }
+          if ($${{ env.PRERELEASE }}) { npm pkg set preview=true --json }
           vsce package
         }
         cd ..

@@ -19,7 +19,6 @@ env:
 jobs:
   tests:
     name: tests-${{matrix.os}}
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -39,11 +38,8 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Install dependencies
-      run: dotnet restore ./src
-
-    - name: Build
-      run: dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
-
-    - name: Run tests
-      run: dotnet test ./src --no-build
+    - name: Build and test
+      run: |
+        dotnet restore ./src
+        dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet test ./src --no-build

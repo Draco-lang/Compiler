@@ -1,11 +1,9 @@
-# Deploy to GH pages the Blazor Web Editor.
-
-name: 'Deploy Blazor Web Editor to GH Pages'
+name: 'Deploy playground to GitHub Pages'
 
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
     - 'src/**'
 

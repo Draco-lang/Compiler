@@ -101,7 +101,7 @@ jobs:
         path: ./**/*.vsix
 
     - name: Upload to NuGet.org
-      run: dotnet nuget push ./**/*.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
+      run: dotnet nuget push ./**/*.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols --skip-duplicate
 
     - name: Upload to VS Code Marketplace
       run: |

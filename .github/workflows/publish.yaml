@@ -84,7 +84,7 @@ jobs:
           if ($${{ env.PRERELEASE }}) { npm pkg set preview=true --json }
           vsce package
         }
-        cd ..
+        cd ../..
 
       # Publishing
     - name: Upload artifacts to GitHub
@@ -107,9 +107,9 @@ jobs:
 
     - name: Upload to VS Code Marketplace
       run: |
-        cd src
+        cd src/Draco.Extension.VsCode
         if ($${{ github.event.inputs.deploy-vscext }})
         {
           vsce publish --pat ${{ env.VSC_MARKETPLACE_TOKEN }}
         }
-        cd ..
+        cd ../..

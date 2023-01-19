@@ -59,12 +59,57 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
         }
     }
 
-    // TODO: Check for updates
+    // The language server is available locally, check for updates
+    if (config.get<boolean>('promptUpdateDracoLangserver')) {
+        const checkForUpdateResult = await executeCommand(`${DracoLangserverCommandName} check-for-updates`);
+        if (checkForUpdateResult.exitCode == 0) {
+            // No updates found
+        }
+        else if (checkForUpdateResult.exitCode == 1) {
+            // Updates found
+            await askUserToUpdateLangserver();
+        }
+        else {
+            // Error
+            await window.showErrorMessage('Failed to check for updates.');
+        }
+    }
 
     return {
         command: `${DracoLangserverCommandName} run`,
 		transport: lsp.TransportKind.stdio,
     };
+}
+
+/**
+ * Asks user for updating the language server.
+ */
+async function askUserToUpdateLangserver(): Promise<void> {
+    const config = workspace.getConfiguration('draco');
+    const dotnetCommand = config.get<string>('dotnetCommand');
+
+    // Prompt
+    const promptResult = await promptUpdateLangserver('There is a new version of Draco language server available. Would you like to update?');
+    if (promptResult != PromptResult.yes) {
+        return;
+    }
+
+    // We want to update
+    const execResult = await executeCommand(`${dotnetCommand} tool install ${DracoLangserverToolName} --global`);
+    if (execResult.exitCode == 0) {
+        await window.showInformationMessage('Draco language server updated successfully.');
+    } else {
+        await window.showErrorMessage('Failed to update Draco language server.');
+    }
+}
+
+/**
+ * Prompts the user for updating the language server. Does not actually do the installation.
+ * @param message The message to display in the prompt.
+ * @returns The chosen @see PromptResult.
+ */
+function promptUpdateLangserver(message: string): Promise<PromptResult> {
+    return promptYesNoDisable('promptUpdateDracoLangserver', message);
 }
 
 /**
@@ -107,27 +152,8 @@ async function askUserToInstallLangserver(reason: string): Promise<boolean> {
  * @param message The message to display in the prompt.
  * @returns The chosen @see PromptResult.
  */
-async function promptInstallLangserver(message: string): Promise<PromptResult> {
-    const config = workspace.getConfiguration('draco');
-
-    // If we don't allow prompting, don't bother
-    if (!config.get<boolean>('promptInstallDracoLangserver')) {
-        return PromptResult.disable;
-    }
-
-    // Actually ask the user
-    const result = await prompt(
-        message,
-        { title: 'Yes', result: PromptResult.yes },
-        { title: 'No', result: PromptResult.no },
-        { title: "Don't Ask Again", result: PromptResult.disable });
-
-    // In case the user wants to disable it, save that option
-    if (result === PromptResult.disable) {
-        await config.update('promptInstallDracoLangserver', false, ConfigurationTarget.Workspace);
-    }
-
-    return result;
+function promptInstallLangserver(message: string): Promise<PromptResult> {
+    return promptYesNoDisable('promptInstallDracoLangserver', message);
 }
 
 /**
@@ -172,11 +198,22 @@ async function askUserToOpenSettings(reason: string): Promise<void> {
  * @param message The message to display in the prompt.
  * @returns The chosen @see PromptResult.
  */
-async function promptOpenSettings(message: string): Promise<PromptResult> {
+function promptOpenSettings(message: string): Promise<PromptResult> {
+    return promptYesNoDisable('promptOpenSettings', message);
+}
+
+/**
+ * Prompts the user with 3 options, Yes, No and Disable.
+ * If the user picks Disable, the setting will be flipped and the prompt won't appear again.
+ * @param setting The setting to save the prompt result to.
+ * @param message The message to display.
+ * @returns The promise to the @see PromptResult.
+ */
+async function promptYesNoDisable(setting: string, message: string): Promise<PromptResult> {
     const config = workspace.getConfiguration('draco');
 
     // If we don't allow prompting, don't bother
-    if (!config.get<boolean>('promptOpenSettings')) {
+    if (!config.get<boolean>(setting)) {
         return PromptResult.disable;
     }
 
@@ -189,7 +226,7 @@ async function promptOpenSettings(message: string): Promise<PromptResult> {
 
     // In case the user wants to disable it, save that option
     if (result === PromptResult.disable) {
-        await config.update('promptOpenSettings', false, ConfigurationTarget.Workspace);
+        await config.update(setting, false, ConfigurationTarget.Workspace);
     }
 
     return result;

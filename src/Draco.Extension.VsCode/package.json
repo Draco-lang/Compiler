@@ -68,6 +68,11 @@
           "type": "boolean",
           "default": true,
           "description": "In case the Draco Language Server was not found, should it be prompted for installation."
+        },
+        "draco.promptUpdateDracoLangserver": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check for Draco language server updates."
         }
       }
     }

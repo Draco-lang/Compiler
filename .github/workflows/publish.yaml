@@ -90,7 +90,7 @@ jobs:
     - name: Upload artifacts to GitHub
       uses: actions/upload-artifact@v3
       with:
-        name: NuGet-packages
+        name: Artifacts
         path: |
           src/**/*.nupkg
           src/**/*.vsix

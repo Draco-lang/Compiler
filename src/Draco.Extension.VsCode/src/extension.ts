@@ -37,7 +37,7 @@ export async function deactivate(): Promise<void> {
 }
 
 async function stopLanguageServer() {
-    if (languageClient) {
+    if (languageClient !== undefined) {
         await languageClient.stop();
         languageClient = undefined;
     }

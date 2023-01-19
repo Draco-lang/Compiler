@@ -11,51 +11,49 @@ env:
   CONFIGURATION: 'Release'  # The configuration to use
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+  VSC_MARKETPLACE_TOKEN: ${{ secrets.VSC_MARKETPLACE_TOKEN }}
   RELEASE_TAG: ${{ github.event.release.tag_name }}
 
 jobs:
   deploy-sdk-and-langserver:
     runs-on: windows-latest
     steps:
+      # Set up environment
     - name: Clone the repo
       uses: actions/checkout@v3
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v3.5.1
-      with:
-        node-version: 18
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Install dependencies
-      run: dotnet restore ./src
-
-    - name: Build
-      run: dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
-
+      # Build and packaging
     - name: Package
-      run: dotnet pack ./src /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ RELEASE_TAG }}"
+      run: |
+        cd src
+        dotnet restore .
+        dotnet build . --configuration ${{ env.CONFIGURATION }} --no-restore
+        dotnet pack . /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ env.RELEASE_TAG }}"
 
+      # Publishing
     - name: Upload to GitHub
       uses: actions/upload-artifact@v3
       with:
-        name: Draco
-        path: src/**/*${{ RELEASE_TAG }}.nupkg
+        name: Artifacts
+        path: ./**/*.nupkg
 
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        files: src/**/*${{ RELEASE_TAG }}.nupkg
+        files: ./**/*.nupkg
 
     - name: Upload to NuGet.org
-      run: dotnet nuget push src/**/*${{ RELEASE_TAG }}.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
+      run: dotnet nuget push ./**/*.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
 
   deploy-vsc-extension:
     runs-on: windows-latest
     steps:
+      # Set up environment
     - name: Clone the repo
       uses: actions/checkout@v3
 
@@ -67,19 +65,18 @@ jobs:
     - name: Install VSCE
       run: npm install -g @vscode/vsce
 
-    - name: Navigate into extension folder
-      run: cd .src/Draco.Extension.VsCode
+      # Build and packaging
+    - name: Package
+      run: |
+        cd src/Draco.Extension.VsCode
+        npm install
+        vsce package
 
-    - name: Install dependencies
-      run: npm install
-
-    - name: Package extension
-      run: vsce package
-
+      # Publishing
     - name: Upload to GitHub
       uses: actions/upload-artifact@v3
       with:
-        name: Draco.VscExtension
+        name: Artifacts
         path: ./**/*.vsix
 
     - name: Upload to GitHub Release
@@ -87,5 +84,5 @@ jobs:
       with:
         files: ./**/*.vsix
 
-    - name: Publish extension
-      run: vsce publish
+    - name: Upload to VS Code Marketplace
+      run: vsce publish --pat ${{ env.VSC_MARKETPLACE_TOKEN }}

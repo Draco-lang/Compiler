@@ -16,6 +16,8 @@ env:
 
 jobs:
   deploy-sdk-and-langserver:
+    # Only start on sdk- or langserver- releases
+    if: ${{ startsWith(env.RELEASE_TAG, 'sdk-') || startsWith(env.RELEASE_TAG, 'langserver-') }}
     runs-on: windows-latest
     steps:
       # Set up environment
@@ -30,10 +32,19 @@ jobs:
       # Build and packaging
     - name: Package
       run: |
+        $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
+        $langserverProjects = "Compiler", "LanguageServer"
+        $projects = @($sdkProjects, $langserverProjects)[!"${{ env.RELEASE_TAG }}".StartsWith("sdk-")]
+
         cd src
-        dotnet restore .
-        dotnet build . --configuration ${{ env.CONFIGURATION }} --no-restore
-        dotnet pack . /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ env.RELEASE_TAG }}"
+
+        foreach ($project in $projects)
+        {
+          $project = "Draco.$project"
+          dotnet restore $project
+          dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore
+          dotnet pack $project /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ env.RELEASE_TAG }}"
+        }
 
       # Publishing
     - name: Upload to GitHub
@@ -51,6 +62,8 @@ jobs:
       run: dotnet nuget push ./**/*.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
 
   deploy-vsc-extension:
+    # Only start on vscext- releases
+    if: ${{ startsWith(env.RELEASE_TAG, 'vscext-') }}
     runs-on: windows-latest
     steps:
       # Set up environment

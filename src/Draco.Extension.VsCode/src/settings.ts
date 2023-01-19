@@ -34,6 +34,7 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
     }
 
     // Dotnet is available, chech if the language server is installed
+    let justInstalled = false;
     {
         // Try to get a list of the global tools
         const globalToolsResult = await executeCommand(`${dotnetCommand} tool list --global`);
@@ -56,11 +57,13 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
                 return undefined;
             }
             // Installation was successful
+            justInstalled = true;
         }
     }
 
     // The language server is available locally, check for updates
-    if (config.get<boolean>('promptUpdateDracoLangserver')) {
+    // We only check if we haven't just installed, otherwise why bother
+    if (!justInstalled && config.get<boolean>('promptUpdateDracoLangserver')) {
         const checkForUpdateResult = await executeCommand(`${DracoLangserverCommandName} check-for-updates`);
         if (checkForUpdateResult.exitCode == 0) {
             // No updates found

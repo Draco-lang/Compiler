@@ -33,7 +33,7 @@ jobs:
     - name: Package
       run: |
         $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
-        $langserverProjects = "Compiler", "LanguageServer"
+        $langserverProjects = "LanguageServer"
         $projects = @($sdkProjects, $langserverProjects)[!"${{ env.RELEASE_TAG }}".StartsWith("sdk-")]
 
         cd src

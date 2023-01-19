@@ -1,6 +1,4 @@
-# Checks that the current branch passes all tests
-
-name: tests
+name: 'Run tests'
 
 on:
   workflow_dispatch:

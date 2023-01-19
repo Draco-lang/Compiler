@@ -88,20 +88,21 @@ jobs:
         cd ..
 
       # Publishing
-    - name: Upload NuGet packages to GitHub
+    - name: Upload artifacts to GitHub
       uses: actions/upload-artifact@v3
       with:
         name: NuGet-packages
-        path: ./**/*.nupkg
-
-    - name: Upload VS Code extension to GitHub
-      uses: actions/upload-artifact@v3
-      with:
-        name: vsc-extension
-        path: ./**/*.vsix
+        path: |
+          ./**/*.nupkg
+          ./**/*.vsix
 
     - name: Upload to NuGet.org
-      run: dotnet nuget push ./**/*.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols --skip-duplicate
+      run: |
+        $packages = Get-ChildItem -Recurse | Where { $_.Name -like "*.nupkg" -and $_.Name -notlike "*symbols*" }
+        foreach ($package in $packages)
+        {
+          dotnet nuget push $package.FullName --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols --skip-duplicate
+        }
 
     - name: Upload to VS Code Marketplace
       run: |

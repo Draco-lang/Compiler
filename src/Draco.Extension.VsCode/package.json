@@ -1,6 +1,7 @@
 {
   "name": "draco-language-support",
   "displayName": "Draco Language Support",
+  "version": "0.0.1",
   "description": "Visual Studio Language support for the Draco programming language.",
   "icon": "resources/extension-icon.png",
   "repository": {

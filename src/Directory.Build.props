@@ -1,6 +1,5 @@
 <Project>
   <PropertyGroup>
-    <Version>0.1.1-pre</Version>
     <DracoToolsTargetFramework>net7.0</DracoToolsTargetFramework>
   </PropertyGroup>
 

@@ -1,10 +1,24 @@
-# Publish everything to NuGet
-
 name: 'Publish packages'
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      deploy-sdk:
+        type: boolean
+        description: Deploy components of the SDK (Compiler, Toolset, Sdk, ProjectTemplates)
+      deploy-langserver:
+        type: boolean
+        description: Deploy the language server (Compiler, LanguageServer)
+      deploy-vscext:
+        type: boolean
+        description: Deploy the VS Code extension
+      version:
+        type: string
+        description: The version number to deploy with
+        required: true
+      prerelease:
+        type: boolean
+        description: The deployed version is pre-release
 
 env:
   DOTNET_VERSION: '7.0.x'   # The .NET SDK version to use
@@ -12,12 +26,11 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
   VSC_MARKETPLACE_TOKEN: ${{ secrets.VSC_MARKETPLACE_TOKEN }}
-  RELEASE_TAG: ${{ github.event.release.tag_name }}
+  VERSION: ${{ github.event.inputs.version }}
+  PRERELEASE: ${{ github.event.inputs.prerelease == 'true' }}
 
 jobs:
-  deploy-sdk-and-langserver:
-    # Only start on sdk- or langserver- releases
-    if: ${{ startsWith(env.RELEASE_TAG, 'sdk-') || startsWith(env.RELEASE_TAG, 'langserver-') }}
+  deploy:
     runs-on: windows-latest
     steps:
       # Set up environment
@@ -29,47 +42,6 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # Build and packaging
-    - name: Package
-      run: |
-        $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
-        $langserverProjects = "LanguageServer"
-        $projects = @($sdkProjects, $langserverProjects)[!"${{ env.RELEASE_TAG }}".StartsWith("sdk-")]
-
-        cd src
-
-        foreach ($project in $projects)
-        {
-          $project = "Draco.$project"
-          dotnet restore $project
-          dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore
-          dotnet pack $project /p:PackageReleaseNotes="See https://github.com/Draco-lang/Compiler/releases/tag/${{ env.RELEASE_TAG }}"
-        }
-
-      # Publishing
-    - name: Upload to GitHub
-      uses: actions/upload-artifact@v3
-      with:
-        name: Artifacts
-        path: ./**/*.nupkg
-
-    - name: Upload to GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ./**/*.nupkg
-
-    - name: Upload to NuGet.org
-      run: dotnet nuget push ./**/*.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
-
-  deploy-vsc-extension:
-    # Only start on vscext- releases
-    if: ${{ startsWith(env.RELEASE_TAG, 'vscext-') }}
-    runs-on: windows-latest
-    steps:
-      # Set up environment
-    - name: Clone the repo
-      uses: actions/checkout@v3
-
     - name: Setup Node.js environment
       uses: actions/setup-node@v3.5.1
       with:
@@ -79,23 +51,56 @@ jobs:
       run: npm install -g @vscode/vsce
 
       # Build and packaging
-    - name: Package
+    - name: Recurse into src
+      run: cd src
+
+    - name: Package .NET portion
       run: |
-        cd src/Draco.Extension.VsCode
-        npm install
-        vsce package
+        $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
+        $langserverProjects = "Compiler", "LanguageServer"
+        $projects = @()
+
+        if (${{ github.event.inputs.deploy-sdk == 'true' }}) { $projects += $sdkProjects; }
+        if (${{ github.event.inputs.deploy-langserver == 'true' }}) { $projects += $langserverProjects; }
+
+        $version = "${{ env.VERSION }}"
+        if (${{ env.PRERELEASE == 'true' }}) { $version += "-pre"; }
+
+        foreach ($project in $projects)
+        {
+          $project = "Draco.$project"
+          dotnet restore $project
+          dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore /p:Version="$version"
+          dotnet pack $project
+        }
+
+    - name: Package VS Code extension
+      run: |
+        cd Draco.Extension.VsCode
+        if (${{ github.event.inputs.deploy-vscext == 'true' }})
+        {
+          npm install
+          npm version "${{ env.VERSION }}"
+          if (${{ env.PRERELEASE }}) { npm pkg set preview=true --json }
+          vsce package
+        }
+        cd ..
 
       # Publishing
-    - name: Upload to GitHub
+    - name: Upload NuGet packages to GitHub
       uses: actions/upload-artifact@v3
       with:
-        name: Artifacts
+        name: NuGet-packages
+        path: ./**/*.nupkg
+
+    - name: Upload VS Code extension to GitHub
+      uses: actions/upload-artifact@v3
+      with:
+        name: vsc-extension
         path: ./**/*.vsix
 
-    - name: Upload to GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ./**/*.vsix
+    - name: Upload to NuGet.org
+      run: dotnet nuget push ./**/*.nupkg --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols
 
     - name: Upload to VS Code Marketplace
       run: vsce publish --pat ${{ env.VSC_MARKETPLACE_TOKEN }}

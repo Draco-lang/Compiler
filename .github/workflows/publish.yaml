@@ -75,7 +75,7 @@ jobs:
 
     - name: Package VS Code extension
       run: |
-        cd Draco.Extension.VsCode
+        cd src/Draco.Extension.VsCode
         if ($${{ github.event.inputs.deploy-vscext }})
         {
           Copy-Item "../../LICENSE" -Destination "LICENSE"

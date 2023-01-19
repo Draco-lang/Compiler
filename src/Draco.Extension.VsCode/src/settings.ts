@@ -27,8 +27,7 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
 
     // First off, check if the dotnet command is available by checking the version
     const dotnetCommand = config.get<string>('dotnetCommand');
-    const foundDotnet = (await executeCommand(`${dotnetCommand} --version`)).exitCode === 0;
-    if (!foundDotnet) {
+    if (!isDotnetInstalled()) {
         await askUserToOpenSettings('Could not locate the dotnet tool.');
         return undefined;
     }
@@ -134,7 +133,7 @@ async function promptInstallLangserver(message: string): Promise<PromptResult> {
  * Asksthe user if they want to open the settings file. If so, the settings file is opened.
  * @param reason The reason the settings needs to be opened.
  */
-async function askUserToOpenSettings(reason: string): Promise<void> {
+export async function askUserToOpenSettings(reason: string): Promise<void> {
     const config = workspace.getConfiguration('draco');
     const settingsUri = await getVscodeFileUri('settings.json');
     const canPrompt = config.get<boolean>('promptOpenSettings');
@@ -234,7 +233,7 @@ async function getVscodeFileUri(fileName: string): Promise<Uri> {
  * Retrieves the relevant workspace URI.
  * @returns The @see Uri of the current workspace.
  */
-function getWorkspaceUri(): Uri {
+export function getWorkspaceUri(): Uri {
     if (workspace.workspaceFolders === undefined || workspace.workspaceFolders.length === 0) {
         throw new FatalError('No workspace is open.');
     }
@@ -275,6 +274,16 @@ function executeCommand(command: string): Promise<Execution> {
             exitCode: err?.code || 0,
         }));
     });
+}
+
+/**
+ * Tries to find dotnet on the machine.
+ * @returns true, if dotnet is installed, otherwise false.
+ */
+export async function isDotnetInstalled(): Promise<boolean>{
+    const config = workspace.getConfiguration('draco');
+    const dotnetCommand = config.get<string>('dotnetCommand');
+    return  (await executeCommand(`${dotnetCommand} --version`)).exitCode === 0;
 }
 
 /**

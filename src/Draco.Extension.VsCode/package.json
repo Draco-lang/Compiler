@@ -70,8 +70,7 @@
           "description": "In case the Draco Language Server was not found, should it be prompted for installation."
         }
       }
-    }
-    ],
+    },
     "commands":[
       {
         "command": "draco.run",

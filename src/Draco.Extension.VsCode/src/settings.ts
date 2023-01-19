@@ -81,6 +81,9 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
     return {
         command: `${DracoLangserverCommandName} run`,
 		transport: lsp.TransportKind.stdio,
+        options: {
+            shell: true,
+        },
     };
 }
 

@@ -1,4 +1,6 @@
 node_modules
 out
+dist
 # We copy it from the original source
 syntaxes
+*.vsix

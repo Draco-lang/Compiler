@@ -62,13 +62,14 @@ jobs:
         if ($${{ github.event.inputs.deploy-langserver }}) { $projects += $langserverProjects; }
 
         $version = "${{ env.VERSION }}"
-        if ($${{ env.PRERELEASE }}) { $version += "-pre"; }
+        $versionSuffix = ""
+        if ($${{ env.PRERELEASE }}) { $versionSuffix = "pre"; }
 
         foreach ($project in $projects)
         {
           $project = "Draco.$project"
           dotnet restore $project
-          dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore /p:Version="$version"
+          dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore /p:VersionPrefix="$version" /p:VersionSuffix="$versionSuffix"
           dotnet pack $project
         }
         cd ..

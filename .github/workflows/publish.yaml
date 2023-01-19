@@ -51,11 +51,9 @@ jobs:
       run: npm install -g @vscode/vsce
 
       # Build and packaging
-    - name: Recurse into src
-      run: cd src
-
     - name: Package .NET portion
       run: |
+        cd src
         $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
         $langserverProjects = "Compiler", "LanguageServer"
         $projects = @()
@@ -73,6 +71,7 @@ jobs:
           dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore /p:Version="$version"
           dotnet pack $project
         }
+        cd ..
 
     - name: Package VS Code extension
       run: |
@@ -93,20 +92,24 @@ jobs:
       with:
         name: NuGet-packages
         path: |
-          ./**/*.nupkg
-          ./**/*.vsix
+          src/**/*.nupkg
+          src/**/*.vsix
 
     - name: Upload to NuGet.org
       run: |
+        cd src
         $packages = Get-ChildItem -Recurse | Where { $_.Name -like "*.nupkg" -and $_.Name -notlike "*symbols*" }
         foreach ($package in $packages)
         {
           dotnet nuget push $package.FullName --api-key ${{ env.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols --skip-duplicate
         }
+        cd ..
 
     - name: Upload to VS Code Marketplace
       run: |
+        cd src
         if ($${{ github.event.inputs.deploy-vscext }})
         {
           vsce publish --pat ${{ env.VSC_MARKETPLACE_TOKEN }}
         }
+        cd ..

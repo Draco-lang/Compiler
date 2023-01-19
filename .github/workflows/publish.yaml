@@ -79,6 +79,7 @@ jobs:
         cd Draco.Extension.VsCode
         if ($${{ github.event.inputs.deploy-vscext }})
         {
+          Copy-Item "../../LICENSE" -Destination "LICENSE"
           npm install
           npm version "${{ env.VERSION }}"
           if ($${{ env.PRERELEASE }}) { npm pkg set preview=true --json }

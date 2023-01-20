@@ -4,7 +4,8 @@ import * as fs from "fs/promises";
 import * as lsp from "vscode-languageclient/node";
 import { ConfigurationTarget, MessageItem, TextEditor, Uri, window, workspace, WorkspaceConfiguration } from "vscode";
 import { FatalError } from "./errors";
-import { prompt, PromptResult } from "./prompt";
+import { prompt, PromptKind, PromptResult } from "./prompt";
+import { logError } from "./logging";
 
 /**
  * The language server package name.
@@ -27,9 +28,10 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
 
     // First off, check if the dotnet command is available by checking the version
     const dotnetCommand = config.get<string>('dotnetCommand');
-    const foundDotnet = (await executeCommand(`${dotnetCommand} --version`)).exitCode === 0;
-    if (!foundDotnet) {
-        await askUserToOpenSettings('Could not locate the dotnet tool.');
+    const dotnetVersionExec = await executeCommand(`${dotnetCommand} --version`);
+    if (dotnetVersionExec.exitCode !== 0) {
+        await askUserToOpenSettings(PromptKind.error, 'Could not locate the dotnet tool.');
+        logError('Could not locate the dotnet tool.', dotnetVersionExec);
         return undefined;
     }
 
@@ -40,6 +42,7 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
         const globalToolsResult = await executeCommand(`${dotnetCommand} tool list --global`);
         if (globalToolsResult.exitCode != 0) {
             await window.showErrorMessage('Failed to retrieve the list of dotnet tools.');
+            logError('Failed to retrieve the list of dotnet tools.', globalToolsResult);
             return undefined;
         }
         // Check, if the output contains the tool name
@@ -75,6 +78,7 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
         else {
             // Error
             await window.showErrorMessage('Failed to check for updates.');
+            logError('Failed to check for updates.', checkForUpdateResult);
         }
     }
 
@@ -101,11 +105,12 @@ async function askUserToUpdateLangserver(): Promise<void> {
     }
 
     // We want to update
-    const execResult = await executeCommand(`${dotnetCommand} tool install ${DracoLangserverToolName} --global`);
+    const execResult = await executeCommand(`${dotnetCommand} tool update ${DracoLangserverToolName} --global`);
     if (execResult.exitCode == 0) {
         await window.showInformationMessage('Draco language server updated successfully.');
     } else {
         await window.showErrorMessage('Failed to update Draco language server.');
+        logError('Failed to update Draco language server.', execResult);
     }
 }
 
@@ -115,7 +120,7 @@ async function askUserToUpdateLangserver(): Promise<void> {
  * @returns The chosen @see PromptResult.
  */
 function promptUpdateLangserver(message: string): Promise<PromptResult> {
-    return promptYesNoDisable('promptUpdateDracoLangserver', message);
+    return promptYesNoDisable('promptUpdateDracoLangserver', PromptKind.info, message);
 }
 
 /**
@@ -143,6 +148,7 @@ async function askUserToInstallLangserver(reason: string): Promise<boolean> {
         if (execResult.exitCode != 0) {
             // Installation failed
             await window.showErrorMessage('Failed to install Draco language server.');
+            logError('Failed to install Draco language server.', execResult);
             return false;
         }
         // Installation succeeded
@@ -159,14 +165,15 @@ async function askUserToInstallLangserver(reason: string): Promise<boolean> {
  * @returns The chosen @see PromptResult.
  */
 function promptInstallLangserver(message: string): Promise<PromptResult> {
-    return promptYesNoDisable('promptInstallDracoLangserver', message);
+    return promptYesNoDisable('promptInstallDracoLangserver', PromptKind.info, message);
 }
 
 /**
  * Asksthe user if they want to open the settings file. If so, the settings file is opened.
+ * @param kind The @see PromptKind to display.
  * @param reason The reason the settings needs to be opened.
  */
-async function askUserToOpenSettings(reason: string): Promise<void> {
+async function askUserToOpenSettings(kind: PromptKind, reason: string): Promise<void> {
     const config = workspace.getConfiguration('draco');
     const settingsUri = await getVscodeFileUri('settings.json');
     const canPrompt = config.get<boolean>('promptOpenSettings');
@@ -175,14 +182,14 @@ async function askUserToOpenSettings(reason: string): Promise<void> {
     if (!canPrompt || window.activeTextEditor?.document.uri.fsPath == settingsUri.fsPath) {
         // If the settings panel is currently open, we prompt slightly differently
         // We do that if we can't prompt as well
-        await window.showErrorMessage(reason);
+        await prompt(kind, reason);
         return;
     }
 
     // The settings window is not open
     if (await exists(settingsUri.fsPath)) {
         // The settings path exists, just prompt to open it
-        const result = await promptOpenSettings(`${reason} Open settings?`);
+        const result = await promptOpenSettings(kind, `${reason} Open settings?`);
         if (result === PromptResult.yes) {
             await openDocument(settingsUri);
         }
@@ -191,7 +198,7 @@ async function askUserToOpenSettings(reason: string): Promise<void> {
 
     // The settings file does not even exist yet
     {
-        const result = await promptOpenSettings(`${reason} Create settings?`);
+        const result = await promptOpenSettings(kind, `${reason} Create settings?`);
         if (result === PromptResult.yes) {
             await writeDefaultSettings(ConfigurationTarget.Workspace);
             await openDocument(settingsUri);
@@ -201,21 +208,23 @@ async function askUserToOpenSettings(reason: string): Promise<void> {
 
 /**
  * Prompts the user for opening the settings. Does not actually open the settings.
+ * @param kind The @see PromptKind to display.
  * @param message The message to display in the prompt.
  * @returns The chosen @see PromptResult.
  */
-function promptOpenSettings(message: string): Promise<PromptResult> {
-    return promptYesNoDisable('promptOpenSettings', message);
+function promptOpenSettings(kind: PromptKind, message: string): Promise<PromptResult> {
+    return promptYesNoDisable('promptOpenSettings', kind, message);
 }
 
 /**
  * Prompts the user with 3 options, Yes, No and Disable.
  * If the user picks Disable, the setting will be flipped and the prompt won't appear again.
  * @param setting The setting to save the prompt result to.
+ * @param kind The @see PromptKind to display.
  * @param message The message to display.
  * @returns The promise to the @see PromptResult.
  */
-async function promptYesNoDisable(setting: string, message: string): Promise<PromptResult> {
+async function promptYesNoDisable(setting: string, kind: PromptKind, message: string): Promise<PromptResult> {
     const config = workspace.getConfiguration('draco');
 
     // If we don't allow prompting, don't bother
@@ -225,6 +234,7 @@ async function promptYesNoDisable(setting: string, message: string): Promise<Pro
 
     // Actually ask the user
     const result = await prompt(
+        kind,
         message,
         { title: 'Yes', result: PromptResult.yes },
         { title: 'No', result: PromptResult.no },
@@ -290,6 +300,11 @@ function getWorkspaceUri(): Uri {
  */
 type Execution = {
     /**
+     * The invoking command.
+     */
+    command: string;
+
+    /**
      * The standard output of the command.
      */
     stdout: string;
@@ -313,6 +328,7 @@ type Execution = {
 function executeCommand(command: string): Promise<Execution> {
     return new Promise((resolve, reject) => {
         proc.exec(command, (err, stdout, stderr) => resolve({
+            command: command,
             stdout: stdout,
             stderr: stderr,
             exitCode: err?.code || 0,

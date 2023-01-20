@@ -17,7 +17,7 @@ export function createLogChannel(): Disposable {
  * @param additionalData Any additional data to log with the message.
  */
 export function logError(message: string, ...additionalData: any[]) {
-    logChannel.appendLine(`[error] (${Date.now()}): ${message}`);
+    logChannel.appendLine(`[error]: ${message}`);
     additionalData.forEach(d => logChannel.appendLine(`  ${d}`));
     logChannel.show();
 }

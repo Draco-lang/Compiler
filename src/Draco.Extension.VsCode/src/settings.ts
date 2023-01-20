@@ -101,7 +101,7 @@ async function askUserToUpdateLangserver(): Promise<void> {
     }
 
     // We want to update
-    const execResult = await executeCommand(`${dotnetCommand} tool install ${DracoLangserverToolName} --global`);
+    const execResult = await executeCommand(`${dotnetCommand} tool update ${DracoLangserverToolName} --global`);
     if (execResult.exitCode == 0) {
         await window.showInformationMessage('Draco language server updated successfully.');
     } else {

@@ -43,6 +43,7 @@ export interface PromptItem extends MessageItem {
  * If the user closes the prompt without choosing an item, @see PromptResult.cancel is returned.
  */
 export async function prompt(message: string, ...items: PromptItem[]): Promise<PromptResult> {
+    // TODO: Not necessarily an error
     // Show the prompt
     const result = await window.showErrorMessage(message, ...items);
     // Map value

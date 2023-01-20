@@ -2,7 +2,7 @@ import { start } from "repl";
 import * as vscode from "vscode";
 import { window, workspace } from "vscode";
 import * as lsp from "vscode-languageclient/node";
-import { prompt, PromptResult } from "./prompt";
+import { prompt, PromptKind, PromptResult } from "./prompt";
 import * as settings from "./settings";
 
 let languageClient: lsp.LanguageClient | undefined;
@@ -14,6 +14,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (languageClient !== undefined) {
                 // Langserver is already running, ask if it should be restarted
                 const promptResult = await prompt(
+                    PromptKind.info,
                     'Settings changed. Restart Draco language server?',
                     { title: 'Yes', result: PromptResult.yes },
                     { title: 'No', result: PromptResult.no });

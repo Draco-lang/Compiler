@@ -2,12 +2,17 @@ import { start } from "repl";
 import * as vscode from "vscode";
 import { window, workspace } from "vscode";
 import * as lsp from "vscode-languageclient/node";
+import { createLogChannel } from "./logging";
 import { prompt, PromptKind, PromptResult } from "./prompt";
 import * as settings from "./settings";
 
 let languageClient: lsp.LanguageClient | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    // Create a log channel
+    const logChannel = createLogChannel();
+    context.subscriptions.push(logChannel);
+
     // Subscribe to setting changes, and prompt the user if the language server should be restarted
     const listener = workspace.onDidChangeConfiguration(async event => {
         if (event.affectsConfiguration('draco')) {

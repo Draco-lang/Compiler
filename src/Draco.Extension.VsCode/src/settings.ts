@@ -5,6 +5,7 @@ import * as lsp from "vscode-languageclient/node";
 import { ConfigurationTarget, MessageItem, TextEditor, Uri, window, workspace, WorkspaceConfiguration } from "vscode";
 import { FatalError } from "./errors";
 import { prompt, PromptKind, PromptResult } from "./prompt";
+import { logError } from "./logging";
 
 /**
  * The language server package name.
@@ -27,9 +28,10 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
 
     // First off, check if the dotnet command is available by checking the version
     const dotnetCommand = config.get<string>('dotnetCommand');
-    const foundDotnet = (await executeCommand(`${dotnetCommand} --version`)).exitCode === 0;
-    if (!foundDotnet) {
+    const dotnetVersionExec = await executeCommand(`${dotnetCommand} --version`);
+    if (dotnetVersionExec.exitCode !== 0) {
         await askUserToOpenSettings(PromptKind.error, 'Could not locate the dotnet tool.');
+        logError('Could not locate the dotnet tool.', dotnetVersionExec);
         return undefined;
     }
 
@@ -40,6 +42,7 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
         const globalToolsResult = await executeCommand(`${dotnetCommand} tool list --global`);
         if (globalToolsResult.exitCode != 0) {
             await window.showErrorMessage('Failed to retrieve the list of dotnet tools.');
+            logError('Failed to retrieve the list of dotnet tools.', globalToolsResult);
             return undefined;
         }
         // Check, if the output contains the tool name
@@ -75,6 +78,7 @@ export async function getLanguageServerOptions(): Promise<lsp.ServerOptions | un
         else {
             // Error
             await window.showErrorMessage('Failed to check for updates.');
+            logError('Failed to check for updates.', checkForUpdateResult);
         }
     }
 
@@ -106,6 +110,7 @@ async function askUserToUpdateLangserver(): Promise<void> {
         await window.showInformationMessage('Draco language server updated successfully.');
     } else {
         await window.showErrorMessage('Failed to update Draco language server.');
+        logError('Failed to update Draco language server.', execResult);
     }
 }
 
@@ -143,6 +148,7 @@ async function askUserToInstallLangserver(reason: string): Promise<boolean> {
         if (execResult.exitCode != 0) {
             // Installation failed
             await window.showErrorMessage('Failed to install Draco language server.');
+            logError('Failed to install Draco language server.', execResult);
             return false;
         }
         // Installation succeeded
@@ -176,7 +182,7 @@ async function askUserToOpenSettings(kind: PromptKind, reason: string): Promise<
     if (!canPrompt || window.activeTextEditor?.document.uri.fsPath == settingsUri.fsPath) {
         // If the settings panel is currently open, we prompt slightly differently
         // We do that if we can't prompt as well
-        await window.showErrorMessage(reason);
+        await prompt(kind, reason);
         return;
     }
 
@@ -294,6 +300,11 @@ function getWorkspaceUri(): Uri {
  */
 type Execution = {
     /**
+     * The invoking command.
+     */
+    command: string;
+
+    /**
      * The standard output of the command.
      */
     stdout: string;
@@ -317,6 +328,7 @@ type Execution = {
 function executeCommand(command: string): Promise<Execution> {
     return new Promise((resolve, reject) => {
         proc.exec(command, (err, stdout, stderr) => resolve({
+            command: command,
             stdout: stdout,
             stderr: stderr,
             exitCode: err?.code || 0,

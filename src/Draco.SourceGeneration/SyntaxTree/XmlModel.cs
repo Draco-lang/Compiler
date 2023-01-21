@@ -31,7 +31,7 @@ public sealed class PredefinedNode
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string? Base { get; set; }
+    public string Base { get; set; } = string.Empty;
 }
 
 public sealed class AbstractNode
@@ -40,7 +40,7 @@ public sealed class AbstractNode
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string? Base { get; set; }
+    public string Base { get; set; } = string.Empty;
 
     public string Documentation { get; set; } = string.Empty;
 }
@@ -51,7 +51,18 @@ public sealed class Node
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string? Base { get; set; }
+    public string Base { get; set; } = string.Empty;
+
+    public string Documentation { get; set; } = string.Empty;
+}
+
+public sealed class Field
+{
+    [XmlAttribute]
+    public string Name { get; set; } = string.Empty;
+
+    [XmlAttribute]
+    public string Type { get; set; } = string.Empty;
 
     public string Documentation { get; set; } = string.Empty;
 }

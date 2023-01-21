@@ -1,0 +1,19 @@
+﻿namespace {{Namespace}};
+
+{{for node in AbstractNodes}}
+    /// <summary>
+    /// {{string.strip(node.Documentation)}}
+    /// </summary>
+    internal abstract class {{node.Name}}
+    {
+    }
+{{end}}
+
+{{for node in Nodes}}
+    /// <summary>
+    /// {{string.strip(node.Documentation)}}
+    /// </summary>
+    internal sealed class {{node.Name}}
+    {
+    }
+{{end}}

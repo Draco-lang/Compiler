@@ -101,6 +101,7 @@ internal sealed class CilCodegen
     private readonly DefinitionIndexWithMarker<DracoIr.Parameter, IReadOnlyProcedure> parameterIndex = new(offset: 1);
     private readonly DefinitionIndex<object> localIndex = new(offset: 0);
     private readonly Dictionary<IReadOnlyBasicBlock, LabelHandle> labels = new();
+    private IReadOnlyProcedure? currentProcedure;
 
     private MethodDefinitionHandle entryPointHandle = default;
 
@@ -161,6 +162,7 @@ internal sealed class CilCodegen
 
     private void TranslateProcedure(IReadOnlyProcedure procedure, string? specialName = null)
     {
+        this.currentProcedure = procedure;
         this.ilBuilder.Align(4);
         var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
         var methodBodyOffset = this.TranslateProcedureBody(methodBodyStream, procedure);
@@ -446,7 +448,10 @@ internal sealed class CilCodegen
         }
         if (value is Value.Param param)
         {
-            encoder.LoadArgument(this.parameterIndex[param.Parameter] - 1);
+            // TODO: Instead of this weirdness, we should just eliminate IndexWithMarker as a whole
+            // Markers are for metadata, indexed from 1 and is global
+            // Here we actually want a 0-based, local indexing
+            encoder.LoadArgument(this.parameterIndex[param.Parameter] - this.parameterIndex.GetMarker(this.currentProcedure!));
             return;
         }
 

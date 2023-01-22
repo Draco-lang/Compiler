@@ -39,6 +39,13 @@ namespace Draco.Compiler.Api.Syntax;
                 this.green = green;
             }
         {{end}}
+
+        {{if $node.IsAbstract}}
+            public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
+        {{else}}
+            public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+                visitor.Visit{{$node.Name}}(this);
+        {{end}}
     }
 
     {{if !$node.IsAbstract}}

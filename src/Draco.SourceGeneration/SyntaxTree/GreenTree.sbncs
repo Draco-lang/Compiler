@@ -14,6 +14,22 @@
     {{end}}
 {{end}}
 
+{{func abstract_sealed(node)}}
+    {{if node.IsAbstract}}
+        abstract
+    {{else}}
+        sealed
+    {{end}}
+{{end}}
+
+{{func protected_public(node)}}
+    {{if node.IsAbstract}}
+        protected
+    {{else}}
+        public
+    {{end}}
+{{end}}
+
 {{func prop(field)}}
     {{summary(field.Documentation)}}
     public
@@ -40,26 +56,31 @@
     {{end}}
 {{end}}
 
+{{func args(fields)}}
+    {{wrap comma_separated fields}}
+        {{to_camel_case($element.Name)}}
+    {{end}}
+{{end}}
+
 {{for $node in Nodes}}
     {{summary($node.Documentation)}}
-    internal
-    {{if $node.IsAbstract}}
-        abstract
-    {{else}}
-        sealed
-    {{end}}
-    partial class {{$node.Name}} {{base($node)}}
+    internal {{abstract_sealed($node)}} partial class {{$node.Name}} {{base($node)}}
     {
         {{for $field in $node.Fields}}
             {{prop($field)}}
         {{end}}
 
-        {{if $node.IsAbstract}}
-            protected
-        {{else}}
-            public
-        {{end}}
-        {{$node.Name}}({{params($node.Fields)}})
+        public override IEnumerable<{{Root.Name}}> Children
+        {
+            get
+            {
+                {{for $field in $node.Fields}}
+                    yield return this.{{$field.Name}};
+                {{end}}
+            }
+        }
+
+        {{protected_public($node)}} {{$node.Name}}({{params($node.Fields)}})
         {
             {{for $element in $node.Fields}}
                 this.{{$element.Name}} = {{to_camel_case($element.Name)}};

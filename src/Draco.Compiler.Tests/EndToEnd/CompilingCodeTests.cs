@@ -93,6 +93,29 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void PowerWithFloat64()
+    {
+        var assembly = Compile("""
+            func power(n: float64, exponent: int32): float64 = {
+                var i = 1;
+                var result = n;
+                while (i < exponent){
+                    result *= n;
+                    i += 1;
+                }
+                result
+            };
+            """);
+
+        var inputs = new[] { (1.5, 3), (5.28, 2), (-2.5, 4), (3, 3), (8.847, 2) };
+        foreach (var (n, exp) in inputs)
+        {
+            var pow = Invoke<double>(assembly, "power", n, exp);
+            Assert.Equal(Math.Pow(n, exp), pow, 5);
+        }
+    }
+
+    [Fact]
     public void LazyAnd()
     {
         var assembly = Compile("""

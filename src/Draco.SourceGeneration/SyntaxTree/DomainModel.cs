@@ -60,8 +60,10 @@ public sealed class Tree
 
         return new Tree(
             root: GetNodeByName(tree.Root),
-            abstractNodes: tree.AbstractNodes.Select(n => GetNodeByName(n.Name)).ToList(),
-            nodes: tree.Nodes.Select(n => GetNodeByName(n.Name)).ToList());
+            nodes: tree.AbstractNodes.Select(n => n.Name)
+                .Concat(tree.Nodes.Select(n => n.Name))
+                .Select(GetNodeByName)
+                .ToList());
     }
 
     private static void ValidateXml(XmlTree tree)
@@ -79,13 +81,11 @@ public sealed class Tree
     }
 
     public Node Root { get; }
-    public IList<Node> AbstractNodes { get; }
     public IList<Node> Nodes { get; }
 
-    public Tree(Node root, IList<Node> abstractNodes, IList<Node> nodes)
+    public Tree(Node root, IList<Node> nodes)
     {
         this.Root = root;
-        this.AbstractNodes = abstractNodes;
         this.Nodes = nodes;
     }
 }

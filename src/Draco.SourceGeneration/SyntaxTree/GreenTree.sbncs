@@ -40,29 +40,26 @@
     {{end}}
 {{end}}
 
-{{for $node in AbstractNodes}}
-    {{summary($node.Documentation)}}
-    internal abstract class {{$node.Name}} {{base($node)}}
-    {
-        {{for $field in $node.Fields}}
-            {{prop($field)}}
-        {{end}}
-
-        protected {{$node.Name}}({{params($node.Fields)}})
-        {
-        }
-    }
-{{end}}
-
 {{for $node in Nodes}}
     {{summary($node.Documentation)}}
-    internal sealed class {{$node.Name}} {{base($node)}}
+    internal
+    {{if $node.IsAbstract}}
+        abstract
+    {{else}}
+        sealed
+    {{end}}
+    partial class {{$node.Name}} {{base($node)}}
     {
         {{for $field in $node.Fields}}
             {{prop($field)}}
         {{end}}
 
-        public {{$node.Name}}({{params($node.Fields)}})
+        {{if $node.IsAbstract}}
+            protected
+        {{else}}
+            public
+        {{end}}
+        {{$node.Name}}({{params($node.Fields)}})
         {
             {{for $element in $node.Fields}}
                 this.{{$element.Name}} = {{to_camel_case($element.Name)}};

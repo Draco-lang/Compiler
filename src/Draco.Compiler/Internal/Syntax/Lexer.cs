@@ -254,7 +254,7 @@ internal sealed class Lexer
                 while (char.IsDigit(this.Peek(offset))) ++offset;
                 var floatView = this.Advance(offset);
                 // TODO: Parsing into an float32 might not be the best idea
-                var floatValue = float.Parse(floatView.Span.ToString(), provider: CultureInfo.InvariantCulture);
+                var floatValue = double.Parse(floatView.Span.ToString(), provider: CultureInfo.InvariantCulture);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralFloat)
                     .SetText(floatView.ToString())

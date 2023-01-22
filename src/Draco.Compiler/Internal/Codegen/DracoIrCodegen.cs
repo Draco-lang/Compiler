@@ -49,6 +49,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         if (type == Semantics.Types.Type.Bool) return IrType.Bool;
         if (type == Semantics.Types.Type.Int32) return IrType.Int32;
         if (type == Semantics.Types.Type.String) return IrType.String;
+        if (type == Semantics.Types.Type.Float64) return IrType.Float64;
 
         if (type is Semantics.Types.Type.Function func)
         {

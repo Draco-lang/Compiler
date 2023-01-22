@@ -272,6 +272,7 @@ internal sealed class CilCodegen
         if (type == Type.Bool) { encoder.Boolean(); return; }
         if (type == Type.Int32) { encoder.Int32(); return; }
         if (type == Type.String) { encoder.String(); return; }
+        if (type == Type.Float64) { encoder.Double(); return; }
 
         // TODO
         throw new NotImplementedException();
@@ -436,6 +437,7 @@ internal sealed class CilCodegen
             if (constant.Value is int i4) { encoder.LoadConstantI4(i4); return; }
             if (constant.Value is bool b) { encoder.LoadConstantI4(b ? 1 : 0); return; }
             if (constant.Value is string s) { encoder.LoadString(this.metadataBuilder.GetOrAddUserString(s)); return; }
+            if (constant.Value is double d8) { encoder.LoadConstantR8(d8); return; }
         }
         if (value is Value.Reg reg)
         {

@@ -552,6 +552,7 @@ internal static class SymbolResolution
         // Types
         Add(Intrinsics.Types.Unit);
         Add(Intrinsics.Types.Int32);
+        Add(Intrinsics.Types.Float64);
         Add(Intrinsics.Types.String);
         Add(Intrinsics.Types.Bool);
         Add(Intrinsics.Types.Char);

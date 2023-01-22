@@ -5,8 +5,18 @@ using Draco.SourceGeneration.SyntaxTree;
 using Scriban;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Scriban.Runtime;
 
 namespace Draco.SourceGeneration;
+
+public sealed class ScribanHelperFunctions : ScriptObject
+{
+    public static string ToCamelCase(string str)
+    {
+        if (str.Length == 0) return str;
+        return $"{char.ToLower(str[0])}{str[1..]}";
+    }
+}
 
 internal class Program
 {
@@ -19,7 +29,15 @@ internal class Program
         var domainModel = Tree.FromXml(xmlModel);
 
         var template = Template.Parse(File.ReadAllText("../../../SyntaxTree/GreenTree.sbncs"));
-        var output = template.Render(model: domainModel, memberRenamer: n => n.Name);
+
+        var context = new TemplateContext();
+        var scriptObject = new ScriptObject();
+        scriptObject.Import(new ScribanHelperFunctions());
+        scriptObject.Import(domainModel, renamer: m => m.Name);
+        context.PushGlobal(scriptObject);
+        context.MemberRenamer = m => m.Name;
+
+        var output = template.Render(context);
         output = SyntaxFactory
             .ParseCompilationUnit(output)
             .NormalizeWhitespace()

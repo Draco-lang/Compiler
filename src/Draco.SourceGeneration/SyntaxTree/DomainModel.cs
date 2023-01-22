@@ -12,14 +12,25 @@ public sealed class Tree
     {
         ValidateXml(tree);
 
+        Field MakeField(XmlField field) =>
+            new(field.Name, field.Type, field.Override, field.Documentation?.Trim());
+
         Node MakePredefinedNode(XmlPredefinedNode node) =>
             new(node.Name, GetBaseByName(node.Base), false, string.Empty);
 
-        Node MakeAbstractNode(XmlAbstractNode node) =>
-            new(node.Name, GetBaseByName(node.Base), true, node.Documentation.Trim());
+        Node MakeAbstractNode(XmlAbstractNode node)
+        {
+            var result = new Node(node.Name, GetBaseByName(node.Base), true, node.Documentation.Trim());
+            foreach (var field in node.Fields) result.Fields.Add(MakeField(field));
+            return result;
+        }
 
-        Node MakeNode(XmlNode node) =>
-            new(node.Name, GetBaseByName(node.Base), false, node.Documentation.Trim());
+        Node MakeNode(XmlNode node)
+        {
+            var result = new Node(node.Name, GetBaseByName(node.Base), false, node.Documentation.Trim());
+            foreach (var field in node.Fields) result.Fields.Add(MakeField(field));
+            return result;
+        }
 
         Node MakeNodeByName(string name)
         {
@@ -86,6 +97,7 @@ public sealed class Node
     public bool IsAbstract { get; }
     public string Documentation { get; }
     public IList<Node> Derived { get; } = new List<Node>();
+    public IList<Field> Fields { get; } = new List<Field>();
 
     public Node(string name, Node? @base, bool isAbstract, string documentation)
     {
@@ -95,5 +107,21 @@ public sealed class Node
         this.Documentation = documentation;
 
         @base?.Derived.Add(this);
+    }
+}
+
+public sealed class Field
+{
+    public string Name { get; }
+    public string Type { get; }
+    public bool Override { get; }
+    public string? Documentation { get; }
+
+    public Field(string name, string type, bool @override, string? documentation)
+    {
+        this.Name = name;
+        this.Type = type;
+        this.Override = @override;
+        this.Documentation = documentation;
     }
 }

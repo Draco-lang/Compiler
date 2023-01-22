@@ -43,6 +43,9 @@ public sealed class XmlAbstractNode
     public string? Base { get; set; }
 
     public string Documentation { get; set; } = string.Empty;
+
+    [XmlElement("Field")]
+    public List<XmlField> Fields { get; set; } = null!;
 }
 
 [XmlRoot(ElementName = "Node")]
@@ -55,6 +58,9 @@ public sealed class XmlNode
     public string? Base { get; set; }
 
     public string Documentation { get; set; } = string.Empty;
+
+    [XmlElement("Field")]
+    public List<XmlField> Fields { get; set; } = null!;
 }
 
 [XmlRoot(ElementName = "Field")]

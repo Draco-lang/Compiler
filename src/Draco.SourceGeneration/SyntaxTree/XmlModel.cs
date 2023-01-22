@@ -7,56 +7,58 @@ using System.Xml.Serialization;
 
 namespace Draco.SourceGeneration.SyntaxTree;
 
-public sealed class Tree
+[XmlRoot(ElementName = "Tree")]
+public sealed class XmlTree
 {
     [XmlAttribute]
     public string Root { get; set; } = string.Empty;
 
-    [XmlAttribute]
-    public string Namespace { get; set; } = string.Empty;
-
     [XmlElement("PredefinedNode")]
-    public List<PredefinedNode> PredefinedNodes { get; set; } = null!;
+    public List<XmlPredefinedNode> PredefinedNodes { get; set; } = null!;
 
     [XmlElement("AbstractNode")]
-    public List<AbstractNode> AbstractNodes { get; set; } = null!;
+    public List<XmlAbstractNode> AbstractNodes { get; set; } = null!;
 
     [XmlElement("Node")]
-    public List<Node> Nodes { get; set; } = null!;
+    public List<XmlNode> Nodes { get; set; } = null!;
 }
 
-public sealed class PredefinedNode
+[XmlRoot(ElementName = "PredefinedNode")]
+public sealed class XmlPredefinedNode
 {
     [XmlAttribute]
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string Base { get; set; } = string.Empty;
+    public string? Base { get; set; } = string.Empty;
 }
 
-public sealed class AbstractNode
+[XmlRoot(ElementName = "AbstractNode")]
+public sealed class XmlAbstractNode
 {
     [XmlAttribute]
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string Base { get; set; } = string.Empty;
+    public string? Base { get; set; } = string.Empty;
 
     public string Documentation { get; set; } = string.Empty;
 }
 
-public sealed class Node
+[XmlRoot(ElementName = "Node")]
+public sealed class XmlNode
 {
     [XmlAttribute]
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string Base { get; set; } = string.Empty;
+    public string? Base { get; set; } = string.Empty;
 
     public string Documentation { get; set; } = string.Empty;
 }
 
-public sealed class Field
+[XmlRoot(ElementName = "Field")]
+public sealed class XmlField
 {
     [XmlAttribute]
     public string Name { get; set; } = string.Empty;

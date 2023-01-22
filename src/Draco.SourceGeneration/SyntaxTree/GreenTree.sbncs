@@ -2,7 +2,7 @@
 
 {{for node in AbstractNodes}}
     /// <summary>
-    /// {{string.strip(node.Documentation)}}
+    /// {{node.Documentation}}
     /// </summary>
     internal abstract class {{node.Name}}
     {
@@ -11,7 +11,7 @@
 
 {{for node in Nodes}}
     /// <summary>
-    /// {{string.strip(node.Documentation)}}
+    /// {{node.Documentation}}
     /// </summary>
     internal sealed class {{node.Name}}
     {

@@ -22,11 +22,12 @@ internal class Program
     internal static void Main(string[] args)
     {
         var str = new StringWriter();
-        var serializer = new XmlSerializer(typeof(Tree));
-        var model = (Tree)serializer.Deserialize(new StringReader(syntax))!;
+        var serializer = new XmlSerializer(typeof(XmlTree));
+        var xmlModel = (XmlTree)serializer.Deserialize(new StringReader(syntax))!;
+        var domainModel = Tree.FromXml(xmlModel);
 
         var template = Template.Parse(File.ReadAllText("../../../SyntaxTree/GreenTree.sbncs"));
-        var output = template.Render(model: model, memberRenamer: n => n.Name);
+        var output = template.Render(model: domainModel, memberRenamer: n => n.Name);
         Console.WriteLine(output);
     }
 }

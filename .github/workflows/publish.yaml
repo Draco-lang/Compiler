@@ -69,7 +69,7 @@ jobs:
           $project = "Draco.$project"
           dotnet restore $project
           dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore /p:Version="$version"
-          dotnet pack $project --no-build /p:Version="$version"
+          dotnet pack $project --configuration ${{ env.CONFIGURATION }} --no-build /p:Version="$version"
         }
         cd ..
 

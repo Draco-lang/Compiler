@@ -93,7 +93,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void PowerDecimalNumbers()
+    public void PowerWithFloat64()
     {
         var assembly = Compile("""
             func power(n: float64, exponent: int32): float64 = {

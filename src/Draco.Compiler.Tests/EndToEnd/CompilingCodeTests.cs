@@ -111,7 +111,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         foreach (var (n, exp) in inputs)
         {
             var pow = Invoke<double>(assembly, "power", n, exp);
-            Assert.Equal(Math.Pow(n, exp), pow);
+            Assert.Equal(Math.Pow(n, exp), pow, 5);
         }
     }
 

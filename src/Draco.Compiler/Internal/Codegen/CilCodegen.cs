@@ -435,7 +435,7 @@ internal sealed class CilCodegen
         if (value is Value.Const constant)
         {
             if (constant.Value is int i4) { encoder.LoadConstantI4(i4); return; }
-            if (constant.Value is double d8) { encoder.LoadConstantR8(d8); return; }
+            if (constant.Value is double r8) { encoder.LoadConstantR8(r8); return; }
             if (constant.Value is bool b) { encoder.LoadConstantI4(b ? 1 : 0); return; }
             if (constant.Value is string s) { encoder.LoadString(this.metadataBuilder.GetOrAddUserString(s)); return; }
         }

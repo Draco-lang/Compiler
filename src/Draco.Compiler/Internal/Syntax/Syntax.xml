@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Tree Root="SyntaxNode">
+  <PredefinedNode Name="SyntaxNode" />
+
+  <Node Name="CompilationUnitSyntax" Base="SyntaxNode">
+    <Documentation>
+      Contains all declarations within an entire compilation unit.
+    </Documentation>
+
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;">
+      <Documentation>
+        All declaration syntaxes within the compilation unit.
+      </Documentation>
+    </Field>
+    <Field Name="End" Type="SyntaxToken">
+      <Documentation>
+        The end of input token.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <AbstractNode Name="DeclarationSyntax">
+    <Documentation>
+      Any declaration.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      Unexpected input in declaration context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+    <Field Name="Diagnostics" Type="ImmutableArray&lt;Diagnostic&gt;" Override="true" />
+  </Node>
+
+  <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A function declaration.
+    </Documentation>
+
+    <Field Name="FunctionKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'func' keyword starting the declaration.
+      </Documentation>
+
+      <Token Kind="KeywordFunc" />
+    </Field>
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared function.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;ParameterSyntax&gt;">
+      <Documentation>
+        The parameters this function declares.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="ReturnType" Type="TypeSpecifierSyntax">
+      <Documentation>
+        The return type of the function.
+      </Documentation>
+    </Field>
+    <Field Name="Body" Type="FunctionBodySyntax">
+      <Documentation>
+        The body of the function.
+      </Documentation>
+    </Field>
+  </Node>
+</Tree>

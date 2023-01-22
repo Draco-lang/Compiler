@@ -1,10 +1,16 @@
-﻿namespace {{Namespace}};
+﻿namespace Draco.Compiler.Internal.Syntax;
+
+{{func base(node)}}
+    {{if node.Base}}
+        : {{node.Base.Name}}
+    {{end}}
+{{end}}
 
 {{for node in AbstractNodes}}
     /// <summary>
     /// {{node.Documentation}}
     /// </summary>
-    internal abstract class {{node.Name}}
+    internal abstract class {{node.Name}} {{base(node)}}
     {
     }
 {{end}}
@@ -13,7 +19,7 @@
     /// <summary>
     /// {{node.Documentation}}
     /// </summary>
-    internal sealed class {{node.Name}}
+    internal sealed class {{node.Name}} {{base(node)}}
     {
     }
 {{end}}

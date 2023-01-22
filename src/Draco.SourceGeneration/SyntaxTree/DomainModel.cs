@@ -10,6 +10,8 @@ public sealed class Tree
 {
     public static Tree FromXml(XmlTree tree)
     {
+        ValidateXml(tree);
+
         Node MakePredefinedNode(XmlPredefinedNode node) =>
             new(node.Name, GetBaseByName(node.Base), false, string.Empty);
 

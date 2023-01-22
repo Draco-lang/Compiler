@@ -30,7 +30,7 @@ public sealed class XmlPredefinedNode
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string? Base { get; set; } = string.Empty;
+    public string? Base { get; set; }
 }
 
 [XmlRoot(ElementName = "AbstractNode")]
@@ -40,7 +40,7 @@ public sealed class XmlAbstractNode
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string? Base { get; set; } = string.Empty;
+    public string? Base { get; set; }
 
     public string Documentation { get; set; } = string.Empty;
 }
@@ -52,7 +52,7 @@ public sealed class XmlNode
     public string Name { get; set; } = string.Empty;
 
     [XmlAttribute]
-    public string? Base { get; set; } = string.Empty;
+    public string? Base { get; set; }
 
     public string Documentation { get; set; } = string.Empty;
 }
@@ -66,5 +66,8 @@ public sealed class XmlField
     [XmlAttribute]
     public string Type { get; set; } = string.Empty;
 
-    public string Documentation { get; set; } = string.Empty;
+    [XmlAttribute]
+    public bool Override { get; set; }
+
+    public string? Documentation { get; set; }
 }

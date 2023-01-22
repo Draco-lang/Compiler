@@ -27,7 +27,9 @@
 {{end}}
 
 {{func field_prefix(field)}}
-    {{doc_summary(field.Documentation)}}
+    /// <summary>
+    /// {{field.Documentation}}
+    /// </summary>
     public
     {{if field.Override}}
         override

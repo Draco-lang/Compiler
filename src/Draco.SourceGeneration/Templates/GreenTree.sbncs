@@ -4,7 +4,9 @@
 {{include 'Tree.sbncs'}}
 
 {{for $node in Nodes}}
-    {{doc_summary($node.Documentation)}}
+    /// <summary>
+    /// {{$node.Documentation}}
+    /// </summary>
     internal {{class_header($node)}}
     {
         {{for $field in $node.Fields}}

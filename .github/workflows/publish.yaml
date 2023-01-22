@@ -67,9 +67,7 @@ jobs:
         foreach ($project in $projects)
         {
           $project = "Draco.$project"
-          dotnet restore $project
-          dotnet build $project --configuration ${{ env.CONFIGURATION }} --no-restore /p:Version="$version"
-          dotnet pack $project --no-build /p:Version="$version"
+          dotnet pack $project --configuration ${{ env.CONFIGURATION }} /p:Version="$version"
         }
         cd ..
 

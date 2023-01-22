@@ -15,6 +15,7 @@ internal static class Intrinsics
     {
         public static ITypeDefinition Unit { get; } = MakeIntrinsicTypeDefinition("unit", Type.Unit);
         public static ITypeDefinition Int32 { get; } = MakeIntrinsicTypeDefinition("int32", Type.Int32);
+        public static ITypeDefinition Float64 { get; } = MakeIntrinsicTypeDefinition("float64", Type.Float64);
         public static ITypeDefinition Bool { get; } = MakeIntrinsicTypeDefinition("bool", Type.Bool);
         public static ITypeDefinition String { get; } = MakeIntrinsicTypeDefinition("string", Type.String);
         public static ITypeDefinition Char { get; } = MakeIntrinsicTypeDefinition("char", Type.Char);

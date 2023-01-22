@@ -1,10 +1,4 @@
-{{func summary(doc)}}
-    {{if doc}}
-        /// <summary>
-        /// {{doc}}
-        /// </summary>
-    {{end}}
-{{end}}
+{{include 'Utils.sbncs'}}
 
 {{func base(node)}}
     {{if node.Base}}
@@ -28,27 +22,17 @@
     {{end}}
 {{end}}
 
-{{func comma_separated}}
-    {{$first = true}}
-    {{for $element in $0}}
-        {{if !$first}}
-            ,
-        {{end}}
-        {{$first = false}}
-        {{$$}}
-    {{end}}
+{{func class_header(node)}}
+    {{abstract_sealed(node)}} partial class {{node.Name}} {{base(node)}}
 {{end}}
 
-{{func params(fields)}}
-    {{wrap comma_separated fields}}
-        {{$element.Type}} {{camel_case($element.Name)}}
+{{func field_prefix(field)}}
+    {{doc_summary(field.Documentation)}}
+    public
+    {{if field.Override}}
+        override
     {{end}}
-{{end}}
-
-{{func args(fields)}}
-    {{wrap comma_separated fields}}
-        {{camel_case($element.Name)}}
-    {{end}}
+    {{field.Type}} {{field.Name}}
 {{end}}
 
 {{func children(node)}}

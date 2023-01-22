@@ -1,0 +1,27 @@
+﻿namespace Draco.Compiler.Internal.Syntax;
+
+{{include 'Utils.sbncs'}}
+{{include 'Tree.sbncs'}}
+
+{{for $node in Nodes}}
+    {{doc_summary($node.Documentation)}}
+    internal {{class_header($node)}}
+    {
+        {{for $field in $node.Fields}}
+            {{field_prefix($field)}} { get; }
+        {{end}}
+
+        {{children($node)}}
+
+        {{protected_public($node)}} {{$node.Name}}(
+            {{wrap separated(', ', $node.Fields)}}
+                {{$element.Type}} {{camel_case($element.Name)}}
+            {{end}}
+        )
+        {
+            {{for $element in $node.Fields}}
+                this.{{$element.Name}} = {{camel_case($element.Name)}};
+            {{end}}
+        }
+    }
+{{end}}

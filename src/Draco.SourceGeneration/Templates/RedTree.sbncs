@@ -1,0 +1,27 @@
+namespace Draco.Compiler.Api.Syntax;
+
+{{include 'Utils.sbncs'}}
+{{include 'Tree.sbncs'}}
+
+{{for $node in Nodes}}
+    {{doc_summary($node.Documentation)}}
+    public {{class_header($node)}}
+    {
+        {{for $field in $node.Fields}}
+            {{$backingField = camel_case($field.Name)}}
+            {{field_prefix($field)}} => this.{{$backingField}} ??= ToRed(this.green.{{$field.Name}});
+            private Internal.Syntax.{{$field.Type}} {{$backingField}};
+        {{end}}
+
+        {{children($node)}}
+
+        {{if !$node.IsAbstract}}
+            private readonly Internal.Syntax.{{$node.Name}} green;
+
+            internal {{$node.Name}}(Internal.Syntax.{{$node.Name}} green)
+            {
+                this.green = green;
+            }
+        {{end}}
+    }
+{{end}}

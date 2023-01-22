@@ -1,0 +1,36 @@
+{{# Writes a summary documentation comment with the given parameter as the documentation text.}}
+{{# Accepts null, in which case the documentation comment is omitted.}}
+{{func doc_summary(doc)}}
+    {{if doc}}
+        /// <summary>
+        /// {{doc}}
+        /// </summary>
+    {{end}}
+{{end}}
+
+{{# Writes a parameter documentation comment.}}
+{{func doc_param(name, doc)}}
+    /// <param name="{{name}}">
+    /// {{doc}}
+    /// </param>
+{{end}}
+
+{{# Writes a return documentation comment.}}
+{{func doc_returns(doc)}}
+    /// <returns>
+    /// {{doc}}
+    /// </returns>
+{{end}}
+
+{{# Expands the passed in block with a separator in-between the elements.}}
+{{# The element is called '$element'.}}
+{{func separated(separator, elements)}}
+    {{$first = true}}
+    {{for $element in $elements}}
+        {{if !$first}}
+            {{separator}}
+        {{end}}
+        {{$first = false}}
+        {{$$}}
+    {{end}}
+{{end}}

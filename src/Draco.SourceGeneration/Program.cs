@@ -6,6 +6,8 @@ using Scriban;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Scriban.Runtime;
+using Scriban.Parsing;
+using System.Threading.Tasks;
 
 namespace Draco.SourceGeneration;
 
@@ -16,6 +18,17 @@ public sealed class ScribanHelperFunctions : ScriptObject
         if (str.Length == 0) return str;
         return $"{char.ToLower(str[0])}{str[1..]}";
     }
+}
+
+public sealed class ScribanTemplateLoader : ITemplateLoader
+{
+    public string GetPath(TemplateContext context, SourceSpan callerSpan, string templateName) =>
+        Path.GetFullPath(templateName);
+    public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath) =>
+        // TODO
+        File.ReadAllText("../../../SyntaxTree/Common.sbncs");
+    public async ValueTask<string> LoadAsync(TemplateContext context, SourceSpan callerSpan, string templatePath) =>
+        await File.ReadAllTextAsync(templatePath);
 }
 
 internal class Program
@@ -31,6 +44,7 @@ internal class Program
         var template = Template.Parse(File.ReadAllText("../../../SyntaxTree/GreenTree.sbncs"));
 
         var context = new TemplateContext();
+        context.TemplateLoader = new ScribanTemplateLoader();
         var scriptObject = new ScriptObject();
         scriptObject.Import(new ScribanHelperFunctions());
         scriptObject.Import(domainModel, renamer: m => m.Name);

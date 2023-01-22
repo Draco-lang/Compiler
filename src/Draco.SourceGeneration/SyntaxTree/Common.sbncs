@@ -1,0 +1,61 @@
+{{func summary(doc)}}
+    {{if doc}}
+        /// <summary>
+        /// {{doc}}
+        /// </summary>
+    {{end}}
+{{end}}
+
+{{func base(node)}}
+    {{if node.Base}}
+        : {{node.Base.Name}}
+    {{end}}
+{{end}}
+
+{{func abstract_sealed(node)}}
+    {{if node.IsAbstract}}
+        abstract
+    {{else}}
+        sealed
+    {{end}}
+{{end}}
+
+{{func protected_public(node)}}
+    {{if node.IsAbstract}}
+        protected
+    {{else}}
+        public
+    {{end}}
+{{end}}
+
+{{func prop(field)}}
+    {{summary(field.Documentation)}}
+    public
+    {{if field.Override}}
+        override
+    {{end}}
+    {{field.Type}} {{field.Name}} { get; }
+{{end}}
+
+{{func comma_separated}}
+    {{$first = true}}
+    {{for $element in $0}}
+        {{if !$first}}
+            ,
+        {{end}}
+        {{$first = false}}
+        {{$$}}
+    {{end}}
+{{end}}
+
+{{func params(fields)}}
+    {{wrap comma_separated fields}}
+        {{$element.Type}} {{to_camel_case($element.Name)}}
+    {{end}}
+{{end}}
+
+{{func args(fields)}}
+    {{wrap comma_separated fields}}
+        {{to_camel_case($element.Name)}}
+    {{end}}
+{{end}}

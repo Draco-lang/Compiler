@@ -23,5 +23,10 @@
                 this.{{$element.Name}} = {{camel_case($element.Name)}};
             {{end}}
         }
+
+        {{if !$node.IsAbstract}}
+            public Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent) =>
+                new Api.Syntax.{{$node.Name}}(tree, this, parent);
+        {{end}}
     }
 {{end}}

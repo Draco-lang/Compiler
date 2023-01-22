@@ -7,19 +7,33 @@ namespace Draco.Compiler.Api.Syntax;
     {{doc_summary($node.Documentation)}}
     public {{class_header($node)}}
     {
+        {{if $node.IsAbstract}}
+            public {{Root.Name}} Parent { get; }
+        {{end}}
+
         {{for $field in $node.Fields}}
             {{$backingField = camel_case($field.Name)}}
-            {{field_prefix($field)}} => this.{{$backingField}} ??= ToRed(this.green.{{$field.Name}});
+            {{field_prefix($field)}} => this.{{$backingField}} ??= this.green.{{$field.Name}}.ToRedNode(this.tree, this);
             private Internal.Syntax.{{$field.Type}} {{$backingField}};
         {{end}}
 
         {{children($node)}}
 
-        {{if !$node.IsAbstract}}
+        {{if $node.IsAbstract}}
+            internal {{$node.Name}}({{Root.Name}}? parent)
+            {
+                this.Parent = parent;
+            }
+        {{else}}
+            private readonly Internal.Syntax.SyntaxTree tree;
             private readonly Internal.Syntax.{{$node.Name}} green;
 
-            internal {{$node.Name}}(Internal.Syntax.{{$node.Name}} green)
+            internal {{$node.Name}}(
+                Internal.Syntax.SyntaxTree tree,
+                Internal.Syntax.{{$node.Name}} green,
+                {{Root.Name}}? parent) : base(parent)
             {
+                this.tree = tree;
                 this.green = green;
             }
         {{end}}

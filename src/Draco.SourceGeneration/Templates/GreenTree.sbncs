@@ -44,3 +44,22 @@
         {{end}}
     }
 {{end}}
+
+/// <summary>
+/// Visitor base class for <cref see="{{Root.Name}}"/>.
+/// </summary>
+internal abstract partial class SyntaxVisitor
+{
+    {{visitor_functions(Nodes, 'void', null)}}
+}
+
+/// <summary>
+/// Visitor base class for <cref see="{{Root.Name}}"/>.
+/// </summary>
+/// <typeparam name="TResult">
+/// The return type of the visitor methods.
+/// </typeparam>
+internal abstract partial class SyntaxVisitor<TResult>
+{
+    {{visitor_functions(Nodes, 'TResult', 'default!')}}
+}

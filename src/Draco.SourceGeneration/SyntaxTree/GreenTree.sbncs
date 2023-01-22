@@ -7,25 +7,20 @@
     internal {{abstract_sealed($node)}} partial class {{$node.Name}} {{base($node)}}
     {
         {{for $field in $node.Fields}}
-            {{prop($field)}}
+            {{summary($field.Documentation)}}
+            public
+            {{if $field.Override}}
+                override
+            {{end}}
+            {{$field.Type}} {{$field.Name}} { get; }
         {{end}}
 
-        {{if !$node.IsAbstract}}
-            public override IEnumerable<{{Root.Name}}> Children
-            {
-                get
-                {
-                    {{for $field in $node.Fields}}
-                        yield return this.{{$field.Name}};
-                    {{end}}
-                }
-            }
-        {{end}}
+        {{children($node)}}
 
         {{protected_public($node)}} {{$node.Name}}({{params($node.Fields)}})
         {
             {{for $element in $node.Fields}}
-                this.{{$element.Name}} = {{to_camel_case($element.Name)}};
+                this.{{$element.Name}} = {{camel_case($element.Name)}};
             {{end}}
         }
     }

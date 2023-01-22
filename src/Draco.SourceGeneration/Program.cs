@@ -13,7 +13,7 @@ namespace Draco.SourceGeneration;
 
 public sealed class ScribanHelperFunctions : ScriptObject
 {
-    public static string ToCamelCase(string str)
+    public static string CamelCase(string str)
     {
         if (str.Length == 0) return str;
         return $"{char.ToLower(str[0])}{str[1..]}";
@@ -41,7 +41,7 @@ internal class Program
         var xmlModel = (XmlTree)serializer.Deserialize(new StringReader(syntaxXml))!;
         var domainModel = Tree.FromXml(xmlModel);
 
-        var template = Template.Parse(File.ReadAllText("../../../SyntaxTree/GreenTree.sbncs"));
+        var template = Template.Parse(File.ReadAllText("../../../SyntaxTree/RedTree.sbncs"));
 
         var context = new TemplateContext();
         context.TemplateLoader = new ScribanTemplateLoader();

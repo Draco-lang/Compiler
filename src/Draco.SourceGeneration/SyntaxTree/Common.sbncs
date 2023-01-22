@@ -28,15 +28,6 @@
     {{end}}
 {{end}}
 
-{{func prop(field)}}
-    {{summary(field.Documentation)}}
-    public
-    {{if field.Override}}
-        override
-    {{end}}
-    {{field.Type}} {{field.Name}} { get; }
-{{end}}
-
 {{func comma_separated}}
     {{$first = true}}
     {{for $element in $0}}
@@ -50,12 +41,27 @@
 
 {{func params(fields)}}
     {{wrap comma_separated fields}}
-        {{$element.Type}} {{to_camel_case($element.Name)}}
+        {{$element.Type}} {{camel_case($element.Name)}}
     {{end}}
 {{end}}
 
 {{func args(fields)}}
     {{wrap comma_separated fields}}
-        {{to_camel_case($element.Name)}}
+        {{camel_case($element.Name)}}
+    {{end}}
+{{end}}
+
+{{func children(node)}}
+    {{if !node.IsAbstract}}
+        public override IEnumerable<{{Root.Name}}> Children
+        {
+            get
+            {
+                {{for $field in node.Fields}}
+                    yield return this.{{$field.Name}};
+                {{end}}
+                yield break;
+            }
+        }
     {{end}}
 {{end}}

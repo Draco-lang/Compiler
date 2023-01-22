@@ -1,0 +1,26 @@
+{{include 'Utils.sbncs'}}
+
+{{func visitor_functions(nodes, return_type, return_value)}}
+    {{for $node in nodes}}
+        {{if $node.IsAbstract}}
+            public {{return_type}} Visit{{$node.Name}}({{$node.Name}} node)
+            {
+                {{if return_value}}
+                    return node.Accept(this);
+                {{else}}
+                    node.Accept(this);
+                {{end}}
+            }
+        {{else}}
+            public virtual {{return_type}} Visit{{$node.Name}}({{$node.Name}} node)
+            {
+                {{for $field in $node.Fields}}
+                    node.{{$field.Name}}.Accept(this);
+                {{end}}
+                {{if return_value}}
+                    return return_value;
+                {{end}}
+            }
+        {{end}}
+    {{end}}
+{{end}}

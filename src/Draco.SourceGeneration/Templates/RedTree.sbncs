@@ -52,7 +52,7 @@ namespace Draco.Compiler.Api.Syntax;
     }
 
     {{if !$node.IsAbstract}}
-        public static class SyntaxFactory
+        public static partial class SyntaxFactory
         {
             /// <summary>
             /// Constructs a new <cref see="{{$node.Name}}"/>.

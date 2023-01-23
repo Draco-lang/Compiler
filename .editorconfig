@@ -7,7 +7,7 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 
-[*.{csproj,props,json,xml}]
+[*.{csproj,props,json,xml,xsd}]
 indent_size = 2
 
 [*.{cs,razor}]

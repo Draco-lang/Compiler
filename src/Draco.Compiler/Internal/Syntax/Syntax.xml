@@ -19,7 +19,7 @@
     </Field>
   </Node>
 
-  <AbstractNode Name="DeclarationSyntax">
+  <AbstractNode Name="DeclarationSyntax" Base="SyntaxNode">
     <Documentation>
       Any declaration.
     </Documentation>
@@ -85,6 +85,99 @@
       <Documentation>
         The body of the function.
       </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="LabelDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A label declaration.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared label.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Colon" Type="SyntaxToken">
+      <Documentation>
+        The colon after the label name.
+      </Documentation>
+
+      <Token Kind="Colon" />
+    </Field>
+  </Node>
+
+  <Node Name="VariableDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A variable declaration.
+    </Documentation>
+
+    <Field Name="Keyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword introducing the variable, either 'var' or 'val'.
+      </Documentation>
+
+      <Token Kind="KeywordVar" />
+      <Token Kind="KeywordVal" />
+    </Field>
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared variable.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Type" Type="TypeSpecifierSyntax">
+      <Documentation>
+        The type of the declared variable.
+      </Documentation>
+    </Field>
+    <Field Name="Value" Type="ValueSpecifierSyntax">
+      <Documentation>
+        The initializer value for the variable.
+      </Documentation>
+    </Field>
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon closing the variable declaration.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="TypeExpressionSyntax" Base="SyntaxNode">
+    <Documentation>
+      Any type expression.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedTypeExpressionSyntax" Base="TypeExpressionSyntax">
+    <Documentation>
+      Unexpected input in type expression context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+    <Field Name="Diagnostics" Type="ImmutableArray&lt;Diagnostic&gt;" Override="true" />
+  </Node>
+
+  <Node Name="NameTypeExpressionSyntax" Base="TypeExpressionSyntax">
+    <Documentation>
+      A single identifier referencing a type name.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxNode">
+      <Documentation>
+        The identifier referencing the type.
+      </Documentation>
+
+      <Token Kind="Identifier" />
     </Field>
   </Node>
 </Tree>

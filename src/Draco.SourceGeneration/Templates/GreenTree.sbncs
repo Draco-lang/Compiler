@@ -27,12 +27,14 @@
         }
 
         {{if $node.IsAbstract}}
-            {{if !$node.Base}}
-                public abstract Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent);
+            public abstract
+            {{if $node.Base}}
+                override
             {{end}}
+            Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent);
         {{else}}
             public override Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent) =>
-                new Api.Syntax.{{$node.Name}}(tree, this, parent);
+                new Api.Syntax.{{$node.Name}}(tree, parent, this);
         {{end}}
 
         {{accept_functions($node)}}

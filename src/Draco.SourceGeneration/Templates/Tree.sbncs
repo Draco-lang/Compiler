@@ -22,6 +22,12 @@
     {{end}}
 {{end}}
 
+{{func nullable(field)}}
+    {{if field.IsNullable}}
+        ?
+    {{end}}
+{{end}}
+
 {{func class_header(node)}}
     {{abstract_sealed(node)}} partial class {{node.Name}} {{base(node)}}
 {{end}}
@@ -44,6 +50,9 @@
             get
             {
                 {{for $field in node.Fields}}
+                    {{if $field.IsNullable}}
+                        if (this.{{$field.Name}} is not null)
+                    {{end}}
                     yield return this.{{$field.Name}};
                 {{end}}
                 yield break;
@@ -79,7 +88,7 @@
             public virtual {{return_type}} Visit{{$node.Name}}({{$node.Name}} node)
             {
                 {{for $field in $node.Fields}}
-                    node.{{$field.Name}}.Accept(this);
+                    node.{{$field.Name}}{{nullable($field)}}.Accept(this);
                 {{end}}
                 {{if return_value}}
                     return {{return_value}};

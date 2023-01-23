@@ -431,7 +431,7 @@
 
       <Token Kind="ParenClose" />
     </Field>
-    <Field Name="Then" Type="ExressionSyntax">
+    <Field Name="Then" Type="ExpressionSyntax">
       <Documentation>
         The portion evaluated repeatedly, while the condition is true.
       </Documentation>

@@ -116,6 +116,8 @@ public sealed class Field
     public string Type { get; }
     public bool Override { get; }
     public string? Documentation { get; }
+    public bool IsNullable => this.Type.EndsWith('?');
+    public string NonNullableType => this.IsNullable ? this.Type[..^1] : this.Type;
 
     public Field(string name, string type, bool @override, string? documentation)
     {

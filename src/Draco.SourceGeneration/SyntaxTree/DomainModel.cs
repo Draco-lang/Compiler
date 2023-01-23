@@ -118,6 +118,17 @@ public sealed class Field
     public string? Documentation { get; }
     public bool IsNullable => this.Type.EndsWith('?');
     public string NonNullableType => this.IsNullable ? this.Type[..^1] : this.Type;
+    public bool IsSyntaxList => this.Type.Contains("SyntaxList");
+    public string ElementType
+    {
+        get
+        {
+            var start = this.Type.IndexOf('<');
+            var end = this.Type.IndexOf('>');
+            if (start < 0 || end < 0 || end < start) throw new InvalidOperationException();
+            return this.Type[(start + 1)..end];
+        }
+    }
 
     public Field(string name, string type, bool @override, string? documentation)
     {

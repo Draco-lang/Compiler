@@ -79,7 +79,7 @@
 
       <Token Kind="ParenClose" />
     </Field>
-    <Field Name="ReturnType" Type="TypeSpecifierSyntax">
+    <Field Name="ReturnType" Type="TypeSpecifierSyntax?">
       <Documentation>
         The return type of the function.
       </Documentation>
@@ -87,6 +87,32 @@
     <Field Name="Body" Type="FunctionBodySyntax">
       <Documentation>
         The body of the function.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ParameterSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single parameter in a function parameter list.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the parameter.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Colon" Type="SyntaxToken">
+      <Documentation>
+        The colon token between the name and the type.
+      </Documentation>
+
+      <Token Kind="Colon" />
+    </Field>
+    <Field Name="Type" Type="TypeSyntax">
+      <Documentation>
+        The type of the parameter.
       </Documentation>
     </Field>
   </Node>
@@ -132,12 +158,12 @@
 
       <Token Kind="Identifier" />
     </Field>
-    <Field Name="Type" Type="TypeSpecifierSyntax">
+    <Field Name="Type" Type="TypeSpecifierSyntax?">
       <Documentation>
         The type of the declared variable.
       </Documentation>
     </Field>
-    <Field Name="Value" Type="ValueSpecifierSyntax">
+    <Field Name="Value" Type="ValueSpecifierSyntax?">
       <Documentation>
         The initializer value for the variable.
       </Documentation>
@@ -151,13 +177,51 @@
     </Field>
   </Node>
 
-  <AbstractNode Name="TypeExpressionSyntax" Base="SyntaxNode">
+  <Node Name="TypeSpecifierSyntax" Base="SyntaxNode">
+    <Documentation>
+      A type specifier referencing a type.
+    </Documentation>
+
+    <Field Name="Colon" Type="SyntaxToken">
+      <Documentation>
+        The colon token.
+      </Documentation>
+
+      <Token Kind="Colon" />
+    </Field>
+    <Field Name="Type" Type="TypeSyntax">
+      <Documentation>
+        The type specified.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ValueSpecifierSyntax" Base="SyntaxNode">
+    <Documentation>
+      A value specifier specifying an expression.
+    </Documentation>
+
+    <Field Name="Assign" Type="SyntaxToken">
+      <Documentation>
+        The assignment token.
+      </Documentation>
+
+      <Token Kind="Assign" />
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax">
+      <Documentation>
+        The value specified.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <AbstractNode Name="TypeSyntax" Base="SyntaxNode">
     <Documentation>
       Any type expression.
     </Documentation>
   </AbstractNode>
 
-  <Node Name="UnexpectedTypeExpressionSyntax" Base="TypeExpressionSyntax">
+  <Node Name="UnexpectedTypeSyntax" Base="TypeSyntax">
     <Documentation>
       Unexpected input in type expression context.
     </Documentation>
@@ -169,7 +233,7 @@
     </Field>
   </Node>
 
-  <Node Name="NameTypeExpressionSyntax" Base="TypeExpressionSyntax">
+  <Node Name="NameTypeSyntax" Base="TypeSyntax">
     <Documentation>
       A single identifier referencing a type name.
     </Documentation>
@@ -223,6 +287,13 @@
         The expression wrapped.
       </Documentation>
     </Field>
+    <Field Name="Semicolon" Type="SyntaxToken?">
+      <Documentation>
+        The semicolon ending the statement.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
   </Node>
 
   <AbstractNode Name="ExpressionSyntax" Base="SyntaxNode">
@@ -272,7 +343,7 @@
         The statements within the block.
       </Documentation>
     </Field>
-    <Field Name="Value" Type="ExpressionSyntax">
+    <Field Name="Value" Type="ExpressionSyntax?">
       <Documentation>
         The value the block evaluates to.
       </Documentation>
@@ -322,7 +393,7 @@
         The portion evaluated, if the condition is true.
       </Documentation>
     </Field>
-    <Field Name="Else" Type="ElseClauseSyntax">
+    <Field Name="Else" Type="ElseClauseSyntax?">
       <Documentation>
         The portion evaluated, if the condition is false.
       </Documentation>
@@ -398,7 +469,7 @@
 
       <Token Kind="KeywordReturn" />
     </Field>
-    <Field Name="Value" Type="ExpressionSyntax">
+    <Field Name="Value" Type="ExpressionSyntax?">
       <Documentation>
         The value to return.
       </Documentation>
@@ -594,6 +665,25 @@
     <Field Name="Comparisons" Type="SyntaxList&lt;ComparisonElementSyntax&gt;">
       <Documentation>
         The list of comparisons.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ElseClauseSyntax" Base="SyntaxNode">
+    <Documentation>
+      An else-clause for an if-expression.
+    </Documentation>
+
+    <Field Name="ElseKeyword" Type="SyntaxToken">
+      <Documentation>
+        The else keyword.
+      </Documentation>
+
+      <Token Kind="KeywordElse" />
+    </Field>
+    <Field Name="Expression" Type="ExpressionSyntax">
+      <Documentation>
+        The expression evaluated, if the else clause runs.
       </Documentation>
     </Field>
   </Node>

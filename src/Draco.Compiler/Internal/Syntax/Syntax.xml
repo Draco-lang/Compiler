@@ -35,7 +35,6 @@
         The unexpected syntax nodes.
       </Documentation>
     </Field>
-    <Field Name="Diagnostics" Type="ImmutableArray&lt;Diagnostic&gt;" Override="true" />
   </Node>
 
   <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">
@@ -164,7 +163,6 @@
         The unexpected syntax nodes.
       </Documentation>
     </Field>
-    <Field Name="Diagnostics" Type="ImmutableArray&lt;Diagnostic&gt;" Override="true" />
   </Node>
 
   <Node Name="NameTypeExpressionSyntax" Base="TypeExpressionSyntax">
@@ -178,6 +176,152 @@
       </Documentation>
 
       <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="StatementSyntax" Base="SyntaxNode">
+    <Documentation>
+      Any statement.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedStatementSyntax" Base="StatementSyntax">
+    <Documentation>
+      Unexpected input in statement context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="DeclarationStatementSyntax" Base="StatementSyntax">
+    <Documentation>
+      A declaration in statement context.
+    </Documentation>
+
+    <Field Name="Declaration" Type="DeclarationSyntax">
+      <Documentation>
+        The declaration wrapped.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ExpressionStatementSyntax" Base="StatementSyntax">
+    <Documentation>
+      An expression in statement context.
+    </Documentation>
+
+    <Field Name="Expression" Type="ExpressionSyntax">
+      <Documentation>
+        The expression wrapped.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <AbstractNode Name="ExpressionSyntax" Base="SyntaxNode">
+    <Documentation>
+      Any expression.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      Unexpected input in expression context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="StatementExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      An expression that results in the unit type, while executing a statement.
+    </Documentation>
+
+    <Field Name="Statement" Type="StatementSyntax">
+      <Documentation>
+        The executed statement.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="BlockExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A code block with statements and a result value.
+    </Documentation>
+
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace token.
+      </Documentation>
+
+      <Token Kind="BraceOpen" />
+    </Field>
+    <Field Name="Statements" Type="SyntaxList&lt;StatementSyntax&gt;">
+      <Documentation>
+        The statements within the block.
+      </Documentation>
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax">
+      <Documentation>
+        The value the block evaluates to.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace token.
+      </Documentation>
+
+      <Token Kind="BraceClose" />
+    </Field>
+  </Node>
+
+  <Node Name="IfExpressionSyntax" Bae="ExpressionSyntax">
+    <Documentation>
+      An if-expression.
+    </Documentation>
+
+    <Field Name="IfKeyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword 'if'.
+      </Documentation>
+
+      <Token Kind="KeywordIf" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the condition.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="Condition" Type="ExpressionSyntax">
+      <Documentation>
+        The condition.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the condition.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="Then" Type="ExressionSyntax">
+      <Documentation>
+        The portion evaluated, if the condition is true.
+      </Documentation>
+    </Field>
+    <Field Name="Else" Type="ElseClauseSyntax">
+      <Documentation>
+        The portion evaluated, if the condition is false.
+      </Documentation>
     </Field>
   </Node>
 </Tree>

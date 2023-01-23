@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 
 namespace Draco.SourceGeneration.SyntaxTree;
 
-[XmlRoot(ElementName = "Tree")]
+[XmlRoot(ElementName = "Tree", Namespace = "http://draco-lang.com/red-green-tree/syntax")]
 public sealed class XmlTree
 {
     [XmlAttribute]

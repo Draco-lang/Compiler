@@ -324,4 +324,42 @@
       </Documentation>
     </Field>
   </Node>
+
+  <Node Name="WhileExpressionSyntax" Bae="ExpressionSyntax">
+    <Documentation>
+      A while-expression.
+    </Documentation>
+
+    <Field Name="WhileKeyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword 'while'.
+      </Documentation>
+
+      <Token Kind="KeywordWhile" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the condition.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="Condition" Type="ExpressionSyntax">
+      <Documentation>
+        The condition.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the condition.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="Then" Type="ExressionSyntax">
+      <Documentation>
+        The portion evaluated repeatedly, while the condition is true.
+      </Documentation>
+    </Field>
+  </Node>
 </Tree>

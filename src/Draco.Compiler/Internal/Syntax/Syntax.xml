@@ -174,7 +174,7 @@
       A single identifier referencing a type name.
     </Documentation>
 
-    <Field Name="Name" Type="SyntaxNode">
+    <Field Name="Name" Type="SyntaxToken">
       <Documentation>
         The identifier referencing the type.
       </Documentation>
@@ -265,7 +265,7 @@
         The opening brace token.
       </Documentation>
 
-      <Token Kind="BraceOpen" />
+      <Token Kind="CurlyOpen" />
     </Field>
     <Field Name="Statements" Type="SyntaxList&lt;StatementSyntax&gt;">
       <Documentation>
@@ -282,7 +282,7 @@
         The closing brace token.
       </Documentation>
 
-      <Token Kind="BraceClose" />
+      <Token Kind="CurlyClose" />
     </Field>
   </Node>
 
@@ -363,6 +363,220 @@
     <Field Name="Then" Type="ExressionSyntax">
       <Documentation>
         The portion evaluated repeatedly, while the condition is true.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="GotoExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A goto-expression.
+    </Documentation>
+
+    <Field Name="GotoKeyword" Type="SyntaxToken">
+      <Documentation>
+        The goto keyword.
+      </Documentation>
+
+      <Token Kind="KeywordGoto" />
+    </Field>
+    <Field Name="Target" Type="LabelExpressionSyntax">
+      <Documentation>
+        The target label to jump to.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ReturnExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A return-expression.
+    </Documentation>
+
+    <Field Name="ReturnKeyword" Type="SyntaxToken">
+      <Documentation>
+        The return keyword.
+      </Documentation>
+
+      <Token Kind="KeywordReturn" />
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax">
+      <Documentation>
+        The value to return.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="LiteralExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A literal value.
+    </Documentation>
+
+    <Field Name="Literal" Type="SyntaxToken">
+      <Documentation>
+        The literal token representing the value.
+      </Documentation>
+
+      <Token Kind="LiteralInteger" />
+      <Token Kind="LiteralFloat" />
+      <Token Kind="LiteralCharacter" />
+      <Token Kind="KeywordTrue" />
+      <Token Kind="KeywordFalse" />
+    </Field>
+  </Node>
+
+  <Node Name="CallExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A function call expression.
+    </Documentation>
+
+    <Field Name="Function" Type="ExpressionSyntax">
+      <Documentation>
+        The called function expression.
+      </Documentation>
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the argument list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="ArgumentList" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;">
+      <Documentation>
+        The argument list the function is called with.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the argument list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+  </Node>
+
+  <Node Name="IndexExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      An indexing expression.
+    </Documentation>
+
+    <Field Name="Indexed" Type="ExpressionSyntax">
+      <Documentation>
+        The indexed expression.
+      </Documentation>
+    </Field>
+    <Field Name="OpenBracket" Type="SyntaxToken">
+      <Documentation>
+        The opening bracket before the index list.
+      </Documentation>
+
+      <Token Kind="BracketOpen" />
+    </Field>
+    <Field Name="IndexList" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;">
+      <Documentation>
+        The index list used for indexing.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBracket" Type="SyntaxToken">
+      <Documentation>
+        The closing bracket after the index list.
+      </Documentation>
+
+      <Token Kind="BracketClose" />
+    </Field>
+  </Node>
+
+  <Node Name="NameExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A single identifier referencing a value.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The identifier referencing the value.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <Node Name="MemberAccessExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A member access expression.
+    </Documentation>
+
+    <Field Name="Accessed" Type="ExpressionSyntax">
+      <Documentation>
+        The accessed element, like an object or namespace.
+      </Documentation>
+    </Field>
+    <Field Name="Dot" Type="SyntaxToken">
+      <Documentation>
+        The dot between the accessed element and the member name.
+      </Documentation>
+
+      <Token Kind="Dot" />
+    </Field>
+    <Field Name="Member" Type="SyntaxToken">
+      <Documentation>
+        The accessed member name.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <Node Name="UnaryExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A unary operator expression.
+    </Documentation>
+
+    <Field Name="Operator" Type="SyntaxToken">
+      <Documentation>
+        The unary operator applied.
+      </Documentation>
+
+      <Token Kind="Plus" />
+      <Token Kind="Minus" />
+      <Token Kind="KeywordNot" />
+    </Field>
+    <Field Name="Operand" Type="ExpressionSyntax">
+      <Documentation>
+        The operand of the operation.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="BinaryExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A binary operator expression.
+    </Documentation>
+
+    <Field Name="Left" Type="ExpressionSyntax">
+      <Documentation>
+        The first operand of the operation.
+      </Documentation>
+    </Field>
+    <Field Name="Operator" Type="SyntaxToken">
+      <Documentation>
+        The unary operator applied.
+      </Documentation>
+
+      <Token Kind="Plus" />
+      <Token Kind="Minus" />
+      <Token Kind="Star" />
+      <Token Kind="Slash" />
+      <Token Kind="KeywordMod" />
+      <Token Kind="KeywordRem" />
+      <Token Kind="KeywordAnd" />
+      <Token Kind="KeywordOr" />
+      <Token Kind="KeywordPlusAssign" />
+      <Token Kind="KeywordMinusAssign" />
+      <Token Kind="KeywordStarAssign" />
+      <Token Kind="KeywordSlashAssign" />
+    </Field>
+    <Field Name="Right" Type="ExpressionSyntax">
+      <Documentation>
+        The second operand of the operation.
       </Documentation>
     </Field>
   </Node>

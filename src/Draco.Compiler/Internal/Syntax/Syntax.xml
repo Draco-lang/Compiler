@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Tree Root="SyntaxNode">
+<Tree
+  xmlns="http://draco-lang.com/red-green-tree/syntax"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/red-green-tree/syntax ../../../Draco.SourceGeneration/SyntaxTree/Syntax.xsd"
+  Root="SyntaxNode">
   <PredefinedNode Name="SyntaxNode" />
 
   <Node Name="CompilationUnitSyntax" Base="SyntaxNode">
@@ -282,7 +286,7 @@
     </Field>
   </Node>
 
-  <Node Name="IfExpressionSyntax" Bae="ExpressionSyntax">
+  <Node Name="IfExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
       An if-expression.
     </Documentation>
@@ -325,7 +329,7 @@
     </Field>
   </Node>
 
-  <Node Name="WhileExpressionSyntax" Bae="ExpressionSyntax">
+  <Node Name="WhileExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
       A while-expression.
     </Documentation>

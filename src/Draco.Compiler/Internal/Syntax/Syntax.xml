@@ -565,14 +565,20 @@
       <Token Kind="Minus" />
       <Token Kind="Star" />
       <Token Kind="Slash" />
+      <Token Kind="PlusAssign" />
+      <Token Kind="MinusAssign" />
+      <Token Kind="StarAssign" />
+      <Token Kind="SlashAssign" />
+      <Token Kind="GreaterThan" />
+      <Token Kind="LessThan" />
+      <Token Kind="GreaterEqual" />
+      <Token Kind="LessEqual" />
+      <Token Kind="Equal" />
+      <Token Kind="NotEqual" />
       <Token Kind="KeywordMod" />
       <Token Kind="KeywordRem" />
       <Token Kind="KeywordAnd" />
       <Token Kind="KeywordOr" />
-      <Token Kind="KeywordPlusAssign" />
-      <Token Kind="KeywordMinusAssign" />
-      <Token Kind="KeywordStarAssign" />
-      <Token Kind="KeywordSlashAssign" />
     </Field>
     <Field Name="Right" Type="ExpressionSyntax">
       <Documentation>

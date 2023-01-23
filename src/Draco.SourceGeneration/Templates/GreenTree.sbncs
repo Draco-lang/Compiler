@@ -27,21 +27,15 @@
         }
 
         {{if $node.IsAbstract}}
-            public abstract Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent);
+            {{if !$node.Base}}
+                public abstract Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent);
+            {{end}}
         {{else}}
             public override Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent) =>
                 new Api.Syntax.{{$node.Name}}(tree, this, parent);
         {{end}}
 
-        {{if $node.IsAbstract}}
-            public abstract TResult Accept(SyntaxVisitor visitor);
-            public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
-        {{else}}
-            public override TResult Accept(SyntaxVisitor visitor) =>
-                visitor.Visit{{$node.Name}}(this);
-            public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
-                visitor.Visit{{$node.Name}}(this);
-        {{end}}
+        {{accept_functions($node)}}
     }
 {{end}}
 

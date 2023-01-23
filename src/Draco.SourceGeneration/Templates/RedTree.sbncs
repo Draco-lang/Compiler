@@ -10,7 +10,7 @@ namespace Draco.Compiler.Api.Syntax;
     public {{class_header($node)}}
     {
         {{if $node.IsAbstract}}
-            public {{Root.Name}} Parent { get; }
+            public {{Root.Name}}? Parent { get; }
         {{end}}
 
         {{for $field in $node.Fields}}
@@ -28,7 +28,7 @@ namespace Draco.Compiler.Api.Syntax;
             }
         {{else}}
             private readonly Internal.Syntax.SyntaxTree tree;
-            private readonly Internal.Syntax.{{$node.Name}} green;
+            private readonly Internal.Syntax.{{$node.Name}}? green;
 
             internal {{$node.Name}}(
                 Internal.Syntax.SyntaxTree tree,
@@ -40,15 +40,7 @@ namespace Draco.Compiler.Api.Syntax;
             }
         {{end}}
 
-        {{if $node.IsAbstract}}
-            public abstract TResult Accept(SyntaxVisitor visitor);
-            public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
-        {{else}}
-            public override TResult Accept(SyntaxVisitor visitor) =>
-                visitor.Visit{{$node.Name}}(this);
-            public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
-                visitor.Visit{{$node.Name}}(this);
-        {{end}}
+        {{accept_functions($node)}}
     }
 
     {{if !$node.IsAbstract}}

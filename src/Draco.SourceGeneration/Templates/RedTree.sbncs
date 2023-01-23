@@ -11,21 +11,39 @@ namespace Draco.Compiler.Api.Syntax;
     {
         {{for $field in $node.Fields}}
             {{$backingField = camel_case($field.Name)}}
-            {{field_prefix($field)}} => this.{{$backingField}} ??= this.green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.tree, this);
+            {{field_prefix($field)}} => this.{{$backingField}} ??= this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.tree, this);
             private {{$field.NonNullableType}}? {{$backingField}};
+        {{end}}
+
+        {{if $node.IsAbstract}}
+            internal abstract
+            {{if $node.Base}}
+                override
+            {{end}}
+            Internal.Syntax.{{$node.Name}} Green { get; }
+        {{else}}
+            internal override Internal.Syntax.{{$node.Name}} Green { get; }
         {{end}}
 
         {{children($node)}}
 
-        private readonly Internal.Syntax.{{$node.Name}} green;
-
-        internal {{$node.Name}}(
-            Internal.Syntax.SyntaxTree tree,
-            {{Root.Name}}? parent,
-            Internal.Syntax.{{$node.Name}} green) : base(tree, parent)
-        {
-            this.green = green;
-        }
+        {{if $node.IsAbstract}}
+            {{if $node.Base}}
+                internal {{$node.Name}}(
+                    Internal.Syntax.SyntaxTree tree,
+                    {{Root.Name}}? parent) : base(tree, parent)
+                {
+                }
+            {{end}}
+        {{else}}
+            internal {{$node.Name}}(
+                Internal.Syntax.SyntaxTree tree,
+                {{Root.Name}}? parent,
+                Internal.Syntax.{{$node.Name}} green) : base(tree, parent)
+            {
+                this.Green = green;
+            }
+        {{end}}
 
         {{accept_functions($node)}}
     }
@@ -52,7 +70,7 @@ namespace Draco.Compiler.Api.Syntax;
                 {{end}}
             ) => new Internal.Syntax.{{$node.Name}}(
                 {{wrap separated(', ', $node.Fields)}}
-                    {{camel_case($element.Name)}}
+                    {{camel_case($element.Name)}}{{nullable($element)}}.Green
                 {{end}}
             ).ToRedNode(null!, null);
         }

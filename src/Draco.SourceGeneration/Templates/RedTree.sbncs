@@ -57,7 +57,7 @@ namespace Draco.Compiler.Api.Syntax;
         public static partial class SyntaxFactory
         {
             /// <summary>
-            /// Constructs a new <cref see="{{$node.Name}}"/>.
+            /// Constructs a new <see cref="{{$node.Name}}"/>.
             /// </summary>
             {{~for $field in $node.Fields~}}
                 {{~if $field.Documentation~}}
@@ -67,9 +67,9 @@ namespace Draco.Compiler.Api.Syntax;
                 {{~end~}}
             {{~end~}}
             /// <returns>
-            /// The constructed <cref see="{{$node.Name}}"/>.
+            /// The constructed <see cref="{{$node.Name}}"/>.
             /// </returns>
-            public static {{$node.Name}} {{$node.Name}}(
+            public static {{$node.Name}} {{remove_suffix($node.Name, 'Syntax')}}(
                 {{wrap separated(', ', $node.Fields)}}
                     {{$element.Type}} {{camel_case($element.Name)}}
                 {{end}}
@@ -83,7 +83,7 @@ namespace Draco.Compiler.Api.Syntax;
 {{end}}
 
 /// <summary>
-/// Visitor base class for <cref see="{{Root.Name}}"/>.
+/// Visitor base class for <see cref="{{Root.Name}}"/>.
 /// </summary>
 public abstract partial class SyntaxVisitor
 {
@@ -91,7 +91,7 @@ public abstract partial class SyntaxVisitor
 }
 
 /// <summary>
-/// Visitor base class for <cref see="{{Root.Name}}"/>.
+/// Visitor base class for <see cref="{{Root.Name}}"/>.
 /// </summary>
 /// <typeparam name="TResult">
 /// The return type of the visitor methods.

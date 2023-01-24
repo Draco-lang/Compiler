@@ -42,7 +42,7 @@
 {{end}}
 
 /// <summary>
-/// Visitor base class for <cref see="{{Root.Name}}"/>.
+/// Visitor base class for <see cref="{{Root.Name}}"/>.
 /// </summary>
 internal abstract partial class SyntaxVisitor
 {
@@ -50,7 +50,7 @@ internal abstract partial class SyntaxVisitor
 }
 
 /// <summary>
-/// Visitor base class for <cref see="{{Root.Name}}"/>.
+/// Visitor base class for <see cref="{{Root.Name}}"/>.
 /// </summary>
 /// <typeparam name="TResult">
 /// The return type of the visitor methods.

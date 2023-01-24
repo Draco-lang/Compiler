@@ -117,6 +117,57 @@
     </Field>
   </Node>
 
+  <AbstractNode Name="FunctionBodySyntax" Base="SyntaxNode">
+    <Documentation>
+      The body of a function definition.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="BlockFunctionBodySyntax" Base="FunctionBodySyntax">
+    <Documentation>
+      A block function body with multiple statements within braces.
+    </Documentation>
+
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace token.
+      </Documentation>
+
+      <Token Kind="CurlyOpen" />
+    </Field>
+    <Field Name="Statements" Type="SyntaxList&lt;StatementSyntax&gt;">
+      <Documentation>
+        The statements within the block.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace token.
+      </Documentation>
+
+      <Token Kind="CurlyClose" />
+    </Field>
+  </Node>
+
+  <Node Name="InlineFunctionBodySyntax" Base="FunctionBodySyntax">
+    <Documentation>
+      A function body consisting of the single returned expression.
+    </Documentation>
+
+    <Field Name="Assign" Type="SyntaxToken">
+      <Documentation>
+        The assignment token.
+      </Documentation>
+
+      <Token Kind="Assign" />
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax">
+      <Documentation>
+        The returned expression.
+      </Documentation>
+    </Field>
+  </Node>
+
   <Node Name="LabelDeclarationSyntax" Base="DeclarationSyntax">
     <Documentation>
       A label declaration.
@@ -450,7 +501,7 @@
 
       <Token Kind="KeywordGoto" />
     </Field>
-    <Field Name="Target" Type="LabelExpressionSyntax">
+    <Field Name="Target" Type="LabelSyntax">
       <Documentation>
         The target label to jump to.
       </Documentation>
@@ -685,6 +736,50 @@
       <Documentation>
         The expression evaluated, if the else clause runs.
       </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ComparisonElementSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single comparison in the comparison chain.
+    </Documentation>
+
+    <Field Name="Operator" Type="SyntaxToken">
+      <Documentation>
+        The operator applied between the previous and the current operand.
+      </Documentation>
+
+      <Token Kind="GreaterThan" />
+      <Token Kind="LessThan" />
+      <Token Kind="GreaterEqual" />
+      <Token Kind="LessEqual" />
+      <Token Kind="Equal" />
+      <Token Kind="NotEqual" />
+    </Field>
+    <Field Name="Right" Type="ExpressionSyntax">
+      <Documentation>
+        The operand to compare the previous one with.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <AbstractNode Name="LabelSyntax" Base="SyntaxNode">
+    <Documentation>
+      A label reference.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="NameLabelSyntax" Base="SyntaxNode">
+    <Documentation>
+      A label reference by name.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the referenced label.
+      </Documentation>
+
+      <Token Kind="Identifier" />
     </Field>
   </Node>
 </Tree>

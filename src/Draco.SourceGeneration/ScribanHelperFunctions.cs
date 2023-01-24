@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,6 +25,10 @@ public sealed class ScribanHelperFunctions : ScriptObject
         var result = $"{char.ToLower(str[0])}{str[1..]}";
         return EscapeKeyword(result);
     }
+
+    public static string RemoveSuffix(string str, string suffix) => str.EndsWith(suffix)
+        ? str[..^suffix.Length]
+        : str;
 
     public static ScribanHelperFunctions Instance { get; } = new();
 

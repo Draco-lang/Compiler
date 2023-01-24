@@ -75,7 +75,12 @@ namespace Draco.Compiler.Api.Syntax;
                 {{end}}
             ) => new Internal.Syntax.{{$node.Name}}(
                 {{wrap separated(', ', $node.Fields)}}
-                    {{camel_case($element.Name)}}{{nullable($element)}}.Green
+                    {{camel_case($element.Name)}}{{nullable($element)}}.
+                        {{if $element.IsSyntaxList}}
+                            ToGreen<Internal.Syntax.{{$element.ElementType}}>()
+                        {{else}}
+                            Green
+                        {{end}}
                 {{end}}
             ).ToRedNode(null!, null);
         }

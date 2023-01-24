@@ -13,10 +13,11 @@ namespace Draco.SourceGeneration.SyntaxTree;
 [Generator]
 public sealed class SyntaxTreeSourceGenerator : IIncrementalGenerator
 {
+#pragma warning disable RS2008 // Enable analyzer release tracking
     private static readonly DiagnosticDescriptor SyntaxXmlNotFound = new(
         id: "DRC0001",
         title: "Syntax.xml not found",
-        messageFormat: "The Syntax.xml file was not found in the project.",
+        messageFormat: "Syntax.xml file was not found in the project",
         category: "SyntaxGenerator",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -24,18 +25,19 @@ public sealed class SyntaxTreeSourceGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor CouldNotReadSyntaxXml = new(
         id: "DRC0002",
         title: "Could not real Syntax.xml",
-        messageFormat: "The Syntax.xml file could not be read.",
+        messageFormat: "Syntax.xml file could not be read",
         category: "SyntaxGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor GenerationError = new(
-        id: "DRC0002",
+        id: "DRC0003",
         title: "Generation error",
         messageFormat: "Error while generating code from Syntax.xml: {0}",
         category: "SyntaxGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+#pragma warning restore RS2008 // Enable analyzer release tracking
 
     private sealed class SourceTextReader : TextReader
     {

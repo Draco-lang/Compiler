@@ -7,15 +7,18 @@ using Scriban;
 using System.Reflection;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
+using System.Threading;
 
 namespace Draco.SourceGeneration;
 
 internal static class CodeGenerator
 {
-    public static string GenerateGreenTree(Tree tree) => Render("GreenTree.sbncs", tree);
-    public static string GenerateRedTree(Tree tree) => Render("RedTree.sbncs", tree);
+    public static string GenerateGreenTree(Tree tree, CancellationToken cancellationToken) =>
+        Render("GreenTree.sbncs", tree, cancellationToken);
+    public static string GenerateRedTree(Tree tree, CancellationToken cancellationToken) =>
+        Render("RedTree.sbncs", tree, cancellationToken);
 
-    private static string Render(string templateName, object model)
+    private static string Render(string templateName, object model, CancellationToken cancellationToken)
     {
         var template = ScribanTemplateLoader.Load(templateName);
 
@@ -28,6 +31,7 @@ internal static class CodeGenerator
         scriptObject.Import(ScribanHelperFunctions.Instance);
         scriptObject.Import(model, renamer: MemberRenamer);
         context.PushGlobal(scriptObject);
+        context.CancellationToken = cancellationToken;
 
         var output = template.Render(context);
         return SyntaxFactory

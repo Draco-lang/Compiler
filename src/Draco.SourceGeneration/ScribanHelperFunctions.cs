@@ -22,12 +22,12 @@ public sealed class ScribanHelperFunctions : ScriptObject
     public static string CamelCase(string str)
     {
         if (str.Length == 0) return str;
-        var result = $"{char.ToLower(str[0])}{str[1..]}";
+        var result = $"{char.ToLower(str[0])}{str.Substring(1)}";
         return EscapeKeyword(result);
     }
 
     public static string RemoveSuffix(string str, string suffix) => str.EndsWith(suffix)
-        ? str[..^suffix.Length]
+        ? str.Substring(0, str.Length - suffix.Length)
         : str;
 
     public static ScribanHelperFunctions Instance { get; } = new();

@@ -116,8 +116,10 @@ public sealed class Field
     public string Type { get; }
     public bool Override { get; }
     public string? Documentation { get; }
-    public bool IsNullable => this.Type.EndsWith('?');
-    public string NonNullableType => this.IsNullable ? this.Type[..^1] : this.Type;
+    public bool IsNullable => this.Type.EndsWith("?");
+    public string NonNullableType => this.IsNullable
+        ? this.Type.Substring(0, this.Type.Length - 1)
+        : this.Type;
     public bool IsSyntaxList => this.Type.Contains("SyntaxList");
     public string ElementType
     {
@@ -126,7 +128,7 @@ public sealed class Field
             var start = this.Type.IndexOf('<');
             var end = this.Type.IndexOf('>');
             if (start < 0 || end < 0 || end < start) throw new InvalidOperationException();
-            return this.Type[(start + 1)..end];
+            return this.Type.Substring(start + 1, end - start - 1);
         }
     }
 

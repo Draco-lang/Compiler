@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Draco.SourceGeneration.SyntaxTree;
@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Draco.SourceGeneration;
 
-internal static class SourceGenerator
+internal static class CodeGenerator
 {
     public static string GenerateGreenTree(Tree tree) => Render("GreenTree.sbncs", tree);
     public static string GenerateRedTree(Tree tree) => Render("RedTree.sbncs", tree);

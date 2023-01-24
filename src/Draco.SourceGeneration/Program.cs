@@ -20,8 +20,8 @@ internal class Program
         var xmlModel = (XmlTree)serializer.Deserialize(new StringReader(syntaxXml))!;
         var domainModel = Tree.FromXml(xmlModel);
 
-        Console.WriteLine(SourceGenerator.GenerateGreenTree(domainModel));
+        Console.WriteLine(CodeGenerator.GenerateGreenTree(domainModel));
         Console.WriteLine("===========================");
-        Console.WriteLine(SourceGenerator.GenerateRedTree(domainModel));
+        Console.WriteLine(CodeGenerator.GenerateRedTree(domainModel));
     }
 }

@@ -20,6 +20,11 @@ public abstract class SyntaxNode
     public SyntaxNode? Parent { get; }
 
     /// <summary>
+    /// The immediate descendant nodes of this one.
+    /// </summary>
+    public abstract IEnumerable<SyntaxNode> Children { get; }
+
+    /// <summary>
     /// The internal green node that this node wraps.
     /// </summary>
     internal abstract Internal.Syntax.SyntaxNode Green { get; }

@@ -9,6 +9,12 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal abstract class SyntaxNode
 {
+    /// <summary>
+    /// The immediate descendant nodes of this one.
+    /// </summary>
+    public abstract IEnumerable<SyntaxNode> Children { get; }
+
+    public abstract Api.Syntax.SyntaxNode ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent);
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
 }

@@ -1,8 +1,11 @@
+using System.Collections.Generic;
+
 namespace Draco.Compiler.Api.Syntax;
 
 {{include 'Utils.sbncs'}}
 {{include 'Tree.sbncs'}}
 
+#nullable enable
 {{for $node in Nodes}}
     /// <summary>
     /// {{$node.Documentation}}
@@ -105,3 +108,4 @@ public abstract partial class SyntaxVisitor<TResult>
 {
     {{visitor_functions(Nodes, 'TResult', 'default!')}}
 }
+#nullable restore

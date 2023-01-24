@@ -1,8 +1,11 @@
-﻿namespace Draco.Compiler.Internal.Syntax;
+﻿using System.Collections.Generic;
+
+namespace Draco.Compiler.Internal.Syntax;
 
 {{include 'Utils.sbncs'}}
 {{include 'Tree.sbncs'}}
 
+#nullable enable
 {{for $node in Nodes}}
     /// <summary>
     /// {{$node.Documentation}}
@@ -82,3 +85,4 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{Root.Name}}>
         {{end}}
     {{end}}
 }
+#nullable restore

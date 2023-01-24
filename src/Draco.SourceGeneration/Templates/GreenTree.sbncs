@@ -59,3 +59,26 @@ internal abstract partial class SyntaxVisitor<TResult>
 {
     {{visitor_functions(Nodes, 'TResult', 'default!')}}
 }
+
+/// <summary>
+/// A base class for rewriting <see cref="{{Root.Name}}"/>.
+/// </summary>
+internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{Root.Name}}>
+{
+    {{for $node in Nodes}}
+        {{if !$node.IsAbstract}}
+            public override {{Root.Name}} Visit{{$node.Name}}({{$node.Name}} node)
+            {
+                {{for $element in $node.Fields}}
+                    var {{camel_case($element.Name)}} =
+                        ({{$element.Type}})this{{nullable($element)}}.{{$element.Name}}.Accept(this);
+                {{end}}
+                return new {{$node.Name}}(
+                    {{wrap separated(', ', $node.Fields)}}
+                        {{camel_case($element.Name)}}
+                    {{end}}
+                );
+            }
+        {{end}}
+    {{end}}
+}

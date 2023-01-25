@@ -1258,8 +1258,12 @@ public sealed class LexerTests
     [InlineData("0x4c6", 1222, TokenType.LiteralInteger)]
     [InlineData("0x4C6", 1222, TokenType.LiteralInteger)]
     [InlineData("0b110101", 53, TokenType.LiteralInteger)]
+    [InlineData("10E3", 10000d, TokenType.LiteralFloat)]
+    [InlineData("10E-3", 0.01, TokenType.LiteralFloat)]
+    [InlineData("0.1e+4", 1000d, TokenType.LiteralFloat)]
+    [InlineData("123.345E-12", 1.23345E-10, TokenType.LiteralFloat)]
     [Trait("Feature", "Literals")]
-    public void TestIntLiteralBinaryAndHexadecimalNotation(string text, int value, TokenType tokenType)
+    public void TestNumericLiteralNonDecimalFormats(string text, object value, TokenType tokenType)
     {
         var tokens = Lex(text);
 

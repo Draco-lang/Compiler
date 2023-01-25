@@ -288,18 +288,37 @@ internal sealed class Lexer
             default: offset++; break;
             }
 
-            while (TryParseHexDigit(this.Peek(offset), out var _)) ++offset;
+            if (numberKind == NumberKind.HexadecimalInteger)
+            {
+                while (TryParseHexDigit(this.Peek(offset), out var _)) ++offset;
+            }
+            else
+            {
+                while (char.IsDigit(this.Peek(offset))) ++offset;
+                if (char.ToLower(this.Peek(offset)) == 'e')
+                {
+                    numberKind = NumberKind.ScientificFloat;
+                    offset--;
+                    if (this.Peek(offset + 2) == '+' || this.Peek(offset + 2) == '-') offset++;
+                }
+            }
 
             // Floating point number
-            if (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1)))
+            if ((this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1))) || numberKind == NumberKind.ScientificFloat)
             {
                 // TODO: proper error
                 if (numberKind == NumberKind.HexadecimalInteger || numberKind == NumberKind.BinaryInteger) throw new InvalidOperationException();
                 offset += 2;
-                numberKind = NumberKind.DecimalFloat;
+                numberKind = numberKind == NumberKind.ScientificFloat ? numberKind : NumberKind.DecimalFloat;
                 while (char.IsDigit(this.Peek(offset))) ++offset;
+                if (numberKind == NumberKind.DecimalFloat && char.ToLower(this.Peek(offset)) == 'e')
+                {
+                    offset++;
+                    if (this.Peek(offset) == '+' || this.Peek(offset) == '-') offset++;
+                    while (char.IsDigit(this.Peek(offset))) ++offset;
+                }
                 var floatView = this.Advance(offset);
-                // TODO: Parsing into an float32 might not be the best idea
+                // TODO: Parsing into an float64 might not be the best idea
                 var floatValue = double.Parse(floatView.Span.ToString(), provider: CultureInfo.InvariantCulture);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralFloat)

@@ -9,4 +9,10 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxTree
 {
+    private readonly Internal.Syntax.SyntaxTree greenTree;
+
+    internal SyntaxTree(Internal.Syntax.SyntaxTree greenTree)
+    {
+        this.greenTree = greenTree;
+    }
 }

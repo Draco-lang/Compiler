@@ -12,7 +12,7 @@ public abstract class SyntaxNode
     /// <summary>
     /// The <see cref="SyntaxTree"/> this node belongs to.
     /// </summary>
-    public SyntaxTree Tree => throw new NotImplementedException();
+    public SyntaxTree Tree => new(this.greenTree);
 
     /// <summary>
     /// The parent <see cref="SyntaxNode"/> of this one.

@@ -1,6 +1,5 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -16,7 +15,7 @@ internal interface ITokenSource
     /// </summary>
     /// <param name="offset">The offset from the current source position.</param>
     /// <returns>The <see cref="Token"/> that is <paramref name="offset"/> amount of tokens ahead.</returns>
-    public Token Peek(int offset = 0);
+    public SyntaxToken Peek(int offset = 0);
 
     /// <summary>
     /// Advances in the source <paramref name="amount"/> amount of tokens.
@@ -33,14 +32,14 @@ internal static class TokenSource
     private sealed class LexerTokenSource : ITokenSource
     {
         private readonly Lexer lexer;
-        private readonly RingBuffer<Token> lookahead = new();
+        private readonly RingBuffer<SyntaxToken> lookahead = new();
 
         public LexerTokenSource(Lexer lexer)
         {
             this.lexer = lexer;
         }
 
-        public Token Peek(int offset = 0)
+        public SyntaxToken Peek(int offset = 0)
         {
             while (offset >= this.lookahead.Count) this.lookahead.AddBack(this.lexer.Lex());
             return this.lookahead[offset];

@@ -597,7 +597,7 @@ internal sealed class Lexer
                         // We build the end token with trivia
                         this.PopMode();
                         this.ParseLeadingTriviaList();
-                        Debug.Assert(this.leadingTriviaList.Count is 1 or 2);
+                        Debug.Assert(this.tokenBuilder.LeadingTrivia.Count is 1 or 2);
                         this.tokenBuilder
                             .SetType(TokenType.MultiLineStringEnd)
                             .SetText(this.AdvanceWithText(3 + mode.ExtendedDelims));
@@ -725,7 +725,7 @@ internal sealed class Lexer
     /// </summary>
     private void ParseLeadingTriviaList()
     {
-        while (this.TryParseTrivia(out var trivia)) this.leadingTriviaList.Add(trivia);
+        while (this.TryParseTrivia(out var trivia)) this.tokenBuilder.LeadingTrivia.Add(trivia);
     }
 
     /// <summary>
@@ -736,7 +736,7 @@ internal sealed class Lexer
     {
         while (this.TryParseTrivia(out var trivia))
         {
-            this.trailingTriviaList.Add(trivia);
+            this.tokenBuilder.TrailingTrivia.Add(trivia);
             if (trivia.Type == TriviaType.Newline) break;
         }
     }

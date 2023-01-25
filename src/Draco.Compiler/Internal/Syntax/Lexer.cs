@@ -51,6 +51,37 @@ internal sealed class Lexer
     }
 
     /// <summary>
+    /// Different kinds of numbers.
+    /// </summary>
+    internal enum NumberKind
+    {
+        /// <summary>
+        /// Decimal integer.
+        /// </summary>
+        DecimalInteger = 10,
+
+        /// <summary>
+        /// Hexadecimal integer.
+        /// </summary>
+        HexadecimalInteger = 16,
+
+        /// <summary>
+        /// Binary integer.
+        /// </summary>
+        BinaryInteger = 2,
+
+        /// <summary>
+        /// Decimal floating-point number.
+        /// </summary>
+        DecimalFloat,
+
+        /// <summary>
+        /// Floating-point number writen in scientific notation.
+        /// </summary>
+        ScientificFloat,
+    }
+
+    /// <summary>
     /// Represents a single mode on the mode stack.
     /// </summary>
     /// <param name="Kind">The kind of the mode.</param>
@@ -244,13 +275,28 @@ internal sealed class Lexer
         // first character
         if (char.IsDigit(ch))
         {
-            var offset = 1;
-            while (char.IsDigit(this.Peek(offset))) ++offset;
+            var offset = 0;
+            var numberKind = NumberKind.DecimalInteger;
+            // Check for what kind of integer do we have
+            switch (this.Peek(1))
+            {
+            // Hexadecimal integer
+            case 'x': numberKind = NumberKind.HexadecimalInteger; this.Advance(2); break;
+            // Binary integer
+            case 'b': numberKind = NumberKind.BinaryInteger; this.Advance(2); break;
+            // Decimal integer
+            default: offset++; break;
+            }
+
+            while (TryParseHexDigit(this.Peek(offset), out var _)) ++offset;
 
             // Floating point number
             if (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1)))
             {
+                // TODO: proper error
+                if (numberKind == NumberKind.HexadecimalInteger || numberKind == NumberKind.BinaryInteger) throw new InvalidOperationException();
                 offset += 2;
+                numberKind = NumberKind.DecimalFloat;
                 while (char.IsDigit(this.Peek(offset))) ++offset;
                 var floatView = this.Advance(offset);
                 // TODO: Parsing into an float32 might not be the best idea
@@ -265,7 +311,7 @@ internal sealed class Lexer
             // Regular integer
             var intView = this.Advance(offset);
             // TODO: Parsing into an int32 might not be the best idea
-            var intValue = int.Parse(intView.Span.ToString());
+            var intValue = Convert.ToInt32(intView.Span.ToString(), (int)numberKind);
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
                 .SetText(intView.ToString())

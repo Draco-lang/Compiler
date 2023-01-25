@@ -1,5 +1,6 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
+using Newtonsoft.Json.Linq;
 using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -1245,6 +1246,26 @@ public sealed class LexerTests
         AssertNextToken(tokens, out var token);
         Assert.Equal(tokenType, token.Type);
         Assert.Equal(text, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("0x4c6", 1222, TokenType.LiteralInteger)]
+    [InlineData("0x4C6", 1222, TokenType.LiteralInteger)]
+    [InlineData("0b110101", 53, TokenType.LiteralInteger)]
+    [Trait("Feature", "Literals")]
+    public void TestIntLiteralBinaryAndHexadecimalNotation(string text, int value, TokenType tokenType)
+    {
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(tokenType, token.Type);
+        Assert.Equal(value, token.Value);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);

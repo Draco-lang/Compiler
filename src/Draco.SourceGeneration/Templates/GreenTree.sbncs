@@ -74,7 +74,7 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{Root.Name}}>
             {
                 {{for $element in $node.Fields}}
                     var {{camel_case($element.Name)}} =
-                        ({{$element.Type}})this{{nullable($element)}}.{{$element.Name}}.Accept(this);
+                        ({{$element.Type}})node{{nullable($element)}}.{{$element.Name}}.Accept(this);
                 {{end}}
                 return new {{$node.Name}}(
                     {{wrap separated(', ', $node.Fields)}}

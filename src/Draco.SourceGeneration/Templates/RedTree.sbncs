@@ -19,7 +19,7 @@ namespace Draco.Compiler.Api.Syntax;
                 {{if $field.IsSyntaxList}}
                     <{{$field.ElementType}}>
                 {{end}}
-                (this.tree, this);
+                (this.GreenTree, this);
             private {{$field.NonNullableType}}? {{$backingField}};
         {{end}}
 

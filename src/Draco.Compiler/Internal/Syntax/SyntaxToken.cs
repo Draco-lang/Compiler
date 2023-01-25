@@ -13,7 +13,7 @@ internal sealed class SyntaxToken : SyntaxNode
 {
     public override IEnumerable<SyntaxNode> Children => throw new NotImplementedException();
 
-    public override Api.Syntax.SyntaxNode ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent) => throw new NotImplementedException();
+    public override Api.Syntax.SyntaxToken ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent) => throw new NotImplementedException();
     public override void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
 }

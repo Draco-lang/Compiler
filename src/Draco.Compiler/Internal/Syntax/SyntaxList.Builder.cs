@@ -30,6 +30,11 @@ internal readonly partial struct SyntaxList<TNode>
     public sealed class Builder
     {
         /// <summary>
+        /// The number of nodes added to the builder.
+        /// </summary>
+        public int Count => throw new NotImplementedException();
+
+        /// <summary>
         /// Constructs a <see cref="SyntaxList{TNode}"/> from the builder.
         /// </summary>
         /// <returns>The constructed <see cref="SyntaxList{TNode}"/>.</returns>

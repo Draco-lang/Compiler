@@ -720,6 +720,32 @@
     </Field>
   </Node>
 
+  <Node Name="GroupingExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      An expression between parenthesis.
+    </Documentation>
+
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the expression.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="Expression" Type="ExpressionSyntax">
+      <Documentation>
+        The expression.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the expression.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+  </Node>
+
   <Node Name="ElseClauseSyntax" Base="SyntaxNode">
     <Documentation>
       An else-clause for an if-expression.
@@ -769,7 +795,7 @@
     </Documentation>
   </AbstractNode>
 
-  <Node Name="NameLabelSyntax" Base="SyntaxNode">
+  <Node Name="NameLabelSyntax" Base="LabelSyntax">
     <Documentation>
       A label reference by name.
     </Documentation>

@@ -21,6 +21,13 @@ internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
     public int Length => this.Nodes.Length;
 
     /// <summary>
+    /// Retrieves the node at <paramref name="index"/>.
+    /// </summary>
+    /// <param name="index">The 0-based index to retrieve the node from.</param>
+    /// <returns>The <typeparamref name="TNode"/> at index <paramref name="index"/>.</returns>
+    public TNode this[int index] => throw new NotImplementedException();
+
+    /// <summary>
     /// The raw <see cref="SyntaxNode"/>s in this list.
     /// </summary>
     public readonly ImmutableArray<SyntaxNode> Nodes;

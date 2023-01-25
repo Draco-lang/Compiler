@@ -374,7 +374,9 @@ internal sealed class Parser
             });
             var location = GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
-            return new UnexpectedFunctionBodySyntax(input, ImmutableArray.Create(diag));
+            // TODO: Attach
+            throw new NotImplementedException();
+            return new UnexpectedFunctionBodySyntax(input);
         }
     }
 
@@ -798,21 +800,21 @@ internal sealed class Parser
     private StringExpressionSyntax ParseLineString()
     {
         var openQuote = this.Expect(TokenType.LineStringStart);
-        var content = ImmutableArray.CreateBuilder<StringPart>();
+        var content = SyntaxList.CreateBuilder<StringPartSyntax>();
         while (true)
         {
             var peek = this.Peek();
             if (peek == TokenType.StringContent)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
+                content.Add(new TextStringPartSyntax(part));
             }
             else if (peek == TokenType.InterpolationStart)
             {
                 var start = this.Advance();
                 var expr = this.ParseExpr();
                 var end = this.Expect(TokenType.InterpolationEnd);
-                content.Add(new StringPart.Interpolation(start, expr, end));
+                content.Add(new InterpolationStringPartSyntax(start, expr, end));
             }
             else
             {
@@ -821,7 +823,7 @@ internal sealed class Parser
             }
         }
         var closeQuote = this.Expect(TokenType.LineStringEnd);
-        return new(openQuote, content.ToImmutable(), closeQuote);
+        return new(openQuote, content.ToSyntaxList(), closeQuote);
     }
 
     /// <summary>
@@ -831,7 +833,7 @@ internal sealed class Parser
     private StringExpressionSyntax ParseMultiLineString()
     {
         var openQuote = this.Expect(TokenType.MultiLineStringStart);
-        var content = ImmutableArray.CreateBuilder<StringPart>();
+        var content = SyntaxList.CreateBuilder<StringPartSyntax>();
         // We check if there's a newline
         if (!openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline))
         {
@@ -845,7 +847,9 @@ internal sealed class Parser
             var diag = Diagnostic.Create(
                 SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString,
                 location);
-            var unexpected = new StringPart.Unexpected(strayTokens, ImmutableArray.Create(diag));
+            // TODO: Associate
+            throw new NotImplementedException();
+            var unexpected = new UnexpectedStringPartSyntax(strayTokens);
             content.Add(unexpected);
         }
         while (true)
@@ -854,14 +858,14 @@ internal sealed class Parser
             if (peek == TokenType.StringContent || peek == TokenType.StringNewline)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
+                content.Add(new TextStringPartSyntax(part));
             }
             else if (peek == TokenType.InterpolationStart)
             {
                 var start = this.Advance();
                 var expr = this.ParseExpr();
                 var end = this.Expect(TokenType.InterpolationEnd);
-                content.Add(new StringPart.Interpolation(start, expr, end));
+                content.Add(new InterpolationStringPartSyntax(start, expr, end));
             }
             else
             {
@@ -887,15 +891,15 @@ internal sealed class Parser
                 // The first trivia was newline, the second must be spaces
                 Debug.Assert(closeQuote.LeadingTrivia[1].Type == TriviaType.Whitespace);
                 // For simplicity we rebuild the contents to be able to append diagnostics
-                var newContent = ImmutableArray.CreateBuilder<StringPart>();
+                var newContent = SyntaxList.CreateBuilder<StringPartSyntax>();
                 // We take the whitespace text and check if every line in the string obeys that as a prefix
                 var prefix = closeQuote.LeadingTrivia[1].Text;
                 var nextIsNewline = true;
                 foreach (var part in content)
                 {
-                    if (part is StringPart.Content contentPart)
+                    if (part is TextStringPartSyntax textPart)
                     {
-                        if (contentPart.Value.Type == TokenType.StringNewline)
+                        if (textPart.Content.Type == TokenType.StringNewline)
                         {
                             // Also a newline, don't care, even an empty line is fine
                             newContent.Add(part);
@@ -903,16 +907,18 @@ internal sealed class Parser
                             continue;
                         }
                         // Actual text content
-                        if (nextIsNewline && !contentPart.Value.Text.StartsWith(prefix))
+                        if (nextIsNewline && !textPart.Content.Text.StartsWith(prefix))
                         {
                             // We are in a newline and the prefixes don't match, that's an error
-                            var whitespaceLength = contentPart.Value.Text.TakeWhile(char.IsWhiteSpace).Count();
+                            var whitespaceLength = textPart.Content.Text.TakeWhile(char.IsWhiteSpace).Count();
                             var location = GetLocation(whitespaceLength);
                             var diag = Diagnostic.Create(
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
-                            var allDiags = contentPart.Diagnostics.Append(diag).ToImmutableArray();
-                            newContent.Add(new StringPart.Content(contentPart.Value, allDiags));
+                            // TODO: Append diagnostics
+                            // var allDiags = textPart.Diagnostics.Append(diag).ToImmutableArray();
+                            // newContent.Add(new StringPart.Content(textPart.Value, allDiags));
+                            throw new NotImplementedException();
                         }
                         else
                         {
@@ -938,27 +944,30 @@ internal sealed class Parser
             var diag = Diagnostic.Create(
                 SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
                 location);
-            closeQuote = closeQuote.AddDiagnostic(diag);
+            // TODO: Attach diagnostic
+            // closeQuote = closeQuote.AddDiagnostic(diag);
+            throw new NotImplementedException();
         }
-        return new(openQuote, content.ToImmutable(), closeQuote);
+        return new(openQuote, content.ToSyntaxList(), closeQuote);
     }
 
     // General utilities
 
     /// <summary>
-    /// Parses a punctuated list.
+    /// Parses a <see cref="SeparatedSyntaxList{TNode}"/>.
     /// </summary>
-    /// <typeparam name="T">The element type of the punctuated list.</typeparam>
+    /// <typeparam name="TNode">The element type of the list.</typeparam>
     /// <param name="elementParser">The parser function that parses a single element.</param>
     /// <param name="punctType">The type of the punctuation token.</param>
     /// <param name="stopType">The type of the token that definitely ends this construct.</param>
-    /// <returns>The parsed <see cref="PunctuatedList{T}"/>.</returns>
-    private PunctuatedList<T> ParsePunctuatedListAllowTrailing<T>(
-        Func<T> elementParser,
+    /// <returns>The parsed <see cref="SeparatedSyntaxList{TNode}"/>.</returns>
+    private SeparatedSyntaxList<TNode> ParsePunctuatedListAllowTrailing<TNode>(
+        Func<TNode> elementParser,
         TokenType punctType,
         TokenType stopType)
+        where TNode : SyntaxNode
     {
-        var elements = ImmutableArray.CreateBuilder<Punctuated<T>>();
+        var elements = SeparatedSyntaxList.CreateBuilder<TNode>();
         while (true)
         {
             // Stop token met, don't go further
@@ -969,16 +978,20 @@ internal sealed class Parser
             if (this.Matches(punctType, out var punct))
             {
                 // Punctuation, add with element
-                elements.Add(new(element, punct));
+                // TODO
+                throw new NotImplementedException();
+                // elements.Add(new(element, punct));
             }
             else
             {
                 // Not punctuation, we are done
-                elements.Add(new(element, null));
+                // TODO
+                throw new NotImplementedException();
+                // elements.Add(new(element, null));
                 break;
             }
         }
-        return new(elements.ToImmutable());
+        return elements.ToSeparatedSyntaxList();
     }
 
     // Token-level operators

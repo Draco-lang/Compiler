@@ -166,6 +166,25 @@
         The returned expression.
       </Documentation>
     </Field>
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon at the end.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <Node Name="UnexpectedFunctionBodySyntax" Base="FunctionBodySyntax">
+    <Documentation>
+      Unexpected input in function body context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
   </Node>
 
   <Node Name="LabelDeclarationSyntax" Base="DeclarationSyntax">
@@ -743,6 +762,92 @@
       </Documentation>
 
       <Token Kind="ParenClose" />
+    </Field>
+  </Node>
+
+  <Node Name="StringExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A string consisting of text and interpolation holes.
+    </Documentation>
+
+    <Field Name="OpenQuotes" Type="SyntaxToken">
+      <Documentation>
+        The opening quotes for the string.
+      </Documentation>
+
+      <Token Kind="LineStringStart" />
+      <Token Kind="MultiLineStringStart" />
+    </Field>
+    <Field Name="Parts" Type="SyntaxList&lt;StringPartSyntax&gt;">
+      <Documentation>
+        The parts the string consists of.
+      </Documentation>
+    </Field>
+    <Field Name="CloseQuotes" Type="SyntaxToken">
+      <Documentation>
+        The closing quotes for the string.
+      </Documentation>
+
+      <Token Kind="LineStringEnd" />
+      <Token Kind="MultiLineStringEnd" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="StringPartSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single part of a string.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="TextStringPartSyntax" Base="StringPartSyntax">
+    <Documentation>
+      Literal text inside the string.
+    </Documentation>
+
+    <Field Name="Content" Type="SyntaxToken">
+      <Documentation>
+        The content of the string part.
+      </Documentation>
+
+      <Token Kind="StringContent" />
+    </Field>
+  </Node>
+
+  <Node Name="InterpolationStringPartSyntax" Base="StringPartSyntax">
+    <Documentation>
+      Interpolation inside the string.
+    </Documentation>
+
+    <Field Name="Open" Type="SyntaxToken">
+      <Documentation>
+        The starting token for the interpolation.
+      </Documentation>
+
+      <Token Kind="InterpolationStart" />
+    </Field>
+    <Field Name="Expression" Type="ExpressionSyntax">
+      <Documentation>
+        The interpolated expression.
+      </Documentation>
+    </Field>
+    <Field Name="Close" Type="SyntaxToken">
+      <Documentation>
+        The ending token for the interpolation.
+      </Documentation>
+
+      <Token Kind="InterpolationEnd" />
+    </Field>
+  </Node>
+
+  <Node Name="UnexpectedStringPartSyntax" Base="StringPartSyntax">
+    <Documentation>
+      Unexpected input in string expression context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
     </Field>
   </Node>
 

@@ -19,6 +19,11 @@ internal sealed partial class SyntaxToken : SyntaxNode
     public TokenType Type => throw new NotImplementedException();
 
     /// <summary>
+    /// The text the token was produced from.
+    /// </summary>
+    public string Text => throw new NotImplementedException();
+
+    /// <summary>
     /// The <see cref="SyntaxTrivia"/> before this token.
     /// </summary>
     public SyntaxList<SyntaxTrivia> LeadingTrivia { get; }

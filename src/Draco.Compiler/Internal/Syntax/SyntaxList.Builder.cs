@@ -27,7 +27,7 @@ internal readonly partial struct SyntaxList<TNode>
     /// <summary>
     /// The builder type for a <see cref="SyntaxList{TNode}"/>.
     /// </summary>
-    public sealed class Builder
+    public sealed class Builder : IEnumerable<TNode>
     {
         /// <summary>
         /// The number of nodes added to the builder.
@@ -45,5 +45,8 @@ internal readonly partial struct SyntaxList<TNode>
         /// </summary>
         /// <param name="node">The node to add.</param>
         public void Add(TNode node) => throw new NotImplementedException();
+
+        public IEnumerator<TNode> GetEnumerator() => throw new NotImplementedException();
+        IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
     }
 }

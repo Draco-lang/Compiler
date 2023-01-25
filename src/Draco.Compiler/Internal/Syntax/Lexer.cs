@@ -97,11 +97,8 @@ internal sealed class Lexer
     // These are various cached builder types to save on allocations
     // The important thing is that these should not carry any significant state in the lexer in any way,
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
-    private readonly Token.Builder tokenBuilder = new();
+    private readonly SyntaxToken.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly ImmutableArray<Trivia>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<Trivia>();
-    private readonly ImmutableArray<Trivia>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<Trivia>();
-    private readonly ImmutableArray<Diagnostic>.Builder diagnosticList = ImmutableArray.CreateBuilder<Diagnostic>();
 
     public Lexer(ISourceReader sourceReader)
     {
@@ -110,16 +107,13 @@ internal sealed class Lexer
     }
 
     /// <summary>
-    /// Reads the next <see cref="Token"/> from the input.
+    /// Reads the next <see cref="SyntaxToken"/> from the input.
     /// </summary>
-    /// <returns>The <see cref="Token"/> read.</returns>
-    public Token Lex()
+    /// <returns>The <see cref="SyntaxToken"/> read.</returns>
+    public SyntaxToken Lex()
     {
         this.tokenBuilder.Clear();
         this.valueBuilder.Clear();
-        this.leadingTriviaList.Clear();
-        this.trailingTriviaList.Clear();
-        this.diagnosticList.Clear();
 
         switch (this.CurrentMode.Kind)
         {
@@ -145,13 +139,6 @@ internal sealed class Lexer
         default:
             throw new InvalidOperationException("unsupported lexer mode");
         }
-
-        // If there was any leading or trailing trivia, we have to add them
-        if (this.leadingTriviaList.Count > 0) this.tokenBuilder.SetLeadingTrivia(this.leadingTriviaList.ToImmutable());
-        if (this.trailingTriviaList.Count > 0) this.tokenBuilder.SetTrailingTrivia(this.trailingTriviaList.ToImmutable());
-
-        // Attach diagnostics, if any
-        if (this.diagnosticList.Count > 0) this.tokenBuilder.SetDiagnostics(this.diagnosticList.ToImmutable());
 
         return this.tokenBuilder.Build();
     }
@@ -759,7 +746,7 @@ internal sealed class Lexer
     /// </summary>
     /// <param name="result">The parsed trivia token is written here.</param>
     /// <returns>True, if a trivia token was parsed.</returns>
-    private bool TryParseTrivia([MaybeNullWhen(false)] out Trivia result)
+    private bool TryParseTrivia([MaybeNullWhen(false)] out SyntaxTrivia result)
     {
         var ch = this.Peek();
         // Newline
@@ -771,7 +758,7 @@ internal sealed class Lexer
                 this.modeStack.Pop();
                 while (this.CurrentMode.Kind != ModeKind.Normal) this.modeStack.Pop();
             }
-            result = Trivia.From(TriviaType.Newline, this.AdvanceWithText(newlineLength));
+            result = SyntaxTrivia.From(TriviaType.Newline, this.AdvanceWithText(newlineLength));
             return true;
         }
         // Any horizontal whitespace
@@ -780,7 +767,7 @@ internal sealed class Lexer
             // We merge it into one chunk to not produce so many individual tokens
             var offset = 1;
             while (IsSpace(this.Peek(offset))) ++offset;
-            result = Trivia.From(TriviaType.Whitespace, this.AdvanceWithText(offset));
+            result = SyntaxTrivia.From(TriviaType.Whitespace, this.AdvanceWithText(offset));
             return true;
         }
         // Comment
@@ -799,7 +786,7 @@ internal sealed class Lexer
             // which means that this will terminate, even if the comment was on the last line of the file
             // without a line break
             while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
-            result = Trivia.From(commentType, this.AdvanceWithText(offset));
+            result = SyntaxTrivia.From(commentType, this.AdvanceWithText(offset));
             return true;
         }
         // Not trivia

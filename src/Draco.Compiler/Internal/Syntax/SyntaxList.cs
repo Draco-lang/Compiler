@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// A generic list of <see cref="SyntaxNode"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds.</typeparam>
-internal readonly struct SyntaxList<TNode> : IEnumerable<TNode>
+internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
     where TNode : SyntaxNode
 {
     /// <summary>

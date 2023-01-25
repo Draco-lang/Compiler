@@ -191,10 +191,10 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="CompilationUnitSyntax"/>.</returns>
     public CompilationUnitSyntax ParseCompilationUnit()
     {
-        var decls = ImmutableArray.CreateBuilder<DeclarationSyntax>();
+        var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
         while (this.Peek() != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
         var end = this.Expect(TokenType.EndOfInput);
-        return new(decls.ToImmutable(), end);
+        return new(decls.ToSyntaxList(), end);
     }
 
     /// <summary>

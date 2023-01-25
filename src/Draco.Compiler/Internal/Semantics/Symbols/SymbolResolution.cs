@@ -41,9 +41,9 @@ internal static class SymbolResolution
     /// Retrieves the <see cref="Diagnostic"/> messages relating to symbol resolution.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> to check.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> to check.</param>
     /// <returns>The <see cref="Diagnostic"/>s related to <paramref name="tree"/>.</returns>
-    public static IEnumerable<Diagnostic> GetDiagnostics(QueryDatabase db, ParseNode tree)
+    public static IEnumerable<Diagnostic> GetDiagnostics(QueryDatabase db, SyntaxNode tree)
     {
         var referencedSymbolDiags = ReferencesSymbol(tree)
             ? GetReferencedSymbol(db, tree).Diagnostics
@@ -59,39 +59,39 @@ internal static class SymbolResolution
     /// Checks, if the given subtree references a symbol.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> to check.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> to check.</param>
     /// <returns>True, if <paramref name="tree"/> references a symbol.</returns>
-    public static bool ReferencesSymbol(ParseNode tree) => TryGetReferencedSymbolName(tree, out _);
+    public static bool ReferencesSymbol(SyntaxNode tree) => TryGetReferencedSymbolName(tree, out _);
 
     /// <summary>
     /// Retrieves the referenced symbol of a subtree.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that references a symbol.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> that references a symbol.</param>
     /// <returns>The referenced <see cref="ISymbol"/>, which can represent a reference error.</returns>
-    public static ISymbol GetReferencedSymbol(QueryDatabase db, ParseNode tree) => tree switch
+    public static ISymbol GetReferencedSymbol(QueryDatabase db, SyntaxNode tree) => tree switch
     {
-        ParseNode.Expr.Name => GetReferencedSymbol<ISymbol.ITyped>(db, tree),
-        ParseNode.TypeExpr.Name => GetReferencedSymbol<ISymbol.ITypeDefinition>(db, tree),
-        ParseNode.LabelName => GetReferencedSymbol<ISymbol.ILabel>(db, tree),
-        ParseNode.Expr.Unary or ParseNode.Expr.Binary or ParseNode.ComparisonElement =>
+        NameExpressionSyntax => GetReferencedSymbol<ISymbol.ITyped>(db, tree),
+        NameTypeSyntax => GetReferencedSymbol<ISymbol.ITypeDefinition>(db, tree),
+        NameLabelSyntax => GetReferencedSymbol<ISymbol.ILabel>(db, tree),
+        UnaryExpressionSyntax or BinaryExpressionSyntax or ComparisonElementSyntax =>
             // NOTE: Names are not type-able, we can rely on any symbol
             GetReferencedSymbol<ISymbol>(db, tree),
         _ => throw new InvalidOperationException(),
     };
 
     /// <summary>
-    /// Retrieves the <see cref="ISymbol"/> referenced by the given <see cref="ParseNode"/>.
+    /// Retrieves the <see cref="ISymbol"/> referenced by the given <see cref="SyntaxNode"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that references a <see cref="ISymbol"/>.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> that references a <see cref="ISymbol"/>.</param>
     /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> references, or null if
     /// it does not reference any.</returns>
-    public static ISymbol? GetReferencedSymbolOrNull(QueryDatabase db, ParseNode tree) => tree switch
+    public static ISymbol? GetReferencedSymbolOrNull(QueryDatabase db, SyntaxNode tree) => tree switch
     {
-        ParseNode.Expr.Name => GetReferencedSymbolOrNull<ISymbol.ITyped>(db, tree),
-        ParseNode.TypeExpr.Name => GetReferencedSymbolOrNull<ISymbol.ITypeDefinition>(db, tree),
-        ParseNode.Expr.Unary or ParseNode.Expr.Binary or ParseNode.ComparisonElement =>
+        NameExpressionSyntax => GetReferencedSymbolOrNull<ISymbol.ITyped>(db, tree),
+        NameTypeSyntax => GetReferencedSymbolOrNull<ISymbol.ITypeDefinition>(db, tree),
+        UnaryExpressionSyntax or BinaryExpressionSyntax or ComparisonElementSyntax =>
             // NOTE: Names are not type-able, we can rely on any symbol
             GetReferencedSymbolOrNull<ISymbol>(db, tree),
         _ => null,
@@ -102,9 +102,9 @@ internal static class SymbolResolution
     /// </summary>
     /// <typeparam name="TSymbol">The symbol type to look up.</typeparam>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that references a symbol.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> that references a symbol.</param>
     /// <returns>The referenced <see cref="ISymbol"/>, which can represent a reference error.</returns>
-    public static TSymbol GetReferencedSymbol<TSymbol>(QueryDatabase db, ParseNode tree)
+    public static TSymbol GetReferencedSymbol<TSymbol>(QueryDatabase db, SyntaxNode tree)
          where TSymbol : class, ISymbol => db.GetOrUpdate(
         tree,
         TSymbol (tree) =>
@@ -124,14 +124,14 @@ internal static class SymbolResolution
         });
 
     /// <summary>
-    /// Retrieves the <see cref="ISymbol"/> referenced by the given <see cref="ParseNode"/>.
+    /// Retrieves the <see cref="ISymbol"/> referenced by the given <see cref="SyntaxNode"/>.
     /// </summary>
     /// <typeparam name="TSymbol">The symbol type to look up.</typeparam>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that references a <see cref="ISymbol"/>.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> that references a <see cref="ISymbol"/>.</param>
     /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> references, or null if
     /// it does not reference any.</returns>
-    public static TSymbol? GetReferencedSymbolOrNull<TSymbol>(QueryDatabase db, ParseNode tree)
+    public static TSymbol? GetReferencedSymbolOrNull<TSymbol>(QueryDatabase db, SyntaxNode tree)
         where TSymbol : class, ISymbol => db.GetOrUpdate(
         tree,
         tree => TryGetReferencedSymbolName(tree, out var name)
@@ -143,10 +143,10 @@ internal static class SymbolResolution
     /// </summary>
     /// <typeparam name="TSymbol">The symbol type to look up.</typeparam>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that references a <see cref="ISymbol"/>.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> that references a <see cref="ISymbol"/>.</param>
     /// <param name="name">The name <paramref name="tree"/> references by.</param>
     /// <returns>The referenced <see cref="ISymbol"/>, or null if not resolved.</returns>
-    public static TSymbol? ReferenceSymbolOrNull<TSymbol>(QueryDatabase db, ParseNode tree, string name)
+    public static TSymbol? ReferenceSymbolOrNull<TSymbol>(QueryDatabase db, SyntaxNode tree, string name)
         where TSymbol : class, ISymbol => db.GetOrUpdate(
         (tree, name),
         TSymbol? (tree, name) =>
@@ -183,32 +183,32 @@ internal static class SymbolResolution
     /// <param name="tree">The tree that might reference a symbol.</param>
     /// <param name="name">The referenced symbol name gets written here.</param>
     /// <returns>True, if <paramref name="tree"/> references a symbol and the result is written to <paramref name="name"/>.</returns>
-    private static bool TryGetReferencedSymbolName(ParseNode tree, [MaybeNullWhen(false)] out string name)
+    private static bool TryGetReferencedSymbolName(SyntaxNode tree, [MaybeNullWhen(false)] out string name)
     {
         switch (tree)
         {
-        case ParseNode.Expr.Name nameExpr:
-            name = nameExpr.Identifier.Text;
+        case NameExpressionSyntax nameExpr:
+            name = nameExpr.Name.Text;
             return true;
 
-        case ParseNode.TypeExpr.Name nameTypeExpr:
-            name = nameTypeExpr.Identifier.Text;
+        case NameTypeSyntax nameTypeExpr:
+            name = nameTypeExpr.Name.Text;
             return true;
 
-        case ParseNode.LabelName labelName:
-            name = labelName.Identifier.Text;
+        case NameLabelSyntax labelName:
+            name = labelName.Name.Text;
             return true;
 
-        case ParseNode.Expr.Unary uryExpr:
+        case UnaryExpressionSyntax uryExpr:
             name = GetUnaryOperatorName(uryExpr.Operator.Type);
             return true;
 
-        case ParseNode.Expr.Binary binExpr:
+        case BinaryExpressionSyntax binExpr:
             // NOTE: Assignment is also denoted as binary, but that does not reference an operator
             name = GetBinaryOperatorName(binExpr.Operator.Type);
             return name is not null;
 
-        case ParseNode.ComparisonElement cmpElement:
+        case ComparisonElementSyntax cmpElement:
             name = GetRelationalOperatorName(cmpElement.Operator.Type);
             return true;
 
@@ -222,9 +222,9 @@ internal static class SymbolResolution
 
     /// <summary>
     /// Utility for internal API to expect a symbol defined by a certain type of tree.
-    /// See <see cref="GetDefinedSymbolOrNull(QueryDatabase, ParseNode)"/>.
+    /// See <see cref="GetDefinedSymbolOrNull(QueryDatabase, SyntaxNode)"/>.
     /// </summary>
-    public static TSymbol GetDefinedSymbolExpected<TSymbol>(QueryDatabase db, ParseNode tree)
+    public static TSymbol GetDefinedSymbolExpected<TSymbol>(QueryDatabase db, SyntaxNode tree)
         where TSymbol : ISymbol
     {
         var symbol = GetDefinedSymbolOrNull(db, tree);
@@ -234,13 +234,13 @@ internal static class SymbolResolution
     }
 
     /// <summary>
-    /// Retrieves the <see cref="ISymbol"/> defined by the given <see cref="ParseNode"/>.
+    /// Retrieves the <see cref="ISymbol"/> defined by the given <see cref="SyntaxNode"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that is asked if it defines a <see cref="ISymbol"/>.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> that is asked if it defines a <see cref="ISymbol"/>.</param>
     /// <returns>The <see cref="ISymbol"/> that <paramref name="tree"/> defines, or null if
     /// it does not define any symbol.</returns>
-    public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
+    public static ISymbol? GetDefinedSymbolOrNull(QueryDatabase db, SyntaxNode tree) => db.GetOrUpdate(
         tree,
         ISymbol? (tree) =>
         {
@@ -258,26 +258,26 @@ internal static class SymbolResolution
     /// it defines no symbol.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that is asked for the defined <see cref="ISymbol"/>.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The <see cref="ISymbol"/> defined by <paramref name="tree"/>, or null.</returns>
-    private static ISymbol? ConstructDefinedSymbolOrNull(QueryDatabase db, ParseNode tree) => tree switch
+    private static ISymbol? ConstructDefinedSymbolOrNull(QueryDatabase db, SyntaxNode tree) => tree switch
     {
-        ParseNode.Decl.Variable variable => Symbol.MakeVariable(
+        VariableDeclarationSyntax variable => Symbol.MakeVariable(
             db: db,
-            name: variable.Identifier.Text,
+            name: variable.Name.Text,
             definition: tree,
             isMutable: variable.Keyword.Type == TokenType.KeywordVar),
-        ParseNode.Decl.Func func => Symbol.MakeFunction(
+        FunctionDeclarationSyntax func => Symbol.MakeFunction(
             db: db,
-            name: func.Identifier.Text,
+            name: func.Name.Text,
             definition: tree),
-        ParseNode.Decl.Label label => Symbol.MakeLabel(
+        LabelDeclarationSyntax label => Symbol.MakeLabel(
             db: db,
-            name: label.Identifier.Text,
+            name: label.Name.Text,
             definition: tree),
-        ParseNode.FuncParam fparam => Symbol.MakeParameter(
+        ParameterSyntax fparam => Symbol.MakeParameter(
             db: db,
-            name: fparam.Identifier.Text,
+            name: fparam.Name.Text,
             definition: tree),
         _ => null,
     };
@@ -290,9 +290,9 @@ internal static class SymbolResolution
     /// <returns>The break and continue <see cref="ISymbol.ILabel"/>s for <paramref name="tree"/>.</returns>
     public static (ISymbol.ILabel Break, ISymbol.ILabel Continue) GetBreakAndContinueLabels(
         QueryDatabase db,
-        ParseNode.Expr.While tree) => db.GetOrUpdate(
+        WhileExpressionSyntax tree) => db.GetOrUpdate(
             tree,
-            (ISymbol.ILabel Break, ISymbol.ILabel Continue) (ParseNode.Expr.While tree) =>
+            (ISymbol.ILabel Break, ISymbol.ILabel Continue) (WhileExpressionSyntax tree) =>
             {
                 var breakLabel = Symbol.SynthetizeLabel("break");
                 var continueLabel = Symbol.SynthetizeLabel("continue");
@@ -306,9 +306,9 @@ internal static class SymbolResolution
     /// <param name="while">The while-node gets written here, in case the parent is a while-loop and <paramref name="tree"/>
     /// is the body.</param>
     /// <returns>True, if <paramref name="tree"/> is the body of a while-loop.</returns>
-    private static bool IsWhileBody(ParseNode tree, [MaybeNullWhen(false)] out ParseNode.Expr.While @while)
+    private static bool IsWhileBody(SyntaxNode tree, [MaybeNullWhen(false)] out WhileExpressionSyntax @while)
     {
-        if (tree.Parent is ParseNode.Expr.While parentWhile && ReferenceEquals(tree.Green, parentWhile.Expression.Green))
+        if (tree.Parent is WhileExpressionSyntax parentWhile && ReferenceEquals(tree.Green, parentWhile.Then.Green))
         {
             @while = parentWhile;
             return true;
@@ -337,12 +337,12 @@ internal static class SymbolResolution
     }
 
     /// <summary>
-    /// Retrieves the containing <see cref="Scope"/> of a <see cref="ParseNode"/>.
+    /// Retrieves the containing <see cref="Scope"/> of a <see cref="SyntaxNode"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> that we need the surrounding <see cref="Scope"/> of.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> that we need the surrounding <see cref="Scope"/> of.</param>
     /// <returns>The surrounding <see cref="Scope"/> of <paramref name="tree"/>.</returns>
-    public static IScope? GetContainingScopeOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
+    public static IScope? GetContainingScopeOrNull(QueryDatabase db, SyntaxNode tree) => db.GetOrUpdate(
         tree,
         IScope? (tree) =>
         {
@@ -352,13 +352,13 @@ internal static class SymbolResolution
         });
 
     /// <summary>
-    /// Retrieves the <see cref="Scope"/> that is introduced by a <see cref="ParseNode"/> node.
+    /// Retrieves the <see cref="Scope"/> that is introduced by a <see cref="SyntaxNode"/> node.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> to retrieve the <see cref="Scope"/> for.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> to retrieve the <see cref="Scope"/> for.</param>
     /// <returns>The <see cref="Scope"/> associated with <paramref name="tree"/>, or null
     /// if it does not define a scope.</returns>
-    public static IScope? GetDefinedScopeOrNull(QueryDatabase db, ParseNode tree) => db.GetOrUpdate(
+    public static IScope? GetDefinedScopeOrNull(QueryDatabase db, SyntaxNode tree) => db.GetOrUpdate(
         tree,
         IScope? (tree) =>
         {
@@ -411,7 +411,7 @@ internal static class SymbolResolution
     /// </summary>
     /// <param name="tree">The tree to get the scope defining ancestor of.</param>
     /// <returns>The closest ancestor of <paramref name="tree"/> that defines a scope.</returns>
-    private static ParseNode? GetScopeDefiningAncestor(ParseNode tree)
+    private static SyntaxNode? GetScopeDefiningAncestor(SyntaxNode tree)
     {
         while (true)
         {
@@ -427,11 +427,11 @@ internal static class SymbolResolution
     /// </summary>
     /// <param name="tree">The tree to get the <see cref="ScopeKind"/> for.</param>
     /// <returns>The <see cref="ScopeKind"/> for the scope that <paramref name="tree"/> defines, or null if it does not define a scope.</returns>
-    private static ScopeKind? GetScopeKind(ParseNode tree) => tree switch
+    private static ScopeKind? GetScopeKind(SyntaxNode tree) => tree switch
     {
         _ when tree.Parent is null => ScopeKind.Global,
-        ParseNode.Expr.Block => ScopeKind.Local,
-        ParseNode.Decl.Func => ScopeKind.Function,
+        BlockExpressionSyntax => ScopeKind.Local,
+        FunctionDeclarationSyntax => ScopeKind.Function,
         // We wrap up loop bodies in a scope, so the labels get defined in a proper, sanitized scope
         _ when IsWhileBody(tree, out _) => ScopeKind.Local,
         _ => null,
@@ -445,7 +445,7 @@ internal static class SymbolResolution
     /// <param name="ancestor">The ancestor of <paramref name="tree"/> to get the position relative to.</param>
     /// <param name="tree">The tree to get the relative position of.</param>
     /// <returns>The relative position of <paramref name="tree"/> in <paramref name="ancestor"/>.</returns>
-    private static int GetPosition(ParseNode ancestor, ParseNode tree)
+    private static int GetPosition(SyntaxNode ancestor, SyntaxNode tree)
     {
         // Search for this subtree
         foreach (var (child, position) in EnumerateSubtreeInScope(ancestor))
@@ -461,7 +461,7 @@ internal static class SymbolResolution
     /// </summary>
     /// <param name="tree">The tree to get all subtrees of.</param>
     /// <returns>The pairs of subtrees and relative positions of <paramref name="tree"/>.</returns>
-    private static IEnumerable<(ParseNode Tree, int Position)> EnumerateSubtreeInScope(ParseNode tree)
+    private static IEnumerable<(SyntaxNode Tree, int Position)> EnumerateSubtreeInScope(SyntaxNode tree)
     {
         // This method must be called on a scope-owning subtree
         Debug.Assert(GetScopeKind(tree) is not null);
@@ -482,7 +482,7 @@ internal static class SymbolResolution
     /// </summary>
     /// <param name="tree">The root of the subtree to enumerate.</param>
     /// <returns>An enumerable containing all subtree nodes without including the children of the ones that define a scope.</returns>
-    private static IEnumerable<ParseNode> EnumerateNodesInSameScope(ParseNode tree)
+    private static IEnumerable<SyntaxNode> EnumerateNodesInSameScope(SyntaxNode tree)
     {
         // We go through each child of the current tree
         foreach (var child in tree.Children)

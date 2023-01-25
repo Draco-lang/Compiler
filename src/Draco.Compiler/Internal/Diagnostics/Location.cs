@@ -31,9 +31,9 @@ internal abstract partial record class Location
     /// Translates this <see cref="Location"/> to an <see cref="ApiLocation"/>, assuming it's relative to
     /// a <see cref="ParseNode"/>.
     /// </summary>
-    /// <param name="context">The <see cref="ParseNode"/> the location is relative to.</param>
+    /// <param name="context">The <see cref="SyntaxNode"/> the location is relative to.</param>
     /// <returns>The equivalent <see cref="ApiLocation"/> of <paramref name="context"/>.</returns>
-    public abstract ApiLocation ToApiLocation(ParseNode? context);
+    public abstract ApiLocation ToApiLocation(SyntaxNode? context);
 }
 
 internal abstract partial record class Location
@@ -43,7 +43,7 @@ internal abstract partial record class Location
     /// </summary>
     private sealed record class Null : Location
     {
-        public override ApiLocation ToApiLocation(ParseNode? context) => ApiLocation.None;
+        public override ApiLocation ToApiLocation(SyntaxNode? context) => ApiLocation.None;
     }
 }
 
@@ -55,7 +55,7 @@ internal abstract partial record class Location
     /// <param name="Range">The relative range compared to the tree.</param>
     public sealed record class RelativeToTree(RelativeRange Range) : Location
     {
-        public override ApiLocation ToApiLocation(ParseNode? context)
+        public override ApiLocation ToApiLocation(SyntaxNode? context)
         {
             if (context is null) throw new ArgumentNullException(nameof(context));
             var range = context.TranslateRelativeRange(this.Range);
@@ -67,11 +67,11 @@ internal abstract partial record class Location
 internal abstract partial record class Location
 {
     /// <summary>
-    /// Represents a <see cref="Location"/> referencing a <see cref="ParseNode"/> element.
+    /// Represents a <see cref="Location"/> referencing a <see cref="SyntaxNode"/> element.
     /// </summary>
     /// <param name="Node">The node the location refers to.</param>
-    public sealed record class TreeReference(ParseNode Node) : Location
+    public sealed record class TreeReference(SyntaxNode Node) : Location
     {
-        public override ApiLocation ToApiLocation(ParseNode? context) => this.Node.Location;
+        public override ApiLocation ToApiLocation(SyntaxNode? context) => this.Node.Location;
     }
 }

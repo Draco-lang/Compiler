@@ -11,6 +11,21 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxToken : SyntaxNode
 {
+    /// <summary>
+    /// The <see cref="TokenType"/> of this token.
+    /// </summary>
+    public TokenType Type => throw new NotImplementedException();
+
+    /// <summary>
+    /// The <see cref="SyntaxTrivia"/> before this token.
+    /// </summary>
+    public SyntaxList<SyntaxTrivia> LeadingTrivia => throw new NotImplementedException();
+
+    /// <summary>
+    /// The <see cref="SyntaxTrivia"/> after this token.
+    /// </summary>
+    public SyntaxList<SyntaxTrivia> TrailingTrivia => throw new NotImplementedException();
+
     public override IEnumerable<SyntaxNode> Children => throw new NotImplementedException();
 
     internal override Internal.Syntax.SyntaxToken Green { get; }

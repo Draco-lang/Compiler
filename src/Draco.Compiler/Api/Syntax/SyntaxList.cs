@@ -17,6 +17,11 @@ public readonly struct SyntaxList<TNode> : IEnumerable<TNode>
 {
     // TODO
 
+    /// <summary>
+    /// The number of nodes in this list.
+    /// </summary>
+    public int Length => throw new NotImplementedException();
+
     internal Internal.Syntax.SyntaxList<TGreenNode> ToGreen<TGreenNode>()
         where TGreenNode : Internal.Syntax.SyntaxNode => throw new NotImplementedException();
 

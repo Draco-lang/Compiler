@@ -16,6 +16,11 @@ internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
     where TNode : SyntaxNode
 {
     /// <summary>
+    /// The number of nodes in this list.
+    /// </summary>
+    public int Length => this.Nodes.Length;
+
+    /// <summary>
     /// The raw <see cref="SyntaxNode"/>s in this list.
     /// </summary>
     public readonly ImmutableArray<SyntaxNode> Nodes;

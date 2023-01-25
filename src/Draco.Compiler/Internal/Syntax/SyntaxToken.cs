@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,16 @@ internal sealed partial class SyntaxToken : SyntaxNode
     /// The <see cref="TokenType"/> of this token.
     /// </summary>
     public TokenType Type => throw new NotImplementedException();
+
+    /// <summary>
+    /// The <see cref="SyntaxTrivia"/> before this token.
+    /// </summary>
+    public SyntaxList<SyntaxTrivia> LeadingTrivia { get; }
+
+    /// <summary>
+    /// The <see cref="SyntaxTrivia"/> after this token.
+    /// </summary>
+    public SyntaxList<SyntaxTrivia> TrailingTrivia { get; }
 
     public override IEnumerable<SyntaxNode> Children => throw new NotImplementedException();
 

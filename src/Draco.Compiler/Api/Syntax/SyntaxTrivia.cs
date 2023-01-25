@@ -11,6 +11,11 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxTrivia : SyntaxNode
 {
+    /// <summary>
+    /// The <see cref="TriviaType"/> of this trivia.
+    /// </summary>
+    public TriviaType Type => throw new NotImplementedException();
+
     public override IEnumerable<SyntaxNode> Children => throw new NotImplementedException();
 
     internal override Internal.Syntax.SyntaxTrivia Green { get; }

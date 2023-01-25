@@ -16,6 +16,11 @@ internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<Syntax
     where TNode : SyntaxNode
 {
     /// <summary>
+    /// The number of nodes in this list.
+    /// </summary>
+    public int Length => this.Nodes.Length;
+
+    /// <summary>
     /// The raw <see cref="SyntaxNode"/>s in this list, including the separators.
     /// </summary>
     public readonly ImmutableArray<SyntaxNode> Nodes;

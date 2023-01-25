@@ -560,7 +560,7 @@ internal static partial class Symbol
             get
             {
                 var builder = ImmutableArray.CreateBuilder<ISymbol.IParameter>();
-                var tree = (SyntaxNode.Decl.Func)this.Definition;
+                var tree = (FunctionDeclarationSyntax)this.Definition;
                 foreach (var param in tree.Params.Value.Elements)
                 {
                     var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
@@ -574,7 +574,7 @@ internal static partial class Symbol
         {
             get
             {
-                var tree = (SyntaxNode.Decl.Func)this.Definition;
+                var tree = (FunctionDeclarationSyntax)this.Definition;
                 return tree.ReturnType is null
                     ? Types.Type.Unit
                     : TypeChecker.Evaluate(this.db, tree.ReturnType.Type);

@@ -22,6 +22,16 @@ public sealed class SyntaxToken : SyntaxNode
     public string Text => throw new NotImplementedException();
 
     /// <summary>
+    /// An optional associated value to this token.
+    /// </summary>
+    public object? Value => throw new NotImplementedException();
+
+    /// <summary>
+    /// The <see cref="Value"/> in string representation.
+    /// </summary>
+    public string? ValueText => throw new NotImplementedException();
+
+    /// <summary>
     /// The <see cref="SyntaxTrivia"/> before this token.
     /// </summary>
     public SyntaxList<SyntaxTrivia> LeadingTrivia => throw new NotImplementedException();
@@ -35,7 +45,7 @@ public sealed class SyntaxToken : SyntaxNode
 
     internal override Internal.Syntax.SyntaxToken Green { get; }
 
-    internal SyntaxToken(Internal.Syntax.SyntaxTree tree, SyntaxNode? parent, Internal.Syntax.SyntaxToken green)
+    internal SyntaxToken(SyntaxTree tree, SyntaxNode? parent, Internal.Syntax.SyntaxToken green)
         : base(tree, parent)
     {
         this.Green = green;

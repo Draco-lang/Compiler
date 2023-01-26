@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -12,7 +14,7 @@ public abstract class SyntaxNode
     /// <summary>
     /// The <see cref="SyntaxTree"/> this node belongs to.
     /// </summary>
-    public SyntaxTree Tree => new(this.GreenTree);
+    public SyntaxTree Tree { get; }
 
     /// <summary>
     /// The parent <see cref="SyntaxNode"/> of this one.
@@ -20,23 +22,28 @@ public abstract class SyntaxNode
     public SyntaxNode? Parent { get; }
 
     /// <summary>
+    /// The <see cref="Diagnostics.Location"/> of this node.
+    /// </summary>
+    public Location Location => throw new NotImplementedException();
+
+    /// <summary>
     /// The immediate descendant nodes of this one.
     /// </summary>
     public abstract IEnumerable<SyntaxNode> Children { get; }
 
     /// <summary>
-    /// The internal tree root.
+    /// All <see cref="SyntaxToken"/>s this node consists of.
     /// </summary>
-    internal Internal.Syntax.SyntaxTree GreenTree { get; }
+    public IEnumerable<SyntaxToken> Tokens => throw new NotImplementedException();
 
     /// <summary>
     /// The internal green node that this node wraps.
     /// </summary>
     internal abstract Internal.Syntax.SyntaxNode Green { get; }
 
-    internal SyntaxNode(Internal.Syntax.SyntaxTree tree, SyntaxNode? parent)
+    internal SyntaxNode(SyntaxTree tree, SyntaxNode? parent)
     {
-        this.GreenTree = tree;
+        this.Tree = tree;
         this.Parent = parent;
     }
 

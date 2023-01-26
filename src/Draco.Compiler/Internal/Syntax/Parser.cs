@@ -57,6 +57,20 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// Represents a parsed block.
+    /// This is factored out because we parse blocks differently, and instantiating an AST node could be wasteful.
+    /// </summary>
+    /// <param name="OpenCurly">The open curly brace.</param>
+    /// <param name="Statements">The list of statements.</param>
+    /// <param name="Value">The evaluation value, if any.</param>
+    /// <param name="CloseCurly">The close curly brace.</param>
+    private readonly record struct ParsedBlock(
+        SyntaxToken OpenCurly,
+        SyntaxList<StatementSyntax> Statements,
+        ExpressionSyntax? Value,
+        SyntaxToken CloseCurly);
+
+    /// <summary>
     /// Describes a single precedence level for expressions.
     /// </summary>
     /// <param name="Kind">The kind of the precedence level.</param>
@@ -359,8 +373,11 @@ internal sealed class Parser
         }
         else if (this.Peek() == TokenType.CurlyOpen)
         {
-            var block = this.ParseBlockExpr(ControlFlowContext.Stmt);
-            return new BlockFunctionBodySyntax(block);
+            var block = this.ParseBlock(ControlFlowContext.Stmt, false);
+            return new BlockFunctionBodySyntax(
+                openBrace: block.OpenCurly,
+                statements: block.Statements,
+                closeBrace: block.CloseCurly);
         }
         else
         {
@@ -470,6 +487,16 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="BlockExpressionSyntax"/>.</returns>
     private BlockExpressionSyntax ParseBlockExpr(ControlFlowContext ctx)
     {
+        var parsed = this.ParseBlock(ctx, true);
+        return new BlockExpressionSyntax(
+            openBrace: parsed.OpenCurly,
+            statements: parsed.Statements,
+            value: parsed.Value,
+            closeBrace: parsed.CloseCurly);
+    }
+
+    private ParsedBlock ParseBlock(ControlFlowContext ctx, bool allowValue)
+    {
         var openBrace = this.Expect(TokenType.CurlyOpen);
         var stmts = SyntaxList.CreateBuilder<StatementSyntax>();
         ExpressionSyntax? value = null;
@@ -514,7 +541,7 @@ internal sealed class Parser
                 {
                     // Some expression
                     var expr = this.ParseExpr();
-                    if (this.Peek() != TokenType.CurlyClose)
+                    if (this.Peek() != TokenType.CurlyClose || !allowValue)
                     {
                         // Likely just a statement, can continue
                         var semicolon = this.Expect(TokenType.Semicolon);

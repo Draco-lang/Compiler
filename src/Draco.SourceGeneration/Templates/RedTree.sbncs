@@ -19,7 +19,7 @@ namespace Draco.Compiler.Api.Syntax;
                 {{if $field.IsSyntaxList}}
                     <{{$field.ElementType}}>
                 {{end}}
-                (this.GreenTree, this);
+                (this.Tree, this);
             private {{$field.NonNullableType}}? {{$backingField}};
         {{end}}
 
@@ -38,14 +38,14 @@ namespace Draco.Compiler.Api.Syntax;
         {{if $node.IsAbstract}}
             {{if $node.Base}}
                 internal {{$node.Name}}(
-                    Internal.Syntax.SyntaxTree tree,
+                    SyntaxTree tree,
                     {{Root.Name}}? parent) : base(tree, parent)
                 {
                 }
             {{end}}
         {{else}}
             internal {{$node.Name}}(
-                Internal.Syntax.SyntaxTree tree,
+                SyntaxTree tree,
                 {{Root.Name}}? parent,
                 Internal.Syntax.{{$node.Name}} green) : base(tree, parent)
             {

@@ -24,6 +24,16 @@ internal sealed partial class SyntaxToken : SyntaxNode
     public string Text => throw new NotImplementedException();
 
     /// <summary>
+    /// An optional associated value to this token.
+    /// </summary>
+    public object? Value => throw new NotImplementedException();
+
+    /// <summary>
+    /// The <see cref="Value"/> in string representation.
+    /// </summary>
+    public string? ValueText => this.Value?.ToString();
+
+    /// <summary>
     /// The <see cref="SyntaxTrivia"/> before this token.
     /// </summary>
     public SyntaxList<SyntaxTrivia> LeadingTrivia { get; }

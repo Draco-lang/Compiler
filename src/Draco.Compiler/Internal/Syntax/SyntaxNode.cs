@@ -20,6 +20,11 @@ internal abstract class SyntaxNode
     /// </summary>
     public abstract IEnumerable<SyntaxNode> Children { get; }
 
+    /// <summary>
+    /// All <see cref="SyntaxToken"/>s this node consists of.
+    /// </summary>
+    public IEnumerable<SyntaxToken> Tokens => throw new NotImplementedException();
+
     public abstract Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent);
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);

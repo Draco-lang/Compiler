@@ -233,7 +233,7 @@ internal static class ParseTreeToAst
             {
             case TextStringPartSyntax content:
             {
-                var text = content.Value.ValueText;
+                var text = content.Content.ValueText;
                 Debug.Assert(text is not null);
                 builder.Add(new Ast.StringPart.Content(
                     SyntaxNode: content,
@@ -318,15 +318,15 @@ internal static class ParseTreeToAst
         }
     }
 
-    private static Ast.Expr ToAstExpr(LiteralExpressionSyntax lit) => lit.Value.Type switch
+    private static Ast.Expr ToAstExpr(LiteralExpressionSyntax lit) => lit.Literal.Type switch
     {
         TokenType.LiteralInteger => new Ast.Expr.Literal(
             SyntaxNode: lit,
-            Value: lit.Value.Value,
+            Value: lit.Literal.Value,
             Type: Type.Int32),
         TokenType.LiteralFloat => new Ast.Expr.Literal(
             SyntaxNode: lit,
-            Value: lit.Value.Value,
+            Value: lit.Literal.Value,
             // NOTE: There is no agreement currently on float literal type
             Type: Type.Float64),
         TokenType.KeywordTrue => new Ast.Expr.Literal(

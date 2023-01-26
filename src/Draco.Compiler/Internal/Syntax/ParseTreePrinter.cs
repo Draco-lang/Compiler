@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Internal.Utilities;

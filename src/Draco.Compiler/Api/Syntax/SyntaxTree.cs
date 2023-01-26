@@ -22,6 +22,11 @@ public sealed class SyntaxTree
     public SyntaxNode Root => throw new NotImplementedException();
 
     /// <summary>
+    /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.
+    /// </summary>
+    public IEnumerable<Diagnostic> Diagnostics => throw new NotImplementedException();
+
+    /// <summary>
     /// The internal root of the tree.
     /// </summary>
     internal Internal.Syntax.SyntaxNode GreenRoot { get; }

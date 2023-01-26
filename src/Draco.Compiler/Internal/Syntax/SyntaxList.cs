@@ -15,6 +15,12 @@ namespace Draco.Compiler.Internal.Syntax;
 internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
     where TNode : SyntaxNode
 {
+    // TODO
+    /// <summary>
+    /// An empty <see cref="SyntaxList{TNode}"/>.
+    /// </summary>
+    public static readonly SyntaxList<TNode> Empty = false ? default! : throw new NotImplementedException();
+
     /// <summary>
     /// The number of nodes in this list.
     /// </summary>

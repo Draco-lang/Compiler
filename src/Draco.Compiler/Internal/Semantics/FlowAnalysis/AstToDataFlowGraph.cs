@@ -35,7 +35,7 @@ internal sealed class AstToDataFlowGraph
         this.prev = this.first;
     }
 
-    private static Ast NoOp() => new Ast.Stmt.NoOp(ParseNode: null);
+    private static Ast NoOp() => new Ast.Stmt.NoOp(SyntaxNode: null);
 
     private DataFlowOperation GetLabel(ISymbol.ILabel label)
     {

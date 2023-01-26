@@ -238,7 +238,7 @@ internal static class ParseTreeToAst
                 builder.Add(new Ast.StringPart.Content(
                     SyntaxNode: content,
                     Value: text![(lastNewline ? str.Cutoff : 0)..]));
-                lastNewline = content.Value.Type == TokenType.StringNewline;
+                lastNewline = content.Content.Type == TokenType.StringNewline;
                 break;
             }
             case InterpolationStringPartSyntax interpolation:

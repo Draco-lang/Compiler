@@ -34,9 +34,9 @@ namespace Draco.Compiler.Internal.Syntax;
             {{if $node.Base}}
                 override
             {{end}}
-            Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent);
+            Api.Syntax.{{$node.Name}} ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent);
         {{else}}
-            public override Api.Syntax.{{$node.Name}} ToRedNode(SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent) =>
+            public override Api.Syntax.{{$node.Name}} ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent) =>
                 new Api.Syntax.{{$node.Name}}(tree, parent, this);
         {{end}}
 

@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
-using Token = Draco.Compiler.Internal.Syntax.ParseNode.Token;
-using Trivia = Draco.Compiler.Internal.Syntax.ParseNode.Trivia;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -18,10 +16,11 @@ internal sealed record class ParseTreeFormatterSettings(string Indentation)
 }
 
 /// <summary>
-/// The formatter for <see cref="ParseNode"/>.
+/// The formatter for <see cref="SyntaxNode"/>.
 /// </summary>
-internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
+internal sealed class ParseTreeFormatter
 {
+#if false
     private static readonly ImmutableArray<Trivia> oneSpaceTrivia = CreateTrivia(TriviaType.Whitespace, " ");
     private static readonly ImmutableArray<Trivia> noSpaceTrivia = CreateTrivia(TriviaType.Whitespace, "");
     private static readonly ImmutableArray<Trivia> newlineTrivia = CreateTrivia(TriviaType.Newline, Environment.NewLine);
@@ -254,4 +253,5 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
 
     private static ImmutableArray<Trivia> CreateTrivia(TriviaType type, string text) =>
         ImmutableArray.Create(Trivia.From(type, text));
+#endif
 }

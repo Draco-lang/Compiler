@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -11,11 +10,11 @@ namespace Draco.Compiler.Internal.Syntax;
 internal static class ParseTreePrinter
 {
     /// <summary>
-    /// Prints the <see cref="ParseNode"/> as the text it was parsed from.
+    /// Prints the <see cref="SyntaxNode"/> as the text it was parsed from.
     /// </summary>
     /// <param name="node">The tree node to print.</param>
     /// <returns>The <paramref name="node"/> printed to text, identical to the text it was parsed from.</returns>
-    public static string ToCode(ParseNode node)
+    public static string ToCode(SyntaxNode node)
     {
         var result = new StringBuilder();
         foreach (var token in node.Tokens)
@@ -33,12 +32,12 @@ internal static class ParseTreePrinter
     /// </summary>
     /// <param name="node">The tree node to print.</param>
     /// <returns>The <paramref name="node"/> printed to text, without the surrounding trivia.</returns>
-    public static string ToCodeWithoutSurroundingTrivia(ParseNode node)
+    public static string ToCodeWithoutSurroundingTrivia(SyntaxNode node)
     {
         var result = new StringBuilder();
         // We simply print the text of all tokens except the first and last ones
         // For the first, we ignore leading trivia, for the last we ignore trailing trivia
-        var lastTrailingTrivia = ImmutableArray<Trivia>.Empty;
+        var lastTrailingTrivia = SyntaxList<SyntaxTrivia>.Empty;
         using var tokenEnumerator = node.Tokens.GetEnumerator();
         // The first token just gets it's content printed
         // That ignores the leading trivia, trailing will only be printed if there are following tokens
@@ -67,19 +66,19 @@ internal static class ParseTreePrinter
     /// </summary>
     /// <param name="node">The root of the subtree to print.</param>
     /// <returns>The <paramref name="node"/> represented as a DOT graph.</returns>
-    public static string ToDot(ParseNode node)
+    public static string ToDot(SyntaxNode node)
     {
-        var graph = new DotGraphBuilder<ParseNode>(isDirected: false, vertexComparer: ReferenceEqualityComparer.Instance);
+        var graph = new DotGraphBuilder<SyntaxNode>(isDirected: false, vertexComparer: ReferenceEqualityComparer.Instance);
         graph.WithName("ParseTree");
 
-        void Impl(ParseNode? parent, ParseNode node)
+        void Impl(SyntaxNode? parent, SyntaxNode node)
         {
             // Connect to parent
             if (parent is not null) graph.AddEdge(node, parent);
             // Label
             graph!
                 .AddVertex(node)
-                .WithLabel(node is Token t ? t.Text : node.GetType().Name);
+                .WithLabel(node is SyntaxToken t ? t.Text : node.GetType().Name);
             // Children
             foreach (var child in node.Children) Impl(node, child);
         }

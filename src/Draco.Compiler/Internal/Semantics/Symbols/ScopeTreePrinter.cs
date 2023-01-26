@@ -17,7 +17,7 @@ internal static class ScopeTreePrinter
     /// <param name="db">The query database used for computations.</param>
     /// <param name="parseTree">The parse tree to print the tree for.</param>
     /// <returns>The DOT graph for the scope tree of <paramref name="parseTree"/>.</returns>
-    public static string ToDot(QueryDatabase db, ParseTree parseTree)
+    public static string ToDot(QueryDatabase db, SyntaxTree parseTree)
     {
         var graph = new DotGraphBuilder<IScope>(isDirected: true);
         graph

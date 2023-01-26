@@ -14,32 +14,32 @@ public sealed class SyntaxToken : SyntaxNode
     /// <summary>
     /// The <see cref="TokenType"/> of this token.
     /// </summary>
-    public TokenType Type => throw new NotImplementedException();
+    public TokenType Type => this.Green.Type;
 
     /// <summary>
     /// The text the token was produced from.
     /// </summary>
-    public string Text => throw new NotImplementedException();
+    public string Text => this.Green.Text;
 
     /// <summary>
     /// An optional associated value to this token.
     /// </summary>
-    public object? Value => throw new NotImplementedException();
+    public object? Value => this.Green.Value;
 
     /// <summary>
     /// The <see cref="Value"/> in string representation.
     /// </summary>
-    public string? ValueText => throw new NotImplementedException();
+    public string? ValueText => this.Green.ValueText;
 
     /// <summary>
     /// The <see cref="SyntaxTrivia"/> before this token.
     /// </summary>
-    public SyntaxList<SyntaxTrivia> LeadingTrivia => throw new NotImplementedException();
+    public SyntaxList<SyntaxTrivia> LeadingTrivia => this.Green.LeadingTrivia.ToRedNode<SyntaxTrivia>(this.Tree, this.Parent);
 
     /// <summary>
     /// The <see cref="SyntaxTrivia"/> after this token.
     /// </summary>
-    public SyntaxList<SyntaxTrivia> TrailingTrivia => throw new NotImplementedException();
+    public SyntaxList<SyntaxTrivia> TrailingTrivia => this.Green.TrailingTrivia.ToRedNode<SyntaxTrivia>(this.Tree, this.Parent);
 
     public override IEnumerable<SyntaxNode> Children => throw new NotImplementedException();
 

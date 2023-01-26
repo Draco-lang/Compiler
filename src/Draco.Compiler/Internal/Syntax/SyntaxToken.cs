@@ -16,17 +16,17 @@ internal sealed partial class SyntaxToken : SyntaxNode
     /// <summary>
     /// The <see cref="TokenType"/> of this token.
     /// </summary>
-    public TokenType Type => throw new NotImplementedException();
+    public TokenType Type { get; }
 
     /// <summary>
     /// The text the token was produced from.
     /// </summary>
-    public string Text => throw new NotImplementedException();
+    public string Text { get; }
 
     /// <summary>
     /// An optional associated value to this token.
     /// </summary>
-    public object? Value => throw new NotImplementedException();
+    public object? Value { get; }
 
     /// <summary>
     /// The <see cref="Value"/> in string representation.
@@ -43,9 +43,26 @@ internal sealed partial class SyntaxToken : SyntaxNode
     /// </summary>
     public SyntaxList<SyntaxTrivia> TrailingTrivia { get; }
 
-    public override IEnumerable<SyntaxNode> Children => throw new NotImplementedException();
+    public override int Width { get; }
 
-    public override Api.Syntax.SyntaxToken ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent) => throw new NotImplementedException();
+    public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
+
+    public SyntaxToken(
+        TokenType type,
+        string text,
+        object? value,
+        SyntaxList<SyntaxTrivia> leadingTrivia,
+        SyntaxList<SyntaxTrivia> trailingTrivia)
+    {
+        this.Type = type;
+        this.Text = text;
+        this.Value = value;
+        this.LeadingTrivia = leadingTrivia;
+        this.TrailingTrivia = trailingTrivia;
+        this.Width = leadingTrivia.Width + text.Length + trailingTrivia.Width;
+    }
+
+    public override Api.Syntax.SyntaxToken ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent) => new(tree, parent, this);
     public override void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
 }

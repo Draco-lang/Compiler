@@ -70,7 +70,7 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{Root.Name}}>
 {
     {{for $node in Nodes}}
         {{if !$node.IsAbstract}}
-            public override {{Root.Name}} Visit{{$node.Name}}({{$node.Name}} node)
+            public override {{Root.Name}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
             {
                 {{for $element in $node.Fields}}
                     var {{camel_case($element.Name)}} =

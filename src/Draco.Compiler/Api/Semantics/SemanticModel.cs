@@ -18,7 +18,7 @@ public sealed class SemanticModel
     /// <summary>
     /// The the tree that the semantic model is for.
     /// </summary>
-    public ParseTree Tree { get; }
+    public SyntaxTree Tree { get; }
 
     /// <summary>
     /// The semantic <see cref="Diagnostic"/>s in this model.
@@ -29,7 +29,7 @@ public sealed class SemanticModel
 
     private readonly QueryDatabase db;
 
-    internal SemanticModel(QueryDatabase db, ParseTree tree)
+    internal SemanticModel(QueryDatabase db, SyntaxTree tree)
     {
         this.db = db;
         this.Tree = tree;
@@ -41,7 +41,7 @@ public sealed class SemanticModel
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     internal IEnumerable<Diagnostic> GetAllDiagnostics()
     {
-        IEnumerable<Diagnostic> GetSymbolAndTypeErrors(ParseNode tree)
+        IEnumerable<Diagnostic> GetSymbolAndTypeErrors(SyntaxNode tree)
         {
             // Symbol
             foreach (var diag in SymbolResolution.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
@@ -72,7 +72,7 @@ public sealed class SemanticModel
     /// <param name="subtree">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// define any.</returns>
-    public ISymbol? GetDefinedSymbolOrNull(ParseNode subtree) =>
+    public ISymbol? GetDefinedSymbolOrNull(SyntaxNode subtree) =>
         SymbolResolution.GetDefinedSymbolOrNull(this.db, subtree)?.ToApiSymbol();
 
     /// <summary>
@@ -81,7 +81,7 @@ public sealed class SemanticModel
     /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// reference any.</returns>
-    public ISymbol? GetReferencedSymbolOrNull(ParseNode subtree) =>
+    public ISymbol? GetReferencedSymbolOrNull(SyntaxNode subtree) =>
         SymbolResolution.GetReferencedSymbolOrNull(this.db, subtree)?.ToApiSymbol();
 
     /// <summary>
@@ -89,6 +89,6 @@ public sealed class SemanticModel
     /// </summary>
     /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>.</returns>
-    public ISymbol GetReferencedSymbol(ParseNode subtree) =>
+    public ISymbol GetReferencedSymbol(SyntaxNode subtree) =>
         SymbolResolution.GetReferencedSymbol(this.db, subtree).ToApiSymbol();
 }

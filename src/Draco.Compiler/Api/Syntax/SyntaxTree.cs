@@ -9,6 +9,11 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxTree
 {
+    /// <summary>
+    /// The root <see cref="SyntaxNode"/> of the tree.
+    /// </summary>
+    public SyntaxNode Root => throw new NotImplementedException();
+
     private readonly Internal.Syntax.SyntaxTree greenTree;
 
     internal SyntaxTree(Internal.Syntax.SyntaxTree greenTree)

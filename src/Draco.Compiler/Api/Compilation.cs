@@ -31,11 +31,11 @@ public sealed class Compilation
     /// <summary>
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
-    /// <param name="parseTree">The <see cref="Syntax.ParseTree"/> to compile.</param>
+    /// <param name="syntaxTree">The <see cref="Syntax.SyntaxTree"/> to compile.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
-    public static Compilation Create(ParseTree parseTree, string? assemblyName = null) => new(
-        parseTree: parseTree,
+    public static Compilation Create(SyntaxTree syntaxTree, string? assemblyName = null) => new(
+        syntaxTree: syntaxTree,
         assemblyName: assemblyName);
 
     private readonly QueryDatabase db = new();
@@ -43,7 +43,7 @@ public sealed class Compilation
     /// <summary>
     /// The tree that is being compiled.
     /// </summary>
-    public ParseTree ParseTree { get; }
+    public SyntaxTree SyntaxTree { get; }
 
     /// <summary>
     /// The name of the output assembly.
@@ -55,9 +55,9 @@ public sealed class Compilation
     /// </summary>
     public ImmutableArray<Diagnostic> Diagnostics => this.GetDiagnostics();
 
-    private Compilation(ParseTree parseTree, string? assemblyName)
+    private Compilation(SyntaxTree syntaxTree, string? assemblyName)
     {
-        this.ParseTree = parseTree;
+        this.SyntaxTree = syntaxTree;
         this.AssemblyName = assemblyName;
     }
 
@@ -74,7 +74,7 @@ public sealed class Compilation
     /// </summary>
     /// <returns>The <see cref="Diagnostic"/>s produced during syntax analysis.</returns>
     public ImmutableArray<Diagnostic> GetSyntaxDiagnostics() =>
-        this.ParseTree.Diagnostics.ToImmutableArray();
+        this.SyntaxTree.Diagnostics.ToImmutableArray();
 
     /// <summary>
     /// Retrieves all <see cref="Diagnostic"/>s that were produced during semantic analysis.
@@ -88,7 +88,7 @@ public sealed class Compilation
     /// </summary>
     /// <returns>The <see cref="SemanticModel"/> for this compilation.</returns>
     public SemanticModel GetSemanticModel() =>
-        new(this.db, this.ParseTree);
+        new(this.db, this.SyntaxTree);
 
     /// <summary>
     /// Emits compiled binary to a <see cref="Stream"/>.
@@ -107,7 +107,7 @@ public sealed class Compilation
         }
 
         // Get AST
-        var ast = ParseTreeToAst.ToAst(this.db, this.ParseTree.Root);
+        var ast = ParseTreeToAst.ToAst(this.db, this.SyntaxTree.Root);
         // Lower it
         ast = AstLowering.Lower(this.db, ast);
         // Generate Draco IR

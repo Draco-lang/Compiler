@@ -18,17 +18,17 @@ namespace Draco.Compiler.Internal.Semantics.Types;
 /// <param name="Expressions">The inferred type of expressions.</param>
 internal readonly record struct TypeInferenceResult(
     IReadOnlyDictionary<ISymbol, Type> Symbols,
-    IReadOnlyDictionary<ParseNode.Expr, Type> Expressions,
+    IReadOnlyDictionary<ExpressionSyntax, Type> Expressions,
     ImmutableArray<Diagnostic> Diagnostics);
 
 /// <summary>
 /// A visitor that does type-inference on the given subtree.
 /// </summary>
-internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
+internal sealed class TypeInferenceVisitor : SyntaxVisitor
 {
     private readonly record struct ReturnContext(
         Type ReturnType,
-        ParseNode.TypeSpecifier? Specifier);
+        TypeSpecifierSyntax? Specifier);
 
     private TypeInferenceResult Result => new(
         Symbols: this.symbols.ToImmutableDictionary(kv => kv.Key, kv => this.RemoveSubstitutions(kv.Value)),
@@ -46,7 +46,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     private readonly QueryDatabase db;
 
     private readonly Dictionary<ISymbol, Type> symbols = new();
-    private readonly Dictionary<ParseNode.Expr, Type> expressions = new();
+    private readonly Dictionary<ExpressionSyntax, Type> expressions = new();
 
     private readonly Stack<ReturnContext> returnContextStack = new();
 
@@ -55,9 +55,9 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         this.db = db;
     }
 
-    public TypeInferenceResult Infer(ParseNode tree)
+    public TypeInferenceResult Infer(SyntaxNode tree)
     {
-        this.Visit(tree);
+        tree.Accept(this);
         this.solver.Solve();
         return this.Result;
     }
@@ -95,22 +95,20 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         return result;
     }
 
-    public override Unit VisitFuncDecl(ParseNode.Decl.Func node)
+    public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
     {
         var context = new ReturnContext(
             ReturnType: node.ReturnType is null ? Type.Unit : TypeChecker.Evaluate(this.db, node.ReturnType.Type),
             Specifier: node.ReturnType);
         this.returnContextStack.Push(context);
-        base.VisitFuncDecl(node);
+        base.VisitFunctionDeclaration(node);
         this.returnContextStack.Pop();
-
-        return this.Default;
     }
 
-    public override Unit VisitVariableDecl(ParseNode.Decl.Variable node)
+    public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
     {
         // Inference in children
-        base.VisitVariableDecl(node);
+        base.VisitVariableDeclaration(node);
 
         // The symbol we are inferring the type for
         var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, node);
@@ -120,8 +118,8 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         var declaredType = node.Type is not null
             ? TypeChecker.Evaluate(this.db, node.Type.Type)
             : null;
-        var valueType = node.Initializer is not null
-            ? TypeChecker.TypeOf(this.db, node.Initializer.Value)
+        var valueType = node.Value is not null
+            ? TypeChecker.TypeOf(this.db, node.Value.Value)
             : null;
 
         // Infer the type from the two potential sources
@@ -146,7 +144,7 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             inferredType = declaredType;
             // TODO: Not the right constraint, we need "Assignable"
             this.solver.Same(declaredType, valueType).ConfigureDiagnostic(diag => diag
-                .WithLocation(new Location.TreeReference(node.Initializer!.Value))
+                .WithLocation(new Location.TreeReference(node.Value!.Value))
                 .AddRelatedInformation(
                     format: "the variable type vas declared to be {0} here",
                     formatArgs: declaredType,
@@ -156,24 +154,22 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
         // Store the inferred type
         Debug.Assert(inferredType is not null);
         this.symbols[symbol!] = inferredType!;
-
-        return this.Default;
     }
 
-    public override Unit VisitInlineBodyFuncBody(ParseNode.FuncBody.InlineBody node)
+    public override void VisitInlineFunctionBody(InlineFunctionBodySyntax node)
     {
         // Inference in children
-        base.VisitInlineBodyFuncBody(node);
+        base.VisitInlineFunctionBody(node);
 
         // TODO: Case where return type is unit but the expr is not?
-        var exprType = TypeChecker.TypeOf(this.db, node.Expression);
+        var exprType = TypeChecker.TypeOf(this.db, node.Value);
 
         Debug.Assert(this.returnContextStack.Count > 0);
         var returnContext = this.returnContextStack.Peek();
 
         // TODO: Not the right constraint, we likely need something like "Assignable" here
         var promise = this.solver.Same(returnContext.ReturnType, exprType).ConfigureDiagnostic(diag => diag
-            .WithLocation(new Location.TreeReference(node.Expression)));
+            .WithLocation(new Location.TreeReference(node.Value)));
         if (returnContext.Specifier is not null)
         {
             promise.ConfigureDiagnostic(diag => diag
@@ -182,16 +178,14 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
                     formatArgs: returnContext.ReturnType,
                     location: new Location.TreeReference(returnContext.Specifier.Type)));
         }
-
-        return this.Default;
     }
 
-    public override Unit VisitReturnExpr(ParseNode.Expr.Return node)
+    public override void VisitReturnExpression(ReturnExpressionSyntax node)
     {
         // Inference in children
-        base.VisitReturnExpr(node);
+        base.VisitReturnExpression(node);
 
-        var exprType = node.Expression is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Expression);
+        var exprType = node.Value is null ? Type.Unit : TypeChecker.TypeOf(this.db, node.Value);
 
         Debug.Assert(this.returnContextStack.Count > 0);
         var returnContext = this.returnContextStack.Peek();
@@ -207,14 +201,12 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
                     formatArgs: returnContext.ReturnType,
                     location: new Location.TreeReference(returnContext.Specifier.Type)));
         }
-
-        return this.Default;
     }
 
-    public override Unit VisitUnaryExpr(ParseNode.Expr.Unary node)
+    public override void VisitUnaryExpression(UnaryExpressionSyntax node)
     {
         // Inference in children
-        base.VisitUnaryExpr(node);
+        base.VisitUnaryExpression(node);
 
         var subexprType = TypeChecker.TypeOf(this.db, node.Operand);
 
@@ -230,14 +222,12 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             // TODO: Validate operand
             this.expressions[node] = subexprType;
         }
-
-        return this.Default;
     }
 
-    public override Unit VisitBinaryExpr(ParseNode.Expr.Binary node)
+    public override void VisitBinaryExpression(BinaryExpressionSyntax node)
     {
         // Inference in children
-        base.VisitBinaryExpr(node);
+        base.VisitBinaryExpression(node);
 
         var leftType = TypeChecker.TypeOf(this.db, node.Left);
         var rightType = TypeChecker.TypeOf(this.db, node.Right);
@@ -278,19 +268,17 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
             var resultType = this.solver.Same(leftType, rightType).Result;
             this.expressions[node] = resultType;
         }
-
-        return this.Default;
     }
 
-    public override Unit VisitIfExpr(ParseNode.Expr.If node)
+    public override void VisitIfExpression(IfExpressionSyntax node)
     {
         // Inference in children
-        base.VisitIfExpr(node);
+        base.VisitIfExpression(node);
 
         // Check if condition is bool
-        var conditionType = TypeChecker.TypeOf(this.db, node.Condition.Value);
+        var conditionType = TypeChecker.TypeOf(this.db, node.Condition);
         this.solver.Same(conditionType, Type.Bool).ConfigureDiagnostic(diag => diag
-            .WithLocation(new Location.TreeReference(node.Condition.Value)));
+            .WithLocation(new Location.TreeReference(node.Condition)));
 
         var resultType = null as Type;
         var leftType = TypeChecker.TypeOf(this.db, node.Then);
@@ -317,36 +305,30 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
                 .Result;
         }
         this.expressions[node] = resultType;
-
-        return this.Default;
     }
 
-    public override Unit VisitWhileExpr(ParseNode.Expr.While node)
+    public override void VisitWhileExpression(WhileExpressionSyntax node)
     {
         // Inference in children
-        base.VisitWhileExpr(node);
+        base.VisitWhileExpression(node);
 
-        var conditionType = TypeChecker.TypeOf(this.db, node.Condition.Value);
+        var conditionType = TypeChecker.TypeOf(this.db, node.Condition);
         this.solver.Same(conditionType, Type.Bool).ConfigureDiagnostic(diag => diag
-            .WithLocation(new Location.TreeReference(node.Condition.Value)));
-
-        return this.Default;
+            .WithLocation(new Location.TreeReference(node.Condition)));
     }
 
-    public override Unit VisitCallExpr(ParseNode.Expr.Call node)
+    public override void VisitCallExpression(CallExpressionSyntax node)
     {
         // Inference in children
-        base.VisitCallExpr(node);
+        base.VisitCallExpression(node);
 
-        var calledType = TypeChecker.TypeOf(this.db, node.Called);
-        var argsType = node.Args.Value.Elements
+        var calledType = TypeChecker.TypeOf(this.db, node.Function);
+        var argsType = node.ArgumentList.Value.Elements
             .Select(a => TypeChecker.TypeOf(this.db, a.Value))
             .ToImmutableArray();
         var promise = this.solver.Call(calledType, argsType).ConfigureDiagnostic(diag => diag
             .WithLocation(new Location.TreeReference(node)));
         this.expressions[node] = promise.Result;
-
-        return this.Default;
     }
 
     // TODO:
@@ -354,14 +336,14 @@ internal sealed class TypeInferenceVisitor : ParseTreeVisitorBase<Unit>
     //  - index
     //  - member access
 
-    private static Location ExtractReturnLocation(ParseNode.Expr expr) =>
+    private static Location ExtractReturnLocation(ExpressionSyntax expr) =>
         new Location.TreeReference(ExtractReturnExpression(expr));
 
-    private static ParseNode.Expr ExtractReturnExpression(ParseNode.Expr expr) => expr switch
+    private static ExpressionSyntax ExtractReturnExpression(ExpressionSyntax expr) => expr switch
     {
-        ParseNode.Expr.If @if => ExtractReturnExpression(@if.Then),
-        ParseNode.Expr.While @while => ExtractReturnExpression(@while.Expression),
-        ParseNode.Expr.Block block => block.Enclosed.Value.Value ?? block,
+        IfExpressionSyntax @if => ExtractReturnExpression(@if.Then),
+        WhileExpressionSyntax @while => ExtractReturnExpression(@while.Then),
+        BlockExpressionSyntax block => block.Value ?? block,
         _ => expr,
     };
 }

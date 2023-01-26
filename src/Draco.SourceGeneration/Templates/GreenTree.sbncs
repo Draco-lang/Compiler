@@ -68,21 +68,6 @@ internal abstract partial class SyntaxVisitor<TResult>
 /// </summary>
 internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{Root.Name}}>
 {
-    {{for $node in Nodes}}
-        {{if !$node.IsAbstract}}
-            public override {{Root.Name}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
-            {
-                {{for $element in $node.Fields}}
-                    var {{camel_case($element.Name)}} =
-                        ({{$element.Type}})node{{nullable($element)}}.{{$element.Name}}.Accept(this);
-                {{end}}
-                return new {{$node.Name}}(
-                    {{wrap separated(', ', $node.Fields)}}
-                        {{camel_case($element.Name)}}
-                    {{end}}
-                );
-            }
-        {{end}}
-    {{end}}
+    {{rewriter_functions(Nodes)}}
 }
 #nullable restore

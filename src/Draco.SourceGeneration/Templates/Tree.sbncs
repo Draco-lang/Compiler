@@ -101,3 +101,22 @@
         {{end}}
     {{end}}
 {{end}}
+
+{{func rewriter_functions(nodes)}}
+    {{for $node in nodes}}
+        {{if !$node.IsAbstract}}
+            public override {{Root.Name}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
+            {
+                {{for $element in $node.Fields}}
+                    var {{camel_case($element.Name)}} =
+                        ({{$element.Type}})node{{nullable($element)}}.{{$element.Name}}.Accept(this);
+                {{end}}
+                return new {{$node.Name}}(
+                    {{wrap separated(', ', $node.Fields)}}
+                        {{camel_case($element.Name)}}
+                    {{end}}
+                );
+            }
+        {{end}}
+    {{end}}
+{{end}}

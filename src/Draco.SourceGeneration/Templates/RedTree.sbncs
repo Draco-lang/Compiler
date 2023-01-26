@@ -108,4 +108,12 @@ public abstract partial class SyntaxVisitor<TResult>
 {
     {{visitor_functions(Nodes, 'TResult', 'default!')}}
 }
+
+/// <summary>
+/// A base class for rewriting <see cref="{{Root.Name}}"/>.
+/// </summary>
+public abstract partial class SyntaxRewriter : SyntaxVisitor<{{Root.Name}}>
+{
+    {{rewriter_functions(Nodes)}}
+}
 #nullable restore

@@ -119,7 +119,7 @@ internal static class ParseTreeToAst
             CallExpressionSyntax call => new Ast.Expr.Call(
                 SyntaxNode: call,
                 Called: ToAstExpr(db, call.Function),
-                Args: call.Args.Value.Elements.Select(a => ToAstExpr(db, a.Value)).ToImmutableArray()),
+                Args: call.ArgumentList.Value.Elements.Select(a => ToAstExpr(db, a.Value)).ToImmutableArray()),
             RelationalExpressionSyntax rel => new Ast.Expr.Relational(
                 SyntaxNode: rel,
                 Left: ToAstExpr(db, rel.Left),
@@ -178,16 +178,8 @@ internal static class ParseTreeToAst
 
     private static Ast.Expr.Block ToAstFuncBody(QueryDatabase db, BlockFunctionBodySyntax body)
     {
-        var block = body.Block.Enclosed.Value;
         var statements = ImmutableArray.CreateBuilder<Ast.Stmt>();
-        foreach (var stmt in block.Statements) statements.Add(ToAstStmt(db, stmt));
-        if (block.Value is not null)
-        {
-            // Desugar it into a statement
-            statements.Add(new Ast.Stmt.Expr(
-                SyntaxNode: block.Value,
-                Expression: ToAstExpr(db, block.Value)));
-        }
+        foreach (var stmt in body.Statements) statements.Add(ToAstStmt(db, stmt));
         // If the return type is Unit, append an implicit return statement
         Debug.Assert(body.Parent is FunctionDeclarationSyntax);
         var definedSymbol = SymbolResolution.GetDefinedSymbolOrNull(db, body.Parent!);

@@ -14,7 +14,7 @@ internal static class DataFlowGraphPrinter
         foreach (var op in dfg.Operations)
         {
             // Add vertex
-            graph.AddVertex(op).WithLabel(op.Node.ParseNode?.ToString() ?? "No-op");
+            graph.AddVertex(op).WithLabel(op.Node.SyntaxNode?.ToString() ?? "No-op");
 
             // Add edges
             foreach (var succ in op.Successors) graph.AddEdge(op, succ);

@@ -74,7 +74,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         // Not initialized
         this.diagnostics.Add(Diagnostic.Create(
             template: DataflowErrors.ImmutableVariableMustBeInitialized,
-            location: node.ParseNode?.Location,
+            location: node.SyntaxNode?.Location,
             formatArgs: node.DeclarationSymbol.Name));
     }
 
@@ -86,7 +86,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         // Immutable and modified
         this.diagnostics.Add(Diagnostic.Create(
             template: DataflowErrors.ImmutableVariableCanNotBeAssignedTo,
-            location: node.ParseNode?.Location,
+            location: node.SyntaxNode?.Location,
             formatArgs: reference.Symbol.Name));
     }
 
@@ -124,7 +124,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
                 // Use of uninitialized variable
                 this.diagnostics.Add(Diagnostic.Create(
                     template: DataflowErrors.VariableUsedBeforeInit,
-                    location: node.ParseNode?.Location,
+                    location: node.SyntaxNode?.Location,
                     formatArgs: var.Name));
             }
         }

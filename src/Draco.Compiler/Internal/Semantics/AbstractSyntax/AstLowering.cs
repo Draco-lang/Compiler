@@ -158,7 +158,7 @@ internal sealed class AstLowering : AstTransformerBase
             changed = true;
             var literal = string.Join(string.Empty, node.Parts.Cast<Ast.StringPart.Content>().Select(p => p.Value));
             return new Ast.Expr.Literal(
-                ParseNode: node.ParseNode,
+                SyntaxNode: node.SyntaxNode,
                 Value: literal,
                 Type: Type.String);
         }
@@ -181,8 +181,8 @@ internal sealed class AstLowering : AstTransformerBase
         }
 
         // Otherwise compute and store
-        Debug.Assert(expr.ParseNode is ParseNode.Expr);
-        var type = TypeChecker.TypeOf(this.db, (ParseNode.Expr)expr.ParseNode!);
+        Debug.Assert(expr.SyntaxNode is ExpressionSyntax);
+        var type = TypeChecker.TypeOf(this.db, (ExpressionSyntax)expr.SyntaxNode!);
         var symbol = Symbol.SynthetizeVariable(type: type, isMutable: false);
         var symbolRef = Reference(symbol);
         var assignment = Stmt(Var(

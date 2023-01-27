@@ -14,9 +14,14 @@ public sealed class SyntaxTrivia : SyntaxNode
     /// <summary>
     /// The <see cref="TriviaType"/> of this trivia.
     /// </summary>
-    public TriviaType Type => throw new NotImplementedException();
+    public TriviaType Type => this.Green.Type;
 
-    public override IEnumerable<SyntaxNode> Children => throw new NotImplementedException();
+    /// <summary>
+    /// The text the trivia was produced from.
+    /// </summary>
+    public string Text => this.Green.Text;
+
+    public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
 
     internal override Internal.Syntax.SyntaxTrivia Green { get; }
 

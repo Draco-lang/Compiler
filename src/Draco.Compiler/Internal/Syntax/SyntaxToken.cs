@@ -45,7 +45,7 @@ internal sealed partial class SyntaxToken : SyntaxNode
 
     public override int Width { get; }
 
-    public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
+    public override IEnumerable<SyntaxNode> Children => this.LeadingTrivia.Concat(this.TrailingTrivia);
 
     public SyntaxToken(
         TokenType type,

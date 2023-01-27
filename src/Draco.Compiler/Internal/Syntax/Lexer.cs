@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -94,11 +95,15 @@ internal sealed class Lexer
     // Mode stack of the lexer, this is actual, changing state
     private readonly Stack<Mode> modeStack = new();
 
+    // All diagnostics produced
+    private readonly ConditionalWeakTable<SyntaxToken, IImmutableList<Diagnostic>> diagnostics = new();
+
     // These are various cached builder types to save on allocations
     // The important thing is that these should not carry any significant state in the lexer in any way,
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
     private readonly SyntaxToken.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
+    private readonly ImmutableArray<Diagnostic>.Builder diagnosticsBuilder = ImmutableArray.CreateBuilder<Diagnostic>();
 
     public Lexer(ISourceReader sourceReader)
     {
@@ -114,6 +119,7 @@ internal sealed class Lexer
     {
         this.tokenBuilder.Clear();
         this.valueBuilder.Clear();
+        this.diagnosticsBuilder.Clear();
 
         switch (this.CurrentMode.Kind)
         {
@@ -140,7 +146,10 @@ internal sealed class Lexer
             throw new InvalidOperationException("unsupported lexer mode");
         }
 
-        return this.tokenBuilder.Build();
+        var token = this.tokenBuilder.Build();
+        // Associate diagnostics, if needed
+        if (this.diagnosticsBuilder.Count > 0) this.diagnostics.Add(token, this.diagnosticsBuilder.ToImmutable());
+        return token;
     }
 
     /// <summary>
@@ -269,23 +278,23 @@ internal sealed class Lexer
             // TODO: Any better/faster way?
             var tokenType = ident switch
             {
-                var _ when ident.Span.SequenceEqual("and".AsSpan()) => TokenType.KeywordAnd,
-                var _ when ident.Span.SequenceEqual("else".AsSpan()) => TokenType.KeywordElse,
-                var _ when ident.Span.SequenceEqual("false".AsSpan()) => TokenType.KeywordFalse,
-                var _ when ident.Span.SequenceEqual("from".AsSpan()) => TokenType.KeywordFrom,
-                var _ when ident.Span.SequenceEqual("func".AsSpan()) => TokenType.KeywordFunc,
-                var _ when ident.Span.SequenceEqual("goto".AsSpan()) => TokenType.KeywordGoto,
-                var _ when ident.Span.SequenceEqual("if".AsSpan()) => TokenType.KeywordIf,
-                var _ when ident.Span.SequenceEqual("import".AsSpan()) => TokenType.KeywordImport,
-                var _ when ident.Span.SequenceEqual("mod".AsSpan()) => TokenType.KeywordMod,
-                var _ when ident.Span.SequenceEqual("not".AsSpan()) => TokenType.KeywordNot,
-                var _ when ident.Span.SequenceEqual("or".AsSpan()) => TokenType.KeywordOr,
-                var _ when ident.Span.SequenceEqual("rem".AsSpan()) => TokenType.KeywordRem,
-                var _ when ident.Span.SequenceEqual("return".AsSpan()) => TokenType.KeywordReturn,
-                var _ when ident.Span.SequenceEqual("true".AsSpan()) => TokenType.KeywordTrue,
-                var _ when ident.Span.SequenceEqual("val".AsSpan()) => TokenType.KeywordVal,
-                var _ when ident.Span.SequenceEqual("var".AsSpan()) => TokenType.KeywordVar,
-                var _ when ident.Span.SequenceEqual("while".AsSpan()) => TokenType.KeywordWhile,
+                var _ when ident.Span.SequenceEqual("and") => TokenType.KeywordAnd,
+                var _ when ident.Span.SequenceEqual("else") => TokenType.KeywordElse,
+                var _ when ident.Span.SequenceEqual("false") => TokenType.KeywordFalse,
+                var _ when ident.Span.SequenceEqual("from") => TokenType.KeywordFrom,
+                var _ when ident.Span.SequenceEqual("func") => TokenType.KeywordFunc,
+                var _ when ident.Span.SequenceEqual("goto") => TokenType.KeywordGoto,
+                var _ when ident.Span.SequenceEqual("if") => TokenType.KeywordIf,
+                var _ when ident.Span.SequenceEqual("import") => TokenType.KeywordImport,
+                var _ when ident.Span.SequenceEqual("mod") => TokenType.KeywordMod,
+                var _ when ident.Span.SequenceEqual("not") => TokenType.KeywordNot,
+                var _ when ident.Span.SequenceEqual("or") => TokenType.KeywordOr,
+                var _ when ident.Span.SequenceEqual("rem") => TokenType.KeywordRem,
+                var _ when ident.Span.SequenceEqual("return") => TokenType.KeywordReturn,
+                var _ when ident.Span.SequenceEqual("true") => TokenType.KeywordTrue,
+                var _ when ident.Span.SequenceEqual("val") => TokenType.KeywordVal,
+                var _ when ident.Span.SequenceEqual("var") => TokenType.KeywordVar,
+                var _ when ident.Span.SequenceEqual("while") => TokenType.KeywordWhile,
                 _ => TokenType.Identifier,
             };
             // Return the appropriate token
@@ -836,7 +845,7 @@ internal sealed class Lexer
             template: template,
             location: location,
             formatArgs: args);
-        this.diagnosticList.Add(diag);
+        this.diagnosticsBuilder.Add(diag);
     }
 
     // Mode stack

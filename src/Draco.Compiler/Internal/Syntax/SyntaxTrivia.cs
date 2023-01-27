@@ -13,16 +13,31 @@ namespace Draco.Compiler.Internal.Syntax;
 internal sealed class SyntaxTrivia : SyntaxNode
 {
     /// <summary>
+    /// Construct a <see cref="SyntaxTrivia"/> from the given data.
+    /// </summary>
+    /// <param name="type">The <see cref="TriviaType"/>.</param>
+    /// <param name="text">The text the trivia was constructed from.</param>
+    /// <returns>A new <see cref="SyntaxTrivia"/> with <see cref="Type"/> <paramref name="type"/> and
+    /// <see cref="Text"/> <paramref name="text"/>.</returns>
+    public static SyntaxTrivia From(TriviaType type, string text) => new(type, text);
+
+    /// <summary>
     /// The <see cref="TriviaType"/> of this trivia.
     /// </summary>
-    public TriviaType Type => throw new NotImplementedException();
+    public TriviaType Type { get; }
 
     /// <summary>
     /// The text the trivia was produced from.
     /// </summary>
-    public string Text => throw new NotImplementedException();
+    public string Text { get; }
 
-    public override IEnumerable<SyntaxNode> Children => throw new NotImplementedException();
+    public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
+
+    public SyntaxTrivia(TriviaType type, string text)
+    {
+        this.Type = type;
+        this.Text = text;
+    }
 
     public override Api.Syntax.SyntaxTrivia ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent) => throw new NotImplementedException();
     public override void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();

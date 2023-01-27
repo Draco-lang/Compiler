@@ -119,7 +119,7 @@ internal static class ParseTreeToAst
             CallExpressionSyntax call => new Ast.Expr.Call(
                 SyntaxNode: call,
                 Called: ToAstExpr(db, call.Function),
-                Args: call.ArgumentList.Value.Elements.Select(a => ToAstExpr(db, a.Value)).ToImmutableArray()),
+                Args: call.ArgumentList.Values.Select(a => ToAstExpr(db, a)).ToImmutableArray()),
             RelationalExpressionSyntax rel => new Ast.Expr.Relational(
                 SyntaxNode: rel,
                 Left: ToAstExpr(db, rel.Left),

@@ -561,9 +561,9 @@ internal static partial class Symbol
             {
                 var builder = ImmutableArray.CreateBuilder<ISymbol.IParameter>();
                 var tree = (FunctionDeclarationSyntax)this.Definition;
-                foreach (var param in tree.ParameterList.Value.Elements)
+                foreach (var param in tree.ParameterList.Values)
                 {
-                    var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
+                    var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param);
                     Debug.Assert(symbol is ISymbol.IParameter);
                     builder.Add((ISymbol.IParameter)symbol!);
                 }

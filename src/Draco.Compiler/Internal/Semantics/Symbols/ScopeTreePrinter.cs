@@ -25,7 +25,7 @@ internal static class ScopeTreePrinter
             .WithRankDir(DotAttribs.RankDir.BottomToTop);
         graph.AllVertices().WithShape(DotAttribs.Shape.Rectangle);
 
-        foreach (var node in parseTree.Root.InOrderTraverse())
+        foreach (var node in parseTree.PreOrderTraverse())
         {
             // TODO: Somehow show illegal references?
 

@@ -323,8 +323,8 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
         base.VisitCallExpression(node);
 
         var calledType = TypeChecker.TypeOf(this.db, node.Function);
-        var argsType = node.ArgumentList.Value.Elements
-            .Select(a => TypeChecker.TypeOf(this.db, a.Value))
+        var argsType = node.ArgumentList.Values
+            .Select(a => TypeChecker.TypeOf(this.db, a))
             .ToImmutableArray();
         var promise = this.solver.Call(calledType, argsType).ConfigureDiagnostic(diag => diag
             .WithLocation(new Location.TreeReference(node)));

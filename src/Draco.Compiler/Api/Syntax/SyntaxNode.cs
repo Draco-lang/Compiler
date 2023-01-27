@@ -47,6 +47,19 @@ public abstract class SyntaxNode
         this.Parent = parent;
     }
 
+    /// <summary>
+    /// Preorder traverses the subtree with this node being the root.
+    /// </summary>
+    /// <returns>The enumerator that performs a preorder traversal.</returns>
+    public IEnumerable<SyntaxNode> PreOrderTraverse()
+    {
+        yield return this;
+        foreach (var child in this.Children)
+        {
+            foreach (var e in child.PreOrderTraverse()) yield return e;
+        }
+    }
+
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
 }

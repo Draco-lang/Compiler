@@ -25,6 +25,19 @@ internal abstract class SyntaxNode
     /// </summary>
     public IEnumerable<SyntaxToken> Tokens => throw new NotImplementedException();
 
+    /// <summary>
+    /// Preorder traverses the subtree with this node being the root.
+    /// </summary>
+    /// <returns>The enumerator that performs a preorder traversal.</returns>
+    public IEnumerable<SyntaxNode> PreOrderTraverse()
+    {
+        yield return this;
+        foreach (var child in this.Children)
+        {
+            foreach (var e in child.PreOrderTraverse()) yield return e;
+        }
+    }
+
     public abstract Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent);
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);

@@ -27,6 +27,12 @@ public sealed class SyntaxTree
     public IEnumerable<Diagnostic> Diagnostics => throw new NotImplementedException();
 
     /// <summary>
+    /// Preorder traverses the thee with this node being the root.
+    /// </summary>
+    /// <returns>The enumerator that performs a preorder traversal.</returns>
+    public IEnumerable<SyntaxNode> PreOrderTraverse() => this.Root.PreOrderTraverse();
+
+    /// <summary>
     /// The internal root of the tree.
     /// </summary>
     internal Internal.Syntax.SyntaxNode GreenRoot { get; }

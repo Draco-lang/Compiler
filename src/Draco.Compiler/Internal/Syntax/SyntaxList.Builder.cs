@@ -32,21 +32,23 @@ internal readonly partial struct SyntaxList<TNode>
         /// <summary>
         /// The number of nodes added to the builder.
         /// </summary>
-        public int Count => throw new NotImplementedException();
+        public int Count => this.builder.Count;
+
+        private readonly ImmutableArray<SyntaxNode>.Builder builder = ImmutableArray.CreateBuilder<SyntaxNode>();
 
         /// <summary>
         /// Constructs a <see cref="SyntaxList{TNode}"/> from the builder.
         /// </summary>
         /// <returns>The constructed <see cref="SyntaxList{TNode}"/>.</returns>
-        public SyntaxList<TNode> ToSyntaxList() => throw new NotImplementedException();
+        public SyntaxList<TNode> ToSyntaxList() => new(this.builder.ToImmutable());
 
         /// <summary>
         /// Adds a <typeparamref name="TNode"/> to this builder.
         /// </summary>
         /// <param name="node">The node to add.</param>
-        public void Add(TNode node) => throw new NotImplementedException();
+        public void Add(TNode node) => this.builder.Add(node);
 
-        public IEnumerator<TNode> GetEnumerator() => throw new NotImplementedException();
-        IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
+        public IEnumerator<TNode> GetEnumerator() => this.builder.Cast<TNode>().GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }
 }

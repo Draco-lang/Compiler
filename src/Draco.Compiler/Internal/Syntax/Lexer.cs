@@ -95,8 +95,10 @@ internal sealed class Lexer
     // Mode stack of the lexer, this is actual, changing state
     private readonly Stack<Mode> modeStack = new();
 
-    // All diagnostics produced
-    private readonly ConditionalWeakTable<SyntaxToken, IImmutableList<Diagnostic>> diagnostics = new();
+    /// <summary>
+    /// The <see cref="Diagnostic"/> messages that got attached to the produced tokens.
+    /// </summary>
+    internal ConditionalWeakTable<SyntaxToken, IImmutableList<Diagnostic>> Diagnostics { get; } = new();
 
     // These are various cached builder types to save on allocations
     // The important thing is that these should not carry any significant state in the lexer in any way,
@@ -148,7 +150,7 @@ internal sealed class Lexer
 
         var token = this.tokenBuilder.Build();
         // Associate diagnostics, if needed
-        if (this.diagnosticsBuilder.Count > 0) this.diagnostics.Add(token, this.diagnosticsBuilder.ToImmutable());
+        if (this.diagnosticsBuilder.Count > 0) this.Diagnostics.Add(token, this.diagnosticsBuilder.ToImmutable());
         return token;
     }
 

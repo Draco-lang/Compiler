@@ -43,7 +43,7 @@ internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
     /// </summary>
     public readonly ImmutableArray<SyntaxNode> Nodes;
 
-    public SyntaxList(ImmutableArray<SyntaxNode> nodes)
+    internal SyntaxList(ImmutableArray<SyntaxNode> nodes)
     {
         Debug.Assert(nodes.All(x => x is TNode));
         this.Nodes = nodes;
@@ -54,6 +54,9 @@ internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
     public void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
     public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
 
-    public IEnumerator<TNode> GetEnumerator() => throw new NotImplementedException();
-    IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
+    public IEnumerator<TNode> GetEnumerator()
+    {
+        for (var i = 0; i < this.Length; ++i) yield return this[i];
+    }
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

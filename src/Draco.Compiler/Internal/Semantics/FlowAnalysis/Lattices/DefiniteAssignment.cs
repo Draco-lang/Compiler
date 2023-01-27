@@ -28,9 +28,11 @@ internal sealed class DefiniteAssignment : ILattice<ImmutableDictionary<ISymbol.
     {
     }
 
-    public bool Equals(ImmutableDictionary<ISymbol.IVariable, Status> x, ImmutableDictionary<ISymbol.IVariable, Status> y) =>
-           x.Count == y.Count
-        && x.All(kv => y.TryGetValue(kv.Key, out var v) && kv.Value == v);
+    public bool Equals(ImmutableDictionary<ISymbol.IVariable, Status>? x, ImmutableDictionary<ISymbol.IVariable, Status>? y) =>
+           ReferenceEquals(x, y)
+        || (x is not null && y is not null
+         && x.Count == y.Count
+         && x.All(kv => y.TryGetValue(kv.Key, out var v) && kv.Value == v));
     public int GetHashCode(ImmutableDictionary<ISymbol.IVariable, Status> obj)
     {
         var h = default(HashCode);

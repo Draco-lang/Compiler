@@ -58,7 +58,7 @@ internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<Syntax
         }
     }
 
-    public SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodes)
+    private SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodes)
     {
         this.Nodes = nodes;
     }

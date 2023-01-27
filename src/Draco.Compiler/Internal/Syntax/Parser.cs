@@ -1001,22 +1001,11 @@ internal sealed class Parser
             if (this.Peek() == stopType) break;
             // Parse an element
             var element = elementParser();
+            elements.Add(element);
             // If the next token is not a punctuation, we are done
-            if (this.Matches(punctType, out var punct))
-            {
-                // Punctuation, add with element
-                // TODO
-                throw new NotImplementedException();
-                // elements.Add(new(element, punct));
-            }
-            else
-            {
-                // Not punctuation, we are done
-                // TODO
-                throw new NotImplementedException();
-                // elements.Add(new(element, null));
-                break;
-            }
+            if (!this.Matches(punctType, out var punct)) break;
+            // We had a punctuation, we can continue
+            elements.Add(punct);
         }
         return elements.ToSeparatedSyntaxList();
     }

@@ -31,6 +31,7 @@ internal static class DotAttribs
 /// </summary>
 /// <typeparam name="TVertex">The vertex type mapped.</typeparam>
 internal sealed class DotGraphBuilder<TVertex>
+    where TVertex : notnull
 {
     public sealed class VertexBuilder
     {

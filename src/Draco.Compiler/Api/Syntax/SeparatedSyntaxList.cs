@@ -12,15 +12,35 @@ namespace Draco.Compiler.Api.Syntax;
 /// A generic list of <see cref="SyntaxNode"/>s separated by <see cref="SyntaxToken"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds between the separators.</typeparam>
-public readonly struct SeparatedSyntaxList<TNode> : IEnumerable<SyntaxNode>
+public sealed class SeparatedSyntaxList<TNode> : IEnumerable<SyntaxNode>
     where TNode : SyntaxNode
 {
-    // TODO
-
     /// <summary>
     /// The number of nodes in this list.
     /// </summary>
     public int Length => throw new NotImplementedException();
+
+    /// <summary>
+    /// The separated values in this list.
+    /// </summary>
+    public IEnumerable<TNode> Values => throw new NotImplementedException();
+
+    /// <summary>
+    /// The separators in this list.
+    /// </summary>
+    public IEnumerable<SyntaxToken> Separators => throw new NotImplementedException();
+
+    private readonly SyntaxTree tree;
+    private readonly SyntaxNode? parent;
+    private readonly ImmutableArray<Internal.Syntax.SyntaxNode> nodes;
+    private SyntaxNode?[]? mappedNodes = null;
+
+    internal SeparatedSyntaxList(SyntaxTree tree, SyntaxNode? parent, ImmutableArray<Internal.Syntax.SyntaxNode> nodes)
+    {
+        this.tree = tree;
+        this.parent = parent;
+        this.nodes = nodes;
+    }
 
     internal Internal.Syntax.SeparatedSyntaxList<TGreenNode> ToGreen<TGreenNode>()
         where TGreenNode : Internal.Syntax.SyntaxNode => throw new NotImplementedException();

@@ -8,7 +8,7 @@ public abstract class EndToEndTestsBase
 {
     protected static Assembly Compile(string sourceCode)
     {
-        var parseTree = ParseTree.Parse(sourceCode);
+        var parseTree = SyntaxTree.Parse(sourceCode);
         var compilation = Compilation.Create(parseTree);
 
         using var peStream = new MemoryStream();

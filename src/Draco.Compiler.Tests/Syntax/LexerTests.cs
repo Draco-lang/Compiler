@@ -271,7 +271,7 @@ public sealed class LexerTests
         Assert.Equal("", token.ValueText);
         AssertNoTrivia(token);
         var diag = AssertSingleDiagnostic(token);
-        Assert.Equal(SyntaxErrors.ZeroLengthUnicodeCodepoint.Format, diag.Format);
+        Assert.Equal(SyntaxErrors.ZeroLengthUnicodeCodepoint, diag.Template);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);
@@ -308,7 +308,7 @@ public sealed class LexerTests
         Assert.Equal("S}", token.ValueText); //TODO: change this when we get better orrors out of invalid unicode codepoints
         AssertNoTrivia(token);
         var diag = AssertSingleDiagnostic(token);
-        Assert.Equal(SyntaxErrors.UnclosedUnicodeCodepoint.Format, diag.Format);
+        Assert.Equal(SyntaxErrors.UnclosedUnicodeCodepoint, diag.Template);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);
@@ -345,7 +345,7 @@ public sealed class LexerTests
         Assert.Equal("", token.ValueText);
         AssertNoTrivia(token);
         var diag = AssertSingleDiagnostic(token);
-        Assert.Equal(SyntaxErrors.UnclosedUnicodeCodepoint.Format, diag.Format);
+        Assert.Equal(SyntaxErrors.UnclosedUnicodeCodepoint, diag.Template);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);
@@ -413,7 +413,7 @@ public sealed class LexerTests
         Assert.Equal("y", token.ValueText);
         AssertNoTrivia(token);
         var diag = AssertSingleDiagnostic(token);
-        Assert.Equal(SyntaxErrors.IllegalEscapeCharacter.Format, diag.Format);
+        Assert.Equal(SyntaxErrors.IllegalEscapeCharacter, diag.Template);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.LineStringEnd, token.Type);
@@ -1343,7 +1343,8 @@ public sealed class LexerTests
         Assert.Equal(text, token.Text);
         Assert.Equal("a", token.ValueText);
         AssertNoTrivia(token);
-        Assert.Single(token.Diagnostics);
+        var diag = AssertSingleDiagnostic(token);
+        Assert.Equal(SyntaxErrors.UnclosedCharacterLiteral, diag.Template);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.EndOfInput, token.Type);

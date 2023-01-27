@@ -21,6 +21,29 @@ public sealed class SyntaxTree
         new(greenRoot: root.Green, diagnostics: new());
 
     /// <summary>
+    /// Parses the given text into a <see cref="SyntaxTree"/>.
+    /// </summary>
+    /// <param name="source">The source to parse.</param>
+    /// <returns>The parsed tree.</returns>
+    public static SyntaxTree Parse(string source) => Parse(SourceText.FromText(source));
+
+    /// <summary>
+    /// Parses the given <see cref="Syntax.SourceText"/> into a <see cref="SyntaxTree"/>.
+    /// </summary>
+    /// <param name="source">The source to parse.</param>
+    /// <returns>The parsed tree.</returns>
+    public static SyntaxTree Parse(SourceText source)
+    {
+        var srcReader = source.SourceReader;
+        var lexer = new Internal.Syntax.Lexer(srcReader);
+        var tokenSource = Internal.Syntax.TokenSource.From(lexer);
+        var parser = new Internal.Syntax.Parser(tokenSource);
+        var cu = parser.ParseCompilationUnit();
+        // TODO: Pass in source and diags
+        return new(cu, new());
+    }
+
+    /// <summary>
     /// The <see cref="Syntax.SourceText"/> that the tree was parsed from.
     /// </summary>
     public SourceText SourceText => throw new NotImplementedException();

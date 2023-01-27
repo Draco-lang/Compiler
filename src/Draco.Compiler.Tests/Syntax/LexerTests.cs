@@ -1,14 +1,14 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
-using static Draco.Compiler.Internal.Syntax.ParseNode;
+using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Tests.Syntax;
 
 public sealed class LexerTests
 {
-    private static IEnumerator<Token> Lex(string text) => LexImpl(text).GetEnumerator();
+    private static IEnumerator<SyntaxToken> Lex(string text) => LexImpl(text).GetEnumerator();
 
-    private static IEnumerable<Token> LexImpl(string text)
+    private static IEnumerable<SyntaxToken> LexImpl(string text)
     {
         var reader = SourceReader.From(text);
         var lexer = new Lexer(reader);
@@ -24,31 +24,31 @@ public sealed class LexerTests
         .Replace("\r\n", "\n")
         .Replace("\r", "\n");
 
-    private static void AssertNextToken(IEnumerator<Token> enumerator, out Token result)
+    private static void AssertNextToken(IEnumerator<SyntaxToken> enumerator, out SyntaxToken result)
     {
         Assert.True(enumerator.MoveNext());
         result = enumerator.Current;
     }
 
-    private static void AssertNoTrivia(Token token)
+    private static void AssertNoTrivia(SyntaxToken token)
     {
         Assert.Empty(token.LeadingTrivia);
         Assert.Empty(token.TrailingTrivia);
     }
 
-    private static void AssertNoTriviaOrDiagnostics(Token token)
+    private static void AssertNoTriviaOrDiagnostics(SyntaxToken token)
     {
         AssertNoTrivia(token);
         Assert.Empty(token.Diagnostics);
     }
 
-    private static void AssertLeadingTrivia(Token token, params string[] trivia)
+    private static void AssertLeadingTrivia(SyntaxToken token, params string[] trivia)
     {
         Assert.Equal(trivia.Length, token.LeadingTrivia.Length);
         Assert.True(trivia.SequenceEqual(token.LeadingTrivia.Select(t => t.Text)));
     }
 
-    private static void AssertTrailingTrivia(Token token, params string[] trivia)
+    private static void AssertTrailingTrivia(SyntaxToken token, params string[] trivia)
     {
         Assert.Equal(trivia.Length, token.TrailingTrivia.Length);
         Assert.True(trivia.SequenceEqual(token.TrailingTrivia.Select(t => t.Text)));

@@ -9,6 +9,7 @@ using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
+using static Draco.Compiler.Internal.Syntax.Lexer;
 using static Draco.Compiler.Internal.Syntax.ParseNode;
 using DiagnosticTemplate = Draco.Compiler.Api.Diagnostics.DiagnosticTemplate;
 
@@ -48,37 +49,6 @@ internal sealed class Lexer
         /// Multi-line string lexing.
         /// </summary>
         MultiLineString,
-    }
-
-    /// <summary>
-    /// Different kinds of numbers.
-    /// </summary>
-    internal enum NumberKind
-    {
-        /// <summary>
-        /// Decimal integer.
-        /// </summary>
-        DecimalInteger = 10,
-
-        /// <summary>
-        /// Hexadecimal integer.
-        /// </summary>
-        HexadecimalInteger = 16,
-
-        /// <summary>
-        /// Binary integer.
-        /// </summary>
-        BinaryInteger = 2,
-
-        /// <summary>
-        /// Decimal floating-point number.
-        /// </summary>
-        DecimalFloat,
-
-        /// <summary>
-        /// Floating-point number writen in scientific notation.
-        /// </summary>
-        ScientificFloat,
     }
 
     /// <summary>
@@ -274,44 +244,49 @@ internal sealed class Lexer
         // Since digits would be a valid identifier character, we can avoid separating the check for the
         // first character
         if (char.IsDigit(ch))
-        {
-            var offset = 0;
-            var numberKind = NumberKind.DecimalInteger;
+        { 
             // Check for what kind of integer do we have
             switch (this.Peek(1))
             {
             // Hexadecimal integer
-            case 'x': numberKind = NumberKind.HexadecimalInteger; this.Advance(2); break;
+            case 'x':
+                this.Advance(2);
+                var hexValue = this.ParseIntLiteral(16);
+                this.tokenBuilder
+                .SetType(TokenType.LiteralInteger)
+                .SetText($"0x{hexValue}")
+                .SetValue(hexValue);
+                return default;
             // Binary integer
-            case 'b': numberKind = NumberKind.BinaryInteger; this.Advance(2); break;
-            // Decimal integer
-            default: offset++; break;
+            case 'b':
+                this.Advance(2);
+                var binaryValue = this.ParseIntLiteral(2);
+                this.tokenBuilder
+                .SetType(TokenType.LiteralInteger)
+                .SetText($"0x{binaryValue}")
+                .SetValue(binaryValue);
+                return default;
+            // Decimal number
+            default: break;
             }
-
-            if (numberKind == NumberKind.HexadecimalInteger)
+            var offset = 1;
+            var isScientificNotation = false;
+            while (char.IsDigit(this.Peek(offset))) ++offset;
+            if (char.ToLower(this.Peek(offset)) == 'e')
             {
-                while (TryParseHexDigit(this.Peek(offset), out var _)) ++offset;
-            }
-            else
-            {
-                while (char.IsDigit(this.Peek(offset))) ++offset;
-                if (char.ToLower(this.Peek(offset)) == 'e')
-                {
-                    numberKind = NumberKind.ScientificFloat;
-                    offset--;
-                    if (this.Peek(offset + 2) == '+' || this.Peek(offset + 2) == '-') offset++;
-                }
+                isScientificNotation = true;
+                offset--;
+                if (this.Peek(offset + 2) == '+' || this.Peek(offset + 2) == '-') offset++;
+                // TODO: Proper error.
+                if (!char.IsDigit(this.Peek(offset + 2))) throw new InvalidOperationException();
             }
 
             // Floating point number
-            if ((this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1))) || numberKind == NumberKind.ScientificFloat)
+            if ((this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1))) || isScientificNotation)
             {
-                // TODO: proper error
-                if (numberKind == NumberKind.HexadecimalInteger || numberKind == NumberKind.BinaryInteger) throw new InvalidOperationException();
                 offset += 2;
-                numberKind = numberKind == NumberKind.ScientificFloat ? numberKind : NumberKind.DecimalFloat;
                 while (char.IsDigit(this.Peek(offset))) ++offset;
-                if (numberKind == NumberKind.DecimalFloat && char.ToLower(this.Peek(offset)) == 'e')
+                if (!isScientificNotation && char.ToLower(this.Peek(offset)) == 'e')
                 {
                     offset++;
                     if (this.Peek(offset) == '+' || this.Peek(offset) == '-') offset++;
@@ -328,13 +303,11 @@ internal sealed class Lexer
             }
 
             // Regular integer
-            var intView = this.Advance(offset);
-            // TODO: Parsing into an int32 might not be the best idea
-            var intValue = Convert.ToInt32(intView.Span.ToString(), (int)numberKind);
+            var decimalInt = this.ParseIntLiteral(10, offset);
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
-                .SetText(intView.ToString())
-                .SetValue(intValue);
+                .SetText(decimalInt.ToString())
+                .SetValue(decimalInt);
             return default;
         }
 
@@ -957,5 +930,19 @@ internal sealed class Lexer
         }
         value = 0;
         return false;
+    }
+    private int ParseIntLiteral(int intBase, int offset = 0)
+    {
+        if(intBase == 16)
+        {
+            while (TryParseHexDigit(this.Peek(offset), out var _)) ++offset;
+        }
+        else
+        {
+            while (char.IsDigit(this.Peek(offset))) ++offset;
+        }
+        var intView = this.Advance(offset);
+        // TODO: Parsing into an int32 might not be the best idea
+        return Convert.ToInt32(intView.Span.ToString(), intBase);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -43,18 +44,23 @@ internal sealed partial class SyntaxToken
         /// Builds a <see cref="SyntaxToken"/> from the data written into the builder.
         /// </summary>
         /// <returns>The built <see cref="SyntaxToken"/>.</returns>
-        public SyntaxToken Build()
-        {
-            // TODO
-            throw new NotImplementedException();
-        }
+        public SyntaxToken Build() => new(
+            type: this.Type,
+            text: this.Text ?? this.Type.GetTokenText(),
+            value: this.Value,
+            leadingTrivia: this.LeadingTrivia.ToSyntaxList(),
+            trailingTrivia: this.TrailingTrivia.ToSyntaxList());
 
         /// <summary>
         /// Clears all data from this builder.
         /// </summary>
         public void Clear()
         {
-            // TODO
+            this.Type = TokenType.Unknown;
+            this.Text = null;
+            this.Value = null;
+            this.LeadingTrivia.Clear();
+            this.TrailingTrivia.Clear();
         }
 
         /// <summary>

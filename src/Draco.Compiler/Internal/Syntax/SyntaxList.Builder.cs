@@ -40,13 +40,18 @@ internal readonly partial struct SyntaxList<TNode>
         /// Constructs a <see cref="SyntaxList{TNode}"/> from the builder.
         /// </summary>
         /// <returns>The constructed <see cref="SyntaxList{TNode}"/>.</returns>
-        public SyntaxList<TNode> ToSyntaxList() => new(this.builder.ToImmutable());
+        public SyntaxList<TNode> ToSyntaxList() => this.Count == 0 ? Empty : new(this.builder.ToImmutable());
 
         /// <summary>
         /// Adds a <typeparamref name="TNode"/> to this builder.
         /// </summary>
         /// <param name="node">The node to add.</param>
         public void Add(TNode node) => this.builder.Add(node);
+
+        /// <summary>
+        /// Clears the elements from this builder.
+        /// </summary>
+        public void Clear() => this.builder.Clear();
 
         public IEnumerator<TNode> GetEnumerator() => this.builder.Cast<TNode>().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();

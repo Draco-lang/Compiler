@@ -30,7 +30,7 @@ internal sealed class DracoGoToDefinitionHandler : DefinitionHandlerBase
         var cursorPosition = Translator.ToCompiler(request.Position);
         // TODO: Share compilation
         var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
-        var parseTree = ParseTree.Parse(souceText);
+        var parseTree = SyntaxTree.Parse(souceText);
         var compilation = Compilation.Create(parseTree);
         var semanticModel = compilation.GetSemanticModel();
 

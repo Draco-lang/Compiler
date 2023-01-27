@@ -32,7 +32,7 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
         // TODO: Share compilation
         var cursorPosition = Translator.ToCompiler(request.Position);
         var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
-        var parseTree = ParseTree.Parse(souceText);
+        var parseTree = SyntaxTree.Parse(souceText);
         var compilation = Compilation.Create(parseTree);
         var semanticModel = compilation.GetSemanticModel();
 
@@ -61,14 +61,14 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
         return Task.FromResult(new LocationContainer(references));
     }
 
-    private static IEnumerable<ParseNode> FindAllReferences(
-        ParseTree tree,
+    private static IEnumerable<SyntaxNode> FindAllReferences(
+        SyntaxTree tree,
         SemanticModel semanticModel,
         ISymbol symbol,
         bool includeDeclaration,
         CancellationToken cancellationToken)
     {
-        foreach (var node in tree.Root.InOrderTraverse())
+        foreach (var node in tree.Root.PreOrderTraverse())
         {
             if (cancellationToken.IsCancellationRequested) yield break;
 

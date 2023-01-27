@@ -74,6 +74,13 @@ public sealed class SyntaxTree
         where TNode : SyntaxNode => this.Root.FindInChildren<TNode>(index);
 
     /// <summary>
+    /// Enumerates this tree, yielding all descendant nodes containing the given position.
+    /// </summary>
+    /// <param name="position">The position that has to be contained.</param>
+    /// <returns>All subtree nodes containing <paramref name="position"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(Position position) => this.Root.TraverseSubtreesAtPosition(position);
+
+    /// <summary>
     /// The internal root of the tree.
     /// </summary>
     internal Internal.Syntax.SyntaxNode GreenRoot { get; }

@@ -76,6 +76,33 @@ public abstract class SyntaxNode
         .OfType<TNode>()
         .ElementAt(index);
 
+    /// <summary>
+    /// Enumerates this subtree, yielding all descendant nodes containing the given position.
+    /// </summary>
+    /// <param name="position">The position that has to be contained.</param>
+    /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(Position position)
+    {
+        var root = this;
+        while (true)
+        {
+            yield return root;
+            foreach (var child in root.Children)
+            {
+                // TODO
+                throw new NotImplementedException();
+                //if (child.Range.Contains(position))
+                //{
+                //    root = child;
+                //    goto found;
+                //}
+            }
+            // No child found that contains position.
+            break;
+        found:;
+        }
+    }
+
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
 }

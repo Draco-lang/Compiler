@@ -14,6 +14,20 @@ namespace Draco.Compiler.Internal.Syntax;
 internal sealed partial class SyntaxToken : SyntaxNode
 {
     /// <summary>
+    /// Constructs a <see cref="SyntaxToken"/> from the given data.
+    /// </summary>
+    /// <param name="type">The <see cref="TokenType"/>.</param>
+    /// <param name="text">The text the token was constructed from.</param>
+    /// <returns>A new <see cref="SyntaxToken"/> with <see cref="Type"/> <paramref name="type"/> and
+    /// <see cref="Text"/> <paramref name="text"/>.</returns>
+    public static SyntaxToken From(TokenType type, string text) => new(
+        type: type,
+        text: text,
+        value: null,
+        leadingTrivia: SyntaxList<SyntaxTrivia>.Empty,
+        trailingTrivia: SyntaxList<SyntaxTrivia>.Empty);
+
+    /// <summary>
     /// The <see cref="TokenType"/> of this token.
     /// </summary>
     public TokenType Type { get; }

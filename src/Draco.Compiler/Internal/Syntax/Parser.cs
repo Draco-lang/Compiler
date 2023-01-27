@@ -1058,7 +1058,9 @@ internal sealed class Parser
             var location = GetLocation(0);
             var tokenTypeName = type.GetUserFriendlyName();
             var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: tokenTypeName);
-            return SyntaxToken.From(type, string.Empty, ImmutableArray.Create(diag));
+            token = SyntaxToken.From(type, string.Empty);
+            // TODO: Attach diagnostic
+            throw new NotImplementedException();
         }
         return token;
     }

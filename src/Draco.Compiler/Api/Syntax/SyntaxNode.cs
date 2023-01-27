@@ -41,6 +41,10 @@ public abstract class SyntaxNode
     /// </summary>
     internal abstract Internal.Syntax.SyntaxNode Green { get; }
 
+    // TODO: Better way?
+    internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range) =>
+        throw new NotImplementedException();
+
     internal SyntaxNode(SyntaxTree tree, SyntaxNode? parent)
     {
         this.Tree = tree;

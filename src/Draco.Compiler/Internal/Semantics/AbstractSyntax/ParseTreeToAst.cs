@@ -227,6 +227,7 @@ internal static class ParseTreeToAst
     {
         var builder = ImmutableArray.CreateBuilder<Ast.StringPart>();
         var lastNewline = true;
+        var cutoff = ComputeCutoff(str);
         foreach (var part in str.Parts)
         {
             switch (part)
@@ -237,7 +238,7 @@ internal static class ParseTreeToAst
                 Debug.Assert(text is not null);
                 builder.Add(new Ast.StringPart.Content(
                     SyntaxNode: content,
-                    Value: text![(lastNewline ? str.Cutoff : 0)..]));
+                    Value: text![(lastNewline ? cutoff : 0)..]));
                 lastNewline = content.Content.Type == TokenType.StringNewline;
                 break;
             }
@@ -261,6 +262,21 @@ internal static class ParseTreeToAst
         return new Ast.Expr.String(
             SyntaxNode: str,
             builder.ToImmutableArray());
+    }
+
+    private static int ComputeCutoff(StringExpressionSyntax str)
+    {
+        // Line strings have no cutoff
+        if (str.OpenQuotes.Type == TokenType.LineStringStart) return 0;
+        // Multiline strings
+        Debug.Assert(str.CloseQuotes.LeadingTrivia.Length <= 2);
+        // If this is true, we have malformed input
+        if (str.CloseQuotes.LeadingTrivia.Length == 0) return 0;
+        // If this is true, there's only newline, no spaces before
+        if (str.CloseQuotes.LeadingTrivia.Length == 1) return 0;
+        // The first trivia was newline, the second must be spaces
+        Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Type == TriviaType.Whitespace);
+        return str.CloseQuotes.LeadingTrivia[1].Text.Length;
     }
 
     private static Ast.Expr ToAstExpr(QueryDatabase db, BinaryExpressionSyntax bin)

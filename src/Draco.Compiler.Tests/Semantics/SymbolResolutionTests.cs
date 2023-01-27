@@ -149,17 +149,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 Name("bar"),
                 FuncParamList(),
                 null,
-                InlineFunctionBody(CallExpr(NameExpression("foo")))),
+                InlineFunctionBody(CallExpression(NameExpression("foo")))),
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
                 null,
-                InlineFunctionBody(CallExpr(NameExpression("foo")))),
+                InlineFunctionBody(CallExpression(NameExpression("foo")))),
             FunctionDeclaration(
                 Name("baz"),
                 FuncParamList(),
                 null,
-                InlineFunctionBody(CallExpr(NameExpression("foo"))))));
+                InlineFunctionBody(CallExpression(NameExpression("foo"))))));
 
         var barDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
         var fooDecl = tree.FindInChildren<FunctionDeclarationSyntax>(1);
@@ -425,7 +425,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                         then: BlockExpression(DeclarationStatement(LabelDeclaration("lbl"))))),
                     ExpressionStatement(GotoExpression("lbl")))))));
 
-        var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
+        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
@@ -467,7 +467,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(BlockExpression(
                     ExpressionStatement(GotoExpression("lbl")))))));
 
-        var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
+        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
@@ -518,7 +518,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Arrange
         var tree = ParseTree.Create(CompilationUnit(
-            VariableDeclaration(Name("x"), null, CallExpr(NameExpression("foo"))),
+            VariableDeclaration(Name("x"), null, CallExpression(NameExpression("foo"))),
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),

@@ -33,7 +33,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FunctionDeclaration(
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             Name("foo"),
             FuncParamList(
                 Parameter(Name("n"), NameType(Name("int32")))),
@@ -94,7 +94,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FunctionDeclaration(
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             Name("foo"),
             FuncParamList(),
             null,
@@ -144,7 +144,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // func baz() = foo();
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("bar"),
                 FuncParamList(),
@@ -200,7 +200,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FunctionDeclaration(
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             Name("foo"),
             FuncParamList(),
             null,
@@ -251,7 +251,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FunctionDeclaration(
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             Name("foo"),
             FuncParamList(),
             null,
@@ -316,7 +316,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FunctionDeclaration(
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             Name("foo"),
             FuncParamList(
                 Parameter(Name("x"), NameType(Name("int32"))),
@@ -347,7 +347,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // func b(b: int32): int32 = b;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration(Name("b"), NameType(Name("int32"))),
             FunctionDeclaration(
                 Name("b"),
@@ -380,7 +380,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // var x;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
@@ -414,7 +414,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
@@ -453,7 +453,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
@@ -490,7 +490,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // var y = x;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration(Name("x"), null, LiteralExpression(0)),
             VariableDeclaration(Name("y"), null, NameExpression("x"))));
 
@@ -517,7 +517,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // func foo(): int32 = 0;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration(Name("x"), null, CallExpression(NameExpression("foo"))),
             FunctionDeclaration(
                 Name("foo"),
@@ -547,7 +547,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
@@ -575,7 +575,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
@@ -605,7 +605,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
@@ -635,7 +635,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
@@ -666,7 +666,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),
@@ -704,7 +704,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
+        var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 Name("foo"),
                 FuncParamList(),

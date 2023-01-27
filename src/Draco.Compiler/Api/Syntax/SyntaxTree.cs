@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
@@ -11,6 +12,14 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxTree
 {
+    /// <summary>
+    /// Constructs a new <see cref="SyntaxTree"/> from the given <paramref name="root"/>.
+    /// </summary>
+    /// <param name="root">The root of the tree.</param>
+    /// <returns>A new <see cref="SyntaxTree"/> with <see cref="Root"/> <paramref name="root"/>.</returns>
+    public static SyntaxTree Create(SyntaxNode root) =>
+        new(greenRoot: root.Green, diagnostics: new());
+
     /// <summary>
     /// The <see cref="Syntax.SourceText"/> that the tree was parsed from.
     /// </summary>
@@ -31,6 +40,15 @@ public sealed class SyntaxTree
     /// </summary>
     /// <returns>The enumerator that performs a preorder traversal.</returns>
     public IEnumerable<SyntaxNode> PreOrderTraverse() => this.Root.PreOrderTraverse();
+
+    /// <summary>
+    /// Searches for a child node of type <typeparamref name="TNode"/>.
+    /// </summary>
+    /// <typeparam name="TNode">The type of child to search for.</typeparam>
+    /// <param name="index">The index of the child to search for.</param>
+    /// <returns>The <paramref name="index"/>th child of type <typeparamref name="TNode"/>.</returns>
+    public TNode FindInChildren<TNode>(int index = 0)
+        where TNode : SyntaxNode => this.Root.FindInChildren<TNode>(index);
 
     /// <summary>
     /// The internal root of the tree.

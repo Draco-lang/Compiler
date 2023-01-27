@@ -64,6 +64,18 @@ public abstract class SyntaxNode
         }
     }
 
+    /// <summary>
+    /// Searches for a child node of type <typeparamref name="TNode"/>.
+    /// </summary>
+    /// <typeparam name="TNode">The type of child to search for.</typeparam>
+    /// <param name="index">The index of the child to search for.</param>
+    /// <returns>The <paramref name="index"/>th child of type <typeparamref name="TNode"/>.</returns>
+    public TNode FindInChildren<TNode>(int index = 0)
+        where TNode : SyntaxNode => this
+        .PreOrderTraverse()
+        .OfType<TNode>()
+        .ElementAt(index);
+
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
 }

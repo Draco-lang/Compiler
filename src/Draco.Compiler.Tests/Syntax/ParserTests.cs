@@ -37,11 +37,10 @@ public sealed class ParserTests
     private void N<T>(Predicate<T> predicate)
         where T : SyntaxNode
     {
-        Assert.NotNull(this.treeEnumerator);
         Assert.True(this.treeEnumerator.MoveNext());
         var node = this.treeEnumerator.Current;
         Assert.IsType<T>(node);
-        Assert.True(predicate((T)(object)node));
+        Assert.True(predicate((T)node));
     }
 
     private void N<T>()
@@ -54,7 +53,7 @@ public sealed class ParserTests
     private void T(TokenType type, string text) => this.N<SyntaxToken>(
            t => t.Type == type
         && t.Text == text
-        && this.diagnostics.TryGetValue(t, out _));
+        && !this.diagnostics.TryGetValue(t, out _));
 
     private void TValue(TokenType type, string value) => this.N<SyntaxToken>(
            t => t.Type == type
@@ -68,7 +67,7 @@ public sealed class ParserTests
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {
         this.ParseCompilationUnit($$"""
-            func main(){
+            func main() {
                 {{inputString}}
             }
             """);
@@ -346,12 +345,16 @@ public sealed class ParserTests
                     this.MissingT(TokenType.Semicolon);
                 }
             }
+            this.N<ExpressionStatementSyntax>();
             this.N<StringExpressionSyntax>();
             {
                 this.T(TokenType.LineStringStart);
                 this.StringContent(";");
                 this.MissingT(TokenType.LineStringEnd);
             }
+            // TODO: Can we get rid of this?
+            // Or do we want to?
+            this.MissingT(TokenType.Semicolon);
         });
     }
 
@@ -605,6 +608,7 @@ public sealed class ParserTests
                 this.N<BlockExpressionSyntax>();
                 {
                     this.T(TokenType.CurlyOpen);
+                    this.N<DeclarationStatementSyntax>();
                     this.N<VariableDeclarationSyntax>();
                     {
                         this.T(TokenType.KeywordVal);
@@ -638,6 +642,7 @@ public sealed class ParserTests
             {
                 this.T(TokenType.KeywordElse);
             }
+            this.N<ExpressionStatementSyntax>();
             this.N<BlockExpressionSyntax>();
             {
                 this.T(TokenType.CurlyOpen);
@@ -728,6 +733,7 @@ public sealed class ParserTests
             if (5 > 0)
             """, () =>
         {
+            this.N<ExpressionStatementSyntax>();
             this.N<IfExpressionSyntax>();
             {
                 this.T(TokenType.KeywordIf);
@@ -968,6 +974,7 @@ public sealed class ParserTests
             while (x < 5)
             """, () =>
         {
+            this.N<ExpressionStatementSyntax>();
             this.N<WhileExpressionSyntax>();
             {
                 this.T(TokenType.KeywordWhile);

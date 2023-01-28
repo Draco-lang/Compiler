@@ -379,7 +379,7 @@ internal sealed class Parser
         }
         else if (this.Peek() == TokenType.CurlyOpen)
         {
-            var block = this.ParseBlock(ControlFlowContext.Stmt, false);
+            var block = this.ParseBlock(ControlFlowContext.Stmt);
             return new BlockFunctionBodySyntax(
                 openBrace: block.OpenCurly,
                 statements: block.Statements,
@@ -493,7 +493,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="BlockExpressionSyntax"/>.</returns>
     private BlockExpressionSyntax ParseBlockExpr(ControlFlowContext ctx)
     {
-        var parsed = this.ParseBlock(ctx, true);
+        var parsed = this.ParseBlock(ctx);
         return new BlockExpressionSyntax(
             openBrace: parsed.OpenCurly,
             statements: parsed.Statements,
@@ -501,7 +501,7 @@ internal sealed class Parser
             closeBrace: parsed.CloseCurly);
     }
 
-    private ParsedBlock ParseBlock(ControlFlowContext ctx, bool allowValue)
+    private ParsedBlock ParseBlock(ControlFlowContext ctx)
     {
         var openBrace = this.Expect(TokenType.CurlyOpen);
         var stmts = SyntaxList.CreateBuilder<StatementSyntax>();
@@ -530,7 +530,7 @@ internal sealed class Parser
             case TokenType.KeywordWhile:
             {
                 var expr = this.ParseControlFlowExpr(ctx);
-                if (this.Peek() == TokenType.CurlyClose)
+                if (ctx == ControlFlowContext.Expr && this.Peek() == TokenType.CurlyClose)
                 {
                     // Treat as expression
                     value = expr;
@@ -547,7 +547,7 @@ internal sealed class Parser
                 {
                     // Some expression
                     var expr = this.ParseExpression();
-                    if (this.Peek() != TokenType.CurlyClose || !allowValue)
+                    if (ctx == ControlFlowContext.Stmt || this.Peek() != TokenType.CurlyClose)
                     {
                         // Likely just a statement, can continue
                         var semicolon = this.Expect(TokenType.Semicolon);
@@ -921,8 +921,6 @@ internal sealed class Parser
             {
                 // The first trivia was newline, the second must be spaces
                 Debug.Assert(closeQuote.LeadingTrivia[1].Type == TriviaType.Whitespace);
-                // For simplicity we rebuild the contents to be able to append diagnostics
-                var newContent = SyntaxList.CreateBuilder<StringPartSyntax>();
                 // We take the whitespace text and check if every line in the string obeys that as a prefix
                 var prefix = closeQuote.LeadingTrivia[1].Text;
                 var nextIsNewline = true;
@@ -933,7 +931,6 @@ internal sealed class Parser
                         if (textPart.Content.Type == TokenType.StringNewline)
                         {
                             // Also a newline, don't care, even an empty line is fine
-                            newContent.Add(part);
                             nextIsNewline = true;
                             continue;
                         }
@@ -946,26 +943,20 @@ internal sealed class Parser
                             var diag = Diagnostic.Create(
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
-                            // TODO: Append diagnostics
-                            // var allDiags = textPart.Diagnostics.Append(diag).ToImmutableArray();
-                            // newContent.Add(new StringPart.Content(textPart.Value, allDiags));
-                            throw new NotImplementedException();
+                            this.Diagnostics.Add(textPart, diag);
                         }
                         else
                         {
                             // Indentation was ok
-                            newContent.Add(part);
                         }
                         nextIsNewline = false;
                     }
                     else
                     {
                         // Interpolation, don't care
-                        newContent.Add(part);
                         nextIsNewline = false;
                     }
                 }
-                content = newContent;
             }
         }
         else
@@ -975,9 +966,7 @@ internal sealed class Parser
             var diag = Diagnostic.Create(
                 SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
                 location);
-            // TODO: Attach diagnostic
-            // closeQuote = closeQuote.AddDiagnostic(diag);
-            throw new NotImplementedException();
+            this.Diagnostics.Add(closeQuote, diag);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
     }

@@ -1,8 +1,10 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Syntax;
+using Diagnostic = Draco.Compiler.Internal.Diagnostics.Diagnostic;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -38,40 +40,54 @@ public sealed class LexerTests
 
     private void AssertNextToken() => Assert.True(this.tokenEnumerator.MoveNext());
 
+    private void AssertNextToken(TokenType type, string text = "", string? valueText = null)
+    {
+        this.AssertNextToken();
+        this.AssertType(type);
+        this.AssertText(text);
+        this.AssertValueText(valueText);
+    }
+
     private void AssertNoTrivia()
     {
         Assert.Empty(this.Current.LeadingTrivia);
         Assert.Empty(this.Current.TrailingTrivia);
     }
 
-    private void AssertNoDiagnostics()
-    {
-        Assert.False(this.diagnostics.TryGetValue(this.Current, out _));
-    }
-
-    private Diagnostic AssertSingleDiagnostic()
-    {
-        Assert.True(this.diagnostics.TryGetValue(this.Current, out var diags));
-        Assert.Single(diags);
-        return diags![0];
-    }
-
     private void AssertNoTriviaOrDiagnostics()
     {
         this.AssertNoTrivia();
-        this.AssertNoDiagnostics();
+        this.AssertDiagnostics();
     }
 
-    private void AssertLeadingTrivia(params string[] trivia)
+    private void AssertType(TokenType type) => Assert.Equal(type, this.Current.Type);
+    private void AssertText(string text) => Assert.Equal(text, this.Current.Text);
+    private void AssertValueText(string? text) => Assert.Equal(text, this.Current.ValueText);
+
+    private void AssertLeadingTrivia(params (TriviaType Type, string Text)[] trivia)
     {
         Assert.Equal(trivia.Length, this.Current.LeadingTrivia.Length);
-        Assert.True(trivia.SequenceEqual(this.Current.LeadingTrivia.Select(t => t.Text)));
+        Assert.True(this.Current.LeadingTrivia.Select(t => (t.Type, t.Text)).SequenceEqual(trivia));
     }
 
-    private void AssertTrailingTrivia(params string[] trivia)
+    private void AssertTrailingTrivia(params (TriviaType Type, string Text)[] trivia)
     {
         Assert.Equal(trivia.Length, this.Current.TrailingTrivia.Length);
-        Assert.True(trivia.SequenceEqual(this.Current.TrailingTrivia.Select(t => t.Text)));
+        Assert.True(this.Current.TrailingTrivia.Select(t => (t.Type, t.Text)).SequenceEqual(trivia));
+    }
+
+    private void AssertDiagnostics(params DiagnosticTemplate[] diags)
+    {
+        if (diags.Length == 0)
+        {
+            Assert.False(this.diagnostics.TryGetValue(this.Current, out _));
+        }
+        else
+        {
+            Assert.True(this.diagnostics.TryGetValue(this.Current, out var gotDiags));
+            Assert.Equal(gotDiags!.Count, diags.Length);
+            Assert.True(diags.SequenceEqual(gotDiags.Select(d => d.Template)));
+        }
     }
 
     [Fact]
@@ -81,14 +97,10 @@ public sealed class LexerTests
         var text = "// Hello, comments";
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Single(this.Current.LeadingTrivia);
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
-        Assert.Equal(string.Empty, this.Current.Text);
-        Assert.Equal("// Hello, comments", this.Current.LeadingTrivia[0].Text);
-        Assert.Equal(TriviaType.LineComment, this.Current.LeadingTrivia[0].Type);
+        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertLeadingTrivia((TriviaType.LineComment, "// Hello, comments"));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
     }
 
     [Fact]
@@ -99,19 +111,15 @@ public sealed class LexerTests
         /// Hello,
         /// multiline doc comments
         """;
-        this.Lex(text);
+        this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        // Second trivia is newline
-        Assert.Equal(3, this.Current.LeadingTrivia.Length);
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
-        Assert.Equal(string.Empty, this.Current.Text);
-        Assert.Equal("/// Hello,", this.Current.LeadingTrivia[0].Text);
-        Assert.Equal("/// multiline doc comments", this.Current.LeadingTrivia[2].Text);
-        Assert.Equal(TriviaType.DocumentationComment, this.Current.LeadingTrivia[0].Type);
-        Assert.Equal(TriviaType.DocumentationComment, this.Current.LeadingTrivia[2].Type);
+        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertDiagnostics();
+        this.AssertLeadingTrivia(
+            (TriviaType.DocumentationComment, "/// Hello,"),
+            (TriviaType.Newline, "\n"),
+            (TriviaType.DocumentationComment, "/// multiline doc comments"));
+        this.AssertTrailingTrivia();
     }
 
     [Fact]
@@ -121,14 +129,10 @@ public sealed class LexerTests
         var text = "/// Hello, doc comments";
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Single(this.Current.LeadingTrivia);
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
-        Assert.Equal(string.Empty, this.Current.Text);
-        Assert.Equal("/// Hello, doc comments", this.Current.LeadingTrivia[0].Text);
-        Assert.Equal(TriviaType.DocumentationComment, this.Current.LeadingTrivia[0].Type);
+        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertLeadingTrivia((TriviaType.DocumentationComment, "/// Hello, doc comments"));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
     }
 
     [Fact]
@@ -140,25 +144,16 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("Hello, line strings!", this.Current.Text);
-        Assert.Equal("Hello, line strings!", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, "Hello, line strings!", "Hello, line strings!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringEnd, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -171,20 +166,13 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("Hello, line strings!", this.Current.Text);
-        Assert.Equal("Hello, line strings!", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, "Hello, line strings!", "Hello, line strings!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -198,25 +186,16 @@ public sealed class LexerTests
         """;
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("Hello, line strings!", this.Current.Text);
-        Assert.Equal("Hello, line strings!", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, "Hello, line strings!", "Hello, line strings!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
-        Assert.Single(this.Current.LeadingTrivia);
-        Assert.Equal(TriviaType.Newline, this.Current.LeadingTrivia[0].Type);
-        Assert.Equal("\n", this.Current.LeadingTrivia[0].Text);
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
     }
 
     [Theory]
@@ -232,25 +211,19 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal(@$"\{ext}""\{ext}\\{ext}n\{ext}'\{ext}u{{1F47D}}\{ext}0", this.Current.Text);
-        Assert.Equal("\"\\\n'👽\0", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            @$"\{ext}""\{ext}\\{ext}n\{ext}'\{ext}u{{1F47D}}\{ext}0",
+            "\"\\\n'👽\0");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-        Assert.Equal($"\"{ext}", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -272,22 +245,14 @@ public sealed class LexerTests
         Assert.Equal($"{ext}\"", this.Current.Text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal(@$"\{ext}u{{}}", this.Current.Text);
-        Assert.Equal("", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, @$"\{ext}u{{}}", string.Empty);
         this.AssertNoTrivia();
-        var diag = this.AssertSingleDiagnostic();
-        Assert.Equal(SyntaxErrors.ZeroLengthUnicodeCodepoint, diag.Template);
+        this.AssertDiagnostics(SyntaxErrors.ZeroLengthUnicodeCodepoint);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-        Assert.Equal($"\"{ext}", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -304,27 +269,18 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal(@$"\{ext}u{{3S}}", this.Current.Text);
-        Assert.Equal("S}", this.Current.ValueText); //TODO: change this when we get better orrors out of invalid unicode codepoints
+        //TODO: change this when we get better errors out of invalid unicode codepoints
+        this.AssertNextToken(TokenType.StringContent, @$"\{ext}u{{3S}}", "S}");
         this.AssertNoTrivia();
-        var diag = this.AssertSingleDiagnostic();
-        Assert.Equal(SyntaxErrors.UnclosedUnicodeCodepoint, diag.Template);
+        this.AssertDiagnostics(SyntaxErrors.UnclosedUnicodeCodepoint);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-        Assert.Equal($"\"{ext}", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -341,27 +297,17 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal(@$"\{ext}u{{", this.Current.Text);
-        Assert.Equal("", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, @$"\{ext}u{{", string.Empty);
         this.AssertNoTrivia();
-        var diag = this.AssertSingleDiagnostic();
-        Assert.Equal(SyntaxErrors.UnclosedUnicodeCodepoint, diag.Template);
+        this.AssertDiagnostics(SyntaxErrors.UnclosedUnicodeCodepoint);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-        Assert.Equal($"\"{ext}", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -374,25 +320,19 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("##\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "##\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal(@"\a\#n\#u{123}\##t", this.Current.Text);
-        Assert.Equal("\\a\\#n\\#u{123}\t", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            @"\a\#n\#u{123}\##t",
+            "\\a\\#n\\#u{123}\t");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-        Assert.Equal($"\"##", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringEnd, $"\"##");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -409,27 +349,17 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal(@$"\{ext}y", this.Current.Text);
-        Assert.Equal("y", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, @$"\{ext}y", "y");
         this.AssertNoTrivia();
-        var diag = this.AssertSingleDiagnostic();
-        Assert.Equal(SyntaxErrors.IllegalEscapeCharacter, diag.Template);
+        this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-        Assert.Equal($"\"{ext}", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -450,42 +380,34 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}{quotes}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        Assert.Single(this.Current.TrailingTrivia);
-        Assert.Equal(TriviaType.Newline, this.Current.TrailingTrivia[0].Type);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("    Hello!", this.Current.Text);
-        Assert.Equal("    Hello!", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            "    Hello!",
+            "    Hello!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringNewline, this.Current.Type);
-        Assert.Equal("\n", this.Current.Text);
-        Assert.Equal("\n", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringNewline, "\n", "\n");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("    Bye!", this.Current.Text);
-        Assert.Equal("    Bye!", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            "    Bye!",
+            "    Bye!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal($"{quotes}{ext}", this.Current.Text);
-        this.AssertLeadingTrivia("\n", "    ");
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia(
+            (TriviaType.Newline, "\n"),
+            (TriviaType.Whitespace, "    "));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -504,22 +426,15 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}{quotes}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia("\n");
-        Assert.Equal(TriviaType.Newline, this.Current.TrailingTrivia[0].Type);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal($"{quotes}{ext}", this.Current.Text);
+        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -538,24 +453,17 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}{quotes}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia("\n");
-        Assert.Equal(TriviaType.Newline, this.Current.TrailingTrivia[0].Type);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal($"{quotes}{ext}", this.Current.Text);
-        this.AssertLeadingTrivia("    ");
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia((TriviaType.Whitespace, "    "));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -573,21 +481,15 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}{quotes}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia("    ");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Whitespace, "    "));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal($"{quotes}{ext}", this.Current.Text);
+        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -605,28 +507,20 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}{quotes}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia(" ");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal($"hello", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "hello", "hello");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal($"{quotes}{ext}", this.Current.Text);
-        this.AssertLeadingTrivia(" ");
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia((TriviaType.Whitespace, " "));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -647,42 +541,32 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}{quotes}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        Assert.Single(this.Current.TrailingTrivia);
-        Assert.Equal(TriviaType.Newline, this.Current.TrailingTrivia[0].Type);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("    Hello!", this.Current.Text);
-        Assert.Equal("    Hello!", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            "    Hello!",
+            "    Hello!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringNewline, this.Current.Type);
-        Assert.Equal("\n", this.Current.Text);
-        Assert.Equal("\n", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringNewline, "\n", "\n");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("    Bye!", this.Current.Text);
-        Assert.Equal("    Bye!", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            "    Bye!",
+            "    Bye!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal($"{quotes}{ext}", this.Current.Text);
-        this.AssertLeadingTrivia("\n");
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -703,42 +587,34 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}{quotes}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        Assert.Single(this.Current.TrailingTrivia);
-        Assert.Equal(TriviaType.Newline, this.Current.TrailingTrivia[0].Type);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("    Hello!", this.Current.Text);
-        Assert.Equal("    Hello!", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            "    Hello!",
+            "    Hello!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringNewline, this.Current.Type);
-        Assert.Equal($"\\{ext}\n", this.Current.Text);
-        Assert.Equal(string.Empty, this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringNewline, $"\\{ext}\n", string.Empty);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("    Bye!", this.Current.Text);
-        Assert.Equal("    Bye!", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            "    Bye!",
+            "    Bye!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal($"{quotes}{ext}", this.Current.Text);
-        this.AssertLeadingTrivia("\n", "    ");
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia(
+            (TriviaType.Newline, "\n"),
+            (TriviaType.Whitespace, "    "));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -760,42 +636,34 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}{quotes}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        Assert.Single(this.Current.TrailingTrivia);
-        Assert.Equal(TriviaType.Newline, this.Current.TrailingTrivia[0].Type);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("    Hello!", this.Current.Text);
-        Assert.Equal("    Hello!", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            "    Hello!",
+            "    Hello!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringNewline, this.Current.Type);
-        Assert.Equal($"\\{ext}{trailingSpace}\n", this.Current.Text);
-        Assert.Equal(string.Empty, this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringNewline, $"\\{ext}{trailingSpace}\n", string.Empty);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("    Bye!", this.Current.Text);
-        Assert.Equal("    Bye!", this.Current.ValueText);
+        this.AssertNextToken(
+            TokenType.StringContent,
+            "    Bye!",
+            "    Bye!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal($"{quotes}{ext}", this.Current.Text);
-        this.AssertLeadingTrivia("\n", "    ");
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia(
+            (TriviaType.Newline, "\n"),
+            (TriviaType.Whitespace, "    "));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -812,118 +680,73 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal($"{ext}\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("x = ", this.Current.Text);
-        Assert.Equal("x = ", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, "x = ", "x = ");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationStart, this.Current.Type);
-        Assert.Equal($@"\{ext}{{", this.Current.Text);
+        this.AssertNextToken(TokenType.InterpolationStart, $@"\{ext}{{");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("x", this.Current.Text);
-        Assert.Equal("x", this.Current.ValueText);
+        this.AssertNextToken(TokenType.Identifier, "x", "x");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationEnd, this.Current.Type);
-        Assert.Equal("}", this.Current.Text);
+        this.AssertNextToken(TokenType.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal(", x + y = ", this.Current.Text);
-        Assert.Equal(", x + y = ", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, ", x + y = ", ", x + y = ");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationStart, this.Current.Type);
-        Assert.Equal($@"\{ext}{{", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia(" ");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.InterpolationStart, $@"\{ext}{{");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("x", this.Current.Text);
-        Assert.Equal("x", this.Current.ValueText);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia(" ");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.Identifier, "x", "x");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Plus, this.Current.Type);
-        Assert.Equal("+", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia(" ");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.Plus, "+");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("y", this.Current.Text);
-        Assert.Equal("y", this.Current.ValueText);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia(" ");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.Identifier, "y", "y");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationEnd, this.Current.Type);
-        Assert.Equal("}", this.Current.Text);
+        this.AssertNextToken(TokenType.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal(", y = ", this.Current.Text);
-        Assert.Equal(", y = ", this.Current.ValueText);
+        this.AssertNextToken(TokenType.StringContent, ", y = ", ", y = ");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationStart, this.Current.Type);
-        Assert.Equal($@"\{ext}{{", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia(" ");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.InterpolationStart, $@"\{ext}{{");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.CurlyOpen, this.Current.Type);
-        Assert.Equal("{", this.Current.Text);
+        this.AssertNextToken(TokenType.CurlyOpen, "{");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("y", this.Current.Text);
-        Assert.Equal("y", this.Current.ValueText);
+        this.AssertNextToken(TokenType.Identifier, "y", "y");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.CurlyClose, this.Current.Type);
-        Assert.Equal("}", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia(" ");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.CurlyClose, "}");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationEnd, this.Current.Type);
-        Assert.Equal("}", this.Current.Text);
+        this.AssertNextToken(TokenType.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-        Assert.Equal($"\"{ext}", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -936,46 +759,30 @@ public sealed class LexerTests
         var text = "\"hello\\{\nvar}bye\"";
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("hello", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "hello", "hello");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationStart, this.Current.Type);
-        Assert.Equal(@"\{", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        this.AssertTrailingTrivia("\n");
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.InterpolationStart, @"\{");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.KeywordVar, this.Current.Type);
-        Assert.Equal("var", this.Current.Text);
+        this.AssertNextToken(TokenType.KeywordVar, "var");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.CurlyClose, this.Current.Type);
-        Assert.Equal("}", this.Current.Text);
+        this.AssertNextToken(TokenType.CurlyClose, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("bye", this.Current.Text);
+        this.AssertNextToken(TokenType.Identifier, "bye", "bye");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -988,57 +795,36 @@ public sealed class LexerTests
         var text = "\"hello\\{\"bye\nvar}baz\"";
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("hello", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "hello", "hello");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationStart, this.Current.Type);
-        Assert.Equal(@"\{", this.Current.Text);
+        this.AssertNextToken(TokenType.InterpolationStart, @"\{");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("bye", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "bye", "bye");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.KeywordVar, this.Current.Type);
-        Assert.Equal("var", this.Current.Text);
-        Assert.Single(this.Current.LeadingTrivia);
-        Assert.Equal("\n", this.Current.LeadingTrivia[0].Text);
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.KeywordVar, "var");
+        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.CurlyClose, this.Current.Type);
-        Assert.Equal("}", this.Current.Text);
+        this.AssertNextToken(TokenType.CurlyClose, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("baz", this.Current.Text);
+        this.AssertNextToken(TokenType.Identifier, "baz", "baz");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1054,53 +840,34 @@ public sealed class LexerTests
         var text = $"{quotes}\nfoo\\{{\nx}}bar\n{quotes}";
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal(quotes, this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        Assert.Single(this.Current.TrailingTrivia);
-        Assert.Equal("\n", this.Current.TrailingTrivia[0].Text);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, quotes);
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("foo", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "foo", "foo");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationStart, this.Current.Type);
-        Assert.Equal(@"\{", this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        Assert.Single(this.Current.TrailingTrivia);
-        Assert.Equal("\n", this.Current.TrailingTrivia[0].Text);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.InterpolationStart, @"\{");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("x", this.Current.Text);
+        this.AssertNextToken(TokenType.Identifier, "x", "x");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationEnd, this.Current.Type);
-        Assert.Equal("}", this.Current.Text);
+        this.AssertNextToken(TokenType.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("bar", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "bar", "bar");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal(quotes, this.Current.Text);
-        Assert.Single(this.Current.LeadingTrivia);
-        Assert.Equal("\n", this.Current.LeadingTrivia[0].Text);
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringEnd, quotes);
+        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1116,63 +883,40 @@ public sealed class LexerTests
         var text = $"{quotes}\nfoo\\{{\"bar\nx}}baz\n{quotes}";
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringStart, this.Current.Type);
-        Assert.Equal(quotes, this.Current.Text);
-        Assert.Empty(this.Current.LeadingTrivia);
-        Assert.Single(this.Current.TrailingTrivia);
-        Assert.Equal("\n", this.Current.TrailingTrivia[0].Text);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringStart, quotes);
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("foo", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "foo", "foo");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationStart, this.Current.Type);
-        Assert.Equal(@"\{", this.Current.Text);
+        this.AssertNextToken(TokenType.InterpolationStart, @"\{");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-        Assert.Equal("\"", this.Current.Text);
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("bar", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "bar", "bar");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("x", this.Current.Text);
-        Assert.Single(this.Current.LeadingTrivia);
-        Assert.Equal("\n", this.Current.LeadingTrivia[0].Text);
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.Identifier, "x", "x");
+        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.InterpolationEnd, this.Current.Type);
-        Assert.Equal("}", this.Current.Text);
+        this.AssertNextToken(TokenType.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("baz", this.Current.Text);
+        this.AssertNextToken(TokenType.StringContent, "baz", "baz");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.MultiLineStringEnd, this.Current.Type);
-        Assert.Equal(quotes, this.Current.Text);
-        Assert.Single(this.Current.LeadingTrivia);
-        Assert.Equal("\n", this.Current.LeadingTrivia[0].Text);
-        Assert.Empty(this.Current.TrailingTrivia);
-        this.AssertNoDiagnostics();
+        this.AssertNextToken(TokenType.MultiLineStringEnd, quotes);
+        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1193,14 +937,10 @@ public sealed class LexerTests
     {
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(tokenType, this.Current.Type);
-        Assert.Equal(text, this.Current.Text);
+        this.AssertNextToken(tokenType, text, tokenType == TokenType.Identifier ? text : null);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1216,14 +956,10 @@ public sealed class LexerTests
     {
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(tokenType, this.Current.Type);
-        Assert.Equal(text, this.Current.Text);
+        this.AssertNextToken(tokenType, text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1244,14 +980,10 @@ public sealed class LexerTests
     {
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(tokenType, this.Current.Type);
-        Assert.Equal(text, this.Current.Text);
+        this.AssertNextToken(tokenType, text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1259,20 +991,30 @@ public sealed class LexerTests
     [InlineData("0", TokenType.LiteralInteger)]
     [InlineData("123", TokenType.LiteralInteger)]
     [InlineData("12.3", TokenType.LiteralFloat)]
-    [InlineData("true", TokenType.KeywordTrue)]
     [Trait("Feature", "Literals")]
-    public void TestLiteral(string text, TokenType tokenType)
+    public void TestNumericLiterals(string text, TokenType tokenType)
     {
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(tokenType, this.Current.Type);
-        Assert.Equal(text, this.Current.Text);
+        this.AssertNextToken(tokenType, text, text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("true", TokenType.KeywordTrue)]
+    [InlineData("false", TokenType.KeywordFalse)]
+    [Trait("Feature", "Literals")]
+    public void TestBoolLiterals(string text, TokenType tokenType)
+    {
+        this.Lex(text);
+
+        this.AssertNextToken(tokenType, text);
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1280,37 +1022,25 @@ public sealed class LexerTests
     [Trait("Feature", "Literals")]
     public void TestIntLiteralWithMethodCall()
     {
-        string text = "56.MyFunction()";
+        var text = "56.MyFunction()";
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LiteralInteger, this.Current.Type);
-        Assert.Equal("56", this.Current.Text);
+        this.AssertNextToken(TokenType.LiteralInteger, "56", "56");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Dot, this.Current.Type);
-        Assert.Equal(".", this.Current.Text);
+        this.AssertNextToken(TokenType.Dot, ".");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("MyFunction", this.Current.Text);
+        this.AssertNextToken(TokenType.Identifier, "MyFunction", "MyFunction");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.ParenOpen, this.Current.Type);
-        Assert.Equal("(", this.Current.Text);
+        this.AssertNextToken(TokenType.ParenOpen, "(");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.ParenClose, this.Current.Type);
-        Assert.Equal(")", this.Current.Text);
+        this.AssertNextToken(TokenType.ParenClose, ")");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1327,35 +1057,24 @@ public sealed class LexerTests
     {
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LiteralCharacter, this.Current.Type);
-        Assert.Equal(text, this.Current.Text);
-        Assert.Equal(charValue, this.Current.ValueText);
+        this.AssertNextToken(TokenType.LiteralCharacter, text, charValue);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
     [Fact]
     public void TestUnclosedCharLiteral()
     {
-        string text = "'a";
+        var text = "'a";
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LiteralCharacter, this.Current.Type);
-        Assert.Equal(text, this.Current.Text);
-        Assert.Equal("a", this.Current.ValueText);
+        this.AssertNextToken(TokenType.LiteralCharacter, text, "a");
         this.AssertNoTrivia();
-        var diag = this.AssertSingleDiagnostic();
-        Assert.Equal(SyntaxErrors.UnclosedCharacterLiteral, diag.Template);
+        this.AssertDiagnostics(SyntaxErrors.UnclosedCharacterLiteral);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
-        Assert.Equal(string.Empty, this.Current.Text);
+        this.AssertNextToken(TokenType.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1369,77 +1088,27 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken();
-        Assert.Equal(TokenType.KeywordFrom, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("System", this.Current.Text);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Dot, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("Console", this.Current.Text);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.KeywordImport, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.CurlyOpen, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("WriteLine", this.Current.Text);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.CurlyClose, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Semicolon, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.KeywordFunc, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("main", this.Current.Text);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.ParenOpen, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.ParenClose, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Assign, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Identifier, this.Current.Type);
-        Assert.Equal("WriteLine", this.Current.Text);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.ParenOpen, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.StringContent, this.Current.Type);
-        Assert.Equal("Hello, World!", this.Current.Text);
-        Assert.Equal("Hello, World!", this.Current.ValueText);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringEnd, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.ParenClose, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.Semicolon, this.Current.Type);
-
-        this.AssertNextToken();
-        Assert.Equal(TokenType.EndOfInput, this.Current.Type);
+        this.AssertNextToken(TokenType.KeywordFrom, "from");
+        this.AssertNextToken(TokenType.Identifier, "System", "System");
+        this.AssertNextToken(TokenType.Dot, ".");
+        this.AssertNextToken(TokenType.Identifier, "Console", "Console");
+        this.AssertNextToken(TokenType.KeywordImport, "import");
+        this.AssertNextToken(TokenType.CurlyOpen, "{");
+        this.AssertNextToken(TokenType.Identifier, "WriteLine", "WriteLine");
+        this.AssertNextToken(TokenType.CurlyClose, "}");
+        this.AssertNextToken(TokenType.Semicolon, ";");
+        this.AssertNextToken(TokenType.KeywordFunc, "func");
+        this.AssertNextToken(TokenType.Identifier, "main", "main");
+        this.AssertNextToken(TokenType.ParenOpen, "(");
+        this.AssertNextToken(TokenType.ParenClose, ")");
+        this.AssertNextToken(TokenType.Assign, "=");
+        this.AssertNextToken(TokenType.Identifier, "WriteLine", "WriteLine");
+        this.AssertNextToken(TokenType.ParenOpen, "(");
+        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenType.StringContent, "Hello, World!", "Hello, World!");
+        this.AssertNextToken(TokenType.LineStringEnd, "\"");
+        this.AssertNextToken(TokenType.ParenClose, ")");
+        this.AssertNextToken(TokenType.Semicolon, ";");
+        this.AssertNextToken(TokenType.EndOfInput);
     }
 }

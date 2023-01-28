@@ -56,7 +56,7 @@ public sealed class SyntaxTree
     /// <summary>
     /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.
     /// </summary>
-    public IEnumerable<Diagnostic> Diagnostics => throw new NotImplementedException();
+    public IEnumerable<Diagnostic> Diagnostics => this.syntaxDiagnostics.Select(kv => kv.Value);
 
     /// <summary>
     /// Preorder traverses the thee with this node being the root.

@@ -18,12 +18,24 @@ public sealed class SeparatedSyntaxList<TNode> : IEnumerable<SyntaxNode>
     /// <summary>
     /// The separated values in this list.
     /// </summary>
-    public IEnumerable<TNode> Values => throw new NotImplementedException();
+    public IEnumerable<TNode> Values
+    {
+        get
+        {
+            for (var i = 0; i < this.nodes.Length; i += 2) yield return (TNode)this.GetNodeAt(i);
+        }
+    }
 
     /// <summary>
     /// The separators in this list.
     /// </summary>
-    public IEnumerable<SyntaxToken> Separators => throw new NotImplementedException();
+    public IEnumerable<SyntaxToken> Separators
+    {
+        get
+        {
+            for (var i = 1; i < this.nodes.Length; i += 2) yield return (SyntaxToken)this.GetNodeAt(i);
+        }
+    }
 
     private readonly SyntaxTree tree;
     private readonly SyntaxNode? parent;

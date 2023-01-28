@@ -23,22 +23,22 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public SyntaxNode? Parent { get; }
 
     /// <summary>
-    /// The <see cref="Diagnostics.Location"/> of this node.
+    /// The <see cref="Diagnostics.Location"/> of this node, excluding the trivia surrounding the node.
     /// </summary>
     public Location Location => new Location.InFile(this.Tree.SourceText, this.Range);
 
     /// <summary>
-    /// The <see cref="Syntax.Range"/> of this node within the source file.
+    /// The <see cref="Syntax.Range"/> of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
     public Range Range => new(Start: this.StartPosition, End: this.EndPosition);
 
     /// <summary>
-    /// The position of the first character of this node within the source file.
+    /// The position of the first character of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
     public Position StartPosition => throw new NotImplementedException();
 
     /// <summary>
-    /// The position after the last character of this node within the source file.
+    /// The position after the last character of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
     public Position EndPosition => throw new NotImplementedException();
 

@@ -35,7 +35,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// All <see cref="SyntaxToken"/>s this node consists of.
     /// </summary>
-    public IEnumerable<SyntaxToken> Tokens => throw new NotImplementedException();
+    public IEnumerable<SyntaxToken> Tokens => this.Children.OfType<SyntaxToken>();
 
     /// <summary>
     /// The internal green node that this node wraps.

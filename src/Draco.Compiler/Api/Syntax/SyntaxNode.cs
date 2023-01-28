@@ -113,13 +113,11 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
             yield return root;
             foreach (var child in root.Children)
             {
-                // TODO
-                throw new NotImplementedException();
-                //if (child.Range.Contains(position))
-                //{
-                //    root = child;
-                //    goto found;
-                //}
+                if (child.Range.Contains(position))
+                {
+                    root = child;
+                    goto found;
+                }
             }
             // No child found that contains position.
             break;

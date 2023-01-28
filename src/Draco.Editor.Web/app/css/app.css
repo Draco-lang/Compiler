@@ -10,11 +10,16 @@ html, body, #app {
     flex: 1 1 auto;
     display: flex;
     flex-direction: row;
+    margin-top: 5px;
 }
 
 .editors-container > div {
     width: 50%;
     border: 1px solid gray
+}
+
+#draco-editor{
+    border-right-width: 0px;
 }
 
 .settings {
@@ -34,7 +39,7 @@ html, body, #app {
 .settings select {
     border-radius: 5px;
     margin-left: 29px;
-    height: 20px;
+    height: 24px;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -137,7 +138,8 @@ public static partial class SyntaxFactory
     public static StringExpressionSyntax StringExpression(string value) =>
         StringExpression(LineStringStart, SyntaxList(TextStringPart(value) as StringPartSyntax), LineStringEnd);
 
-    public static TextStringPartSyntax TextStringPart(string value) => TextStringPart(MakeToken(TokenType.StringContent, value));
+    public static TextStringPartSyntax TextStringPart(string value) =>
+        TextStringPart(MakeToken(TokenType.StringContent, value, value));
 
     // TOKENS //////////////////////////////////////////////////////////////////
 

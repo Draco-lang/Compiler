@@ -15,11 +15,11 @@ html, body, #app {
 
 .editors-container > div {
     width: 50%;
-    border: 1px solid gray
+    border-top: 1px solid gray
 }
 
-#draco-editor{
-    border-right-width: 0px;
+#draco-editor {
+    border-right: 1px solid gray
 }
 
 .settings {

@@ -98,4 +98,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "closing quotes are not on a new line of multiline string",
         code: Code(10));
+
+    /// <summary>
+    /// The literal ended unexpectedly.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedFloatingPointLiteralEnd = DiagnosticTemplate.Create(
+        title: "unexpected floating-point literal end",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected end of scientific notation floating-point literal, expected one or more digits after exponent",
+        code: Code(11));
 }

@@ -1278,6 +1278,25 @@ public sealed class LexerTests
         AssertNoTriviaOrDiagnostics(token);
     }
 
+    [Theory]
+    [InlineData("0.1e+", TokenType.LiteralFloat)]
+    [InlineData("345E-", TokenType.LiteralFloat)]
+    [Trait("Feature", "Literals")]
+    public void TestNumericLiteralInvalidNonDecimalFormats(string text, TokenType tokenType)
+    {
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(tokenType, token.Type);
+        Assert.Single(token.Diagnostics);
+        Assert.Equal("unexpected floating-point literal end", token.Diagnostics[0].Title);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
     [Fact]
     [Trait("Feature", "Literals")]
     public void TestIntLiteralWithMethodCall()

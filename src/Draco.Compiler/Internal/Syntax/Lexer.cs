@@ -244,7 +244,7 @@ internal sealed class Lexer
         // Since digits would be a valid identifier character, we can avoid separating the check for the
         // first character
         if (char.IsDigit(ch))
-        { 
+        {
             // Check for what kind of integer do we have
             switch (this.Peek(1))
             {
@@ -275,10 +275,20 @@ internal sealed class Lexer
             if (char.ToLower(this.Peek(offset)) == 'e')
             {
                 isScientificNotation = true;
-                offset--;
-                if (this.Peek(offset + 2) == '+' || this.Peek(offset + 2) == '-') offset++;
-                // TODO: Proper error.
-                if (!char.IsDigit(this.Peek(offset + 2))) throw new InvalidOperationException();
+                var notationOffset = 0;
+                if (this.Peek(offset + 1) == '+' || this.Peek(offset + 1) == '-') notationOffset++;
+                if (!char.IsDigit(this.Peek(offset + notationOffset + 1)))
+                {
+                    this.AddError(
+                        template: SyntaxErrors.UnexpectedFloatingPointLiteralEnd,
+                        offset: offset,
+                        width: notationOffset + 1);
+                    this.tokenBuilder
+                        .SetType(TokenType.LiteralFloat)
+                        .SetText(this.Advance(offset + notationOffset + 1).Span.ToString());
+                    return default;
+                }
+                offset += notationOffset;
             }
 
             // Floating point number
@@ -288,8 +298,21 @@ internal sealed class Lexer
                 while (char.IsDigit(this.Peek(offset))) ++offset;
                 if (!isScientificNotation && char.ToLower(this.Peek(offset)) == 'e')
                 {
-                    offset++;
-                    if (this.Peek(offset) == '+' || this.Peek(offset) == '-') offset++;
+                    var notationOffset = 0;
+                    if (this.Peek(offset + 1) == '+' || this.Peek(offset + 1) == '-') notationOffset++;
+                    if (!char.IsDigit(this.Peek(offset + notationOffset + 1)))
+                    {
+                        // TODO: Add args
+                        this.AddError(
+                            template: SyntaxErrors.UnexpectedFloatingPointLiteralEnd,
+                            offset: offset,
+                            width: notationOffset + 1);
+                        this.tokenBuilder
+                        .SetType(TokenType.LiteralFloat)
+                        .SetText(this.Advance(offset + notationOffset + 1).Span.ToString());
+                        return default;
+                    }
+                    offset += notationOffset + 1;
                     while (char.IsDigit(this.Peek(offset))) ++offset;
                 }
                 var floatView = this.Advance(offset);

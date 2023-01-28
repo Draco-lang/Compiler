@@ -16,6 +16,20 @@ internal sealed partial class SyntaxToken
     public sealed class Builder
     {
         /// <summary>
+        /// Creates a builder from an already constructed <see cref="SyntaxToken"/>.
+        /// </summary>
+        /// <param name="token">The <see cref="SyntaxToken"/> to fill up the builder data with.</param>
+        /// <returns>The constructed <see cref="Builder"/> with all data from <paramref name="token"/>.</returns>
+        public static Builder From(SyntaxToken token) => new()
+        {
+            Type = token.Type,
+            Text = token.Text,
+            Value = token.Value,
+            LeadingTrivia = token.LeadingTrivia.ToBuilder(),
+            TrailingTrivia = token.TrailingTrivia.ToBuilder(),
+        };
+
+        /// <summary>
         /// The <see cref="TokenType"/> of the <see cref="SyntaxToken"/> being built.
         /// </summary>
         public TokenType Type { get; set; }

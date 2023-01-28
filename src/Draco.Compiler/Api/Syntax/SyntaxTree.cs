@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -12,6 +13,9 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxTree
 {
+    private static ParseTreeFormatterSettings FormatterSettings { get; } = new(
+        Indentation: "    ");
+
     /// <summary>
     /// Constructs a new <see cref="SyntaxTree"/> from the given <paramref name="root"/>.
     /// </summary>
@@ -35,9 +39,9 @@ public sealed class SyntaxTree
     public static SyntaxTree Parse(SourceText source)
     {
         var srcReader = source.SourceReader;
-        var lexer = new Internal.Syntax.Lexer(srcReader);
-        var tokenSource = Internal.Syntax.TokenSource.From(lexer);
-        var parser = new Internal.Syntax.Parser(tokenSource);
+        var lexer = new Lexer(srcReader);
+        var tokenSource = TokenSource.From(lexer);
+        var parser = new Parser(tokenSource);
         var cu = parser.ParseCompilationUnit();
         // TODO: Pass in diags
         return new(source, cu, new());
@@ -82,6 +86,12 @@ public sealed class SyntaxTree
     public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(Position position) => this.Root.TraverseSubtreesAtPosition(position);
 
     /// <summary>
+    /// Syntactically formats this <see cref="SyntaxTree"/>.
+    /// </summary>
+    /// <returns>The formatted tree.</returns>
+    public SyntaxTree Format() => new ParseTreeFormatter(FormatterSettings).Format(this);
+
+    /// <summary>
     /// The internal root of the tree.
     /// </summary>
     internal Internal.Syntax.SyntaxNode GreenRoot { get; }
@@ -97,4 +107,6 @@ public sealed class SyntaxTree
         this.GreenRoot = greenRoot;
         this.syntaxDiagnostics = syntaxDiagnostics;
     }
+
+    public override string ToString() => this.Root.ToString();
 }

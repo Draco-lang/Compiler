@@ -20,6 +20,15 @@ internal static class SyntaxList
     /// <returns>The created builder.</returns>
     public static SyntaxList<TNode>.Builder CreateBuilder<TNode>()
         where TNode : SyntaxNode => new();
+
+    /// <summary>
+    /// Creates a <see cref="SyntaxList{TNode}"/> from the given elements.
+    /// </summary>
+    /// <typeparam name="TNode">The node element type.</typeparam>
+    /// <param name="nodes">The elements to create the list from.</param>
+    /// <returns>A new syntax list, containing <paramref name="nodes"/>.</returns>
+    public static SyntaxList<TNode> Create<TNode>(params TNode[] nodes)
+        where TNode : SyntaxNode => new(nodes.Cast<SyntaxNode>().ToImmutableArray());
 }
 
 internal readonly partial struct SyntaxList<TNode>
@@ -34,7 +43,17 @@ internal readonly partial struct SyntaxList<TNode>
         /// </summary>
         public int Count => this.builder.Count;
 
-        private readonly ImmutableArray<SyntaxNode>.Builder builder = ImmutableArray.CreateBuilder<SyntaxNode>();
+        private readonly ImmutableArray<SyntaxNode>.Builder builder;
+
+        public Builder()
+        {
+            this.builder = ImmutableArray.CreateBuilder<SyntaxNode>();
+        }
+
+        public Builder(ImmutableArray<SyntaxNode> initial)
+        {
+            this.builder = initial.ToBuilder();
+        }
 
         /// <summary>
         /// Constructs a <see cref="SyntaxList{TNode}"/> from the builder.
@@ -47,6 +66,18 @@ internal readonly partial struct SyntaxList<TNode>
         /// </summary>
         /// <param name="node">The node to add.</param>
         public void Add(TNode node) => this.builder.Add(node);
+
+        /// <summary>
+        /// Adds a sequence of <typeparamref name="TNode"/>s to this builder.
+        /// </summary>
+        /// <param name="nodes">The nodes to add.</param>
+        public void AddRange(IEnumerable<TNode> nodes) => this.builder.AddRange(nodes);
+
+        /// <summary>
+        /// Adds a sequence of <typeparamref name="TNode"/>s to this builder.
+        /// </summary>
+        /// <param name="nodes">The nodes to add.</param>
+        public void AddRange(SyntaxList<TNode> nodes) => this.builder.AddRange(nodes.Nodes);
 
         /// <summary>
         /// Clears the elements from this builder.

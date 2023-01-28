@@ -49,6 +49,12 @@ internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
         this.Nodes = nodes;
     }
 
+    /// <summary>
+    /// Converts this <see cref="SyntaxList{TNode}"/> into a builder.
+    /// </summary>
+    /// <returns>The builder.</returns>
+    public Builder ToBuilder() => new(this.Nodes);
+
     public Api.Syntax.SyntaxList<TRedNode> ToRedNode<TRedNode>(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent)
         where TRedNode : Api.Syntax.SyntaxNode => new(tree, parent, this.Nodes);
 

@@ -28,8 +28,18 @@ internal readonly partial struct SeparatedSyntaxList<TNode>
     /// </summary>
     public sealed class Builder
     {
-        private readonly ImmutableArray<SyntaxNode>.Builder builder = ImmutableArray.CreateBuilder<SyntaxNode>();
+        private readonly ImmutableArray<SyntaxNode>.Builder builder;
         private bool separatorsTurn;
+
+        public Builder()
+        {
+            this.builder = ImmutableArray.CreateBuilder<SyntaxNode>();
+        }
+
+        public Builder(ImmutableArray<SyntaxNode> initial)
+        {
+            this.builder = initial.ToBuilder();
+        }
 
         /// <summary>
         /// Adds a value node to the builder.

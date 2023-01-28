@@ -68,7 +68,7 @@ internal abstract partial class SyntaxVisitor<TResult>
 /// </summary>
 internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{Root.Name}}>
 {
-    {{for $node in nodes}}
+    {{for $node in Nodes}}
         {{if !$node.IsAbstract}}
             public override {{Root.Name}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
             {

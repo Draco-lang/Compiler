@@ -86,6 +86,5 @@ public sealed class ParseTreeFormatterTests
 
         var actual = SyntaxTree.Parse(input).Format().ToString();
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
-        throw new NotImplementedException();
     }
 }

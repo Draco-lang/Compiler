@@ -81,6 +81,8 @@ internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<Syntax
         foreach (var n in this) n.Accept(visitor);
         return default!;
     }
+    public SeparatedSyntaxList<TNode> Accept(SyntaxRewriter rewriter) =>
+        new(this.Nodes.Select(n => n.Accept(rewriter)).ToImmutableArray());
 
     public IEnumerator<SyntaxNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();

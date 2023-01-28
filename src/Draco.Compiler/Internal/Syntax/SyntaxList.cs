@@ -67,6 +67,8 @@ internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
         foreach (var n in this) n.Accept(visitor);
         return default!;
     }
+    public SyntaxList<TNode> Accept(SyntaxRewriter rewriter) =>
+        new(this.Nodes.Select(n => n.Accept(rewriter)).ToImmutableArray());
 
     public IEnumerator<TNode> GetEnumerator()
     {

@@ -175,7 +175,7 @@ internal sealed class ParseTreeFormatter : SyntaxRewriter
             {
                 TokenType.Semicolon or TokenType.CurlyClose or TokenType.CurlyOpen or TokenType.Colon =>
                     SetTrivia(newToken, CreateTrivia(TriviaType.Whitespace, this.Indentation), oneSpaceTrivia),
-                _ => SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
+                _ => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
             },
 
             TokenType.KeywordElse => this.lastToken switch

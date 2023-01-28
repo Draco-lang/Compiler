@@ -68,6 +68,6 @@ internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<Syntax
     public void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
     public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
 
-    public IEnumerator<SyntaxNode> GetEnumerator() => throw new NotImplementedException();
-    IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
+    public IEnumerator<SyntaxNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

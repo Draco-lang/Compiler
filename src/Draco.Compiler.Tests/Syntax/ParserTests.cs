@@ -9,7 +9,7 @@ namespace Draco.Compiler.Tests.Syntax;
 public sealed class ParserTests
 {
     private IEnumerator<SyntaxNode> treeEnumerator = Enumerable.Empty<SyntaxNode>().GetEnumerator();
-    private ConditionalWeakTable<SyntaxNode, IImmutableList<Diagnostic>> diagnostics = new();
+    private ConditionalWeakTable<SyntaxNode, Diagnostic> diagnostics = new();
 
     private void ParseInto<T>(string text, Func<Parser, T> func)
         where T : SyntaxNode
@@ -54,8 +54,7 @@ public sealed class ParserTests
     private void T(TokenType type, string text) => this.N<SyntaxToken>(
            t => t.Type == type
         && t.Text == text
-        && this.diagnostics.TryGetValue(t, out var diags)
-        && diags.Count > 0);
+        && this.diagnostics.TryGetValue(t, out _));
 
     private void TValue(TokenType type, string value) => this.N<SyntaxToken>(
            t => t.Type == type
@@ -64,8 +63,7 @@ public sealed class ParserTests
 
     private void MissingT(TokenType type) => this.N<SyntaxToken>(
            t => t.Type == type
-        && this.diagnostics.TryGetValue(t, out var diags)
-        && diags.Count > 0);
+        && this.diagnostics.TryGetValue(t, out _));
 
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {

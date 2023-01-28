@@ -196,7 +196,7 @@ internal sealed class Parser
     /// <summary>
     /// The <see cref="Diagnostic"/> messages attached to the nodes.
     /// </summary>
-    internal ConditionalWeakTable<SyntaxNode, IImmutableList<Diagnostic>> Diagnostics { get; } = new();
+    internal ConditionalWeakTable<SyntaxNode, Diagnostic> Diagnostics { get; } = new();
 
     private readonly ITokenSource tokenSource;
 
@@ -245,9 +245,9 @@ internal sealed class Parser
             });
             var location = GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
-            // TODO: Attach
-            throw new NotImplementedException();
-            return new UnexpectedDeclarationSyntax(input);
+            var node = new UnexpectedDeclarationSyntax(input);
+            this.Diagnostics.Add(node, diag);
+            return node;
         }
         }
     }
@@ -397,9 +397,9 @@ internal sealed class Parser
             });
             var location = GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
-            // TODO: Attach
-            throw new NotImplementedException();
-            return new UnexpectedFunctionBodySyntax(input);
+            var node = new UnexpectedFunctionBodySyntax(input);
+            this.Diagnostics.Add(node, diag);
+            return node;
         }
     }
 
@@ -437,9 +437,9 @@ internal sealed class Parser
             });
             var location = GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "type");
-            // TODO: Associate
-            throw new NotImplementedException();
-            return new UnexpectedTypeSyntax(input);
+            var node = new UnexpectedTypeSyntax(input);
+            this.Diagnostics.Add(node, diag);
+            return node;
         }
     }
 
@@ -573,9 +573,8 @@ internal sealed class Parser
                     });
                     var location = GetLocation(tokens.Sum(i => i.Width));
                     var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "statement");
-                    // TODO: Associate
-                    throw new NotImplementedException();
                     var errNode = new UnexpectedStatementSyntax(tokens);
+                    this.Diagnostics.Add(errNode, diag);
                     stmts.Add(errNode);
                 }
                 break;
@@ -819,9 +818,9 @@ internal sealed class Parser
             });
             var location = GetLocation(input.Sum(i => i.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
-            // TODO: Associate
-            throw new NotImplementedException();
-            return new UnexpectedExpressionSyntax(input);
+            var node = new UnexpectedExpressionSyntax(input);
+            this.Diagnostics.Add(node, diag);
+            return node;
         }
         }
     }
@@ -880,9 +879,8 @@ internal sealed class Parser
             var diag = Diagnostic.Create(
                 SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString,
                 location);
-            // TODO: Associate
-            throw new NotImplementedException();
             var unexpected = new UnexpectedStringPartSyntax(strayTokens);
+            this.Diagnostics.Add(unexpected, diag);
             content.Add(unexpected);
         }
         while (true)
@@ -1054,8 +1052,7 @@ internal sealed class Parser
             var tokenTypeName = type.GetUserFriendlyName();
             var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: tokenTypeName);
             token = SyntaxToken.From(type, string.Empty);
-            // TODO: Attach diagnostic
-            throw new NotImplementedException();
+            this.Diagnostics.Add(token, diag);
         }
         return token;
     }

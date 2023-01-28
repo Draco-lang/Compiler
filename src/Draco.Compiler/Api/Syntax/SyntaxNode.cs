@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 
@@ -9,7 +10,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// <summary>
 /// A single node in the Draco syntax tree.
 /// </summary>
-public abstract class SyntaxNode
+public abstract class SyntaxNode : IEquatable<SyntaxNode>
 {
     /// <summary>
     /// The <see cref="SyntaxTree"/> this node belongs to.
@@ -50,6 +51,11 @@ public abstract class SyntaxNode
         this.Tree = tree;
         this.Parent = parent;
     }
+
+    // Equality by green nodes
+    public bool Equals(SyntaxNode? other) => ReferenceEquals(this.Green, other?.Green);
+    public override bool Equals(object? obj) => this.Equals(obj as SyntaxNode);
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this.Green);
 
     /// <summary>
     /// Preorder traverses the subtree with this node being the root.

@@ -6,11 +6,14 @@ namespace Draco.Compiler.Tests.EndToEnd;
 // https://github.com/Draco-lang/Compiler/issues/139
 public sealed class Issue139Tests
 {
+    // TODO: This needs to be fixed, once we have interpolation
+#if false
     [InlineData("""
         func main() {
             var msg = "Hello! \{}";
         }
         """)]
+#endif
     [InlineData("""
         func main() {
             var i = i +

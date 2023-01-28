@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -71,6 +72,8 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public bool Equals(SyntaxNode? other) => ReferenceEquals(this.Green, other?.Green);
     public override bool Equals(object? obj) => this.Equals(obj as SyntaxNode);
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this.Green);
+
+    public override string ToString() => ParseTreePrinter.ToCodeWithoutSurroundingTrivia(this.Green);
 
     /// <summary>
     /// Preorder traverses the subtree with this node being the root.

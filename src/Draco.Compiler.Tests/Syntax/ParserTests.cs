@@ -187,6 +187,18 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void TestFloatingPointLiteralMissingValueAfterExponent()
+    {
+        this.ParseExpression("""
+            0.5e
+            """);
+        this.N<Expr.Literal>();
+        {
+            this.MissingT(TokenType.LiteralFloat);
+        }
+    }
+
+    [Fact]
     public void TestLineString()
     {
         this.ParseExpression("""

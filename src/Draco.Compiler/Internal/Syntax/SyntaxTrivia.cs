@@ -41,7 +41,7 @@ internal sealed class SyntaxTrivia : SyntaxNode
         this.Text = text;
     }
 
-    public override Api.Syntax.SyntaxTrivia ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent) => throw new NotImplementedException();
-    public override void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
-    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
+    public override Api.Syntax.SyntaxTrivia ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent) => new(tree, parent, this);
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxTrivia(this);
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxTrivia(this);
 }

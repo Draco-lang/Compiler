@@ -31,6 +31,6 @@ public sealed class SyntaxTrivia : SyntaxNode
         this.Green = green;
     }
 
-    public override void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
-    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxTrivia(this);
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxTrivia(this);
 }

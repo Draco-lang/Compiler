@@ -23,7 +23,7 @@ internal abstract class SyntaxNode
     /// <summary>
     /// All <see cref="SyntaxToken"/>s this node consists of.
     /// </summary>
-    public IEnumerable<SyntaxToken> Tokens => this.Children.OfType<SyntaxToken>();
+    public IEnumerable<SyntaxToken> Tokens => this.PreOrderTraverse().OfType<SyntaxToken>();
 
     /// <summary>
     /// Preorder traverses the subtree with this node being the root.

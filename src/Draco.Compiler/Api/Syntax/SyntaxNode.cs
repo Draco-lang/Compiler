@@ -52,7 +52,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// All <see cref="SyntaxToken"/>s this node consists of.
     /// </summary>
-    public IEnumerable<SyntaxToken> Tokens => this.Children.OfType<SyntaxToken>();
+    public IEnumerable<SyntaxToken> Tokens => this.PreOrderTraverse().OfType<SyntaxToken>();
 
     /// <summary>
     /// The internal green node that this node wraps.
@@ -129,5 +129,94 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
 
-    private Range ComputeRange() => throw new NotImplementedException();
+    private Range ComputeRange()
+    {
+        var line = 0;
+        var column = 0;
+
+        Position CurrentPosition() => new(Line: line, Column: column);
+
+        void AdvanceToken(SyntaxToken token)
+        {
+            if (token.Type == TokenType.StringNewline)
+            {
+                ++line;
+                column = 0;
+            }
+            else
+            {
+                column += token.Text.Length;
+            }
+        }
+
+        void AdvanceTrivia(SyntaxTrivia trivia)
+        {
+            if (trivia.Type == TriviaType.Newline)
+            {
+                ++line;
+                column = 0;
+            }
+            else
+            {
+                column += trivia.Text.Length;
+            }
+        }
+
+        void AdvanceTriviaList(IEnumerable<SyntaxTrivia> triviaList)
+        {
+            foreach (var trivia in triviaList) AdvanceTrivia(trivia);
+        }
+
+        void AssignAndAdvanceToken(SyntaxToken token)
+        {
+            if (token.range is null)
+            {
+                // Not cached yet
+                AdvanceTriviaList(token.LeadingTrivia);
+                var start = CurrentPosition();
+                AdvanceToken(token);
+                var end = CurrentPosition();
+                // Cache
+                token.range = new(start, end);
+            }
+            else
+            {
+                // Cached, do a shortcut
+                var end = token.range.Value.End;
+                line = end.Line;
+                column = end.Column;
+            }
+            // We still need to advance trailing trivia
+            AdvanceTriviaList(token.TrailingTrivia);
+        }
+
+        // Get the first token in this node
+        var firstToken = this.Tokens.FirstOrDefault();
+        if (firstToken is null)
+        {
+            // This is an empty node
+            // TODO
+            throw new NotImplementedException();
+        }
+
+        // If there was a first token, there is a last
+        var lastToken = this.Tokens.Last();
+
+        Range MakeRange() =>
+            new(Start: firstToken!.range!.Value.Start, End: lastToken!.range!.Value.End);
+
+        // The tokens already have a range
+        if (firstToken.range is not null && lastToken.range is not null) return MakeRange();
+
+        // We need to do a pass from the start of the tree up until the end token
+        foreach (var token in this.Tree.Root.Tokens)
+        {
+            AssignAndAdvanceToken(token);
+            // We are done
+            if (ReferenceEquals(token.Green, lastToken.Green)) break;
+        }
+
+        // We should have the information
+        return MakeRange();
+    }
 }

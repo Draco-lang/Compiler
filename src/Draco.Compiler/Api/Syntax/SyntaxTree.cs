@@ -51,7 +51,8 @@ public sealed class SyntaxTree
     /// <summary>
     /// The root <see cref="SyntaxNode"/> of the tree.
     /// </summary>
-    public SyntaxNode Root => this.GreenRoot.ToRedNode(this, null);
+    public SyntaxNode Root => this.root ??= this.GreenRoot.ToRedNode(this, null);
+    private SyntaxNode? root;
 
     /// <summary>
     /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.

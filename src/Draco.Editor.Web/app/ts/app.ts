@@ -144,7 +144,8 @@ const outputEditor = monaco.editor.create(document.getElementById('output-viewer
     renderLineHighlight: "none",
     overviewRulerBorder: false,
     hideCursorInOverviewRuler: true,
-    mouseWheelZoom: true
+    mouseWheelZoom: true,
+    occurrencesHighlight: false
 });
 
 compilerWorker.onmessage = async (ev) => {

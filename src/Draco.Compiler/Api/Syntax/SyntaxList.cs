@@ -58,6 +58,6 @@ public sealed class SyntaxList<TNode> : IEnumerable<TNode>
     public void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
     public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
 
-    public IEnumerator<TNode> GetEnumerator() => throw new NotImplementedException();
-    IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
+    public IEnumerator<TNode> GetEnumerator() => Enumerable.Range(0, this.Length).Select(i => this[i]).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

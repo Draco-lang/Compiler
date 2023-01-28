@@ -58,13 +58,13 @@ internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<Syntax
         }
     }
 
-    private SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodes)
+    internal SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodes)
     {
         this.Nodes = nodes;
     }
 
     public Api.Syntax.SeparatedSyntaxList<TRedNode> ToRedNode<TRedNode>(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent)
-        where TRedNode : Api.Syntax.SyntaxNode => throw new NotImplementedException();
+        where TRedNode : Api.Syntax.SyntaxNode => new(tree, parent, this.Nodes);
     public void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
     public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
 

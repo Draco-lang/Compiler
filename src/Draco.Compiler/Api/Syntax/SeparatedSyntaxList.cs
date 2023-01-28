@@ -16,11 +16,6 @@ public sealed class SeparatedSyntaxList<TNode> : IEnumerable<SyntaxNode>
     where TNode : SyntaxNode
 {
     /// <summary>
-    /// The number of nodes in this list.
-    /// </summary>
-    public int Length => throw new NotImplementedException();
-
-    /// <summary>
     /// The separated values in this list.
     /// </summary>
     public IEnumerable<TNode> Values => throw new NotImplementedException();
@@ -43,11 +38,23 @@ public sealed class SeparatedSyntaxList<TNode> : IEnumerable<SyntaxNode>
     }
 
     internal Internal.Syntax.SeparatedSyntaxList<TGreenNode> ToGreen<TGreenNode>()
-        where TGreenNode : Internal.Syntax.SyntaxNode => throw new NotImplementedException();
+        where TGreenNode : Internal.Syntax.SyntaxNode => new(this.nodes);
 
     public void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
     public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
 
-    public IEnumerator<SyntaxNode> GetEnumerator() => throw new NotImplementedException();
-    IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
+    public IEnumerator<SyntaxNode> GetEnumerator() => Enumerable.Range(0, this.nodes.Length).Select(this.GetNodeAt).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+    private SyntaxNode GetNodeAt(int index)
+    {
+        this.mappedNodes ??= new SyntaxNode?[this.nodes.Length];
+        var existing = this.mappedNodes[index];
+        if (existing is null)
+        {
+            existing = this.nodes[index].ToRedNode(this.tree, this.parent);
+            this.mappedNodes[index] = existing;
+        }
+        return existing;
+    }
 }

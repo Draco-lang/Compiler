@@ -18,7 +18,7 @@ public sealed class SyntaxTree
     /// <param name="root">The root of the tree.</param>
     /// <returns>A new <see cref="SyntaxTree"/> with <see cref="Root"/> <paramref name="root"/>.</returns>
     public static SyntaxTree Create(SyntaxNode root) =>
-        new(greenRoot: root.Green, diagnostics: new());
+        new(sourceText: SourceText.None, greenRoot: root.Green, syntaxDiagnostics: new());
 
     /// <summary>
     /// Parses the given text into a <see cref="SyntaxTree"/>.
@@ -40,18 +40,18 @@ public sealed class SyntaxTree
         var parser = new Internal.Syntax.Parser(tokenSource);
         var cu = parser.ParseCompilationUnit();
         // TODO: Pass in source and diags
-        return new(cu, new());
+        return new(source, cu, new());
     }
 
     /// <summary>
     /// The <see cref="Syntax.SourceText"/> that the tree was parsed from.
     /// </summary>
-    public SourceText SourceText => throw new NotImplementedException();
+    public SourceText SourceText { get; }
 
     /// <summary>
     /// The root <see cref="SyntaxNode"/> of the tree.
     /// </summary>
-    public SyntaxNode Root => throw new NotImplementedException();
+    public SyntaxNode Root => this.GreenRoot.ToRedNode(this, null);
 
     /// <summary>
     /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.
@@ -85,13 +85,15 @@ public sealed class SyntaxTree
     /// </summary>
     internal Internal.Syntax.SyntaxNode GreenRoot { get; }
 
-    private readonly ConditionalWeakTable<Internal.Syntax.SyntaxNode, Diagnostic> diagnostics;
+    private readonly ConditionalWeakTable<Internal.Syntax.SyntaxNode, Diagnostic> syntaxDiagnostics;
 
     internal SyntaxTree(
+        SourceText sourceText,
         Internal.Syntax.SyntaxNode greenRoot,
-        ConditionalWeakTable<Internal.Syntax.SyntaxNode, Diagnostic> diagnostics)
+        ConditionalWeakTable<Internal.Syntax.SyntaxNode, Diagnostic> syntaxDiagnostics)
     {
+        this.SourceText = sourceText;
         this.GreenRoot = greenRoot;
-        this.diagnostics = diagnostics;
+        this.syntaxDiagnostics = syntaxDiagnostics;
     }
 }

@@ -7,8 +7,6 @@ namespace Draco.Compiler.Tests.Semantics;
 
 public sealed class DocumentationCommentsTests : SemanticTestsBase
 {
-    // TODO
-#if false
     [Theory]
     [InlineData("This is doc comment")]
     [InlineData("""
@@ -23,13 +21,13 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            WithDocumentation(FuncDecl(
-            Name("main"),
-            FuncParamList(),
+            WithDocumentation(FunctionDeclaration(
+            "main",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr())), docComment)));
+            BlockFunctionBody()), docComment)));
 
-        var funcDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
+        var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -55,13 +53,13 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            WithDocumentation(VariableDecl(
-            Name("x"),
+            WithDocumentation(VariableDeclaration(
+            "x",
             null,
-            LiteralExpr(0)),
+            LiteralExpression(0)),
             docComment)));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -88,15 +86,16 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = SyntaxTree.Create(CompilationUnit(
-            FuncDecl(Name("main"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-            WithDocumentation(DeclStmt(LabelDecl("myLabel")),
-            docComment))))));
+            BlockFunctionBody(
+            WithDocumentation(
+                DeclarationStatement(LabelDeclaration("myLabel")),
+                docComment)))));
 
-        var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
+        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -108,5 +107,4 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         Assert.Empty(semanticModel.Diagnostics);
         Assert.Equal(string.Empty, labelSym.Documentation, ignoreLineEndingDifferences: true);
     }
-#endif
 }

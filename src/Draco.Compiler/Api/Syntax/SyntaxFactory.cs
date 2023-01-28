@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -13,7 +14,47 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public static partial class SyntaxFactory
 {
+    // REWRITERS ///////////////////////////////////////////////////////////////
+
+    private sealed class AddLeadingTriviaRewriter : SyntaxRewriter
+    {
+        private bool firstToken = true;
+        private readonly Internal.Syntax.SyntaxTrivia[] triviaToAdd;
+
+        public AddLeadingTriviaRewriter(Internal.Syntax.SyntaxTrivia[] triviaToAdd)
+        {
+            this.triviaToAdd = triviaToAdd;
+        }
+
+        public override Internal.Syntax.SyntaxToken VisitSyntaxToken(Internal.Syntax.SyntaxToken node)
+        {
+            if (!this.firstToken) return node;
+            this.firstToken = false;
+            var builder = node.ToBuilder();
+            builder.LeadingTrivia.AddRange(this.triviaToAdd);
+            return builder.Build();
+        }
+    }
+
     // NODES ///////////////////////////////////////////////////////////////////
+
+    private static TNode WithLeadingTrivia<TNode>(TNode node, params Internal.Syntax.SyntaxTrivia[] trivia)
+        where TNode : SyntaxNode
+    {
+        var rewriter = new AddLeadingTriviaRewriter(trivia);
+        var green = node.Green.Accept(rewriter);
+        return (TNode)green.ToRedNode(null!, null);
+    }
+
+    public static TNode WithDocumentation<TNode>(TNode node, string docs)
+        where TNode : SyntaxNode =>
+        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+            .Select(x => Internal.Syntax.SyntaxTrivia.From(TriviaType.DocumentationComment, $"///{x}")).ToArray());
+
+    public static TNode WithComments<TNode>(TNode node, string docs)
+        where TNode : SyntaxNode =>
+        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+            .Select(x => Internal.Syntax.SyntaxTrivia.From(TriviaType.DocumentationComment, $"//{x}")).ToArray());
 
     public static SyntaxToken Name(string text) => MakeToken(TokenType.Identifier, text);
     public static SyntaxToken Integer(int value) => MakeToken(TokenType.LiteralInteger, value.ToString(), value);

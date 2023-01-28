@@ -108,7 +108,18 @@ outputTypeSelector.onchange = () => {
 const dracoEditor = monaco.editor.create(document.getElementById('draco-editor'), {
     value: inputCode,
     language: 'draco',
-    theme: 'dynamic-theme'
+    theme: 'dynamic-theme',
+    scrollbar: {
+        vertical: 'visible'
+    },
+    scrollBeyondLastLine: false,
+    minimap: {
+        enabled: false
+    },
+    renderLineHighlight: "none",
+    overviewRulerBorder: false,
+    hideCursorInOverviewRuler: true,
+    mouseWheelZoom: true
 });
 
 dracoEditor.onDidChangeModelContent(() => {
@@ -122,7 +133,18 @@ dracoEditor.onDidChangeModelContent(() => {
 const outputEditor = monaco.editor.create(document.getElementById('output-viewer'), {
     value: [stdoutBuffer].join('\n'),
     theme: 'dynamic-theme',
-    readOnly: true
+    readOnly: true,
+    scrollbar: {
+        vertical: 'visible'
+    },
+    scrollBeyondLastLine: false,
+    minimap: {
+        enabled: false
+    },
+    renderLineHighlight: "none",
+    overviewRulerBorder: false,
+    hideCursorInOverviewRuler: true,
+    mouseWheelZoom: true
 });
 
 compilerWorker.onmessage = async (ev) => {

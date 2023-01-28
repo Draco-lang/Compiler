@@ -12,8 +12,9 @@ html, body, #app {
     flex-direction: row;
 }
 
-.editors-container div {
+.editors-container > div {
     width: 50%;
+    border: 1px solid gray
 }
 
 .settings {
@@ -21,20 +22,23 @@ html, body, #app {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    margin-top: 5px;
+    margin-bottom: 0px;
+}
+
+#output-type-selector {
+    left: 50%;
+    position: absolute;
+}
+
+.settings select {
+    border-radius: 5px;
+    margin-left: 29px;
+    height: 20px;
 }
 
 @media (prefers-color-scheme: dark) {
-    .settings {
-        background-color: #1e1e1e;
-    }
     body {
         background-color: #1e1e1e;
-    }
-}
-
-
-@media (prefers-color-scheme: light) {
-    .settings {
-        background-color: #fffffe;
     }
 }

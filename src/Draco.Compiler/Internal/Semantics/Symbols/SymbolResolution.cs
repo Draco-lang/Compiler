@@ -431,6 +431,7 @@ internal static class SymbolResolution
     {
         _ when tree.Parent is null => ScopeKind.Global,
         BlockExpressionSyntax => ScopeKind.Local,
+        BlockFunctionBodySyntax => ScopeKind.Local,
         FunctionDeclarationSyntax => ScopeKind.Function,
         // We wrap up loop bodies in a scope, so the labels get defined in a proper, sanitized scope
         _ when IsWhileBody(tree, out _) => ScopeKind.Local,

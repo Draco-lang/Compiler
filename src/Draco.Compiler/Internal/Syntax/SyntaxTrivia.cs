@@ -31,6 +31,8 @@ internal sealed class SyntaxTrivia : SyntaxNode
     /// </summary>
     public string Text { get; }
 
+    public override int Width => this.Text.Length;
+
     public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
 
     public SyntaxTrivia(TriviaType type, string text)

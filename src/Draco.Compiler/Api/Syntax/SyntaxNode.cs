@@ -31,17 +31,18 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The <see cref="Syntax.Range"/> of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
-    public Range Range => new(Start: this.StartPosition, End: this.EndPosition);
+    public Range Range => this.range ??= this.ComputeRange();
+    private Range? range;
 
     /// <summary>
     /// The position of the first character of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
-    public Position StartPosition => throw new NotImplementedException();
+    public Position StartPosition => this.Range.Start;
 
     /// <summary>
     /// The position after the last character of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
-    public Position EndPosition => throw new NotImplementedException();
+    public Position EndPosition => this.Range.End;
 
     /// <summary>
     /// The immediate descendant nodes of this one.
@@ -127,4 +128,6 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
 
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
+
+    private Range ComputeRange() => throw new NotImplementedException();
 }

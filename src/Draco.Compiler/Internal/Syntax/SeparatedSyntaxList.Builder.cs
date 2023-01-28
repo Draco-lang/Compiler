@@ -38,7 +38,7 @@ internal readonly partial struct SeparatedSyntaxList<TNode>
         public void Add(TNode value)
         {
             if (this.separatorsTurn) throw new InvalidOperationException("a separator was expected next");
-            this.Add(value);
+            this.builder.Add(value);
             this.separatorsTurn = true;
         }
 
@@ -49,7 +49,7 @@ internal readonly partial struct SeparatedSyntaxList<TNode>
         public void Add(SyntaxToken separator)
         {
             if (!this.separatorsTurn) throw new InvalidOperationException("a value was expected next");
-            this.Add(separator);
+            this.builder.Add(separator);
             this.separatorsTurn = false;
         }
 

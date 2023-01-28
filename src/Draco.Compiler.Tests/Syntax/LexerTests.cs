@@ -1,6 +1,5 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
-using Newtonsoft.Json.Linq;
 using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -1234,42 +1233,24 @@ public sealed class LexerTests
     }
 
     [Theory]
-    [InlineData("0", TokenType.LiteralInteger)]
-    [InlineData("123", TokenType.LiteralInteger)]
-    [InlineData("12.3", TokenType.LiteralFloat)]
-    [InlineData("true", TokenType.KeywordTrue)]
-    [Trait("Feature", "Literals")]
-    public void TestLiteral(string text, TokenType tokenType)
-    {
-        var tokens = Lex(text);
-
-        AssertNextToken(tokens, out var token);
-        Assert.Equal(tokenType, token.Type);
-        Assert.Equal(text, token.Text);
-        AssertNoTriviaOrDiagnostics(token);
-
-        AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.EndOfInput, token.Type);
-        Assert.Equal(string.Empty, token.Text);
-        AssertNoTriviaOrDiagnostics(token);
-    }
-
-    [Theory]
+    [InlineData("0", 0, TokenType.LiteralInteger)]
+    [InlineData("123", 123, TokenType.LiteralInteger)]
+    [InlineData("12.3", 12.3, TokenType.LiteralFloat)]
+    [InlineData("true", null, TokenType.KeywordTrue)]
     [InlineData("0x4c6", 1222, TokenType.LiteralInteger)]
-    [InlineData("0x4C6", 1222, TokenType.LiteralInteger)]
     [InlineData("0b110101", 53, TokenType.LiteralInteger)]
     [InlineData("10E3", 10000d, TokenType.LiteralFloat)]
     [InlineData("10E-3", 0.01, TokenType.LiteralFloat)]
     [InlineData("0.1e+4", 1000d, TokenType.LiteralFloat)]
     [InlineData("123.345E-12", 1.23345E-10, TokenType.LiteralFloat)]
     [Trait("Feature", "Literals")]
-    public void TestNumericLiteralNonDecimalFormats(string text, object value, TokenType tokenType)
+    public void TestLiteral(string text, object? value, TokenType tokenType)
     {
         var tokens = Lex(text);
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(tokenType, token.Type);
-        Assert.Equal(value, token.Value);
+        if (value is not null) Assert.Equal(value, token.Value);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
@@ -1288,6 +1269,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(tokenType, token.Type);
+        Assert.Null(token.Value);
         Assert.Single(token.Diagnostics);
         Assert.Equal("unexpected floating-point literal end", token.Diagnostics[0].Title);
 

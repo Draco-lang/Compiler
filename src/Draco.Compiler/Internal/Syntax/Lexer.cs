@@ -9,7 +9,6 @@ using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.Lexer;
 using static Draco.Compiler.Internal.Syntax.ParseNode;
 using DiagnosticTemplate = Draco.Compiler.Api.Diagnostics.DiagnosticTemplate;
 
@@ -251,20 +250,20 @@ internal sealed class Lexer
             // Hexadecimal integer
             case 'x':
                 this.Advance(2);
-                var hexValue = this.ParseIntLiteral(16);
+                var hexView = this.ParseIntLiteral(16, 0, out var hexValue);
                 this.tokenBuilder
-                .SetType(TokenType.LiteralInteger)
-                .SetText($"0x{hexValue}")
-                .SetValue(hexValue);
+                    .SetType(TokenType.LiteralInteger)
+                    .SetText($"0x{hexView}")
+                    .SetValue(hexValue);
                 return default;
             // Binary integer
             case 'b':
                 this.Advance(2);
-                var binaryValue = this.ParseIntLiteral(2);
+                var binView = this.ParseIntLiteral(2, 0, out var binValue);
                 this.tokenBuilder
-                .SetType(TokenType.LiteralInteger)
-                .SetText($"0x{binaryValue}")
-                .SetValue(binaryValue);
+                    .SetType(TokenType.LiteralInteger)
+                    .SetText($"0b{binView}")
+                    .SetValue(binValue);
                 return default;
             // Decimal number
             default: break;
@@ -275,20 +274,18 @@ internal sealed class Lexer
             if (char.ToLower(this.Peek(offset)) == 'e')
             {
                 isScientificNotation = true;
-                var notationOffset = 0;
-                if (this.Peek(offset + 1) == '+' || this.Peek(offset + 1) == '-') notationOffset++;
-                if (!char.IsDigit(this.Peek(offset + notationOffset + 1)))
+                if (this.Peek(offset + 1) == '+' || this.Peek(offset + 1) == '-') offset++;
+                if (!char.IsDigit(this.Peek(offset + 1)))
                 {
                     this.AddError(
                         template: SyntaxErrors.UnexpectedFloatingPointLiteralEnd,
-                        offset: offset,
-                        width: notationOffset + 1);
+                        offset: offset + 1,
+                        width: 1);
                     this.tokenBuilder
                         .SetType(TokenType.LiteralFloat)
-                        .SetText(this.Advance(offset + notationOffset + 1).Span.ToString());
+                        .SetText(this.Advance(offset + 1).Span.ToString());
                     return default;
                 }
-                offset += notationOffset;
             }
 
             // Floating point number
@@ -298,21 +295,19 @@ internal sealed class Lexer
                 while (char.IsDigit(this.Peek(offset))) ++offset;
                 if (!isScientificNotation && char.ToLower(this.Peek(offset)) == 'e')
                 {
-                    var notationOffset = 0;
-                    if (this.Peek(offset + 1) == '+' || this.Peek(offset + 1) == '-') notationOffset++;
-                    if (!char.IsDigit(this.Peek(offset + notationOffset + 1)))
+                    if (this.Peek(offset + 1) == '+' || this.Peek(offset + 1) == '-') offset++;
+                    if (!char.IsDigit(this.Peek(offset + 1)))
                     {
-                        // TODO: Add args
                         this.AddError(
                             template: SyntaxErrors.UnexpectedFloatingPointLiteralEnd,
-                            offset: offset,
-                            width: notationOffset + 1);
+                            offset: offset + 1,
+                            width: 1);
                         this.tokenBuilder
-                        .SetType(TokenType.LiteralFloat)
-                        .SetText(this.Advance(offset + notationOffset + 1).Span.ToString());
+                            .SetType(TokenType.LiteralFloat)
+                            .SetText(this.Advance(offset + 1).Span.ToString());
                         return default;
                     }
-                    offset += notationOffset + 1;
+                    offset++;
                     while (char.IsDigit(this.Peek(offset))) ++offset;
                 }
                 var floatView = this.Advance(offset);
@@ -326,11 +321,11 @@ internal sealed class Lexer
             }
 
             // Regular integer
-            var decimalInt = this.ParseIntLiteral(10, offset);
+            var decimalView = this.ParseIntLiteral(10, offset, out var decimalValue);
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
-                .SetText(decimalInt.ToString())
-                .SetValue(decimalInt);
+                .SetText(decimalView)
+                .SetValue(decimalValue);
             return default;
         }
 
@@ -954,9 +949,9 @@ internal sealed class Lexer
         value = 0;
         return false;
     }
-    private int ParseIntLiteral(int intBase, int offset = 0)
+    private string ParseIntLiteral(int intBase, int offset, out int value)
     {
-        if(intBase == 16)
+        if (intBase == 16)
         {
             while (TryParseHexDigit(this.Peek(offset), out var _)) ++offset;
         }
@@ -964,8 +959,9 @@ internal sealed class Lexer
         {
             while (char.IsDigit(this.Peek(offset))) ++offset;
         }
-        var intView = this.Advance(offset);
+        var intView = this.Advance(offset).Span.ToString();
         // TODO: Parsing into an int32 might not be the best idea
-        return Convert.ToInt32(intView.Span.ToString(), intBase);
+        value = Convert.ToInt32(intView, intBase);
+        return intView;
     }
 }

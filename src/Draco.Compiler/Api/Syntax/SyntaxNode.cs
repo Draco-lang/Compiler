@@ -25,7 +25,22 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The <see cref="Diagnostics.Location"/> of this node.
     /// </summary>
-    public Location Location => throw new NotImplementedException();
+    public Location Location => new Location.InFile(this.Tree.SourceText, this.Range);
+
+    /// <summary>
+    /// The <see cref="Syntax.Range"/> of this node within the source file.
+    /// </summary>
+    public Range Range => new(Start: this.StartPosition, End: this.EndPosition);
+
+    /// <summary>
+    /// The position of the first character of this node within the source file.
+    /// </summary>
+    public Position StartPosition => throw new NotImplementedException();
+
+    /// <summary>
+    /// The position after the last character of this node within the source file.
+    /// </summary>
+    public Position EndPosition => throw new NotImplementedException();
 
     /// <summary>
     /// The immediate descendant nodes of this one.

@@ -65,8 +65,16 @@ internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<Syntax
 
     public Api.Syntax.SeparatedSyntaxList<TRedNode> ToRedNode<TRedNode>(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent)
         where TRedNode : Api.Syntax.SyntaxNode => new(tree, parent, this.Nodes);
-    public void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
-    public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
+
+    public void Accept(SyntaxVisitor visitor)
+    {
+        foreach (var n in this) n.Accept(visitor);
+    }
+    public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor)
+    {
+        foreach (var n in this) n.Accept(visitor);
+        return default!;
+    }
 
     public IEnumerator<SyntaxNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();

@@ -51,6 +51,6 @@ public sealed class SyntaxToken : SyntaxNode
         this.Green = green;
     }
 
-    public override void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
-    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxToken(this);
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxToken(this);
 }

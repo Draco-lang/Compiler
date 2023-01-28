@@ -40,8 +40,15 @@ public sealed class SeparatedSyntaxList<TNode> : IEnumerable<SyntaxNode>
     internal Internal.Syntax.SeparatedSyntaxList<TGreenNode> ToGreen<TGreenNode>()
         where TGreenNode : Internal.Syntax.SyntaxNode => new(this.nodes);
 
-    public void Accept(SyntaxVisitor visitor) => throw new NotImplementedException();
-    public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => throw new NotImplementedException();
+    public void Accept(SyntaxVisitor visitor)
+    {
+        foreach (var n in this) n.Accept(visitor);
+    }
+    public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor)
+    {
+        foreach (var n in this) n.Accept(visitor);
+        return default!;
+    }
 
     public IEnumerator<SyntaxNode> GetEnumerator() => Enumerable.Range(0, this.nodes.Length).Select(this.GetNodeAt).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();

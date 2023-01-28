@@ -1,3 +1,6 @@
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Syntax;
 using TokenType = Draco.Compiler.Api.Syntax.TokenType;
 
@@ -5,71 +8,64 @@ namespace Draco.Compiler.Tests.Syntax;
 
 public sealed class ParserTests
 {
-    private static T ParseInto<T>(string text, Func<Parser, T> func)
+    private IEnumerator<SyntaxNode> treeEnumerator = Enumerable.Empty<SyntaxNode>().GetEnumerator();
+    private ConditionalWeakTable<SyntaxNode, IImmutableList<Diagnostic>> diagnostics = new();
+
+    private void ParseInto<T>(string text, Func<Parser, T> func)
+        where T : SyntaxNode
     {
         var srcReader = SourceReader.From(text);
         var lexer = new Lexer(srcReader);
         var tokenSource = TokenSource.From(lexer);
         var parser = new Parser(tokenSource);
-        return func(parser);
+        this.diagnostics = parser.Diagnostics;
+        this.treeEnumerator = func(parser).PreOrderTraverse().GetEnumerator();
     }
 
-    private IEnumerator<SyntaxNode>? treeEnumerator;
+    private void ParseCompilationUnit(string text) =>
+        this.ParseInto(text, p => p.ParseCompilationUnit());
 
-    private void ParseCompilationUnit(string text)
-    {
-        this.treeEnumerator = ParseInto(text, p => p.ParseCompilationUnit())
-            .PreOrderTraverse()
-            .GetEnumerator();
-    }
+    private void ParseDeclaration(string text) =>
+        this.ParseInto(text, p => p.ParseDeclaration());
 
-    private void ParseDeclaration(string text)
-    {
-        this.treeEnumerator = ParseInto(text, p => p.ParseDeclaration())
-            .PreOrderTraverse()
-            .GetEnumerator();
-    }
+    private void ParseExpression(string text) =>
+        this.ParseInto(text, p => p.ParseExpression());
 
-    private void ParseExpression(string text)
-    {
-        this.treeEnumerator = ParseInto(text, p => p.ParseExpr())
-            .PreOrderTraverse()
-            .GetEnumerator();
-    }
-
-    private void ParseStatement(string text)
-    {
-        this.treeEnumerator = ParseInto(text, p => p.ParseStatement(true))
-            .PreOrderTraverse()
-            .GetEnumerator();
-    }
+    private void ParseStatement(string text) =>
+        this.ParseInto(text, p => p.ParseStatement(true));
 
     private void N<T>(Predicate<T> predicate)
+        where T : SyntaxNode
     {
         Assert.NotNull(this.treeEnumerator);
-        Assert.True(this.treeEnumerator!.MoveNext());
+        Assert.True(this.treeEnumerator.MoveNext());
         var node = this.treeEnumerator.Current;
         Assert.IsType<T>(node);
         Assert.True(predicate((T)(object)node));
     }
 
-    private void N<T>() => this.N<T>(_ => true);
+    private void N<T>()
+        where T : SyntaxNode => this.N<T>(_ => true);
 
-    // TODO
-    private void T(TokenType type) => throw new NotImplementedException();
-        // this.N<SyntaxToken>(t => t.Type == type && t.Diagnostics.Length == 0);
+    private void T(TokenType type) => this.N<SyntaxToken>(
+           t => t.Type == type
+        && !this.diagnostics.TryGetValue(t, out _));
 
-    // TODO
-    private void T(TokenType type, string text) => throw new NotImplementedException();
-        // this.N<SyntaxToken>(t => t.Type == type && t.Text == text && t.Diagnostics.Length == 0);
+    private void T(TokenType type, string text) => this.N<SyntaxToken>(
+           t => t.Type == type
+        && t.Text == text
+        && this.diagnostics.TryGetValue(t, out var diags)
+        && diags.Count > 0);
 
-    // TODO
-    private void TValue(TokenType type, string value) => throw new NotImplementedException();
-        // this.N<SyntaxToken>(t => t.Type == type && t.ValueText == value && t.Diagnostics.Length == 0);
+    private void TValue(TokenType type, string value) => this.N<SyntaxToken>(
+           t => t.Type == type
+        && t.ValueText == value
+        && !this.diagnostics.TryGetValue(t, out _));
 
-    // TODO
-    private void MissingT(TokenType type) => throw new NotImplementedException();
-        // this.N<SyntaxToken>(t => t.Type == type && t.Diagnostics.Length > 0);
+    private void MissingT(TokenType type) => this.N<SyntaxToken>(
+           t => t.Type == type
+        && this.diagnostics.TryGetValue(t, out var diags)
+        && diags.Count > 0);
 
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {

@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -192,6 +193,11 @@ internal sealed class Parser
         TokenType.Star,
     };
 
+    /// <summary>
+    /// The <see cref="Diagnostic"/> messages attached to the nodes.
+    /// </summary>
+    internal ConditionalWeakTable<SyntaxNode, IImmutableList<Diagnostic>> Diagnostics { get; } = new();
+
     private readonly ITokenSource tokenSource;
 
     public Parser(ITokenSource tokenSource)
@@ -277,7 +283,7 @@ internal sealed class Parser
         default:
         {
             // TODO: This assumption might not be the best
-            var expr = this.ParseExpr();
+            var expr = this.ParseExpression();
             var semicolon = this.Expect(TokenType.Semicolon);
             return new ExpressionStatementSyntax(expr, semicolon);
         }
@@ -301,7 +307,7 @@ internal sealed class Parser
         ValueSpecifierSyntax? assignment = null;
         if (this.Matches(TokenType.Assign, out var assign))
         {
-            var value = this.ParseExpr();
+            var value = this.ParseExpression();
             assignment = new(assign, value);
         }
         // Eat semicolon at the end of declaration
@@ -367,7 +373,7 @@ internal sealed class Parser
     {
         if (this.Matches(TokenType.Assign, out var assign))
         {
-            var expr = this.ParseExpr();
+            var expr = this.ParseExpression();
             var semicolon = this.Expect(TokenType.Semicolon);
             return new InlineFunctionBodySyntax(assign, expr, semicolon);
         }
@@ -467,7 +473,7 @@ internal sealed class Parser
         if (ctx == ControlFlowContext.Expr)
         {
             // Only expressions, no semicolon needed
-            return this.ParseExpr();
+            return this.ParseExpression();
         }
         else
         {
@@ -540,7 +546,7 @@ internal sealed class Parser
                 if (expressionStarters.Contains(this.Peek()))
                 {
                     // Some expression
-                    var expr = this.ParseExpr();
+                    var expr = this.ParseExpression();
                     if (this.Peek() != TokenType.CurlyClose || !allowValue)
                     {
                         // Likely just a statement, can continue
@@ -590,7 +596,7 @@ internal sealed class Parser
     {
         var ifKeyword = this.Expect(TokenType.KeywordIf);
         var openParen = this.Expect(TokenType.ParenOpen);
-        var condition = this.ParseExpr();
+        var condition = this.ParseExpression();
         var closeParen = this.Expect(TokenType.ParenClose);
         var thenBody = this.ParseControlFlowBody(ctx);
 
@@ -613,7 +619,7 @@ internal sealed class Parser
     {
         var whileKeyword = this.Expect(TokenType.KeywordWhile);
         var openParen = this.Expect(TokenType.ParenOpen);
-        var condition = this.ParseExpr();
+        var condition = this.ParseExpression();
         var closeParen = this.Expect(TokenType.ParenClose);
         var body = this.ParseControlFlowBody(ctx);
         return new(whileKeyword, openParen, condition, closeParen, body);
@@ -623,7 +629,7 @@ internal sealed class Parser
     /// Parses an expression.
     /// </summary>
     /// <returns>The parsed <see cref="ExpressionSyntax"/>.</returns>
-    internal ExpressionSyntax ParseExpr()
+    internal ExpressionSyntax ParseExpression()
     {
         // The function that is driven by the precedence table
         ExpressionSyntax ParsePrecedenceLevel(int level)
@@ -692,7 +698,7 @@ internal sealed class Parser
         {
             var returnKeyword = this.Advance();
             ExpressionSyntax? value = null;
-            if (expressionStarters.Contains(this.Peek())) value = this.ParseExpr();
+            if (expressionStarters.Contains(this.Peek())) value = this.ParseExpression();
             return new ReturnExpressionSyntax(returnKeyword, value);
         }
 
@@ -735,7 +741,7 @@ internal sealed class Parser
             {
                 var openParen = this.Expect(TokenType.ParenOpen);
                 var args = this.ParsePunctuatedListAllowTrailing(
-                    elementParser: this.ParseExpr,
+                    elementParser: this.ParseExpression,
                     punctType: TokenType.Comma,
                     stopType: TokenType.ParenClose);
                 var closeParen = this.Expect(TokenType.ParenClose);
@@ -745,7 +751,7 @@ internal sealed class Parser
             {
                 var openParen = this.Expect(TokenType.ParenOpen);
                 var args = this.ParsePunctuatedListAllowTrailing(
-                    elementParser: this.ParseExpr,
+                    elementParser: this.ParseExpression,
                     punctType: TokenType.Comma,
                     stopType: TokenType.BracketClose);
                 var closeParen = this.Expect(TokenType.ParenClose);
@@ -793,7 +799,7 @@ internal sealed class Parser
         case TokenType.ParenOpen:
         {
             var openParen = this.Expect(TokenType.ParenOpen);
-            var expr = this.ParseExpr();
+            var expr = this.ParseExpression();
             var closeParen = this.Expect(TokenType.ParenClose);
             return new GroupingExpressionSyntax(openParen, expr, closeParen);
         }
@@ -839,7 +845,7 @@ internal sealed class Parser
             else if (peek == TokenType.InterpolationStart)
             {
                 var start = this.Advance();
-                var expr = this.ParseExpr();
+                var expr = this.ParseExpression();
                 var end = this.Expect(TokenType.InterpolationEnd);
                 content.Add(new InterpolationStringPartSyntax(start, expr, end));
             }
@@ -890,7 +896,7 @@ internal sealed class Parser
             else if (peek == TokenType.InterpolationStart)
             {
                 var start = this.Advance();
-                var expr = this.ParseExpr();
+                var expr = this.ParseExpression();
                 var end = this.Expect(TokenType.InterpolationEnd);
                 content.Add(new InterpolationStringPartSyntax(start, expr, end));
             }

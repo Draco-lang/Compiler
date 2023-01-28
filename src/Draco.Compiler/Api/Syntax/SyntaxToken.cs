@@ -41,7 +41,7 @@ public sealed class SyntaxToken : SyntaxNode
     /// </summary>
     public SyntaxList<SyntaxTrivia> TrailingTrivia => this.Green.TrailingTrivia.ToRedNode<SyntaxTrivia>(this.Tree, this.Parent);
 
-    public override IEnumerable<SyntaxNode> Children => this.LeadingTrivia.Concat(this.TrailingTrivia);
+    public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxToken>();
 
     internal override Internal.Syntax.SyntaxToken Green { get; }
 

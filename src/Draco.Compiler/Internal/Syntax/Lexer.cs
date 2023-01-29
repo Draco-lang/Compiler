@@ -245,28 +245,17 @@ internal sealed class Lexer
         if (char.IsDigit(ch))
         {
             // Check for what kind of integer do we have
-            switch (this.Peek(1))
+            var c = this.Peek(1);
+            // Hexadecimal or binary integer
+            if (c == 'x' || c == 'b')
             {
-            // Hexadecimal integer
-            case 'x':
                 this.Advance(2);
-                var hexView = this.ParseIntLiteral(16, 0, out var hexValue);
+                var binView = this.ParseIntLiteral(c == 'x' ? 16 : 2, out var binValue);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralInteger)
-                    .SetText($"0x{hexView}")
-                    .SetValue(hexValue);
-                return default;
-            // Binary integer
-            case 'b':
-                this.Advance(2);
-                var binView = this.ParseIntLiteral(2, 0, out var binValue);
-                this.tokenBuilder
-                    .SetType(TokenType.LiteralInteger)
-                    .SetText($"0b{binView}")
+                    .SetText($"0{c}{binView}")
                     .SetValue(binValue);
                 return default;
-            // Decimal number
-            default: break;
             }
             var offset = 1;
             var isScientificNotation = false;
@@ -321,7 +310,7 @@ internal sealed class Lexer
             }
 
             // Regular integer
-            var decimalView = this.ParseIntLiteral(10, offset, out var decimalValue);
+            var decimalView = this.ParseIntLiteral(10, out var decimalValue);
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
                 .SetText(decimalView)
@@ -949,19 +938,16 @@ internal sealed class Lexer
         value = 0;
         return false;
     }
-    private string ParseIntLiteral(int intBase, int offset, out int value)
+
+    private string ParseIntLiteral(int radix, out int value)
     {
-        if (intBase == 16)
+        var offset = 0;
+        value = 0;
+        while (TryParseHexDigit(this.Peek(offset), out var digit))
         {
-            while (TryParseHexDigit(this.Peek(offset), out var _)) ++offset;
+            value = value * radix + digit;
+            offset++;
         }
-        else
-        {
-            while (char.IsDigit(this.Peek(offset))) ++offset;
-        }
-        var intView = this.Advance(offset).Span.ToString();
-        // TODO: Parsing into an int32 might not be the best idea
-        value = Convert.ToInt32(intView, intBase);
-        return intView;
+        return this.Advance(offset).Span.ToString();
     }
 }

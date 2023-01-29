@@ -1,5 +1,6 @@
 using System;
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
@@ -44,13 +45,19 @@ internal class Program
         };
         generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption, msbuildDiagOption);
 
+        var formatCodeCommand = new Command("format", "Formats contents of specified draco file and writes formated code to stdio")
+        {
+            fileArgument,
+        };
+        formatCodeCommand.SetHandler(FormatCode, fileArgument);
+
         var rootCommand = new RootCommand("CLI for the Draco compiler");
         rootCommand.AddCommand(runCommand);
         rootCommand.AddCommand(generateIRCommand);
         rootCommand.AddCommand(generateExeCommand);
+        rootCommand.AddCommand(formatCodeCommand);
         return rootCommand;
     }
-
     private static void Run(FileInfo input)
     {
         var sourceText = SourceText.FromFile(input.FullName);
@@ -107,5 +114,12 @@ internal class Program
             file = $"{original.Location.SourceText.Path.OriginalString}({range.Start.Line + 1},{range.Start.Column + 1},{range.End.Line + 1},{range.End.Column + 1})";
         }
         return $"{file} : {original.Severity.ToString().ToLower()} {original.Template.Code} : {original.Message}";
+    }
+
+    private static void FormatCode(FileInfo input)
+    {
+        var sourceText = SourceText.FromFile(input.FullName);
+        var parseTree = ParseTree.Parse(sourceText);
+        Console.WriteLine(parseTree.Format().ToString());
     }
 }

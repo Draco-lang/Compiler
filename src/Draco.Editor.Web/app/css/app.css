@@ -10,7 +10,6 @@ html, body, #app {
     flex: 1 1 auto;
     display: flex;
     flex-direction: row;
-    margin-top: 5px;
 }
 
 .editors-container > div {
@@ -27,8 +26,6 @@ html, body, #app {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    margin-top: 5px;
-    margin-bottom: 0px;
 }
 
 #output-type-selector {
@@ -38,8 +35,8 @@ html, body, #app {
 
 .settings select {
     border-radius: 5px;
-    margin-left: 29px;
     height: 24px;
+    margin: 5px 0px 5px 29px;
 }
 
 @media (prefers-color-scheme: dark) {

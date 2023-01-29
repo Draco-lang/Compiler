@@ -7,20 +7,6 @@ using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax;
 
-/// <summary>
-/// Utilities for <see cref="SeparatedSyntaxList{TNode}"/>.
-/// </summary>
-internal static class SeparatedSyntaxList
-{
-    /// <summary>
-    /// Creates a builder for a <see cref="SeparatedSyntaxList{TNode}"/>.
-    /// </summary>
-    /// <typeparam name="TNode">The node type.</typeparam>
-    /// <returns>The created builder.</returns>
-    public static SeparatedSyntaxList<TNode>.Builder CreateBuilder<TNode>()
-        where TNode : SyntaxNode => new();
-}
-
 internal readonly partial struct SeparatedSyntaxList<TNode>
 {
     /// <summary>

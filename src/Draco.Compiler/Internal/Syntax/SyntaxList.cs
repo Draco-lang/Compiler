@@ -10,6 +10,29 @@ using System.Threading.Tasks;
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
+/// Utilities for <see cref="SyntaxList{TNode}"/>.
+/// </summary>
+internal static class SyntaxList
+{
+    /// <summary>
+    /// Creates a builder for a <see cref="SyntaxList{TNode}"/>.
+    /// </summary>
+    /// <typeparam name="TNode">The node type.</typeparam>
+    /// <returns>The created builder.</returns>
+    public static SyntaxList<TNode>.Builder CreateBuilder<TNode>()
+        where TNode : SyntaxNode => new();
+
+    /// <summary>
+    /// Creates a <see cref="SyntaxList{TNode}"/> from the given elements.
+    /// </summary>
+    /// <typeparam name="TNode">The node element type.</typeparam>
+    /// <param name="nodes">The elements to create the list from.</param>
+    /// <returns>A new syntax list, containing <paramref name="nodes"/>.</returns>
+    public static SyntaxList<TNode> Create<TNode>(params TNode[] nodes)
+        where TNode : SyntaxNode => new(nodes.Cast<SyntaxNode>().ToImmutableArray());
+}
+
+/// <summary>
 /// A generic list of <see cref="SyntaxNode"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds.</typeparam>

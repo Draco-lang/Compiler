@@ -250,11 +250,11 @@ internal sealed class Lexer
             if (c == 'x' || c == 'b')
             {
                 this.Advance(2);
-                var binView = this.ParseIntLiteral(c == 'x' ? 16 : 2, out var binValue);
+                var view = this.ParseIntLiteral(c == 'x' ? 16 : 2, out var value);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralInteger)
-                    .SetText($"0{c}{binView}")
-                    .SetValue(binValue);
+                    .SetText($"0{c}{view}")
+                    .SetValue(value);
                 return default;
             }
             var offset = 1;

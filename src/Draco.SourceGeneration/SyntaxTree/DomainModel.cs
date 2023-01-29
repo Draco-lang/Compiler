@@ -120,17 +120,6 @@ public sealed class Field
     public string NonNullableType => this.IsNullable
         ? this.Type.Substring(0, this.Type.Length - 1)
         : this.Type;
-    public bool IsSyntaxList => this.Type.Contains("SyntaxList");
-    public string ElementType
-    {
-        get
-        {
-            var start = this.Type.IndexOf('<');
-            var end = this.Type.IndexOf('>');
-            if (start < 0 || end < 0 || end < start) throw new InvalidOperationException();
-            return this.Type.Substring(start + 1, end - start - 1);
-        }
-    }
 
     public Field(string name, string type, bool @override, string? documentation)
     {

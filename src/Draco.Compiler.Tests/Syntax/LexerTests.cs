@@ -66,13 +66,13 @@ public sealed class LexerTests
 
     private void AssertLeadingTrivia(params (TriviaType Type, string Text)[] trivia)
     {
-        Assert.Equal(trivia.Length, this.Current.LeadingTrivia.Length);
+        Assert.Equal(trivia.Length, this.Current.LeadingTrivia.Count);
         Assert.True(this.Current.LeadingTrivia.Select(t => (t.Type, t.Text)).SequenceEqual(trivia));
     }
 
     private void AssertTrailingTrivia(params (TriviaType Type, string Text)[] trivia)
     {
-        Assert.Equal(trivia.Length, this.Current.TrailingTrivia.Length);
+        Assert.Equal(trivia.Length, this.Current.TrailingTrivia.Count);
         Assert.True(this.Current.TrailingTrivia.Select(t => (t.Type, t.Text)).SequenceEqual(trivia));
     }
 

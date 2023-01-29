@@ -60,7 +60,10 @@ public static partial class SyntaxFactory
     public static SyntaxToken Integer(int value) => MakeToken(TokenType.LiteralInteger, value.ToString(), value);
 
     public static SyntaxList<TNode> SyntaxList<TNode>(IEnumerable<TNode> elements)
-        where TNode : SyntaxNode => new(tree: null!, parent: null, elements.Select(n => n.Green).ToImmutableArray());
+        where TNode : SyntaxNode => new(
+            tree: null!,
+            parent: null,
+            green: Syntax.SyntaxList<TNode>.MakeGreen(elements.Select(n => n.Green)));
     public static SyntaxList<TNode> SyntaxList<TNode>(params TNode[] elements)
         where TNode : SyntaxNode => SyntaxList(elements.AsEnumerable());
 
@@ -68,7 +71,7 @@ public static partial class SyntaxFactory
         where TNode : SyntaxNode => new(
             tree: null!,
             parent: null,
-            elements.SelectMany(n => new[] { n.Green, separator.Green }).ToImmutableArray());
+            green: Syntax.SeparatedSyntaxList<TNode>.MakeGreen(elements.SelectMany(n => new[] { n.Green, separator.Green })));
     public static SeparatedSyntaxList<TNode> SeparatedSyntaxList<TNode>(SyntaxToken separator, params TNode[] elements)
         where TNode : SyntaxNode => SeparatedSyntaxList(separator, elements.AsEnumerable());
 

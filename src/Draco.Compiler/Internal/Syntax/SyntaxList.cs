@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,73 +30,55 @@ internal static class SyntaxList
     /// <param name="nodes">The elements to create the list from.</param>
     /// <returns>A new syntax list, containing <paramref name="nodes"/>.</returns>
     public static SyntaxList<TNode> Create<TNode>(params TNode[] nodes)
-        where TNode : SyntaxNode => new(nodes.Cast<SyntaxNode>().ToImmutableArray());
+        where TNode : SyntaxNode => new(nodes.ToImmutableArray());
 }
 
 /// <summary>
 /// A generic list of <see cref="SyntaxNode"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds.</typeparam>
-internal readonly partial struct SyntaxList<TNode> : IEnumerable<TNode>
+internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
     where TNode : SyntaxNode
 {
-    /// <summary>
-    /// An empty <see cref="SyntaxList{TNode}"/>.
-    /// </summary>
-    public static readonly SyntaxList<TNode> Empty = new(ImmutableArray<SyntaxNode>.Empty);
+    public static SyntaxList<TNode> Empty { get; } = new(ImmutableArray<TNode>.Empty);
 
-    /// <summary>
-    /// The number of nodes in this list.
-    /// </summary>
-    public int Length => this.Nodes.Length;
+    private static Type RedElementType { get; } = Assembly
+        .GetExecutingAssembly()
+        .GetType($"Draco.Compiler.Api.Syntax.{typeof(TNode).Name}")!;
+    private static Type RedNodeType { get; } = typeof(Api.Syntax.SyntaxList<>).MakeGenericType(RedElementType);
+    private static ConstructorInfo RedNodeConstructor { get; } = RedNodeType.GetConstructor(
+        BindingFlags.NonPublic | BindingFlags.Instance,
+        new[]
+        {
+            typeof(Api.Syntax.SyntaxTree),
+            typeof(Api.Syntax.SyntaxNode),
+            typeof(IReadOnlyList<SyntaxNode>),
+        })!;
 
-    /// <summary>
-    /// The width of this list in characters.
-    /// </summary>
-    public int Width => this.Nodes.Sum(n => n.Width);
+    public int Count => this.nodes.Length;
+    public override IEnumerable<SyntaxNode> Children => this.nodes;
 
-    /// <summary>
-    /// Retrieves the node at <paramref name="index"/>.
-    /// </summary>
-    /// <param name="index">The 0-based index to retrieve the node from.</param>
-    /// <returns>The <typeparamref name="TNode"/> at index <paramref name="index"/>.</returns>
-    public TNode this[int index] => (TNode)this.Nodes[index];
+    public TNode this[int index] => this.nodes[index];
 
-    /// <summary>
-    /// The raw <see cref="SyntaxNode"/>s in this list.
-    /// </summary>
-    public readonly ImmutableArray<SyntaxNode> Nodes;
+    private readonly ImmutableArray<TNode> nodes;
 
-    internal SyntaxList(ImmutableArray<SyntaxNode> nodes)
+    public SyntaxList(ImmutableArray<TNode> nodes)
     {
-        Debug.Assert(nodes.All(x => x is TNode));
-        this.Nodes = nodes;
+        this.nodes = nodes;
     }
 
-    /// <summary>
-    /// Converts this <see cref="SyntaxList{TNode}"/> into a builder.
-    /// </summary>
-    /// <returns>The builder.</returns>
-    public Builder ToBuilder() => new(this.Nodes);
-
-    public Api.Syntax.SyntaxList<TRedNode> ToRedNode<TRedNode>(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent)
-        where TRedNode : Api.Syntax.SyntaxNode => new(tree, parent, this.Nodes);
-
-    public void Accept(SyntaxVisitor visitor)
+    public SyntaxList(IEnumerable<SyntaxNode> nodes)
+        : this(nodes.Cast<TNode>().ToImmutableArray())
     {
-        foreach (var n in this) n.Accept(visitor);
     }
-    public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor)
-    {
-        foreach (var n in this) n.Accept(visitor);
-        return default!;
-    }
-    public SyntaxList<TNode> Accept(SyntaxRewriter rewriter) =>
-        new(this.Nodes.Select(n => n.Accept(rewriter)).ToImmutableArray());
 
-    public IEnumerator<TNode> GetEnumerator()
-    {
-        for (var i = 0; i < this.Length; ++i) yield return this[i];
-    }
+    public Builder ToBuilder() => new(this.nodes.ToBuilder());
+
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxList(this);
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxList(this);
+    public override Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent) =>
+        (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke(new object?[] { tree, parent, this })!;
+
+    public IEnumerator<TNode> GetEnumerator() => this.nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

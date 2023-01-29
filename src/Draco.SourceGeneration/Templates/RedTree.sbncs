@@ -5,6 +5,10 @@ namespace Draco.Compiler.Api.Syntax;
 {{include 'Utils.sbncs'}}
 {{include 'Tree.sbncs'}}
 
+{{func to_internal_type(t)}}
+    Internal.Syntax.{{string.replace(t, '<', '<Internal.Syntax.')}}
+{{end}}
+
 #nullable enable
 {{for $node in Nodes}}
     /// <summary>
@@ -15,11 +19,7 @@ namespace Draco.Compiler.Api.Syntax;
         {{for $field in $node.Fields}}
             {{$backingField = camel_case($field.Name)}}
             {{field_prefix($field)}} =>
-                this.{{$backingField}} ??= this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode
-                {{if $field.IsSyntaxList}}
-                    <{{$field.ElementType}}>
-                {{end}}
-                (this.Tree, this);
+                this.{{$backingField}} ??= ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this);
             private {{$field.NonNullableType}}? {{$backingField}};
         {{end}}
 
@@ -78,12 +78,7 @@ namespace Draco.Compiler.Api.Syntax;
                 {{end}}
             ) => new Internal.Syntax.{{$node.Name}}(
                 {{wrap separated(', ', $node.Fields)}}
-                    {{camel_case($element.Name)}}{{nullable($element)}}.
-                        {{if $element.IsSyntaxList}}
-                            ToGreen<Internal.Syntax.{{$element.ElementType}}>()
-                        {{else}}
-                            Green
-                        {{end}}
+                    ({{to_internal_type($element.Type)}}){{camel_case($element.Name)}}{{nullable($element)}}.Green
                 {{end}}
             ).ToRedNode(null!, null);
         }

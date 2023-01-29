@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax;
 
-internal readonly partial struct SeparatedSyntaxList<TNode>
+internal sealed partial class SeparatedSyntaxList<TNode>
 {
     /// <summary>
     /// The builder type for a <see cref="SeparatedSyntaxList{TNode}"/>.
@@ -18,14 +18,20 @@ internal readonly partial struct SeparatedSyntaxList<TNode>
         private bool separatorsTurn;
 
         public Builder()
+            : this(ImmutableArray.CreateBuilder<SyntaxNode>())
         {
-            this.builder = ImmutableArray.CreateBuilder<SyntaxNode>();
         }
 
-        public Builder(ImmutableArray<SyntaxNode> initial)
+        public Builder(ImmutableArray<SyntaxNode>.Builder underlying)
         {
-            this.builder = initial.ToBuilder();
+            this.builder = underlying;
         }
+
+        /// <summary>
+        /// Constructs a <see cref="SeparatedSyntaxList{TNode}"/> from the builder.
+        /// </summary>
+        /// <returns>The constructed <see cref="SeparatedSyntaxList{TNode}"/>.</returns>
+        public SeparatedSyntaxList<TNode> ToSeparatedSyntaxList() => new(this.builder.ToImmutable());
 
         /// <summary>
         /// Adds a value node to the builder.
@@ -48,11 +54,5 @@ internal readonly partial struct SeparatedSyntaxList<TNode>
             this.builder.Add(separator);
             this.separatorsTurn = false;
         }
-
-        /// <summary>
-        /// Constructs a <see cref="SeparatedSyntaxList{TNode}"/> from the builder.
-        /// </summary>
-        /// <returns>The constructed <see cref="SeparatedSyntaxList{TNode}"/>.</returns>
-        public SeparatedSyntaxList<TNode> ToSeparatedSyntaxList() => new(this.builder.ToImmutable());
     }
 }

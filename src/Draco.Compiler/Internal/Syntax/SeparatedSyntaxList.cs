@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,28 +28,21 @@ internal static class SeparatedSyntaxList
 /// A generic list of <see cref="SyntaxNode"/>s separated by <see cref="SyntaxToken"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds between the separators.</typeparam>
-internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<SyntaxNode>
+internal sealed partial class SeparatedSyntaxList<TNode> : SyntaxNode, IReadOnlyList<SyntaxNode>
     where TNode : SyntaxNode
 {
-    /// <summary>
-    /// An empty <see cref="SeparatedSyntaxList{TNode}"/>.
-    /// </summary>
-    public static readonly SeparatedSyntaxList<TNode> Empty = new(ImmutableArray<SyntaxNode>.Empty);
-
-    /// <summary>
-    /// The number of nodes in this list.
-    /// </summary>
-    public int Length => this.Nodes.Length;
-
-    /// <summary>
-    /// The width of this list in characters.
-    /// </summary>
-    public int Width => this.Nodes.Sum(n => n.Width);
-
-    /// <summary>
-    /// The raw <see cref="SyntaxNode"/>s in this list, including the separators.
-    /// </summary>
-    public readonly ImmutableArray<SyntaxNode> Nodes;
+    private static Type RedElementType { get; } = Assembly
+        .GetExecutingAssembly()
+        .GetType($"Draco.Compiler.Api.Syntax.{typeof(TNode).Name}")!;
+    private static Type RedNodeType { get; } = typeof(Api.Syntax.SeparatedSyntaxList<>).MakeGenericType(RedElementType);
+    private static ConstructorInfo RedNodeConstructor { get; } = RedNodeType.GetConstructor(
+        BindingFlags.NonPublic | BindingFlags.Instance,
+        new[]
+        {
+            typeof(Api.Syntax.SyntaxTree),
+            typeof(Api.Syntax.SyntaxNode),
+            typeof(IReadOnlyList<SyntaxNode>),
+        })!;
 
     /// <summary>
     /// The separated values in this list.
@@ -57,7 +51,7 @@ internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<Syntax
     {
         get
         {
-            for (var i = 0; i < this.Nodes.Length; i += 2) yield return (TNode)this.Nodes[i];
+            for (var i = 0; i < this.nodes.Length; i += 2) yield return (TNode)this.nodes[i];
         }
     }
 
@@ -68,36 +62,34 @@ internal readonly partial struct SeparatedSyntaxList<TNode> : IEnumerable<Syntax
     {
         get
         {
-            for (var i = 1; i < this.Nodes.Length; i += 2) yield return (SyntaxToken)this.Nodes[i];
+            for (var i = 1; i < this.nodes.Length; i += 2) yield return (SyntaxToken)this.nodes[i];
         }
     }
 
-    internal SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodes)
+    int IReadOnlyCollection<SyntaxNode>.Count => this.nodes.Length;
+    SyntaxNode IReadOnlyList<SyntaxNode>.this[int index] => this.nodes[index];
+
+    public override IEnumerable<SyntaxNode> Children => this.nodes;
+
+    private readonly ImmutableArray<SyntaxNode> nodes;
+
+    public SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodes)
     {
-        this.Nodes = nodes;
+        this.nodes = nodes;
     }
 
-    /// <summary>
-    /// Converts this <see cref="SeparatedSyntaxList{TNode}"/> into a builder.
-    /// </summary>
-    /// <returns>The builder.</returns>
-    public Builder ToBuilder() => new(this.Nodes);
-
-    public Api.Syntax.SeparatedSyntaxList<TRedNode> ToRedNode<TRedNode>(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent)
-        where TRedNode : Api.Syntax.SyntaxNode => new(tree, parent, this.Nodes);
-
-    public void Accept(SyntaxVisitor visitor)
+    public SeparatedSyntaxList(IEnumerable<SyntaxNode> nodes)
+        : this(nodes.ToImmutableArray())
     {
-        foreach (var n in this) n.Accept(visitor);
     }
-    public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor)
-    {
-        foreach (var n in this) n.Accept(visitor);
-        return default!;
-    }
-    public SeparatedSyntaxList<TNode> Accept(SyntaxRewriter rewriter) =>
-        new(this.Nodes.Select(n => n.Accept(rewriter)).ToImmutableArray());
 
-    public IEnumerator<SyntaxNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
+    public Builder ToBuilder() => new(this.nodes.ToBuilder());
+
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitSeparatedSyntaxList(this);
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSeparatedSyntaxList(this);
+    public override Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent) =>
+        (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke(new object?[] { tree, parent, this })!;
+
+    public IEnumerator<SyntaxNode> GetEnumerator() => this.nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,59 +13,52 @@ namespace Draco.Compiler.Api.Syntax;
 /// A generic list of <see cref="SyntaxNode"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds.</typeparam>
-public sealed class SyntaxList<TNode> : IEnumerable<TNode>
+public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
     where TNode : SyntaxNode
 {
-    /// <summary>
-    /// The number of nodes in this list.
-    /// </summary>
-    public int Length => this.nodes.Length;
+    private static Type GreenElementType { get; } = Assembly
+        .GetExecutingAssembly()
+        .GetType($"Draco.Compiler.Internal.Syntax.{typeof(TNode).Name}")!;
+    private static Type GreenNodeType { get; } = typeof(Internal.Syntax.SyntaxList<>).MakeGenericType(GreenElementType);
+    private static ConstructorInfo GreenNodeConstructor { get; } = GreenNodeType.GetConstructor(new[]
+    {
+        typeof(IEnumerable<>).MakeGenericType(GreenElementType),
+    })!;
 
-    /// <summary>
-    /// Retrieves the node at <paramref name="index"/>.
-    /// </summary>
-    /// <param name="index">The 0-based index to retrieve the node from.</param>
-    /// <returns>The <typeparamref name="TNode"/> at index <paramref name="index"/>.</returns>
+    internal static IReadOnlyList<Internal.Syntax.SyntaxNode> MakeGreen(IEnumerable<Internal.Syntax.SyntaxNode> nodes) =>
+        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke(new[] { nodes })!;
+
+    public int Count => this.GreenList.Count;
+    public override IEnumerable<SyntaxNode> Children => this;
+    internal override Internal.Syntax.SyntaxNode Green { get; }
+    internal IReadOnlyList<Internal.Syntax.SyntaxNode> GreenList => (IReadOnlyList<Internal.Syntax.SyntaxNode>)this.Green;
+
     public TNode this[int index]
     {
         get
         {
-            this.mappedNodes ??= new SyntaxNode?[this.nodes.Length];
+            this.mappedNodes ??= new SyntaxNode?[this.GreenList.Count];
             var existing = this.mappedNodes[index];
             if (existing is null)
             {
-                existing = this.nodes[index].ToRedNode(this.tree, this.parent);
+                existing = this.GreenList[index].ToRedNode(this.Tree, this.Parent);
                 this.mappedNodes[index] = existing;
             }
             return (TNode)existing;
         }
     }
 
-    private readonly SyntaxTree tree;
-    private readonly SyntaxNode? parent;
-    private readonly ImmutableArray<Internal.Syntax.SyntaxNode> nodes;
     private SyntaxNode?[]? mappedNodes = null;
 
-    internal SyntaxList(SyntaxTree tree, SyntaxNode? parent, ImmutableArray<Internal.Syntax.SyntaxNode> nodes)
+    internal SyntaxList(SyntaxTree tree, SyntaxNode? parent, IReadOnlyList<Internal.Syntax.SyntaxNode> green)
+        : base(tree, parent)
     {
-        this.tree = tree;
-        this.parent = parent;
-        this.nodes = nodes;
+        if (green is not Internal.Syntax.SyntaxNode greenNode) throw new ArgumentException("green must be a SyntaxNode", nameof(green));
+        this.Green = greenNode;
     }
 
-    internal Internal.Syntax.SyntaxList<TGreenNode> ToGreen<TGreenNode>()
-        where TGreenNode : Internal.Syntax.SyntaxNode => new(this.nodes);
-
-    public void Accept(SyntaxVisitor visitor)
-    {
-        foreach (var n in this) n.Accept(visitor);
-    }
-    public TResult Accept<TResult>(SyntaxVisitor<TResult> visitor)
-    {
-        foreach (var n in this) n.Accept(visitor);
-        return default!;
-    }
-
-    public IEnumerator<TNode> GetEnumerator() => Enumerable.Range(0, this.Length).Select(i => this[i]).GetEnumerator();
+    public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxList(this);
+    public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxList(this);
+    public IEnumerator<TNode> GetEnumerator() => Enumerable.Range(0, this.Count).Select(i => this[i]).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

@@ -53,11 +53,7 @@
                     {{if $field.IsNullable}}
                         if (this.{{$field.Name}} is not null)
                     {{end}}
-                    {{if $field.IsSyntaxList}}
-                        foreach (var child in this.{{$field.Name}}) yield return child;
-                    {{else}}
-                        yield return this.{{$field.Name}};
-                    {{end}}
+                    yield return this.{{$field.Name}};
                 {{end}}
                 yield break;
             }

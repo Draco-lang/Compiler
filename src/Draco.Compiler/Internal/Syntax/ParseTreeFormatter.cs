@@ -253,14 +253,14 @@ internal sealed class ParseTreeFormatter : SyntaxRewriter
 
     private static bool CheckTriviaEqual(SyntaxToken tok1, SyntaxToken tok2)
     {
-        if (tok1.TrailingTrivia.Length != tok2.TrailingTrivia.Length) return false;
-        if (tok1.LeadingTrivia.Length != tok2.LeadingTrivia.Length) return false;
+        if (tok1.TrailingTrivia.Count != tok2.TrailingTrivia.Count) return false;
+        if (tok1.LeadingTrivia.Count != tok2.LeadingTrivia.Count) return false;
 
-        for (var i = 0; i < tok1.TrailingTrivia.Length; i++)
+        for (var i = 0; i < tok1.TrailingTrivia.Count; i++)
         {
             if (tok1.TrailingTrivia[i].Text != tok2.TrailingTrivia[i].Text) return false;
         }
-        for (var i = 0; i < tok1.LeadingTrivia.Length; i++)
+        for (var i = 0; i < tok1.LeadingTrivia.Count; i++)
         {
             if (tok1.LeadingTrivia[i].Text != tok2.LeadingTrivia[i].Text) return false;
         }

@@ -8,60 +8,47 @@ using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax;
 
-internal readonly partial struct SyntaxList<TNode>
+internal sealed partial class SyntaxList<TNode>
 {
     /// <summary>
     /// The builder type for a <see cref="SyntaxList{TNode}"/>.
     /// </summary>
-    public sealed class Builder : IEnumerable<TNode>
+    public sealed class Builder : IList<TNode>
     {
-        /// <summary>
-        /// The number of nodes added to the builder.
-        /// </summary>
+        public bool IsReadOnly => false;
         public int Count => this.builder.Count;
 
-        private readonly ImmutableArray<SyntaxNode>.Builder builder;
+        TNode IList<TNode>.this[int index]
+        {
+            get => this.builder[index];
+            set => this.builder[index] = value;
+        }
+
+        private readonly ImmutableArray<TNode>.Builder builder;
 
         public Builder()
+            : this(ImmutableArray.CreateBuilder<TNode>())
         {
-            this.builder = ImmutableArray.CreateBuilder<SyntaxNode>();
         }
 
-        public Builder(ImmutableArray<SyntaxNode> initial)
+        public Builder(ImmutableArray<TNode>.Builder underlying)
         {
-            this.builder = initial.ToBuilder();
+            this.builder = underlying;
         }
 
-        /// <summary>
-        /// Constructs a <see cref="SyntaxList{TNode}"/> from the builder.
-        /// </summary>
-        /// <returns>The constructed <see cref="SyntaxList{TNode}"/>.</returns>
-        public SyntaxList<TNode> ToSyntaxList() => this.Count == 0 ? Empty : new(this.builder.ToImmutable());
-
-        /// <summary>
-        /// Adds a <typeparamref name="TNode"/> to this builder.
-        /// </summary>
-        /// <param name="node">The node to add.</param>
-        public void Add(TNode node) => this.builder.Add(node);
-
-        /// <summary>
-        /// Adds a sequence of <typeparamref name="TNode"/>s to this builder.
-        /// </summary>
-        /// <param name="nodes">The nodes to add.</param>
-        public void AddRange(IEnumerable<TNode> nodes) => this.builder.AddRange(nodes);
-
-        /// <summary>
-        /// Adds a sequence of <typeparamref name="TNode"/>s to this builder.
-        /// </summary>
-        /// <param name="nodes">The nodes to add.</param>
-        public void AddRange(SyntaxList<TNode> nodes) => this.builder.AddRange(nodes.Nodes);
-
-        /// <summary>
-        /// Clears the elements from this builder.
-        /// </summary>
+        public SyntaxList<TNode> ToSyntaxList() => new(this.builder.ToImmutable());
         public void Clear() => this.builder.Clear();
-
-        public IEnumerator<TNode> GetEnumerator() => this.builder.Cast<TNode>().GetEnumerator();
+        public void Add(TNode item) => this.builder.Add(item);
+        public void AddRange(IEnumerable<TNode> items) => this.builder.AddRange(items);
+        public void Insert(int index, TNode item) => this.builder.Insert(index, item);
+        public void InsertRange(int index, IEnumerable<TNode> items) => this.builder.InsertRange(index, items);
+        public bool Remove(TNode item) => this.builder.Remove(item);
+        public void RemoveAt(int index) => this.builder.RemoveAt(index);
+        public void RemoveRange(int index, int length) => this.builder.RemoveRange(index, length);
+        public bool Contains(TNode item) => this.builder.Contains(item);
+        public int IndexOf(TNode item) => this.builder.IndexOf(item);
+        public void CopyTo(TNode[] array, int arrayIndex) => this.builder.CopyTo(array, arrayIndex);
+        public IEnumerator<TNode> GetEnumerator() => this.builder.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }
 }

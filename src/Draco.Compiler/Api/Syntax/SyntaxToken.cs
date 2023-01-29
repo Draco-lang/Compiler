@@ -34,12 +34,12 @@ public sealed class SyntaxToken : SyntaxNode
     /// <summary>
     /// The <see cref="SyntaxTrivia"/> before this token.
     /// </summary>
-    public SyntaxList<SyntaxTrivia> LeadingTrivia => this.Green.LeadingTrivia.ToRedNode<SyntaxTrivia>(this.Tree, this.Parent);
+    public SyntaxList<SyntaxTrivia> LeadingTrivia => (SyntaxList<SyntaxTrivia>)this.Green.LeadingTrivia.ToRedNode(this.Tree, this.Parent);
 
     /// <summary>
     /// The <see cref="SyntaxTrivia"/> after this token.
     /// </summary>
-    public SyntaxList<SyntaxTrivia> TrailingTrivia => this.Green.TrailingTrivia.ToRedNode<SyntaxTrivia>(this.Tree, this.Parent);
+    public SyntaxList<SyntaxTrivia> TrailingTrivia => (SyntaxList<SyntaxTrivia>)this.Green.TrailingTrivia.ToRedNode(this.Tree, this.Parent);
 
     public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxToken>();
 

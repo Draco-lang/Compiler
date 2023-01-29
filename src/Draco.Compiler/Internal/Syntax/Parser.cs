@@ -910,14 +910,14 @@ internal sealed class Parser
         //  - the leading trivia of the closing quotes contains a newline
         //  - the string is empty and the opening quotes trailing trivia contains a newline
         var isClosingQuoteOnNewline =
-               closeQuote.LeadingTrivia.Length > 0
+               closeQuote.LeadingTrivia.Count > 0
             || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline));
         if (isClosingQuoteOnNewline)
         {
-            Debug.Assert(closeQuote.LeadingTrivia.Length <= 2);
+            Debug.Assert(closeQuote.LeadingTrivia.Count <= 2);
             Debug.Assert(openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline)
                       || closeQuote.LeadingTrivia.Any(t => t.Type == TriviaType.Newline));
-            if (closeQuote.LeadingTrivia.Length == 2)
+            if (closeQuote.LeadingTrivia.Count == 2)
             {
                 // The first trivia was newline, the second must be spaces
                 Debug.Assert(closeQuote.LeadingTrivia[1].Type == TriviaType.Whitespace);

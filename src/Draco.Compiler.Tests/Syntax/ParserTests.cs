@@ -73,17 +73,20 @@ public sealed class ParserTests
             """);
         this.N<CompilationUnitSyntax>();
         {
+            this.N<SyntaxList<DeclarationSyntax>>();
             this.N<FunctionDeclarationSyntax>();
             {
                 this.T(TokenType.KeywordFunc);
                 this.T(TokenType.Identifier);
 
                 this.T(TokenType.ParenOpen);
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
                 this.T(TokenType.ParenClose);
 
                 this.N<BlockFunctionBodySyntax>();
                 {
                     this.T(TokenType.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
                     predicate();
                     this.T(TokenType.CurlyClose);
                 }
@@ -114,6 +117,7 @@ public sealed class ParserTests
         this.ParseCompilationUnit(string.Empty);
 
         this.N<CompilationUnitSyntax>();
+        this.N<SyntaxList<DeclarationSyntax>>();
         {
             this.T(TokenType.EndOfInput);
         }
@@ -128,6 +132,7 @@ public sealed class ParserTests
             """);
 
         this.N<CompilationUnitSyntax>();
+        this.N<SyntaxList<DeclarationSyntax>>();
         {
             this.N<FunctionDeclarationSyntax>();
             {
@@ -135,11 +140,13 @@ public sealed class ParserTests
                 this.T(TokenType.Identifier);
 
                 this.T(TokenType.ParenOpen);
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
                 this.T(TokenType.ParenClose);
 
                 this.N<BlockFunctionBodySyntax>();
                 {
                     this.T(TokenType.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
                     this.T(TokenType.CurlyClose);
                 }
             }
@@ -154,6 +161,7 @@ public sealed class ParserTests
             """);
 
         this.N<CompilationUnitSyntax>();
+        this.N<SyntaxList<DeclarationSyntax>>();
         {
             this.N<FunctionDeclarationSyntax>();
             {
@@ -161,11 +169,13 @@ public sealed class ParserTests
                 this.T(TokenType.Identifier);
 
                 this.T(TokenType.ParenOpen);
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
                 this.T(TokenType.ParenClose);
 
                 this.N<BlockFunctionBodySyntax>();
                 {
                     this.T(TokenType.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
                     this.MissingT(TokenType.CurlyClose);
                 }
             }
@@ -181,6 +191,7 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.LineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, World!");
             this.T(TokenType.LineStringEnd);
         }
@@ -197,6 +208,7 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.MultiLineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, World!");
             this.T(TokenType.MultiLineStringEnd);
         }
@@ -212,6 +224,7 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.MultiLineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.T(TokenType.MultiLineStringEnd);
         }
     }
@@ -225,6 +238,7 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.LineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.T(TokenType.LineStringEnd);
         }
     }
@@ -238,6 +252,7 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.LineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, ");
             this.N<InterpolationStringPartSyntax>();
             {
@@ -245,6 +260,7 @@ public sealed class ParserTests
                 this.N<StringExpressionSyntax>();
                 {
                     this.T(TokenType.LineStringStart);
+                    this.N<SyntaxList<StringPartSyntax>>();
                     this.StringContent("World");
                     this.T(TokenType.LineStringEnd);
                 }
@@ -264,6 +280,7 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.LineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, \nWorld! 👽");
             this.T(TokenType.LineStringEnd);
         }
@@ -281,6 +298,7 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.MultiLineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, ");
             this.StringNewline();
             this.StringContent("World!");
@@ -308,6 +326,7 @@ public sealed class ParserTests
                         this.N<StringExpressionSyntax>();
                         {
                             this.T(TokenType.LineStringStart);
+                            this.N<SyntaxList<StringPartSyntax>>();
                             this.StringContent("Hello, World!;");
                             this.MissingT(TokenType.LineStringEnd);
                         }
@@ -338,6 +357,7 @@ public sealed class ParserTests
                         this.N<StringExpressionSyntax>();
                         {
                             this.T(TokenType.LineStringStart);
+                            this.N<SyntaxList<StringPartSyntax>>();
                             this.StringContent("Hello, World!");
                             this.MissingT(TokenType.LineStringEnd);
                         }
@@ -349,6 +369,7 @@ public sealed class ParserTests
             this.N<StringExpressionSyntax>();
             {
                 this.T(TokenType.LineStringStart);
+                this.N<SyntaxList<StringPartSyntax>>();
                 this.StringContent(";");
                 this.MissingT(TokenType.LineStringEnd);
             }
@@ -371,6 +392,7 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.MultiLineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent($"Hello,{trailingSpace}");
             this.StringNewline();
             this.N<InterpolationStringPartSyntax>();
@@ -379,6 +401,7 @@ public sealed class ParserTests
                 this.N<StringExpressionSyntax>();
                 {
                     this.T(TokenType.LineStringStart);
+                    this.N<SyntaxList<StringPartSyntax>>();
                     this.StringContent("World!");
                     this.T(TokenType.LineStringEnd);
                 }
@@ -452,6 +475,9 @@ public sealed class ParserTests
             {
                 this.T(TokenType.Assign);
                 this.N<UnexpectedExpressionSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
                 this.T(TokenType.Semicolon);
             }
         }
@@ -489,6 +515,9 @@ public sealed class ParserTests
             {
                 this.T(TokenType.Colon);
                 this.N<UnexpectedTypeSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
             }
             this.T(TokenType.Semicolon);
         }
@@ -534,10 +563,16 @@ public sealed class ParserTests
             {
                 this.T(TokenType.Colon);
                 this.N<UnexpectedTypeSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
                 this.N<ValueSpecifierSyntax>();
                 {
                     this.T(TokenType.Assign);
                     this.N<UnexpectedExpressionSyntax>();
+                    {
+                        this.N<SyntaxList<SyntaxNode>>();
+                    }
                     this.T(TokenType.Semicolon);
                 }
             }
@@ -566,6 +601,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger);
                 }
+                this.N<SyntaxList<ComparisonElementSyntax>>();
                 this.N<ComparisonElementSyntax>();
                 {
                     this.T(TokenType.GreaterThan);
@@ -581,6 +617,7 @@ public sealed class ParserTests
             this.N<BlockExpressionSyntax>();
             {
                 this.T(TokenType.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
                 this.N<DeclarationStatementSyntax>();
                 {
                     this.N<VariableDeclarationSyntax>();
@@ -608,6 +645,7 @@ public sealed class ParserTests
                 this.N<BlockExpressionSyntax>();
                 {
                     this.T(TokenType.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
                     this.N<DeclarationStatementSyntax>();
                     this.N<VariableDeclarationSyntax>();
                     {
@@ -640,12 +678,14 @@ public sealed class ParserTests
         {
             this.N<UnexpectedStatementSyntax>();
             {
+                this.N<SyntaxList<SyntaxNode>>();
                 this.T(TokenType.KeywordElse);
             }
             this.N<ExpressionStatementSyntax>();
             this.N<BlockExpressionSyntax>();
             {
                 this.T(TokenType.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
                 this.N<DeclarationStatementSyntax>();
                 {
                     this.N<VariableDeclarationSyntax>();
@@ -688,6 +728,7 @@ public sealed class ParserTests
                     {
                         this.T(TokenType.LiteralInteger);
                     }
+                    this.N<SyntaxList<ComparisonElementSyntax>>();
                     this.N<ComparisonElementSyntax>();
                     {
                         this.T(TokenType.GreaterThan);
@@ -703,6 +744,7 @@ public sealed class ParserTests
                 this.N<BlockExpressionSyntax>();
                 {
                     this.T(TokenType.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
                     this.N<DeclarationStatementSyntax>();
                     {
                         this.N<VariableDeclarationSyntax>();
@@ -744,6 +786,7 @@ public sealed class ParserTests
                     {
                         this.T(TokenType.LiteralInteger);
                     }
+                    this.N<SyntaxList<ComparisonElementSyntax>>();
                     this.N<ComparisonElementSyntax>();
                     {
                         this.T(TokenType.GreaterThan);
@@ -757,6 +800,9 @@ public sealed class ParserTests
                 this.N<StatementExpressionSyntax>();
                 this.N<ExpressionStatementSyntax>();
                 this.N<UnexpectedExpressionSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
                 // TODO: This should be unnecessary
                 this.MissingT(TokenType.Semicolon);
             }
@@ -780,6 +826,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger);
                 }
+                this.N<SyntaxList<ComparisonElementSyntax>>();
                 this.N<ComparisonElementSyntax>();
                 {
                     this.T(TokenType.GreaterThan);
@@ -822,6 +869,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger);
                 }
+                this.N<SyntaxList<ComparisonElementSyntax>>();
                 this.N<ComparisonElementSyntax>();
                 {
                     this.T(TokenType.GreaterThan);
@@ -859,6 +907,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.Identifier);
                 }
+                this.N<SyntaxList<ComparisonElementSyntax>>();
                 this.N<ComparisonElementSyntax>();
                 {
                     this.T(TokenType.LessThan);
@@ -874,6 +923,7 @@ public sealed class ParserTests
             this.N<BlockExpressionSyntax>();
             {
                 this.T(TokenType.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
                 this.N<ExpressionStatementSyntax>();
                 {
                     this.N<BinaryExpressionSyntax>();
@@ -923,6 +973,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.Identifier);
                 }
+                this.N<SyntaxList<ComparisonElementSyntax>>();
                 this.N<ComparisonElementSyntax>();
                 {
                     this.T(TokenType.LessThan);
@@ -938,6 +989,7 @@ public sealed class ParserTests
             this.N<BlockExpressionSyntax>();
             {
                 this.T(TokenType.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
                 this.N<ExpressionStatementSyntax>();
                 {
                     this.N<BinaryExpressionSyntax>();
@@ -985,6 +1037,7 @@ public sealed class ParserTests
                     {
                         this.T(TokenType.Identifier);
                     }
+                    this.N<SyntaxList<ComparisonElementSyntax>>();
                     this.N<ComparisonElementSyntax>();
                     {
                         this.T(TokenType.LessThan);
@@ -998,6 +1051,9 @@ public sealed class ParserTests
                 this.N<StatementExpressionSyntax>();
                 this.N<ExpressionStatementSyntax>();
                 this.N<UnexpectedExpressionSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
                 // TODO: This should be unnecessary
                 this.MissingT(TokenType.Semicolon);
             }
@@ -1121,6 +1177,7 @@ public sealed class ParserTests
         this.N<BlockExpressionSyntax>();
         {
             this.T(TokenType.CurlyOpen);
+            this.N<SyntaxList<StatementSyntax>>();
             this.N<DeclarationStatementSyntax>();
             {
                 this.N<VariableDeclarationSyntax>();
@@ -1158,6 +1215,7 @@ public sealed class ParserTests
         this.N<BlockExpressionSyntax>();
         {
             this.T(TokenType.CurlyOpen);
+            this.N<SyntaxList<StatementSyntax>>();
             this.N<DeclarationStatementSyntax>();
             {
                 this.N<VariableDeclarationSyntax>();
@@ -1190,6 +1248,7 @@ public sealed class ParserTests
         this.N<BlockExpressionSyntax>();
         {
             this.T(TokenType.CurlyOpen);
+            this.N<SyntaxList<StatementSyntax>>();
             this.T(TokenType.CurlyClose);
         }
     }
@@ -1305,6 +1364,7 @@ public sealed class ParserTests
                     this.T(TokenType.LiteralInteger, "2");
                 }
             }
+            this.N<SyntaxList<ComparisonElementSyntax>>();
             this.N<ComparisonElementSyntax>();
             {
                 this.T(TokenType.GreaterThan);
@@ -1339,6 +1399,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger, "3");
                 }
+                this.N<SyntaxList<ComparisonElementSyntax>>();
                 this.N<ComparisonElementSyntax>();
                 {
                     this.T(TokenType.GreaterThan);
@@ -1363,6 +1424,7 @@ public sealed class ParserTests
                 {
                     this.T(TokenType.LiteralInteger, "5");
                 }
+                this.N<SyntaxList<ComparisonElementSyntax>>();
                 this.N<ComparisonElementSyntax>();
                 {
                     this.T(TokenType.Equal);
@@ -1385,11 +1447,15 @@ public sealed class ParserTests
         this.N<StringExpressionSyntax>();
         {
             this.T(TokenType.LineStringStart, "\"");
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("a");
             this.N<InterpolationStringPartSyntax>();
             {
                 this.T(TokenType.InterpolationStart);
                 this.N<UnexpectedExpressionSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
                 this.T(TokenType.InterpolationEnd);
             }
             this.StringContent("b");

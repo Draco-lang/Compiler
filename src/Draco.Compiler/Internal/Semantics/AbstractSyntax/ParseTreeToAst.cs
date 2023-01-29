@@ -269,11 +269,11 @@ internal static class ParseTreeToAst
         // Line strings have no cutoff
         if (str.OpenQuotes.Type == TokenType.LineStringStart) return 0;
         // Multiline strings
-        Debug.Assert(str.CloseQuotes.LeadingTrivia.Length <= 2);
+        Debug.Assert(str.CloseQuotes.LeadingTrivia.Count <= 2);
         // If this is true, we have malformed input
-        if (str.CloseQuotes.LeadingTrivia.Length == 0) return 0;
+        if (str.CloseQuotes.LeadingTrivia.Count == 0) return 0;
         // If this is true, there's only newline, no spaces before
-        if (str.CloseQuotes.LeadingTrivia.Length == 1) return 0;
+        if (str.CloseQuotes.LeadingTrivia.Count == 1) return 0;
         // The first trivia was newline, the second must be spaces
         Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Type == TriviaType.Whitespace);
         return str.CloseQuotes.LeadingTrivia[1].Text.Length;

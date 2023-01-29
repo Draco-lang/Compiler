@@ -31,10 +31,10 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
     {
         // TODO: Share compilation
         var cursorPosition = Translator.ToCompiler(request.Position);
-        var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
-        var parseTree = ParseTree.Parse(souceText);
+        var sourceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
+        var parseTree = Program.Try(() => ParseTree.Parse(sourceText));
         var compilation = Compilation.Create(parseTree);
-        var semanticModel = compilation.GetSemanticModel();
+        var semanticModel = Program.Try(() => compilation.GetSemanticModel());
 
         var referencedSymbol = parseTree
             .TraverseSubtreesAtPosition(cursorPosition)

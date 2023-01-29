@@ -22,7 +22,7 @@ internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandler
         var uri = request.TextDocument.Uri.ToUri();
         var sourceText = this.repository.GetDocument(request.TextDocument.Uri);
         var tree = Program.Try(() => ParseTree.Parse(sourceText));
-        var originalRange = tree.Range;
+        var originalRange = tree.Root.Range;
         tree = Program.Try(() => tree.Format());
         var edit = new TextEdit()
         {

@@ -26,6 +26,7 @@ internal enum TransportKind
 
 internal static class Program
 {
+    private static OmniSharp.Extensions.LanguageServer.Server.LanguageServer? server;
     internal static async Task Main(string[] args)
     {
         var stdioFlag = new Option<bool>(name: "--stdio", description: "A flag to set the transportation option to stdio");
@@ -50,7 +51,7 @@ internal static class Program
     {
         var transportKind = GetTransportKind(stdioFlag);
 
-        var server = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options => options
+        server = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options => options
             .ConfigureTransportKind(transportKind)
             .WithHandler<DracoDocumentHandler>()
             .WithHandler<DracoSemanticTokensHandler>()
@@ -119,7 +120,7 @@ internal static class Program
 
     private static void LogException(Exception exception)
     {
-        server.LogError($"Draco language server failed with following error: {exception.Message}");
+        server!.LogError($"Draco language server failed with following error: {exception.Message}");
     }
 
     internal static void Try(Action action)

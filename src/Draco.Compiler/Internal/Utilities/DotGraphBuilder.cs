@@ -260,6 +260,6 @@ internal sealed class DotGraphBuilder<TVertex>
             DotAttribs.RankDir.BottomToTop => "BT",
             _ => "LR",
         },
-        _ => value.ToString(),
+        _ => value.ToString() ?? "null",
     };
 }

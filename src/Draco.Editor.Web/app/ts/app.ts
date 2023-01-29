@@ -5,7 +5,6 @@ import { Registry } from 'monaco-textmate';
 import { wireTmGrammars } from 'monaco-editor-textmate'; // Library that allow running Textmates grammar in monaco.
 import grammarDefinition from '../../../Draco.SyntaxHighlighting/draco.tmLanguage.json';
 import { deflateRaw, inflateRaw } from 'pako';
-import { stdout } from 'process';
 
 // This file is run on page load.
 // This run before blazor load, and will tell blazor to start.
@@ -116,7 +115,7 @@ const dracoEditor = monaco.editor.create(document.getElementById('draco-editor')
     minimap: {
         enabled: false
     },
-    renderLineHighlight: "none",
+    renderLineHighlight: 'none',
     overviewRulerBorder: false,
     hideCursorInOverviewRuler: true,
     mouseWheelZoom: true
@@ -141,7 +140,7 @@ const outputEditor = monaco.editor.create(document.getElementById('output-viewer
     minimap: {
         enabled: false
     },
-    renderLineHighlight: "none",
+    renderLineHighlight: 'none',
     overviewRulerBorder: false,
     hideCursorInOverviewRuler: true,
     mouseWheelZoom: true,

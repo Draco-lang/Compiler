@@ -5,17 +5,19 @@ using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
+using Draco.RedGreenTree.Attributes;
 using TokenType = Draco.Compiler.Api.Syntax.TokenType;
 
 namespace Draco.Compiler.Internal.Syntax;
 
-internal abstract partial record class ParseTree
+internal abstract partial record class ParseNode
 {
     /// <summary>
     /// Represents a piece of source code that has an associated category and can be considered atomic during parsing.
     /// Stores surrounding trivia and lexical errors.
     /// </summary>
-    internal sealed partial record class Token : ParseTree
+    [Ignore(IgnoreFlags.SyntaxFactoryConstruct)]
+    internal sealed partial record class Token : ParseNode
     {
         /// <summary>
         /// The <see cref="TokenType"/> of this <see cref="Token"/>.
@@ -57,7 +59,7 @@ internal abstract partial record class ParseTree
         /// </summary>
         internal override ImmutableArray<Diagnostic> Diagnostics { get; }
 
-        public override IEnumerable<ParseTree> Children => Enumerable.Empty<ParseTree>();
+        public override IEnumerable<ParseNode> Children => Enumerable.Empty<ParseNode>();
 
         private Token(
             TokenType type,
@@ -134,6 +136,22 @@ internal abstract partial record class ParseTree
             type: type,
             text: text,
             value: null,
+            leadingTrivia: ImmutableArray<Trivia>.Empty,
+            trailingTrivia: ImmutableArray<Trivia>.Empty,
+            diagnostics: ImmutableArray<Diagnostic>.Empty);
+
+        /// <summary>
+        /// Constructs a <see cref="Token"/> from <paramref name="type"/>, <paramref name="text"/> and <paramref name="value"/>.
+        /// </summary>
+        /// <param name="type">The <see cref="TokenType"/> of the token to be constructed.</param>
+        /// <param name="text">The text the <see cref="Token"/> is produced from.</param>
+        /// <param name="value">The value associated with the <see cref="Token"/>.</param>
+        /// <returns>The constructed <see cref="Token"/> with type <paramref name="type"/>,
+        /// text <paramref name="text"/> and value <paramref name="value"/>.</returns>
+        public static Token From(TokenType type, string text, object? value) => new(
+            type: type,
+            text: text,
+            value: value,
             leadingTrivia: ImmutableArray<Trivia>.Empty,
             trailingTrivia: ImmutableArray<Trivia>.Empty,
             diagnostics: ImmutableArray<Diagnostic>.Empty);

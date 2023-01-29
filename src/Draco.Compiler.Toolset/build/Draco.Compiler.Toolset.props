@@ -1,0 +1,15 @@
+<Project>
+
+  <PropertyGroup>
+    <DefaultLanguageSourceExtension>.draco</DefaultLanguageSourceExtension>
+    <Language>Draco</Language>
+    <TargetRuntime>Managed</TargetRuntime>
+
+    <!-- We don't support refout in the compiler. -->
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <UsingTask TaskName="DracoCompiler" AssemblyFile="$(MSBuildThisFileDirectory)..\tasks\Draco.Compiler.Tasks.dll"/>
+
+</Project>
+

@@ -1,5 +1,5 @@
 using Draco.Compiler.Internal.Syntax;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 using TokenType = Draco.Compiler.Api.Syntax.TokenType;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -15,7 +15,7 @@ public sealed class ParserTests
         return func(parser);
     }
 
-    private IEnumerator<ParseTree>? treeEnumerator;
+    private IEnumerator<ParseNode>? treeEnumerator;
 
     private void ParseCompilationUnit(string text)
     {
@@ -288,7 +288,7 @@ public sealed class ParserTests
     {
         this.ParseExpression($""""
             """
-            Hello, \    
+            Hello, \
             World!
             """
             """");
@@ -371,16 +371,17 @@ public sealed class ParserTests
     [Fact]
     public void TestMultilineStringUnclosedInterpolation()
     {
-        this.ParseExpression(""""
+        const string trailingSpace = " ";
+        this.ParseExpression($$""""
             """
-            Hello, 
+            Hello,{{trailingSpace}}
             \{"World!"
             """
             """");
         this.N<Expr.String>();
         {
             this.T(TokenType.MultiLineStringStart);
-            this.StringContent("Hello, ");
+            this.StringContent($"Hello,{trailingSpace}");
             this.StringNewline();
             this.N<StringPart.Interpolation>();
             {
@@ -497,10 +498,7 @@ public sealed class ParserTests
             this.N<TypeSpecifier>();
             {
                 this.T(TokenType.Colon);
-                this.N<TypeExpr.Name>();
-                {
-                    this.MissingT(TokenType.Identifier);
-                }
+                this.N<TypeExpr.Unexpected>();
             }
             this.T(TokenType.Semicolon);
         }
@@ -545,10 +543,7 @@ public sealed class ParserTests
             this.N<TypeSpecifier>();
             {
                 this.T(TokenType.Colon);
-                this.N<TypeExpr.Name>();
-                {
-                    this.MissingT(TokenType.Identifier);
-                }
+                this.N<TypeExpr.Unexpected>();
                 this.N<ValueInitializer>();
                 {
                     this.T(TokenType.Assign);
@@ -1063,7 +1058,7 @@ public sealed class ParserTests
         this.N<Expr.Goto>();
         {
             this.T(TokenType.KeywordGoto);
-            this.N<Expr.Name>();
+            this.N<LabelName>();
             {
                 this.T(TokenType.Identifier);
             }
@@ -1081,7 +1076,7 @@ public sealed class ParserTests
             this.N<Expr.Goto>();
             {
                 this.T(TokenType.KeywordGoto);
-                this.N<Expr.Name>();
+                this.N<LabelName>();
                 {
                     this.MissingT(TokenType.Identifier);
                 }
@@ -1393,6 +1388,28 @@ public sealed class ParserTests
                     }
                 }
             }
+        }
+    }
+
+    [Fact]
+    public void TestEmptyInterpolation()
+    {
+        this.ParseExpression("""
+            "a\{}b"
+            """);
+
+        this.N<Expr.String>();
+        {
+            this.T(TokenType.LineStringStart, "\"");
+            this.StringContent("a");
+            this.N<StringPart.Interpolation>();
+            {
+                this.T(TokenType.InterpolationStart);
+                this.N<Expr.Unexpected>();
+                this.T(TokenType.InterpolationEnd);
+            }
+            this.StringContent("b");
+            this.T(TokenType.LineStringEnd, "\"");
         }
     }
 }

@@ -1,20 +1,20 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.RedGreenTree.Attributes;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
 /// Provides a transformer base that transforms the tree.
 /// </summary>
-[TransformerBase(typeof(ParseTree), typeof(ParseTree))]
+[TransformerBase(typeof(ParseNode), typeof(ParseNode))]
 internal abstract partial class ParseTreeTransformerBase
 {
     protected ImmutableArray<TElement> TransformImmutableArray<TElement>(
         ImmutableArray<TElement> elements,
         out bool changed)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         changed = false;
         var newBuilder = ImmutableArray.CreateBuilder<TElement>();
@@ -38,7 +38,7 @@ internal abstract partial class ParseTreeTransformerBase
     protected PunctuatedList<TElement> TransformPunctuatedList<TElement>(
         PunctuatedList<TElement> list,
         out bool changed)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         changed = false;
         var newBuilder = ImmutableArray.CreateBuilder<Punctuated<TElement>>();
@@ -54,7 +54,7 @@ internal abstract partial class ParseTreeTransformerBase
     protected Punctuated<TElement> TransformPunctuated<TElement>(
         Punctuated<TElement> punctuated,
         out bool changed)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         var punctChanged = false;
         var element = (TElement)this.Transform(punctuated.Value, out var valueChanged);
@@ -66,7 +66,7 @@ internal abstract partial class ParseTreeTransformerBase
     protected Enclosed<TElement> TransformEnclosed<TElement>(
         Enclosed<TElement> enclosed,
         out bool changed)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         var open = this.TransformToken(enclosed.OpenToken, out var openChanged);
         var value = (TElement)this.Transform(enclosed.Value, out var valueChanged);
@@ -78,7 +78,7 @@ internal abstract partial class ParseTreeTransformerBase
     protected Enclosed<PunctuatedList<TElement>> TransformEnclosed<TElement>(
         Enclosed<PunctuatedList<TElement>> enclosed,
         out bool changed)
-        where TElement : ParseTree
+        where TElement : ParseNode
     {
         var open = this.TransformToken(enclosed.OpenToken, out var openChanged);
         var value = this.TransformPunctuatedList(enclosed.Value, out var valueChanged);

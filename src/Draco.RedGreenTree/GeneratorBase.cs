@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using Draco.RedGreenTree.Attributes;
 using Microsoft.CodeAnalysis;
 
 namespace Draco.RedGreenTree;
@@ -21,6 +22,9 @@ public abstract class GeneratorBase
         ? string.Empty
         : $"{char.ToLower(text[0])}{text.Substring(1)}";
 
+    protected static string ToCamelCaseEscaped(string text) =>
+        RoslynUtils.EscapeKeyword(ToCamelCase(text));
+
     protected static string SettingsToHeaderComment(object? settings)
     {
         if (settings is null) return string.Empty;
@@ -37,4 +41,14 @@ public abstract class GeneratorBase
 
     protected static bool SymbolEquals(ISymbol? a, ISymbol? b) =>
         SymbolEqualityComparer.Default.Equals(a, b);
+
+    protected static bool HasIgnoreFlag(ISymbol symbol, IgnoreFlags ignoreFlags)
+    {
+        if (symbol.HasAttribute(typeof(IgnoreAttribute), out var args))
+        {
+            var flags = (IgnoreFlags)args[0]!;
+            return flags.HasFlag(ignoreFlags);
+        }
+        return false;
+    }
 }

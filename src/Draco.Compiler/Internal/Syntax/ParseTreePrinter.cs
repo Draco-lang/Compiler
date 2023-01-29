@@ -1,193 +1,90 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Immutable;
 using System.Text;
-using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
-using ApiParseTree = Draco.Compiler.Api.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Prints the <see cref="ParseTree"/> as the text it was parsed from.
+/// Utilities for printing a <see cref="ParseTree"/>.
 /// </summary>
-internal sealed class CodeParseTreePrinter : ParseTreeVisitorBase<Unit>
+internal static class ParseTreePrinter
 {
     /// <summary>
-    /// Prints the <see cref="ParseTree"/> as the text it was parsed from.
+    /// Prints the <see cref="ParseNode"/> as the text it was parsed from.
     /// </summary>
-    /// <param name="tree">The tree to print.</param>
-    /// <returns>The <paramref name="tree"/> printed to text, identical to the text it was parsed from.</returns>
-    public static string Print(ParseTree tree)
+    /// <param name="node">The tree node to print.</param>
+    /// <returns>The <paramref name="node"/> printed to text, identical to the text it was parsed from.</returns>
+    public static string ToCode(ParseNode node)
     {
-        var printer = new CodeParseTreePrinter();
-        printer.Visit(tree);
-        return printer.code.ToString();
+        var result = new StringBuilder();
+        foreach (var token in node.Tokens)
+        {
+            foreach (var t in token.LeadingTrivia) result.Append(t.Text);
+            result.Append(token.Text);
+            foreach (var t in token.TrailingTrivia) result.Append(t.Text);
+        }
+        return result.ToString();
     }
 
-    private readonly StringBuilder code = new();
-
-    private CodeParseTreePrinter()
-    {
-    }
-
-    public override Unit VisitToken(Token token)
-    {
-        foreach (var t in token.LeadingTrivia) this.code.Append(t.Text);
-        this.code.Append(token.Text);
-        foreach (var t in token.TrailingTrivia) this.code.Append(t.Text);
-        return default;
-    }
-}
-
-/// <summary>
-/// Prints the parse-tree in a debuggable form with type names and explicit hierarchy.
-/// </summary>
-internal sealed class DebugParseTreePrinter
-{
     /// <summary>
-    /// Prints the parse-tree in a debuggable form with type names and explicit hierarchy.
+    /// Prints the <see cref="ParseNode"/> as the text it was parsed from, discarding the very first leading trivia
+    /// and the very last trailing trivia, "trimming" the code.
     /// </summary>
-    /// <param name="tree">The tree to print.</param>
-    /// <returns>The <paramref name="tree"/> printed in a debuggable form.</returns>
-    public static string Print(ParseTree tree)
+    /// <param name="node">The tree node to print.</param>
+    /// <returns>The <paramref name="node"/> printed to text, without the surrounding trivia.</returns>
+    public static string ToCodeWithoutSurroundingTrivia(ParseNode node)
     {
-        var printer = new DebugParseTreePrinter();
-        printer.AppendParseTree(tree);
-        return printer.code.ToString();
-    }
-
-    private readonly StringBuilder code = new();
-    private int indentation;
-
-    private DebugParseTreePrinter()
-    {
-    }
-
-    private DebugParseTreePrinter AppendObject(object? obj) => obj switch
-    {
-        Token t => this.AppendToken(t),
-        ParseTree t => this.AppendParseTree(t),
-        string s => this.Append(s),
-        IEnumerable e => this.AppendList(e),
-        object o when o.GetType() is var type
-                   && type.IsGenericType
-                   && type.GetGenericTypeDefinition() == typeof(Enclosed<>) =>
-            this.AppendSubtree("Enclosed", o),
-        object o when o.GetType() is var type
-                   && type.IsGenericType
-                   && type.GetGenericTypeDefinition() == typeof(PunctuatedList<>) =>
-            this.AppendList((IEnumerable)type.GetProperty(nameof(PunctuatedList<int>.Elements))!.GetValue(o)!),
-        object o when o.GetType() is var type
-                   && type.IsGenericType
-                   && type.GetGenericTypeDefinition() == typeof(Punctuated<>) =>
-            this.AppendSubtree("Punctuated", o),
-        object o => this.Append(o.ToString() ?? string.Empty),
-        null => this.Append("null"),
-    };
-
-    private DebugParseTreePrinter AppendList(IEnumerable e) => this.AppendIndented(
-        e.Cast<object?>().Select(o => new KeyValuePair<string?, object?>(null, o)),
-        open: '[',
-        close: ']');
-
-    private DebugParseTreePrinter AppendParseTree(ParseTree t) => this.AppendSubtree(t.GetType().Name, t);
-
-    private DebugParseTreePrinter AppendToken(Token t)
-    {
-        this.Append("'").Append(t.Text).Append("'");
-        var valueText = t.ValueText;
-        if (valueText is not null && valueText != t.Text) this.Append($" (value={valueText})");
-        if (t.Diagnostics.Length > 0)
+        var result = new StringBuilder();
+        // We simply print the text of all tokens except the first and last ones
+        // For the first, we ignore leading trivia, for the last we ignore trailing trivia
+        var lastTrailingTrivia = ImmutableArray<Trivia>.Empty;
+        using var tokenEnumerator = node.Tokens.GetEnumerator();
+        // The first token just gets it's content printed
+        // That ignores the leading trivia, trailing will only be printed if there are following tokens
+        var hasFirstToken = tokenEnumerator.MoveNext();
+        if (!hasFirstToken) return string.Empty;
+        var firstToken = tokenEnumerator.Current;
+        result.Append(firstToken.Text);
+        lastTrailingTrivia = firstToken.TrailingTrivia;
+        while (tokenEnumerator.MoveNext())
         {
-            this.Append(" [");
-            this.Append(string.Join(", ", t.Diagnostics.Select(DiagnosticToString)));
-            this.Append("]");
+            var token = tokenEnumerator.Current;
+            // Last trailing trivia
+            foreach (var t in lastTrailingTrivia) result.Append(t.Text);
+            // Leading trivia
+            foreach (var t in token.LeadingTrivia) result.Append(t.Text);
+            // Content
+            result.Append(token.Text);
+            // Trailing trivia
+            lastTrailingTrivia = token.TrailingTrivia;
         }
-        return this;
+        return result.ToString();
     }
 
-    private DebugParseTreePrinter AppendSubtree(string name, object tree) => this
-        .Append(name)
-        .Append(" ")
-        .AppendIndented(tree
-            .GetType()
-            .GetProperties()
-            .Where(p => tree is not ParseTree || p.Name != "Children")
-            .Select(p => new KeyValuePair<string?, object?>(p.Name, p.GetValue(tree))),
-            open: '{',
-            close: '}');
-
-    private DebugParseTreePrinter AppendIndented(IEnumerable<KeyValuePair<string?, object?>> values, char open, char close)
+    /// <summary>
+    /// Prints the given subtree as a DOT graph.
+    /// </summary>
+    /// <param name="node">The root of the subtree to print.</param>
+    /// <returns>The <paramref name="node"/> represented as a DOT graph.</returns>
+    public static string ToDot(ParseNode node)
     {
-        if (!values.Any()) return this.Append($"{open}{close}");
+        var graph = new DotGraphBuilder<ParseNode>(isDirected: false, vertexComparer: ReferenceEqualityComparer.Instance);
+        graph.WithName("ParseTree");
 
-        this.AppendLine(open.ToString());
-        ++this.indentation;
-        foreach (var (key, value) in values)
+        void Impl(ParseNode? parent, ParseNode node)
         {
-            this.AppendIndentation();
-            if (key is not null) this.Append(key).Append(": ");
-            this.AppendObject(value).AppendLine(", ");
+            // Connect to parent
+            if (parent is not null) graph.AddEdge(node, parent);
+            // Label
+            graph!
+                .AddVertex(node)
+                .WithLabel(node is Token t ? t.Text : node.GetType().Name);
+            // Children
+            foreach (var child in node.Children) Impl(node, child);
         }
-        --this.indentation;
-        this.AppendIndentation();
-        return this.Append(close.ToString());
+
+        Impl(null, node);
+        return graph.ToDot();
     }
-
-    private DebugParseTreePrinter Append(string text)
-    {
-        this.code.Append(text);
-        return this;
-    }
-
-    private DebugParseTreePrinter AppendLine(string text = "")
-    {
-        this.code.AppendLine(text);
-        return this;
-    }
-
-    private DebugParseTreePrinter AppendIndentation()
-    {
-        for (var i = 0; i < this.indentation; ++i) this.code.Append("  ");
-        return this;
-    }
-
-    private static string DiagnosticToString(Diagnostic diagnostic) =>
-           string.Format(diagnostic.Format, diagnostic.FormatArgs);
-}
-
-/// <summary>
-/// Prints the parse tree in a DOT graph format.
-/// </summary>
-internal sealed class DotParseTreePrinter : DotGraphParseTreePrinterBase
-{
-    public static string Print(ApiParseTree parseTree)
-    {
-        var printer = new DotParseTreePrinter();
-        printer.PrintTree(parseTree);
-        return printer.Code;
-    }
-
-    protected override void PrintSingle(ApiParseTree tree)
-    {
-        var name = this.GetNodeName(tree);
-
-        // Node text
-        var text = NodeToString(tree);
-        this.Builder.AppendLine($"  {name} [label=\"{text}\"]");
-
-        // Parent relation
-        if (this.TryGetParentName(out var parentName))
-        {
-            this.Builder.AppendLine($"  {name} -> {parentName} [dir=none]");
-        }
-    }
-
-    private static string NodeToString(ApiParseTree tree) => tree switch
-    {
-        ApiParseTree.Token token => token.Text,
-        _ => tree.GetType().Name,
-    };
 }

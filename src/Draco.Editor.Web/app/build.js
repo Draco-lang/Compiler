@@ -21,15 +21,12 @@ async function dotnetjsBuild() {
     await viteBuild(defineConfig({ // Yes, I'm using another bundler, because this one bundle correctly dotnet.js to CJS...
         build: {
             lib: {
-                // Could also be a dictionary or array of multiple entry points
                 entry: path.resolve(binFolder, 'dotnet.js'),
                 name: 'dotnet',
                 fileName: 'dotnet',
                 formats: ['umd']
             },
             rollupOptions: {
-                // make sure to externalize deps that shouldn't be bundled
-                // into your library
                 external: ['dotnet.wasm'],
                 output: {
                     esModule: false,

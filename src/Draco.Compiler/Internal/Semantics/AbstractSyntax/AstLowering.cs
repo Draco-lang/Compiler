@@ -48,24 +48,22 @@ internal sealed class AstLowering : AstTransformerBase
 
         changed = true;
 
-        var continueLabel = ISymbol.SynthetizeLabel();
-        var breakLabel = ISymbol.SynthetizeLabel();
         var condition = this.TransformExpr(node.Condition, out _);
         var body = this.TransformExpr(node.Expression, out _);
 
         return Block(
             // continue_label:
-            Stmt(Label(continueLabel)),
+            Stmt(Label(node.ContinueLabel)),
             // if (!condition) goto break_label;
             If(
                 condition: Not(condition),
-                then: Goto(breakLabel)),
+                then: Goto(node.BreakLabel)),
             // body...
             Stmt(body),
             // goto continue_label;
-            Stmt(Goto(continueLabel)),
+            Stmt(Goto(node.ContinueLabel)),
             // break_label:
-            Stmt(Label(breakLabel)));
+            Stmt(Label(node.BreakLabel)));
     }
 
     public override Ast.Expr TransformRelationalExpr(Ast.Expr.Relational node, out bool changed)
@@ -120,31 +118,17 @@ internal sealed class AstLowering : AstTransformerBase
         //
         // =>
         //
-        // {
-        //     var result = false;
-        //     if (expr1) result = expr2;
-        //     result
-        // }
+        // if (expr1) expr2 else false
 
         changed = true;
 
         var left = this.TransformExpr(node.Left, out _);
         var right = this.TransformExpr(node.Right, out _);
 
-        var varSymbol = ISymbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
-        return Block(
-            stmts: new[]
-            {
-                // var result = false;
-                Stmt(Var(
-                    varSymbol: varSymbol,
-                    value: Bool(false))),
-                // if (expr1) result = expr2;
-                If(
-                    condition: left,
-                    then: Assign(Reference(varSymbol), right)),
-            },
-            value: Reference(varSymbol));
+        return If(
+            condition: left,
+            then: right,
+            @else: Bool(false));
     }
 
     public override Ast.Expr TransformOrExpr(Ast.Expr.Or node, out bool changed)
@@ -153,31 +137,37 @@ internal sealed class AstLowering : AstTransformerBase
         //
         // =>
         //
-        // {
-        //     var result = true;
-        //     if (!expr1) result = expr2;
-        //     result
-        // }
+        // if (expr1) true else expr2
 
         changed = true;
 
         var left = this.TransformExpr(node.Left, out _);
         var right = this.TransformExpr(node.Right, out _);
 
-        var varSymbol = ISymbol.SynthetizeVariable(type: Type.Bool, isMutable: true);
-        return Block(
-            stmts: new[]
-            {
-                // var result = false;
-                Stmt(Var(
-                    varSymbol: varSymbol,
-                    value: Bool(true))),
-                // if (!expr1) result = expr2;
-                If(
-                    condition: Not(left),
-                    then: Assign(Reference(varSymbol), right)),
-            },
-            value: Reference(varSymbol));
+        return If(
+            condition: left,
+            then: Bool(true),
+            @else: right);
+    }
+
+    public override Ast.Expr TransformStringExpr(Ast.Expr.String node, out bool changed)
+    {
+        if (node.Parts.All(p => p is Ast.StringPart.Content))
+        {
+            // It's a single, or multi-line string without interpolation, we make a literal out of it
+            changed = true;
+            var literal = string.Join(string.Empty, node.Parts.Cast<Ast.StringPart.Content>().Select(p => p.Value));
+            return new Ast.Expr.Literal(
+                ParseNode: node.ParseNode,
+                Value: literal,
+                Type: Type.String);
+        }
+        else
+        {
+            // TODO: Desugar into interpolation handler
+            changed = false;
+            return node;
+        }
     }
 
     // Utility to store an expression to a temporary variable
@@ -191,9 +181,9 @@ internal sealed class AstLowering : AstTransformerBase
         }
 
         // Otherwise compute and store
-        Debug.Assert(expr.ParseTree is ParseTree.Expr);
-        var type = TypeChecker.TypeOf(this.db, (ParseTree.Expr)expr.ParseTree);
-        var symbol = ISymbol.SynthetizeVariable(type: type, isMutable: false);
+        Debug.Assert(expr.ParseNode is ParseNode.Expr);
+        var type = TypeChecker.TypeOf(this.db, (ParseNode.Expr)expr.ParseNode!);
+        var symbol = Symbol.SynthetizeVariable(type: type, isMutable: false);
         var symbolRef = Reference(symbol);
         var assignment = Stmt(Var(
             varSymbol: symbol,

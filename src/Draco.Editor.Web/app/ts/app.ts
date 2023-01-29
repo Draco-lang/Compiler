@@ -9,8 +9,9 @@ import { deflateRaw, inflateRaw } from 'pako';
 // This file is run on page load.
 // This run before blazor load, and will tell blazor to start.
 
-const worker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
-
+const compilerWorker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
+let runtimeWorker: Worker | undefined;
+let stdoutBuffer = 'Loading Compiler\'s .NET Runtime...';
 self.MonacoEnvironment = {
     // Web Workers need to start a new script, by url.
     // This is the path where the script of the webworker is served.
@@ -97,7 +98,7 @@ outputTypeSelector.onchange = () => {
         break;
     }
     // We relay the output type change to C#.
-    worker.postMessage({
+    compilerWorker.postMessage({
         type: 'OnOutputTypeChange',
         payload: newVal
     });
@@ -106,24 +107,47 @@ outputTypeSelector.onchange = () => {
 const dracoEditor = monaco.editor.create(document.getElementById('draco-editor'), {
     value: inputCode,
     language: 'draco',
-    theme: 'dynamic-theme'
+    theme: 'dynamic-theme',
+    scrollbar: {
+        vertical: 'visible'
+    },
+    scrollBeyondLastLine: false,
+    minimap: {
+        enabled: false
+    },
+    renderLineHighlight: 'none',
+    overviewRulerBorder: false,
+    hideCursorInOverviewRuler: true,
+    mouseWheelZoom: true
 });
 
 dracoEditor.onDidChangeModelContent(() => {
     updateHash();
-    worker.postMessage({
+    compilerWorker.postMessage({
         type: 'CodeChange',
         payload: dracoEditor.getModel().createSnapshot().read()
     });
 });
 
 const outputEditor = monaco.editor.create(document.getElementById('output-viewer'), {
-    value: ['.NET Runtime loading...'].join('\n'),
+    value: [stdoutBuffer].join('\n'),
     theme: 'dynamic-theme',
-    readOnly: true
+    readOnly: true,
+    scrollbar: {
+        vertical: 'visible'
+    },
+    scrollBeyondLastLine: false,
+    minimap: {
+        enabled: false
+    },
+    renderLineHighlight: 'none',
+    overviewRulerBorder: false,
+    hideCursorInOverviewRuler: true,
+    mouseWheelZoom: true,
+    occurrencesHighlight: false
 });
 
-worker.onmessage = (ev) => {
+compilerWorker.onmessage = async (ev) => {
     const msg = ev.data as {
         type: string;
         message: string;
@@ -132,14 +156,43 @@ worker.onmessage = (ev) => {
     case 'setOutputText':
         outputEditor.getModel().setValue(msg.message);
         break;
+    case 'runtimeAssembly': {
+        if(runtimeWorker != undefined) {
+            runtimeWorker.terminate();
+        }
+        stdoutBuffer = '';
+        outputEditor.getModel().setValue('Loading script\'s .NET Runtime...');
+        runtimeWorker = new Worker('worker.js');
+        const cfg = JSON.parse(msg.message);
+        console.log('Starting worker with boot config:');
+        cfg['disableInterop'] = true;
+        runtimeWorker.postMessage(cfg);
+        runtimeWorker.onmessage = (e) => {
+            const runtimeMsg =  e.data as {
+                type:string;
+                message: string;
+            };
+            switch(runtimeMsg.type) {
+            case 'stdout':
+                stdoutBuffer += runtimeMsg.message + '\n';
+                outputEditor.getModel().setValue(stdoutBuffer);
+                break;
+            default:
+                console.log('Runtime sent unknown message',runtimeMsg);
+                break;
+            }
+        };
+        break;
+    }
     default:
+        console.log('Runtime sent unknown message',msg);
         break;
     }
 };
 
 async function main() {
     const cfg = await (await fetch('_framework/blazor.boot.json')).json();
-    const dlls = Object.keys(cfg.resources.assembly).map(
+    const dlls: unknown[] = Object.keys(cfg.resources.assembly).map(
         s => {
             return {
                 'behavior': 'assembly',
@@ -156,8 +209,8 @@ async function main() {
         assemblyRootFolder: '_framework',
         assets: dlls,
     };
-    worker.postMessage(bootCfg);
-    worker.postMessage({
+    compilerWorker.postMessage(bootCfg);
+    compilerWorker.postMessage({
         type: 'OnInit',
         payload: {
             OutputType: outputTypeSelector.value,

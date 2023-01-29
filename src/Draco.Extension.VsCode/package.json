@@ -1,8 +1,14 @@
 {
   "name": "draco-language-support",
   "displayName": "Draco Language Support",
-  "description": "Visual Studio Language support for the Draco programming language.",
   "version": "0.0.1",
+  "description": "Visual Studio Language support for the Draco programming language.",
+  "icon": "resources/extension-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Draco-lang/Compiler"
+  },
+  "publisher": "Draco-lang",
   "engines": {
     "vscode": "^1.72.0"
   },
@@ -11,9 +17,10 @@
   ],
   "activationEvents": [
     "onLanguage:draco",
-    "workspaceContains:**/*.draco"
+    "workspaceContains:**/*.draco",
+    "workspaceContains:**/*.dracoproj"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "languages": [
       {
@@ -25,7 +32,11 @@
         "extensions": [
           ".draco"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./resources/draco-source-icon-light.svg",
+          "dark": "./resources/draco-source-icon-dark.svg"
+        }
       }
     ],
     "grammars": [
@@ -34,13 +45,44 @@
         "scopeName": "source.draco",
         "path": "./syntaxes/draco.tmLanguage.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Draco",
+      "properties": {
+        "draco.dotnetCommand": {
+          "type": "string",
+          "default": "dotnet",
+          "description": "The command to invoke the dotnet tool."
+        },
+        "draco.dracoSdkVersion": {
+          "type": "string",
+          "default": "*",
+          "description": "The package version pattern for the Draco SDK to use."
+        },
+        "draco.promptOpenSettings": {
+          "type": "boolean",
+          "default": true,
+          "description": "In case of a setting error, should the settings file be prompted for opening."
+        },
+        "draco.promptInstallDracoLangserver": {
+          "type": "boolean",
+          "default": true,
+          "description": "In case the Draco Language Server was not found, should it be prompted for installation."
+        },
+        "draco.promptUpdateDracoLangserver": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check for Draco language server updates."
+        }
+      }
+    }
   },
   "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "(npm run copy-grammar) && webpack",
+    "watch": "(npm run compile) && (webpack --watch)",
+    "package": "(npm run copy-grammar) && (webpack --mode production --devtool hidden-source-map)",
     "copy-grammar": "copyfiles --up --flat ../Draco.SyntaxHighlighting/draco.tmLanguage.json syntaxes",
-    "vscode:prepublish": "npm run compile",
-    "compile": "(npm run copy-grammar) && (tsc -p ./)",
-    "watch": "(npm run compile) && (tsc -watch -p ./)",
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
@@ -50,7 +92,7 @@
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "16.x",
-    "@types/vscode": "^1.73.0",
+    "@types/vscode": "^1.72.0",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "@typescript-eslint/parser": "^5.31.0",
     "@vscode/test-electron": "^2.1.5",
@@ -58,6 +100,9 @@
     "eslint": "^8.20.0",
     "glob": "^8.0.3",
     "mocha": "^10.0.0",
-    "typescript": "^4.7.4"
+    "typescript": "^4.7.4",
+    "ts-loader": "^9.3.1",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
   }
 }

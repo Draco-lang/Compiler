@@ -1,11 +1,9 @@
-# Deploy to GH pages the Blazor Web Editor.
-
-name: 'Deploy Blazor Web Editor to GH Pages'
+name: 'Deploy playground to GitHub Pages'
 
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
     - 'src/**'
 
@@ -37,7 +35,7 @@ jobs:
         node-version: 18
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '7.0.x'
 

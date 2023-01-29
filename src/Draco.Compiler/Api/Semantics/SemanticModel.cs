@@ -3,6 +3,8 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Query;
+using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Semantics.FlowAnalysis;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Semantics.Types;
 
@@ -14,34 +16,32 @@ namespace Draco.Compiler.Api.Semantics;
 public sealed class SemanticModel
 {
     /// <summary>
-    /// The root of the tree that the semantic model is for.
+    /// The the tree that the semantic model is for.
     /// </summary>
-    public ParseTree Root { get; }
+    public ParseTree Tree { get; }
+
+    /// <summary>
+    /// The semantic <see cref="Diagnostic"/>s in this model.
+    /// </summary>
+    public IEnumerable<Diagnostic> Diagnostics => this.GetAllDiagnostics();
 
     internal QueryDatabase QueryDatabase => this.db;
 
     private readonly QueryDatabase db;
 
-    internal SemanticModel(QueryDatabase db, ParseTree root)
+    internal SemanticModel(QueryDatabase db, ParseTree tree)
     {
         this.db = db;
-        this.Root = root;
+        this.Tree = tree;
     }
-
-    /// <summary>
-    /// Prints this model as a scope tree in a DOT graph format.
-    /// </summary>
-    /// <returns>The DOT graph of the symbols and scopes of <see cref="Root"/>.</returns>
-    public string ToScopeTreeDotGraphString() =>
-        ScopeTreePrinter.Print(this.db, this.Root);
 
     /// <summary>
     /// Retrieves all semantic <see cref="Diagnostic"/>s.
     /// </summary>
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
-    public IEnumerable<Diagnostic> GetAllDiagnostics()
+    internal IEnumerable<Diagnostic> GetAllDiagnostics()
     {
-        IEnumerable<Diagnostic> Impl(ParseTree tree)
+        IEnumerable<Diagnostic> GetSymbolAndTypeErrors(ParseNode tree)
         {
             // Symbol
             foreach (var diag in SymbolResolution.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
@@ -50,10 +50,17 @@ public sealed class SemanticModel
             foreach (var diag in TypeChecker.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
 
             // Children
-            foreach (var diag in tree.Children.SelectMany(Impl)) yield return diag;
+            foreach (var diag in tree.Children.SelectMany(GetSymbolAndTypeErrors)) yield return diag;
         }
 
-        return Impl(this.Root);
+        var ast = ParseTreeToAst.ToAst(this.db, this.Tree.Root);
+
+        IEnumerable<Diagnostic> GetAstErrors() => ast!.GetAllDiagnostics();
+        IEnumerable<Diagnostic> GetDataFlowErrors() => DataFlowPasses.Analyze(ast);
+
+        return GetSymbolAndTypeErrors(this.Tree.Root)
+            .Concat(GetAstErrors())
+            .Concat(GetDataFlowErrors());
     }
 
     // NOTE: These OrNull functions are not too pretty
@@ -65,7 +72,7 @@ public sealed class SemanticModel
     /// <param name="subtree">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// define any.</returns>
-    public ISymbol? GetDefinedSymbolOrNull(ParseTree subtree) =>
+    public ISymbol? GetDefinedSymbolOrNull(ParseNode subtree) =>
         SymbolResolution.GetDefinedSymbolOrNull(this.db, subtree)?.ToApiSymbol();
 
     /// <summary>
@@ -74,7 +81,7 @@ public sealed class SemanticModel
     /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// reference any.</returns>
-    public ISymbol? GetReferencedSymbolOrNull(ParseTree subtree) =>
+    public ISymbol? GetReferencedSymbolOrNull(ParseNode subtree) =>
         SymbolResolution.GetReferencedSymbolOrNull(this.db, subtree)?.ToApiSymbol();
 
     /// <summary>
@@ -82,6 +89,6 @@ public sealed class SemanticModel
     /// </summary>
     /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>.</returns>
-    public ISymbol GetReferencedSymbol(ParseTree subtree) =>
+    public ISymbol GetReferencedSymbol(ParseNode subtree) =>
         SymbolResolution.GetReferencedSymbol(this.db, subtree).ToApiSymbol();
 }

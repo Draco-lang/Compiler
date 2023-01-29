@@ -1,5 +1,7 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
+using static Draco.Compiler.Internal.Semantics.Symbols.Symbol;
 using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Internal.Semantics.Symbols;
@@ -13,6 +15,7 @@ internal static class Intrinsics
     {
         public static ITypeDefinition Unit { get; } = MakeIntrinsicTypeDefinition("unit", Type.Unit);
         public static ITypeDefinition Int32 { get; } = MakeIntrinsicTypeDefinition("int32", Type.Int32);
+        public static ITypeDefinition Float64 { get; } = MakeIntrinsicTypeDefinition("float64", Type.Float64);
         public static ITypeDefinition Bool { get; } = MakeIntrinsicTypeDefinition("bool", Type.Bool);
         public static ITypeDefinition String { get; } = MakeIntrinsicTypeDefinition("string", Type.String);
         public static ITypeDefinition Char { get; } = MakeIntrinsicTypeDefinition("char", Type.Char);
@@ -20,22 +23,27 @@ internal static class Intrinsics
 
     public static class Operators
     {
-        public static IUnaryOperator Not_Bool { get; } = MakeIntrinsicUnaryOperator(TokenType.KeywordNot, Type.Bool, Type.Bool);
-        public static IUnaryOperator Pos_Int32 { get; } = MakeIntrinsicUnaryOperator(TokenType.Plus, Type.Int32, Type.Int32);
-        public static IUnaryOperator Neg_Int32 { get; } = MakeIntrinsicUnaryOperator(TokenType.Minus, Type.Int32, Type.Int32);
+        public static IFunction Not_Bool { get; } = MakeIntrinsicUnaryOperator(TokenType.KeywordNot, Type.Bool, Type.Bool);
+        public static IFunction Pos_Int32 { get; } = MakeIntrinsicUnaryOperator(TokenType.Plus, Type.Int32, Type.Int32);
+        public static IFunction Neg_Int32 { get; } = MakeIntrinsicUnaryOperator(TokenType.Minus, Type.Int32, Type.Int32);
 
-        public static IBinaryOperator Add_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Plus, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator Sub_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Minus, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator Mul_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Star, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator Div_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Slash, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator Mod_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.KeywordMod, Type.Int32, Type.Int32, Type.Int32);
-        public static IBinaryOperator Rem_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.KeywordRem, Type.Int32, Type.Int32, Type.Int32);
+        public static IFunction Add_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Plus, Type.Int32, Type.Int32, Type.Int32);
+        public static IFunction Sub_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Minus, Type.Int32, Type.Int32, Type.Int32);
+        public static IFunction Mul_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Star, Type.Int32, Type.Int32, Type.Int32);
+        public static IFunction Div_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.Slash, Type.Int32, Type.Int32, Type.Int32);
+        public static IFunction Mod_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.KeywordMod, Type.Int32, Type.Int32, Type.Int32);
+        public static IFunction Rem_Int32 { get; } = MakeIntrinsicBinaryOperator(TokenType.KeywordRem, Type.Int32, Type.Int32, Type.Int32);
 
-        public static IBinaryOperator Less_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.LessThan, Type.Int32, Type.Int32, Type.Bool);
-        public static IBinaryOperator LessEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.LessEqual, Type.Int32, Type.Int32, Type.Bool);
-        public static IBinaryOperator Greater_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.GreaterThan, Type.Int32, Type.Int32, Type.Bool);
-        public static IBinaryOperator GreaterEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.GreaterEqual, Type.Int32, Type.Int32, Type.Bool);
-        public static IBinaryOperator Equal_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.Equal, Type.Int32, Type.Int32, Type.Bool);
-        public static IBinaryOperator NotEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.NotEqual, Type.Int32, Type.Int32, Type.Bool);
+        public static IFunction Less_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.LessThan, Type.Int32, Type.Int32, Type.Bool);
+        public static IFunction LessEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.LessEqual, Type.Int32, Type.Int32, Type.Bool);
+        public static IFunction Greater_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.GreaterThan, Type.Int32, Type.Int32, Type.Bool);
+        public static IFunction GreaterEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.GreaterEqual, Type.Int32, Type.Int32, Type.Bool);
+        public static IFunction Equal_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.Equal, Type.Int32, Type.Int32, Type.Bool);
+        public static IFunction NotEqual_Int32 { get; } = MakeIntrinsicRelationalOperator(TokenType.NotEqual, Type.Int32, Type.Int32, Type.Bool);
+    }
+
+    public static class Functions
+    {
+        public static IFunction Println { get; } = MakeIntrinsicFunction("println", ImmutableArray.Create(Type.String), Type.Unit);
     }
 }

@@ -10,10 +10,7 @@ namespace Draco.LanguageServer.Handlers;
 internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandlerBase
 {
     private readonly DracoDocumentRepository repository;
-    private readonly DocumentSelector documentSelector = new(new DocumentFilter
-    {
-        Pattern = $"**/*{Constants.DracoSourceExtension}",
-    });
+    private readonly DocumentSelector documentSelector = Constants.DracoSourceDocumentSelector;
 
     public DracoDocumentFormattingHandler(DracoDocumentRepository repository)
     {
@@ -22,8 +19,9 @@ internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandler
 
     public override Task<TextEditContainer?> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
     {
-        var source = this.repository.GetDocument(request.TextDocument.Uri);
-        var tree = Program.Try(() => ParseTree.Parse(source));
+        var uri = request.TextDocument.Uri.ToUri();
+        var sourceText = this.repository.GetDocument(request.TextDocument.Uri);
+        var tree = Program.Try(() => ParseTree.Parse(sourceText));
         var originalRange = tree.Range;
         tree = Program.Try(() => tree.Format());
         var edit = new TextEdit()

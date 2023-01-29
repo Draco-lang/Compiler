@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,10 +24,7 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
 
     private readonly ILanguageServerFacade server;
     private readonly DracoDocumentRepository repository;
-    private readonly DocumentSelector documentSelector = new(new DocumentFilter
-    {
-        Pattern = $"**/*{Constants.DracoSourceExtension}",
-    });
+    private readonly DocumentSelector documentSelector = Constants.DracoSourceDocumentSelector;
 
     public DracoDocumentHandler(ILanguageServerFacade server, DracoDocumentRepository repository)
     {
@@ -76,10 +74,12 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
 
     private Task PublishDiagnosticsAsync(DocumentUri uri, string text)
     {
-        var parseTree = ParseTree.Parse(text);
+        // TODO: When becomes incrmental, should not re-create
+        var sourceText = SourceText.FromText(uri.ToUri(), text.AsMemory());
+        var parseTree = ParseTree.Parse(sourceText);
         // TODO: Compilation should be shared
         var compilation = Compilation.Create(parseTree);
-        var diags = compilation.GetDiagnostics();
+        var diags = compilation.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
         this.server.TextDocument.PublishDiagnostics(new()
         {

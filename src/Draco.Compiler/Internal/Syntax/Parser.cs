@@ -5,12 +5,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
-using static Draco.Compiler.Internal.Syntax.ParseTree;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Parses a sequence of <see cref="Token"/>s into a <see cref="ParseTree"/>.
+/// Parses a sequence of <see cref="Token"/>s into a <see cref="ParseNode"/>.
 /// </summary>
 internal sealed class Parser
 {
@@ -394,9 +394,25 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="TypeExpr"/>.</returns>
     private TypeExpr ParseTypeExpr()
     {
-        // For now we only allow identifiers
-        var typeName = this.Expect(TokenType.Identifier);
-        return new TypeExpr.Name(typeName);
+        if (this.Matches(TokenType.Identifier, out var typeName))
+        {
+            return new TypeExpr.Name(typeName);
+        }
+        else
+        {
+            var input = this.Synchronize(t => t switch
+            {
+                TokenType.Semicolon or TokenType.Comma
+                or TokenType.ParenClose or TokenType.BracketClose
+                or TokenType.CurlyClose or TokenType.InterpolationEnd
+                or TokenType.Assign => false,
+                var type when expressionStarters.Contains(type) => false,
+                _ => true,
+            });
+            var location = GetLocation(input.Sum(i => i.Width));
+            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "type");
+            return new TypeExpr.Unexpected(input, ImmutableArray.Create(diag));
+        }
     }
 
     /// <summary>
@@ -656,7 +672,7 @@ internal sealed class Parser
         {
             var gotoKeyword = this.Advance();
             var labelName = this.Expect(TokenType.Identifier);
-            return new Expr.Goto(gotoKeyword, new Expr.Name(labelName));
+            return new Expr.Goto(gotoKeyword, new LabelName(labelName));
         }
 
         default:
@@ -762,7 +778,8 @@ internal sealed class Parser
             var input = this.Synchronize(t => t switch
             {
                 TokenType.Semicolon or TokenType.Comma
-                or TokenType.ParenClose or TokenType.BracketClose or TokenType.CurlyClose => false,
+                or TokenType.ParenClose or TokenType.BracketClose
+                or TokenType.CurlyClose or TokenType.InterpolationEnd => false,
                 var type when expressionStarters.Contains(type) => false,
                 _ => true,
             });
@@ -787,7 +804,7 @@ internal sealed class Parser
             if (peek == TokenType.StringContent)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, 0, ImmutableArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek == TokenType.InterpolationStart)
             {
@@ -836,7 +853,7 @@ internal sealed class Parser
             if (peek == TokenType.StringContent || peek == TokenType.StringNewline)
             {
                 var part = this.Advance();
-                content.Add(new StringPart.Content(part, 0, ImmutableArray<Diagnostic>.Empty));
+                content.Add(new StringPart.Content(part, ImmutableArray<Diagnostic>.Empty));
             }
             else if (peek == TokenType.InterpolationStart)
             {
@@ -894,12 +911,12 @@ internal sealed class Parser
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
                             var allDiags = contentPart.Diagnostics.Append(diag).ToImmutableArray();
-                            newContent.Add(new StringPart.Content(contentPart.Value, 0, allDiags));
+                            newContent.Add(new StringPart.Content(contentPart.Value, allDiags));
                         }
                         else
                         {
-                            // Indentation was ok, reinstantiate to add cutoff
-                            newContent.Add(new StringPart.Content(contentPart.Value, prefix.Length, contentPart.Diagnostics));
+                            // Indentation was ok
+                            newContent.Add(part);
                         }
                         nextIsNewline = false;
                     }
@@ -986,11 +1003,11 @@ internal sealed class Parser
     /// while a given condition is met.
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
-    /// <returns>The consumed list of <see cref="Token"/>s as <see cref="ParseTree"/>s.</returns>
-    private ImmutableArray<ParseTree> Synchronize(Func<TokenType, bool> keepGoing)
+    /// <returns>The consumed list of <see cref="Token"/>s as <see cref="ParseNode"/>s.</returns>
+    private ImmutableArray<ParseNode> Synchronize(Func<TokenType, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
-        var input = ImmutableArray.CreateBuilder<ParseTree>();
+        var input = ImmutableArray.CreateBuilder<ParseNode>();
         while (true)
         {
             var peek = this.Peek();

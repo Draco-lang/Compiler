@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Tests", "Dra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree", "Draco.RedGreenTree\Draco.RedGreenTree.csproj", "{4C08CDD1-8B9B-49C3-9372-3919020E6B64}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.Cli", "Draco.RedGreenTree.Cli\Draco.RedGreenTree.Cli.csproj", "{6429EFEC-EA0B-4B38-9D21-04220D977841}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.SourceGenerator", "Draco.RedGreenTree.SourceGenerator\Draco.RedGreenTree.SourceGenerator.csproj", "{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Cli", "Draco.Compiler.Cli\Draco.Compiler.Cli.csproj", "{9E8937E0-9A0D-4E8F-90F6-AB1FE1D7E464}"
@@ -22,9 +20,18 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AED258F7-746C-452E-B073-153F9457660B}"
 	ProjectSection(SolutionItems) = preProject
 		..\.editorconfig = ..\.editorconfig
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.LanguageServer", "Draco.LanguageServer\Draco.LanguageServer.csproj", "{715FB0AC-561D-4958-8D79-0ACD516BA89B}"
+EndProject
+Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "Draco.Sdk", "Draco.Sdk\Draco.Sdk.msbuildproj", "{48C755B9-6BC9-47E7-BDF1-393E07B1A001}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Tasks", "Draco.Compiler.Tasks\Draco.Compiler.Tasks.csproj", "{30B6DB14-2A2B-4356-868D-6EB7161D686B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Toolset", "Draco.Compiler.Toolset\Draco.Compiler.Toolset.csproj", "{82765FD8-0985-475F-BDE6-3A27254FF457}"
+EndProject
+Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "Draco.ProjectTemplates", "Draco.ProjectTemplates\Draco.ProjectTemplates.msbuildproj", "{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,12 +58,6 @@ Global
 		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Nuget|Any CPU.Build.0 = Release|Any CPU
 		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
-		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Nuget|Any CPU.Build.0 = Release|Any CPU
-		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6429EFEC-EA0B-4B38-9D21-04220D977841}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
@@ -87,6 +88,30 @@ Global
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{715FB0AC-561D-4958-8D79-0ACD516BA89B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
+		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Nuget|Any CPU.Build.0 = Release|Any CPU
+		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48C755B9-6BC9-47E7-BDF1-393E07B1A001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30B6DB14-2A2B-4356-868D-6EB7161D686B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82765FD8-0985-475F-BDE6-3A27254FF457}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

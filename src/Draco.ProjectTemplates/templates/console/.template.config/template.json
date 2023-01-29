@@ -1,0 +1,50 @@
+{
+    "$schema": "http://json.schemastore.org/template",
+    "identity": "Draco.Console",
+    "groupIdentity": "Microsoft.Common.Console",
+    "name": "Console App",
+    "shortName": "console",
+    "sourceName": "DracoConsole",
+    "classifications": [
+        "Console",
+        "Common"
+    ],
+    "tags": {
+        "language": "Draco",
+        "type": "project"
+    },
+    "author": "Draco Language contributors",
+    "description": "A project for creating a command-line application with Draco",
+    "preferNameDirectory": true,
+    "symbols": {
+        "framework": {
+            "type": "parameter",
+            "datatype": "choice",
+            "allowMultipleValues": false,
+            "choices": [
+                {
+                    "choice": "net6.0",
+                    "displayName": ".NET 6",
+                    "description": "Target .NET 6."
+                },
+                {
+                    "choice": "net7.0",
+                    "displayName": ".NET 7",
+                    "description": "Target .NET 7."
+                }
+            ],
+            "defaultValue": "net7.0",
+            "replaces": "{TargetFramework}",
+            "displayName": "Target framework",
+            "description": "The target framework for the project."
+        }
+    },
+    "primaryOutputs": [
+        {
+            "path": "./main.draco"
+        },
+        {
+            "path": "./ConsoleApplication.dracoproj"
+        }
+    ]
+}

@@ -3,17 +3,11 @@ using Draco.Compiler.Api.Diagnostics;
 namespace Draco.Compiler.Internal.Semantics;
 
 /// <summary>
-/// Holds constants for semantic.
+/// Holds constants for type checking errors.
 /// </summary>
-internal static class SemanticErrors
+internal static class TypeCheckingErrors
 {
-    /// <summary>
-    /// An undefined reference.
-    /// </summary>
-    public static readonly DiagnosticTemplate UndefinedReference = DiagnosticTemplate.Create(
-        title: "undefined reference",
-        severity: DiagnosticSeverity.Error,
-        format: "undefined reference to {0}");
+    private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.TypeChecking, index);
 
     /// <summary>
     /// The type of something could not be inferred.
@@ -21,7 +15,8 @@ internal static class SemanticErrors
     public static readonly DiagnosticTemplate CouldNotInferType = DiagnosticTemplate.Create(
         title: "could not infer type",
         severity: DiagnosticSeverity.Error,
-        format: "could not infer type of {0}");
+        format: "could not infer type of {0}",
+        code: Code(1));
 
     /// <summary>
     /// A type mismatch error.
@@ -29,5 +24,7 @@ internal static class SemanticErrors
     public static readonly DiagnosticTemplate TypeMismatch = DiagnosticTemplate.Create(
         title: "type mismatch",
         severity: DiagnosticSeverity.Error,
-        format: "type mismatch between {0} and {1}");
+        format: "type mismatch between {0} and {1}",
+        code: Code(2));
 }
+

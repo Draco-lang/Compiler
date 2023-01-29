@@ -2,7 +2,9 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
+using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 
@@ -16,46 +18,42 @@ internal class Program
     private static RootCommand ConfigureCommands()
     {
         var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
-        var emitCSharpOutput = new Option<FileInfo>("--output-cs", description: "Specifies output file for generated c#, if not specified, generated code is not saved to the disk");
+        var emitIROutputOption = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
-        var runCommand = new Command("run", "Runs specified draco file")
+        var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
+
+        var runCommand = new Command("run", "Runs specified Draco file")
         {
             fileArgument,
             outputOption,
         };
         runCommand.SetHandler(Run, fileArgument);
 
-        var generateParseTreeCommand = new Command("parse", "Generates parse tree from specified draco file")
+        var generateIRCommand = new Command("codegen", "Generates DracoIR from specified draco file and displays it to the console")
         {
             fileArgument,
+            emitIROutputOption,
         };
-        generateParseTreeCommand.SetHandler((file) => GenerateParseTree(file), fileArgument);
+        generateIRCommand.SetHandler(GenerateDracoIR, fileArgument, emitIROutputOption);
 
-        var generateCSCommand = new Command("codegen", "Generates c# from specified draco file and displays it to the console")
-        {
-            fileArgument,
-            emitCSharpOutput,
-        };
-        generateCSCommand.SetHandler((file, emitCS) => GenerateCSharp(file, emitCS), fileArgument, emitCSharpOutput);
-
-        var generateExeCommand = new Command("compile", "Generates executable from specified draco file")
+        var generateExeCommand = new Command("compile", "Generates executable from specified Draco file")
         {
             fileArgument,
             outputOption,
+            msbuildDiagOption,
         };
-        generateExeCommand.SetHandler((input, output) => GenerateExe(input, output), fileArgument, outputOption);
+        generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption, msbuildDiagOption);
 
-        var rootCommand = new RootCommand("CLI for the draco compiler");
+        var rootCommand = new RootCommand("CLI for the Draco compiler");
         rootCommand.AddCommand(runCommand);
-        rootCommand.AddCommand(generateParseTreeCommand);
-        rootCommand.AddCommand(generateCSCommand);
+        rootCommand.AddCommand(generateIRCommand);
         rootCommand.AddCommand(generateExeCommand);
         return rootCommand;
     }
 
     private static void Run(FileInfo input)
     {
-        var sourceText = File.ReadAllText(input.FullName);
+        var sourceText = SourceText.FromFile(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
         var execResult = ScriptingEngine.Execute(compilation);
@@ -67,41 +65,47 @@ internal class Program
         Console.WriteLine($"Result: {execResult.Result}");
     }
 
-    private static void GenerateParseTree(FileInfo input)
+    private static void GenerateDracoIR(FileInfo input, FileInfo? emitCS)
     {
-        var sourceText = File.ReadAllText(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        Console.WriteLine(parseTree.ToDebugString());
-    }
-
-    private static void GenerateCSharp(FileInfo input, FileInfo? emitCS)
-    {
-        var sourceText = File.ReadAllText(input.FullName);
+        var sourceText = SourceText.FromFile(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree);
-        using var csStream = new MemoryStream();
-        var emitResult = compilation.EmitCSharp(csStream);
+        using var irStream = new MemoryStream();
+        var emitResult = compilation.Emit(
+            peStream: new MemoryStream(),
+            dracoIrStream: irStream);
         if (!emitResult.Success)
         {
             foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
             return;
         }
-        csStream.Position = 0;
-        var generatedCs = new StreamReader(csStream).ReadToEnd();
-        Console.WriteLine(generatedCs);
-        if (emitCS is not null) File.WriteAllText(emitCS.FullName, generatedCs);
+        irStream.Position = 0;
+        var generatedIr = new StreamReader(irStream).ReadToEnd();
+        Console.WriteLine(generatedIr);
+        if (emitCS is not null) File.WriteAllText(emitCS.FullName, generatedIr);
     }
 
-    private static void GenerateExe(FileInfo input, FileInfo output)
+    private static void GenerateExe(FileInfo input, FileInfo output, bool msbuildDiags)
     {
-        var sourceText = File.ReadAllText(input.FullName);
+        var sourceText = SourceText.FromFile(input.FullName);
         var parseTree = ParseTree.Parse(sourceText);
         var compilation = Compilation.Create(parseTree, output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(dllStream);
         if (!emitResult.Success)
         {
-            foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
+            foreach (var diag in emitResult.Diagnostics.Select(x => msbuildDiags ? MakeMsbuildDiag(x) : x.ToString())) Console.WriteLine(diag);
         }
+    }
+
+    private static string MakeMsbuildDiag(Diagnostic original)
+    {
+        var file = string.Empty;
+        if (!original.Location.IsNone && original.Location.SourceText.Path is not null)
+        {
+            var range = original.Location.Range!.Value;
+            file = $"{original.Location.SourceText.Path.OriginalString}({range.Start.Line + 1},{range.Start.Column + 1},{range.End.Line + 1},{range.End.Column + 1})";
+        }
+        return $"{file} : {original.Severity.ToString().ToLower()} {original.Template.Code} : {original.Message}";
     }
 }

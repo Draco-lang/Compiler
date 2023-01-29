@@ -12,8 +12,13 @@ html, body, #app {
     flex-direction: row;
 }
 
-.editors-container div {
+.editors-container > div {
     width: 50%;
+    border-top: 1px solid gray
+}
+
+#draco-editor {
+    border-right: 1px solid gray
 }
 
 .settings {
@@ -23,18 +28,19 @@ html, body, #app {
     justify-content: space-between;
 }
 
-@media (prefers-color-scheme: dark) {
-    .settings {
-        background-color: #1e1e1e;
-    }
-    body {
-        background-color: #1e1e1e;
-    }
+#output-type-selector {
+    left: 50%;
+    position: absolute;
 }
 
+.settings select {
+    border-radius: 5px;
+    height: 24px;
+    margin: 5px 0px 5px 29px;
+}
 
-@media (prefers-color-scheme: light) {
-    .settings {
-        background-color: #fffffe;
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1e1e1e;
     }
 }

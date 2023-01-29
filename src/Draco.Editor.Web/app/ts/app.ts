@@ -5,7 +5,6 @@ import { Registry } from 'monaco-textmate';
 import { wireTmGrammars } from 'monaco-editor-textmate'; // Library that allow running Textmates grammar in monaco.
 import grammarDefinition from '../../../Draco.SyntaxHighlighting/draco.tmLanguage.json';
 import { deflateRaw, inflateRaw } from 'pako';
-import { stdout } from 'process';
 
 // This file is run on page load.
 // This run before blazor load, and will tell blazor to start.
@@ -108,7 +107,18 @@ outputTypeSelector.onchange = () => {
 const dracoEditor = monaco.editor.create(document.getElementById('draco-editor'), {
     value: inputCode,
     language: 'draco',
-    theme: 'dynamic-theme'
+    theme: 'dynamic-theme',
+    scrollbar: {
+        vertical: 'visible'
+    },
+    scrollBeyondLastLine: false,
+    minimap: {
+        enabled: false
+    },
+    renderLineHighlight: 'none',
+    overviewRulerBorder: false,
+    hideCursorInOverviewRuler: true,
+    mouseWheelZoom: true
 });
 
 dracoEditor.onDidChangeModelContent(() => {
@@ -122,7 +132,19 @@ dracoEditor.onDidChangeModelContent(() => {
 const outputEditor = monaco.editor.create(document.getElementById('output-viewer'), {
     value: [stdoutBuffer].join('\n'),
     theme: 'dynamic-theme',
-    readOnly: true
+    readOnly: true,
+    scrollbar: {
+        vertical: 'visible'
+    },
+    scrollBeyondLastLine: false,
+    minimap: {
+        enabled: false
+    },
+    renderLineHighlight: 'none',
+    overviewRulerBorder: false,
+    hideCursorInOverviewRuler: true,
+    mouseWheelZoom: true,
+    occurrencesHighlight: false
 });
 
 compilerWorker.onmessage = async (ev) => {

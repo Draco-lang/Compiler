@@ -110,7 +110,7 @@ internal abstract partial record class Ast
             [property: Ignore(IgnoreFlags.TransformerTransform)] SyntaxNode? SyntaxNode) : Expr
         {
             /// <summary>
-            /// A default unit value without a parse tree.
+            /// A default unit value without a syntax tree.
             /// </summary>
             public static Unit Default { get; } = new(SyntaxNode: null);
 

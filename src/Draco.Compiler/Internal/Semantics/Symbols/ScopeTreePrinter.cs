@@ -15,7 +15,7 @@ internal static class ScopeTreePrinter
     /// Constructs a DOT graph representation of the scope tree.
     /// </summary>
     /// <param name="db">The query database used for computations.</param>
-    /// <param name="syntaxTree">The parse tree to print the tree for.</param>
+    /// <param name="syntaxTree">The syntax tree to print the tree for.</param>
     /// <returns>The DOT graph for the scope tree of <paramref name="syntaxTree"/>.</returns>
     public static string ToDot(QueryDatabase db, SyntaxTree syntaxTree)
     {

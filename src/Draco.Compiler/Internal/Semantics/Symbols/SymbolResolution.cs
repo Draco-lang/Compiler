@@ -228,8 +228,8 @@ internal static class SymbolResolution
         where TSymbol : ISymbol
     {
         var symbol = GetDefinedSymbolOrNull(db, tree);
-        if (symbol is null) throw new InvalidOperationException("The parse tree does not define a symbol");
-        if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The parse tree defines a differen kind of symbol");
+        if (symbol is null) throw new InvalidOperationException("The syntax tree does not define a symbol");
+        if (symbol is not TSymbol tSymbol) throw new InvalidOperationException("The syntax tree defines a differen kind of symbol");
         return tSymbol;
     }
 

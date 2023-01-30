@@ -130,9 +130,9 @@ internal sealed class Parser
     private static readonly PrecLevel[] precedenceTable = new[]
     {
         // Max precedence is atom
-        PrecLevel.Custom((parser, _) => parser.ParseAtomExpr()),
+        PrecLevel.Custom((parser, _) => parser.ParseAtomExpression()),
         // Then comes call, indexing and member access
-        PrecLevel.Custom((parser, subexprParser) => parser.ParseCallLevelExpr(subexprParser)),
+        PrecLevel.Custom((parser, subexprParser) => parser.ParseCallLevelExpression(subexprParser)),
         // Then prefix unary + and -
         PrecLevel.Prefix(TokenType.Plus, TokenType.Minus),
         // Then binary *, /, mod, rem
@@ -140,7 +140,7 @@ internal sealed class Parser
         // Then binary +, -
         PrecLevel.BinaryLeft(TokenType.Plus, TokenType.Minus),
         // Then relational operators
-        PrecLevel.Custom((parser, subexprParser) => parser.ParseRelationalLevelExpr(subexprParser)),
+        PrecLevel.Custom((parser, subexprParser) => parser.ParseRelationalLevelExpression(subexprParser)),
         // Then unary not
         PrecLevel.Prefix(TokenType.KeywordNot),
         // Then binary and
@@ -153,7 +153,7 @@ internal sealed class Parser
             TokenType.PlusAssign, TokenType.MinusAssign,
             TokenType.StarAssign, TokenType.SlashAssign),
         // Finally the pseudo-statement-like constructs
-        PrecLevel.Custom((parser, subexprParser) => parser.ParsePseudoStmtLevelExpr(subexprParser)),
+        PrecLevel.Custom((parser, subexprParser) => parser.ParsePseudoStatementLevelExpression(subexprParser)),
     };
 
     /// <summary>
@@ -226,7 +226,7 @@ internal sealed class Parser
         switch (this.Peek())
         {
         case TokenType.KeywordFunc:
-            return this.ParseFuncDeclaration();
+            return this.ParseFunctionDeclaration();
 
         case TokenType.KeywordVar:
         case TokenType.KeywordVal:
@@ -275,7 +275,7 @@ internal sealed class Parser
         case TokenType.KeywordIf:
         case TokenType.KeywordWhile:
         {
-            var expr = this.ParseControlFlowExpr(ControlFlowContext.Stmt);
+            var expr = this.ParseControlFlowExpression(ControlFlowContext.Stmt);
             return new ExpressionStatementSyntax(expr, null);
         }
 
@@ -319,7 +319,7 @@ internal sealed class Parser
     /// Parsed a function declaration.
     /// </summary>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
-    private FunctionDeclarationSyntax ParseFuncDeclaration()
+    private FunctionDeclarationSyntax ParseFunctionDeclaration()
     {
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenType.KeywordFunc);
@@ -327,8 +327,8 @@ internal sealed class Parser
 
         // Parameters
         var openParen = this.Expect(TokenType.ParenOpen);
-        var funcParameters = this.ParsePunctuatedListAllowTrailing(
-            elementParser: this.ParseFuncParam,
+        var funcParameters = this.ParseSeparatedSyntaxList(
+            elementParser: this.ParseParameter,
             punctType: TokenType.Comma,
             stopType: TokenType.ParenClose);
         var closeParen = this.Expect(TokenType.ParenClose);
@@ -337,7 +337,7 @@ internal sealed class Parser
         TypeSpecifierSyntax? returnType = null;
         if (this.Peek() == TokenType.Colon) returnType = this.ParseTypeSpecifier();
 
-        var body = this.ParseFuncBody();
+        var body = this.ParseFunctionBody();
 
         return new FunctionDeclarationSyntax(funcKeyword, name, openParen, funcParameters, closeParen, returnType, body);
     }
@@ -357,11 +357,11 @@ internal sealed class Parser
     /// Parses a function parameter.
     /// </summary>
     /// <returns>The parsed <see cref="ParameterSyntax"/>.</returns>
-    private ParameterSyntax ParseFuncParam()
+    private ParameterSyntax ParseParameter()
     {
         var name = this.Expect(TokenType.Identifier);
         var colon = this.Expect(TokenType.Colon);
-        var type = this.ParseTypeExpr();
+        var type = this.ParseType();
         return new(name, colon, type);
     }
 
@@ -369,7 +369,7 @@ internal sealed class Parser
     /// Parses a function body.
     /// </summary>
     /// <returns>The parsed <see cref="FunctionBodySyntax"/>.</returns>
-    private FunctionBodySyntax ParseFuncBody()
+    private FunctionBodySyntax ParseFunctionBody()
     {
         if (this.Matches(TokenType.Assign, out var assign))
         {
@@ -410,7 +410,7 @@ internal sealed class Parser
     private TypeSpecifierSyntax ParseTypeSpecifier()
     {
         var colon = this.Expect(TokenType.Colon);
-        var type = this.ParseTypeExpr();
+        var type = this.ParseType();
         return new(colon, type);
     }
 
@@ -418,7 +418,7 @@ internal sealed class Parser
     /// Parses a type expression.
     /// </summary>
     /// <returns>The parsed <see cref="TypeSyntax"/>.</returns>
-    private TypeSyntax ParseTypeExpr()
+    private TypeSyntax ParseType()
     {
         if (this.Matches(TokenType.Identifier, out var typeName))
         {
@@ -448,7 +448,7 @@ internal sealed class Parser
     /// </summary>
     /// <param name="ctx">The current context we are in.</param>
     /// <returns>The parsed <see cref="ExpressionSyntax"/>.</returns>
-    private ExpressionSyntax ParseControlFlowExpr(ControlFlowContext ctx)
+    private ExpressionSyntax ParseControlFlowExpression(ControlFlowContext ctx)
     {
         var peekType = this.Peek();
         Debug.Assert(peekType == TokenType.CurlyOpen
@@ -456,9 +456,9 @@ internal sealed class Parser
                   || peekType == TokenType.KeywordWhile);
         return peekType switch
         {
-            TokenType.CurlyOpen => this.ParseBlockExpr(ctx),
-            TokenType.KeywordIf => this.ParseIfExpr(ctx),
-            TokenType.KeywordWhile => this.ParseWhileExpr(ctx),
+            TokenType.CurlyOpen => this.ParseBlockExpression(ctx),
+            TokenType.KeywordIf => this.ParseIfExpression(ctx),
+            TokenType.KeywordWhile => this.ParseWhileExpression(ctx),
             _ => throw new InvalidOperationException(),
         };
     }
@@ -491,7 +491,7 @@ internal sealed class Parser
     /// </summary>
     /// <param name="ctx">The current context we are in.</param>
     /// <returns>The parsed <see cref="BlockExpressionSyntax"/>.</returns>
-    private BlockExpressionSyntax ParseBlockExpr(ControlFlowContext ctx)
+    private BlockExpressionSyntax ParseBlockExpression(ControlFlowContext ctx)
     {
         var parsed = this.ParseBlock(ctx);
         return new BlockExpressionSyntax(
@@ -529,7 +529,7 @@ internal sealed class Parser
             case TokenType.KeywordIf:
             case TokenType.KeywordWhile:
             {
-                var expr = this.ParseControlFlowExpr(ctx);
+                var expr = this.ParseControlFlowExpression(ctx);
                 if (ctx == ControlFlowContext.Expr && this.Peek() == TokenType.CurlyClose)
                 {
                     // Treat as expression
@@ -591,7 +591,7 @@ internal sealed class Parser
     /// </summary>
     /// <param name="ctx">The current context we are in.</param>
     /// <returns>The parsed <see cref="IfExpressionSyntax"/>.</returns>
-    private IfExpressionSyntax ParseIfExpr(ControlFlowContext ctx)
+    private IfExpressionSyntax ParseIfExpression(ControlFlowContext ctx)
     {
         var ifKeyword = this.Expect(TokenType.KeywordIf);
         var openParen = this.Expect(TokenType.ParenOpen);
@@ -614,7 +614,7 @@ internal sealed class Parser
     /// </summary>
     /// <param name="ctx">The current context we are in.</param>
     /// <returns>The parsed <see cref="WhileExpressionSyntax"/>.</returns>
-    private WhileExpressionSyntax ParseWhileExpr(ControlFlowContext ctx)
+    private WhileExpressionSyntax ParseWhileExpression(ControlFlowContext ctx)
     {
         var whileKeyword = this.Expect(TokenType.KeywordWhile);
         var openParen = this.Expect(TokenType.ParenOpen);
@@ -689,7 +689,7 @@ internal sealed class Parser
 
     // Plumbing code for precedence parsing
 
-    private ExpressionSyntax ParsePseudoStmtLevelExpr(Func<ExpressionSyntax> elementParser)
+    private ExpressionSyntax ParsePseudoStatementLevelExpression(Func<ExpressionSyntax> elementParser)
     {
         switch (this.Peek())
         {
@@ -713,7 +713,7 @@ internal sealed class Parser
         }
     }
 
-    private ExpressionSyntax ParseRelationalLevelExpr(Func<ExpressionSyntax> elementParser)
+    private ExpressionSyntax ParseRelationalLevelExpression(Func<ExpressionSyntax> elementParser)
     {
         var left = elementParser();
         var comparisons = SyntaxList.CreateBuilder<ComparisonElementSyntax>();
@@ -730,7 +730,7 @@ internal sealed class Parser
             : new RelationalExpressionSyntax(left, comparisons.ToSyntaxList());
     }
 
-    private ExpressionSyntax ParseCallLevelExpr(Func<ExpressionSyntax> elementParser)
+    private ExpressionSyntax ParseCallLevelExpression(Func<ExpressionSyntax> elementParser)
     {
         var result = elementParser();
         while (true)
@@ -739,7 +739,7 @@ internal sealed class Parser
             if (peek == TokenType.ParenOpen)
             {
                 var openParen = this.Expect(TokenType.ParenOpen);
-                var args = this.ParsePunctuatedListAllowTrailing(
+                var args = this.ParseSeparatedSyntaxList(
                     elementParser: this.ParseExpression,
                     punctType: TokenType.Comma,
                     stopType: TokenType.ParenClose);
@@ -749,7 +749,7 @@ internal sealed class Parser
             else if (peek == TokenType.BracketOpen)
             {
                 var openParen = this.Expect(TokenType.ParenOpen);
-                var args = this.ParsePunctuatedListAllowTrailing(
+                var args = this.ParseSeparatedSyntaxList(
                     elementParser: this.ParseExpression,
                     punctType: TokenType.Comma,
                     stopType: TokenType.BracketClose);
@@ -769,7 +769,7 @@ internal sealed class Parser
         return result;
     }
 
-    private ExpressionSyntax ParseAtomExpr()
+    private ExpressionSyntax ParseAtomExpression()
     {
         switch (this.Peek())
         {
@@ -805,7 +805,7 @@ internal sealed class Parser
         case TokenType.CurlyOpen:
         case TokenType.KeywordIf:
         case TokenType.KeywordWhile:
-            return this.ParseControlFlowExpr(ControlFlowContext.Expr);
+            return this.ParseControlFlowExpression(ControlFlowContext.Expr);
         default:
         {
             var input = this.Synchronize(t => t switch
@@ -978,10 +978,10 @@ internal sealed class Parser
     /// </summary>
     /// <typeparam name="TNode">The element type of the list.</typeparam>
     /// <param name="elementParser">The parser function that parses a single element.</param>
-    /// <param name="punctType">The type of the punctuation token.</param>
+    /// <param name="punctType">The type of the separator token.</param>
     /// <param name="stopType">The type of the token that definitely ends this construct.</param>
     /// <returns>The parsed <see cref="SeparatedSyntaxList{TNode}"/>.</returns>
-    private SeparatedSyntaxList<TNode> ParsePunctuatedListAllowTrailing<TNode>(
+    private SeparatedSyntaxList<TNode> ParseSeparatedSyntaxList<TNode>(
         Func<TNode> elementParser,
         TokenType punctType,
         TokenType stopType)

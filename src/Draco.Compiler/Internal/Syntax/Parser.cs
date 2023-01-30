@@ -72,88 +72,73 @@ internal sealed class Parser
         SyntaxToken CloseCurly);
 
     /// <summary>
-    /// Describes a single precedence level for expressions.
+    /// A delegate for an <see cref="ExpressionSyntax"/> parser.
     /// </summary>
-    /// <param name="Kind">The kind of the precedence level.</param>
-    /// <param name="Operators">The operator tokens for this level.</param>
-    /// <param name="CustomParser">The custom parser for the level, if any.</param>
-    private readonly record struct PrecLevel(
-        PrecLevelKind Kind,
-        TokenType[] Operators,
-        Func<Parser, Func<ExpressionSyntax>, ExpressionSyntax> CustomParser)
-    {
-        /// <summary>
-        /// Constructs a precedence level for prefix operators.
-        /// </summary>
-        /// <param name="ops">The valid prefix unary operator token types.</param>
-        /// <returns>A precedence level descriptor.</returns>
-        public static PrecLevel Prefix(params TokenType[] ops) => new(
-            Kind: PrecLevelKind.Prefix,
-            Operators: ops,
-            CustomParser: (_1, _2) => throw new InvalidOperationException());
-
-        /// <summary>
-        /// Constructs a precedence level for binary left-associative operators.
-        /// </summary>
-        /// <param name="ops">The valid binary operator token types.</param>
-        /// <returns>A precedence level descriptor.</returns>
-        public static PrecLevel BinaryLeft(params TokenType[] ops) => new(
-            Kind: PrecLevelKind.BinaryLeft,
-            Operators: ops,
-            CustomParser: (_1, _2) => throw new InvalidOperationException());
-
-        /// <summary>
-        /// Constructs a precedence level for binary right-associative operators.
-        /// </summary>
-        /// <param name="ops">The valid binary operator token types.</param>
-        /// <returns>A precedence level descriptor.</returns>
-        public static PrecLevel BinaryRight(params TokenType[] ops) => new(
-            Kind: PrecLevelKind.BinaryRight,
-            Operators: ops,
-            CustomParser: (_1, _2) => throw new InvalidOperationException());
-
-        /// <summary>
-        /// Constructs a precedence level for a custom parser function.
-        /// </summary>
-        /// <param name="parserFunc">The parser function for the level.</param>
-        /// <returns>A precedence level descriptor.</returns>
-        public static PrecLevel Custom(Func<Parser, Func<ExpressionSyntax>, ExpressionSyntax> parserFunc) => new(
-            Kind: PrecLevelKind.Custom,
-            Operators: Array.Empty<TokenType>(),
-            CustomParser: parserFunc);
-    }
+    /// <param name="level">The level in the precedence table.</param>
+    /// <returns>The parsed <see cref="ExpressionSyntax"/>.</returns>
+    private delegate ExpressionSyntax ExpressionParserDelegate(int level);
 
     /// <summary>
-    /// The precedence table for the parser.
-    /// Goes from highest precedence first, lowest precedence last.
+    /// Constructs an <see cref="ExpressionParserDelegate"/> for a set of prefix operators.
     /// </summary>
-    private static readonly PrecLevel[] precedenceTable = new[]
+    /// <param name="operators">The set of prefix operators.</param>
+    /// <returns>An <see cref="ExpressionParserDelegate"/> that recognizes <paramref name="operators"/> as prefix operators.</returns>
+    private ExpressionParserDelegate Prefix(params TokenType[] operators) => level =>
     {
-        // Max precedence is atom
-        PrecLevel.Custom((parser, _) => parser.ParseAtomExpression()),
-        // Then comes call, indexing and member access
-        PrecLevel.Custom((parser, subexprParser) => parser.ParseCallLevelExpression(subexprParser)),
-        // Then prefix unary + and -
-        PrecLevel.Prefix(TokenType.Plus, TokenType.Minus),
-        // Then binary *, /, mod, rem
-        PrecLevel.BinaryLeft(TokenType.Star, TokenType.Slash, TokenType.KeywordMod, TokenType.KeywordRem),
-        // Then binary +, -
-        PrecLevel.BinaryLeft(TokenType.Plus, TokenType.Minus),
-        // Then relational operators
-        PrecLevel.Custom((parser, subexprParser) => parser.ParseRelationalLevelExpression(subexprParser)),
-        // Then unary not
-        PrecLevel.Prefix(TokenType.KeywordNot),
-        // Then binary and
-        PrecLevel.BinaryLeft(TokenType.KeywordAnd),
-        // Then binary or
-        PrecLevel.BinaryLeft(TokenType.KeywordOr),
-        // Then assignment and compound assignment, which are **RIGHT ASSOCIATIVE**
-        PrecLevel.BinaryRight(
-            TokenType.Assign,
-            TokenType.PlusAssign, TokenType.MinusAssign,
-            TokenType.StarAssign, TokenType.SlashAssign),
-        // Finally the pseudo-statement-like constructs
-        PrecLevel.Custom((parser, subexprParser) => parser.ParsePseudoStatementLevelExpression(subexprParser)),
+        var opType = this.Peek();
+        if (operators.Contains(opType))
+        {
+            // There is such operator on this level
+            var op = this.Advance();
+            var subexpr = this.ParseExpression(level);
+            return new UnaryExpressionSyntax(op, subexpr);
+        }
+        else
+        {
+            // Just descent to next level
+            return this.ParseExpression(level + 1);
+        }
+    };
+
+    /// <summary>
+    /// Constructs an <see cref="ExpressionParserDelegate"/> for a set of left-associative binary operators.
+    /// </summary>
+    /// <param name="operators">The set of binary operators.</param>
+    /// <returns>An <see cref="ExpressionParserDelegate"/> that recognizes <paramref name="operators"/> as
+    /// left-associative binary operators.</returns>
+    private ExpressionParserDelegate BinaryLeft(params TokenType[] operators) => level =>
+    {
+        // We unroll left-associativity into a loop
+        var result = this.ParseExpression(level + 1);
+        while (true)
+        {
+            var opType = this.Peek();
+            if (!operators.Contains(opType)) break;
+            var op = this.Advance();
+            var right = this.ParseExpression(level + 1);
+            result = new BinaryExpressionSyntax(result, op, right);
+        }
+        return result;
+    };
+
+    /// <summary>
+    /// Constructs an <see cref="ExpressionParserDelegate"/> for a set of right-associative binary operators.
+    /// </summary>
+    /// <param name="operators">The set of binary operators.</param>
+    /// <returns>An <see cref="ExpressionParserDelegate"/> that recognizes <paramref name="operators"/> as
+    /// right-associative binary operators.</returns>
+    private ExpressionParserDelegate BinaryRight(params TokenType[] operators) => level =>
+    {
+        // Right-associativity is simply right-recursion
+        var result = this.ParseExpression(level + 1);
+        var opType = this.Peek();
+        if (operators.Contains(this.Peek()))
+        {
+            var op = this.Advance();
+            var right = this.ParseExpression(level);
+            result = new BinaryExpressionSyntax(result, op, right);
+        }
+        return result;
     };
 
     /// <summary>
@@ -628,68 +613,46 @@ internal sealed class Parser
     /// Parses an expression.
     /// </summary>
     /// <returns>The parsed <see cref="ExpressionSyntax"/>.</returns>
-    internal ExpressionSyntax ParseExpression()
-    {
-        // The function that is driven by the precedence table
-        ExpressionSyntax ParsePrecedenceLevel(int level)
-        {
-            var desc = precedenceTable[level];
-            switch (desc.Kind)
-            {
-            case PrecLevelKind.Prefix:
-            {
-                var opType = this.Peek();
-                if (desc.Operators.Contains(opType))
-                {
-                    // There is such operator on this level
-                    var op = this.Advance();
-                    var subexpr = ParsePrecedenceLevel(level);
-                    return new UnaryExpressionSyntax(op, subexpr);
-                }
-                // Just descent to next level
-                return ParsePrecedenceLevel(level - 1);
-            }
-            case PrecLevelKind.BinaryLeft:
-            {
-                // We unroll left-associativity into a loop
-                var result = ParsePrecedenceLevel(level - 1);
-                while (true)
-                {
-                    var opType = this.Peek();
-                    if (!desc.Operators.Contains(opType)) break;
-                    var op = this.Advance();
-                    var right = ParsePrecedenceLevel(level - 1);
-                    result = new BinaryExpressionSyntax(result, op, right);
-                }
-                return result;
-            }
-            case PrecLevelKind.BinaryRight:
-            {
-                // Right-associativity is simply right-recursion
-                var result = ParsePrecedenceLevel(level - 1);
-                var opType = this.Peek();
-                if (desc.Operators.Contains(this.Peek()))
-                {
-                    var op = this.Advance();
-                    var right = ParsePrecedenceLevel(level);
-                    result = new BinaryExpressionSyntax(result, op, right);
-                }
-                return result;
-            }
-            case PrecLevelKind.Custom:
-                // Just call the custom parser
-                return desc.CustomParser(this, () => ParsePrecedenceLevel(level - 1));
-            default:
-                throw new InvalidOperationException("no such precedence level kind");
-            }
-        }
+    internal ExpressionSyntax ParseExpression() => this.ParseExpression(0);
 
-        return ParsePrecedenceLevel(precedenceTable.Length - 1);
-    }
+    /// <summary>
+    /// Parses an expression.
+    /// </summary>
+    /// <param name="level">The current precedence level.</param>
+    /// <returns>The parsed <see cref="ExpressionSyntax"/>.</returns>
+    private ExpressionSyntax ParseExpression(int level) => level switch
+    {
+        // Finally the pseudo-statement-like constructs
+        0 => this.ParsePseudoStatementLevelExpression(level),
+        // Then assignment and compound assignment, which are **RIGHT ASSOCIATIVE**
+        1 => this.BinaryRight(
+            TokenType.Assign,
+            TokenType.PlusAssign, TokenType.MinusAssign,
+            TokenType.StarAssign, TokenType.SlashAssign)(level),
+        // Then binary or
+        2 => this.BinaryLeft(TokenType.KeywordOr)(level),
+        // Then binary and
+        3 => this.BinaryLeft(TokenType.KeywordAnd)(level),
+        // Then unary not
+        4 => this.Prefix(TokenType.KeywordNot)(level),
+        // Then relational operators
+        5 => this.ParseRelationalLevelExpression(level),
+        // Then binary +, -
+        6 => this.BinaryLeft(TokenType.Plus, TokenType.Minus)(level),
+        // Then binary *, /, mod, rem
+        7 => this.BinaryLeft(TokenType.Star, TokenType.Slash, TokenType.KeywordMod, TokenType.KeywordRem)(level),
+        // Then prefix unary + and -
+        8 => this.Prefix(TokenType.Plus, TokenType.Minus)(level),
+        // Then comes call, indexing and member access
+        9 => this.ParseCallLevelExpression(level),
+        // Max precedence is atom
+        10 => this.ParseAtomExpression(level),
+        _ => throw new ArgumentOutOfRangeException(nameof(level)),
+    };
 
     // Plumbing code for precedence parsing
 
-    private ExpressionSyntax ParsePseudoStatementLevelExpression(Func<ExpressionSyntax> elementParser)
+    private ExpressionSyntax ParsePseudoStatementLevelExpression(int level)
     {
         switch (this.Peek())
         {
@@ -700,29 +663,27 @@ internal sealed class Parser
             if (expressionStarters.Contains(this.Peek())) value = this.ParseExpression();
             return new ReturnExpressionSyntax(returnKeyword, value);
         }
-
         case TokenType.KeywordGoto:
         {
             var gotoKeyword = this.Advance();
             var labelName = this.Expect(TokenType.Identifier);
             return new GotoExpressionSyntax(gotoKeyword, new NameLabelSyntax(labelName));
         }
-
         default:
-            return elementParser();
+            return this.ParseExpression(level + 1);
         }
     }
 
-    private ExpressionSyntax ParseRelationalLevelExpression(Func<ExpressionSyntax> elementParser)
+    private ExpressionSyntax ParseRelationalLevelExpression(int level)
     {
-        var left = elementParser();
+        var left = this.ParseExpression(level + 1);
         var comparisons = SyntaxList.CreateBuilder<ComparisonElementSyntax>();
         while (true)
         {
             var opType = this.Peek();
             if (!relationalOps.Contains(opType)) break;
             var op = this.Advance();
-            var right = elementParser();
+            var right = this.ParseExpression(level + 1);
             comparisons.Add(new(op, right));
         }
         return comparisons.Count == 0
@@ -730,9 +691,9 @@ internal sealed class Parser
             : new RelationalExpressionSyntax(left, comparisons.ToSyntaxList());
     }
 
-    private ExpressionSyntax ParseCallLevelExpression(Func<ExpressionSyntax> elementParser)
+    private ExpressionSyntax ParseCallLevelExpression(int level)
     {
-        var result = elementParser();
+        var result = this.ParseExpression(level + 1);
         while (true)
         {
             var peek = this.Peek();
@@ -769,7 +730,7 @@ internal sealed class Parser
         return result;
     }
 
-    private ExpressionSyntax ParseAtomExpression()
+    private ExpressionSyntax ParseAtomExpression(int level)
     {
         switch (this.Peek())
         {

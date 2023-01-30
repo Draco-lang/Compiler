@@ -42,8 +42,8 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
     {
         var uri = identifier.TextDocument.Uri.ToUri();
         var sourceText = this.repository.GetDocument(identifier.TextDocument.Uri);
-        var parseTree = SyntaxTree.Parse(sourceText);
-        var tokens = GetTokens(parseTree.Root);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var tokens = GetTokens(syntaxTree.Root);
         foreach (var token in tokens)
         {
             builder.Push(Translator.ToLsp(token.Range), token.Type, token.Modifiers);

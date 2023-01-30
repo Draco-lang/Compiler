@@ -133,8 +133,8 @@ public sealed class Issue139Tests
     [Theory]
     public void DoesNotCrash(string source)
     {
-        var parseTree = SyntaxTree.Parse(source);
-        var compilation = Compilation.Create(parseTree);
+        var syntaxTree = SyntaxTree.Parse(source);
+        var compilation = Compilation.Create(syntaxTree);
         compilation.Emit(new MemoryStream());
     }
 }

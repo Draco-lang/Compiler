@@ -2,7 +2,7 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Tests.Syntax;
 
-public sealed class ParseTreeFormatterTests
+public sealed class SyntaxTreeFormatterTests
 {
     [Fact]
     public void TestFormatting()

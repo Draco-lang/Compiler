@@ -53,7 +53,7 @@ public sealed class SemanticModel
             foreach (var diag in tree.Children.SelectMany(GetSymbolAndTypeErrors)) yield return diag;
         }
 
-        var ast = ParseTreeToAst.ToAst(this.db, this.Tree.Root);
+        var ast = SyntaxTreeToAst.ToAst(this.db, this.Tree.Root);
 
         IEnumerable<Diagnostic> GetAstErrors() => ast!.GetAllDiagnostics();
         IEnumerable<Diagnostic> GetDataFlowErrors() => DataFlowPasses.Analyze(ast);

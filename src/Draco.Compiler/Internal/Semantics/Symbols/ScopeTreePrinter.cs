@@ -15,9 +15,9 @@ internal static class ScopeTreePrinter
     /// Constructs a DOT graph representation of the scope tree.
     /// </summary>
     /// <param name="db">The query database used for computations.</param>
-    /// <param name="parseTree">The parse tree to print the tree for.</param>
-    /// <returns>The DOT graph for the scope tree of <paramref name="parseTree"/>.</returns>
-    public static string ToDot(QueryDatabase db, SyntaxTree parseTree)
+    /// <param name="syntaxTree">The parse tree to print the tree for.</param>
+    /// <returns>The DOT graph for the scope tree of <paramref name="syntaxTree"/>.</returns>
+    public static string ToDot(QueryDatabase db, SyntaxTree syntaxTree)
     {
         var graph = new DotGraphBuilder<IScope>(isDirected: true);
         graph
@@ -25,7 +25,7 @@ internal static class ScopeTreePrinter
             .WithRankDir(DotAttribs.RankDir.BottomToTop);
         graph.AllVertices().WithShape(DotAttribs.Shape.Rectangle);
 
-        foreach (var node in parseTree.PreOrderTraverse())
+        foreach (var node in syntaxTree.PreOrderTraverse())
         {
             // TODO: Somehow show illegal references?
 

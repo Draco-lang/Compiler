@@ -70,7 +70,7 @@ internal static class SyntaxTreePrinter
     public static string ToDot(SyntaxNode node)
     {
         var graph = new DotGraphBuilder<SyntaxNode>(isDirected: false, vertexComparer: ReferenceEqualityComparer.Instance);
-        graph.WithName("ParseTree");
+        graph.WithName("SyntaxTree");
 
         void Impl(SyntaxNode? parent, SyntaxNode node)
         {

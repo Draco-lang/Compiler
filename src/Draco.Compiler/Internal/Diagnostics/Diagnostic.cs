@@ -103,7 +103,7 @@ internal sealed partial class Diagnostic
     /// <summary>
     /// Translates this <see cref="Diagnostic"/> to an <see cref="ApiDiagnostic"/>.
     /// </summary>
-    /// <param name="context">The <see cref="ParseNode"/> node this <see cref="Diagnostic"/> is attached to.</param>
+    /// <param name="context">The <see cref="SyntaxNode"/> node this <see cref="Diagnostic"/> is attached to.</param>
     /// <returns>The equivalent <see cref="ApiDiagnostic"/> to <paramref name="context"/>.</returns>
     public ApiDiagnostic ToApiDiagnostic(SyntaxNode? context) => new(
         this,

@@ -179,10 +179,10 @@ internal static class TypeChecker
         handleCycle: (visitor, tree) => visitor.PartialResult);
 
     /// <summary>
-    /// Retrieves the <see cref="ParseNode"/> ancestor that can be used for type inference for <paramref name="tree"/>.
+    /// Retrieves the <see cref="SyntaxNode"/> ancestor that can be used for type inference for <paramref name="tree"/>.
     /// </summary>
     /// <param name="db">The <see cref="QueryDatabase"/> for the computation.</param>
-    /// <param name="tree">The <see cref="ParseNode"/> to get the ancestor of.</param>
+    /// <param name="tree">The <see cref="SyntaxNode"/> to get the ancestor of.</param>
     /// <returns>The inferrable ancestor of <paramref name="tree"/>.</returns>
     private static SyntaxNode GetInferrableAncestor(QueryDatabase db, SyntaxNode tree)
     {

@@ -28,7 +28,7 @@ internal static class SyntaxTreePrinter
     }
 
     /// <summary>
-    /// Prints the <see cref="ParseNode"/> as the text it was parsed from, discarding the very first leading trivia
+    /// Prints the <see cref="SyntaxNode"/> as the text it was parsed from, discarding the very first leading trivia
     /// and the very last trailing trivia, "trimming" the code.
     /// </summary>
     /// <param name="node">The tree node to print.</param>

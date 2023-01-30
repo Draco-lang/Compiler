@@ -15,7 +15,7 @@ using DiagnosticTemplate = Draco.Compiler.Api.Diagnostics.DiagnosticTemplate;
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Breaks up source code into a sequence of <see cref="Token"/>s.
+/// Breaks up source code into a sequence of <see cref="SyntaxToken"/>s.
 /// </summary>
 internal sealed class Lexer
 {
@@ -157,7 +157,7 @@ internal sealed class Lexer
     /// <summary>
     /// Lexes tokens that can be found in regular code.
     /// </summary>
-    /// <returns>The lexed <see cref="Token"/>.</returns>
+    /// <returns>The lexed <see cref="SyntaxToken"/>.</returns>
     private Unit LexNormal()
     {
         Unit TakeBasic(TokenType tokenType, int length)
@@ -397,7 +397,7 @@ internal sealed class Lexer
     /// <summary>
     /// Lexes a token that can be part of a string.
     /// </summary>
-    /// <returns>The lexed string <see cref="Token"/>.</returns>
+    /// <returns>The lexed string <see cref="SyntaxToken"/>.</returns>
     private Unit LexString()
     {
         // Get the largest continuous sequence without linebreaks or interpolation

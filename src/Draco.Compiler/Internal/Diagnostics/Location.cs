@@ -29,7 +29,7 @@ internal abstract partial record class Location
 
     /// <summary>
     /// Translates this <see cref="Location"/> to an <see cref="ApiLocation"/>, assuming it's relative to
-    /// a <see cref="ParseNode"/>.
+    /// a <see cref="SyntaxNode"/>.
     /// </summary>
     /// <param name="context">The <see cref="SyntaxNode"/> the location is relative to.</param>
     /// <returns>The equivalent <see cref="ApiLocation"/> of <paramref name="context"/>.</returns>

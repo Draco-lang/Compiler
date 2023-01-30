@@ -10,7 +10,7 @@ using Draco.Compiler.Internal.Diagnostics;
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Parses a sequence of <see cref="Token"/>s into a <see cref="ParseNode"/>.
+/// Parses a sequence of <see cref="SyntaxToken"/>s into a <see cref="SyntaxNode"/>.
 /// </summary>
 internal sealed class Parser
 {
@@ -1006,11 +1006,11 @@ internal sealed class Parser
     // Token-level operators
 
     /// <summary>
-    /// Performs synchronization, meaning it consumes <see cref="Token"/>s from the input
+    /// Performs synchronization, meaning it consumes <see cref="SyntaxToken"/>s from the input
     /// while a given condition is met.
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
-    /// <returns>The consumed list of <see cref="Token"/>s as <see cref="ParseNode"/>s.</returns>
+    /// <returns>The consumed list of <see cref="SyntaxToken"/>s as <see cref="SyntaxNode"/>s.</returns>
     private SyntaxList<SyntaxNode> Synchronize(Func<TokenType, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
@@ -1030,7 +1030,7 @@ internal sealed class Parser
     /// If it is, the token is consumed.
     /// </summary>
     /// <param name="type">The expected token type.</param>
-    /// <returns>The consumed <see cref="Token"/>.</returns>
+    /// <returns>The consumed <see cref="SyntaxToken"/>.</returns>
     private SyntaxToken Expect(TokenType type)
     {
         if (!this.Matches(type, out var token))
@@ -1079,7 +1079,7 @@ internal sealed class Parser
     /// <summary>
     /// Advances the parser in the token source with one token.
     /// </summary>
-    /// <returns>The consumed <see cref="Token"/>.</returns>
+    /// <returns>The consumed <see cref="SyntaxToken"/>.</returns>
     private SyntaxToken Advance()
     {
         var token = this.tokenSource.Peek();

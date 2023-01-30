@@ -10,15 +10,15 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// Settings that the formatter will use.
 /// </summary>
-internal sealed record class ParseTreeFormatterSettings(string Indentation)
+internal sealed record class SyntaxTreeFormatterSettings(string Indentation)
 {
-    internal static readonly ParseTreeFormatterSettings Default = new("    ");
+    internal static readonly SyntaxTreeFormatterSettings Default = new("    ");
 }
 
 /// <summary>
 /// The formatter for <see cref="SyntaxNode"/>.
 /// </summary>
-internal sealed class ParseTreeFormatter : SyntaxRewriter
+internal sealed class SyntaxTreeFormatter : SyntaxRewriter
 {
     private static readonly SyntaxList<SyntaxTrivia> oneSpaceTrivia = CreateTrivia(TriviaType.Whitespace, " ");
     private static readonly SyntaxList<SyntaxTrivia> noSpaceTrivia = CreateTrivia(TriviaType.Whitespace, "");
@@ -27,7 +27,7 @@ internal sealed class ParseTreeFormatter : SyntaxRewriter
     private TokenType? lastToken;
     private TokenType? nextToken;
     private IEnumerator<SyntaxToken>? tokens;
-    private readonly ParseTreeFormatterSettings settings;
+    private readonly SyntaxTreeFormatterSettings settings;
     private int indentCount = 0;
     private string Indentation
     {
@@ -39,7 +39,7 @@ internal sealed class ParseTreeFormatter : SyntaxRewriter
         }
     }
 
-    internal ParseTreeFormatter(ParseTreeFormatterSettings settings)
+    internal SyntaxTreeFormatter(SyntaxTreeFormatterSettings settings)
     {
         this.settings = settings;
     }

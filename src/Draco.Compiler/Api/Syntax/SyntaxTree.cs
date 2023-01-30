@@ -13,7 +13,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxTree
 {
-    private static ParseTreeFormatterSettings FormatterSettings { get; } = new(
+    private static SyntaxTreeFormatterSettings FormatterSettings { get; } = new(
         Indentation: "    ");
 
     /// <summary>
@@ -89,7 +89,7 @@ public sealed class SyntaxTree
     /// Syntactically formats this <see cref="SyntaxTree"/>.
     /// </summary>
     /// <returns>The formatted tree.</returns>
-    public SyntaxTree Format() => new ParseTreeFormatter(FormatterSettings).Format(this);
+    public SyntaxTree Format() => new SyntaxTreeFormatter(FormatterSettings).Format(this);
 
     /// <summary>
     /// The internal root of the tree.

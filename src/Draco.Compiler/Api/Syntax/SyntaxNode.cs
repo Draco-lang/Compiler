@@ -74,7 +74,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public override bool Equals(object? obj) => this.Equals(obj as SyntaxNode);
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this.Green);
 
-    public override string ToString() => ParseTreePrinter.ToCodeWithoutSurroundingTrivia(this.Green);
+    public override string ToString() => SyntaxTreePrinter.ToCodeWithoutSurroundingTrivia(this.Green);
 
     /// <summary>
     /// Preorder traverses the subtree with this node being the root.

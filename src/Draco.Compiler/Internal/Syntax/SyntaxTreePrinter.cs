@@ -6,9 +6,9 @@ using Draco.Compiler.Internal.Utilities;
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Utilities for printing a <see cref="ParseTree"/>.
+/// Utilities for printing a <see cref="SyntaxTree"/>.
 /// </summary>
-internal static class ParseTreePrinter
+internal static class SyntaxTreePrinter
 {
     /// <summary>
     /// Prints the <see cref="SyntaxNode"/> as the text it was parsed from.

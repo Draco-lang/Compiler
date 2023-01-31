@@ -38,6 +38,39 @@ namespace Draco.Compiler.Internal.Syntax;
         {{else}}
             public override Api.Syntax.{{$node.Name}} ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent) =>
                 new Api.Syntax.{{$node.Name}}(tree, parent, this);
+
+            /// <summary>
+            /// Updates this <see cref="{{$node.Name}}"/> with the new provided data.
+            /// The node is only reinstantiated, if the passed in data is different.
+            /// </summary>
+            {{~for $field in $node.Fields~}}
+                {{~if $field.Documentation~}}
+                    /// <param name="{{camel_case($field.Name)}}">
+                    /// {{$field.Documentation}}
+                    /// </param>
+                {{~end~}}
+            {{~end~}}
+            /// <returns>
+            /// The constructed <see cref="{{$node.Name}}"/>, or this instance, if the passed in data is identical
+            /// to the old one.
+            /// </returns>
+            public {{$node.Name}} Update(
+                {{wrap separated(', ', $node.Fields)}}
+                    {{$element.Type}} {{camel_case($element.Name)}}
+                {{end}}
+            )
+            {
+                if (
+                    {{wrap separated(' && ', $node.Fields)}}
+                        Equals(this.{{$element.Name}}, {{camel_case($element.Name)}})
+                    {{end}}
+                ) return this;
+                else return new {{$node.Name}}(
+                    {{wrap separated(', ', $node.Fields)}}
+                        {{camel_case($element.Name)}}
+                    {{end}}
+                );
+            }
         {{end}}
 
         {{accept_functions($node)}}
@@ -76,7 +109,7 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{Root.Name}}>
                     var {{camel_case($element.Name)}} =
                         ({{$element.Type}})node.{{$element.Name}}{{nullable($element)}}.Accept(this);
                 {{end}}
-                return new {{$node.Name}}(
+                return node.Update(
                     {{wrap separated(', ', $node.Fields)}}
                         {{camel_case($element.Name)}}
                     {{end}}

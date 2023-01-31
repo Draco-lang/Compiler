@@ -142,16 +142,6 @@ internal sealed class Parser
     };
 
     /// <summary>
-    /// The list of all relational operators.
-    /// </summary>
-    private static readonly TokenKind[] relationalOps = new[]
-    {
-        TokenKind.Equal, TokenKind.NotEqual,
-        TokenKind.GreaterThan, TokenKind.LessThan,
-        TokenKind.GreaterEqual, TokenKind.LessEqual,
-    };
-
-    /// <summary>
     /// The list of all tokens that can start an expression.
     /// </summary>
     private static readonly TokenKind[] expressionStarters = new[]
@@ -681,7 +671,7 @@ internal sealed class Parser
         while (true)
         {
             var opKind = this.Peek();
-            if (!relationalOps.Contains(opKind)) break;
+            if (!SyntaxFacts.IsRelationalOperator(opKind)) break;
             var op = this.Advance();
             var right = this.ParseExpression(level + 1);
             comparisons.Add(new(op, right));

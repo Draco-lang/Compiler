@@ -101,4 +101,17 @@ public static class SyntaxFacts
     /// <returns>True, if <paramref name="tokenKind"/> represents a compound assignment operator, false otherwise.</returns>
     public static bool IsCompoundAssignmentOperator(TokenKind tokenKind) =>
         GetOperatorOfCompoundAssignment(tokenKind) is not null;
+
+    /// <summary>
+    /// Checks, if a given <see cref="TokenKind"/> corresponds to a relational operator.
+    /// </summary>
+    /// <param name="tokenKind">The <see cref="TokenKind"/> to check.</param>
+    /// <returns>True, if <paramref name="tokenKind"/> is a relational operator, false otherwise.</returns>
+    public static bool IsRelationalOperator(TokenKind tokenKind) => tokenKind
+        is TokenKind.Equal
+        or TokenKind.NotEqual
+        or TokenKind.GreaterThan
+        or TokenKind.LessThan
+        or TokenKind.GreaterEqual
+        or TokenKind.LessEqual;
 }

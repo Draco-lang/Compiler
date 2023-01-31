@@ -22,7 +22,7 @@ internal sealed partial class SyntaxToken
         /// <returns>The constructed <see cref="Builder"/> with all data from <paramref name="token"/>.</returns>
         public static Builder From(SyntaxToken token) => new()
         {
-            Type = token.Kind,
+            Kind = token.Kind,
             Text = token.Text,
             Value = token.Value,
             LeadingTrivia = token.LeadingTrivia.ToBuilder(),
@@ -32,7 +32,7 @@ internal sealed partial class SyntaxToken
         /// <summary>
         /// The <see cref="TokenKind"/> of the <see cref="SyntaxToken"/> being built.
         /// </summary>
-        public TokenKind Type { get; set; }
+        public TokenKind Kind { get; set; }
 
         /// <summary>
         /// The text the <see cref="SyntaxToken"/> is constructed from.
@@ -59,8 +59,8 @@ internal sealed partial class SyntaxToken
         /// </summary>
         /// <returns>The built <see cref="SyntaxToken"/>.</returns>
         public SyntaxToken Build() => new(
-            kind: this.Type,
-            text: this.Text ?? SyntaxFacts.GetTokenText(this.Type) ?? throw new InvalidOperationException("can't determine the text for the given SyntaxToken"),
+            kind: this.Kind,
+            text: this.Text ?? SyntaxFacts.GetTokenText(this.Kind) ?? throw new InvalidOperationException("can't determine the text for the given SyntaxToken"),
             value: this.Value,
             leadingTrivia: this.LeadingTrivia.ToSyntaxList(),
             trailingTrivia: this.TrailingTrivia.ToSyntaxList());
@@ -70,7 +70,7 @@ internal sealed partial class SyntaxToken
         /// </summary>
         public void Clear()
         {
-            this.Type = TokenKind.Unknown;
+            this.Kind = TokenKind.Unknown;
             this.Text = null;
             this.Value = null;
             this.LeadingTrivia.Clear();
@@ -78,13 +78,13 @@ internal sealed partial class SyntaxToken
         }
 
         /// <summary>
-        /// Sets the <see cref="Type"/> for the token to be built.
+        /// Sets the <see cref="Kind"/> for the token to be built.
         /// </summary>
-        /// <param name="type">The <see cref="TokenKind"/> to set.</param>
+        /// <param name="kind">The <see cref="TokenKind"/> to set.</param>
         /// <returns>The <see cref="Builder"/> instance the method was called on.</returns>
-        public Builder SetType(TokenKind type)
+        public Builder SetKind(TokenKind kind)
         {
-            this.Type = type;
+            this.Kind = kind;
             return this;
         }
 

@@ -125,7 +125,7 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
     {
         var newToken = token.ToBuilder();
 
-        newToken = newToken.Type switch
+        newToken = newToken.Kind switch
         {
             // TODO: Maybe use dictionary in future to allow user to alter "stickiness" of some tokens
             // Tokens that always have one space after
@@ -268,6 +268,6 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
         return true;
     }
 
-    private static SyntaxList<SyntaxTrivia> CreateTrivia(TriviaKind type, string text) =>
-        SyntaxList.Create(SyntaxTrivia.From(type, text));
+    private static SyntaxList<SyntaxTrivia> CreateTrivia(TriviaKind kind, string text) =>
+        SyntaxList.Create(SyntaxTrivia.From(kind, text));
 }

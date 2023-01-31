@@ -133,7 +133,7 @@ internal sealed class Lexer
             this.ParseLeadingTriviaList();
             this.LexNormal();
             // If we just ended interpolation, we are within a string, don't consume
-            if (this.tokenBuilder.Type != TokenKind.InterpolationEnd) this.ParseTrailingTriviaList();
+            if (this.tokenBuilder.Kind != TokenKind.InterpolationEnd) this.ParseTrailingTriviaList();
             break;
         }
 
@@ -141,7 +141,7 @@ internal sealed class Lexer
         case ModeKind.MultiLineString:
             this.LexString();
             // If we are starting interpolation, we can consume trailing trivia
-            if (this.tokenBuilder.Type == TokenKind.InterpolationStart) this.ParseTrailingTriviaList();
+            if (this.tokenBuilder.Kind == TokenKind.InterpolationStart) this.ParseTrailingTriviaList();
             break;
 
         default:
@@ -163,14 +163,14 @@ internal sealed class Lexer
         Unit TakeBasic(TokenKind tokenKind, int length)
         {
             this.Advance(length);
-            this.tokenBuilder.SetType(tokenKind);
+            this.tokenBuilder.SetKind(tokenKind);
             return default;
         }
 
         Unit TakeWithText(TokenKind tokenKind, int length)
         {
             this.tokenBuilder
-                .SetType(tokenKind)
+                .SetKind(tokenKind)
                 .SetText(this.AdvanceWithText(length));
             return default;
         }
@@ -178,7 +178,7 @@ internal sealed class Lexer
         // First check for end of source here
         if (this.SourceReader.IsEnd)
         {
-            this.tokenBuilder.SetType(TokenKind.EndOfInput);
+            this.tokenBuilder.SetKind(TokenKind.EndOfInput);
             return default;
         }
 
@@ -253,7 +253,7 @@ internal sealed class Lexer
                 // TODO: Parsing into an float32 might not be the best idea
                 var floatValue = double.Parse(floatView.Span.ToString(), provider: CultureInfo.InvariantCulture);
                 this.tokenBuilder
-                    .SetType(TokenKind.LiteralFloat)
+                    .SetKind(TokenKind.LiteralFloat)
                     .SetText(floatView.ToString())
                     .SetValue(floatValue);
                 return default;
@@ -264,7 +264,7 @@ internal sealed class Lexer
             // TODO: Parsing into an int32 might not be the best idea
             var intValue = int.Parse(intView.Span.ToString());
             this.tokenBuilder
-                .SetType(TokenKind.LiteralInteger)
+                .SetKind(TokenKind.LiteralInteger)
                 .SetText(intView.ToString())
                 .SetValue(intValue);
             return default;
@@ -307,7 +307,7 @@ internal sealed class Lexer
                 // escaped identifiers, this can be a good way to handle it
                 var identStr = ident.ToString();
                 this.tokenBuilder
-                    .SetType(TokenKind.Identifier)
+                    .SetKind(TokenKind.Identifier)
                     .SetText(identStr)
                     .SetValue(identStr);
                 return default;
@@ -315,7 +315,7 @@ internal sealed class Lexer
             else
             {
                 // Keyword, we save on allocation
-                this.tokenBuilder.SetType(tokenKind);
+                this.tokenBuilder.SetKind(tokenKind);
                 return default;
             }
         }
@@ -365,7 +365,7 @@ internal sealed class Lexer
             // Done
             var text = this.AdvanceWithText(offset);
             this.tokenBuilder
-                .SetType(TokenKind.LiteralCharacter)
+                .SetKind(TokenKind.LiteralCharacter)
                 .SetText(text)
                 .SetValue(resultChar);
             return default;
@@ -408,7 +408,7 @@ internal sealed class Lexer
         // First check for end of source here
         if (this.SourceReader.IsEnd)
         {
-            this.tokenBuilder.SetType(TokenKind.EndOfInput);
+            this.tokenBuilder.SetKind(TokenKind.EndOfInput);
             return default;
         }
 
@@ -422,7 +422,7 @@ internal sealed class Lexer
             // NOTE: Not a nice assumption to rely on '\0', but let's assume the input could end here,
             // return the section we have consumed so far
             this.tokenBuilder
-                .SetType(TokenKind.StringContent)
+                .SetKind(TokenKind.StringContent)
                 .SetText(this.AdvanceWithText(offset))
                 .SetValue(this.valueBuilder.ToString());
             return default;
@@ -473,7 +473,7 @@ internal sealed class Lexer
                     ? TokenKind.LineStringEnd
                     : TokenKind.MultiLineStringEnd;
                 this.tokenBuilder
-                    .SetType(tokenKind)
+                    .SetKind(tokenKind)
                     .SetText(this.AdvanceWithText(endLength));
                 return default;
             }
@@ -482,7 +482,7 @@ internal sealed class Lexer
                 // This will only be the end of string in the next iteration, we just return what we have
                 // consumed so far
                 this.tokenBuilder
-                    .SetType(TokenKind.StringContent)
+                    .SetKind(TokenKind.StringContent)
                     .SetText(this.AdvanceWithText(offset))
                     .SetValue(this.valueBuilder.ToString());
                 return default;
@@ -512,7 +512,7 @@ internal sealed class Lexer
                         : ModeKind.MultiLineInterpolation;
                     this.PushMode(newMode, 0);
                     this.tokenBuilder
-                        .SetType(TokenKind.InterpolationStart)
+                        .SetKind(TokenKind.InterpolationStart)
                         .SetText(this.AdvanceWithText(mode.ExtendedDelims + 2));
                     return default;
                 }
@@ -521,7 +521,7 @@ internal sealed class Lexer
                     // This will only be interpolation in the next iteration, we just return what we have
                     // consumed so far
                     this.tokenBuilder
-                        .SetType(TokenKind.StringContent)
+                        .SetKind(TokenKind.StringContent)
                         .SetText(this.AdvanceWithText(offset))
                         .SetValue(this.valueBuilder.ToString());
                     return default;
@@ -542,7 +542,7 @@ internal sealed class Lexer
                         // We can return this line-continuation
                         // The important thing is that the value is an empty string
                         this.tokenBuilder
-                            .SetType(TokenKind.StringNewline)
+                            .SetKind(TokenKind.StringNewline)
                             .SetText(this.AdvanceWithText(mode.ExtendedDelims + 1 + whiteCharOffset + length))
                             .SetValue(string.Empty);
                         return default;
@@ -551,7 +551,7 @@ internal sealed class Lexer
                     {
                         // There is content before that we need to deal with
                         this.tokenBuilder
-                            .SetType(TokenKind.StringContent)
+                            .SetKind(TokenKind.StringContent)
                             .SetText(this.AdvanceWithText(offset))
                             .SetValue(this.valueBuilder.ToString());
                         return default;
@@ -581,7 +581,7 @@ internal sealed class Lexer
                 this.PopMode();
                 while (this.CurrentMode.IsLine) this.PopMode();
                 this.tokenBuilder
-                    .SetType(TokenKind.StringContent)
+                    .SetKind(TokenKind.StringContent)
                     .SetText(this.AdvanceWithText(offset))
                     .SetValue(this.valueBuilder.ToString());
                 return default;
@@ -610,7 +610,7 @@ internal sealed class Lexer
                         this.ParseLeadingTriviaList();
                         Debug.Assert(this.tokenBuilder.LeadingTrivia.Count is 1 or 2);
                         this.tokenBuilder
-                            .SetType(TokenKind.MultiLineStringEnd)
+                            .SetKind(TokenKind.MultiLineStringEnd)
                             .SetText(this.AdvanceWithText(3 + mode.ExtendedDelims));
                         this.ParseTrailingTriviaList();
                         return default;
@@ -619,7 +619,7 @@ internal sealed class Lexer
                     // Just a regular newline, more content to follow
                     var stringNewlineText = this.AdvanceWithText(newlineLength);
                     this.tokenBuilder
-                        .SetType(TokenKind.StringNewline)
+                        .SetKind(TokenKind.StringNewline)
                         .SetText(stringNewlineText)
                         .SetValue(stringNewlineText);
                     return default;
@@ -628,7 +628,7 @@ internal sealed class Lexer
                 {
                     // We need to return the content fist
                     this.tokenBuilder
-                        .SetType(TokenKind.StringContent)
+                        .SetKind(TokenKind.StringContent)
                         .SetText(this.AdvanceWithText(offset))
                         .SetValue(this.valueBuilder.ToString());
                     return default;
@@ -786,18 +786,18 @@ internal sealed class Lexer
         {
             // Line Comment
             var offset = 2;
-            var commentType = TriviaKind.LineComment;
+            var commentKind = TriviaKind.LineComment;
             // Documentation Comment
             if (this.Peek(2) == '/')
             {
                 offset = 3;
-                commentType = TriviaKind.DocumentationComment;
+                commentKind = TriviaKind.DocumentationComment;
             }
             // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
             // which means that this will terminate, even if the comment was on the last line of the file
             // without a line break
             while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
-            result = SyntaxTrivia.From(commentType, this.AdvanceWithText(offset));
+            result = SyntaxTrivia.From(commentKind, this.AdvanceWithText(offset));
             return true;
         }
         // Not trivia

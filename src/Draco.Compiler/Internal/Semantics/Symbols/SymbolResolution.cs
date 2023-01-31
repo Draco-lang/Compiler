@@ -200,16 +200,16 @@ internal static class SymbolResolution
             return true;
 
         case UnaryExpressionSyntax uryExpr:
-            name = GetUnaryOperatorName(uryExpr.Operator.Type);
+            name = GetUnaryOperatorName(uryExpr.Operator.Kind);
             return true;
 
         case BinaryExpressionSyntax binExpr:
             // NOTE: Assignment is also denoted as binary, but that does not reference an operator
-            name = GetBinaryOperatorName(binExpr.Operator.Type);
+            name = GetBinaryOperatorName(binExpr.Operator.Kind);
             return name is not null;
 
         case ComparisonElementSyntax cmpElement:
-            name = GetRelationalOperatorName(cmpElement.Operator.Type);
+            name = GetRelationalOperatorName(cmpElement.Operator.Kind);
             return true;
 
         default:
@@ -266,7 +266,7 @@ internal static class SymbolResolution
             db: db,
             name: variable.Name.Text,
             definition: tree,
-            isMutable: variable.Keyword.Type == TokenType.KeywordVar),
+            isMutable: variable.Keyword.Kind == TokenKind.KeywordVar),
         FunctionDeclarationSyntax func => Symbol.MakeFunction(
             db: db,
             name: func.Name.Text,
@@ -515,34 +515,34 @@ internal static class SymbolResolution
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
-    internal static string GetUnaryOperatorName(TokenType op) => op switch
+    internal static string GetUnaryOperatorName(TokenKind op) => op switch
     {
-        TokenType.Plus => "unary operator +",
-        TokenType.Minus => "unary operator -",
-        TokenType.KeywordNot => "unary operator not",
+        TokenKind.Plus => "unary operator +",
+        TokenKind.Minus => "unary operator -",
+        TokenKind.KeywordNot => "unary operator not",
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    internal static string? GetBinaryOperatorName(TokenType op) => op switch
+    internal static string? GetBinaryOperatorName(TokenKind op) => op switch
     {
-        TokenType.Assign or TokenType.KeywordAnd or TokenType.KeywordOr => null,
-        TokenType.Plus or TokenType.PlusAssign => "binary operator +",
-        TokenType.Minus or TokenType.MinusAssign => "binary operator -",
-        TokenType.Star or TokenType.StarAssign => "binary operator *",
-        TokenType.Slash or TokenType.SlashAssign => "binary operator /",
-        TokenType.KeywordMod => "binary operator mod",
-        TokenType.KeywordRem => "binary operator mod",
+        TokenKind.Assign or TokenKind.KeywordAnd or TokenKind.KeywordOr => null,
+        TokenKind.Plus or TokenKind.PlusAssign => "binary operator +",
+        TokenKind.Minus or TokenKind.MinusAssign => "binary operator -",
+        TokenKind.Star or TokenKind.StarAssign => "binary operator *",
+        TokenKind.Slash or TokenKind.SlashAssign => "binary operator /",
+        TokenKind.KeywordMod => "binary operator mod",
+        TokenKind.KeywordRem => "binary operator mod",
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    internal static string GetRelationalOperatorName(TokenType op) => op switch
+    internal static string GetRelationalOperatorName(TokenKind op) => op switch
     {
-        TokenType.LessThan => "binary operator <",
-        TokenType.GreaterThan => "binary operator >",
-        TokenType.LessEqual => "binary operator <=",
-        TokenType.GreaterEqual => "binary operator >=",
-        TokenType.Equal => "binary operator ==",
-        TokenType.NotEqual => "binary operator !=",
+        TokenKind.LessThan => "binary operator <",
+        TokenKind.GreaterThan => "binary operator >",
+        TokenKind.LessEqual => "binary operator <=",
+        TokenKind.GreaterEqual => "binary operator >=",
+        TokenKind.Equal => "binary operator ==",
+        TokenKind.NotEqual => "binary operator !=",
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 

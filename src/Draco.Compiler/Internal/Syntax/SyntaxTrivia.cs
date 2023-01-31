@@ -15,16 +15,16 @@ internal sealed class SyntaxTrivia : SyntaxNode
     /// <summary>
     /// Construct a <see cref="SyntaxTrivia"/> from the given data.
     /// </summary>
-    /// <param name="type">The <see cref="TriviaType"/>.</param>
+    /// <param name="kind">The <see cref="TriviaKind"/>.</param>
     /// <param name="text">The text the trivia was constructed from.</param>
-    /// <returns>A new <see cref="SyntaxTrivia"/> with <see cref="Type"/> <paramref name="type"/> and
+    /// <returns>A new <see cref="SyntaxTrivia"/> with <see cref="Kind"/> <paramref name="kind"/> and
     /// <see cref="Text"/> <paramref name="text"/>.</returns>
-    public static SyntaxTrivia From(TriviaType type, string text) => new(type, text);
+    public static SyntaxTrivia From(TriviaKind kind, string text) => new(kind, text);
 
     /// <summary>
-    /// The <see cref="TriviaType"/> of this trivia.
+    /// The <see cref="TriviaKind"/> of this trivia.
     /// </summary>
-    public TriviaType Type { get; }
+    public TriviaKind Kind { get; }
 
     /// <summary>
     /// The text the trivia was produced from.
@@ -35,9 +35,9 @@ internal sealed class SyntaxTrivia : SyntaxNode
 
     public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
 
-    public SyntaxTrivia(TriviaType type, string text)
+    public SyntaxTrivia(TriviaKind kind, string text)
     {
-        this.Type = type;
+        this.Kind = kind;
         this.Text = text;
     }
 

@@ -239,7 +239,7 @@ internal static class SyntaxTreeToAst
                 builder.Add(new Ast.StringPart.Content(
                     SyntaxNode: content,
                     Value: text![(lastNewline ? cutoff : 0)..]));
-                lastNewline = content.Content.Type == TokenType.StringNewline;
+                lastNewline = content.Content.Kind == TokenKind.StringNewline;
                 break;
             }
             case InterpolationStringPartSyntax interpolation:
@@ -267,7 +267,7 @@ internal static class SyntaxTreeToAst
     private static int ComputeCutoff(StringExpressionSyntax str)
     {
         // Line strings have no cutoff
-        if (str.OpenQuotes.Type == TokenType.LineStringStart) return 0;
+        if (str.OpenQuotes.Kind == TokenKind.LineStringStart) return 0;
         // Multiline strings
         Debug.Assert(str.CloseQuotes.LeadingTrivia.Count <= 2);
         // If this is true, we have malformed input
@@ -275,14 +275,14 @@ internal static class SyntaxTreeToAst
         // If this is true, there's only newline, no spaces before
         if (str.CloseQuotes.LeadingTrivia.Count == 1) return 0;
         // The first trivia was newline, the second must be spaces
-        Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Type == TriviaType.Whitespace);
+        Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Kind == TriviaKind.Whitespace);
         return str.CloseQuotes.LeadingTrivia[1].Text.Length;
     }
 
     private static Ast.Expr ToAstExpr(QueryDatabase db, BinaryExpressionSyntax bin)
     {
         // Binary tree either becomes an assignment or a binary expr
-        if (Syntax.TokenTypeExtensions.IsCompoundAssignmentOperator(bin.Operator.Type))
+        if (SyntaxFacts.IsCompoundAssignmentOperator(bin.Operator.Kind))
         {
             var left = ToAstLValue(db, bin.Left);
             var right = ToAstExpr(db, bin.Right);
@@ -293,7 +293,7 @@ internal static class SyntaxTreeToAst
                 CompoundOperator: @operator,
                 Value: right);
         }
-        else if (bin.Operator.Type == TokenType.Assign)
+        else if (bin.Operator.Kind == TokenKind.Assign)
         {
             var left = ToAstLValue(db, bin.Left);
             var right = ToAstExpr(db, bin.Right);
@@ -303,7 +303,7 @@ internal static class SyntaxTreeToAst
                 CompoundOperator: null,
                 Value: right);
         }
-        else if (bin.Operator.Type == TokenType.KeywordAnd)
+        else if (bin.Operator.Kind == TokenKind.KeywordAnd)
         {
             var left = ToAstExpr(db, bin.Left);
             var right = ToAstExpr(db, bin.Right);
@@ -312,7 +312,7 @@ internal static class SyntaxTreeToAst
                 Left: left,
                 Right: right);
         }
-        else if (bin.Operator.Type == TokenType.KeywordOr)
+        else if (bin.Operator.Kind == TokenKind.KeywordOr)
         {
             var left = ToAstExpr(db, bin.Left);
             var right = ToAstExpr(db, bin.Right);
@@ -334,22 +334,22 @@ internal static class SyntaxTreeToAst
         }
     }
 
-    private static Ast.Expr ToAstExpr(LiteralExpressionSyntax lit) => lit.Literal.Type switch
+    private static Ast.Expr ToAstExpr(LiteralExpressionSyntax lit) => lit.Literal.Kind switch
     {
-        TokenType.LiteralInteger => new Ast.Expr.Literal(
+        TokenKind.LiteralInteger => new Ast.Expr.Literal(
             SyntaxNode: lit,
             Value: lit.Literal.Value,
             Type: Type.Int32),
-        TokenType.LiteralFloat => new Ast.Expr.Literal(
+        TokenKind.LiteralFloat => new Ast.Expr.Literal(
             SyntaxNode: lit,
             Value: lit.Literal.Value,
             // NOTE: There is no agreement currently on float literal type
             Type: Type.Float64),
-        TokenType.KeywordTrue => new Ast.Expr.Literal(
+        TokenKind.KeywordTrue => new Ast.Expr.Literal(
             SyntaxNode: lit,
             Value: true,
             Type: Type.Bool),
-        TokenType.KeywordFalse => new Ast.Expr.Literal(
+        TokenKind.KeywordFalse => new Ast.Expr.Literal(
             SyntaxNode: lit,
             Value: false,
             Type: Type.Bool),

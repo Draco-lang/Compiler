@@ -13,84 +13,92 @@ namespace Draco.Compiler.Api.Syntax;
 public static class SyntaxFacts
 {
     /// <summary>
-    /// Attempts to retrieve the textual representation of a token type.
+    /// Attempts to retrieve the textual representation of a <see cref="TokenKind"/>.
     /// </summary>
-    /// <param name="tokenType">The <see cref="TokenType"/> to get the text of.</param>
-    /// <returns>The textual representation of <paramref name="tokenType"/>, or null, if it doesn't have a
+    /// <param name="tokenKind">The <see cref="TokenKind"/> to get the text of.</param>
+    /// <returns>The textual representation of <paramref name="tokenKind"/>, or null, if it doesn't have a
     /// unique representation.</returns>
-    public static string? GetTokenText(TokenType tokenType) => tokenType switch
+    public static string? GetTokenText(TokenKind tokenKind) => tokenKind switch
     {
-        TokenType.EndOfInput => string.Empty,
-        TokenType.InterpolationEnd => "}",
-        TokenType.KeywordAnd => "and",
-        TokenType.KeywordElse => "else",
-        TokenType.KeywordFalse => "false",
-        TokenType.KeywordFrom => "from",
-        TokenType.KeywordFunc => "func",
-        TokenType.KeywordGoto => "goto",
-        TokenType.KeywordIf => "if",
-        TokenType.KeywordImport => "import",
-        TokenType.KeywordMod => "mod",
-        TokenType.KeywordNot => "not",
-        TokenType.KeywordOr => "or",
-        TokenType.KeywordRem => "rem",
-        TokenType.KeywordReturn => "return",
-        TokenType.KeywordTrue => "true",
-        TokenType.KeywordVal => "val",
-        TokenType.KeywordVar => "var",
-        TokenType.KeywordWhile => "while",
-        TokenType.ParenOpen => "(",
-        TokenType.ParenClose => ")",
-        TokenType.CurlyOpen => "{",
-        TokenType.CurlyClose => "}",
-        TokenType.BracketOpen => "[",
-        TokenType.BracketClose => "]",
-        TokenType.Dot => ".",
-        TokenType.Comma => ",",
-        TokenType.Colon => ":",
-        TokenType.Semicolon => ";",
-        TokenType.Plus => "+",
-        TokenType.Minus => "-",
-        TokenType.Star => "*",
-        TokenType.Slash => "/",
-        TokenType.LessThan => "<",
-        TokenType.GreaterThan => ">",
-        TokenType.LessEqual => "<=",
-        TokenType.GreaterEqual => ">=",
-        TokenType.Equal => "==",
-        TokenType.NotEqual => "!=",
-        TokenType.Assign => "=",
-        TokenType.PlusAssign => "+=",
-        TokenType.MinusAssign => "-=",
-        TokenType.StarAssign => "*=",
-        TokenType.SlashAssign => "/=",
+        TokenKind.EndOfInput => string.Empty,
+        TokenKind.InterpolationEnd => "}",
+        TokenKind.KeywordAnd => "and",
+        TokenKind.KeywordElse => "else",
+        TokenKind.KeywordFalse => "false",
+        TokenKind.KeywordFrom => "from",
+        TokenKind.KeywordFunc => "func",
+        TokenKind.KeywordGoto => "goto",
+        TokenKind.KeywordIf => "if",
+        TokenKind.KeywordImport => "import",
+        TokenKind.KeywordMod => "mod",
+        TokenKind.KeywordNot => "not",
+        TokenKind.KeywordOr => "or",
+        TokenKind.KeywordRem => "rem",
+        TokenKind.KeywordReturn => "return",
+        TokenKind.KeywordTrue => "true",
+        TokenKind.KeywordVal => "val",
+        TokenKind.KeywordVar => "var",
+        TokenKind.KeywordWhile => "while",
+        TokenKind.ParenOpen => "(",
+        TokenKind.ParenClose => ")",
+        TokenKind.CurlyOpen => "{",
+        TokenKind.CurlyClose => "}",
+        TokenKind.BracketOpen => "[",
+        TokenKind.BracketClose => "]",
+        TokenKind.Dot => ".",
+        TokenKind.Comma => ",",
+        TokenKind.Colon => ":",
+        TokenKind.Semicolon => ";",
+        TokenKind.Plus => "+",
+        TokenKind.Minus => "-",
+        TokenKind.Star => "*",
+        TokenKind.Slash => "/",
+        TokenKind.LessThan => "<",
+        TokenKind.GreaterThan => ">",
+        TokenKind.LessEqual => "<=",
+        TokenKind.GreaterEqual => ">=",
+        TokenKind.Equal => "==",
+        TokenKind.NotEqual => "!=",
+        TokenKind.Assign => "=",
+        TokenKind.PlusAssign => "+=",
+        TokenKind.MinusAssign => "-=",
+        TokenKind.StarAssign => "*=",
+        TokenKind.SlashAssign => "/=",
         _ => null,
     };
 
     /// <summary>
-    /// Attempts to retrieve a user-friendly name for a <see cref="TokenType"/>.
+    /// Attempts to retrieve a user-friendly name for a <see cref="TokenKind"/>.
     /// </summary>
-    /// <param name="tokenType">The <see cref="TokenType"/> to get the user-friendly name for.</param>
-    /// <returns>The user-friendly name of <paramref name="tokenType"/>.</returns>
-    public static string GetUserFriendlyName(TokenType tokenType) => tokenType switch
+    /// <param name="tokenKind">The <see cref="TokenKind"/> to get the user-friendly name for.</param>
+    /// <returns>The user-friendly name of <paramref name="tokenKind"/>.</returns>
+    public static string GetUserFriendlyName(TokenKind tokenKind) => tokenKind switch
     {
-        TokenType.EndOfInput => "end of file",
-        TokenType.LineStringEnd or TokenType.MultiLineStringEnd => "end of string literal",
-        _ => tokenType.GetTokenTextOrNull() ?? tokenType.ToString().ToLower(),
+        TokenKind.EndOfInput => "end of file",
+        TokenKind.LineStringEnd or TokenKind.MultiLineStringEnd => "end of string literal",
+        _ => GetTokenText(tokenKind) ?? tokenKind.ToString().ToLower(),
     };
 
     /// <summary>
-    /// Retrieves the operator that a given <see cref="TokenType"/> has for compound assignment.
+    /// Retrieves the operator that a given <see cref="TokenKind"/> has for compound assignment.
     /// </summary>
-    /// <param name="tokenType">The <see cref="TokenType"/> to check.</param>
-    /// <returns>The corresponding <see cref="TokenType"/> of the operator, if <paramref name="tokenType"/> is
+    /// <param name="tokenKind">The <see cref="TokenKind"/> to check.</param>
+    /// <returns>The corresponding <see cref="TokenKind"/> of the operator, if <paramref name="tokenKind"/> is
     /// a compound assignment, null otherwise..</returns>
-    public static TokenType? GetOperatorOfCompoundAssignment(TokenType tokenType) => tokenType switch
+    public static TokenKind? GetOperatorOfCompoundAssignment(TokenKind tokenKind) => tokenKind switch
     {
-        TokenType.PlusAssign => TokenType.Plus,
-        TokenType.MinusAssign => TokenType.Minus,
-        TokenType.StarAssign => TokenType.Star,
-        TokenType.SlashAssign => TokenType.Slash,
+        TokenKind.PlusAssign => TokenKind.Plus,
+        TokenKind.MinusAssign => TokenKind.Minus,
+        TokenKind.StarAssign => TokenKind.Star,
+        TokenKind.SlashAssign => TokenKind.Slash,
         _ => null,
     };
+
+    /// <summary>
+    /// Checks, if a given <see cref="TokenKind"/> corresponds to a compound assignment operator.
+    /// </summary>
+    /// <param name="tokenKind">The <see cref="TokenKind"/> to check.</param>
+    /// <returns>True, if <paramref name="tokenKind"/> represents a compound assignment operator, false otherwise.</returns>
+    public static bool IsCompoundAssignmentOperator(TokenKind tokenKind) =>
+        GetOperatorOfCompoundAssignment(tokenKind) is not null;
 }

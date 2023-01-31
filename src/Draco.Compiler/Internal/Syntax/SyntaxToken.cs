@@ -16,22 +16,22 @@ internal sealed partial class SyntaxToken : SyntaxNode
     /// <summary>
     /// Constructs a <see cref="SyntaxToken"/> from the given data.
     /// </summary>
-    /// <param name="type">The <see cref="TokenType"/>.</param>
+    /// <param name="kind">The <see cref="TokenKind"/>.</param>
     /// <param name="text">The text the token was constructed from.</param>
     /// <param name="value">The associated value of the token.</param>
-    /// <returns>A new <see cref="SyntaxToken"/> with <see cref="Type"/> <paramref name="type"/>,
+    /// <returns>A new <see cref="SyntaxToken"/> with <see cref="Kind"/> <paramref name="kind"/>,
     /// <see cref="Text"/> <paramref name="text"/> and <see cref="Value"/> <paramref name="value"/>.</returns>
-    public static SyntaxToken From(TokenType type, string? text = null, object? value = null) => new(
-        type: type,
-        text: text ?? type.GetTokenText(),
+    public static SyntaxToken From(TokenKind kind, string? text = null, object? value = null) => new(
+        kind: kind,
+        text: text ?? SyntaxFacts.GetTokenText(kind) ?? throw new ArgumentNullException(nameof(text)),
         value: value,
         leadingTrivia: SyntaxList<SyntaxTrivia>.Empty,
         trailingTrivia: SyntaxList<SyntaxTrivia>.Empty);
 
     /// <summary>
-    /// The <see cref="TokenType"/> of this token.
+    /// The <see cref="TokenKind"/> of this token.
     /// </summary>
-    public TokenType Type { get; }
+    public TokenKind Kind { get; }
 
     /// <summary>
     /// The text the token was produced from.
@@ -63,13 +63,13 @@ internal sealed partial class SyntaxToken : SyntaxNode
     public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxToken>();
 
     public SyntaxToken(
-        TokenType type,
+        TokenKind kind,
         string text,
         object? value,
         SyntaxList<SyntaxTrivia> leadingTrivia,
         SyntaxList<SyntaxTrivia> trailingTrivia)
     {
-        this.Type = type;
+        this.Kind = kind;
         this.Text = text;
         this.Value = value;
         this.LeadingTrivia = leadingTrivia;

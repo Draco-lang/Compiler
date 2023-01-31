@@ -83,10 +83,10 @@ internal sealed class Parser
     /// </summary>
     /// <param name="operators">The set of prefix operators.</param>
     /// <returns>An <see cref="ExpressionParserDelegate"/> that recognizes <paramref name="operators"/> as prefix operators.</returns>
-    private ExpressionParserDelegate Prefix(params TokenType[] operators) => level =>
+    private ExpressionParserDelegate Prefix(params TokenKind[] operators) => level =>
     {
-        var opType = this.Peek();
-        if (operators.Contains(opType))
+        var opKind = this.Peek();
+        if (operators.Contains(opKind))
         {
             // There is such operator on this level
             var op = this.Advance();
@@ -106,14 +106,14 @@ internal sealed class Parser
     /// <param name="operators">The set of binary operators.</param>
     /// <returns>An <see cref="ExpressionParserDelegate"/> that recognizes <paramref name="operators"/> as
     /// left-associative binary operators.</returns>
-    private ExpressionParserDelegate BinaryLeft(params TokenType[] operators) => level =>
+    private ExpressionParserDelegate BinaryLeft(params TokenKind[] operators) => level =>
     {
         // We unroll left-associativity into a loop
         var result = this.ParseExpression(level + 1);
         while (true)
         {
-            var opType = this.Peek();
-            if (!operators.Contains(opType)) break;
+            var opKind = this.Peek();
+            if (!operators.Contains(opKind)) break;
             var op = this.Advance();
             var right = this.ParseExpression(level + 1);
             result = new BinaryExpressionSyntax(result, op, right);
@@ -127,11 +127,11 @@ internal sealed class Parser
     /// <param name="operators">The set of binary operators.</param>
     /// <returns>An <see cref="ExpressionParserDelegate"/> that recognizes <paramref name="operators"/> as
     /// right-associative binary operators.</returns>
-    private ExpressionParserDelegate BinaryRight(params TokenType[] operators) => level =>
+    private ExpressionParserDelegate BinaryRight(params TokenKind[] operators) => level =>
     {
         // Right-associativity is simply right-recursion
         var result = this.ParseExpression(level + 1);
-        var opType = this.Peek();
+        var opKind = this.Peek();
         if (operators.Contains(this.Peek()))
         {
             var op = this.Advance();
@@ -144,38 +144,38 @@ internal sealed class Parser
     /// <summary>
     /// The list of all relational operators.
     /// </summary>
-    private static readonly TokenType[] relationalOps = new[]
+    private static readonly TokenKind[] relationalOps = new[]
     {
-        TokenType.Equal, TokenType.NotEqual,
-        TokenType.GreaterThan, TokenType.LessThan,
-        TokenType.GreaterEqual, TokenType.LessEqual,
+        TokenKind.Equal, TokenKind.NotEqual,
+        TokenKind.GreaterThan, TokenKind.LessThan,
+        TokenKind.GreaterEqual, TokenKind.LessEqual,
     };
 
     /// <summary>
     /// The list of all tokens that can start an expression.
     /// </summary>
-    private static readonly TokenType[] expressionStarters = new[]
+    private static readonly TokenKind[] expressionStarters = new[]
     {
-        TokenType.Identifier,
-        TokenType.LiteralInteger,
-        TokenType.LiteralFloat,
-        TokenType.LiteralCharacter,
-        TokenType.LineStringStart,
-        TokenType.MultiLineStringStart,
-        TokenType.KeywordFalse,
-        TokenType.KeywordFunc,
-        TokenType.KeywordGoto,
-        TokenType.KeywordIf,
-        TokenType.KeywordNot,
-        TokenType.KeywordReturn,
-        TokenType.KeywordTrue,
-        TokenType.KeywordWhile,
-        TokenType.ParenOpen,
-        TokenType.CurlyOpen,
-        TokenType.BracketOpen,
-        TokenType.Plus,
-        TokenType.Minus,
-        TokenType.Star,
+        TokenKind.Identifier,
+        TokenKind.LiteralInteger,
+        TokenKind.LiteralFloat,
+        TokenKind.LiteralCharacter,
+        TokenKind.LineStringStart,
+        TokenKind.MultiLineStringStart,
+        TokenKind.KeywordFalse,
+        TokenKind.KeywordFunc,
+        TokenKind.KeywordGoto,
+        TokenKind.KeywordIf,
+        TokenKind.KeywordNot,
+        TokenKind.KeywordReturn,
+        TokenKind.KeywordTrue,
+        TokenKind.KeywordWhile,
+        TokenKind.ParenOpen,
+        TokenKind.CurlyOpen,
+        TokenKind.BracketOpen,
+        TokenKind.Plus,
+        TokenKind.Minus,
+        TokenKind.Star,
     };
 
     /// <summary>
@@ -197,8 +197,8 @@ internal sealed class Parser
     public CompilationUnitSyntax ParseCompilationUnit()
     {
         var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
-        while (this.Peek() != TokenType.EndOfInput) decls.Add(this.ParseDeclaration());
-        var end = this.Expect(TokenType.EndOfInput);
+        while (this.Peek() != TokenKind.EndOfInput) decls.Add(this.ParseDeclaration());
+        var end = this.Expect(TokenKind.EndOfInput);
         return new(decls.ToSyntaxList(), end);
     }
 
@@ -210,22 +210,22 @@ internal sealed class Parser
     {
         switch (this.Peek())
         {
-        case TokenType.KeywordFunc:
+        case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration();
 
-        case TokenType.KeywordVar:
-        case TokenType.KeywordVal:
+        case TokenKind.KeywordVar:
+        case TokenKind.KeywordVal:
             return this.ParseVariableDeclaration();
 
-        case TokenType.Identifier when this.Peek(1) == TokenType.Colon:
+        case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
             return this.ParseLabelDeclaration();
 
         default:
         {
             var input = this.Synchronize(t => t switch
             {
-                TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
-                TokenType.Identifier when this.Peek(1) == TokenType.Colon => false,
+                TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal => false,
+                TokenKind.Identifier when this.Peek(1) == TokenKind.Colon => false,
                 _ => true,
             });
             var location = GetLocation(input.Sum(i => i.Width));
@@ -246,19 +246,19 @@ internal sealed class Parser
         switch (this.Peek())
         {
         // Declarations
-        case TokenType.KeywordFunc when allowDecl:
-        case TokenType.KeywordVar when allowDecl:
-        case TokenType.KeywordVal when allowDecl:
-        case TokenType.Identifier when allowDecl && this.Peek(1) == TokenType.Colon:
+        case TokenKind.KeywordFunc when allowDecl:
+        case TokenKind.KeywordVar when allowDecl:
+        case TokenKind.KeywordVal when allowDecl:
+        case TokenKind.Identifier when allowDecl && this.Peek(1) == TokenKind.Colon:
         {
             var decl = this.ParseDeclaration();
             return new DeclarationStatementSyntax(decl);
         }
 
         // Expressions that can appear without braces
-        case TokenType.CurlyOpen:
-        case TokenType.KeywordIf:
-        case TokenType.KeywordWhile:
+        case TokenKind.CurlyOpen:
+        case TokenKind.KeywordIf:
+        case TokenKind.KeywordWhile:
         {
             var expr = this.ParseControlFlowExpression(ControlFlowContext.Stmt);
             return new ExpressionStatementSyntax(expr, null);
@@ -269,7 +269,7 @@ internal sealed class Parser
         {
             // TODO: This assumption might not be the best
             var expr = this.ParseExpression();
-            var semicolon = this.Expect(TokenType.Semicolon);
+            var semicolon = this.Expect(TokenKind.Semicolon);
             return new ExpressionStatementSyntax(expr, semicolon);
         }
         }
@@ -283,20 +283,20 @@ internal sealed class Parser
     {
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
-        Debug.Assert(keyword.Type == TokenType.KeywordVal || keyword.Type == TokenType.KeywordVar);
-        var identifier = this.Expect(TokenType.Identifier);
+        Debug.Assert(keyword.Kind == TokenKind.KeywordVal || keyword.Kind == TokenKind.KeywordVar);
+        var identifier = this.Expect(TokenKind.Identifier);
         // We don't necessarily have type specifier
         TypeSpecifierSyntax? type = null;
-        if (this.Peek() == TokenType.Colon) type = this.ParseTypeSpecifier();
+        if (this.Peek() == TokenKind.Colon) type = this.ParseTypeSpecifier();
         // We don't necessarily have value assigned to the variable
         ValueSpecifierSyntax? assignment = null;
-        if (this.Matches(TokenType.Assign, out var assign))
+        if (this.Matches(TokenKind.Assign, out var assign))
         {
             var value = this.ParseExpression();
             assignment = new(assign, value);
         }
         // Eat semicolon at the end of declaration
-        var semicolon = this.Expect(TokenType.Semicolon);
+        var semicolon = this.Expect(TokenKind.Semicolon);
         return new VariableDeclarationSyntax(keyword, identifier, type, assignment, semicolon);
     }
 
@@ -307,20 +307,20 @@ internal sealed class Parser
     private FunctionDeclarationSyntax ParseFunctionDeclaration()
     {
         // Func keyword and name of the function
-        var funcKeyword = this.Expect(TokenType.KeywordFunc);
-        var name = this.Expect(TokenType.Identifier);
+        var funcKeyword = this.Expect(TokenKind.KeywordFunc);
+        var name = this.Expect(TokenKind.Identifier);
 
         // Parameters
-        var openParen = this.Expect(TokenType.ParenOpen);
+        var openParen = this.Expect(TokenKind.ParenOpen);
         var funcParameters = this.ParseSeparatedSyntaxList(
             elementParser: this.ParseParameter,
-            punctType: TokenType.Comma,
-            stopType: TokenType.ParenClose);
-        var closeParen = this.Expect(TokenType.ParenClose);
+            separatorKind: TokenKind.Comma,
+            stopKind: TokenKind.ParenClose);
+        var closeParen = this.Expect(TokenKind.ParenClose);
 
         // We don't necessarily have type specifier
         TypeSpecifierSyntax? returnType = null;
-        if (this.Peek() == TokenType.Colon) returnType = this.ParseTypeSpecifier();
+        if (this.Peek() == TokenKind.Colon) returnType = this.ParseTypeSpecifier();
 
         var body = this.ParseFunctionBody();
 
@@ -333,8 +333,8 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="LabelDeclarationSyntax"/>.</returns>
     private LabelDeclarationSyntax ParseLabelDeclaration()
     {
-        var labelName = this.Expect(TokenType.Identifier);
-        var colon = this.Expect(TokenType.Colon);
+        var labelName = this.Expect(TokenKind.Identifier);
+        var colon = this.Expect(TokenKind.Colon);
         return new(labelName, colon);
     }
 
@@ -344,8 +344,8 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="ParameterSyntax"/>.</returns>
     private ParameterSyntax ParseParameter()
     {
-        var name = this.Expect(TokenType.Identifier);
-        var colon = this.Expect(TokenType.Colon);
+        var name = this.Expect(TokenKind.Identifier);
+        var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
         return new(name, colon, type);
     }
@@ -356,13 +356,13 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="FunctionBodySyntax"/>.</returns>
     private FunctionBodySyntax ParseFunctionBody()
     {
-        if (this.Matches(TokenType.Assign, out var assign))
+        if (this.Matches(TokenKind.Assign, out var assign))
         {
             var expr = this.ParseExpression();
-            var semicolon = this.Expect(TokenType.Semicolon);
+            var semicolon = this.Expect(TokenKind.Semicolon);
             return new InlineFunctionBodySyntax(assign, expr, semicolon);
         }
-        else if (this.Peek() == TokenType.CurlyOpen)
+        else if (this.Peek() == TokenKind.CurlyOpen)
         {
             var block = this.ParseBlock(ControlFlowContext.Stmt);
             return new BlockFunctionBodySyntax(
@@ -376,8 +376,8 @@ internal sealed class Parser
             // Maybe if we get to a '=' or '{' we could actually try to re-parse and prepend with the bogus input
             var input = this.Synchronize(t => t switch
             {
-                TokenType.Semicolon or TokenType.CurlyClose
-                or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal => false,
+                TokenKind.Semicolon or TokenKind.CurlyClose
+                or TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal => false,
                 _ => true,
             });
             var location = GetLocation(input.Sum(i => i.Width));
@@ -394,7 +394,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="TypeSpecifierSyntax"/>.</returns>
     private TypeSpecifierSyntax ParseTypeSpecifier()
     {
-        var colon = this.Expect(TokenType.Colon);
+        var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
         return new(colon, type);
     }
@@ -405,7 +405,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="TypeSyntax"/>.</returns>
     private TypeSyntax ParseType()
     {
-        if (this.Matches(TokenType.Identifier, out var typeName))
+        if (this.Matches(TokenKind.Identifier, out var typeName))
         {
             return new NameTypeSyntax(typeName);
         }
@@ -413,11 +413,11 @@ internal sealed class Parser
         {
             var input = this.Synchronize(t => t switch
             {
-                TokenType.Semicolon or TokenType.Comma
-                or TokenType.ParenClose or TokenType.BracketClose
-                or TokenType.CurlyClose or TokenType.InterpolationEnd
-                or TokenType.Assign => false,
-                var type when expressionStarters.Contains(type) => false,
+                TokenKind.Semicolon or TokenKind.Comma
+                or TokenKind.ParenClose or TokenKind.BracketClose
+                or TokenKind.CurlyClose or TokenKind.InterpolationEnd
+                or TokenKind.Assign => false,
+                var kind when expressionStarters.Contains(kind) => false,
                 _ => true,
             });
             var location = GetLocation(input.Sum(i => i.Width));
@@ -435,15 +435,15 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="ExpressionSyntax"/>.</returns>
     private ExpressionSyntax ParseControlFlowExpression(ControlFlowContext ctx)
     {
-        var peekType = this.Peek();
-        Debug.Assert(peekType == TokenType.CurlyOpen
-                  || peekType == TokenType.KeywordIf
-                  || peekType == TokenType.KeywordWhile);
-        return peekType switch
+        var peekKind = this.Peek();
+        Debug.Assert(peekKind == TokenKind.CurlyOpen
+                  || peekKind == TokenKind.KeywordIf
+                  || peekKind == TokenKind.KeywordWhile);
+        return peekKind switch
         {
-            TokenType.CurlyOpen => this.ParseBlockExpression(ctx),
-            TokenType.KeywordIf => this.ParseIfExpression(ctx),
-            TokenType.KeywordWhile => this.ParseWhileExpression(ctx),
+            TokenKind.CurlyOpen => this.ParseBlockExpression(ctx),
+            TokenKind.KeywordIf => this.ParseIfExpression(ctx),
+            TokenKind.KeywordWhile => this.ParseWhileExpression(ctx),
             _ => throw new InvalidOperationException(),
         };
     }
@@ -488,34 +488,34 @@ internal sealed class Parser
 
     private ParsedBlock ParseBlock(ControlFlowContext ctx)
     {
-        var openBrace = this.Expect(TokenType.CurlyOpen);
+        var openBrace = this.Expect(TokenKind.CurlyOpen);
         var stmts = SyntaxList.CreateBuilder<StatementSyntax>();
         ExpressionSyntax? value = null;
         while (true)
         {
             switch (this.Peek())
             {
-            case TokenType.EndOfInput:
-            case TokenType.CurlyClose:
+            case TokenKind.EndOfInput:
+            case TokenKind.CurlyClose:
                 // On a close curly or out of input, we can immediately exit
                 goto end_of_block;
 
-            case TokenType.KeywordFunc:
-            case TokenType.KeywordVar:
-            case TokenType.KeywordVal:
-            case TokenType.Identifier when this.Peek(1) == TokenType.Colon:
+            case TokenKind.KeywordFunc:
+            case TokenKind.KeywordVar:
+            case TokenKind.KeywordVal:
+            case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
             {
                 var decl = this.ParseDeclaration();
                 stmts.Add(new DeclarationStatementSyntax(decl));
                 break;
             }
 
-            case TokenType.CurlyOpen:
-            case TokenType.KeywordIf:
-            case TokenType.KeywordWhile:
+            case TokenKind.CurlyOpen:
+            case TokenKind.KeywordIf:
+            case TokenKind.KeywordWhile:
             {
                 var expr = this.ParseControlFlowExpression(ctx);
-                if (ctx == ControlFlowContext.Expr && this.Peek() == TokenType.CurlyClose)
+                if (ctx == ControlFlowContext.Expr && this.Peek() == TokenKind.CurlyClose)
                 {
                     // Treat as expression
                     value = expr;
@@ -532,10 +532,10 @@ internal sealed class Parser
                 {
                     // Some expression
                     var expr = this.ParseExpression();
-                    if (ctx == ControlFlowContext.Stmt || this.Peek() != TokenType.CurlyClose)
+                    if (ctx == ControlFlowContext.Stmt || this.Peek() != TokenKind.CurlyClose)
                     {
                         // Likely just a statement, can continue
-                        var semicolon = this.Expect(TokenType.Semicolon);
+                        var semicolon = this.Expect(TokenKind.Semicolon);
                         stmts.Add(new ExpressionStatementSyntax(expr, semicolon));
                     }
                     else
@@ -548,11 +548,11 @@ internal sealed class Parser
                 else
                 {
                     // Error, synchronize
-                    var tokens = this.Synchronize(type => type switch
+                    var tokens = this.Synchronize(kind => kind switch
                     {
-                        TokenType.CurlyClose
-                        or TokenType.KeywordFunc or TokenType.KeywordVar or TokenType.KeywordVal
-                        or TokenType.Identifier when this.Peek(1) == TokenType.Colon => false,
+                        TokenKind.CurlyClose
+                        or TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal
+                        or TokenKind.Identifier when this.Peek(1) == TokenKind.Colon => false,
                         var tt when expressionStarters.Contains(tt) => false,
                         _ => true,
                     });
@@ -567,7 +567,7 @@ internal sealed class Parser
             }
         }
     end_of_block:
-        var closeBrace = this.Expect(TokenType.CurlyClose);
+        var closeBrace = this.Expect(TokenKind.CurlyClose);
         return new(openBrace, stmts.ToSyntaxList(), value, closeBrace);
     }
 
@@ -578,14 +578,14 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="IfExpressionSyntax"/>.</returns>
     private IfExpressionSyntax ParseIfExpression(ControlFlowContext ctx)
     {
-        var ifKeyword = this.Expect(TokenType.KeywordIf);
-        var openParen = this.Expect(TokenType.ParenOpen);
+        var ifKeyword = this.Expect(TokenKind.KeywordIf);
+        var openParen = this.Expect(TokenKind.ParenOpen);
         var condition = this.ParseExpression();
-        var closeParen = this.Expect(TokenType.ParenClose);
+        var closeParen = this.Expect(TokenKind.ParenClose);
         var thenBody = this.ParseControlFlowBody(ctx);
 
         ElseClauseSyntax? elsePart = null;
-        if (this.Matches(TokenType.KeywordElse, out var elseKeyword))
+        if (this.Matches(TokenKind.KeywordElse, out var elseKeyword))
         {
             var elseBody = this.ParseControlFlowBody(ctx);
             elsePart = new(elseKeyword, elseBody);
@@ -601,10 +601,10 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="WhileExpressionSyntax"/>.</returns>
     private WhileExpressionSyntax ParseWhileExpression(ControlFlowContext ctx)
     {
-        var whileKeyword = this.Expect(TokenType.KeywordWhile);
-        var openParen = this.Expect(TokenType.ParenOpen);
+        var whileKeyword = this.Expect(TokenKind.KeywordWhile);
+        var openParen = this.Expect(TokenKind.ParenOpen);
         var condition = this.ParseExpression();
-        var closeParen = this.Expect(TokenType.ParenClose);
+        var closeParen = this.Expect(TokenKind.ParenClose);
         var body = this.ParseControlFlowBody(ctx);
         return new(whileKeyword, openParen, condition, closeParen, body);
     }
@@ -626,23 +626,23 @@ internal sealed class Parser
         0 => this.ParsePseudoStatementLevelExpression(level),
         // Then assignment and compound assignment, which are **RIGHT ASSOCIATIVE**
         1 => this.BinaryRight(
-            TokenType.Assign,
-            TokenType.PlusAssign, TokenType.MinusAssign,
-            TokenType.StarAssign, TokenType.SlashAssign)(level),
+            TokenKind.Assign,
+            TokenKind.PlusAssign, TokenKind.MinusAssign,
+            TokenKind.StarAssign, TokenKind.SlashAssign)(level),
         // Then binary or
-        2 => this.BinaryLeft(TokenType.KeywordOr)(level),
+        2 => this.BinaryLeft(TokenKind.KeywordOr)(level),
         // Then binary and
-        3 => this.BinaryLeft(TokenType.KeywordAnd)(level),
+        3 => this.BinaryLeft(TokenKind.KeywordAnd)(level),
         // Then unary not
-        4 => this.Prefix(TokenType.KeywordNot)(level),
+        4 => this.Prefix(TokenKind.KeywordNot)(level),
         // Then relational operators
         5 => this.ParseRelationalLevelExpression(level),
         // Then binary +, -
-        6 => this.BinaryLeft(TokenType.Plus, TokenType.Minus)(level),
+        6 => this.BinaryLeft(TokenKind.Plus, TokenKind.Minus)(level),
         // Then binary *, /, mod, rem
-        7 => this.BinaryLeft(TokenType.Star, TokenType.Slash, TokenType.KeywordMod, TokenType.KeywordRem)(level),
+        7 => this.BinaryLeft(TokenKind.Star, TokenKind.Slash, TokenKind.KeywordMod, TokenKind.KeywordRem)(level),
         // Then prefix unary + and -
-        8 => this.Prefix(TokenType.Plus, TokenType.Minus)(level),
+        8 => this.Prefix(TokenKind.Plus, TokenKind.Minus)(level),
         // Then comes call, indexing and member access
         9 => this.ParseCallLevelExpression(level),
         // Max precedence is atom
@@ -656,17 +656,17 @@ internal sealed class Parser
     {
         switch (this.Peek())
         {
-        case TokenType.KeywordReturn:
+        case TokenKind.KeywordReturn:
         {
             var returnKeyword = this.Advance();
             ExpressionSyntax? value = null;
             if (expressionStarters.Contains(this.Peek())) value = this.ParseExpression();
             return new ReturnExpressionSyntax(returnKeyword, value);
         }
-        case TokenType.KeywordGoto:
+        case TokenKind.KeywordGoto:
         {
             var gotoKeyword = this.Advance();
-            var labelName = this.Expect(TokenType.Identifier);
+            var labelName = this.Expect(TokenKind.Identifier);
             return new GotoExpressionSyntax(gotoKeyword, new NameLabelSyntax(labelName));
         }
         default:
@@ -680,8 +680,8 @@ internal sealed class Parser
         var comparisons = SyntaxList.CreateBuilder<ComparisonElementSyntax>();
         while (true)
         {
-            var opType = this.Peek();
-            if (!relationalOps.Contains(opType)) break;
+            var opKind = this.Peek();
+            if (!relationalOps.Contains(opKind)) break;
             var op = this.Advance();
             var right = this.ParseExpression(level + 1);
             comparisons.Add(new(op, right));
@@ -697,29 +697,29 @@ internal sealed class Parser
         while (true)
         {
             var peek = this.Peek();
-            if (peek == TokenType.ParenOpen)
+            if (peek == TokenKind.ParenOpen)
             {
-                var openParen = this.Expect(TokenType.ParenOpen);
+                var openParen = this.Expect(TokenKind.ParenOpen);
                 var args = this.ParseSeparatedSyntaxList(
                     elementParser: this.ParseExpression,
-                    punctType: TokenType.Comma,
-                    stopType: TokenType.ParenClose);
-                var closeParen = this.Expect(TokenType.ParenClose);
+                    separatorKind: TokenKind.Comma,
+                    stopKind: TokenKind.ParenClose);
+                var closeParen = this.Expect(TokenKind.ParenClose);
                 result = new CallExpressionSyntax(result, openParen, args, closeParen);
             }
-            else if (peek == TokenType.BracketOpen)
+            else if (peek == TokenKind.BracketOpen)
             {
-                var openParen = this.Expect(TokenType.ParenOpen);
+                var openParen = this.Expect(TokenKind.ParenOpen);
                 var args = this.ParseSeparatedSyntaxList(
                     elementParser: this.ParseExpression,
-                    punctType: TokenType.Comma,
-                    stopType: TokenType.BracketClose);
-                var closeParen = this.Expect(TokenType.ParenClose);
+                    separatorKind: TokenKind.Comma,
+                    stopKind: TokenKind.BracketClose);
+                var closeParen = this.Expect(TokenKind.ParenClose);
                 result = new IndexExpressionSyntax(result, openParen, args, closeParen);
             }
-            else if (this.Matches(TokenType.Dot, out var dot))
+            else if (this.Matches(TokenKind.Dot, out var dot))
             {
-                var name = this.Expect(TokenType.Identifier);
+                var name = this.Expect(TokenKind.Identifier);
                 result = new MemberAccessExpressionSyntax(result, dot, name);
             }
             else
@@ -734,47 +734,47 @@ internal sealed class Parser
     {
         switch (this.Peek())
         {
-        case TokenType.LiteralInteger:
-        case TokenType.LiteralFloat:
-        case TokenType.LiteralCharacter:
+        case TokenKind.LiteralInteger:
+        case TokenKind.LiteralFloat:
+        case TokenKind.LiteralCharacter:
         {
             var value = this.Advance();
             return new LiteralExpressionSyntax(value);
         }
-        case TokenType.KeywordTrue:
-        case TokenType.KeywordFalse:
+        case TokenKind.KeywordTrue:
+        case TokenKind.KeywordFalse:
         {
             var value = this.Advance();
             return new LiteralExpressionSyntax(value);
         }
-        case TokenType.LineStringStart:
+        case TokenKind.LineStringStart:
             return this.ParseLineString();
-        case TokenType.MultiLineStringStart:
+        case TokenKind.MultiLineStringStart:
             return this.ParseMultiLineString();
-        case TokenType.Identifier:
+        case TokenKind.Identifier:
         {
             var name = this.Advance();
             return new NameExpressionSyntax(name);
         }
-        case TokenType.ParenOpen:
+        case TokenKind.ParenOpen:
         {
-            var openParen = this.Expect(TokenType.ParenOpen);
+            var openParen = this.Expect(TokenKind.ParenOpen);
             var expr = this.ParseExpression();
-            var closeParen = this.Expect(TokenType.ParenClose);
+            var closeParen = this.Expect(TokenKind.ParenClose);
             return new GroupingExpressionSyntax(openParen, expr, closeParen);
         }
-        case TokenType.CurlyOpen:
-        case TokenType.KeywordIf:
-        case TokenType.KeywordWhile:
+        case TokenKind.CurlyOpen:
+        case TokenKind.KeywordIf:
+        case TokenKind.KeywordWhile:
             return this.ParseControlFlowExpression(ControlFlowContext.Expr);
         default:
         {
             var input = this.Synchronize(t => t switch
             {
-                TokenType.Semicolon or TokenType.Comma
-                or TokenType.ParenClose or TokenType.BracketClose
-                or TokenType.CurlyClose or TokenType.InterpolationEnd => false,
-                var type when expressionStarters.Contains(type) => false,
+                TokenKind.Semicolon or TokenKind.Comma
+                or TokenKind.ParenClose or TokenKind.BracketClose
+                or TokenKind.CurlyClose or TokenKind.InterpolationEnd => false,
+                var kind when expressionStarters.Contains(kind) => false,
                 _ => true,
             });
             var location = GetLocation(input.Sum(i => i.Width));
@@ -792,21 +792,21 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="StringExpressionSyntax"/>.</returns>
     private StringExpressionSyntax ParseLineString()
     {
-        var openQuote = this.Expect(TokenType.LineStringStart);
+        var openQuote = this.Expect(TokenKind.LineStringStart);
         var content = SyntaxList.CreateBuilder<StringPartSyntax>();
         while (true)
         {
             var peek = this.Peek();
-            if (peek == TokenType.StringContent)
+            if (peek == TokenKind.StringContent)
             {
                 var part = this.Advance();
                 content.Add(new TextStringPartSyntax(part));
             }
-            else if (peek == TokenType.InterpolationStart)
+            else if (peek == TokenKind.InterpolationStart)
             {
                 var start = this.Advance();
                 var expr = this.ParseExpression();
-                var end = this.Expect(TokenType.InterpolationEnd);
+                var end = this.Expect(TokenKind.InterpolationEnd);
                 content.Add(new InterpolationStringPartSyntax(start, expr, end));
             }
             else
@@ -815,7 +815,7 @@ internal sealed class Parser
                 break;
             }
         }
-        var closeQuote = this.Expect(TokenType.LineStringEnd);
+        var closeQuote = this.Expect(TokenKind.LineStringEnd);
         return new(openQuote, content.ToSyntaxList(), closeQuote);
     }
 
@@ -825,15 +825,15 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="StringExpressionSyntax"/>.</returns>
     private StringExpressionSyntax ParseMultiLineString()
     {
-        var openQuote = this.Expect(TokenType.MultiLineStringStart);
+        var openQuote = this.Expect(TokenKind.MultiLineStringStart);
         var content = SyntaxList.CreateBuilder<StringPartSyntax>();
         // We check if there's a newline
-        if (!openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline))
+        if (!openQuote.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline))
         {
             // Possible stray tokens inline
             var strayTokens = this.Synchronize(t => t switch
             {
-                TokenType.MultiLineStringEnd or TokenType.StringNewline => false,
+                TokenKind.MultiLineStringEnd or TokenKind.StringNewline => false,
                 _ => true,
             });
             var location = GetLocation(strayTokens.Sum(t => t.Width));
@@ -847,16 +847,16 @@ internal sealed class Parser
         while (true)
         {
             var peek = this.Peek();
-            if (peek == TokenType.StringContent || peek == TokenType.StringNewline)
+            if (peek == TokenKind.StringContent || peek == TokenKind.StringNewline)
             {
                 var part = this.Advance();
                 content.Add(new TextStringPartSyntax(part));
             }
-            else if (peek == TokenType.InterpolationStart)
+            else if (peek == TokenKind.InterpolationStart)
             {
                 var start = this.Advance();
                 var expr = this.ParseExpression();
-                var end = this.Expect(TokenType.InterpolationEnd);
+                var end = this.Expect(TokenKind.InterpolationEnd);
                 content.Add(new InterpolationStringPartSyntax(start, expr, end));
             }
             else
@@ -865,23 +865,23 @@ internal sealed class Parser
                 break;
             }
         }
-        var closeQuote = this.Expect(TokenType.MultiLineStringEnd);
+        var closeQuote = this.Expect(TokenKind.MultiLineStringEnd);
         // We need to check if the close quote is on a newline
         // There are 2 cases:
         //  - the leading trivia of the closing quotes contains a newline
         //  - the string is empty and the opening quotes trailing trivia contains a newline
         var isClosingQuoteOnNewline =
                closeQuote.LeadingTrivia.Count > 0
-            || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline));
+            || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline));
         if (isClosingQuoteOnNewline)
         {
             Debug.Assert(closeQuote.LeadingTrivia.Count <= 2);
-            Debug.Assert(openQuote.TrailingTrivia.Any(t => t.Type == TriviaType.Newline)
-                      || closeQuote.LeadingTrivia.Any(t => t.Type == TriviaType.Newline));
+            Debug.Assert(openQuote.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline)
+                      || closeQuote.LeadingTrivia.Any(t => t.Kind == TriviaKind.Newline));
             if (closeQuote.LeadingTrivia.Count == 2)
             {
                 // The first trivia was newline, the second must be spaces
-                Debug.Assert(closeQuote.LeadingTrivia[1].Type == TriviaType.Whitespace);
+                Debug.Assert(closeQuote.LeadingTrivia[1].Kind == TriviaKind.Whitespace);
                 // We take the whitespace text and check if every line in the string obeys that as a prefix
                 var prefix = closeQuote.LeadingTrivia[1].Text;
                 var nextIsNewline = true;
@@ -889,7 +889,7 @@ internal sealed class Parser
                 {
                     if (part is TextStringPartSyntax textPart)
                     {
-                        if (textPart.Content.Type == TokenType.StringNewline)
+                        if (textPart.Content.Kind == TokenKind.StringNewline)
                         {
                             // Also a newline, don't care, even an empty line is fine
                             nextIsNewline = true;
@@ -939,25 +939,25 @@ internal sealed class Parser
     /// </summary>
     /// <typeparam name="TNode">The element type of the list.</typeparam>
     /// <param name="elementParser">The parser function that parses a single element.</param>
-    /// <param name="punctType">The type of the separator token.</param>
-    /// <param name="stopType">The type of the token that definitely ends this construct.</param>
+    /// <param name="separatorKind">The kind of the separator token.</param>
+    /// <param name="stopKind">The kind of the token that definitely ends this construct.</param>
     /// <returns>The parsed <see cref="SeparatedSyntaxList{TNode}"/>.</returns>
     private SeparatedSyntaxList<TNode> ParseSeparatedSyntaxList<TNode>(
         Func<TNode> elementParser,
-        TokenType punctType,
-        TokenType stopType)
+        TokenKind separatorKind,
+        TokenKind stopKind)
         where TNode : SyntaxNode
     {
         var elements = SeparatedSyntaxList.CreateBuilder<TNode>();
         while (true)
         {
             // Stop token met, don't go further
-            if (this.Peek() == stopType) break;
+            if (this.Peek() == stopKind) break;
             // Parse an element
             var element = elementParser();
             elements.Add(element);
             // If the next token is not a punctuation, we are done
-            if (!this.Matches(punctType, out var punct)) break;
+            if (!this.Matches(separatorKind, out var punct)) break;
             // We had a punctuation, we can continue
             elements.Add(punct);
         }
@@ -972,14 +972,14 @@ internal sealed class Parser
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
     /// <returns>The consumed list of <see cref="SyntaxToken"/>s as <see cref="SyntaxNode"/>s.</returns>
-    private SyntaxList<SyntaxNode> Synchronize(Func<TokenType, bool> keepGoing)
+    private SyntaxList<SyntaxNode> Synchronize(Func<TokenKind, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
         var input = SyntaxList.CreateBuilder<SyntaxNode>();
         while (true)
         {
             var peek = this.Peek();
-            if (peek == TokenType.EndOfInput) break;
+            if (peek == TokenKind.EndOfInput) break;
             if (!keepGoing(peek)) break;
             input.Add(this.Advance());
         }
@@ -990,33 +990,33 @@ internal sealed class Parser
     /// Expects a certain kind of token to be at the current position.
     /// If it is, the token is consumed.
     /// </summary>
-    /// <param name="type">The expected token type.</param>
+    /// <param name="kind">The expected <see cref="TokenKind"/>.</param>
     /// <returns>The consumed <see cref="SyntaxToken"/>.</returns>
-    private SyntaxToken Expect(TokenType type)
+    private SyntaxToken Expect(TokenKind kind)
     {
-        if (!this.Matches(type, out var token))
+        if (!this.Matches(kind, out var token))
         {
             // We construct an empty token that signals that this is missing from the tree
             // The attached diagnostic message describes what is missing
             var location = GetLocation(0);
-            var tokenTypeName = type.GetUserFriendlyName();
-            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: tokenTypeName);
-            token = SyntaxToken.From(type, string.Empty);
+            var friendlyName = SyntaxFacts.GetUserFriendlyName(kind);
+            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: friendlyName);
+            token = SyntaxToken.From(kind, string.Empty);
             this.Diagnostics.Add(token, diag);
         }
         return token;
     }
 
     /// <summary>
-    /// Checks if the upcoming token has type <paramref name="type"/>.
+    /// Checks if the upcoming token has kind <paramref name="kind"/>.
     /// If it is, the token is consumed.
     /// </summary>
-    /// <param name="type">The token type to match.</param>
+    /// <param name="kind">The <see cref="TokenKind"/> to match.</param>
     /// <param name="token">The matched token is written here.</param>
-    /// <returns>True, if the upcoming token is of type <paramref name="type"/>.</returns>
-    private bool Matches(TokenType type, [MaybeNullWhen(false)] out SyntaxToken token)
+    /// <returns>True, if the upcoming token is of kind <paramref name="kind"/>.</returns>
+    private bool Matches(TokenKind kind, [MaybeNullWhen(false)] out SyntaxToken token)
     {
-        if (this.Peek() == type)
+        if (this.Peek() == kind)
         {
             token = this.Advance();
             return true;
@@ -1029,13 +1029,13 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Peeks ahead the type of a token in the token source.
+    /// Peeks ahead the kind of a token in the token source.
     /// </summary>
     /// <param name="offset">The amount to peek ahead.</param>
-    /// <returns>The <see cref="TokenType"/> of the <see cref="SyntaxToken"/> that is <paramref name="offset"/>
+    /// <returns>The <see cref="TokenKind"/> of the <see cref="SyntaxToken"/> that is <paramref name="offset"/>
     /// ahead.</returns>
-    private TokenType Peek(int offset = 0) =>
-        this.tokenSource.Peek(offset).Type;
+    private TokenKind Peek(int offset = 0) =>
+        this.tokenSource.Peek(offset).Kind;
 
     /// <summary>
     /// Advances the parser in the token source with one token.

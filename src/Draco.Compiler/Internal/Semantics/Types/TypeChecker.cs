@@ -87,12 +87,12 @@ internal static class TypeChecker
     {
         UnexpectedExpressionSyntax => Type.Error.Empty,
         GroupingExpressionSyntax g => TypeOf(db, g.Expression),
-        LiteralExpressionSyntax lit => lit.Literal.Type switch
+        LiteralExpressionSyntax lit => lit.Literal.Kind switch
         {
-            TokenType.LiteralInteger => Type.Int32,
+            TokenKind.LiteralInteger => Type.Int32,
             // NOTE: There is no agreement currently on float literal type
-            TokenType.LiteralFloat => Type.Float64,
-            TokenType.KeywordTrue or TokenType.KeywordFalse => Type.Bool,
+            TokenKind.LiteralFloat => Type.Float64,
+            TokenKind.KeywordTrue or TokenKind.KeywordFalse => Type.Bool,
             _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         },
         StringExpressionSyntax => Type.String,

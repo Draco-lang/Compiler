@@ -12,9 +12,9 @@ namespace Draco.Compiler.Api.Syntax;
 public sealed class SyntaxTrivia : SyntaxNode
 {
     /// <summary>
-    /// The <see cref="TriviaType"/> of this trivia.
+    /// The <see cref="TriviaKind"/> of this trivia.
     /// </summary>
-    public TriviaType Type => this.Green.Type;
+    public TriviaKind Kind => this.Green.Kind;
 
     /// <summary>
     /// The text the trivia was produced from.

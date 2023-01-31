@@ -30,7 +30,7 @@ public sealed class LexerTests
         {
             var token = lexer.Lex();
             yield return token;
-            if (token.Type == TokenType.EndOfInput) break;
+            if (token.Kind == TokenKind.EndOfInput) break;
         }
     }
 
@@ -40,7 +40,7 @@ public sealed class LexerTests
 
     private void AssertNextToken() => Assert.True(this.tokenEnumerator.MoveNext());
 
-    private void AssertNextToken(TokenType type, string text = "", string? valueText = null)
+    private void AssertNextToken(TokenKind type, string text = "", string? valueText = null)
     {
         this.AssertNextToken();
         this.AssertType(type);
@@ -60,20 +60,20 @@ public sealed class LexerTests
         this.AssertDiagnostics();
     }
 
-    private void AssertType(TokenType type) => Assert.Equal(type, this.Current.Type);
+    private void AssertType(TokenKind type) => Assert.Equal(type, this.Current.Kind);
     private void AssertText(string text) => Assert.Equal(text, this.Current.Text);
     private void AssertValueText(string? text) => Assert.Equal(text, this.Current.ValueText);
 
-    private void AssertLeadingTrivia(params (TriviaType Type, string Text)[] trivia)
+    private void AssertLeadingTrivia(params (TriviaKind Type, string Text)[] trivia)
     {
         Assert.Equal(trivia.Length, this.Current.LeadingTrivia.Count);
-        Assert.True(this.Current.LeadingTrivia.Select(t => (t.Type, t.Text)).SequenceEqual(trivia));
+        Assert.True(this.Current.LeadingTrivia.Select(t => (t.Kind, t.Text)).SequenceEqual(trivia));
     }
 
-    private void AssertTrailingTrivia(params (TriviaType Type, string Text)[] trivia)
+    private void AssertTrailingTrivia(params (TriviaKind Type, string Text)[] trivia)
     {
         Assert.Equal(trivia.Length, this.Current.TrailingTrivia.Count);
-        Assert.True(this.Current.TrailingTrivia.Select(t => (t.Type, t.Text)).SequenceEqual(trivia));
+        Assert.True(this.Current.TrailingTrivia.Select(t => (t.Kind, t.Text)).SequenceEqual(trivia));
     }
 
     private void AssertDiagnostics(params DiagnosticTemplate[] diags)
@@ -97,8 +97,8 @@ public sealed class LexerTests
         var text = "// Hello, comments";
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.EndOfInput);
-        this.AssertLeadingTrivia((TriviaType.LineComment, "// Hello, comments"));
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertLeadingTrivia((TriviaKind.LineComment, "// Hello, comments"));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
     }
@@ -113,12 +113,12 @@ public sealed class LexerTests
         """;
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertDiagnostics();
         this.AssertLeadingTrivia(
-            (TriviaType.DocumentationComment, "/// Hello,"),
-            (TriviaType.Newline, "\n"),
-            (TriviaType.DocumentationComment, "/// multiline doc comments"));
+            (TriviaKind.DocumentationComment, "/// Hello,"),
+            (TriviaKind.Newline, "\n"),
+            (TriviaKind.DocumentationComment, "/// multiline doc comments"));
         this.AssertTrailingTrivia();
     }
 
@@ -129,8 +129,8 @@ public sealed class LexerTests
         var text = "/// Hello, doc comments";
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.EndOfInput);
-        this.AssertLeadingTrivia((TriviaType.DocumentationComment, "/// Hello, doc comments"));
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertLeadingTrivia((TriviaKind.DocumentationComment, "/// Hello, doc comments"));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
     }
@@ -144,16 +144,16 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "Hello, line strings!", "Hello, line strings!");
+        this.AssertNextToken(TokenKind.StringContent, "Hello, line strings!", "Hello, line strings!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.LineStringEnd, "\"");
+        this.AssertNextToken(TokenKind.LineStringEnd, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -166,13 +166,13 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "Hello, line strings!", "Hello, line strings!");
+        this.AssertNextToken(TokenKind.StringContent, "Hello, line strings!", "Hello, line strings!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -186,14 +186,14 @@ public sealed class LexerTests
         """;
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "Hello, line strings!", "Hello, line strings!");
+        this.AssertNextToken(TokenKind.StringContent, "Hello, line strings!", "Hello, line strings!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
-        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertLeadingTrivia((TriviaKind.Newline, "\n"));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
     }
@@ -211,19 +211,19 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             @$"\{ext}""\{ext}\\{ext}n\{ext}'\{ext}u{{1F47D}}\{ext}0",
             "\"\\\n'👽\0");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
+        this.AssertNextToken(TokenKind.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -241,18 +241,18 @@ public sealed class LexerTests
         this.Lex(text);
 
         this.AssertNextToken();
-        Assert.Equal(TokenType.LineStringStart, this.Current.Type);
+        Assert.Equal(TokenKind.LineStringStart, this.Current.Kind);
         Assert.Equal($"{ext}\"", this.Current.Text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, @$"\{ext}u{{}}", string.Empty);
+        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{}}", string.Empty);
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.ZeroLengthUnicodeCodepoint);
 
-        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
+        this.AssertNextToken(TokenKind.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -269,18 +269,18 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
         //TODO: change this when we get better errors out of invalid unicode codepoints
-        this.AssertNextToken(TokenType.StringContent, @$"\{ext}u{{3S}}", "S}");
+        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{3S}}", "S}");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnclosedUnicodeCodepoint);
 
-        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
+        this.AssertNextToken(TokenKind.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -297,17 +297,17 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, @$"\{ext}u{{", string.Empty);
+        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{", string.Empty);
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnclosedUnicodeCodepoint);
 
-        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
+        this.AssertNextToken(TokenKind.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -320,19 +320,19 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, "##\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "##\"");
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             @"\a\#n\#u{123}\##t",
             "\\a\\#n\\#u{123}\t");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.LineStringEnd, $"\"##");
+        this.AssertNextToken(TokenKind.LineStringEnd, $"\"##");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -349,17 +349,17 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, @$"\{ext}y", "y");
+        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}y", "y");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
 
-        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
+        this.AssertNextToken(TokenKind.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -380,34 +380,34 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertNextToken(TokenKind.MultiLineStringStart, $"{ext}{quotes}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             "    Hello!",
             "    Hello!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringNewline, "\n", "\n");
+        this.AssertNextToken(TokenKind.StringNewline, "\n", "\n");
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             "    Bye!",
             "    Bye!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, $"{quotes}{ext}");
         this.AssertLeadingTrivia(
-            (TriviaType.Newline, "\n"),
-            (TriviaType.Whitespace, "    "));
+            (TriviaKind.Newline, "\n"),
+            (TriviaKind.Whitespace, "    "));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -426,15 +426,15 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertNextToken(TokenKind.MultiLineStringStart, $"{ext}{quotes}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, $"{quotes}{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -453,17 +453,17 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertNextToken(TokenKind.MultiLineStringStart, $"{ext}{quotes}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
-        this.AssertLeadingTrivia((TriviaType.Whitespace, "    "));
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia((TriviaKind.Whitespace, "    "));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -481,15 +481,15 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertNextToken(TokenKind.MultiLineStringStart, $"{ext}{quotes}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Whitespace, "    "));
+        this.AssertTrailingTrivia((TriviaKind.Whitespace, "    "));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, $"{quotes}{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -507,20 +507,20 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertNextToken(TokenKind.MultiLineStringStart, $"{ext}{quotes}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertTrailingTrivia((TriviaKind.Whitespace, " "));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "hello", "hello");
+        this.AssertNextToken(TokenKind.StringContent, "hello", "hello");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
-        this.AssertLeadingTrivia((TriviaType.Whitespace, " "));
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia((TriviaKind.Whitespace, " "));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -541,32 +541,32 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertNextToken(TokenKind.MultiLineStringStart, $"{ext}{quotes}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             "    Hello!",
             "    Hello!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringNewline, "\n", "\n");
+        this.AssertNextToken(TokenKind.StringNewline, "\n", "\n");
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             "    Bye!",
             "    Bye!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
-        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertLeadingTrivia((TriviaKind.Newline, "\n"));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -587,34 +587,34 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertNextToken(TokenKind.MultiLineStringStart, $"{ext}{quotes}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             "    Hello!",
             "    Hello!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringNewline, $"\\{ext}\n", string.Empty);
+        this.AssertNextToken(TokenKind.StringNewline, $"\\{ext}\n", string.Empty);
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             "    Bye!",
             "    Bye!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, $"{quotes}{ext}");
         this.AssertLeadingTrivia(
-            (TriviaType.Newline, "\n"),
-            (TriviaType.Whitespace, "    "));
+            (TriviaKind.Newline, "\n"),
+            (TriviaKind.Whitespace, "    "));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -636,34 +636,34 @@ public sealed class LexerTests
         """";
         this.Lex(NormalizeNewliens(text));
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, $"{ext}{quotes}");
+        this.AssertNextToken(TokenKind.MultiLineStringStart, $"{ext}{quotes}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             "    Hello!",
             "    Hello!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringNewline, $"\\{ext}{trailingSpace}\n", string.Empty);
+        this.AssertNextToken(TokenKind.StringNewline, $"\\{ext}{trailingSpace}\n", string.Empty);
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(
-            TokenType.StringContent,
+            TokenKind.StringContent,
             "    Bye!",
             "    Bye!");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, $"{quotes}{ext}");
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, $"{quotes}{ext}");
         this.AssertLeadingTrivia(
-            (TriviaType.Newline, "\n"),
-            (TriviaType.Whitespace, "    "));
+            (TriviaKind.Newline, "\n"),
+            (TriviaKind.Whitespace, "    "));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -680,73 +680,73 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, $"{ext}\"");
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "x = ", "x = ");
+        this.AssertNextToken(TokenKind.StringContent, "x = ", "x = ");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationStart, $@"\{ext}{{");
+        this.AssertNextToken(TokenKind.InterpolationStart, $@"\{ext}{{");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "x", "x");
+        this.AssertNextToken(TokenKind.Identifier, "x", "x");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationEnd, "}");
+        this.AssertNextToken(TokenKind.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, ", x + y = ", ", x + y = ");
+        this.AssertNextToken(TokenKind.StringContent, ", x + y = ", ", x + y = ");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationStart, $@"\{ext}{{");
+        this.AssertNextToken(TokenKind.InterpolationStart, $@"\{ext}{{");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertTrailingTrivia((TriviaKind.Whitespace, " "));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "x", "x");
+        this.AssertNextToken(TokenKind.Identifier, "x", "x");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertTrailingTrivia((TriviaKind.Whitespace, " "));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.Plus, "+");
+        this.AssertNextToken(TokenKind.Plus, "+");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertTrailingTrivia((TriviaKind.Whitespace, " "));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "y", "y");
+        this.AssertNextToken(TokenKind.Identifier, "y", "y");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertTrailingTrivia((TriviaKind.Whitespace, " "));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationEnd, "}");
+        this.AssertNextToken(TokenKind.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, ", y = ", ", y = ");
+        this.AssertNextToken(TokenKind.StringContent, ", y = ", ", y = ");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationStart, $@"\{ext}{{");
+        this.AssertNextToken(TokenKind.InterpolationStart, $@"\{ext}{{");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertTrailingTrivia((TriviaKind.Whitespace, " "));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.CurlyOpen, "{");
+        this.AssertNextToken(TokenKind.CurlyOpen, "{");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "y", "y");
+        this.AssertNextToken(TokenKind.Identifier, "y", "y");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.CurlyClose, "}");
+        this.AssertNextToken(TokenKind.CurlyClose, "}");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Whitespace, " "));
+        this.AssertTrailingTrivia((TriviaKind.Whitespace, " "));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationEnd, "}");
+        this.AssertNextToken(TokenKind.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.LineStringEnd, $"\"{ext}");
+        this.AssertNextToken(TokenKind.LineStringEnd, $"\"{ext}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -759,30 +759,30 @@ public sealed class LexerTests
         var text = "\"hello\\{\nvar}bye\"";
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "hello", "hello");
+        this.AssertNextToken(TokenKind.StringContent, "hello", "hello");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationStart, @"\{");
+        this.AssertNextToken(TokenKind.InterpolationStart, @"\{");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.KeywordVar, "var");
+        this.AssertNextToken(TokenKind.KeywordVar, "var");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.CurlyClose, "}");
+        this.AssertNextToken(TokenKind.CurlyClose, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "bye", "bye");
+        this.AssertNextToken(TokenKind.Identifier, "bye", "bye");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -795,36 +795,36 @@ public sealed class LexerTests
         var text = "\"hello\\{\"bye\nvar}baz\"";
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "hello", "hello");
+        this.AssertNextToken(TokenKind.StringContent, "hello", "hello");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationStart, @"\{");
+        this.AssertNextToken(TokenKind.InterpolationStart, @"\{");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "bye", "bye");
+        this.AssertNextToken(TokenKind.StringContent, "bye", "bye");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.KeywordVar, "var");
-        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertNextToken(TokenKind.KeywordVar, "var");
+        this.AssertLeadingTrivia((TriviaKind.Newline, "\n"));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.CurlyClose, "}");
+        this.AssertNextToken(TokenKind.CurlyClose, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "baz", "baz");
+        this.AssertNextToken(TokenKind.Identifier, "baz", "baz");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -840,34 +840,34 @@ public sealed class LexerTests
         var text = $"{quotes}\nfoo\\{{\nx}}bar\n{quotes}";
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, quotes);
+        this.AssertNextToken(TokenKind.MultiLineStringStart, quotes);
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "foo", "foo");
+        this.AssertNextToken(TokenKind.StringContent, "foo", "foo");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationStart, @"\{");
+        this.AssertNextToken(TokenKind.InterpolationStart, @"\{");
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "x", "x");
+        this.AssertNextToken(TokenKind.Identifier, "x", "x");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationEnd, "}");
+        this.AssertNextToken(TokenKind.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "bar", "bar");
+        this.AssertNextToken(TokenKind.StringContent, "bar", "bar");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, quotes);
-        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, quotes);
+        this.AssertLeadingTrivia((TriviaKind.Newline, "\n"));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -883,138 +883,138 @@ public sealed class LexerTests
         var text = $"{quotes}\nfoo\\{{\"bar\nx}}baz\n{quotes}";
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.MultiLineStringStart, quotes);
+        this.AssertNextToken(TokenKind.MultiLineStringStart, quotes);
         this.AssertLeadingTrivia();
-        this.AssertTrailingTrivia((TriviaType.Newline, "\n"));
+        this.AssertTrailingTrivia((TriviaKind.Newline, "\n"));
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "foo", "foo");
+        this.AssertNextToken(TokenKind.StringContent, "foo", "foo");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationStart, @"\{");
+        this.AssertNextToken(TokenKind.InterpolationStart, @"\{");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "bar", "bar");
+        this.AssertNextToken(TokenKind.StringContent, "bar", "bar");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "x", "x");
-        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertNextToken(TokenKind.Identifier, "x", "x");
+        this.AssertLeadingTrivia((TriviaKind.Newline, "\n"));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.InterpolationEnd, "}");
+        this.AssertNextToken(TokenKind.InterpolationEnd, "}");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.StringContent, "baz", "baz");
+        this.AssertNextToken(TokenKind.StringContent, "baz", "baz");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.MultiLineStringEnd, quotes);
-        this.AssertLeadingTrivia((TriviaType.Newline, "\n"));
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, quotes);
+        this.AssertLeadingTrivia((TriviaKind.Newline, "\n"));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
     [Theory]
-    [InlineData("if", TokenType.KeywordIf)]
-    [InlineData("else", TokenType.KeywordElse)]
-    [InlineData("while", TokenType.KeywordWhile)]
-    [InlineData("if_", TokenType.Identifier)]
-    [InlineData("ifa", TokenType.Identifier)]
-    [InlineData("if0", TokenType.Identifier)]
-    [InlineData("_if", TokenType.Identifier)]
-    [InlineData("hello", TokenType.Identifier)]
-    [InlineData("hello123", TokenType.Identifier)]
-    [InlineData("hello_123", TokenType.Identifier)]
-    [InlineData("_hello_123", TokenType.Identifier)]
+    [InlineData("if", TokenKind.KeywordIf)]
+    [InlineData("else", TokenKind.KeywordElse)]
+    [InlineData("while", TokenKind.KeywordWhile)]
+    [InlineData("if_", TokenKind.Identifier)]
+    [InlineData("ifa", TokenKind.Identifier)]
+    [InlineData("if0", TokenKind.Identifier)]
+    [InlineData("_if", TokenKind.Identifier)]
+    [InlineData("hello", TokenKind.Identifier)]
+    [InlineData("hello123", TokenKind.Identifier)]
+    [InlineData("hello_123", TokenKind.Identifier)]
+    [InlineData("_hello_123", TokenKind.Identifier)]
     [Trait("Feature", "Words")]
-    public void TestKeyword(string text, TokenType tokenType)
+    public void TestKeyword(string text, TokenKind tokenKind)
     {
         this.Lex(text);
 
-        this.AssertNextToken(tokenType, text, tokenType == TokenType.Identifier ? text : null);
+        this.AssertNextToken(tokenKind, text, tokenKind == TokenKind.Identifier ? text : null);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
     [Theory]
-    [InlineData("(", TokenType.ParenOpen)]
-    [InlineData("[", TokenType.BracketOpen)]
-    [InlineData("{", TokenType.CurlyOpen)]
-    [InlineData(".", TokenType.Dot)]
-    [InlineData(":", TokenType.Colon)]
-    [InlineData(";", TokenType.Semicolon)]
+    [InlineData("(", TokenKind.ParenOpen)]
+    [InlineData("[", TokenKind.BracketOpen)]
+    [InlineData("{", TokenKind.CurlyOpen)]
+    [InlineData(".", TokenKind.Dot)]
+    [InlineData(":", TokenKind.Colon)]
+    [InlineData(";", TokenKind.Semicolon)]
     [Trait("Feature", "Punctuations")]
-    public void TestPunctuation(string text, TokenType tokenType)
+    public void TestPunctuation(string text, TokenKind tokenKind)
     {
         this.Lex(text);
 
-        this.AssertNextToken(tokenType, text);
+        this.AssertNextToken(tokenKind, text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
     [Theory]
-    [InlineData("+", TokenType.Plus)]
-    [InlineData("-", TokenType.Minus)]
-    [InlineData("*", TokenType.Star)]
-    [InlineData("+=", TokenType.PlusAssign)]
-    [InlineData("!=", TokenType.NotEqual)]
-    [InlineData("=", TokenType.Assign)]
-    [InlineData("==", TokenType.Equal)]
-    [InlineData("mod", TokenType.KeywordMod)]
-    [InlineData("rem", TokenType.KeywordRem)]
-    [InlineData("and", TokenType.KeywordAnd)]
-    [InlineData("not", TokenType.KeywordNot)]
+    [InlineData("+", TokenKind.Plus)]
+    [InlineData("-", TokenKind.Minus)]
+    [InlineData("*", TokenKind.Star)]
+    [InlineData("+=", TokenKind.PlusAssign)]
+    [InlineData("!=", TokenKind.NotEqual)]
+    [InlineData("=", TokenKind.Assign)]
+    [InlineData("==", TokenKind.Equal)]
+    [InlineData("mod", TokenKind.KeywordMod)]
+    [InlineData("rem", TokenKind.KeywordRem)]
+    [InlineData("and", TokenKind.KeywordAnd)]
+    [InlineData("not", TokenKind.KeywordNot)]
     [Trait("Feature", "Operators")]
-    public void TestOperator(string text, TokenType tokenType)
+    public void TestOperator(string text, TokenKind tokenKind)
     {
         this.Lex(text);
 
-        this.AssertNextToken(tokenType, text);
+        this.AssertNextToken(tokenKind, text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
     [Theory]
-    [InlineData("0", TokenType.LiteralInteger)]
-    [InlineData("123", TokenType.LiteralInteger)]
-    [InlineData("12.3", TokenType.LiteralFloat)]
+    [InlineData("0", TokenKind.LiteralInteger)]
+    [InlineData("123", TokenKind.LiteralInteger)]
+    [InlineData("12.3", TokenKind.LiteralFloat)]
     [Trait("Feature", "Literals")]
-    public void TestNumericLiterals(string text, TokenType tokenType)
+    public void TestNumericLiterals(string text, TokenKind tokenKind)
     {
         this.Lex(text);
 
-        this.AssertNextToken(tokenType, text, text);
+        this.AssertNextToken(tokenKind, text, text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
     [Theory]
-    [InlineData("true", TokenType.KeywordTrue)]
-    [InlineData("false", TokenType.KeywordFalse)]
+    [InlineData("true", TokenKind.KeywordTrue)]
+    [InlineData("false", TokenKind.KeywordFalse)]
     [Trait("Feature", "Literals")]
-    public void TestBoolLiterals(string text, TokenType tokenType)
+    public void TestBoolLiterals(string text, TokenKind tokenKind)
     {
         this.Lex(text);
 
-        this.AssertNextToken(tokenType, text);
+        this.AssertNextToken(tokenKind, text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1025,22 +1025,22 @@ public sealed class LexerTests
         var text = "56.MyFunction()";
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LiteralInteger, "56", "56");
+        this.AssertNextToken(TokenKind.LiteralInteger, "56", "56");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.Dot, ".");
+        this.AssertNextToken(TokenKind.Dot, ".");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.Identifier, "MyFunction", "MyFunction");
+        this.AssertNextToken(TokenKind.Identifier, "MyFunction", "MyFunction");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.ParenOpen, "(");
+        this.AssertNextToken(TokenKind.ParenOpen, "(");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.ParenClose, ")");
+        this.AssertNextToken(TokenKind.ParenClose, ")");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1057,10 +1057,10 @@ public sealed class LexerTests
     {
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LiteralCharacter, text, charValue);
+        this.AssertNextToken(TokenKind.LiteralCharacter, text, charValue);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1070,11 +1070,11 @@ public sealed class LexerTests
         var text = "'a";
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.LiteralCharacter, text, "a");
+        this.AssertNextToken(TokenKind.LiteralCharacter, text, "a");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnclosedCharacterLiteral);
 
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();
     }
 
@@ -1088,27 +1088,27 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenType.KeywordFrom, "from");
-        this.AssertNextToken(TokenType.Identifier, "System", "System");
-        this.AssertNextToken(TokenType.Dot, ".");
-        this.AssertNextToken(TokenType.Identifier, "Console", "Console");
-        this.AssertNextToken(TokenType.KeywordImport, "import");
-        this.AssertNextToken(TokenType.CurlyOpen, "{");
-        this.AssertNextToken(TokenType.Identifier, "WriteLine", "WriteLine");
-        this.AssertNextToken(TokenType.CurlyClose, "}");
-        this.AssertNextToken(TokenType.Semicolon, ";");
-        this.AssertNextToken(TokenType.KeywordFunc, "func");
-        this.AssertNextToken(TokenType.Identifier, "main", "main");
-        this.AssertNextToken(TokenType.ParenOpen, "(");
-        this.AssertNextToken(TokenType.ParenClose, ")");
-        this.AssertNextToken(TokenType.Assign, "=");
-        this.AssertNextToken(TokenType.Identifier, "WriteLine", "WriteLine");
-        this.AssertNextToken(TokenType.ParenOpen, "(");
-        this.AssertNextToken(TokenType.LineStringStart, "\"");
-        this.AssertNextToken(TokenType.StringContent, "Hello, World!", "Hello, World!");
-        this.AssertNextToken(TokenType.LineStringEnd, "\"");
-        this.AssertNextToken(TokenType.ParenClose, ")");
-        this.AssertNextToken(TokenType.Semicolon, ";");
-        this.AssertNextToken(TokenType.EndOfInput);
+        this.AssertNextToken(TokenKind.KeywordFrom, "from");
+        this.AssertNextToken(TokenKind.Identifier, "System", "System");
+        this.AssertNextToken(TokenKind.Dot, ".");
+        this.AssertNextToken(TokenKind.Identifier, "Console", "Console");
+        this.AssertNextToken(TokenKind.KeywordImport, "import");
+        this.AssertNextToken(TokenKind.CurlyOpen, "{");
+        this.AssertNextToken(TokenKind.Identifier, "WriteLine", "WriteLine");
+        this.AssertNextToken(TokenKind.CurlyClose, "}");
+        this.AssertNextToken(TokenKind.Semicolon, ";");
+        this.AssertNextToken(TokenKind.KeywordFunc, "func");
+        this.AssertNextToken(TokenKind.Identifier, "main", "main");
+        this.AssertNextToken(TokenKind.ParenOpen, "(");
+        this.AssertNextToken(TokenKind.ParenClose, ")");
+        this.AssertNextToken(TokenKind.Assign, "=");
+        this.AssertNextToken(TokenKind.Identifier, "WriteLine", "WriteLine");
+        this.AssertNextToken(TokenKind.ParenOpen, "(");
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
+        this.AssertNextToken(TokenKind.StringContent, "Hello, World!", "Hello, World!");
+        this.AssertNextToken(TokenKind.LineStringEnd, "\"");
+        this.AssertNextToken(TokenKind.ParenClose, ")");
+        this.AssertNextToken(TokenKind.Semicolon, ";");
+        this.AssertNextToken(TokenKind.EndOfInput);
     }
 }

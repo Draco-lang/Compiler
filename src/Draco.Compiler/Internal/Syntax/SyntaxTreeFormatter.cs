@@ -20,12 +20,12 @@ internal sealed record class SyntaxTreeFormatterSettings(string Indentation)
 /// </summary>
 internal sealed class SyntaxTreeFormatter : SyntaxRewriter
 {
-    private static readonly SyntaxList<SyntaxTrivia> oneSpaceTrivia = CreateTrivia(TriviaType.Whitespace, " ");
-    private static readonly SyntaxList<SyntaxTrivia> noSpaceTrivia = CreateTrivia(TriviaType.Whitespace, "");
-    private static readonly SyntaxList<SyntaxTrivia> newlineTrivia = CreateTrivia(TriviaType.Newline, Environment.NewLine);
+    private static readonly SyntaxList<SyntaxTrivia> oneSpaceTrivia = CreateTrivia(TriviaKind.Whitespace, " ");
+    private static readonly SyntaxList<SyntaxTrivia> noSpaceTrivia = CreateTrivia(TriviaKind.Whitespace, "");
+    private static readonly SyntaxList<SyntaxTrivia> newlineTrivia = CreateTrivia(TriviaKind.Newline, Environment.NewLine);
 
-    private TokenType? lastToken;
-    private TokenType? nextToken;
+    private TokenKind? lastToken;
+    private TokenKind? nextToken;
     private IEnumerator<SyntaxToken>? tokens;
     private readonly SyntaxTreeFormatterSettings settings;
     private int indentCount = 0;
@@ -79,10 +79,10 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
     public SyntaxNode Format(SyntaxNode tree)
     {
         this.tokens = tree.Tokens.GetEnumerator();
-        this.lastToken = TokenType.EndOfInput;
+        this.lastToken = TokenKind.EndOfInput;
         // We need to be one token ahead, because the next token affects the current one, so we must advance twice here
         if (!(this.tokens.MoveNext() && this.tokens.MoveNext())) return tree;
-        this.nextToken = this.tokens.Current.Type;
+        this.nextToken = this.tokens.Current.Kind;
         return tree.Accept(this);
     }
 
@@ -95,9 +95,9 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
         this.AddIndentation();
         var colonTokenChanged = CheckTriviaEqual(trColonToken, node.Colon);
         // We need to advance to the next token by hand, because we don't call TransformToken
-        this.lastToken = TokenType.Colon;
-        if (this.tokens!.MoveNext()) this.nextToken = this.tokens!.Current.Type;
-        else this.nextToken = TokenType.EndOfInput;
+        this.lastToken = TokenKind.Colon;
+        if (this.tokens!.MoveNext()) this.nextToken = this.tokens!.Current.Kind;
+        else this.nextToken = TokenKind.EndOfInput;
         var identifierChanged = !ReferenceEquals(node.Name, trIdentifier);
         var changed = identifierChanged || colonTokenChanged;
         if (!changed) return node;
@@ -106,12 +106,12 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
 
     public override SyntaxToken VisitSyntaxToken(SyntaxToken node)
     {
-        if (node.Type == TokenType.EndOfInput) return node;
+        if (node.Kind == TokenKind.EndOfInput) return node;
         var resultToken = this.FormatToken(node);
-        this.lastToken = resultToken.Type;
+        this.lastToken = resultToken.Kind;
         this.tokens!.MoveNext();
-        if (this.tokens.Current is null) this.nextToken = TokenType.EndOfInput;
-        else this.nextToken = this.tokens.Current.Type;
+        if (this.tokens.Current is null) this.nextToken = TokenKind.EndOfInput;
+        else this.nextToken = this.tokens.Current.Kind;
         if (resultToken is not null)
         {
             // If the original token andthe new one have the same trivia, we set  changed to false, so the entire subtree is not recalculated
@@ -129,100 +129,100 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
         {
             // TODO: Maybe use dictionary in future to allow user to alter "stickiness" of some tokens
             // Tokens that always have one space after
-            // Note: TokenType.Comma is exception, in case it is in label declaration, it is handeled outside of this function
-            TokenType.Assign or TokenType.Colon or TokenType.Comma or TokenType.Equal or
-            TokenType.GreaterEqual or TokenType.GreaterThan or TokenType.InterpolationStart or
-            TokenType.KeywordAnd or TokenType.KeywordFrom or TokenType.KeywordImport or
-            TokenType.KeywordMod or TokenType.KeywordNot or TokenType.KeywordOr or
-            TokenType.KeywordRem or TokenType.LessEqual or TokenType.LessThan or
-            TokenType.Minus or TokenType.MinusAssign or TokenType.NotEqual or
-            TokenType.Plus or TokenType.PlusAssign or TokenType.Slash or
-            TokenType.SlashAssign or TokenType.Star or TokenType.StarAssign => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
+            // Note: TokenKind.Comma is exception, in case it is in label declaration, it is handeled outside of this function
+            TokenKind.Assign or TokenKind.Colon or TokenKind.Comma or TokenKind.Equal or
+            TokenKind.GreaterEqual or TokenKind.GreaterThan or TokenKind.InterpolationStart or
+            TokenKind.KeywordAnd or TokenKind.KeywordFrom or TokenKind.KeywordImport or
+            TokenKind.KeywordMod or TokenKind.KeywordNot or TokenKind.KeywordOr or
+            TokenKind.KeywordRem or TokenKind.LessEqual or TokenKind.LessThan or
+            TokenKind.Minus or TokenKind.MinusAssign or TokenKind.NotEqual or
+            TokenKind.Plus or TokenKind.PlusAssign or TokenKind.Slash or
+            TokenKind.SlashAssign or TokenKind.Star or TokenKind.StarAssign => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
 
             // Tokens that statement can start with, which means they need to have indentation before them
-            // Note: TokenType.Identifier is handeled separately, base on tokens that are before or after the Identifier
-            TokenType.KeywordVal or TokenType.KeywordVar or TokenType.KeywordFunc or
-            TokenType.KeywordReturn or TokenType.KeywordGoto or TokenType.KeywordWhile =>
-                SetTrivia(newToken, CreateTrivia(TriviaType.Whitespace, this.Indentation), oneSpaceTrivia),
+            // Note: TokenKind.Identifier is handeled separately, base on tokens that are before or after the Identifier
+            TokenKind.KeywordVal or TokenKind.KeywordVar or TokenKind.KeywordFunc or
+            TokenKind.KeywordReturn or TokenKind.KeywordGoto or TokenKind.KeywordWhile =>
+                SetTrivia(newToken, CreateTrivia(TriviaKind.Whitespace, this.Indentation), oneSpaceTrivia),
 
-            TokenType.ParenOpen => SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
+            TokenKind.ParenOpen => SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
 
-            TokenType.ParenClose => this.nextToken switch
+            TokenKind.ParenClose => this.nextToken switch
             {
-                TokenType.ParenClose or TokenType.Semicolon => SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
+                TokenKind.ParenClose or TokenKind.Semicolon => SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
                 _ => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
             },
 
-            TokenType.Semicolon => this.nextToken switch
+            TokenKind.Semicolon => this.nextToken switch
             {
-                TokenType.KeywordElse => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
+                TokenKind.KeywordElse => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
                 _ => SetTrivia(newToken, noSpaceTrivia, newlineTrivia),
             },
 
-            TokenType.CurlyOpen => this.lastToken switch
+            TokenKind.CurlyOpen => this.lastToken switch
             {
-                TokenType.Semicolon or TokenType.CurlyOpen or TokenType.CurlyClose or
-                TokenType.EndOfInput or TokenType.Colon =>
-                    this.AddIndentation(SetTrivia(newToken, CreateTrivia(TriviaType.Whitespace, this.Indentation), newlineTrivia)),
+                TokenKind.Semicolon or TokenKind.CurlyOpen or TokenKind.CurlyClose or
+                TokenKind.EndOfInput or TokenKind.Colon =>
+                    this.AddIndentation(SetTrivia(newToken, CreateTrivia(TriviaKind.Whitespace, this.Indentation), newlineTrivia)),
                 _ => SetTrailingTrivia(this.AddIndentation(newToken), newlineTrivia),
             },
 
-            TokenType.CurlyClose =>
-                SetTrivia(this.RemoveIndentation(newToken), CreateTrivia(TriviaType.Whitespace, this.Indentation), newlineTrivia),
+            TokenKind.CurlyClose =>
+                SetTrivia(this.RemoveIndentation(newToken), CreateTrivia(TriviaKind.Whitespace, this.Indentation), newlineTrivia),
 
             // If and else keywords are formatted diferently when they are used as expressions and when they are used as statements
-            TokenType.KeywordIf => this.lastToken switch
+            TokenKind.KeywordIf => this.lastToken switch
             {
-                TokenType.Semicolon or TokenType.CurlyClose or TokenType.CurlyOpen or TokenType.Colon =>
-                    SetTrivia(newToken, CreateTrivia(TriviaType.Whitespace, this.Indentation), oneSpaceTrivia),
+                TokenKind.Semicolon or TokenKind.CurlyClose or TokenKind.CurlyOpen or TokenKind.Colon =>
+                    SetTrivia(newToken, CreateTrivia(TriviaKind.Whitespace, this.Indentation), oneSpaceTrivia),
                 _ => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
             },
 
-            TokenType.KeywordElse => this.lastToken switch
+            TokenKind.KeywordElse => this.lastToken switch
             {
-                TokenType.CurlyClose or TokenType.Colon =>
-                    SetTrivia(newToken, CreateTrivia(TriviaType.Whitespace, this.Indentation), oneSpaceTrivia),
+                TokenKind.CurlyClose or TokenKind.Colon =>
+                    SetTrivia(newToken, CreateTrivia(TriviaKind.Whitespace, this.Indentation), oneSpaceTrivia),
                 _ => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
             },
 
             // Identifier is handeled based on the context in which it is used
-            TokenType.Identifier => (this.lastToken, this.nextToken) switch
+            TokenKind.Identifier => (this.lastToken, this.nextToken) switch
             {
-                { lastToken: TokenType.KeywordVal or TokenType.KeywordVar, nextToken: TokenType.Colon } =>
+                { lastToken: TokenKind.KeywordVal or TokenKind.KeywordVar, nextToken: TokenKind.Colon } =>
                     SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
                 {
-                    lastToken: TokenType.KeywordFrom or TokenType.KeywordVal or TokenType.KeywordVar or TokenType.Colon,
-                    nextToken: TokenType.Semicolon or TokenType.Assign or TokenType.PlusAssign or
-                    TokenType.MinusAssign or TokenType.Slash or TokenType.StarAssign
+                    lastToken: TokenKind.KeywordFrom or TokenKind.KeywordVal or TokenKind.KeywordVar or TokenKind.Colon,
+                    nextToken: TokenKind.Semicolon or TokenKind.Assign or TokenKind.PlusAssign or
+                    TokenKind.MinusAssign or TokenKind.Slash or TokenKind.StarAssign
                 } => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
 
                 {
-                    lastToken: TokenType.Semicolon or TokenType.CurlyOpen or
-                    TokenType.CurlyClose or TokenType.EndOfInput or TokenType.Colon,
-                    nextToken: TokenType.Assign or TokenType.PlusAssign or
-                    TokenType.MinusAssign or TokenType.Slash or TokenType.StarAssign
-                } => SetTrivia(newToken, CreateTrivia(TriviaType.Whitespace, this.Indentation), oneSpaceTrivia),
+                    lastToken: TokenKind.Semicolon or TokenKind.CurlyOpen or
+                    TokenKind.CurlyClose or TokenKind.EndOfInput or TokenKind.Colon,
+                    nextToken: TokenKind.Assign or TokenKind.PlusAssign or
+                    TokenKind.MinusAssign or TokenKind.Slash or TokenKind.StarAssign
+                } => SetTrivia(newToken, CreateTrivia(TriviaKind.Whitespace, this.Indentation), oneSpaceTrivia),
 
-                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen or TokenType.CurlyClose or TokenType.EndOfInput or TokenType.Colon } =>
-                    SetTrivia(newToken, CreateTrivia(TriviaType.Whitespace, this.Indentation), noSpaceTrivia),
+                { lastToken: TokenKind.Semicolon or TokenKind.CurlyOpen or TokenKind.CurlyClose or TokenKind.EndOfInput or TokenKind.Colon } =>
+                    SetTrivia(newToken, CreateTrivia(TriviaKind.Whitespace, this.Indentation), noSpaceTrivia),
 
-                { nextToken: TokenType.Semicolon or TokenType.ParenOpen or TokenType.ParenClose } =>
+                { nextToken: TokenKind.Semicolon or TokenKind.ParenOpen or TokenKind.ParenClose } =>
                     SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
 
                 _ => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
             },
 
             // Literals are handeled based on the context in which they are used
-            // Note: TokenType.MultiLineStringEnd is handeled separately, beacause we can't alter its leading trivia
-            TokenType.LiteralInteger or TokenType.LiteralFloat or TokenType.KeywordFalse or TokenType.KeywordTrue or TokenType.LiteralCharacter or TokenType.LineStringEnd => (this.lastToken, this.nextToken) switch
+            // Note: TokenKind.MultiLineStringEnd is handeled separately, beacause we can't alter its leading trivia
+            TokenKind.LiteralInteger or TokenKind.LiteralFloat or TokenKind.KeywordFalse or TokenKind.KeywordTrue or TokenKind.LiteralCharacter or TokenKind.LineStringEnd => (this.lastToken, this.nextToken) switch
             {
-                { nextToken: TokenType.Semicolon or TokenType.ParenClose } => SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
+                { nextToken: TokenKind.Semicolon or TokenKind.ParenClose } => SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
                 _ => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
             },
 
-            TokenType.MultiLineStringEnd => (this.lastToken, this.nextToken) switch
+            TokenKind.MultiLineStringEnd => (this.lastToken, this.nextToken) switch
             {
-                { nextToken: TokenType.Semicolon or TokenType.ParenClose } => SetTrailingTrivia(newToken, noSpaceTrivia),
+                { nextToken: TokenKind.Semicolon or TokenKind.ParenClose } => SetTrailingTrivia(newToken, noSpaceTrivia),
                 _ => SetTrailingTrivia(newToken, oneSpaceTrivia),
             },
 
@@ -268,6 +268,6 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
         return true;
     }
 
-    private static SyntaxList<SyntaxTrivia> CreateTrivia(TriviaType type, string text) =>
+    private static SyntaxList<SyntaxTrivia> CreateTrivia(TriviaKind type, string text) =>
         SyntaxList.Create(SyntaxTrivia.From(type, text));
 }

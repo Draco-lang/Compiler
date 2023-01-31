@@ -11,7 +11,7 @@ internal interface ITokenSource
     /// <summary>
     /// Peeks ahead <paramref name="offset"/> of tokens in the source without consuming it.
     /// If the source is past the end, it should return a <see cref="SyntaxToken"/> with type
-    /// <see cref="TokenType.EndOfInput"/>.
+    /// <see cref="TokenKind.EndOfInput"/>.
     /// </summary>
     /// <param name="offset">The offset from the current source position.</param>
     /// <returns>The <see cref="SyntaxToken"/> that is <paramref name="offset"/> amount of tokens ahead.</returns>

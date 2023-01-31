@@ -54,21 +54,21 @@ internal static partial class Symbol
     public static ISymbol.IFunction MakeIntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType) =>
         new IntrinsicFunction(name, paramTypes, returnType);
 
-    public static ISymbol.IFunction MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
+    public static ISymbol.IFunction MakeIntrinsicUnaryOperator(TokenKind op, Type operandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetUnaryOperatorName(op),
             ImmutableArray.Create(operandType),
             resultType);
 
     public static ISymbol.IFunction MakeIntrinsicBinaryOperator(
-        TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
+        TokenKind op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetBinaryOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
             ImmutableArray.Create(leftOperandType, rightrOperandType),
             resultType);
 
     public static ISymbol.IFunction MakeIntrinsicRelationalOperator(
-        TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
+        TokenKind op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetRelationalOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
             ImmutableArray.Create(leftOperandType, rightrOperandType),
@@ -82,7 +82,7 @@ internal static partial class Symbol
         if (definition is null) return string.Empty;
         // Get all the doc commemts above the declaration
         var token = definition.Tokens.FirstOrDefault();
-        var trivia = token?.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment);
+        var trivia = token?.LeadingTrivia.Where(x => x.Kind == TriviaKind.DocumentationComment);
         // Concatenate the text of all the doc comments
         return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;
     }

@@ -138,7 +138,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
 
         void AdvanceToken(SyntaxToken token)
         {
-            if (token.Type == TokenType.StringNewline)
+            if (token.Kind == TokenKind.StringNewline)
             {
                 ++line;
                 column = 0;
@@ -151,7 +151,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
 
         void AdvanceTrivia(SyntaxTrivia trivia)
         {
-            if (trivia.Type == TriviaType.Newline)
+            if (trivia.Kind == TriviaKind.Newline)
             {
                 ++line;
                 column = 0;

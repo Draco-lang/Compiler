@@ -210,7 +210,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
 
         var subexprType = TypeChecker.TypeOf(this.db, node.Operand);
 
-        if (node.Operator.Type == TokenType.KeywordNot)
+        if (node.Operator.Kind == TokenKind.KeywordNot)
         {
             // Must be boolean
             this.solver.Same(subexprType, Type.Bool).ConfigureDiagnostic(diag => diag
@@ -232,7 +232,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
         var leftType = TypeChecker.TypeOf(this.db, node.Left);
         var rightType = TypeChecker.TypeOf(this.db, node.Right);
 
-        if (node.Operator.Type == TokenType.Assign)
+        if (node.Operator.Kind == TokenKind.Assign)
         {
             // Right has to be assignable to left
             // TODO: Wrong constraint, we need "Assignable"
@@ -252,7 +252,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
 
             this.expressions[node] = promise.Result;
         }
-        else if (node.Operator.Type is TokenType.KeywordAnd or TokenType.KeywordOr)
+        else if (node.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr)
         {
             // We require the sides to be of boolean type
             this.solver.Same(leftType, Type.Bool).ConfigureDiagnostic(diag => diag

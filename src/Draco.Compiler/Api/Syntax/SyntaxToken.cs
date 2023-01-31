@@ -12,9 +12,9 @@ namespace Draco.Compiler.Api.Syntax;
 public sealed class SyntaxToken : SyntaxNode
 {
     /// <summary>
-    /// The <see cref="TokenType"/> of this token.
+    /// The <see cref="TokenKind"/> of this token.
     /// </summary>
-    public TokenType Type => this.Green.Type;
+    public TokenKind Kind => this.Green.Kind;
 
     /// <summary>
     /// The text the token was produced from.

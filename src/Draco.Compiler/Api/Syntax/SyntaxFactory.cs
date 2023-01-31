@@ -49,15 +49,15 @@ public static partial class SyntaxFactory
     public static TNode WithDocumentation<TNode>(TNode node, string docs)
         where TNode : SyntaxNode =>
         WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
-            .Select(x => Internal.Syntax.SyntaxTrivia.From(TriviaType.DocumentationComment, $"///{x}")).ToArray());
+            .Select(x => Internal.Syntax.SyntaxTrivia.From(TriviaKind.DocumentationComment, $"///{x}")).ToArray());
 
     public static TNode WithComments<TNode>(TNode node, string docs)
         where TNode : SyntaxNode =>
         WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
-            .Select(x => Internal.Syntax.SyntaxTrivia.From(TriviaType.DocumentationComment, $"//{x}")).ToArray());
+            .Select(x => Internal.Syntax.SyntaxTrivia.From(TriviaKind.DocumentationComment, $"//{x}")).ToArray());
 
-    public static SyntaxToken Name(string text) => MakeToken(TokenType.Identifier, text);
-    public static SyntaxToken Integer(int value) => MakeToken(TokenType.LiteralInteger, value.ToString(), value);
+    public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
+    public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
 
     public static SyntaxList<TNode> SyntaxList<TNode>(IEnumerable<TNode> elements)
         where TNode : SyntaxNode => new(
@@ -183,37 +183,37 @@ public static partial class SyntaxFactory
         StringExpression(LineStringStart, SyntaxList(TextStringPart(value) as StringPartSyntax), LineStringEnd);
 
     public static TextStringPartSyntax TextStringPart(string value) =>
-        TextStringPart(MakeToken(TokenType.StringContent, value, value));
+        TextStringPart(MakeToken(TokenKind.StringContent, value, value));
 
     // TOKENS //////////////////////////////////////////////////////////////////
 
-    public static SyntaxToken EndOfInput { get; } = MakeToken(TokenType.EndOfInput);
-    public static SyntaxToken Assign { get; } = MakeToken(TokenType.Assign);
-    public static SyntaxToken Comma { get; } = MakeToken(TokenType.Comma);
-    public static SyntaxToken Colon { get; } = MakeToken(TokenType.Colon);
-    public static SyntaxToken Semicolon { get; } = MakeToken(TokenType.Semicolon);
-    public static SyntaxToken Return { get; } = MakeToken(TokenType.KeywordReturn);
-    public static SyntaxToken If { get; } = MakeToken(TokenType.KeywordIf);
-    public static SyntaxToken While { get; } = MakeToken(TokenType.KeywordWhile);
-    public static SyntaxToken Else { get; } = MakeToken(TokenType.KeywordElse);
-    public static SyntaxToken Var { get; } = MakeToken(TokenType.KeywordVar);
-    public static SyntaxToken Val { get; } = MakeToken(TokenType.KeywordVal);
-    public static SyntaxToken Func { get; } = MakeToken(TokenType.KeywordFunc);
-    public static SyntaxToken Goto { get; } = MakeToken(TokenType.KeywordGoto);
-    public static SyntaxToken True { get; } = MakeToken(TokenType.KeywordTrue);
-    public static SyntaxToken False { get; } = MakeToken(TokenType.KeywordFalse);
-    public static SyntaxToken OpenBrace { get; } = MakeToken(TokenType.CurlyOpen);
-    public static SyntaxToken CloseBrace { get; } = MakeToken(TokenType.CurlyClose);
-    public static SyntaxToken OpenParen { get; } = MakeToken(TokenType.ParenOpen);
-    public static SyntaxToken CloseParen { get; } = MakeToken(TokenType.ParenClose);
-    public static SyntaxToken Plus { get; } = MakeToken(TokenType.Plus);
-    public static SyntaxToken LineStringStart { get; } = MakeToken(TokenType.LineStringStart, "\"");
-    public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenType.LineStringEnd, "\"");
+    public static SyntaxToken EndOfInput { get; } = MakeToken(TokenKind.EndOfInput);
+    public static SyntaxToken Assign { get; } = MakeToken(TokenKind.Assign);
+    public static SyntaxToken Comma { get; } = MakeToken(TokenKind.Comma);
+    public static SyntaxToken Colon { get; } = MakeToken(TokenKind.Colon);
+    public static SyntaxToken Semicolon { get; } = MakeToken(TokenKind.Semicolon);
+    public static SyntaxToken Return { get; } = MakeToken(TokenKind.KeywordReturn);
+    public static SyntaxToken If { get; } = MakeToken(TokenKind.KeywordIf);
+    public static SyntaxToken While { get; } = MakeToken(TokenKind.KeywordWhile);
+    public static SyntaxToken Else { get; } = MakeToken(TokenKind.KeywordElse);
+    public static SyntaxToken Var { get; } = MakeToken(TokenKind.KeywordVar);
+    public static SyntaxToken Val { get; } = MakeToken(TokenKind.KeywordVal);
+    public static SyntaxToken Func { get; } = MakeToken(TokenKind.KeywordFunc);
+    public static SyntaxToken Goto { get; } = MakeToken(TokenKind.KeywordGoto);
+    public static SyntaxToken True { get; } = MakeToken(TokenKind.KeywordTrue);
+    public static SyntaxToken False { get; } = MakeToken(TokenKind.KeywordFalse);
+    public static SyntaxToken OpenBrace { get; } = MakeToken(TokenKind.CurlyOpen);
+    public static SyntaxToken CloseBrace { get; } = MakeToken(TokenKind.CurlyClose);
+    public static SyntaxToken OpenParen { get; } = MakeToken(TokenKind.ParenOpen);
+    public static SyntaxToken CloseParen { get; } = MakeToken(TokenKind.ParenClose);
+    public static SyntaxToken Plus { get; } = MakeToken(TokenKind.Plus);
+    public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
+    public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
 
-    private static SyntaxToken MakeToken(TokenType tokenType) =>
-        Internal.Syntax.SyntaxToken.From(tokenType).ToRedNode(null!, null);
-    private static SyntaxToken MakeToken(TokenType tokenType, string text) =>
-        Internal.Syntax.SyntaxToken.From(tokenType, text).ToRedNode(null!, null);
-    private static SyntaxToken MakeToken(TokenType tokenType, string text, object? value) =>
-        Internal.Syntax.SyntaxToken.From(tokenType, text, value).ToRedNode(null!, null);
+    private static SyntaxToken MakeToken(TokenKind tokenKind) =>
+        Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null);
+    private static SyntaxToken MakeToken(TokenKind tokenKind, string text) =>
+        Internal.Syntax.SyntaxToken.From(tokenKind, text).ToRedNode(null!, null);
+    private static SyntaxToken MakeToken(TokenKind tokenKind, string text, object? value) =>
+        Internal.Syntax.SyntaxToken.From(tokenKind, text, value).ToRedNode(null!, null);
 }

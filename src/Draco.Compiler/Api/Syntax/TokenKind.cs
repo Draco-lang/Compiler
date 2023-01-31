@@ -3,7 +3,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// <summary>
 /// The different kinds of tokens in the syntax tree.
 /// </summary>
-public enum TokenType
+public enum TokenKind
 {
     /// <summary>
     /// The end of the read source.

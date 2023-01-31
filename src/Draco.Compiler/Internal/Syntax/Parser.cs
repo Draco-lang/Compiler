@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -168,16 +169,13 @@ internal sealed class Parser
         TokenKind.Star,
     };
 
-    /// <summary>
-    /// The <see cref="Diagnostic"/> messages attached to the nodes.
-    /// </summary>
-    internal ConditionalWeakTable<SyntaxNode, Diagnostic> Diagnostics { get; } = new();
-
     private readonly ITokenSource tokenSource;
+    private readonly SyntaxDiagnosticTable diagnostics;
 
-    public Parser(ITokenSource tokenSource)
+    public Parser(ITokenSource tokenSource, SyntaxDiagnosticTable diagnostics)
     {
         this.tokenSource = tokenSource;
+        this.diagnostics = diagnostics;
     }
 
     /// <summary>
@@ -218,10 +216,10 @@ internal sealed class Parser
                 TokenKind.Identifier when this.Peek(1) == TokenKind.Colon => false,
                 _ => true,
             });
-            var location = GetLocation(input.Sum(i => i.Width));
+            var location = new Location.RelativeToTree(Range: new(Offset: 0, Width: input.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
             var node = new UnexpectedDeclarationSyntax(input);
-            this.Diagnostics.Add(node, diag);
+            this.AddDiagnostic(node, diag);
             return node;
         }
         }
@@ -370,10 +368,10 @@ internal sealed class Parser
                 or TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal => false,
                 _ => true,
             });
-            var location = GetLocation(input.Sum(i => i.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
             var node = new UnexpectedFunctionBodySyntax(input);
-            this.Diagnostics.Add(node, diag);
+            this.AddDiagnostic(node, diag);
             return node;
         }
     }
@@ -410,10 +408,10 @@ internal sealed class Parser
                 var kind when expressionStarters.Contains(kind) => false,
                 _ => true,
             });
-            var location = GetLocation(input.Sum(i => i.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "type");
             var node = new UnexpectedTypeSyntax(input);
-            this.Diagnostics.Add(node, diag);
+            this.AddDiagnostic(node, diag);
             return node;
         }
     }
@@ -538,7 +536,7 @@ internal sealed class Parser
                 else
                 {
                     // Error, synchronize
-                    var tokens = this.Synchronize(kind => kind switch
+                    var input = this.Synchronize(kind => kind switch
                     {
                         TokenKind.CurlyClose
                         or TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal
@@ -546,10 +544,10 @@ internal sealed class Parser
                         var tt when expressionStarters.Contains(tt) => false,
                         _ => true,
                     });
-                    var location = GetLocation(tokens.Sum(i => i.Width));
+                    var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
                     var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "statement");
-                    var errNode = new UnexpectedStatementSyntax(tokens);
-                    this.Diagnostics.Add(errNode, diag);
+                    var errNode = new UnexpectedStatementSyntax(input);
+                    this.AddDiagnostic(errNode, diag);
                     stmts.Add(errNode);
                 }
                 break;
@@ -767,10 +765,10 @@ internal sealed class Parser
                 var kind when expressionStarters.Contains(kind) => false,
                 _ => true,
             });
-            var location = GetLocation(input.Sum(i => i.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
             var node = new UnexpectedExpressionSyntax(input);
-            this.Diagnostics.Add(node, diag);
+            this.AddDiagnostic(node, diag);
             return node;
         }
         }
@@ -821,17 +819,17 @@ internal sealed class Parser
         if (!openQuote.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline))
         {
             // Possible stray tokens inline
-            var strayTokens = this.Synchronize(t => t switch
+            var input = this.Synchronize(t => t switch
             {
                 TokenKind.MultiLineStringEnd or TokenKind.StringNewline => false,
                 _ => true,
             });
-            var location = GetLocation(strayTokens.Sum(t => t.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
             var diag = Diagnostic.Create(
                 SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString,
                 location);
-            var unexpected = new UnexpectedStringPartSyntax(strayTokens);
-            this.Diagnostics.Add(unexpected, diag);
+            var unexpected = new UnexpectedStringPartSyntax(input);
+            this.AddDiagnostic(unexpected, diag);
             content.Add(unexpected);
         }
         while (true)
@@ -890,11 +888,11 @@ internal sealed class Parser
                         {
                             // We are in a newline and the prefixes don't match, that's an error
                             var whitespaceLength = textPart.Content.Text.TakeWhile(char.IsWhiteSpace).Count();
-                            var location = GetLocation(whitespaceLength);
+                            var location = new Location.RelativeToTree(new(Offset: 0, Width: whitespaceLength));
                             var diag = Diagnostic.Create(
                                 SyntaxErrors.InsufficientIndentationInMultiLinString,
                                 location);
-                            this.Diagnostics.Add(textPart, diag);
+                            this.AddDiagnostic(textPart, diag);
                         }
                         else
                         {
@@ -913,11 +911,11 @@ internal sealed class Parser
         else
         {
             // Error, the closing quotes are not on a newline
-            var location = GetLocation(closeQuote.Width);
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: closeQuote.Width));
             var diag = Diagnostic.Create(
                 SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
                 location);
-            this.Diagnostics.Add(closeQuote, diag);
+            this.AddDiagnostic(closeQuote, diag);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
     }
@@ -988,11 +986,11 @@ internal sealed class Parser
         {
             // We construct an empty token that signals that this is missing from the tree
             // The attached diagnostic message describes what is missing
-            var location = GetLocation(0);
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: 0));
             var friendlyName = SyntaxFacts.GetUserFriendlyName(kind);
             var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: friendlyName);
             token = SyntaxToken.From(kind, string.Empty);
-            this.Diagnostics.Add(token, diag);
+            this.AddDiagnostic(token, diag);
         }
         return token;
     }
@@ -1038,7 +1036,6 @@ internal sealed class Parser
         return token;
     }
 
-    // Location utility
-
-    private static Location GetLocation(int width) => new Location.RelativeToTree(Range: new(Offset: 0, Width: width));
+    private void AddDiagnostic(SyntaxNode node, Diagnostic diagnostic) =>
+        throw new NotImplementedException();
 }

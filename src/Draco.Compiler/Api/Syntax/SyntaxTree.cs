@@ -38,10 +38,11 @@ public sealed class SyntaxTree
     /// <returns>The parsed tree.</returns>
     public static SyntaxTree Parse(SourceText source)
     {
+        var diags = new SyntaxDiagnosticTable();
         var srcReader = source.SourceReader;
-        var lexer = new Lexer(srcReader);
+        var lexer = new Lexer(srcReader, diags);
         var tokenSource = TokenSource.From(lexer);
-        var parser = new Parser(tokenSource);
+        var parser = new Parser(tokenSource, diags);
         var cu = parser.ParseCompilationUnit();
         // TODO: Pass in diags
         return new(source, cu, new());
@@ -61,7 +62,7 @@ public sealed class SyntaxTree
     /// <summary>
     /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.
     /// </summary>
-    public IEnumerable<Diagnostic> Diagnostics => this.syntaxDiagnostics.Select(kv => kv.Value);
+    public IEnumerable<Diagnostic> Diagnostics => this.syntaxDiagnostics.Diagnostics;
 
     /// <summary>
     /// Preorder traverses the thee with this node being the root.
@@ -96,12 +97,12 @@ public sealed class SyntaxTree
     /// </summary>
     internal Internal.Syntax.SyntaxNode GreenRoot { get; }
 
-    private readonly ConditionalWeakTable<Internal.Syntax.SyntaxNode, Diagnostic> syntaxDiagnostics;
+    private readonly SyntaxDiagnosticTable syntaxDiagnostics;
 
     internal SyntaxTree(
         SourceText sourceText,
         Internal.Syntax.SyntaxNode greenRoot,
-        ConditionalWeakTable<Internal.Syntax.SyntaxNode, Diagnostic> syntaxDiagnostics)
+        SyntaxDiagnosticTable syntaxDiagnostics)
     {
         this.SourceText = sourceText;
         this.GreenRoot = greenRoot;

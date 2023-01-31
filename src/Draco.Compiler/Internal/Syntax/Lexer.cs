@@ -95,21 +95,19 @@ internal sealed class Lexer
     // Mode stack of the lexer, this is actual, changing state
     private readonly Stack<Mode> modeStack = new();
 
-    /// <summary>
-    /// The <see cref="Diagnostic"/> messages that got attached to the produced tokens.
-    /// </summary>
-    internal ConditionalWeakTable<SyntaxToken, IImmutableList<Diagnostic>> Diagnostics { get; } = new();
-
     // These are various cached builder types to save on allocations
     // The important thing is that these should not carry any significant state in the lexer in any way,
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
     private readonly SyntaxToken.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly ImmutableArray<Diagnostic>.Builder diagnosticsBuilder = ImmutableArray.CreateBuilder<Diagnostic>();
+    private readonly List<Diagnostic> diagnosticBuilder = new();
 
-    public Lexer(ISourceReader sourceReader)
+    private readonly SyntaxDiagnosticTable diagnostics;
+
+    public Lexer(ISourceReader sourceReader, SyntaxDiagnosticTable diagnostics)
     {
         this.SourceReader = sourceReader;
+        this.diagnostics = diagnostics;
         this.PushMode(ModeKind.Normal, 0);
     }
 
@@ -121,7 +119,7 @@ internal sealed class Lexer
     {
         this.tokenBuilder.Clear();
         this.valueBuilder.Clear();
-        this.diagnosticsBuilder.Clear();
+        this.diagnosticBuilder.Clear();
 
         switch (this.CurrentMode.Kind)
         {
@@ -150,7 +148,7 @@ internal sealed class Lexer
 
         var token = this.tokenBuilder.Build();
         // Associate diagnostics, if needed
-        if (this.diagnosticsBuilder.Count > 0) this.Diagnostics.Add(token, this.diagnosticsBuilder.ToImmutable());
+        if (this.diagnosticBuilder.Count > 0) this.diagnostics.Add(token, this.diagnosticBuilder);
         return token;
     }
 
@@ -847,7 +845,7 @@ internal sealed class Lexer
             template: template,
             location: location,
             formatArgs: args);
-        this.diagnosticsBuilder.Add(diag);
+        this.diagnosticBuilder.Add(diag);
     }
 
     // Mode stack

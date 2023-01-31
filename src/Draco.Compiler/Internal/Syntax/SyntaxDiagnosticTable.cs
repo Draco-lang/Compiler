@@ -13,6 +13,11 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal readonly struct SyntaxDiagnosticTable
 {
+    /// <summary>
+    /// All <see cref="Diagnostic"/> messages attached to some <see cref="SyntaxNode"/>.
+    /// </summary>
+    public IEnumerable<Diagnostic> Diagnostics => this.diagnostics.SelectMany(kv => kv.Value);
+
     private readonly ConditionalWeakTable<SyntaxNode, List<Diagnostic>> diagnostics = new();
 
     public SyntaxDiagnosticTable()
@@ -32,5 +37,20 @@ internal readonly struct SyntaxDiagnosticTable
             this.diagnostics.Add(node, diagnosticList);
         }
         diagnosticList.Add(diagnostic);
+    }
+
+    /// <summary>
+    /// Adds a list <see cref="Diagnostic"/>s to the given <see cref="SyntaxNode"/>.
+    /// </summary>
+    /// <param name="node">The <see cref="SyntaxNode"/> to attach the <paramref name="diagnostics"/> to.</param>
+    /// <param name="diagnostics">The <see cref="Diagnostic"/>s to attach to <paramref name="node"/>.</param>
+    public void Add(SyntaxNode node, IEnumerable<Diagnostic> diagnostics)
+    {
+        if (!this.diagnostics.TryGetValue(node, out var diagnosticList))
+        {
+            diagnosticList = new();
+            this.diagnostics.Add(node, diagnosticList);
+        }
+        diagnosticList.AddRange(diagnostics);
     }
 }

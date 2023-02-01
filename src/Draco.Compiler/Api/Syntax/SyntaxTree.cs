@@ -44,8 +44,7 @@ public sealed class SyntaxTree
         var tokenSource = TokenSource.From(lexer);
         var parser = new Parser(tokenSource, diags);
         var cu = parser.ParseCompilationUnit();
-        // TODO: Pass in diags
-        return new(source, cu, new());
+        return new(source, cu, diags);
     }
 
     /// <summary>

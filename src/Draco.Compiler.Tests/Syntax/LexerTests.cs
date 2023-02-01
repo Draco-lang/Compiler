@@ -14,7 +14,7 @@ public sealed class LexerTests
     private SyntaxToken Current => this.tokenEnumerator.Current;
 
     private IEnumerator<SyntaxToken> tokenEnumerator = Enumerable.Empty<SyntaxToken>().GetEnumerator();
-    private SyntaxDiagnosticTable diagnostics = new();
+    private readonly SyntaxDiagnosticTable diagnostics = new();
 
     private void Lex(string text)
     {

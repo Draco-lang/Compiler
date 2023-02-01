@@ -8,17 +8,16 @@ namespace Draco.Compiler.Tests.Syntax;
 
 public sealed class ParserTests
 {
+    private readonly SyntaxDiagnosticTable diagnostics = new();
     private IEnumerator<SyntaxNode> treeEnumerator = Enumerable.Empty<SyntaxNode>().GetEnumerator();
-    private ConditionalWeakTable<SyntaxNode, Diagnostic> diagnostics = new();
 
     private void ParseInto<T>(string text, Func<Parser, T> func)
         where T : SyntaxNode
     {
         var srcReader = SourceReader.From(text);
-        var lexer = new Lexer(srcReader);
+        var lexer = new Lexer(srcReader, this.diagnostics);
         var tokenSource = TokenSource.From(lexer);
-        var parser = new Parser(tokenSource);
-        this.diagnostics = parser.Diagnostics;
+        var parser = new Parser(tokenSource, this.diagnostics);
         this.treeEnumerator = func(parser).PreOrderTraverse().GetEnumerator();
     }
 
@@ -46,23 +45,23 @@ public sealed class ParserTests
     private void N<T>()
         where T : SyntaxNode => this.N<T>(_ => true);
 
-    private void T(TokenKind type) => this.N<SyntaxToken>(
-           t => t.Kind == type
-        && !this.diagnostics.TryGetValue(t, out _));
+    private void T(TokenKind type) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && this.diagnostics.Get(t).Count == 0);
 
-    private void T(TokenKind type, string text) => this.N<SyntaxToken>(
-           t => t.Kind == type
+    private void T(TokenKind type, string text) => this.N<SyntaxToken>(t =>
+           t.Kind == type
         && t.Text == text
-        && !this.diagnostics.TryGetValue(t, out _));
+        && this.diagnostics.Get(t).Count == 0);
 
-    private void TValue(TokenKind type, string value) => this.N<SyntaxToken>(
-           t => t.Kind == type
+    private void TValue(TokenKind type, string value) => this.N<SyntaxToken>(t =>
+           t.Kind == type
         && t.ValueText == value
-        && !this.diagnostics.TryGetValue(t, out _));
+        && this.diagnostics.Get(t).Count == 0);
 
-    private void MissingT(TokenKind type) => this.N<SyntaxToken>(
-           t => t.Kind == type
-        && this.diagnostics.TryGetValue(t, out _));
+    private void MissingT(TokenKind type) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && this.diagnostics.Get(t).Count > 0);
 
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {

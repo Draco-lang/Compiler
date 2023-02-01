@@ -62,7 +62,8 @@ public sealed class SyntaxTree
     /// <summary>
     /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.
     /// </summary>
-    public IEnumerable<Diagnostic> Diagnostics => this.syntaxDiagnostics.Diagnostics;
+    public IEnumerable<Diagnostic> Diagnostics => this.PreOrderTraverse()
+        .SelectMany(n => this.syntaxDiagnostics.Get(n.Green).Select(d => d.ToApiDiagnostic(n)));
 
     /// <summary>
     /// Preorder traverses the thee with this node being the root.

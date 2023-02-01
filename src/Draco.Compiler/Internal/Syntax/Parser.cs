@@ -1037,5 +1037,5 @@ internal sealed class Parser
     }
 
     private void AddDiagnostic(SyntaxNode node, Diagnostic diagnostic) =>
-        throw new NotImplementedException();
+        this.diagnostics.Add(node, diagnostic);
 }

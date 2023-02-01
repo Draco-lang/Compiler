@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -23,6 +24,15 @@ internal readonly struct SyntaxDiagnosticTable
     public SyntaxDiagnosticTable()
     {
     }
+
+    /// <summary>
+    /// Retrieves all <see cref="Diagnostic"/> messages for a given <see cref="SyntaxNode"/>.
+    /// </summary>
+    /// <param name="node">The <see cref="SyntaxNode"/> to retrieve the <see cref="Diagnostic"/> messages for.</param>
+    /// <returns>All <see cref="Diagnostic"/> messages for <paramref name="node"/>.</returns>
+    public IReadOnlyCollection<Diagnostic> Get(SyntaxNode node) => this.diagnostics.TryGetValue(node, out var diagnostics)
+        ? diagnostics
+        : ImmutableArray<Diagnostic>.Empty;
 
     /// <summary>
     /// Adds a <see cref="Diagnostic"/> to the given <see cref="SyntaxNode"/>.

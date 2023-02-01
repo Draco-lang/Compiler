@@ -14,14 +14,13 @@ public sealed class LexerTests
     private SyntaxToken Current => this.tokenEnumerator.Current;
 
     private IEnumerator<SyntaxToken> tokenEnumerator = Enumerable.Empty<SyntaxToken>().GetEnumerator();
-    private ConditionalWeakTable<SyntaxToken, IImmutableList<Diagnostic>> diagnostics = new();
+    private SyntaxDiagnosticTable diagnostics = new();
 
     private void Lex(string text)
     {
         var source = SourceReader.From(text);
-        var lexer = new Lexer(source);
+        var lexer = new Lexer(source, this.diagnostics);
         this.tokenEnumerator = LexImpl(lexer).GetEnumerator();
-        this.diagnostics = lexer.Diagnostics;
     }
 
     private static IEnumerable<SyntaxToken> LexImpl(Lexer lexer)
@@ -78,16 +77,9 @@ public sealed class LexerTests
 
     private void AssertDiagnostics(params DiagnosticTemplate[] diags)
     {
-        if (diags.Length == 0)
-        {
-            Assert.False(this.diagnostics.TryGetValue(this.Current, out _));
-        }
-        else
-        {
-            Assert.True(this.diagnostics.TryGetValue(this.Current, out var gotDiags));
-            Assert.Equal(gotDiags!.Count, diags.Length);
-            Assert.True(diags.SequenceEqual(gotDiags.Select(d => d.Template)));
-        }
+        var gotDiags = this.diagnostics.Get(this.Current);
+        Assert.Equal(diags.Length, gotDiags!.Count);
+        Assert.True(diags.SequenceEqual(gotDiags.Select(d => d.Template)));
     }
 
     [Fact]

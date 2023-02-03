@@ -22,14 +22,12 @@ internal sealed class DracoDocumentFormattingHandler : DocumentFormattingHandler
         var uri = request.TextDocument.Uri.ToUri();
         var sourceText = this.repository.GetDocument(request.TextDocument.Uri);
         var tree = SyntaxTree.Parse(sourceText);
-        // TODO
-        throw new System.NotImplementedException();
-        //var originalRange = tree.Root.Range;
-        //tree = tree.Format();
+        var originalRange = tree.Root.Range;
+        tree = tree.Format();
         var edit = new TextEdit()
         {
             NewText = tree.ToString(),
-            //Range = Translator.ToLsp(originalRange),
+            Range = Translator.ToLsp(originalRange),
         };
         var container = new TextEditContainer(edit);
         return Task.FromResult(container)!;

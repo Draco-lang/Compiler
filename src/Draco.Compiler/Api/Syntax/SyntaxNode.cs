@@ -60,8 +60,14 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     internal abstract Internal.Syntax.SyntaxNode Green { get; }
 
     // TODO: Better way?
-    internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range) =>
-        throw new NotImplementedException();
+    internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range)
+    {
+        var text = this.ToString().AsSpan();
+        var start = StepPositionByText(this.Range.Start, text[..range.Offset]);
+        var minWidth = Math.Min(range.Width, text.Length);
+        var end = StepPositionByText(start, text.Slice(range.Offset, minWidth));
+        return new(start, end);
+    }
 
     internal SyntaxNode(SyntaxTree tree, SyntaxNode? parent)
     {
@@ -195,8 +201,21 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
         if (firstToken is null)
         {
             // This is an empty node
-            // TODO
-            throw new NotImplementedException();
+            // We try to look for the predecessor in the parent
+            // If there is no parent, assume starting position
+            if (this.Parent is null) return default;
+            // There is a parent, attempt to find the node before this one
+            var beforeThis = this.Parent.Children
+                .TakeWhile(n => !ReferenceEquals(n.Green, this.Green))
+                .FirstOrDefault();
+            if (beforeThis is null)
+            {
+                // There wasn't a node before this, ask for the parent
+                var parentRange = this.Parent.Range;
+                return new(parentRange.Start, 0);
+            }
+            // There was a node before this one
+            return new(beforeThis.Range.End, 0);
         }
 
         // If there was a first token, there is a last
@@ -218,5 +237,40 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
 
         // We should have the information
         return MakeRange();
+    }
+
+    // NOTE: This might be a good general utility somewhere else?
+    private static Position StepPositionByText(Position start, ReadOnlySpan<char> text)
+    {
+        var currLine = start.Line;
+        var currCol = start.Column;
+        for (var i = 0; i < text.Length; ++i)
+        {
+            var ch = text[i];
+            if (ch == '\r')
+            {
+                // Either Windows or OS-X 9 style newlines
+                if (i + 1 < text.Length && text[i + 1] == '\n')
+                {
+                    // Windows-style, eat extra char
+                    ++i;
+                }
+                // Otherwise OS-X 9 style
+                ++currLine;
+                currCol = 0;
+            }
+            else if (ch == '\n')
+            {
+                // Unix-style newline
+                ++currLine;
+                currCol = 0;
+            }
+            else
+            {
+                // NOTE: We might not want to increment in all cases
+                ++currCol;
+            }
+        }
+        return new(Line: currLine, Column: currCol);
     }
 }

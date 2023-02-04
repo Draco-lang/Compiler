@@ -1,10 +1,6 @@
-using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Syntax;
-using Diagnostic = Draco.Compiler.Internal.Diagnostics.Diagnostic;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Tests.Syntax;

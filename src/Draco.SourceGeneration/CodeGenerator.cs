@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Draco.SourceGeneration.SyntaxTree;
 using Scriban.Runtime;
 using Scriban;

@@ -263,24 +263,25 @@ internal sealed class Lexer
             if (char.ToLower(this.Peek(offset)) == 'e')
             {
                 isScientificNotation = true;
-                if (this.Peek(offset + 1) == '+' || this.Peek(offset + 1) == '-') offset++;
-                if (!char.IsDigit(this.Peek(offset + 1)))
+                ++offset;
+                if (this.Peek(offset) == '+' || this.Peek(offset) == '-') ++offset;
+                if (!char.IsDigit(this.Peek(offset)))
                 {
                     this.AddError(
                         template: SyntaxErrors.UnexpectedFloatingPointLiteralEnd,
-                        offset: offset + 1,
+                        offset: offset,
                         width: 1);
                     this.tokenBuilder
                         .SetType(TokenType.LiteralFloat)
-                        .SetText(this.Advance(offset + 1).Span.ToString());
+                        .SetText(this.Advance(offset).Span.ToString());
                     return default;
                 }
             }
 
             // Floating point number
-            if ((this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1))) || isScientificNotation)
+            if (isScientificNotation || (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1))))
             {
-                offset += 2;
+                offset += 1;
                 while (char.IsDigit(this.Peek(offset))) ++offset;
                 if (!isScientificNotation && char.ToLower(this.Peek(offset)) == 'e')
                 {
@@ -364,6 +365,8 @@ internal sealed class Lexer
             {
                 // Keyword, we save on allocation
                 this.tokenBuilder.SetType(tokenType);
+                if (tokenType == TokenType.KeywordTrue) this.tokenBuilder.SetValue(true);
+                if (tokenType == TokenType.KeywordFalse) this.tokenBuilder.SetValue(false);
                 return default;
             }
         }
@@ -948,6 +951,6 @@ internal sealed class Lexer
             value = value * radix + digit;
             offset++;
         }
-        return this.Advance(offset).Span.ToString();
+        return this.AdvanceWithText(offset);
     }
 }

@@ -1236,7 +1236,7 @@ public sealed class LexerTests
     [InlineData("0", 0, TokenType.LiteralInteger)]
     [InlineData("123", 123, TokenType.LiteralInteger)]
     [InlineData("12.3", 12.3, TokenType.LiteralFloat)]
-    [InlineData("true", null, TokenType.KeywordTrue)]
+    [InlineData("true", true, TokenType.KeywordTrue)]
     [InlineData("0x4c6", 1222, TokenType.LiteralInteger)]
     [InlineData("0b110101", 53, TokenType.LiteralInteger)]
     [InlineData("10E3", 10000d, TokenType.LiteralFloat)]
@@ -1244,13 +1244,13 @@ public sealed class LexerTests
     [InlineData("0.1e+4", 1000d, TokenType.LiteralFloat)]
     [InlineData("123.345E-12", 1.23345E-10, TokenType.LiteralFloat)]
     [Trait("Feature", "Literals")]
-    public void TestLiteral(string text, object? value, TokenType tokenType)
+    public void TestLiteral(string text, object value, TokenType tokenType)
     {
         var tokens = Lex(text);
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(tokenType, token.Type);
-        if (value is not null) Assert.Equal(value, token.Value);
+        Assert.Equal(value, token.Value);
         AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);

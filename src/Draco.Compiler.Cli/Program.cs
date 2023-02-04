@@ -44,7 +44,7 @@ internal class Program
         };
         generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption, msbuildDiagOption);
 
-        var formatCodeCommand = new Command("format", "Formats contents of specified draco file and writes formated code to stdio")
+        var formatCodeCommand = new Command("format", "Formats contents of specified Draco file and writes formatted code to the standard output")
         {
             fileArgument,
         };

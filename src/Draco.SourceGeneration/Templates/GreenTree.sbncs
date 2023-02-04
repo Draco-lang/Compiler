@@ -24,8 +24,29 @@ namespace Draco.Compiler.Internal.Syntax;
             {{end}}
         )
         {
-            {{for $element in $node.Fields}}
-                this.{{$element.Name}} = {{camel_case($element.Name)}};
+            {{for $field in $node.Fields}}
+                {{# Check for allowed token kinds}}
+                {{if $field.IsToken}}
+                    if (
+                        {{if $field.IsNullable}}
+                            {{camel_case($field.Name)}} is not null &&
+                        {{end}}
+                        {{camel_case($field.Name)}}.Kind is not
+                        {{wrap separated(' and not ', $field.TokenKinds)}}
+                            Api.Syntax.TokenKind.{{$element}}
+                        {{end}}
+                    )
+                    {
+                        throw new System.ArgumentOutOfRangeException(
+                            nameof({{camel_case($field.Name)}}),
+                            $"the token must be of kind {{array.join($field.TokenKinds, ' or ')}}"
+                        );
+                    }
+                {{end}}
+            {{end}}
+            {{# Actual initialization}}
+            {{for $field in $node.Fields}}
+                this.{{$field.Name}} = {{camel_case($field.Name)}};
             {{end}}
         }
 

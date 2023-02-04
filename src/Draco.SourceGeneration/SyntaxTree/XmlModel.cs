@@ -76,4 +76,14 @@ public sealed class XmlField
     public bool Override { get; set; }
 
     public string? Documentation { get; set; }
+
+    [XmlElement("Token")]
+    public List<XmlToken> Tokens { get; set; } = null!;
+}
+
+[XmlRoot(ElementName = "Token")]
+public sealed class XmlToken
+{
+    [XmlAttribute]
+    public string Kind { get; set; } = string.Empty;
 }

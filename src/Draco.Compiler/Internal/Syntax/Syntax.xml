@@ -20,6 +20,8 @@
       <Documentation>
         The end of input token.
       </Documentation>
+
+      <Token Kind="EndOfInput" />
     </Field>
   </Node>
 
@@ -706,6 +708,7 @@
       <Token Kind="Minus" />
       <Token Kind="Star" />
       <Token Kind="Slash" />
+      <Token Kind="Assign" />
       <Token Kind="PlusAssign" />
       <Token Kind="MinusAssign" />
       <Token Kind="StarAssign" />
@@ -810,6 +813,7 @@
       </Documentation>
 
       <Token Kind="StringContent" />
+      <Token Kind="StringNewline" />
     </Field>
   </Node>
 

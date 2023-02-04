@@ -35,12 +35,12 @@ public sealed class LexerTests
 
     private void AssertNextToken() => Assert.True(this.tokenEnumerator.MoveNext());
 
-    private void AssertNextToken(TokenKind type, string text = "", string? valueText = null)
+    private void AssertNextToken(TokenKind type, string text = "", object? value = null)
     {
         this.AssertNextToken();
         this.AssertType(type);
         this.AssertText(text);
-        this.AssertValueText(valueText);
+        this.AssertValue(value);
     }
 
     private void AssertNoTrivia()
@@ -57,6 +57,18 @@ public sealed class LexerTests
 
     private void AssertType(TokenKind type) => Assert.Equal(type, this.Current.Kind);
     private void AssertText(string text) => Assert.Equal(text, this.Current.Text);
+    private void AssertValue(object? value)
+    {
+        if (value is double d)
+        {
+            Assert.NotNull(this.Current.Value);
+            Assert.Equal(d, (double)this.Current.Value!, 5);
+        }
+        else
+        {
+            Assert.Equal(value, this.Current.Value);
+        }
+    }
     private void AssertValueText(string? text) => Assert.Equal(text, this.Current.ValueText);
 
     private void AssertLeadingTrivia(params (TriviaKind Type, string Text)[] trivia)
@@ -976,15 +988,15 @@ public sealed class LexerTests
     }
 
     [Theory]
-    [InlineData("0", TokenKind.LiteralInteger)]
-    [InlineData("123", TokenKind.LiteralInteger)]
-    [InlineData("12.3", TokenKind.LiteralFloat)]
+    [InlineData("0", 0, TokenKind.LiteralInteger)]
+    [InlineData("123", 123, TokenKind.LiteralInteger)]
+    [InlineData("12.3", 12.3, TokenKind.LiteralFloat)]
     [Trait("Feature", "Literals")]
-    public void TestNumericLiterals(string text, TokenKind tokenKind)
+    public void TestNumericLiterals(string text, object value, TokenKind tokenKind)
     {
         this.Lex(text);
 
-        this.AssertNextToken(tokenKind, text, text);
+        this.AssertNextToken(tokenKind, text, value);
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(TokenKind.EndOfInput);
@@ -1013,7 +1025,7 @@ public sealed class LexerTests
         var text = "56.MyFunction()";
         this.Lex(text);
 
-        this.AssertNextToken(TokenKind.LiteralInteger, "56", "56");
+        this.AssertNextToken(TokenKind.LiteralInteger, "56", 56);
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(TokenKind.Dot, ".");

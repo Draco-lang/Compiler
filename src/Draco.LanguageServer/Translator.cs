@@ -62,13 +62,10 @@ internal static class Translator
      or CompilerApi.Syntax.TokenKind.LineStringEnd
      or CompilerApi.Syntax.TokenKind.MultiLineStringStart
      or CompilerApi.Syntax.TokenKind.MultiLineStringEnd
-     or CompilerApi.Syntax.TokenKind.LiteralCharacter =>
-        // TODO
-        throw new System.NotImplementedException()
-        /*new SemanticToken(
-            LspModels.SemanticTokenType.String,
-            LspModels.SemanticTokenModifier.Defaults.ToImmutableList(),
-            token.Range)*/,
+     or CompilerApi.Syntax.TokenKind.LiteralCharacter => new SemanticToken(
+         Type: LspModels.SemanticTokenType.String,
+         Modifiers: LspModels.SemanticTokenModifier.Defaults.ToImmutableList(),
+         Range: token.Range),
         _ => null,
     };
 }

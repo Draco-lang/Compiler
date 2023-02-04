@@ -1,6 +1,7 @@
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
+using Newtonsoft.Json.Linq;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -991,6 +992,12 @@ public sealed class LexerTests
     [InlineData("0", 0, TokenKind.LiteralInteger)]
     [InlineData("123", 123, TokenKind.LiteralInteger)]
     [InlineData("12.3", 12.3, TokenKind.LiteralFloat)]
+    [InlineData("0x4c6", 1222, TokenKind.LiteralInteger)]
+    [InlineData("0b110101", 53, TokenKind.LiteralInteger)]
+    [InlineData("10E3", 10000d, TokenKind.LiteralFloat)]
+    [InlineData("10E-3", 0.01, TokenKind.LiteralFloat)]
+    [InlineData("0.1e+4", 1000d, TokenKind.LiteralFloat)]
+    [InlineData("123.345E-12", 1.23345E-10, TokenKind.LiteralFloat)]
     [Trait("Feature", "Literals")]
     public void TestNumericLiterals(string text, object value, TokenKind tokenKind)
     {
@@ -1004,15 +1011,30 @@ public sealed class LexerTests
     }
 
     [Theory]
-    [InlineData("true", TokenKind.KeywordTrue)]
-    [InlineData("false", TokenKind.KeywordFalse)]
+    [InlineData("true", true, TokenKind.KeywordTrue)]
+    [InlineData("false", false, TokenKind.KeywordFalse)]
     [Trait("Feature", "Literals")]
-    public void TestBoolLiterals(string text, TokenKind tokenKind)
+    public void TestBoolLiterals(string text, bool value, TokenKind tokenKind)
+    {
+        this.Lex(text);
+
+        this.AssertNextToken(tokenKind, text, value);
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("0.1e+", TokenKind.LiteralFloat)]
+    [InlineData("345E-", TokenKind.LiteralFloat)]
+    [Trait("Feature", "Literals")]
+    public void TestNumericLiteralInvalidNonDecimalFormats(string text, TokenKind tokenKind)
     {
         this.Lex(text);
 
         this.AssertNextToken(tokenKind, text);
-        this.AssertNoTriviaOrDiagnostics();
+        this.AssertDiagnostics(SyntaxErrors.UnexpectedFloatingPointLiteralEnd);
 
         this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();

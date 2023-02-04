@@ -245,24 +245,33 @@ internal sealed class Lexer
         if (char.IsDigit(ch))
         {
             // Check for what kind of integer do we have
-            var c = this.Peek(1);
+            var radix = this.Peek(1);
             // Hexadecimal or binary integer
-            if (c == 'x' || c == 'b')
+            if (ch == '0' && (radix == 'x' || radix == 'b'))
             {
                 this.Advance(2);
-                var view = this.ParseIntLiteral(c == 'x' ? 16 : 2, out var value);
+                var view = this.ParseIntLiteral(radix == 'x' ? 16 : 2, out var value);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralInteger)
-                    .SetText($"0{c}{view}")
+                    .SetText($"0{radix}{view}")
                     .SetValue(value);
                 return default;
             }
             var offset = 1;
-            var isScientificNotation = false;
+            var isFloat = false;
             while (char.IsDigit(this.Peek(offset))) ++offset;
+
+            // Floating point number
+            if (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1)))
+            {
+                isFloat = true;
+                offset += 2;
+                while (char.IsDigit(this.Peek(offset))) ++offset;
+            }
+
             if (char.ToLower(this.Peek(offset)) == 'e')
             {
-                isScientificNotation = true;
+                isFloat = true;
                 ++offset;
                 if (this.Peek(offset) == '+' || this.Peek(offset) == '-') ++offset;
                 if (!char.IsDigit(this.Peek(offset)))
@@ -276,30 +285,11 @@ internal sealed class Lexer
                         .SetText(this.Advance(offset).Span.ToString());
                     return default;
                 }
+                while (char.IsDigit(this.Peek(offset))) ++offset;
             }
 
-            // Floating point number
-            if (isScientificNotation || (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1))))
+            if (isFloat)
             {
-                offset += 1;
-                while (char.IsDigit(this.Peek(offset))) ++offset;
-                if (!isScientificNotation && char.ToLower(this.Peek(offset)) == 'e')
-                {
-                    if (this.Peek(offset + 1) == '+' || this.Peek(offset + 1) == '-') offset++;
-                    if (!char.IsDigit(this.Peek(offset + 1)))
-                    {
-                        this.AddError(
-                            template: SyntaxErrors.UnexpectedFloatingPointLiteralEnd,
-                            offset: offset + 1,
-                            width: 1);
-                        this.tokenBuilder
-                            .SetType(TokenType.LiteralFloat)
-                            .SetText(this.Advance(offset + 1).Span.ToString());
-                        return default;
-                    }
-                    offset++;
-                    while (char.IsDigit(this.Peek(offset))) ++offset;
-                }
                 var floatView = this.Advance(offset);
                 // TODO: Parsing into an float64 might not be the best idea
                 var floatValue = double.Parse(floatView.Span.ToString(), provider: CultureInfo.InvariantCulture);

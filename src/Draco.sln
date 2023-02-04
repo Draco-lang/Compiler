@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Toolset", "D
 EndProject
 Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "Draco.ProjectTemplates", "Draco.ProjectTemplates\Draco.ProjectTemplates.msbuildproj", "{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Fuzzer", "Fuzzer\Draco.Fuzzer.csproj", "{4B1D20EB-F2DF-4724-87E6-9839C67049FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -112,6 +114,12 @@ Global
 		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

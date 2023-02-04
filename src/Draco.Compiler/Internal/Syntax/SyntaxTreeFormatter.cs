@@ -165,8 +165,12 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
                 _ => SetTrailingTrivia(this.AddIndentation(newToken), newlineTrivia),
             },
 
-            TokenKind.CurlyClose =>
-                SetTrivia(this.RemoveIndentation(newToken), CreateTrivia(TriviaKind.Whitespace, this.Indentation), newlineTrivia),
+            TokenKind.CurlyClose => this.nextToken switch
+            {
+                TokenKind.Semicolon =>
+                    SetTrivia(this.RemoveIndentation(newToken), CreateTrivia(TriviaKind.Whitespace, this.Indentation), noSpaceTrivia),
+                _ => SetTrivia(this.RemoveIndentation(newToken), CreateTrivia(TriviaKind.Whitespace, this.Indentation), newlineTrivia)
+            },
 
             // If and else keywords are formatted diferently when they are used as expressions and when they are used as statements
             TokenKind.KeywordIf => this.lastToken switch
@@ -215,6 +219,13 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
             TokenKind.LiteralInteger or TokenKind.LiteralFloat or TokenKind.KeywordFalse or TokenKind.KeywordTrue or TokenKind.LiteralCharacter or TokenKind.LineStringEnd => (this.lastToken, this.nextToken) switch
             {
                 { nextToken: TokenKind.Semicolon or TokenKind.ParenClose } => SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
+
+                { lastToken: TokenKind.Semicolon or TokenKind.CurlyOpen, nextToken: TokenKind.CurlyClose } =>
+                    SetTrivia(newToken, CreateTrivia(TriviaKind.Whitespace, this.Indentation), newlineTrivia),
+
+                { lastToken: TokenKind.Semicolon or TokenKind.CurlyOpen } =>
+                    SetTrivia(newToken, CreateTrivia(TriviaKind.Whitespace, this.Indentation), oneSpaceTrivia),
+
                 _ => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),
             },
 

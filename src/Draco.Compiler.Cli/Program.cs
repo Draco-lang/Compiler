@@ -118,7 +118,7 @@ internal class Program
     private static void FormatCode(FileInfo input)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
+        var parseTree = SyntaxTree.Parse(sourceText);
         Console.WriteLine(parseTree.Format().ToString());
     }
 }

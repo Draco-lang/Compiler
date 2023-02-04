@@ -244,16 +244,54 @@ internal sealed class Lexer
         // first character
         if (char.IsDigit(ch))
         {
+            // Check for what kind of integer do we have
+            var radix = this.Peek(1);
+            // Hexadecimal or binary integer
+            if (ch == '0' && (radix == 'x' || radix == 'b'))
+            {
+                this.Advance(2);
+                var view = this.ParseIntLiteral(radix == 'x' ? 16 : 2, out var value);
+                this.tokenBuilder
+                    .SetType(TokenType.LiteralInteger)
+                    .SetText($"0{radix}{view}")
+                    .SetValue(value);
+                return default;
+            }
             var offset = 1;
+            var isFloat = false;
             while (char.IsDigit(this.Peek(offset))) ++offset;
 
             // Floating point number
             if (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1)))
             {
+                isFloat = true;
                 offset += 2;
                 while (char.IsDigit(this.Peek(offset))) ++offset;
+            }
+
+            if (char.ToLower(this.Peek(offset)) == 'e')
+            {
+                isFloat = true;
+                ++offset;
+                if (this.Peek(offset) == '+' || this.Peek(offset) == '-') ++offset;
+                if (!char.IsDigit(this.Peek(offset)))
+                {
+                    this.AddError(
+                        template: SyntaxErrors.UnexpectedFloatingPointLiteralEnd,
+                        offset: offset,
+                        width: 1);
+                    this.tokenBuilder
+                        .SetType(TokenType.LiteralFloat)
+                        .SetText(this.Advance(offset).Span.ToString());
+                    return default;
+                }
+                while (char.IsDigit(this.Peek(offset))) ++offset;
+            }
+
+            if (isFloat)
+            {
                 var floatView = this.Advance(offset);
-                // TODO: Parsing into an float32 might not be the best idea
+                // TODO: Parsing into an float64 might not be the best idea
                 var floatValue = double.Parse(floatView.Span.ToString(), provider: CultureInfo.InvariantCulture);
                 this.tokenBuilder
                     .SetType(TokenType.LiteralFloat)
@@ -263,13 +301,11 @@ internal sealed class Lexer
             }
 
             // Regular integer
-            var intView = this.Advance(offset);
-            // TODO: Parsing into an int32 might not be the best idea
-            var intValue = int.Parse(intView.Span.ToString());
+            var decimalView = this.ParseIntLiteral(10, out var decimalValue);
             this.tokenBuilder
                 .SetType(TokenType.LiteralInteger)
-                .SetText(intView.ToString())
-                .SetValue(intValue);
+                .SetText(decimalView)
+                .SetValue(decimalValue);
             return default;
         }
 
@@ -319,6 +355,8 @@ internal sealed class Lexer
             {
                 // Keyword, we save on allocation
                 this.tokenBuilder.SetType(tokenType);
+                if (tokenType == TokenType.KeywordTrue) this.tokenBuilder.SetValue(true);
+                if (tokenType == TokenType.KeywordFalse) this.tokenBuilder.SetValue(false);
                 return default;
             }
         }
@@ -892,5 +930,17 @@ internal sealed class Lexer
         }
         value = 0;
         return false;
+    }
+
+    private string ParseIntLiteral(int radix, out int value)
+    {
+        var offset = 0;
+        value = 0;
+        while (TryParseHexDigit(this.Peek(offset), out var digit))
+        {
+            value = value * radix + digit;
+            offset++;
+        }
+        return this.AdvanceWithText(offset);
     }
 }

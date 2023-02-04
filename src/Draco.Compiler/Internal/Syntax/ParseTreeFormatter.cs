@@ -173,8 +173,11 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
                 _ => this.AddIndentation(newToken).SetTrailingTrivia(newlineTrivia)
             },
 
-            TokenType.CurlyClose =>
-            this.RemoveIndentation(newToken).SetLeadingTrivia(CreateTrivia(TriviaType.Whitespace, this.Indentation)).SetTrailingTrivia(newlineTrivia),
+            TokenType.CurlyClose => this.nextToken switch
+            {
+                TokenType.Semicolon => this.RemoveIndentation(newToken).SetLeadingTrivia(CreateTrivia(TriviaType.Whitespace, this.Indentation)).SetTrailingTrivia(noSpaceTrivia),
+                _ => this.RemoveIndentation(newToken).SetLeadingTrivia(CreateTrivia(TriviaType.Whitespace, this.Indentation)).SetTrailingTrivia(newlineTrivia)
+            },
 
             // If and else keywords are formatted diferently when they are used as expressions and when they are used as statements
             TokenType.KeywordIf => this.lastToken switch
@@ -223,6 +226,12 @@ internal sealed class ParseTreeFormatter : ParseTreeTransformerBase
             TokenType.LiteralInteger or TokenType.LiteralFloat or TokenType.KeywordFalse or TokenType.KeywordTrue or TokenType.LiteralCharacter or TokenType.LineStringEnd => (this.lastToken, this.nextToken) switch
             {
                 { nextToken: TokenType.Semicolon or TokenType.ParenClose } => newToken.SetLeadingTrivia(noSpaceTrivia).SetTrailingTrivia(noSpaceTrivia),
+
+                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen, nextToken: TokenType.CurlyClose } =>
+                newToken.SetLeadingTrivia(CreateTrivia(TriviaType.Whitespace, this.Indentation)).SetTrailingTrivia(newlineTrivia),
+
+                { lastToken: TokenType.Semicolon or TokenType.CurlyOpen } =>
+                newToken.SetLeadingTrivia(CreateTrivia(TriviaType.Whitespace, this.Indentation)).SetTrailingTrivia(oneSpaceTrivia),
                 _ => newToken.SetLeadingTrivia(noSpaceTrivia).SetTrailingTrivia(oneSpaceTrivia)
             },
 

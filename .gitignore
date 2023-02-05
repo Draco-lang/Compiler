@@ -1,5 +1,6 @@
 .vs
 bin
 obj
+*.nupkg
 *.user
 **/Properties/launchSettings.json

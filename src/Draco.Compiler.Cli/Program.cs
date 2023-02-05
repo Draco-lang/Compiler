@@ -60,8 +60,8 @@ internal class Program
     private static void Run(FileInfo input)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        var compilation = Compilation.Create(parseTree);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(syntaxTree);
         var execResult = ScriptingEngine.Execute(compilation);
         if (!execResult.Success)
         {
@@ -74,8 +74,8 @@ internal class Program
     private static void GenerateDracoIR(FileInfo input, FileInfo? emitCS)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        var compilation = Compilation.Create(parseTree);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(syntaxTree);
         using var irStream = new MemoryStream();
         var emitResult = compilation.Emit(
             peStream: new MemoryStream(),
@@ -94,8 +94,8 @@ internal class Program
     private static void GenerateExe(FileInfo input, FileInfo output, bool msbuildDiags)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        var compilation = Compilation.Create(parseTree, output.Name);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(syntaxTree, output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(dllStream);
         if (!emitResult.Success)
@@ -118,7 +118,7 @@ internal class Program
     private static void FormatCode(FileInfo input)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
+        var parseTree = SyntaxTree.Parse(sourceText);
         Console.WriteLine(parseTree.Format().ToString());
     }
 }

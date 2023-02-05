@@ -2,7 +2,7 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Tests.Syntax;
 
-public sealed class ParseTreeFormatterTests
+public sealed class SyntaxTreeFormatterTests
 {
     [Fact]
     public void TestFormatting()
@@ -90,8 +90,7 @@ public sealed class ParseTreeFormatterTests
 
             """";
 
-        var actual = ParseTree.Parse(input).Format().ToString();
-
+        var actual = SyntaxTree.Parse(input).Format().ToString();
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 }

@@ -42,8 +42,8 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
     {
         var uri = identifier.TextDocument.Uri.ToUri();
         var sourceText = this.repository.GetDocument(identifier.TextDocument.Uri);
-        var parseTree = ParseTree.Parse(sourceText);
-        var tokens = GetTokens(parseTree.Root);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var tokens = GetTokens(syntaxTree.Root);
         foreach (var token in tokens)
         {
             builder.Push(Translator.ToLsp(token.Range), token.Type, token.Modifiers);
@@ -75,6 +75,6 @@ internal sealed class DracoSemanticTokensHandler : SemanticTokensHandlerBase
             Range = true
         };
 
-    private static IEnumerable<SemanticToken> GetTokens(ParseNode tree) => tree.Tokens
+    private static IEnumerable<SemanticToken> GetTokens(SyntaxNode tree) => tree.Tokens
         .Select(t => Translator.ToLsp(t)!).OfType<SemanticToken>();
 }

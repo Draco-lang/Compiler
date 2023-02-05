@@ -1,0 +1,58 @@
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://draco-lang.com/red-green-tree/syntax"
+  xmlns="http://draco-lang.com/red-green-tree/syntax"
+  attributeFormDefault="unqualified"
+  elementFormDefault="qualified">
+
+  <xs:element name="Tree" type="TreeType" />
+
+  <xs:complexType name="TreeType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="PredefinedNode" type="PredefinedNodeType" />
+      <xs:element name="Node" type="NodeType" />
+      <xs:element name="AbstractNode" type="AbstractNodeType" />
+    </xs:choice>
+    <xs:attribute name="Root" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="PredefinedNodeType">
+    <xs:sequence>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="AbstractNodeType">
+    <xs:sequence>
+      <xs:element name="Documentation" type="xs:string" />
+      <xs:element name="Field" type="FieldType" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string" use="required" />
+    <xs:attribute name="Base" type="xs:string" use="optional" />
+  </xs:complexType>
+
+  <xs:complexType name="NodeType">
+    <xs:sequence>
+      <xs:element name="Documentation" type="xs:string" />
+      <xs:element name="Field" type="FieldType" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string" use="required" />
+    <xs:attribute name="Base" type="xs:string" use="optional" />
+  </xs:complexType>
+
+  <xs:complexType name="FieldType">
+    <xs:sequence>
+      <xs:element name="Documentation" type="xs:string" />
+      <xs:element name="Token" type="TokenType" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string" use="required" />
+    <xs:attribute name="Type" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="TokenType">
+    <xs:sequence>
+    </xs:sequence>
+    <xs:attribute name="Kind" type="xs:string" use="required" />
+  </xs:complexType>
+
+</xs:schema>

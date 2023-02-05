@@ -8,7 +8,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Semantics.Symbols;
-using Draco.Compiler.Internal.Utilities;
 using Type = Draco.Compiler.Internal.DracoIr.Type;
 
 namespace Draco.Compiler.Internal.Codegen;

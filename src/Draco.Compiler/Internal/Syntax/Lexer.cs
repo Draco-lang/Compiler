@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -9,13 +8,12 @@ using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
-using static Draco.Compiler.Internal.Syntax.ParseNode;
 using DiagnosticTemplate = Draco.Compiler.Api.Diagnostics.DiagnosticTemplate;
 
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// Breaks up source code into a sequence of <see cref="Token"/>s.
+/// Breaks up source code into a sequence of <see cref="SyntaxToken"/>s.
 /// </summary>
 internal sealed class Lexer
 {
@@ -98,29 +96,28 @@ internal sealed class Lexer
     // These are various cached builder types to save on allocations
     // The important thing is that these should not carry any significant state in the lexer in any way,
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
-    private readonly Token.Builder tokenBuilder = new();
+    private readonly SyntaxToken.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly ImmutableArray<Trivia>.Builder leadingTriviaList = ImmutableArray.CreateBuilder<Trivia>();
-    private readonly ImmutableArray<Trivia>.Builder trailingTriviaList = ImmutableArray.CreateBuilder<Trivia>();
-    private readonly ImmutableArray<Diagnostic>.Builder diagnosticList = ImmutableArray.CreateBuilder<Diagnostic>();
+    private readonly List<Diagnostic> diagnosticBuilder = new();
 
-    public Lexer(ISourceReader sourceReader)
+    private readonly SyntaxDiagnosticTable diagnostics;
+
+    public Lexer(ISourceReader sourceReader, SyntaxDiagnosticTable diagnostics)
     {
         this.SourceReader = sourceReader;
+        this.diagnostics = diagnostics;
         this.PushMode(ModeKind.Normal, 0);
     }
 
     /// <summary>
-    /// Reads the next <see cref="Token"/> from the input.
+    /// Reads the next <see cref="SyntaxToken"/> from the input.
     /// </summary>
-    /// <returns>The <see cref="Token"/> read.</returns>
-    public Token Lex()
+    /// <returns>The <see cref="SyntaxToken"/> read.</returns>
+    public SyntaxToken Lex()
     {
         this.tokenBuilder.Clear();
         this.valueBuilder.Clear();
-        this.leadingTriviaList.Clear();
-        this.trailingTriviaList.Clear();
-        this.diagnosticList.Clear();
+        this.diagnosticBuilder.Clear();
 
         switch (this.CurrentMode.Kind)
         {
@@ -132,7 +129,7 @@ internal sealed class Lexer
             this.ParseLeadingTriviaList();
             this.LexNormal();
             // If we just ended interpolation, we are within a string, don't consume
-            if (this.tokenBuilder.Type != TokenType.InterpolationEnd) this.ParseTrailingTriviaList();
+            if (this.tokenBuilder.Kind != TokenKind.InterpolationEnd) this.ParseTrailingTriviaList();
             break;
         }
 
@@ -140,40 +137,36 @@ internal sealed class Lexer
         case ModeKind.MultiLineString:
             this.LexString();
             // If we are starting interpolation, we can consume trailing trivia
-            if (this.tokenBuilder.Type == TokenType.InterpolationStart) this.ParseTrailingTriviaList();
+            if (this.tokenBuilder.Kind == TokenKind.InterpolationStart) this.ParseTrailingTriviaList();
             break;
 
         default:
             throw new InvalidOperationException("unsupported lexer mode");
         }
 
-        // If there was any leading or trailing trivia, we have to add them
-        if (this.leadingTriviaList.Count > 0) this.tokenBuilder.SetLeadingTrivia(this.leadingTriviaList.ToImmutable());
-        if (this.trailingTriviaList.Count > 0) this.tokenBuilder.SetTrailingTrivia(this.trailingTriviaList.ToImmutable());
-
-        // Attach diagnostics, if any
-        if (this.diagnosticList.Count > 0) this.tokenBuilder.SetDiagnostics(this.diagnosticList.ToImmutable());
-
-        return this.tokenBuilder.Build();
+        var token = this.tokenBuilder.Build();
+        // Associate diagnostics, if needed
+        if (this.diagnosticBuilder.Count > 0) this.diagnostics.Add(token, this.diagnosticBuilder);
+        return token;
     }
 
     /// <summary>
     /// Lexes tokens that can be found in regular code.
     /// </summary>
-    /// <returns>The lexed <see cref="Token"/>.</returns>
+    /// <returns>The lexed <see cref="SyntaxToken"/>.</returns>
     private Unit LexNormal()
     {
-        Unit TakeBasic(TokenType tokenType, int length)
+        Unit TakeBasic(TokenKind tokenKind, int length)
         {
             this.Advance(length);
-            this.tokenBuilder.SetType(tokenType);
+            this.tokenBuilder.SetKind(tokenKind);
             return default;
         }
 
-        Unit TakeWithText(TokenType tokenType, int length)
+        Unit TakeWithText(TokenKind tokenKind, int length)
         {
             this.tokenBuilder
-                .SetType(tokenType)
+                .SetKind(tokenKind)
                 .SetText(this.AdvanceWithText(length));
             return default;
         }
@@ -181,7 +174,7 @@ internal sealed class Lexer
         // First check for end of source here
         if (this.SourceReader.IsEnd)
         {
-            this.tokenBuilder.SetType(TokenType.EndOfInput);
+            this.tokenBuilder.SetKind(TokenKind.EndOfInput);
             return default;
         }
 
@@ -191,49 +184,49 @@ internal sealed class Lexer
         // Punctuation
         switch (ch)
         {
-        case '(': return TakeBasic(TokenType.ParenOpen, 1);
-        case ')': return TakeBasic(TokenType.ParenClose, 1);
+        case '(': return TakeBasic(TokenKind.ParenOpen, 1);
+        case ')': return TakeBasic(TokenKind.ParenClose, 1);
         case '{':
             if (mode.IsInterpolation) this.PushMode(mode.Kind, 0);
-            return TakeBasic(TokenType.CurlyOpen, 1);
+            return TakeBasic(TokenKind.CurlyOpen, 1);
         case '}':
             if (mode.IsInterpolation)
             {
                 this.PopMode();
                 // If we are not in interpolation anymore, this is an interpolation end token
-                if (!this.CurrentMode.IsInterpolation) return TakeBasic(TokenType.InterpolationEnd, 1);
+                if (!this.CurrentMode.IsInterpolation) return TakeBasic(TokenKind.InterpolationEnd, 1);
             }
-            return TakeBasic(TokenType.CurlyClose, 1);
-        case '[': return TakeBasic(TokenType.BracketOpen, 1);
-        case ']': return TakeBasic(TokenType.BracketClose, 1);
+            return TakeBasic(TokenKind.CurlyClose, 1);
+        case '[': return TakeBasic(TokenKind.BracketOpen, 1);
+        case ']': return TakeBasic(TokenKind.BracketClose, 1);
 
-        case '.': return TakeBasic(TokenType.Dot, 1);
-        case ',': return TakeBasic(TokenType.Comma, 1);
-        case ':': return TakeBasic(TokenType.Colon, 1);
-        case ';': return TakeBasic(TokenType.Semicolon, 1);
+        case '.': return TakeBasic(TokenKind.Dot, 1);
+        case ',': return TakeBasic(TokenKind.Comma, 1);
+        case ':': return TakeBasic(TokenKind.Colon, 1);
+        case ';': return TakeBasic(TokenKind.Semicolon, 1);
         case '+':
-            if (this.Peek(1) == '=') return TakeBasic(TokenType.PlusAssign, 2);
-            return TakeBasic(TokenType.Plus, 1);
+            if (this.Peek(1) == '=') return TakeBasic(TokenKind.PlusAssign, 2);
+            return TakeBasic(TokenKind.Plus, 1);
         case '-':
-            if (this.Peek(1) == '=') return TakeBasic(TokenType.MinusAssign, 2);
-            return TakeBasic(TokenType.Minus, 1);
+            if (this.Peek(1) == '=') return TakeBasic(TokenKind.MinusAssign, 2);
+            return TakeBasic(TokenKind.Minus, 1);
         case '*':
-            if (this.Peek(1) == '=') return TakeBasic(TokenType.StarAssign, 2);
-            return TakeBasic(TokenType.Star, 1);
+            if (this.Peek(1) == '=') return TakeBasic(TokenKind.StarAssign, 2);
+            return TakeBasic(TokenKind.Star, 1);
         case '/':
-            if (this.Peek(1) == '=') return TakeBasic(TokenType.SlashAssign, 2);
-            return TakeBasic(TokenType.Slash, 1);
+            if (this.Peek(1) == '=') return TakeBasic(TokenKind.SlashAssign, 2);
+            return TakeBasic(TokenKind.Slash, 1);
         case '<':
-            if (this.Peek(1) == '=') return TakeBasic(TokenType.LessEqual, 2);
-            return TakeBasic(TokenType.LessThan, 1);
+            if (this.Peek(1) == '=') return TakeBasic(TokenKind.LessEqual, 2);
+            return TakeBasic(TokenKind.LessThan, 1);
         case '>':
-            if (this.Peek(1) == '=') return TakeBasic(TokenType.GreaterEqual, 2);
-            return TakeBasic(TokenType.GreaterThan, 1);
+            if (this.Peek(1) == '=') return TakeBasic(TokenKind.GreaterEqual, 2);
+            return TakeBasic(TokenKind.GreaterThan, 1);
         case '=':
-            if (this.Peek(1) == '=') return TakeBasic(TokenType.Equal, 2);
-            return TakeBasic(TokenType.Assign, 1);
+            if (this.Peek(1) == '=') return TakeBasic(TokenKind.Equal, 2);
+            return TakeBasic(TokenKind.Assign, 1);
         case '!':
-            if (this.Peek(1) == '=') return TakeBasic(TokenType.NotEqual, 2);
+            if (this.Peek(1) == '=') return TakeBasic(TokenKind.NotEqual, 2);
             // NOTE: '!' in it self is not negation!
             break;
         }
@@ -252,7 +245,7 @@ internal sealed class Lexer
                 this.Advance(2);
                 var view = this.ParseIntLiteral(radix == 'x' ? 16 : 2, out var value);
                 this.tokenBuilder
-                    .SetType(TokenType.LiteralInteger)
+                    .SetKind(TokenKind.LiteralInteger)
                     .SetText($"0{radix}{view}")
                     .SetValue(value);
                 return default;
@@ -281,7 +274,7 @@ internal sealed class Lexer
                         offset: offset,
                         width: 1);
                     this.tokenBuilder
-                        .SetType(TokenType.LiteralFloat)
+                        .SetKind(TokenKind.LiteralFloat)
                         .SetText(this.Advance(offset).Span.ToString());
                     return default;
                 }
@@ -294,7 +287,7 @@ internal sealed class Lexer
                 // TODO: Parsing into an float64 might not be the best idea
                 var floatValue = double.Parse(floatView.Span.ToString(), provider: CultureInfo.InvariantCulture);
                 this.tokenBuilder
-                    .SetType(TokenType.LiteralFloat)
+                    .SetKind(TokenKind.LiteralFloat)
                     .SetText(floatView.ToString())
                     .SetValue(floatValue);
                 return default;
@@ -303,7 +296,7 @@ internal sealed class Lexer
             // Regular integer
             var decimalView = this.ParseIntLiteral(10, out var decimalValue);
             this.tokenBuilder
-                .SetType(TokenType.LiteralInteger)
+                .SetKind(TokenKind.LiteralInteger)
                 .SetText(decimalView)
                 .SetValue(decimalValue);
             return default;
@@ -317,36 +310,36 @@ internal sealed class Lexer
             var ident = this.Advance(offset);
             // Remap keywords
             // TODO: Any better/faster way?
-            var tokenType = ident switch
+            var tokenKind = ident switch
             {
-                var _ when ident.Span.SequenceEqual("and".AsSpan()) => TokenType.KeywordAnd,
-                var _ when ident.Span.SequenceEqual("else".AsSpan()) => TokenType.KeywordElse,
-                var _ when ident.Span.SequenceEqual("false".AsSpan()) => TokenType.KeywordFalse,
-                var _ when ident.Span.SequenceEqual("from".AsSpan()) => TokenType.KeywordFrom,
-                var _ when ident.Span.SequenceEqual("func".AsSpan()) => TokenType.KeywordFunc,
-                var _ when ident.Span.SequenceEqual("goto".AsSpan()) => TokenType.KeywordGoto,
-                var _ when ident.Span.SequenceEqual("if".AsSpan()) => TokenType.KeywordIf,
-                var _ when ident.Span.SequenceEqual("import".AsSpan()) => TokenType.KeywordImport,
-                var _ when ident.Span.SequenceEqual("mod".AsSpan()) => TokenType.KeywordMod,
-                var _ when ident.Span.SequenceEqual("not".AsSpan()) => TokenType.KeywordNot,
-                var _ when ident.Span.SequenceEqual("or".AsSpan()) => TokenType.KeywordOr,
-                var _ when ident.Span.SequenceEqual("rem".AsSpan()) => TokenType.KeywordRem,
-                var _ when ident.Span.SequenceEqual("return".AsSpan()) => TokenType.KeywordReturn,
-                var _ when ident.Span.SequenceEqual("true".AsSpan()) => TokenType.KeywordTrue,
-                var _ when ident.Span.SequenceEqual("val".AsSpan()) => TokenType.KeywordVal,
-                var _ when ident.Span.SequenceEqual("var".AsSpan()) => TokenType.KeywordVar,
-                var _ when ident.Span.SequenceEqual("while".AsSpan()) => TokenType.KeywordWhile,
-                _ => TokenType.Identifier,
+                var _ when ident.Span.SequenceEqual("and") => TokenKind.KeywordAnd,
+                var _ when ident.Span.SequenceEqual("else") => TokenKind.KeywordElse,
+                var _ when ident.Span.SequenceEqual("false") => TokenKind.KeywordFalse,
+                var _ when ident.Span.SequenceEqual("from") => TokenKind.KeywordFrom,
+                var _ when ident.Span.SequenceEqual("func") => TokenKind.KeywordFunc,
+                var _ when ident.Span.SequenceEqual("goto") => TokenKind.KeywordGoto,
+                var _ when ident.Span.SequenceEqual("if") => TokenKind.KeywordIf,
+                var _ when ident.Span.SequenceEqual("import") => TokenKind.KeywordImport,
+                var _ when ident.Span.SequenceEqual("mod") => TokenKind.KeywordMod,
+                var _ when ident.Span.SequenceEqual("not") => TokenKind.KeywordNot,
+                var _ when ident.Span.SequenceEqual("or") => TokenKind.KeywordOr,
+                var _ when ident.Span.SequenceEqual("rem") => TokenKind.KeywordRem,
+                var _ when ident.Span.SequenceEqual("return") => TokenKind.KeywordReturn,
+                var _ when ident.Span.SequenceEqual("true") => TokenKind.KeywordTrue,
+                var _ when ident.Span.SequenceEqual("val") => TokenKind.KeywordVal,
+                var _ when ident.Span.SequenceEqual("var") => TokenKind.KeywordVar,
+                var _ when ident.Span.SequenceEqual("while") => TokenKind.KeywordWhile,
+                _ => TokenKind.Identifier,
             };
             // Return the appropriate token
-            if (tokenType == TokenType.Identifier)
+            if (tokenKind == TokenKind.Identifier)
             {
                 // Need to save the value
                 // NOTE: We don't necessarily need to save the value yet, but if we later decide that we want
                 // escaped identifiers, this can be a good way to handle it
                 var identStr = ident.ToString();
                 this.tokenBuilder
-                    .SetType(TokenType.Identifier)
+                    .SetKind(TokenKind.Identifier)
                     .SetText(identStr)
                     .SetValue(identStr);
                 return default;
@@ -354,9 +347,9 @@ internal sealed class Lexer
             else
             {
                 // Keyword, we save on allocation
-                this.tokenBuilder.SetType(tokenType);
-                if (tokenType == TokenType.KeywordTrue) this.tokenBuilder.SetValue(true);
-                if (tokenType == TokenType.KeywordFalse) this.tokenBuilder.SetValue(false);
+                this.tokenBuilder.SetKind(tokenKind);
+                if (tokenKind == TokenKind.KeywordTrue) this.tokenBuilder.SetValue(true);
+                if (tokenKind == TokenKind.KeywordFalse) this.tokenBuilder.SetValue(false);
                 return default;
             }
         }
@@ -406,7 +399,7 @@ internal sealed class Lexer
             // Done
             var text = this.AdvanceWithText(offset);
             this.tokenBuilder
-                .SetType(TokenType.LiteralCharacter)
+                .SetKind(TokenKind.LiteralCharacter)
                 .SetText(text)
                 .SetValue(resultChar);
             return default;
@@ -423,22 +416,22 @@ internal sealed class Lexer
                 {
                     // Mutli-line string opening quotes
                     this.PushMode(ModeKind.MultiLineString, extendedDelims);
-                    return TakeWithText(TokenType.MultiLineStringStart, offset + 3);
+                    return TakeWithText(TokenKind.MultiLineStringStart, offset + 3);
                 }
                 // Single-line string opening quote
                 this.PushMode(ModeKind.LineString, extendedDelims);
-                return TakeWithText(TokenType.LineStringStart, offset + 1);
+                return TakeWithText(TokenKind.LineStringStart, offset + 1);
             }
         }
 
         // Unknown
-        return TakeWithText(TokenType.Unknown, 1);
+        return TakeWithText(TokenKind.Unknown, 1);
     }
 
     /// <summary>
     /// Lexes a token that can be part of a string.
     /// </summary>
-    /// <returns>The lexed string <see cref="Token"/>.</returns>
+    /// <returns>The lexed string <see cref="SyntaxToken"/>.</returns>
     private Unit LexString()
     {
         // Get the largest continuous sequence without linebreaks or interpolation
@@ -449,7 +442,7 @@ internal sealed class Lexer
         // First check for end of source here
         if (this.SourceReader.IsEnd)
         {
-            this.tokenBuilder.SetType(TokenType.EndOfInput);
+            this.tokenBuilder.SetKind(TokenKind.EndOfInput);
             return default;
         }
 
@@ -463,7 +456,7 @@ internal sealed class Lexer
             // NOTE: Not a nice assumption to rely on '\0', but let's assume the input could end here,
             // return the section we have consumed so far
             this.tokenBuilder
-                .SetType(TokenType.StringContent)
+                .SetKind(TokenKind.StringContent)
                 .SetText(this.AdvanceWithText(offset))
                 .SetValue(this.valueBuilder.ToString());
             return default;
@@ -510,11 +503,11 @@ internal sealed class Lexer
                 this.PopMode();
                 // In case the string end offset doesn't match, we have leading whitespace
                 if (offset != stringEndOffset) this.ParseLeadingTriviaList();
-                var tokenType = mode.Kind == ModeKind.LineString
-                    ? TokenType.LineStringEnd
-                    : TokenType.MultiLineStringEnd;
+                var tokenKind = mode.Kind == ModeKind.LineString
+                    ? TokenKind.LineStringEnd
+                    : TokenKind.MultiLineStringEnd;
                 this.tokenBuilder
-                    .SetType(tokenType)
+                    .SetKind(tokenKind)
                     .SetText(this.AdvanceWithText(endLength));
                 return default;
             }
@@ -523,7 +516,7 @@ internal sealed class Lexer
                 // This will only be the end of string in the next iteration, we just return what we have
                 // consumed so far
                 this.tokenBuilder
-                    .SetType(TokenType.StringContent)
+                    .SetKind(TokenKind.StringContent)
                     .SetText(this.AdvanceWithText(offset))
                     .SetValue(this.valueBuilder.ToString());
                 return default;
@@ -553,7 +546,7 @@ internal sealed class Lexer
                         : ModeKind.MultiLineInterpolation;
                     this.PushMode(newMode, 0);
                     this.tokenBuilder
-                        .SetType(TokenType.InterpolationStart)
+                        .SetKind(TokenKind.InterpolationStart)
                         .SetText(this.AdvanceWithText(mode.ExtendedDelims + 2));
                     return default;
                 }
@@ -562,7 +555,7 @@ internal sealed class Lexer
                     // This will only be interpolation in the next iteration, we just return what we have
                     // consumed so far
                     this.tokenBuilder
-                        .SetType(TokenType.StringContent)
+                        .SetKind(TokenKind.StringContent)
                         .SetText(this.AdvanceWithText(offset))
                         .SetValue(this.valueBuilder.ToString());
                     return default;
@@ -583,7 +576,7 @@ internal sealed class Lexer
                         // We can return this line-continuation
                         // The important thing is that the value is an empty string
                         this.tokenBuilder
-                            .SetType(TokenType.StringNewline)
+                            .SetKind(TokenKind.StringNewline)
                             .SetText(this.AdvanceWithText(mode.ExtendedDelims + 1 + whiteCharOffset + length))
                             .SetValue(string.Empty);
                         return default;
@@ -592,7 +585,7 @@ internal sealed class Lexer
                     {
                         // There is content before that we need to deal with
                         this.tokenBuilder
-                            .SetType(TokenType.StringContent)
+                            .SetKind(TokenKind.StringContent)
                             .SetText(this.AdvanceWithText(offset))
                             .SetValue(this.valueBuilder.ToString());
                         return default;
@@ -622,7 +615,7 @@ internal sealed class Lexer
                 this.PopMode();
                 while (this.CurrentMode.IsLine) this.PopMode();
                 this.tokenBuilder
-                    .SetType(TokenType.StringContent)
+                    .SetKind(TokenKind.StringContent)
                     .SetText(this.AdvanceWithText(offset))
                     .SetValue(this.valueBuilder.ToString());
                 return default;
@@ -649,9 +642,9 @@ internal sealed class Lexer
                         // We build the end token with trivia
                         this.PopMode();
                         this.ParseLeadingTriviaList();
-                        Debug.Assert(this.leadingTriviaList.Count is 1 or 2);
+                        Debug.Assert(this.tokenBuilder.LeadingTrivia.Count is 1 or 2);
                         this.tokenBuilder
-                            .SetType(TokenType.MultiLineStringEnd)
+                            .SetKind(TokenKind.MultiLineStringEnd)
                             .SetText(this.AdvanceWithText(3 + mode.ExtendedDelims));
                         this.ParseTrailingTriviaList();
                         return default;
@@ -660,7 +653,7 @@ internal sealed class Lexer
                     // Just a regular newline, more content to follow
                     var stringNewlineText = this.AdvanceWithText(newlineLength);
                     this.tokenBuilder
-                        .SetType(TokenType.StringNewline)
+                        .SetKind(TokenKind.StringNewline)
                         .SetText(stringNewlineText)
                         .SetValue(stringNewlineText);
                     return default;
@@ -669,7 +662,7 @@ internal sealed class Lexer
                 {
                     // We need to return the content fist
                     this.tokenBuilder
-                        .SetType(TokenType.StringContent)
+                        .SetKind(TokenKind.StringContent)
                         .SetText(this.AdvanceWithText(offset))
                         .SetValue(this.valueBuilder.ToString());
                     return default;
@@ -777,7 +770,7 @@ internal sealed class Lexer
     /// </summary>
     private void ParseLeadingTriviaList()
     {
-        while (this.TryParseTrivia(out var trivia)) this.leadingTriviaList.Add(trivia);
+        while (this.TryParseTrivia(out var trivia)) this.tokenBuilder.LeadingTrivia.Add(trivia);
     }
 
     /// <summary>
@@ -788,8 +781,8 @@ internal sealed class Lexer
     {
         while (this.TryParseTrivia(out var trivia))
         {
-            this.trailingTriviaList.Add(trivia);
-            if (trivia.Type == TriviaType.Newline) break;
+            this.tokenBuilder.TrailingTrivia.Add(trivia);
+            if (trivia.Kind == TriviaKind.Newline) break;
         }
     }
 
@@ -798,7 +791,7 @@ internal sealed class Lexer
     /// </summary>
     /// <param name="result">The parsed trivia token is written here.</param>
     /// <returns>True, if a trivia token was parsed.</returns>
-    private bool TryParseTrivia([MaybeNullWhen(false)] out Trivia result)
+    private bool TryParseTrivia([MaybeNullWhen(false)] out SyntaxTrivia result)
     {
         var ch = this.Peek();
         // Newline
@@ -810,7 +803,7 @@ internal sealed class Lexer
                 this.modeStack.Pop();
                 while (this.CurrentMode.Kind != ModeKind.Normal) this.modeStack.Pop();
             }
-            result = Trivia.From(TriviaType.Newline, this.AdvanceWithText(newlineLength));
+            result = SyntaxTrivia.From(TriviaKind.Newline, this.AdvanceWithText(newlineLength));
             return true;
         }
         // Any horizontal whitespace
@@ -819,7 +812,7 @@ internal sealed class Lexer
             // We merge it into one chunk to not produce so many individual tokens
             var offset = 1;
             while (IsSpace(this.Peek(offset))) ++offset;
-            result = Trivia.From(TriviaType.Whitespace, this.AdvanceWithText(offset));
+            result = SyntaxTrivia.From(TriviaKind.Whitespace, this.AdvanceWithText(offset));
             return true;
         }
         // Comment
@@ -827,18 +820,18 @@ internal sealed class Lexer
         {
             // Line Comment
             var offset = 2;
-            var commentType = TriviaType.LineComment;
+            var commentKind = TriviaKind.LineComment;
             // Documentation Comment
             if (this.Peek(2) == '/')
             {
                 offset = 3;
-                commentType = TriviaType.DocumentationComment;
+                commentKind = TriviaKind.DocumentationComment;
             }
             // NOTE: We use a little trick here, we specify a newline character as the default for Peek,
             // which means that this will terminate, even if the comment was on the last line of the file
             // without a line break
             while (!IsNewline(this.Peek(offset, @default: '\n'))) ++offset;
-            result = Trivia.From(commentType, this.AdvanceWithText(offset));
+            result = SyntaxTrivia.From(commentKind, this.AdvanceWithText(offset));
             return true;
         }
         // Not trivia
@@ -888,7 +881,7 @@ internal sealed class Lexer
             template: template,
             location: location,
             formatArgs: args);
-        this.diagnosticList.Add(diag);
+        this.diagnosticBuilder.Add(diag);
     }
 
     // Mode stack

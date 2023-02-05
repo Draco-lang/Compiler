@@ -1,97 +1,90 @@
 using Draco.Compiler.Internal.Syntax;
-using static Draco.Compiler.Internal.Syntax.ParseNode;
-using TokenType = Draco.Compiler.Api.Syntax.TokenType;
+using TokenKind = Draco.Compiler.Api.Syntax.TokenKind;
 
 namespace Draco.Compiler.Tests.Syntax;
 
 public sealed class ParserTests
 {
-    private static T ParseInto<T>(string text, Func<Parser, T> func)
+    private readonly SyntaxDiagnosticTable diagnostics = new();
+    private IEnumerator<SyntaxNode> treeEnumerator = Enumerable.Empty<SyntaxNode>().GetEnumerator();
+
+    private void ParseInto<T>(string text, Func<Parser, T> func)
+        where T : SyntaxNode
     {
         var srcReader = SourceReader.From(text);
-        var lexer = new Lexer(srcReader);
+        var lexer = new Lexer(srcReader, this.diagnostics);
         var tokenSource = TokenSource.From(lexer);
-        var parser = new Parser(tokenSource);
-        return func(parser);
+        var parser = new Parser(tokenSource, this.diagnostics);
+        this.treeEnumerator = func(parser).PreOrderTraverse().GetEnumerator();
     }
 
-    private IEnumerator<ParseNode>? treeEnumerator;
+    private void ParseCompilationUnit(string text) =>
+        this.ParseInto(text, p => p.ParseCompilationUnit());
 
-    private void ParseCompilationUnit(string text)
-    {
-        this.treeEnumerator = ParseInto(text, p => p.ParseCompilationUnit())
-            .InOrderTraverse()
-            .GetEnumerator();
-    }
+    private void ParseDeclaration(string text) =>
+        this.ParseInto(text, p => p.ParseDeclaration());
 
-    private void ParseDeclaration(string text)
-    {
-        this.treeEnumerator = ParseInto(text, p => p.ParseDeclaration())
-            .InOrderTraverse()
-            .GetEnumerator();
-    }
+    private void ParseExpression(string text) =>
+        this.ParseInto(text, p => p.ParseExpression());
 
-    private void ParseExpression(string text)
-    {
-        this.treeEnumerator = ParseInto(text, p => p.ParseExpr())
-            .InOrderTraverse()
-            .GetEnumerator();
-    }
-
-    private void ParseStatement(string text)
-    {
-        this.treeEnumerator = ParseInto(text, p => p.ParseStatement(true))
-            .InOrderTraverse()
-            .GetEnumerator();
-    }
+    private void ParseStatement(string text) =>
+        this.ParseInto(text, p => p.ParseStatement(true));
 
     private void N<T>(Predicate<T> predicate)
+        where T : SyntaxNode
     {
-        Assert.NotNull(this.treeEnumerator);
-        Assert.True(this.treeEnumerator!.MoveNext());
+        Assert.True(this.treeEnumerator.MoveNext());
         var node = this.treeEnumerator.Current;
         Assert.IsType<T>(node);
-        Assert.True(predicate((T)(object)node));
+        Assert.True(predicate((T)node));
     }
 
-    private void N<T>() => this.N<T>(_ => true);
+    private void N<T>()
+        where T : SyntaxNode => this.N<T>(_ => true);
 
-    private void T(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length == 0);
+    private void T(TokenKind type) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && this.diagnostics.Get(t).Count == 0);
 
-    private void T(TokenType type, string text) => this.N<Token>(t => t.Type == type && t.Text == text && t.Diagnostics.Length == 0);
+    private void T(TokenKind type, string text) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && t.Text == text
+        && this.diagnostics.Get(t).Count == 0);
 
-    private void TValue(TokenType type, string value) => this.N<Token>(t => t.Type == type && t.ValueText == value && t.Diagnostics.Length == 0);
+    private void TValue(TokenKind type, string value) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && t.ValueText == value
+        && this.diagnostics.Get(t).Count == 0);
 
-    private void MissingT(TokenType type) => this.N<Token>(t => t.Type == type && t.Diagnostics.Length > 0);
+    private void MissingT(TokenKind type) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && this.diagnostics.Get(t).Count > 0);
 
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {
         this.ParseCompilationUnit($$"""
-            func main(){
+            func main() {
                 {{inputString}}
             }
             """);
-        this.N<CompilationUnit>();
+        this.N<CompilationUnitSyntax>();
         {
-            this.N<Decl.Func>();
+            this.N<SyntaxList<DeclarationSyntax>>();
+            this.N<FunctionDeclarationSyntax>();
             {
-                this.T(TokenType.KeywordFunc);
-                this.T(TokenType.Identifier);
+                this.T(TokenKind.KeywordFunc);
+                this.T(TokenKind.Identifier);
 
-                this.T(TokenType.ParenOpen);
-                this.T(TokenType.ParenClose);
+                this.T(TokenKind.ParenOpen);
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
+                this.T(TokenKind.ParenClose);
 
-                this.N<FuncBody.BlockBody>();
+                this.N<BlockFunctionBodySyntax>();
                 {
-                    this.N<Expr.Block>();
-                    {
-                        this.T(TokenType.CurlyOpen);
-                        this.N<BlockContents>();
-                        {
-                            predicate();
-                        }
-                        this.T(TokenType.CurlyClose);
-                    }
+                    this.T(TokenKind.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
+                    predicate();
+                    this.T(TokenKind.CurlyClose);
                 }
 
             }
@@ -100,17 +93,17 @@ public sealed class ParserTests
 
     private void StringNewline()
     {
-        this.N<StringPart.Content>();
+        this.N<TextStringPartSyntax>();
         {
-            this.T(TokenType.StringNewline);
+            this.T(TokenKind.StringNewline);
         }
     }
 
     private void StringContent(string content)
     {
-        this.N<StringPart.Content>();
+        this.N<TextStringPartSyntax>();
         {
-            this.TValue(TokenType.StringContent, content);
+            this.TValue(TokenKind.StringContent, content);
         }
     }
 
@@ -119,9 +112,10 @@ public sealed class ParserTests
     {
         this.ParseCompilationUnit(string.Empty);
 
-        this.N<CompilationUnit>();
+        this.N<CompilationUnitSyntax>();
+        this.N<SyntaxList<DeclarationSyntax>>();
         {
-            this.T(TokenType.EndOfInput);
+            this.T(TokenKind.EndOfInput);
         }
     }
 
@@ -133,24 +127,23 @@ public sealed class ParserTests
             }
             """);
 
-        this.N<CompilationUnit>();
+        this.N<CompilationUnitSyntax>();
+        this.N<SyntaxList<DeclarationSyntax>>();
         {
-            this.N<Decl.Func>();
+            this.N<FunctionDeclarationSyntax>();
             {
-                this.T(TokenType.KeywordFunc);
-                this.T(TokenType.Identifier);
+                this.T(TokenKind.KeywordFunc);
+                this.T(TokenKind.Identifier);
 
-                this.T(TokenType.ParenOpen);
-                this.T(TokenType.ParenClose);
+                this.T(TokenKind.ParenOpen);
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
+                this.T(TokenKind.ParenClose);
 
-                this.N<FuncBody.BlockBody>();
+                this.N<BlockFunctionBodySyntax>();
                 {
-                    this.N<Expr.Block>();
-                    {
-                        this.T(TokenType.CurlyOpen);
-                        this.N<BlockContents>();
-                        this.T(TokenType.CurlyClose);
-                    }
+                    this.T(TokenKind.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
+                    this.T(TokenKind.CurlyClose);
                 }
             }
         }
@@ -163,24 +156,23 @@ public sealed class ParserTests
             func main() {
             """);
 
-        this.N<CompilationUnit>();
+        this.N<CompilationUnitSyntax>();
+        this.N<SyntaxList<DeclarationSyntax>>();
         {
-            this.N<Decl.Func>();
+            this.N<FunctionDeclarationSyntax>();
             {
-                this.T(TokenType.KeywordFunc);
-                this.T(TokenType.Identifier);
+                this.T(TokenKind.KeywordFunc);
+                this.T(TokenKind.Identifier);
 
-                this.T(TokenType.ParenOpen);
-                this.T(TokenType.ParenClose);
+                this.T(TokenKind.ParenOpen);
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
+                this.T(TokenKind.ParenClose);
 
-                this.N<FuncBody.BlockBody>();
+                this.N<BlockFunctionBodySyntax>();
                 {
-                    this.N<Expr.Block>();
-                    {
-                        this.T(TokenType.CurlyOpen);
-                        this.N<BlockContents>();
-                        this.MissingT(TokenType.CurlyClose);
-                    }
+                    this.T(TokenKind.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
+                    this.MissingT(TokenKind.CurlyClose);
                 }
             }
         }
@@ -192,11 +184,12 @@ public sealed class ParserTests
         this.ParseExpression("""
             "Hello, World!"
             """);
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.LineStringStart);
+            this.T(TokenKind.LineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, World!");
-            this.T(TokenType.LineStringEnd);
+            this.T(TokenKind.LineStringEnd);
         }
     }
 
@@ -208,11 +201,12 @@ public sealed class ParserTests
             Hello, World!
             """
             """");
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.MultiLineStringStart);
+            this.T(TokenKind.MultiLineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, World!");
-            this.T(TokenType.MultiLineStringEnd);
+            this.T(TokenKind.MultiLineStringEnd);
         }
     }
 
@@ -223,10 +217,11 @@ public sealed class ParserTests
             """
             """
             """");
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.MultiLineStringStart);
-            this.T(TokenType.MultiLineStringEnd);
+            this.T(TokenKind.MultiLineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
+            this.T(TokenKind.MultiLineStringEnd);
         }
     }
 
@@ -236,10 +231,11 @@ public sealed class ParserTests
         this.ParseExpression($""""
             ""
             """");
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.LineStringStart);
-            this.T(TokenType.LineStringEnd);
+            this.T(TokenKind.LineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
+            this.T(TokenKind.LineStringEnd);
         }
     }
 
@@ -249,23 +245,25 @@ public sealed class ParserTests
         this.ParseExpression("""
             "Hello, \{"World"}!"
             """);
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.LineStringStart);
+            this.T(TokenKind.LineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, ");
-            this.N<StringPart.Interpolation>();
+            this.N<InterpolationStringPartSyntax>();
             {
-                this.T(TokenType.InterpolationStart);
-                this.N<Expr.String>();
+                this.T(TokenKind.InterpolationStart);
+                this.N<StringExpressionSyntax>();
                 {
-                    this.T(TokenType.LineStringStart);
+                    this.T(TokenKind.LineStringStart);
+                    this.N<SyntaxList<StringPartSyntax>>();
                     this.StringContent("World");
-                    this.T(TokenType.LineStringEnd);
+                    this.T(TokenKind.LineStringEnd);
                 }
-                this.T(TokenType.InterpolationEnd);
+                this.T(TokenKind.InterpolationEnd);
             }
             this.StringContent("!");
-            this.T(TokenType.LineStringEnd);
+            this.T(TokenKind.LineStringEnd);
         }
     }
 
@@ -275,11 +273,12 @@ public sealed class ParserTests
         this.ParseExpression("""
             "Hello, \nWorld! \u{1F47D}"
             """);
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.LineStringStart);
+            this.T(TokenKind.LineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, \nWorld! 👽");
-            this.T(TokenType.LineStringEnd);
+            this.T(TokenKind.LineStringEnd);
         }
     }
 
@@ -292,13 +291,14 @@ public sealed class ParserTests
             World!
             """
             """");
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.MultiLineStringStart);
+            this.T(TokenKind.MultiLineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("Hello, ");
             this.StringNewline();
             this.StringContent("World!");
-            this.T(TokenType.MultiLineStringEnd);
+            this.T(TokenKind.MultiLineStringEnd);
         }
     }
 
@@ -310,23 +310,24 @@ public sealed class ParserTests
             val x = "Hello, World!;
             """, () =>
         {
-            this.N<Stmt.Decl>();
+            this.N<DeclarationStatementSyntax>();
             {
-                this.N<Decl.Variable>();
+                this.N<VariableDeclarationSyntax>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.T(TokenKind.KeywordVal);
+                    this.T(TokenKind.Identifier);
+                    this.N<ValueSpecifierSyntax>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.String>();
+                        this.T(TokenKind.Assign);
+                        this.N<StringExpressionSyntax>();
                         {
-                            this.T(TokenType.LineStringStart);
+                            this.T(TokenKind.LineStringStart);
+                            this.N<SyntaxList<StringPartSyntax>>();
                             this.StringContent("Hello, World!;");
-                            this.MissingT(TokenType.LineStringEnd);
+                            this.MissingT(TokenKind.LineStringEnd);
                         }
                     }
-                    this.MissingT(TokenType.Semicolon);
+                    this.MissingT(TokenKind.Semicolon);
                 }
             }
         });
@@ -340,31 +341,37 @@ public sealed class ParserTests
             ";
             """, () =>
         {
-            this.N<Stmt.Decl>();
+            this.N<DeclarationStatementSyntax>();
             {
-                this.N<Decl.Variable>();
+                this.N<VariableDeclarationSyntax>();
                 {
-                    this.T(TokenType.KeywordVal);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.T(TokenKind.KeywordVal);
+                    this.T(TokenKind.Identifier);
+                    this.N<ValueSpecifierSyntax>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.String>();
+                        this.T(TokenKind.Assign);
+                        this.N<StringExpressionSyntax>();
                         {
-                            this.T(TokenType.LineStringStart);
+                            this.T(TokenKind.LineStringStart);
+                            this.N<SyntaxList<StringPartSyntax>>();
                             this.StringContent("Hello, World!");
-                            this.MissingT(TokenType.LineStringEnd);
+                            this.MissingT(TokenKind.LineStringEnd);
                         }
                     }
-                    this.MissingT(TokenType.Semicolon);
+                    this.MissingT(TokenKind.Semicolon);
                 }
             }
-            this.N<Expr.String>();
+            this.N<ExpressionStatementSyntax>();
+            this.N<StringExpressionSyntax>();
             {
-                this.T(TokenType.LineStringStart);
+                this.T(TokenKind.LineStringStart);
+                this.N<SyntaxList<StringPartSyntax>>();
                 this.StringContent(";");
-                this.MissingT(TokenType.LineStringEnd);
+                this.MissingT(TokenKind.LineStringEnd);
             }
+            // TODO: Can we get rid of this?
+            // Or do we want to?
+            this.MissingT(TokenKind.Semicolon);
         });
     }
 
@@ -378,23 +385,25 @@ public sealed class ParserTests
             \{"World!"
             """
             """");
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.MultiLineStringStart);
+            this.T(TokenKind.MultiLineStringStart);
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent($"Hello,{trailingSpace}");
             this.StringNewline();
-            this.N<StringPart.Interpolation>();
+            this.N<InterpolationStringPartSyntax>();
             {
-                this.T(TokenType.InterpolationStart);
-                this.N<Expr.String>();
+                this.T(TokenKind.InterpolationStart);
+                this.N<StringExpressionSyntax>();
                 {
-                    this.T(TokenType.LineStringStart);
+                    this.T(TokenKind.LineStringStart);
+                    this.N<SyntaxList<StringPartSyntax>>();
                     this.StringContent("World!");
-                    this.T(TokenType.LineStringEnd);
+                    this.T(TokenKind.LineStringEnd);
                 }
             }
-            this.MissingT(TokenType.InterpolationEnd);
-            this.MissingT(TokenType.MultiLineStringEnd);
+            this.MissingT(TokenKind.InterpolationEnd);
+            this.MissingT(TokenKind.MultiLineStringEnd);
         }
     }
 
@@ -402,19 +411,19 @@ public sealed class ParserTests
     public void TestVariableDeclarationWithNoTypeAndWithValueAndMissingSemicolon()
     {
         this.ParseDeclaration("val x = 5");
-        this.N<Decl.Variable>();
+        this.N<VariableDeclarationSyntax>();
         {
-            this.T(TokenType.KeywordVal);
-            this.T(TokenType.Identifier);
-            this.N<ValueInitializer>();
+            this.T(TokenKind.KeywordVal);
+            this.T(TokenKind.Identifier);
+            this.N<ValueSpecifierSyntax>();
             {
-                this.T(TokenType.Assign);
-                this.N<Expr.Literal>();
+                this.T(TokenKind.Assign);
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger);
+                    this.T(TokenKind.LiteralInteger);
                 }
             }
-            this.MissingT(TokenType.Semicolon);
+            this.MissingT(TokenKind.Semicolon);
         }
     }
 
@@ -422,11 +431,11 @@ public sealed class ParserTests
     public void TestVariableDeclarationWithNoTypeAndWithNoValue()
     {
         this.ParseDeclaration("val x;");
-        this.N<Decl.Variable>();
+        this.N<VariableDeclarationSyntax>();
         {
-            this.T(TokenType.KeywordVal);
-            this.T(TokenType.Identifier);
-            this.T(TokenType.Semicolon);
+            this.T(TokenKind.KeywordVal);
+            this.T(TokenKind.Identifier);
+            this.T(TokenKind.Semicolon);
         }
     }
 
@@ -434,19 +443,19 @@ public sealed class ParserTests
     public void TestVariableDeclarationWithNoTypeAndWithValue()
     {
         this.ParseDeclaration("val x = 5;");
-        this.N<Decl.Variable>();
+        this.N<VariableDeclarationSyntax>();
         {
-            this.T(TokenType.KeywordVal);
-            this.T(TokenType.Identifier);
-            this.N<ValueInitializer>();
+            this.T(TokenKind.KeywordVal);
+            this.T(TokenKind.Identifier);
+            this.N<ValueSpecifierSyntax>();
             {
-                this.T(TokenType.Assign);
-                this.N<Expr.Literal>();
+                this.T(TokenKind.Assign);
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger);
+                    this.T(TokenKind.LiteralInteger);
                 }
             }
-            this.T(TokenType.Semicolon);
+            this.T(TokenKind.Semicolon);
         }
     }
 
@@ -454,15 +463,18 @@ public sealed class ParserTests
     public void TestVariableDeclarationWithNoTypeAndWithMissingValue()
     {
         this.ParseDeclaration("val x =;");
-        this.N<Decl.Variable>();
+        this.N<VariableDeclarationSyntax>();
         {
-            this.T(TokenType.KeywordVal);
-            this.T(TokenType.Identifier);
-            this.N<ValueInitializer>();
+            this.T(TokenKind.KeywordVal);
+            this.T(TokenKind.Identifier);
+            this.N<ValueSpecifierSyntax>();
             {
-                this.T(TokenType.Assign);
-                this.N<Expr.Unexpected>();
-                this.T(TokenType.Semicolon);
+                this.T(TokenKind.Assign);
+                this.N<UnexpectedExpressionSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
+                this.T(TokenKind.Semicolon);
             }
         }
     }
@@ -471,19 +483,19 @@ public sealed class ParserTests
     public void TestVariableDeclarationWithTypeAndWithNoValue()
     {
         this.ParseDeclaration("val x: int32;");
-        this.N<Decl.Variable>();
+        this.N<VariableDeclarationSyntax>();
         {
-            this.T(TokenType.KeywordVal);
-            this.T(TokenType.Identifier);
-            this.N<TypeSpecifier>();
+            this.T(TokenKind.KeywordVal);
+            this.T(TokenKind.Identifier);
+            this.N<TypeSpecifierSyntax>();
             {
-                this.T(TokenType.Colon);
-                this.N<TypeExpr.Name>();
+                this.T(TokenKind.Colon);
+                this.N<NameTypeSyntax>();
                 {
-                    this.T(TokenType.Identifier);
+                    this.T(TokenKind.Identifier);
                 }
             }
-            this.T(TokenType.Semicolon);
+            this.T(TokenKind.Semicolon);
         }
     }
 
@@ -491,16 +503,19 @@ public sealed class ParserTests
     public void TestVariableDeclarationWithMissingTypeAndNoValue()
     {
         this.ParseDeclaration("val x:;");
-        this.N<Decl.Variable>();
+        this.N<VariableDeclarationSyntax>();
         {
-            this.T(TokenType.KeywordVal);
-            this.T(TokenType.Identifier);
-            this.N<TypeSpecifier>();
+            this.T(TokenKind.KeywordVal);
+            this.T(TokenKind.Identifier);
+            this.N<TypeSpecifierSyntax>();
             {
-                this.T(TokenType.Colon);
-                this.N<TypeExpr.Unexpected>();
+                this.T(TokenKind.Colon);
+                this.N<UnexpectedTypeSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
             }
-            this.T(TokenType.Semicolon);
+            this.T(TokenKind.Semicolon);
         }
     }
 
@@ -508,27 +523,27 @@ public sealed class ParserTests
     public void TestVariableDeclarationWithTypeAndWithValue()
     {
         this.ParseDeclaration("val x: int32 = 5;");
-        this.N<Decl.Variable>();
+        this.N<VariableDeclarationSyntax>();
         {
-            this.T(TokenType.KeywordVal);
-            this.T(TokenType.Identifier);
-            this.N<TypeSpecifier>();
+            this.T(TokenKind.KeywordVal);
+            this.T(TokenKind.Identifier);
+            this.N<TypeSpecifierSyntax>();
             {
-                this.T(TokenType.Colon);
-                this.N<TypeExpr.Name>();
+                this.T(TokenKind.Colon);
+                this.N<NameTypeSyntax>();
                 {
-                    this.T(TokenType.Identifier);
+                    this.T(TokenKind.Identifier);
                 }
-                this.N<ValueInitializer>();
+                this.N<ValueSpecifierSyntax>();
                 {
-                    this.T(TokenType.Assign);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.Assign);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger);
+                        this.T(TokenKind.LiteralInteger);
                     }
                 }
             }
-            this.T(TokenType.Semicolon);
+            this.T(TokenKind.Semicolon);
         }
     }
 
@@ -536,19 +551,25 @@ public sealed class ParserTests
     public void TestVariableDeclarationWithMissingTypeAndMissingValue()
     {
         this.ParseDeclaration("val x: =;");
-        this.N<Decl.Variable>();
+        this.N<VariableDeclarationSyntax>();
         {
-            this.T(TokenType.KeywordVal);
-            this.T(TokenType.Identifier);
-            this.N<TypeSpecifier>();
+            this.T(TokenKind.KeywordVal);
+            this.T(TokenKind.Identifier);
+            this.N<TypeSpecifierSyntax>();
             {
-                this.T(TokenType.Colon);
-                this.N<TypeExpr.Unexpected>();
-                this.N<ValueInitializer>();
+                this.T(TokenKind.Colon);
+                this.N<UnexpectedTypeSyntax>();
                 {
-                    this.T(TokenType.Assign);
-                    this.N<Expr.Unexpected>();
-                    this.T(TokenType.Semicolon);
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
+                this.N<ValueSpecifierSyntax>();
+                {
+                    this.T(TokenKind.Assign);
+                    this.N<UnexpectedExpressionSyntax>();
+                    {
+                        this.N<SyntaxList<SyntaxNode>>();
+                    }
+                    this.T(TokenKind.Semicolon);
                 }
             }
         }
@@ -565,80 +586,79 @@ public sealed class ParserTests
                 val y = 'c';
             }
             """);
-        this.N<Stmt.Expr>();
-        this.N<Expr.If>();
+        this.N<ExpressionStatementSyntax>();
+        this.N<IfExpressionSyntax>();
         {
-            this.T(TokenType.KeywordIf);
-            this.T(TokenType.ParenOpen);
-            this.N<Expr.Relational>();
+            this.T(TokenKind.KeywordIf);
+            this.T(TokenKind.ParenOpen);
+            this.N<RelationalExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger);
+                    this.T(TokenKind.LiteralInteger);
                 }
-                this.N<ComparisonElement>();
+                this.N<SyntaxList<ComparisonElementSyntax>>();
+                this.N<ComparisonElementSyntax>();
                 {
-                    this.T(TokenType.GreaterThan);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.GreaterThan);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger);
+                        this.T(TokenKind.LiteralInteger);
                     }
                 }
             }
-            this.T(TokenType.ParenClose);
-            this.N<Expr.UnitStmt>();
-            this.N<Stmt.Expr>();
-            this.N<Expr.Block>();
-            this.T(TokenType.CurlyOpen);
-            this.N<BlockContents>();
+            this.T(TokenKind.ParenClose);
+            this.N<StatementExpressionSyntax>();
+            this.N<ExpressionStatementSyntax>();
+            this.N<BlockExpressionSyntax>();
             {
-                this.N<Stmt.Decl>();
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
+                this.N<DeclarationStatementSyntax>();
                 {
-                    this.N<Decl.Variable>();
+                    this.N<VariableDeclarationSyntax>();
                     {
-                        this.T(TokenType.KeywordVal);
-                        this.T(TokenType.Identifier);
-                        this.N<ValueInitializer>();
+                        this.T(TokenKind.KeywordVal);
+                        this.T(TokenKind.Identifier);
+                        this.N<ValueSpecifierSyntax>();
                         {
-                            this.T(TokenType.Assign);
-                            this.N<Expr.Literal>();
+                            this.T(TokenKind.Assign);
+                            this.N<LiteralExpressionSyntax>();
                             {
-                                this.T(TokenType.LiteralInteger);
+                                this.T(TokenKind.LiteralInteger);
                             }
                         }
-                        this.T(TokenType.Semicolon);
+                        this.T(TokenKind.Semicolon);
                     }
                 }
+                this.T(TokenKind.CurlyClose);
             }
-            this.T(TokenType.CurlyClose);
-            this.N<ElseClause>();
+            this.N<ElseClauseSyntax>();
             {
-                this.T(TokenType.KeywordElse);
-                this.N<Expr.UnitStmt>();
-                this.N<Stmt.Expr>();
-                this.N<Expr.Block>();
-                this.T(TokenType.CurlyOpen);
-                this.N<BlockContents>();
+                this.T(TokenKind.KeywordElse);
+                this.N<StatementExpressionSyntax>();
+                this.N<ExpressionStatementSyntax>();
+                this.N<BlockExpressionSyntax>();
                 {
-                    this.N<Stmt.Decl>();
+                    this.T(TokenKind.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
+                    this.N<DeclarationStatementSyntax>();
+                    this.N<VariableDeclarationSyntax>();
                     {
-                        this.N<Decl.Variable>();
+                        this.T(TokenKind.KeywordVal);
+                        this.T(TokenKind.Identifier);
+                        this.N<ValueSpecifierSyntax>();
                         {
-                            this.T(TokenType.KeywordVal);
-                            this.T(TokenType.Identifier);
-                            this.N<ValueInitializer>();
+                            this.T(TokenKind.Assign);
+                            this.N<LiteralExpressionSyntax>();
                             {
-                                this.T(TokenType.Assign);
-                                this.N<Expr.Literal>();
-                                {
-                                    this.T(TokenType.LiteralCharacter);
-                                }
+                                this.T(TokenKind.LiteralCharacter);
                             }
-                            this.T(TokenType.Semicolon);
                         }
+                        this.T(TokenKind.Semicolon);
                     }
+                    this.T(TokenKind.CurlyClose);
                 }
-                this.T(TokenType.CurlyClose);
             }
         }
     }
@@ -652,33 +672,35 @@ public sealed class ParserTests
             }
             """, () =>
         {
-            this.N<Stmt.Unexpected>();
+            this.N<UnexpectedStatementSyntax>();
             {
-                this.T(TokenType.KeywordElse);
+                this.N<SyntaxList<SyntaxNode>>();
+                this.T(TokenKind.KeywordElse);
             }
-            this.N<Expr.Block>();
-            this.T(TokenType.CurlyOpen);
-            this.N<BlockContents>();
+            this.N<ExpressionStatementSyntax>();
+            this.N<BlockExpressionSyntax>();
             {
-                this.N<Stmt.Decl>();
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
+                this.N<DeclarationStatementSyntax>();
                 {
-                    this.N<Decl.Variable>();
+                    this.N<VariableDeclarationSyntax>();
                     {
-                        this.T(TokenType.KeywordVal);
-                        this.T(TokenType.Identifier);
-                        this.N<ValueInitializer>();
+                        this.T(TokenKind.KeywordVal);
+                        this.T(TokenKind.Identifier);
+                        this.N<ValueSpecifierSyntax>();
                         {
-                            this.T(TokenType.Assign);
-                            this.N<Expr.Literal>();
+                            this.T(TokenKind.Assign);
+                            this.N<LiteralExpressionSyntax>();
                             {
-                                this.T(TokenType.LiteralInteger);
+                                this.T(TokenKind.LiteralInteger);
                             }
                         }
-                        this.T(TokenType.Semicolon);
+                        this.T(TokenKind.Semicolon);
                     }
                 }
+                this.T(TokenKind.CurlyClose);
             }
-            this.T(TokenType.CurlyClose);
         });
     }
 
@@ -690,53 +712,54 @@ public sealed class ParserTests
                 val x = 5;
             }
             """);
-        this.N<Stmt.Expr>();
+        this.N<ExpressionStatementSyntax>();
         {
-            this.N<Expr.If>();
+            this.N<IfExpressionSyntax>();
             {
-                this.T(TokenType.KeywordIf);
-                this.T(TokenType.ParenOpen);
-                this.N<Expr.Relational>();
+                this.T(TokenKind.KeywordIf);
+                this.T(TokenKind.ParenOpen);
+                this.N<RelationalExpressionSyntax>();
                 {
-                    this.N<Expr.Literal>();
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger);
+                        this.T(TokenKind.LiteralInteger);
                     }
-                    this.N<ComparisonElement>();
+                    this.N<SyntaxList<ComparisonElementSyntax>>();
+                    this.N<ComparisonElementSyntax>();
                     {
-                        this.T(TokenType.GreaterThan);
-                        this.N<Expr.Literal>();
+                        this.T(TokenKind.GreaterThan);
+                        this.N<LiteralExpressionSyntax>();
                         {
-                            this.T(TokenType.LiteralInteger);
+                            this.T(TokenKind.LiteralInteger);
                         }
                     }
                 }
-                this.MissingT(TokenType.ParenClose);
-                this.N<Expr.UnitStmt>();
-                this.N<Stmt.Expr>();
-                this.N<Expr.Block>();
-                this.T(TokenType.CurlyOpen);
-                this.N<BlockContents>();
+                this.MissingT(TokenKind.ParenClose);
+                this.N<StatementExpressionSyntax>();
+                this.N<ExpressionStatementSyntax>();
+                this.N<BlockExpressionSyntax>();
                 {
-                    this.N<Stmt.Decl>();
+                    this.T(TokenKind.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
+                    this.N<DeclarationStatementSyntax>();
                     {
-                        this.N<Decl.Variable>();
+                        this.N<VariableDeclarationSyntax>();
                         {
-                            this.T(TokenType.KeywordVal);
-                            this.T(TokenType.Identifier);
-                            this.N<ValueInitializer>();
+                            this.T(TokenKind.KeywordVal);
+                            this.T(TokenKind.Identifier);
+                            this.N<ValueSpecifierSyntax>();
                             {
-                                this.T(TokenType.Assign);
-                                this.N<Expr.Literal>();
+                                this.T(TokenKind.Assign);
+                                this.N<LiteralExpressionSyntax>();
                                 {
-                                    this.T(TokenType.LiteralInteger);
+                                    this.T(TokenKind.LiteralInteger);
                                 }
                             }
-                            this.T(TokenType.Semicolon);
+                            this.T(TokenKind.Semicolon);
                         }
                     }
+                    this.T(TokenKind.CurlyClose);
                 }
-                this.T(TokenType.CurlyClose);
             }
         }
     }
@@ -748,31 +771,36 @@ public sealed class ParserTests
             if (5 > 0)
             """, () =>
         {
-            this.N<Expr.If>();
+            this.N<ExpressionStatementSyntax>();
+            this.N<IfExpressionSyntax>();
             {
-                this.T(TokenType.KeywordIf);
-                this.T(TokenType.ParenOpen);
-                this.N<Expr.Relational>();
+                this.T(TokenKind.KeywordIf);
+                this.T(TokenKind.ParenOpen);
+                this.N<RelationalExpressionSyntax>();
                 {
-                    this.N<Expr.Literal>();
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger);
+                        this.T(TokenKind.LiteralInteger);
                     }
-                    this.N<ComparisonElement>();
+                    this.N<SyntaxList<ComparisonElementSyntax>>();
+                    this.N<ComparisonElementSyntax>();
                     {
-                        this.T(TokenType.GreaterThan);
-                        this.N<Expr.Literal>();
+                        this.T(TokenKind.GreaterThan);
+                        this.N<LiteralExpressionSyntax>();
                         {
-                            this.T(TokenType.LiteralInteger);
+                            this.T(TokenKind.LiteralInteger);
                         }
                     }
                 }
-                this.T(TokenType.ParenClose);
-                this.N<Expr.UnitStmt>();
-                this.N<Stmt.Expr>();
-                this.N<Expr.Unexpected>();
+                this.T(TokenKind.ParenClose);
+                this.N<StatementExpressionSyntax>();
+                this.N<ExpressionStatementSyntax>();
+                this.N<UnexpectedExpressionSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
                 // TODO: This should be unnecessary
-                this.MissingT(TokenType.Semicolon);
+                this.MissingT(TokenKind.Semicolon);
             }
         });
     }
@@ -784,36 +812,37 @@ public sealed class ParserTests
             if (5 > 0) 3 else 9
             """);
 
-        this.N<Expr.If>();
+        this.N<IfExpressionSyntax>();
         {
-            this.T(TokenType.KeywordIf);
-            this.T(TokenType.ParenOpen);
-            this.N<Expr.Relational>();
+            this.T(TokenKind.KeywordIf);
+            this.T(TokenKind.ParenOpen);
+            this.N<RelationalExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger);
+                    this.T(TokenKind.LiteralInteger);
                 }
-                this.N<ComparisonElement>();
+                this.N<SyntaxList<ComparisonElementSyntax>>();
+                this.N<ComparisonElementSyntax>();
                 {
-                    this.T(TokenType.GreaterThan);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.GreaterThan);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger);
+                        this.T(TokenKind.LiteralInteger);
                     }
                 }
             }
-            this.T(TokenType.ParenClose);
-            this.N<Expr.Literal>();
+            this.T(TokenKind.ParenClose);
+            this.N<LiteralExpressionSyntax>();
             {
-                this.T(TokenType.LiteralInteger);
+                this.T(TokenKind.LiteralInteger);
             }
-            this.N<ElseClause>();
+            this.N<ElseClauseSyntax>();
             {
-                this.T(TokenType.KeywordElse);
-                this.N<Expr.Literal>();
+                this.T(TokenKind.KeywordElse);
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger);
+                    this.T(TokenKind.LiteralInteger);
                 }
             }
         }
@@ -826,29 +855,30 @@ public sealed class ParserTests
             if (5 > 0) 3
             """);
 
-        this.N<Expr.If>();
+        this.N<IfExpressionSyntax>();
         {
-            this.T(TokenType.KeywordIf);
-            this.T(TokenType.ParenOpen);
-            this.N<Expr.Relational>();
+            this.T(TokenKind.KeywordIf);
+            this.T(TokenKind.ParenOpen);
+            this.N<RelationalExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger);
+                    this.T(TokenKind.LiteralInteger);
                 }
-                this.N<ComparisonElement>();
+                this.N<SyntaxList<ComparisonElementSyntax>>();
+                this.N<ComparisonElementSyntax>();
                 {
-                    this.T(TokenType.GreaterThan);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.GreaterThan);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger);
+                        this.T(TokenKind.LiteralInteger);
                     }
                 }
             }
-            this.T(TokenType.ParenClose);
-            this.N<Expr.Literal>();
+            this.T(TokenKind.ParenClose);
+            this.N<LiteralExpressionSyntax>();
             {
-                this.T(TokenType.LiteralInteger);
+                this.T(TokenKind.LiteralInteger);
             }
         }
     }
@@ -862,60 +892,61 @@ public sealed class ParserTests
             }
             """);
 
-        this.N<Stmt.Expr>();
-        this.N<Expr.While>();
+        this.N<ExpressionStatementSyntax>();
+        this.N<WhileExpressionSyntax>();
         {
-            this.T(TokenType.KeywordWhile);
-            this.T(TokenType.ParenOpen);
-            this.N<Expr.Relational>();
+            this.T(TokenKind.KeywordWhile);
+            this.T(TokenKind.ParenOpen);
+            this.N<RelationalExpressionSyntax>();
             {
-                this.N<Expr.Name>();
+                this.N<NameExpressionSyntax>();
                 {
-                    this.T(TokenType.Identifier);
+                    this.T(TokenKind.Identifier);
                 }
-                this.N<ComparisonElement>();
+                this.N<SyntaxList<ComparisonElementSyntax>>();
+                this.N<ComparisonElementSyntax>();
                 {
-                    this.T(TokenType.LessThan);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.LessThan);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger);
+                        this.T(TokenKind.LiteralInteger);
                     }
                 }
             }
-            this.T(TokenType.ParenClose);
-            this.N<Expr.UnitStmt>();
-            this.N<Stmt.Expr>();
-            this.N<Expr.Block>();
-            this.T(TokenType.CurlyOpen);
-            this.N<BlockContents>();
+            this.T(TokenKind.ParenClose);
+            this.N<StatementExpressionSyntax>();
+            this.N<ExpressionStatementSyntax>();
+            this.N<BlockExpressionSyntax>();
             {
-                this.N<Stmt.Expr>();
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
+                this.N<ExpressionStatementSyntax>();
                 {
-                    this.N<Expr.Binary>();
+                    this.N<BinaryExpressionSyntax>();
                     {
-                        this.N<Expr.Name>();
+                        this.N<NameExpressionSyntax>();
                         {
-                            this.T(TokenType.Identifier);
+                            this.T(TokenKind.Identifier);
                         }
-                        this.T(TokenType.Assign);
-                        this.N<Expr.Binary>();
+                        this.T(TokenKind.Assign);
+                        this.N<BinaryExpressionSyntax>();
                         {
-                            this.N<Expr.Name>();
+                            this.N<NameExpressionSyntax>();
                             {
-                                this.T(TokenType.Identifier);
+                                this.T(TokenKind.Identifier);
                             }
-                            this.T(TokenType.Plus);
-                            this.N<Expr.Literal>();
+                            this.T(TokenKind.Plus);
+                            this.N<LiteralExpressionSyntax>();
                             {
-                                this.T(TokenType.LiteralInteger);
+                                this.T(TokenKind.LiteralInteger);
                             }
                         }
-                        this.T(TokenType.Semicolon);
+                        this.T(TokenKind.Semicolon);
                     }
                 }
+                this.T(TokenKind.CurlyClose);
             }
         }
-        this.T(TokenType.CurlyClose);
     }
 
     [Fact]
@@ -927,60 +958,61 @@ public sealed class ParserTests
             }
             """);
 
-        this.N<Stmt.Expr>();
-        this.N<Expr.While>();
+        this.N<ExpressionStatementSyntax>();
+        this.N<WhileExpressionSyntax>();
         {
-            this.T(TokenType.KeywordWhile);
-            this.T(TokenType.ParenOpen);
-            this.N<Expr.Relational>();
+            this.T(TokenKind.KeywordWhile);
+            this.T(TokenKind.ParenOpen);
+            this.N<RelationalExpressionSyntax>();
             {
-                this.N<Expr.Name>();
+                this.N<NameExpressionSyntax>();
                 {
-                    this.T(TokenType.Identifier);
+                    this.T(TokenKind.Identifier);
                 }
-                this.N<ComparisonElement>();
+                this.N<SyntaxList<ComparisonElementSyntax>>();
+                this.N<ComparisonElementSyntax>();
                 {
-                    this.T(TokenType.LessThan);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.LessThan);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger);
+                        this.T(TokenKind.LiteralInteger);
                     }
                 }
             }
-            this.MissingT(TokenType.ParenClose);
-            this.N<Expr.UnitStmt>();
-            this.N<Stmt.Expr>();
-            this.N<Expr.Block>();
-            this.T(TokenType.CurlyOpen);
-            this.N<BlockContents>();
+            this.MissingT(TokenKind.ParenClose);
+            this.N<StatementExpressionSyntax>();
+            this.N<ExpressionStatementSyntax>();
+            this.N<BlockExpressionSyntax>();
             {
-                this.N<Stmt.Expr>();
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
+                this.N<ExpressionStatementSyntax>();
                 {
-                    this.N<Expr.Binary>();
+                    this.N<BinaryExpressionSyntax>();
                     {
-                        this.N<Expr.Name>();
+                        this.N<NameExpressionSyntax>();
                         {
-                            this.T(TokenType.Identifier);
+                            this.T(TokenKind.Identifier);
                         }
-                        this.T(TokenType.Assign);
-                        this.N<Expr.Binary>();
+                        this.T(TokenKind.Assign);
+                        this.N<BinaryExpressionSyntax>();
                         {
-                            this.N<Expr.Name>();
+                            this.N<NameExpressionSyntax>();
                             {
-                                this.T(TokenType.Identifier);
+                                this.T(TokenKind.Identifier);
                             }
-                            this.T(TokenType.Plus);
-                            this.N<Expr.Literal>();
+                            this.T(TokenKind.Plus);
+                            this.N<LiteralExpressionSyntax>();
                             {
-                                this.T(TokenType.LiteralInteger);
+                                this.T(TokenKind.LiteralInteger);
                             }
                         }
-                        this.T(TokenType.Semicolon);
+                        this.T(TokenKind.Semicolon);
                     }
                 }
+                this.T(TokenKind.CurlyClose);
             }
         }
-        this.T(TokenType.CurlyClose);
     }
 
     [Fact]
@@ -990,31 +1022,36 @@ public sealed class ParserTests
             while (x < 5)
             """, () =>
         {
-            this.N<Expr.While>();
+            this.N<ExpressionStatementSyntax>();
+            this.N<WhileExpressionSyntax>();
             {
-                this.T(TokenType.KeywordWhile);
-                this.T(TokenType.ParenOpen);
-                this.N<Expr.Relational>();
+                this.T(TokenKind.KeywordWhile);
+                this.T(TokenKind.ParenOpen);
+                this.N<RelationalExpressionSyntax>();
                 {
-                    this.N<Expr.Name>();
+                    this.N<NameExpressionSyntax>();
                     {
-                        this.T(TokenType.Identifier);
+                        this.T(TokenKind.Identifier);
                     }
-                    this.N<ComparisonElement>();
+                    this.N<SyntaxList<ComparisonElementSyntax>>();
+                    this.N<ComparisonElementSyntax>();
                     {
-                        this.T(TokenType.LessThan);
-                        this.N<Expr.Literal>();
+                        this.T(TokenKind.LessThan);
+                        this.N<LiteralExpressionSyntax>();
                         {
-                            this.T(TokenType.LiteralInteger);
+                            this.T(TokenKind.LiteralInteger);
                         }
                     }
                 }
-                this.T(TokenType.ParenClose);
-                this.N<Expr.UnitStmt>();
-                this.N<Stmt.Expr>();
-                this.N<Expr.Unexpected>();
+                this.T(TokenKind.ParenClose);
+                this.N<StatementExpressionSyntax>();
+                this.N<ExpressionStatementSyntax>();
+                this.N<UnexpectedExpressionSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
                 // TODO: This should be unnecessary
-                this.MissingT(TokenType.Semicolon);
+                this.MissingT(TokenKind.Semicolon);
             }
         });
     }
@@ -1026,10 +1063,10 @@ public sealed class ParserTests
             myLabel:
             """);
 
-        this.N<Decl.Label>();
+        this.N<LabelDeclarationSyntax>();
         {
-            this.T(TokenType.Identifier, "myLabel");
-            this.T(TokenType.Colon);
+            this.T(TokenKind.Identifier, "myLabel");
+            this.T(TokenKind.Colon);
         }
     }
 
@@ -1041,10 +1078,10 @@ public sealed class ParserTests
             :
             """);
 
-        this.N<Decl.Label>();
+        this.N<LabelDeclarationSyntax>();
         {
-            this.T(TokenType.Identifier, "myLabel");
-            this.T(TokenType.Colon);
+            this.T(TokenKind.Identifier, "myLabel");
+            this.T(TokenKind.Colon);
         }
     }
 
@@ -1055,12 +1092,12 @@ public sealed class ParserTests
             goto myLabel
             """);
 
-        this.N<Expr.Goto>();
+        this.N<GotoExpressionSyntax>();
         {
-            this.T(TokenType.KeywordGoto);
-            this.N<LabelName>();
+            this.T(TokenKind.KeywordGoto);
+            this.N<NameLabelSyntax>();
             {
-                this.T(TokenType.Identifier);
+                this.T(TokenKind.Identifier);
             }
         }
     }
@@ -1072,16 +1109,16 @@ public sealed class ParserTests
                 goto;
             """, () =>
         {
-            this.N<Stmt.Expr>();
-            this.N<Expr.Goto>();
+            this.N<ExpressionStatementSyntax>();
+            this.N<GotoExpressionSyntax>();
             {
-                this.T(TokenType.KeywordGoto);
-                this.N<LabelName>();
+                this.T(TokenKind.KeywordGoto);
+                this.N<NameLabelSyntax>();
                 {
-                    this.MissingT(TokenType.Identifier);
+                    this.MissingT(TokenKind.Identifier);
                 }
             }
-            this.T(TokenType.Semicolon);
+            this.T(TokenKind.Semicolon);
         });
     }
 
@@ -1092,19 +1129,19 @@ public sealed class ParserTests
                 return 2 + 1
             """);
 
-        this.N<Expr.Return>();
+        this.N<ReturnExpressionSyntax>();
         {
-            this.T(TokenType.KeywordReturn);
-            this.N<Expr.Binary>();
+            this.T(TokenKind.KeywordReturn);
+            this.N<BinaryExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger);
+                    this.T(TokenKind.LiteralInteger);
                 }
-                this.T(TokenType.Plus);
-                this.N<Expr.Literal>();
+                this.T(TokenKind.Plus);
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger);
+                    this.T(TokenKind.LiteralInteger);
                 }
             }
         }
@@ -1117,9 +1154,9 @@ public sealed class ParserTests
                 return
             """);
 
-        this.N<Expr.Return>();
+        this.N<ReturnExpressionSyntax>();
         {
-            this.T(TokenType.KeywordReturn);
+            this.T(TokenKind.KeywordReturn);
         }
     }
 
@@ -1133,33 +1170,33 @@ public sealed class ParserTests
             }
             """);
 
-        this.N<Expr.Block>();
-        this.T(TokenType.CurlyOpen);
-        this.N<BlockContents>();
+        this.N<BlockExpressionSyntax>();
         {
-            this.N<Stmt.Decl>();
+            this.T(TokenKind.CurlyOpen);
+            this.N<SyntaxList<StatementSyntax>>();
+            this.N<DeclarationStatementSyntax>();
             {
-                this.N<Decl.Variable>();
+                this.N<VariableDeclarationSyntax>();
                 {
-                    this.T(TokenType.KeywordVar);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.T(TokenKind.KeywordVar);
+                    this.T(TokenKind.Identifier);
+                    this.N<ValueSpecifierSyntax>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.Literal>();
+                        this.T(TokenKind.Assign);
+                        this.N<LiteralExpressionSyntax>();
                         {
-                            this.T(TokenType.LiteralInteger);
+                            this.T(TokenKind.LiteralInteger);
                         }
                     }
-                    this.T(TokenType.Semicolon);
+                    this.T(TokenKind.Semicolon);
                 }
             }
-            this.N<Expr.Name>();
+            this.N<NameExpressionSyntax>();
             {
-                this.T(TokenType.Identifier);
+                this.T(TokenKind.Identifier);
             }
+            this.T(TokenKind.CurlyClose);
         }
-        this.T(TokenType.CurlyClose);
     }
 
     [Fact]
@@ -1171,29 +1208,29 @@ public sealed class ParserTests
             }
             """);
 
-        this.N<Expr.Block>();
-        this.T(TokenType.CurlyOpen);
-        this.N<BlockContents>();
+        this.N<BlockExpressionSyntax>();
         {
-            this.N<Stmt.Decl>();
+            this.T(TokenKind.CurlyOpen);
+            this.N<SyntaxList<StatementSyntax>>();
+            this.N<DeclarationStatementSyntax>();
             {
-                this.N<Decl.Variable>();
+                this.N<VariableDeclarationSyntax>();
                 {
-                    this.T(TokenType.KeywordVar);
-                    this.T(TokenType.Identifier);
-                    this.N<ValueInitializer>();
+                    this.T(TokenKind.KeywordVar);
+                    this.T(TokenKind.Identifier);
+                    this.N<ValueSpecifierSyntax>();
                     {
-                        this.T(TokenType.Assign);
-                        this.N<Expr.Literal>();
+                        this.T(TokenKind.Assign);
+                        this.N<LiteralExpressionSyntax>();
                         {
-                            this.T(TokenType.LiteralInteger);
+                            this.T(TokenKind.LiteralInteger);
                         }
                     }
-                    this.T(TokenType.Semicolon);
+                    this.T(TokenKind.Semicolon);
                 }
             }
+            this.T(TokenKind.CurlyClose);
         }
-        this.T(TokenType.CurlyClose);
     }
 
     [Fact]
@@ -1204,10 +1241,12 @@ public sealed class ParserTests
             }
             """);
 
-        this.N<Expr.Block>();
-        this.T(TokenType.CurlyOpen);
-        this.N<BlockContents>();
-        this.T(TokenType.CurlyClose);
+        this.N<BlockExpressionSyntax>();
+        {
+            this.T(TokenKind.CurlyOpen);
+            this.N<SyntaxList<StatementSyntax>>();
+            this.T(TokenKind.CurlyClose);
+        }
     }
 
     [Fact]
@@ -1217,51 +1256,51 @@ public sealed class ParserTests
             3 mod 2 + 2 * -8.6 - 9 / 3
             """);
 
-        this.N<Expr.Binary>();
+        this.N<BinaryExpressionSyntax>();
         {
-            this.N<Expr.Binary>();
+            this.N<BinaryExpressionSyntax>();
             {
-                this.N<Expr.Binary>();
+                this.N<BinaryExpressionSyntax>();
                 {
-                    this.N<Expr.Literal>();
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger, "3");
+                        this.T(TokenKind.LiteralInteger, "3");
                     }
-                    this.T(TokenType.KeywordMod);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.KeywordMod);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger, "2");
+                        this.T(TokenKind.LiteralInteger, "2");
                     }
                 }
-                this.T(TokenType.Plus);
-                this.N<Expr.Binary>();
+                this.T(TokenKind.Plus);
+                this.N<BinaryExpressionSyntax>();
                 {
-                    this.N<Expr.Literal>();
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger, "2");
+                        this.T(TokenKind.LiteralInteger, "2");
                     }
-                    this.T(TokenType.Star);
-                    this.N<Expr.Unary>();
+                    this.T(TokenKind.Star);
+                    this.N<UnaryExpressionSyntax>();
                     {
-                        this.T(TokenType.Minus);
-                        this.N<Expr.Literal>();
+                        this.T(TokenKind.Minus);
+                        this.N<LiteralExpressionSyntax>();
                         {
-                            this.T(TokenType.LiteralFloat, "8.6");
+                            this.T(TokenKind.LiteralFloat, "8.6");
                         }
                     }
                 }
             }
-            this.T(TokenType.Minus);
-            this.N<Expr.Binary>();
+            this.T(TokenKind.Minus);
+            this.N<BinaryExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger, "9");
+                    this.T(TokenKind.LiteralInteger, "9");
                 }
-                this.T(TokenType.Slash);
-                this.N<Expr.Literal>();
+                this.T(TokenKind.Slash);
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger, "3");
+                    this.T(TokenKind.LiteralInteger, "3");
                 }
             }
         }
@@ -1274,27 +1313,27 @@ public sealed class ParserTests
             true and false or not false
             """);
 
-        this.N<Expr.Binary>();
+        this.N<BinaryExpressionSyntax>();
         {
-            this.N<Expr.Binary>();
+            this.N<BinaryExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.KeywordTrue);
+                    this.T(TokenKind.KeywordTrue);
                 }
-                this.T(TokenType.KeywordAnd);
-                this.N<Expr.Literal>();
+                this.T(TokenKind.KeywordAnd);
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.KeywordFalse);
+                    this.T(TokenKind.KeywordFalse);
                 }
             }
-            this.T(TokenType.KeywordOr);
-            this.N<Expr.Unary>();
+            this.T(TokenKind.KeywordOr);
+            this.N<UnaryExpressionSyntax>();
             {
-                this.T(TokenType.KeywordNot);
-                this.N<Expr.Literal>();
+                this.T(TokenKind.KeywordNot);
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.KeywordFalse);
+                    this.T(TokenKind.KeywordFalse);
                 }
             }
         }
@@ -1307,33 +1346,34 @@ public sealed class ParserTests
             3.8 + 2 > 2 * 3
             """);
 
-        this.N<Expr.Relational>();
+        this.N<RelationalExpressionSyntax>();
         {
-            this.N<Expr.Binary>();
+            this.N<BinaryExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralFloat, "3.8");
+                    this.T(TokenKind.LiteralFloat, "3.8");
                 }
-                this.T(TokenType.Plus);
-                this.N<Expr.Literal>();
+                this.T(TokenKind.Plus);
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger, "2");
+                    this.T(TokenKind.LiteralInteger, "2");
                 }
             }
-            this.N<ComparisonElement>();
+            this.N<SyntaxList<ComparisonElementSyntax>>();
+            this.N<ComparisonElementSyntax>();
             {
-                this.T(TokenType.GreaterThan);
-                this.N<Expr.Binary>();
+                this.T(TokenKind.GreaterThan);
+                this.N<BinaryExpressionSyntax>();
                 {
-                    this.N<Expr.Literal>();
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger, "2");
+                        this.T(TokenKind.LiteralInteger, "2");
                     }
-                    this.T(TokenType.Star);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.Star);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger, "3");
+                        this.T(TokenKind.LiteralInteger, "3");
                     }
                 }
             }
@@ -1347,44 +1387,46 @@ public sealed class ParserTests
             3 > 2.89 < 8 or 5 == 3
             """);
 
-        this.N<Expr.Binary>();
+        this.N<BinaryExpressionSyntax>();
         {
-            this.N<Expr.Relational>();
+            this.N<RelationalExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger, "3");
+                    this.T(TokenKind.LiteralInteger, "3");
                 }
-                this.N<ComparisonElement>();
+                this.N<SyntaxList<ComparisonElementSyntax>>();
+                this.N<ComparisonElementSyntax>();
                 {
-                    this.T(TokenType.GreaterThan);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.GreaterThan);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralFloat, "2.89");
+                        this.T(TokenKind.LiteralFloat, "2.89");
                     }
                 }
-                this.N<ComparisonElement>();
+                this.N<ComparisonElementSyntax>();
                 {
-                    this.T(TokenType.LessThan);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.LessThan);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger, "8");
+                        this.T(TokenKind.LiteralInteger, "8");
                     }
                 }
             }
-            this.T(TokenType.KeywordOr);
-            this.N<Expr.Relational>();
+            this.T(TokenKind.KeywordOr);
+            this.N<RelationalExpressionSyntax>();
             {
-                this.N<Expr.Literal>();
+                this.N<LiteralExpressionSyntax>();
                 {
-                    this.T(TokenType.LiteralInteger, "5");
+                    this.T(TokenKind.LiteralInteger, "5");
                 }
-                this.N<ComparisonElement>();
+                this.N<SyntaxList<ComparisonElementSyntax>>();
+                this.N<ComparisonElementSyntax>();
                 {
-                    this.T(TokenType.Equal);
-                    this.N<Expr.Literal>();
+                    this.T(TokenKind.Equal);
+                    this.N<LiteralExpressionSyntax>();
                     {
-                        this.T(TokenType.LiteralInteger, "3");
+                        this.T(TokenKind.LiteralInteger, "3");
                     }
                 }
             }
@@ -1398,18 +1440,22 @@ public sealed class ParserTests
             "a\{}b"
             """);
 
-        this.N<Expr.String>();
+        this.N<StringExpressionSyntax>();
         {
-            this.T(TokenType.LineStringStart, "\"");
+            this.T(TokenKind.LineStringStart, "\"");
+            this.N<SyntaxList<StringPartSyntax>>();
             this.StringContent("a");
-            this.N<StringPart.Interpolation>();
+            this.N<InterpolationStringPartSyntax>();
             {
-                this.T(TokenType.InterpolationStart);
-                this.N<Expr.Unexpected>();
-                this.T(TokenType.InterpolationEnd);
+                this.T(TokenKind.InterpolationStart);
+                this.N<UnexpectedExpressionSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                }
+                this.T(TokenKind.InterpolationEnd);
             }
             this.StringContent("b");
-            this.T(TokenType.LineStringEnd, "\"");
+            this.T(TokenKind.LineStringEnd, "\"");
         }
     }
 }

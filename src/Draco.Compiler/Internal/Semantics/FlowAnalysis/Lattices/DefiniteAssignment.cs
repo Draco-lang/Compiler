@@ -1,6 +1,5 @@
-using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Utilities;
@@ -13,6 +12,9 @@ namespace Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
 /// </summary>
 internal sealed class DefiniteAssignment : ILattice<ImmutableDictionary<ISymbol.IVariable, DefiniteAssignment.Status>>
 {
+    private static IEqualityComparer<IReadOnlyDictionary<ISymbol.IVariable, Status>> DictionaryComparer =>
+        DictionaryEqualityComparer<ISymbol.IVariable, Status>.Default;
+
     public enum Status
     {
         NotInitialized = 0,
@@ -28,15 +30,10 @@ internal sealed class DefiniteAssignment : ILattice<ImmutableDictionary<ISymbol.
     {
     }
 
-    public bool Equals(ImmutableDictionary<ISymbol.IVariable, Status> x, ImmutableDictionary<ISymbol.IVariable, Status> y) =>
-           x.Count == y.Count
-        && x.All(kv => y.TryGetValue(kv.Key, out var v) && kv.Value == v);
-    public int GetHashCode(ImmutableDictionary<ISymbol.IVariable, Status> obj)
-    {
-        var h = default(HashCode);
-        foreach (var kv in obj) h.Add(kv);
-        return h.ToHashCode();
-    }
+    public bool Equals(ImmutableDictionary<ISymbol.IVariable, Status>? x, ImmutableDictionary<ISymbol.IVariable, Status>? y) =>
+        DictionaryComparer.Equals(x, y);
+    public int GetHashCode(ImmutableDictionary<ISymbol.IVariable, Status> obj) =>
+        DictionaryComparer.GetHashCode(obj);
 
     public ImmutableDictionary<ISymbol.IVariable, Status> Join(
         ImmutableDictionary<ISymbol.IVariable, Status> a,

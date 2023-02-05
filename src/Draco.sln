@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Toolset", "D
 EndProject
 Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "Draco.ProjectTemplates", "Draco.ProjectTemplates\Draco.ProjectTemplates.msbuildproj", "{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.SourceGeneration", "Draco.SourceGeneration\Draco.SourceGeneration.csproj", "{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -112,6 +114,12 @@ Global
 		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

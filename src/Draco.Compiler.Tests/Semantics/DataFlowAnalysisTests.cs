@@ -1,5 +1,4 @@
 using Draco.Compiler.Api;
-using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Semantics;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
@@ -15,11 +14,11 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr()))));
+            BlockFunctionBody())));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -37,11 +36,11 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr()))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            BlockFunctionBody())));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -61,12 +60,12 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(ReturnExpr(LiteralExpr(0))))))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(ReturnExpression(LiteralExpression(0)))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -85,14 +84,14 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(IfExpr(
-                    condition: NameExpr("b"),
-                    then: ReturnExpr(LiteralExpr(1)))))))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("b", NameType("bool"))),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(IfExpression(
+                    condition: NameExpression("b"),
+                    then: ReturnExpression(LiteralExpression(1))))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -113,15 +112,15 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("bool")))),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(IfExpr(
-                    condition: NameExpr("b"),
-                    then: ReturnExpr(LiteralExpr(1)),
-                    @else: ReturnExpr(LiteralExpr(2)))))))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("b", NameType("bool"))),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(IfExpression(
+                    condition: NameExpression("b"),
+                    then: ReturnExpression(LiteralExpression(1)),
+                    @else: ReturnExpression(LiteralExpression(2))))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -142,14 +141,14 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(WhileExpr(
-                    condition: LiteralExpr(false),
-                    body: ReturnExpr(LiteralExpr(0)))))))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(WhileExpression(
+                    condition: LiteralExpression(false),
+                    body: ReturnExpression(LiteralExpression(0))))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -171,14 +170,14 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(GotoExpr("after")),
-                ExprStmt(ReturnExpr(LiteralExpr(0))),
-                DeclStmt(LabelDecl("after")))))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(GotoExpression("after")),
+                ExpressionStatement(ReturnExpression(LiteralExpression(0))),
+                DeclarationStatement(LabelDeclaration("after"))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -202,16 +201,16 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(GotoExpr("after")),
-                DeclStmt(LabelDecl("before")),
-                ExprStmt(ReturnExpr(LiteralExpr(0))),
-                DeclStmt(LabelDecl("after")),
-                ExprStmt(GotoExpr("before")))))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(GotoExpression("after")),
+                DeclarationStatement(LabelDeclaration("before")),
+                ExpressionStatement(ReturnExpression(LiteralExpression(0))),
+                DeclarationStatement(LabelDeclaration("after")),
+                ExpressionStatement(GotoExpression("before"))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -231,13 +230,13 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(GotoExpr("non_existing")),
-                ExprStmt(ReturnExpr(LiteralExpr(0))))))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(GotoExpression("non_existing")),
+                ExpressionStatement(ReturnExpression(LiteralExpression(0)))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -258,13 +257,13 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
-                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -285,13 +284,13 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")), LiteralExpr(0))),
-                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"), LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -312,14 +311,14 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
-                ExprStmt(BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0))),
-                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -342,16 +341,16 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
-                ExprStmt(IfExpr(
-                    condition: LiteralExpr(false),
-                    then: BlockExpr(ExprStmt(BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)))))),
-                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                ExpressionStatement(IfExpression(
+                    condition: LiteralExpression(false),
+                    then: BlockExpression(ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))),
+                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -378,17 +377,17 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
-                ExprStmt(IfExpr(
-                    condition: LiteralExpr(false),
-                    then: BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)),
-                    @else: BinaryExpr(NameExpr("x"), Assign, LiteralExpr(1)))),
-                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                ExpressionStatement(IfExpression(
+                    condition: LiteralExpression(false),
+                    then: BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)),
+                    @else: BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))),
+                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -411,16 +410,16 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))),
-                ExprStmt(WhileExpr(
-                    condition: LiteralExpr(false),
-                    body: BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0)))),
-                DeclStmt(VariableDecl(Name("y"), null, NameExpr("x"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                ExpressionStatement(WhileExpression(
+                    condition: LiteralExpression(false),
+                    body: BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))),
+                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -438,8 +437,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // val x: int32 = 0;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            ImmutableVariableDecl(Name("x"), NameTypeExpr(Name("int32")), LiteralExpr(0))));
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -458,12 +457,12 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(ImmutableVariableDecl(Name("x"), NameTypeExpr(Name("int32")), LiteralExpr(0))))))));
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -480,8 +479,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // val x: int32;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            ImmutableVariableDecl(Name("x"), NameTypeExpr(Name("int32")))));
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration("x", NameType("int32"))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -501,12 +500,12 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(ImmutableVariableDecl(Name("x"), NameTypeExpr(Name("int32")))))))));
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32")))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -527,13 +526,13 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(ImmutableVariableDecl(Name("x"), NameTypeExpr(Name("int32")), LiteralExpr(0))),
-                ExprStmt(BinaryExpr(NameExpr("x"), Assign, LiteralExpr(1))))))));
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0))),
+                ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))));
 
         // Act
         var compilation = Compilation.Create(tree);

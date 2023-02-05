@@ -1,0 +1,920 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Tree
+  xmlns="http://draco-lang.com/red-green-tree/syntax"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/red-green-tree/syntax ../../../Draco.SourceGeneration/SyntaxTree/Syntax.xsd"
+  Root="SyntaxNode">
+  <PredefinedNode Name="SyntaxNode" />
+
+  <Node Name="CompilationUnitSyntax" Base="SyntaxNode">
+    <Documentation>
+      Contains all declarations within an entire compilation unit.
+    </Documentation>
+
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;">
+      <Documentation>
+        All declaration syntaxes within the compilation unit.
+      </Documentation>
+    </Field>
+    <Field Name="End" Type="SyntaxToken">
+      <Documentation>
+        The end of input token.
+      </Documentation>
+
+      <Token Kind="EndOfInput" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="DeclarationSyntax" Base="SyntaxNode">
+    <Documentation>
+      Any declaration.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      Unexpected input in declaration context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A function declaration.
+    </Documentation>
+
+    <Field Name="FunctionKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'func' keyword starting the declaration.
+      </Documentation>
+
+      <Token Kind="KeywordFunc" />
+    </Field>
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared function.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;ParameterSyntax&gt;">
+      <Documentation>
+        The parameters this function declares.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="ReturnType" Type="TypeSpecifierSyntax?">
+      <Documentation>
+        The return type of the function.
+      </Documentation>
+    </Field>
+    <Field Name="Body" Type="FunctionBodySyntax">
+      <Documentation>
+        The body of the function.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ParameterSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single parameter in a function parameter list.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the parameter.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Colon" Type="SyntaxToken">
+      <Documentation>
+        The colon token between the name and the type.
+      </Documentation>
+
+      <Token Kind="Colon" />
+    </Field>
+    <Field Name="Type" Type="TypeSyntax">
+      <Documentation>
+        The type of the parameter.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <AbstractNode Name="FunctionBodySyntax" Base="SyntaxNode">
+    <Documentation>
+      The body of a function definition.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="BlockFunctionBodySyntax" Base="FunctionBodySyntax">
+    <Documentation>
+      A block function body with multiple statements within braces.
+    </Documentation>
+
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace token.
+      </Documentation>
+
+      <Token Kind="CurlyOpen" />
+    </Field>
+    <Field Name="Statements" Type="SyntaxList&lt;StatementSyntax&gt;">
+      <Documentation>
+        The statements within the block.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace token.
+      </Documentation>
+
+      <Token Kind="CurlyClose" />
+    </Field>
+  </Node>
+
+  <Node Name="InlineFunctionBodySyntax" Base="FunctionBodySyntax">
+    <Documentation>
+      A function body consisting of the single returned expression.
+    </Documentation>
+
+    <Field Name="Assign" Type="SyntaxToken">
+      <Documentation>
+        The assignment token.
+      </Documentation>
+
+      <Token Kind="Assign" />
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax">
+      <Documentation>
+        The returned expression.
+      </Documentation>
+    </Field>
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon at the end.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <Node Name="UnexpectedFunctionBodySyntax" Base="FunctionBodySyntax">
+    <Documentation>
+      Unexpected input in function body context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="LabelDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A label declaration.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared label.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Colon" Type="SyntaxToken">
+      <Documentation>
+        The colon after the label name.
+      </Documentation>
+
+      <Token Kind="Colon" />
+    </Field>
+  </Node>
+
+  <Node Name="VariableDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A variable declaration.
+    </Documentation>
+
+    <Field Name="Keyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword introducing the variable, either 'var' or 'val'.
+      </Documentation>
+
+      <Token Kind="KeywordVar" />
+      <Token Kind="KeywordVal" />
+    </Field>
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared variable.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Type" Type="TypeSpecifierSyntax?">
+      <Documentation>
+        The type of the declared variable.
+      </Documentation>
+    </Field>
+    <Field Name="Value" Type="ValueSpecifierSyntax?">
+      <Documentation>
+        The initializer value for the variable.
+      </Documentation>
+    </Field>
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon closing the variable declaration.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <Node Name="TypeSpecifierSyntax" Base="SyntaxNode">
+    <Documentation>
+      A type specifier referencing a type.
+    </Documentation>
+
+    <Field Name="Colon" Type="SyntaxToken">
+      <Documentation>
+        The colon token.
+      </Documentation>
+
+      <Token Kind="Colon" />
+    </Field>
+    <Field Name="Type" Type="TypeSyntax">
+      <Documentation>
+        The type specified.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ValueSpecifierSyntax" Base="SyntaxNode">
+    <Documentation>
+      A value specifier specifying an expression.
+    </Documentation>
+
+    <Field Name="Assign" Type="SyntaxToken">
+      <Documentation>
+        The assignment token.
+      </Documentation>
+
+      <Token Kind="Assign" />
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax">
+      <Documentation>
+        The value specified.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <AbstractNode Name="TypeSyntax" Base="SyntaxNode">
+    <Documentation>
+      Any type expression.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedTypeSyntax" Base="TypeSyntax">
+    <Documentation>
+      Unexpected input in type expression context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="NameTypeSyntax" Base="TypeSyntax">
+    <Documentation>
+      A single identifier referencing a type name.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The identifier referencing the type.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="StatementSyntax" Base="SyntaxNode">
+    <Documentation>
+      Any statement.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedStatementSyntax" Base="StatementSyntax">
+    <Documentation>
+      Unexpected input in statement context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="DeclarationStatementSyntax" Base="StatementSyntax">
+    <Documentation>
+      A declaration in statement context.
+    </Documentation>
+
+    <Field Name="Declaration" Type="DeclarationSyntax">
+      <Documentation>
+        The declaration wrapped.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ExpressionStatementSyntax" Base="StatementSyntax">
+    <Documentation>
+      An expression in statement context.
+    </Documentation>
+
+    <Field Name="Expression" Type="ExpressionSyntax">
+      <Documentation>
+        The expression wrapped.
+      </Documentation>
+    </Field>
+    <Field Name="Semicolon" Type="SyntaxToken?">
+      <Documentation>
+        The semicolon ending the statement.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="ExpressionSyntax" Base="SyntaxNode">
+    <Documentation>
+      Any expression.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      Unexpected input in expression context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="StatementExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      An expression that results in the unit type, while executing a statement.
+    </Documentation>
+
+    <Field Name="Statement" Type="StatementSyntax">
+      <Documentation>
+        The executed statement.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="BlockExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A code block with statements and a result value.
+    </Documentation>
+
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace token.
+      </Documentation>
+
+      <Token Kind="CurlyOpen" />
+    </Field>
+    <Field Name="Statements" Type="SyntaxList&lt;StatementSyntax&gt;">
+      <Documentation>
+        The statements within the block.
+      </Documentation>
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax?">
+      <Documentation>
+        The value the block evaluates to.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace token.
+      </Documentation>
+
+      <Token Kind="CurlyClose" />
+    </Field>
+  </Node>
+
+  <Node Name="IfExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      An if-expression.
+    </Documentation>
+
+    <Field Name="IfKeyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword 'if'.
+      </Documentation>
+
+      <Token Kind="KeywordIf" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the condition.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="Condition" Type="ExpressionSyntax">
+      <Documentation>
+        The condition.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the condition.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="Then" Type="ExpressionSyntax">
+      <Documentation>
+        The portion evaluated, if the condition is true.
+      </Documentation>
+    </Field>
+    <Field Name="Else" Type="ElseClauseSyntax?">
+      <Documentation>
+        The portion evaluated, if the condition is false.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="WhileExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A while-expression.
+    </Documentation>
+
+    <Field Name="WhileKeyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword 'while'.
+      </Documentation>
+
+      <Token Kind="KeywordWhile" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the condition.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="Condition" Type="ExpressionSyntax">
+      <Documentation>
+        The condition.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the condition.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="Then" Type="ExpressionSyntax">
+      <Documentation>
+        The portion evaluated repeatedly, while the condition is true.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="GotoExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A goto-expression.
+    </Documentation>
+
+    <Field Name="GotoKeyword" Type="SyntaxToken">
+      <Documentation>
+        The goto keyword.
+      </Documentation>
+
+      <Token Kind="KeywordGoto" />
+    </Field>
+    <Field Name="Target" Type="LabelSyntax">
+      <Documentation>
+        The target label to jump to.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ReturnExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A return-expression.
+    </Documentation>
+
+    <Field Name="ReturnKeyword" Type="SyntaxToken">
+      <Documentation>
+        The return keyword.
+      </Documentation>
+
+      <Token Kind="KeywordReturn" />
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax?">
+      <Documentation>
+        The value to return.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="LiteralExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A literal value.
+    </Documentation>
+
+    <Field Name="Literal" Type="SyntaxToken">
+      <Documentation>
+        The literal token representing the value.
+      </Documentation>
+
+      <Token Kind="LiteralInteger" />
+      <Token Kind="LiteralFloat" />
+      <Token Kind="LiteralCharacter" />
+      <Token Kind="KeywordTrue" />
+      <Token Kind="KeywordFalse" />
+    </Field>
+  </Node>
+
+  <Node Name="CallExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A function call expression.
+    </Documentation>
+
+    <Field Name="Function" Type="ExpressionSyntax">
+      <Documentation>
+        The called function expression.
+      </Documentation>
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the argument list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="ArgumentList" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;">
+      <Documentation>
+        The argument list the function is called with.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the argument list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+  </Node>
+
+  <Node Name="IndexExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      An indexing expression.
+    </Documentation>
+
+    <Field Name="Indexed" Type="ExpressionSyntax">
+      <Documentation>
+        The indexed expression.
+      </Documentation>
+    </Field>
+    <Field Name="OpenBracket" Type="SyntaxToken">
+      <Documentation>
+        The opening bracket before the index list.
+      </Documentation>
+
+      <Token Kind="BracketOpen" />
+    </Field>
+    <Field Name="IndexList" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;">
+      <Documentation>
+        The index list used for indexing.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBracket" Type="SyntaxToken">
+      <Documentation>
+        The closing bracket after the index list.
+      </Documentation>
+
+      <Token Kind="BracketClose" />
+    </Field>
+  </Node>
+
+  <Node Name="NameExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A single identifier referencing a value.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The identifier referencing the value.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <Node Name="MemberAccessExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A member access expression.
+    </Documentation>
+
+    <Field Name="Accessed" Type="ExpressionSyntax">
+      <Documentation>
+        The accessed element, like an object or namespace.
+      </Documentation>
+    </Field>
+    <Field Name="Dot" Type="SyntaxToken">
+      <Documentation>
+        The dot between the accessed element and the member name.
+      </Documentation>
+
+      <Token Kind="Dot" />
+    </Field>
+    <Field Name="Member" Type="SyntaxToken">
+      <Documentation>
+        The accessed member name.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <Node Name="UnaryExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A unary operator expression.
+    </Documentation>
+
+    <Field Name="Operator" Type="SyntaxToken">
+      <Documentation>
+        The unary operator applied.
+      </Documentation>
+
+      <Token Kind="Plus" />
+      <Token Kind="Minus" />
+      <Token Kind="KeywordNot" />
+    </Field>
+    <Field Name="Operand" Type="ExpressionSyntax">
+      <Documentation>
+        The operand of the operation.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="BinaryExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A binary operator expression.
+    </Documentation>
+
+    <Field Name="Left" Type="ExpressionSyntax">
+      <Documentation>
+        The first operand of the operation.
+      </Documentation>
+    </Field>
+    <Field Name="Operator" Type="SyntaxToken">
+      <Documentation>
+        The unary operator applied.
+      </Documentation>
+
+      <Token Kind="Plus" />
+      <Token Kind="Minus" />
+      <Token Kind="Star" />
+      <Token Kind="Slash" />
+      <Token Kind="Assign" />
+      <Token Kind="PlusAssign" />
+      <Token Kind="MinusAssign" />
+      <Token Kind="StarAssign" />
+      <Token Kind="SlashAssign" />
+      <Token Kind="KeywordMod" />
+      <Token Kind="KeywordRem" />
+      <Token Kind="KeywordAnd" />
+      <Token Kind="KeywordOr" />
+    </Field>
+    <Field Name="Right" Type="ExpressionSyntax">
+      <Documentation>
+        The second operand of the operation.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="RelationalExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A relational expression chain.
+    </Documentation>
+
+    <Field Name="Left" Type="ExpressionSyntax">
+      <Documentation>
+        The first element in the comparison chain.
+      </Documentation>
+    </Field>
+    <Field Name="Comparisons" Type="SyntaxList&lt;ComparisonElementSyntax&gt;">
+      <Documentation>
+        The list of comparisons.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="GroupingExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      An expression between parenthesis.
+    </Documentation>
+
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the expression.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="Expression" Type="ExpressionSyntax">
+      <Documentation>
+        The expression.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the expression.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+  </Node>
+
+  <Node Name="StringExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A string consisting of text and interpolation holes.
+    </Documentation>
+
+    <Field Name="OpenQuotes" Type="SyntaxToken">
+      <Documentation>
+        The opening quotes for the string.
+      </Documentation>
+
+      <Token Kind="LineStringStart" />
+      <Token Kind="MultiLineStringStart" />
+    </Field>
+    <Field Name="Parts" Type="SyntaxList&lt;StringPartSyntax&gt;">
+      <Documentation>
+        The parts the string consists of.
+      </Documentation>
+    </Field>
+    <Field Name="CloseQuotes" Type="SyntaxToken">
+      <Documentation>
+        The closing quotes for the string.
+      </Documentation>
+
+      <Token Kind="LineStringEnd" />
+      <Token Kind="MultiLineStringEnd" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="StringPartSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single part of a string.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="TextStringPartSyntax" Base="StringPartSyntax">
+    <Documentation>
+      Literal text inside the string.
+    </Documentation>
+
+    <Field Name="Content" Type="SyntaxToken">
+      <Documentation>
+        The content of the string part.
+      </Documentation>
+
+      <Token Kind="StringContent" />
+      <Token Kind="StringNewline" />
+    </Field>
+  </Node>
+
+  <Node Name="InterpolationStringPartSyntax" Base="StringPartSyntax">
+    <Documentation>
+      Interpolation inside the string.
+    </Documentation>
+
+    <Field Name="Open" Type="SyntaxToken">
+      <Documentation>
+        The starting token for the interpolation.
+      </Documentation>
+
+      <Token Kind="InterpolationStart" />
+    </Field>
+    <Field Name="Expression" Type="ExpressionSyntax">
+      <Documentation>
+        The interpolated expression.
+      </Documentation>
+    </Field>
+    <Field Name="Close" Type="SyntaxToken">
+      <Documentation>
+        The ending token for the interpolation.
+      </Documentation>
+
+      <Token Kind="InterpolationEnd" />
+    </Field>
+  </Node>
+
+  <Node Name="UnexpectedStringPartSyntax" Base="StringPartSyntax">
+    <Documentation>
+      Unexpected input in string expression context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ElseClauseSyntax" Base="SyntaxNode">
+    <Documentation>
+      An else-clause for an if-expression.
+    </Documentation>
+
+    <Field Name="ElseKeyword" Type="SyntaxToken">
+      <Documentation>
+        The else keyword.
+      </Documentation>
+
+      <Token Kind="KeywordElse" />
+    </Field>
+    <Field Name="Expression" Type="ExpressionSyntax">
+      <Documentation>
+        The expression evaluated, if the else clause runs.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ComparisonElementSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single comparison in the comparison chain.
+    </Documentation>
+
+    <Field Name="Operator" Type="SyntaxToken">
+      <Documentation>
+        The operator applied between the previous and the current operand.
+      </Documentation>
+
+      <Token Kind="GreaterThan" />
+      <Token Kind="LessThan" />
+      <Token Kind="GreaterEqual" />
+      <Token Kind="LessEqual" />
+      <Token Kind="Equal" />
+      <Token Kind="NotEqual" />
+    </Field>
+    <Field Name="Right" Type="ExpressionSyntax">
+      <Documentation>
+        The operand to compare the previous one with.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <AbstractNode Name="LabelSyntax" Base="SyntaxNode">
+    <Documentation>
+      A label reference.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="NameLabelSyntax" Base="LabelSyntax">
+    <Documentation>
+      A label reference by name.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the referenced label.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+</Tree>

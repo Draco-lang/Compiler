@@ -7,6 +7,6 @@ internal class Program
     static void Main(string[] args)
     {
         LexerTester tester = new LexerTester();
-        tester.StartTesting(5000, 0);
+        tester.StartTesting(15000, 0);
     }
 }

@@ -98,4 +98,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "closing quotes are not on a new line of multiline string",
         code: Code(10));
+
+    /// <summary>
+    /// There was end of input after start of escape sequence.
+    /// </summary>
+    public static readonly DiagnosticTemplate EmptyEscapeSequence = DiagnosticTemplate.Create(
+        title: "escape sequence was empty",
+        severity: DiagnosticSeverity.Error,
+        format: "there was end of input after start of escape sequence",
+        code: Code(11));
 }

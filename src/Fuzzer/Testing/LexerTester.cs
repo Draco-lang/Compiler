@@ -12,8 +12,7 @@ internal class LexerTester : IComponentTester
         for (int i = 0; i < numEpoch; i++)
         {
             var currentInptut = generator.NextExpoch();
-            var lexer = new Lexer(SourceReader.From(currentInptut));
-            this.LexAll(lexer, currentInptut);
+            this.LexAll(currentInptut);
             for (int j = 0; j < numMutations; j++)
             {
                 throw new NotImplementedException();
@@ -21,8 +20,9 @@ internal class LexerTester : IComponentTester
         }
     }
 
-    private void LexAll(Lexer lexer, string input)
+    private void LexAll(string input)
     {
+        var lexer = new Lexer(SourceReader.From(input));
         try
         {
             while (true)

@@ -496,6 +496,31 @@ internal sealed class Lexer
         // Check for escape sequence
         if (ch == '\\')
         {
+            // End of file after the escape
+            // Pop the string mode so the next token is End of input
+            if (this.Peek(offset + mode.ExtendedDelims + 1) == '\0')
+            {
+                this.PopMode();
+
+                var untilEndOffset = 0;
+                while (this.Peek(offset + untilEndOffset) != '\0')
+                {
+                    this.valueBuilder.Append(this.Peek(offset + untilEndOffset));
+                    ++untilEndOffset;
+                }
+                this.AddError(
+                    template: SyntaxErrors.EmptyEscapeSequence,
+                    offset: offset,
+                    width: untilEndOffset);
+
+                offset += untilEndOffset;
+
+                this.tokenBuilder
+                    .SetType(TokenType.StringContent)
+                    .SetText(this.AdvanceWithText(offset))
+                    .SetValue(this.valueBuilder.ToString());
+                return default;
+            }
             var escapeStart = offset;
 
             // Count the number of required delimiters

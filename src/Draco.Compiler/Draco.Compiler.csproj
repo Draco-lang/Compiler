@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <AdditionalFiles Include="Internal\Syntax\Syntax.xml" />
+    <AdditionalFiles Include="Internal\BoundTree\BoundNodes.xml" />
   </ItemGroup>
 
   <ItemGroup>

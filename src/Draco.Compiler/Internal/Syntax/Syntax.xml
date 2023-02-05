@@ -5,6 +5,8 @@
   xsi:schemaLocation="http://draco-lang.com/red-green-tree/syntax ../../../Draco.SourceGeneration/SyntaxTree/Syntax.xsd"
   Root="SyntaxNode">
   <PredefinedNode Name="SyntaxNode" />
+  <PredefinedNode Name="SyntaxToken" />
+  <PredefinedNode Name="SyntaxTrivia" />
 
   <Node Name="CompilationUnitSyntax" Base="SyntaxNode">
     <Documentation>

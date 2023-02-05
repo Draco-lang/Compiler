@@ -1,4 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Tree Root="BoundNode">
+<Tree
+  xmlns="http://draco-lang.com/bound-tree/bound-nodes"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/bound-tree/bound-nodes ../../../Draco.SourceGeneration/BoundTree/BoundNodes.xsd"
+  Root="BoundNode">
+  <PredefinedNode Name="BoundNode" />
 
+  <AbstractNode Name="BoundStatement" Base="BoundNode" />
+  <AbstractNode Name="BoundExpression" Base="BoundNode" />
+  <AbstractNode Name="BoundLvalue" Base="BoundNode" />
+
+  <Node Name="BoundGotoStatement" Base="BoundStatement">
+    <Field Name="Target" Type="LabelSymbol" />
+  </Node>
+
+  <!-- Compiler uses it for lowering. -->
+  <Node Name="BoundConditionalGotoStatement" Base="BoundStatement">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Target" Type="LabelSymbol" />
+  </Node>
 </Tree>

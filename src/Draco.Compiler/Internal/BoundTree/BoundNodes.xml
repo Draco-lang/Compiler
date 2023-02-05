@@ -10,13 +10,21 @@
   <AbstractNode Name="BoundExpression" Base="BoundNode" />
   <AbstractNode Name="BoundLvalue" Base="BoundNode" />
 
-  <Node Name="BoundGotoStatement" Base="BoundStatement">
-    <Field Name="Target" Type="LabelSymbol" />
-  </Node>
-
   <!-- Compiler uses it for lowering. -->
   <Node Name="BoundConditionalGotoStatement" Base="BoundStatement">
     <Field Name="Condition" Type="BoundExpression" />
     <Field Name="Target" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="LabelStatement" Base="BoundStatement">
+    <Field Name="Label" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="BoundGotoExpression" Base="BoundExpression">
+    <Field Name="Target" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="BoundLiteralExpression" Base="BoundExpression">
+    <Field Name="Value" Type="object" />
   </Node>
 </Tree>

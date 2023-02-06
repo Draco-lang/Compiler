@@ -10,21 +10,46 @@
   <AbstractNode Name="BoundExpression" Base="BoundNode" />
   <AbstractNode Name="BoundLvalue" Base="BoundNode" />
 
-  <!-- Compiler uses it for lowering. -->
-  <Node Name="BoundConditionalGotoStatement" Base="BoundStatement">
-    <Field Name="Condition" Type="BoundExpression" />
-    <Field Name="Target" Type="LabelSymbol" />
-  </Node>
+  <!-- Statements -->
 
-  <Node Name="LabelStatement" Base="BoundStatement">
+  <Node Name="BoundLabelStatement" Base="BoundStatement">
     <Field Name="Label" Type="LabelSymbol" />
   </Node>
+
+  <Node Name="BoundExpressionStatement" Base="BoundStatement">
+    <Field Name="Expression" Type="BoundExpression" />
+  </Node>
+
+  <!-- Expressions -->
 
   <Node Name="BoundGotoExpression" Base="BoundExpression">
     <Field Name="Target" Type="LabelSymbol" />
   </Node>
 
+  <Node Name="BoundReturnExpression" Base="BoundExpression">
+    <Field Name="Value" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundIfExpression" Base="BoundExpression">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Then" Type="BoundExpression" />
+    <Field Name="Else" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundWhileExpression" Base="BoundExpression">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Then" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundCallExpression" Base="BoundExpression">
+    <Field Name="Method" Type="BoundExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object" />
   </Node>
+
+  <!-- LValues -->
+  <!-- TODO -->
 </Tree>

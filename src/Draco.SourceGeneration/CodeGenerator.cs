@@ -1,4 +1,3 @@
-using Draco.SourceGeneration.SyntaxTree;
 using Scriban.Runtime;
 using Scriban;
 using System.Reflection;
@@ -10,10 +9,12 @@ namespace Draco.SourceGeneration;
 
 internal static class CodeGenerator
 {
-    public static string GenerateGreenSyntaxTree(Tree tree, CancellationToken cancellationToken) =>
+    public static string GenerateGreenSyntaxTree(SyntaxTree.Tree tree, CancellationToken cancellationToken) =>
         Render("GreenSyntaxTree.sbncs", tree, cancellationToken);
-    public static string GenerateRedSyntaxTree(Tree tree, CancellationToken cancellationToken) =>
+    public static string GenerateRedSyntaxTree(SyntaxTree.Tree tree, CancellationToken cancellationToken) =>
         Render("RedSyntaxTree.sbncs", tree, cancellationToken);
+    public static string GenerateBoundTree(BoundTree.Tree tree, CancellationToken cancellationToken) =>
+        Render("BoundTree.sbncs", tree, cancellationToken);
 
     private static string Render(string templateName, object model, CancellationToken cancellationToken)
     {

@@ -1,0 +1,64 @@
+{{include 'Utils.sbncs'}}
+
+{{func base(node)}}
+    {{if node.Base}}
+        : {{node.Base.Name}}
+    {{end}}
+{{end}}
+
+{{func abstract_sealed(node)}}
+    {{if node.IsAbstract}}
+        abstract
+    {{else}}
+        sealed
+    {{end}}
+{{end}}
+
+{{func protected_public(node)}}
+    {{if node.IsAbstract}}
+        protected
+    {{else}}
+        public
+    {{end}}
+{{end}}
+
+{{func nullable(field)}}
+    {{if field.IsNullable}}
+        ?
+    {{end}}
+{{end}}
+
+{{func class_header(node)}}
+    {{abstract_sealed(node)}} partial class {{node.Name}} {{base(node)}}
+{{end}}
+
+{{func field_prefix(field)}}
+    {{if field.Documentation}}
+        /// <summary>
+        /// {{field.Documentation}}
+        /// </summary>
+    {{end}}
+    public
+    {{if field.Override}}
+        override
+    {{end}}
+    {{field.Type}} {{field.Name}}
+{{end}}
+
+{{func children(node)}}
+    {{if !node.IsAbstract}}
+        public override IEnumerable<{{Root.Name}}> Children
+        {
+            get
+            {
+                {{for $field in node.Fields}}
+                    {{if $field.IsNullable}}
+                        if (this.{{$field.Name}} is not null)
+                    {{end}}
+                    yield return this.{{$field.Name}};
+                {{end}}
+                yield break;
+            }
+        }
+    {{end}}
+{{end}}

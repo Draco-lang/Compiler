@@ -1,0 +1,48 @@
+using System.Collections.Generic;
+
+namespace Draco.Compiler.Internal.BoundTree;
+
+{{include 'Utils.sbncs'}}
+{{include 'Tree.sbncs'}}
+
+#nullable enable
+{{for $node in Nodes}}
+    internal {{class_header($node)}}
+    {
+        {{for $field in $node.Fields}}
+            {{field_prefix($field)}} { get; }
+        {{end}}
+
+        {{protected_public($node)}} {{$node.Name}}(
+            {{wrap separated(', ', $node.Fields)}}
+                {{$element.Type}} {{camel_case($element.Name)}}
+            {{end}}
+        )
+        {
+            {{for $field in $node.Fields}}
+                this.{{$field.Name}} = {{camel_case($field.Name)}};
+            {{end}}
+        }
+
+        {{if !$node.IsAbstract}}
+            public {{$node.Name}} Update(
+                {{wrap separated(', ', $node.Fields)}}
+                    {{$element.Type}} {{camel_case($element.Name)}}
+                {{end}}
+            )
+            {
+                if (
+                    {{wrap separated(' && ', $node.Fields)}}
+                        Equals(this.{{$element.Name}}, {{camel_case($element.Name)}})
+                    {{end}}
+                ) return this;
+                else return new {{$node.Name}}(
+                    {{wrap separated(', ', $node.Fields)}}
+                        {{camel_case($element.Name)}}
+                    {{end}}
+                );
+            }
+        {{end}}
+    }
+{{end}}
+#nullable restore

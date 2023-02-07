@@ -3,6 +3,7 @@ using System.Collections.Generic;
 namespace Draco.Compiler.Api.Syntax;
 
 {{include 'Utils.sbncs'}}
+{{include 'Tree.sbncs'}}
 {{include 'SyntaxTree.sbncs'}}
 
 {{func to_internal_type(t)}}

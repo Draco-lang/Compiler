@@ -94,11 +94,11 @@ public sealed class SyntaxTreeSourceGenerator : IIncrementalGenerator
                 var xmlModel = (XmlTree)serializer.Deserialize(new SourceTextReader(syntaxXmlSource));
                 var domainModel = Tree.FromXml(xmlModel);
 
-                var greenTreeCode = CodeGenerator.GenerateGreenTree(domainModel, context.CancellationToken);
-                var redTreeCode = CodeGenerator.GenerateRedTree(domainModel, context.CancellationToken);
+                var greenTreeCode = CodeGenerator.GenerateGreenSyntaxTree(domainModel, context.CancellationToken);
+                var redTreeCode = CodeGenerator.GenerateRedSyntaxTree(domainModel, context.CancellationToken);
 
-                context.AddSource("GreenTree.Generated.cs", SourceText.From(greenTreeCode, Encoding.UTF8));
-                context.AddSource("RedTree.Generated.cs", SourceText.From(redTreeCode, Encoding.UTF8));
+                context.AddSource("GreenSyntaxTree.Generated.cs", SourceText.From(greenTreeCode, Encoding.UTF8));
+                context.AddSource("RedSyntaxTree.Generated.cs", SourceText.From(redTreeCode, Encoding.UTF8));
             }
             catch (Exception ex)
             {

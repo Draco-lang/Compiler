@@ -3,7 +3,7 @@
 namespace Draco.Compiler.Internal.Syntax;
 
 {{include 'Utils.sbncs'}}
-{{include 'Tree.sbncs'}}
+{{include 'SyntaxTree.sbncs'}}
 
 #nullable enable
 {{for $node in Nodes}}

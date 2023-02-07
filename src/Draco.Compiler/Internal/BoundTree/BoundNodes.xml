@@ -12,9 +12,9 @@
 
   <!-- Statements -->
 
-  <Node Name="BoundLabelStatement" Base="BoundStatement">
+  <!--<Node Name="BoundLabelStatement" Base="BoundStatement">
     <Field Name="Label" Type="LabelSymbol" />
-  </Node>
+  </Node>-->
 
   <Node Name="BoundExpressionStatement" Base="BoundStatement">
     <Field Name="Expression" Type="BoundExpression" />
@@ -22,9 +22,9 @@
 
   <!-- Expressions -->
 
-  <Node Name="BoundGotoExpression" Base="BoundExpression">
+  <!--<Node Name="BoundGotoExpression" Base="BoundExpression">
     <Field Name="Target" Type="LabelSymbol" />
-  </Node>
+  </Node>-->
 
   <Node Name="BoundReturnExpression" Base="BoundExpression">
     <Field Name="Value" Type="BoundExpression" />

@@ -15,10 +15,11 @@ namespace Draco.Compiler.Internal.BoundTree;
         {{end}}
 
         {{protected_public($node)}} {{$node.Name}}(
-            {{wrap separated(', ', $node.Fields)}}
-                {{$element.Type}} {{camel_case($element.Name)}}
+            Api.Syntax.SyntaxNode syntax
+            {{for $element in $node.Fields}}
+                , {{$element.Type}} {{camel_case($element.Name)}}
             {{end}}
-        )
+        ) : base(syntax)
         {
             {{for $field in $node.Fields}}
                 this.{{$field.Name}} = {{camel_case($field.Name)}};
@@ -38,8 +39,9 @@ namespace Draco.Compiler.Internal.BoundTree;
                     {{end}}
                 ) return this;
                 else return new {{$node.Name}}(
-                    {{wrap separated(', ', $node.Fields)}}
-                        {{camel_case($element.Name)}}
+                    this.Syntax
+                    {{for $element in $node.Fields}}
+                        , {{camel_case($element.Name)}}
                     {{end}}
                 );
             }

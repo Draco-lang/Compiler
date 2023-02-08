@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.BoundTree;
 
@@ -12,6 +13,13 @@ namespace Draco.Compiler.Internal.BoundTree;
 /// </summary>
 internal abstract partial class BoundNode
 {
+    public SyntaxNode? Syntax { get; }
+
+    protected BoundNode(SyntaxNode? syntax)
+    {
+        this.Syntax = syntax;
+    }
+
     protected static bool Equals<TNode>(ImmutableArray<TNode> left, ImmutableArray<TNode> right)
         where TNode : BoundNode
     {

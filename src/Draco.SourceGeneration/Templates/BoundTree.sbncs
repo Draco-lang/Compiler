@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.BoundTree;
         {{end}}
 
         {{protected_public($node)}} {{$node.Name}}(
-            Api.Syntax.SyntaxNode syntax
+            Api.Syntax.SyntaxNode? syntax
             {{for $element in $node.Fields}}
                 , {{$element.Type}} {{camel_case($element.Name)}}
             {{end}}
@@ -47,5 +47,21 @@ namespace Draco.Compiler.Internal.BoundTree;
             }
         {{end}}
     }
+
+    {{if !$node.IsAbstract}}
+        internal static partial class BoundTreeFactory
+        {
+            public static {{$node.Name}} {{remove_prefix($node.Name, 'Bound')}}(
+                {{wrap separated(', ', $node.Fields)}}
+                    {{$element.Type}} {{camel_case($element.Name)}}
+                {{end}}
+            ) => new {{$node.Name}}(
+                null
+                {{for $element in $node.Fields}}
+                    , {{camel_case($element.Name)}}
+                {{end}}
+            );
+        }
+    {{end}}
 {{end}}
 #nullable restore

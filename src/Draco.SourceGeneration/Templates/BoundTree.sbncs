@@ -6,6 +6,43 @@ namespace Draco.Compiler.Internal.BoundTree;
 {{include 'Utils.sbncs'}}
 {{include 'Tree.sbncs'}}
 
+{{func accept_functions(node)}}
+    {{if node.IsAbstract && !node.Base}}
+        public abstract void Accept(BoundTreeVisitor visitor);
+        public abstract TResult Accept<TResult>(BoundTreeVisitor<TResult> visitor);
+    {{else}}
+        public override void Accept(BoundTreeVisitor visitor) =>
+            visitor.Visit{{remove_prefix(node.Name, 'Bound')}}(this);
+        public override TResult Accept<TResult>(BoundTreeVisitor<TResult> visitor) =>
+            visitor.Visit{{remove_prefix(node.Name, 'Bound')}}(this);
+    {{end}}
+{{end}}
+
+{{func visitor_functions(nodes, return_type, return_value)}}
+    {{for $node in nodes}}
+        {{if $node.IsAbstract}}
+            public {{return_type}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            {
+                {{if return_value}}
+                    return node.Accept(this);
+                {{else}}
+                    node.Accept(this);
+                {{end}}
+            }
+        {{else}}
+            public virtual {{return_type}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            {
+                {{for $field in $node.Fields}}
+                    node.{{$field.Name}}{{nullable($field)}}.Accept(this);
+                {{end}}
+                {{if return_value}}
+                    return {{return_value}};
+                {{end}}
+            }
+        {{end}}
+    {{end}}
+{{end}}
+
 #nullable enable
 {{for $node in Nodes}}
     internal {{class_header($node)}}
@@ -46,6 +83,8 @@ namespace Draco.Compiler.Internal.BoundTree;
                 );
             }
         {{end}}
+
+        {{accept_functions($node)}}
     }
 
     {{if !$node.IsAbstract}}
@@ -64,4 +103,46 @@ namespace Draco.Compiler.Internal.BoundTree;
         }
     {{end}}
 {{end}}
+
+/// <summary>
+/// Visitor base class for <see cref="{{Root.Name}}"/>.
+/// </summary>
+internal abstract partial class BoundTreeVisitor
+{
+    {{visitor_functions(Nodes, 'void', null)}}
+}
+
+/// <summary>
+/// Visitor base class for <see cref="{{Root.Name}}"/>.
+/// </summary>
+/// <typeparam name="TResult">
+/// The return type of the visitor methods.
+/// </typeparam>
+internal abstract partial class BoundTreeVisitor<TResult>
+{
+    {{visitor_functions(Nodes, 'TResult', 'default!')}}
+}
+
+/// <summary>
+/// A base class for rewriting <see cref="{{Root.Name}}"/>.
+/// </summary>
+internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{Root.Name}}>
+{
+    {{for $node in Nodes}}
+        {{if !$node.IsAbstract}}
+            public override {{Root.Name}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            {
+                {{for $element in $node.Fields}}
+                    var {{camel_case($element.Name)}} =
+                        ({{$element.Type}})node.{{$element.Name}}{{nullable($element)}}.Accept(this);
+                {{end}}
+                return node.Update(
+                    {{wrap separated(', ', $node.Fields)}}
+                        {{camel_case($element.Name)}}
+                    {{end}}
+                );
+            }
+        {{end}}
+    {{end}}
+}
 #nullable restore

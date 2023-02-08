@@ -20,6 +20,9 @@ internal abstract partial class BoundNode
         this.Syntax = syntax;
     }
 
+    public abstract void Accept(BoundTreeVisitor visitor);
+    public abstract TResult Accept<TResult>(BoundTreeVisitor<TResult> visitor);
+
     protected static bool Equals<TNode>(ImmutableArray<TNode> left, ImmutableArray<TNode> right)
         where TNode : BoundNode
     {

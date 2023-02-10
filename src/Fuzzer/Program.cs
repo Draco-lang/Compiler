@@ -1,12 +1,12 @@
-using Fuzzer.Testing;
+using Draco.Fuzzer.Testing;
 
-namespace Fuzzer;
+namespace Draco.Fuzzer;
 
 internal class Program
 {
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
-        LexerTester tester = new LexerTester();
-        tester.StartTesting(15000, 0);
+        var tester = new ParserFuzzer();
+        tester.StartTesting(50000, 0);
     }
 }

@@ -1,0 +1,32 @@
+using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Syntax;
+using Draco.Fuzzer.Testing.Generators;
+
+namespace Draco.Fuzzer.Testing;
+
+internal class LexerFuzzer : ComponentTester
+{
+    private RandomInputGenerator generator;
+    public LexerFuzzer()
+    {
+        this.generator = new RandomInputGenerator();
+    }
+    public override void RunEpoch()
+    {
+        var input = this.generator.NextExpoch();
+        var lexer = new Lexer(SourceReader.From(input));
+        try
+        {
+            while (true)
+            {
+                var token = lexer.Lex();
+                if (token.Type == TokenType.EndOfInput) break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Helper.PrintError(ex, input);
+        }
+    }
+    public override void RunMutation() => throw new NotImplementedException();
+}

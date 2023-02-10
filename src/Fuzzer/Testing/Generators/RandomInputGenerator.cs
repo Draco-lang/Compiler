@@ -1,4 +1,4 @@
-namespace Fuzzer.Testing.Generators;
+namespace Draco.Fuzzer.Testing.Generators;
 
 internal class RandomInputGenerator : IInputGenerator
 {
@@ -27,7 +27,8 @@ internal class RandomInputGenerator : IInputGenerator
         {
             chars.Add((char)this.random.Next(256));
         }
-        return new string(chars.ToArray());
+        this.currentEpoch = new string(chars.ToArray());
+        return this.currentEpoch;
     }
 
     public string NextMutation()

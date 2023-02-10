@@ -1,4 +1,4 @@
-namespace Fuzzer.Testing.Generators;
+namespace Draco.Fuzzer.Testing.Generators;
 
 internal interface IInputGenerator
 {

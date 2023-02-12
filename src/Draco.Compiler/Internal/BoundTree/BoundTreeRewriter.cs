@@ -14,6 +14,7 @@ internal abstract partial class BoundTreeRewriter
     public ImmutableArray<TNode> VisitArray<TNode>(ImmutableArray<TNode> array)
         where TNode : BoundNode
     {
+        // Lazy construction, only create the builder when absolutely needed
         var elements = null as ImmutableArray<TNode>.Builder;
         foreach (var node in array)
         {

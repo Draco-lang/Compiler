@@ -1,15 +1,18 @@
 using Draco.Compiler.Api.Syntax;
-using Draco.Fuzzer.Testing;
 using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
 internal class ParserFuzzer : ComponentTester
 {
-    private RandomInputGenerator generator;
-    public ParserFuzzer()
+    private IInputGenerator generator;
+    public ParserFuzzer(FuzzType fuzzType)
     {
-        this.generator = new RandomInputGenerator();
+        switch (fuzzType)
+        {
+        case FuzzType.RandomText: this.generator = new RandomTextGenerator(); break;
+        default: throw new NotImplementedException();
+        }
     }
 
     public override void RunEpoch()

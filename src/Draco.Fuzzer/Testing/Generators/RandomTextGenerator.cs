@@ -1,18 +1,18 @@
 namespace Draco.Fuzzer.Testing.Generators;
 
-internal class RandomInputGenerator : IInputGenerator
+internal class RandomTextGenerator : IInputGenerator
 {
     private string? currentEpoch;
     private Random random;
     private int maxLength;
 
-    public RandomInputGenerator(int maxLength = 5000)
+    public RandomTextGenerator(int maxLength = 5000)
     {
         this.random = new Random();
         this.maxLength = maxLength;
     }
 
-    public RandomInputGenerator(int seed, int maxLength = 5000)
+    public RandomTextGenerator(int seed, int maxLength = 5000)
     {
         this.random = new Random(seed);
         this.maxLength = maxLength;

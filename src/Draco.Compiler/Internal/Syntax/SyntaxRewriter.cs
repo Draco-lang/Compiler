@@ -4,6 +4,7 @@ namespace Draco.Compiler.Internal.Syntax;
 
 internal abstract partial class SyntaxRewriter
 {
+    // TODO: Fix these to be lazy
     public override SyntaxNode VisitSeparatedSyntaxList<TNode>(SeparatedSyntaxList<TNode> node) =>
         new SeparatedSyntaxList<TNode>(node.Select(n => n.Accept(this)));
     public override SyntaxNode VisitSyntaxList<TNode>(SyntaxList<TNode> node) =>

@@ -21,7 +21,11 @@ internal abstract partial class BoundTreeRewriter
             if (!Equals(node, rewritten))
             {
                 // There was an update
-                elements ??= ImmutableArray.CreateBuilder<TNode>();
+                if (elements is null)
+                {
+                    elements = ImmutableArray.CreateBuilder<TNode>();
+                    // TODO: Add existing
+                }
                 elements.Add((TNode)rewritten);
             }
         }

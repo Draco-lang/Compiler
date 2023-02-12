@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -116,6 +117,17 @@ public sealed class Field
     public string NonNullableType => this.IsNullable
         ? this.Type.Substring(0, this.Type.Length - 1)
         : this.Type;
+    public bool IsArray => this.Type.StartsWith("ImmutableArray");
+    public string ElementType
+    {
+        get
+        {
+            Debug.Assert(this.IsArray);
+            var start = this.Type.IndexOf('<') + 1;
+            var end = this.Type.IndexOf('>');
+            return this.Type.Substring(start, end - start);
+        }
+    }
 
     public Field(string name, string type, bool @override)
     {

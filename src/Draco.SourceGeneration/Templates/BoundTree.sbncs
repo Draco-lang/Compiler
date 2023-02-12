@@ -18,6 +18,15 @@ namespace Draco.Compiler.Internal.BoundTree;
     {{end}}
 {{end}}
 
+{{func is_node_name(name)}}
+    {{for $n in Nodes}}
+        {{if $n.Name == name}}
+            {{ret true}}
+        {{end}}
+    {{end}}
+    {{ret false}}
+{{end}}
+
 {{func visitor_functions(nodes, return_type, return_value)}}
     {{for $node in nodes}}
         {{if $node.IsAbstract}}
@@ -33,7 +42,11 @@ namespace Draco.Compiler.Internal.BoundTree;
             public virtual {{return_type}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
             {
                 {{for $field in $node.Fields}}
-                    node.{{$field.Name}}{{nullable($field)}}.Accept(this);
+                    {{if is_node_name($field.NonNullableType)}}
+                        node.{{$field.Name}}{{nullable($field)}}.Accept(this);
+                    {{else if $field.IsArray && is_node_name($field.ElementType)}}
+                        foreach (var element in node.{{$field.Name}}) element.Accept(this);
+                    {{end}}
                 {{end}}
                 {{if return_value}}
                     return {{return_value}};
@@ -133,8 +146,14 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{Root.Name
             public override {{Root.Name}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
             {
                 {{for $element in $node.Fields}}
-                    var {{camel_case($element.Name)}} =
-                        ({{$element.Type}})node.{{$element.Name}}{{nullable($element)}}.Accept(this);
+                    {{if is_node_name($element.NonNullableType)}}
+                        var {{camel_case($element.Name)}} =
+                            ({{$element.Type}})node.{{$element.Name}}{{nullable($element)}}.Accept(this);
+                    {{else if $element.IsArray && is_node_name($element.ElementType)}}
+                        var {{camel_case($element.Name)}} = this.VisitArray(node.{{$element.Name}});
+                    {{else}}
+                        var {{camel_case($element.Name)}} = node.{{$element.Name}};
+                    {{end}}
                 {{end}}
                 return node.Update(
                     {{wrap separated(', ', $node.Fields)}}

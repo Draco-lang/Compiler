@@ -9,8 +9,6 @@ namespace Draco.Compiler.Internal.BoundTree;
 
 internal abstract partial class BoundTreeRewriter
 {
-    // TODO: This needs to be fixed, arrays can not be compared with Equals
-    // BoundNode.Equals is already ready for this, maybe use that?
     public ImmutableArray<TNode> VisitArray<TNode>(ImmutableArray<TNode> array)
         where TNode : BoundNode
     {

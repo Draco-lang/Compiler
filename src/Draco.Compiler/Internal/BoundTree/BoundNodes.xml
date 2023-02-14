@@ -66,6 +66,17 @@
     <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 
+  <Node Name="BoundUnaryExpression" Base="BoundExpression">
+    <Field Name="Operator" Type="UnaryOperatorSymbol" />
+    <Field Name="Operand" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundBinaryExpression" Base="BoundExpression">
+    <Field Name="Operator" Type="BinaryOperatorSymbol" />
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
   <Node Name="BoundAndExpression" Base="BoundExpression">
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
@@ -87,6 +98,16 @@
 
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object" />
+  </Node>
+
+  <Node Name="BoundRelationalExpression" Base="BoundExpression">
+    <Field Name="First" Type="BoundExpression" />
+    <Field Name="Comparisons" Type="ImmutableArray&lt;BoundComparison&gt;" />
+  </Node>
+
+  <Node Name="BoundComparison" Base="BoundNode">
+    <Field Name="Operator" Type="ComparisonOperatorSymbol" />
+    <Field Name="Next" Type="BoundExpression" />
   </Node>
 
   <!-- LValues -->

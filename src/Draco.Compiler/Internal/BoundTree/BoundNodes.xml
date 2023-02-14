@@ -12,19 +12,34 @@
 
   <!-- Statements -->
 
-  <!--<Node Name="BoundLabelStatement" Base="BoundStatement">
+  <Node Name="BoundLabelStatement" Base="BoundStatement">
     <Field Name="Label" Type="LabelSymbol" />
-  </Node>-->
+  </Node>
 
   <Node Name="BoundExpressionStatement" Base="BoundStatement">
     <Field Name="Expression" Type="BoundExpression" />
   </Node>
 
+  <Node Name="BoundSequencePoint" Base="BoundStatement">
+    <Field Name="Statement" Type="BoundStatement?" />
+  </Node>
+
+  <Node Name="BoundLocalDeclaration" Base="BoundStatement">
+    <Field Name="Local" Type="LocalSymbol" />
+    <Field Name="Value" Type="BoundExpression?" />
+  </Node>
+
   <!-- Expressions -->
 
-  <!--<Node Name="BoundGotoExpression" Base="BoundExpression">
+  <Node Name="BoundGotoExpression" Base="BoundExpression">
     <Field Name="Target" Type="LabelSymbol" />
-  </Node>-->
+  </Node>
+
+  <Node Name="BoundBlockExpression" Base="BoundExpression">
+    <Field Name="Locals" Type="ImmutableArray&lt;LocalSymbol&gt;" />
+    <Field Name="Statements" Type="ImmutableArray&lt;BoundStatement&gt;" />
+    <Field Name="Value" Type="BoundExpression" />
+  </Node>
 
   <Node Name="BoundReturnExpression" Base="BoundExpression">
     <Field Name="Value" Type="BoundExpression" />
@@ -46,10 +61,37 @@
     <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 
+  <Node Name="BoundIndexExpression" Base="BoundExpression">
+    <Field Name="Collection" Type="BoundExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
+  <Node Name="BoundAndExpression" Base="BoundExpression">
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundOrExpression" Base="BoundExpression">
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundAssignmentExpression" Base="BoundExpression">
+    <Field Name="Left" Type="BoundLvalue" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundLocalExpression" Base="BoundExpression">
+    <Field Name="Local" Type="LocalSymbol" />
+  </Node>
+
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object" />
   </Node>
 
   <!-- LValues -->
-  <!-- TODO -->
+
+  <Node Name="BoundLocalLvalue" Base="BoundLvalue">
+    <Field Name="Local" Type="LocalSymbol" />
+  </Node>
 </Tree>

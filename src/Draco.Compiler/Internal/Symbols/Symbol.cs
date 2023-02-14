@@ -11,4 +11,13 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class Symbol
 {
+    /// <summary>
+    /// The symbol directly containing this one.
+    /// </summary>
+    public abstract Symbol? ContainingSymbol { get; }
+
+    /// <summary>
+    /// The name of this symbol.
+    /// </summary>
+    public virtual string Name => string.Empty;
 }

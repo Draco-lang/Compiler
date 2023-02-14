@@ -11,4 +11,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class GlobalSymbol : Symbol
 {
+    /// <summary>
+    /// The type of the global.
+    /// </summary>
+    public abstract Type Type { get; }
 }

@@ -1,14 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
-/// Represents a parameter in a function.
+/// Represents a comparison operator.
 /// </summary>
-internal abstract partial class ParameterSymbol : LocalSymbol
+internal abstract partial class ComparisonOperatorSymbol : BinaryOperatorSymbol
 {
 }

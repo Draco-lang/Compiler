@@ -15,4 +15,9 @@ internal abstract partial class LocalSymbol : Symbol
     /// The type of the local.
     /// </summary>
     public abstract Type Type { get; }
+
+    /// <summary>
+    /// True, if this local is mutable.
+    /// </summary>
+    public abstract bool IsMutable { get; }
 }

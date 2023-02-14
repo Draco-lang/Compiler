@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.BoundTree;
 

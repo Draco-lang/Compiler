@@ -11,4 +11,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class LocalSymbol : Symbol
 {
+    /// <summary>
+    /// The type of the local.
+    /// </summary>
+    public abstract Type Type { get; }
 }

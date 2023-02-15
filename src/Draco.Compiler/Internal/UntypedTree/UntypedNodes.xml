@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Tree
-  xmlns="http://draco-lang.com/bound-tree/bound-nodes"
+  xmlns="http://draco-lang.com/untyped-tree/untyped-nodes"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://draco-lang.com/bound-tree/bound-nodes ../../../Draco.SourceGeneration/BoundTree/BoundNodes.xsd"
+  xsi:schemaLocation="http://draco-lang.com/untyped-tree/untyped-nodes ../../../Draco.SourceGeneration/UntypedTree/UntypedNodes.xsd"
   Root="BoundNode">
   <PredefinedNode Name="BoundNode" />
 

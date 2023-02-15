@@ -13,6 +13,8 @@ internal static class CodeGenerator
         Render("GreenSyntaxTree.sbncs", tree, cancellationToken);
     public static string GenerateRedSyntaxTree(SyntaxTree.Tree tree, CancellationToken cancellationToken) =>
         Render("RedSyntaxTree.sbncs", tree, cancellationToken);
+    public static string GenerateUntypedTree(UntypedTree.Tree tree, CancellationToken cancellationToken) =>
+        Render("UntypedTree.sbncs", tree, cancellationToken);
     public static string GenerateBoundTree(BoundTree.Tree tree, CancellationToken cancellationToken) =>
         Render("BoundTree.sbncs", tree, cancellationToken);
 

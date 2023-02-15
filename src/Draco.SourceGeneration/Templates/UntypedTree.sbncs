@@ -9,13 +9,13 @@ namespace Draco.Compiler.Internal.UntypedTree;
 
 {{func accept_functions(node)}}
     {{if node.IsAbstract && !node.Base}}
-        public abstract void Accept(BoundTreeVisitor visitor);
-        public abstract TResult Accept<TResult>(BoundTreeVisitor<TResult> visitor);
+        public abstract void Accept(UntypedTreeVisitor visitor);
+        public abstract TResult Accept<TResult>(UntypedTreeVisitor<TResult> visitor);
     {{else}}
-        public override void Accept(BoundTreeVisitor visitor) =>
-            visitor.Visit{{remove_prefix(node.Name, 'Bound')}}(this);
-        public override TResult Accept<TResult>(BoundTreeVisitor<TResult> visitor) =>
-            visitor.Visit{{remove_prefix(node.Name, 'Bound')}}(this);
+        public override void Accept(UntypedTreeVisitor visitor) =>
+            visitor.Visit{{remove_prefix(node.Name, 'Untyped')}}(this);
+        public override TResult Accept<TResult>(UntypedTreeVisitor<TResult> visitor) =>
+            visitor.Visit{{remove_prefix(node.Name, 'Untyped')}}(this);
     {{end}}
 {{end}}
 
@@ -31,7 +31,7 @@ namespace Draco.Compiler.Internal.UntypedTree;
 {{func visitor_functions(nodes, return_type, return_value)}}
     {{for $node in nodes}}
         {{if $node.IsAbstract}}
-            public {{return_type}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            public {{return_type}} Visit{{remove_prefix($node.Name, 'Untyped')}}({{$node.Name}} node)
             {
                 {{if return_value}}
                     return node.Accept(this);
@@ -40,7 +40,7 @@ namespace Draco.Compiler.Internal.UntypedTree;
                 {{end}}
             }
         {{else}}
-            public virtual {{return_type}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            public virtual {{return_type}} Visit{{remove_prefix($node.Name, 'Untyped')}}({{$node.Name}} node)
             {
                 {{for $field in $node.Fields}}
                     {{if is_node_name($field.NonNullableType)}}
@@ -102,9 +102,9 @@ namespace Draco.Compiler.Internal.UntypedTree;
     }
 
     {{if !$node.IsAbstract}}
-        internal static partial class BoundTreeFactory
+        internal static partial class UntypedTreeFactory
         {
-            public static {{$node.Name}} {{remove_prefix($node.Name, 'Bound')}}(
+            public static {{$node.Name}} {{remove_prefix($node.Name, 'Untyped')}}(
                 {{wrap separated(', ', $node.Fields)}}
                     {{$element.Type}} {{camel_case($element.Name)}}
                 {{end}}
@@ -121,7 +121,7 @@ namespace Draco.Compiler.Internal.UntypedTree;
 /// <summary>
 /// Visitor base class for <see cref="{{Root.Name}}"/>.
 /// </summary>
-internal abstract partial class BoundTreeVisitor
+internal abstract partial class UntypedTreeVisitor
 {
     {{visitor_functions(Nodes, 'void', null)}}
 }
@@ -132,7 +132,7 @@ internal abstract partial class BoundTreeVisitor
 /// <typeparam name="TResult">
 /// The return type of the visitor methods.
 /// </typeparam>
-internal abstract partial class BoundTreeVisitor<TResult>
+internal abstract partial class UntypedTreeVisitor<TResult>
 {
     {{visitor_functions(Nodes, 'TResult', 'default!')}}
 }
@@ -140,11 +140,11 @@ internal abstract partial class BoundTreeVisitor<TResult>
 /// <summary>
 /// A base class for rewriting <see cref="{{Root.Name}}"/>.
 /// </summary>
-internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{Root.Name}}>
+internal abstract partial class UntypedTreeRewriter : UntypedTreeVisitor<{{Root.Name}}>
 {
     {{for $node in Nodes}}
         {{if !$node.IsAbstract}}
-            public override {{Root.Name}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            public override {{Root.Name}} Visit{{remove_prefix($node.Name, 'Untyped')}}({{$node.Name}} node)
             {
                 {{for $element in $node.Fields}}
                     {{if is_node_name($element.NonNullableType)}}

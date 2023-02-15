@@ -3,116 +3,112 @@
   xmlns="http://draco-lang.com/untyped-tree/untyped-nodes"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://draco-lang.com/untyped-tree/untyped-nodes ../../../Draco.SourceGeneration/UntypedTree/UntypedNodes.xsd"
-  Root="BoundNode">
-  <PredefinedNode Name="BoundNode" />
+  Root="UntypedNode">
+  <PredefinedNode Name="UntypedNode" />
 
-  <AbstractNode Name="BoundStatement" Base="BoundNode" />
-  <AbstractNode Name="BoundExpression" Base="BoundNode" />
-  <AbstractNode Name="BoundLvalue" Base="BoundNode" />
+  <AbstractNode Name="UntypedStatement" Base="UntypedNode" />
+  <AbstractNode Name="UntypedExpression" Base="UntypedNode" />
+  <AbstractNode Name="UntypedLvalue" Base="UntypedNode" />
 
   <!-- Statements -->
 
-  <Node Name="BoundLabelStatement" Base="BoundStatement">
+  <Node Name="UntypedLabelStatement" Base="UntypedStatement">
     <Field Name="Label" Type="LabelSymbol" />
   </Node>
 
-  <Node Name="BoundExpressionStatement" Base="BoundStatement">
-    <Field Name="Expression" Type="BoundExpression" />
+  <Node Name="UntypedExpressionStatement" Base="UntypedStatement">
+    <Field Name="Expression" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundSequencePoint" Base="BoundStatement">
-    <Field Name="Statement" Type="BoundStatement?" />
-  </Node>
-
-  <Node Name="BoundLocalDeclaration" Base="BoundStatement">
+  <Node Name="UntypedLocalDeclaration" Base="UntypedStatement">
     <Field Name="Local" Type="LocalSymbol" />
-    <Field Name="Value" Type="BoundExpression?" />
+    <Field Name="Value" Type="UntypedExpression?" />
   </Node>
 
   <!-- Expressions -->
 
-  <Node Name="BoundGotoExpression" Base="BoundExpression">
+  <Node Name="UntypedGotoExpression" Base="UntypedExpression">
     <Field Name="Target" Type="LabelSymbol" />
   </Node>
 
-  <Node Name="BoundBlockExpression" Base="BoundExpression">
+  <Node Name="UntypedBlockExpression" Base="UntypedExpression">
     <Field Name="Locals" Type="ImmutableArray&lt;LocalSymbol&gt;" />
-    <Field Name="Statements" Type="ImmutableArray&lt;BoundStatement&gt;" />
-    <Field Name="Value" Type="BoundExpression" />
+    <Field Name="Statements" Type="ImmutableArray&lt;UntypedStatement&gt;" />
+    <Field Name="Value" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundReturnExpression" Base="BoundExpression">
-    <Field Name="Value" Type="BoundExpression" />
+  <Node Name="UntypedReturnExpression" Base="UntypedExpression">
+    <Field Name="Value" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundIfExpression" Base="BoundExpression">
-    <Field Name="Condition" Type="BoundExpression" />
-    <Field Name="Then" Type="BoundExpression" />
-    <Field Name="Else" Type="BoundExpression" />
+  <Node Name="UntypedIfExpression" Base="UntypedExpression">
+    <Field Name="Condition" Type="UntypedExpression" />
+    <Field Name="Then" Type="UntypedExpression" />
+    <Field Name="Else" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundWhileExpression" Base="BoundExpression">
-    <Field Name="Condition" Type="BoundExpression" />
-    <Field Name="Then" Type="BoundExpression" />
+  <Node Name="UntypedWhileExpression" Base="UntypedExpression">
+    <Field Name="Condition" Type="UntypedExpression" />
+    <Field Name="Then" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundCallExpression" Base="BoundExpression">
-    <Field Name="Method" Type="BoundExpression" />
-    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  <Node Name="UntypedCallExpression" Base="UntypedExpression">
+    <Field Name="Method" Type="UntypedExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
   </Node>
 
-  <Node Name="BoundIndexExpression" Base="BoundExpression">
-    <Field Name="Collection" Type="BoundExpression" />
-    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  <Node Name="UntypedIndexExpression" Base="UntypedExpression">
+    <Field Name="Collection" Type="UntypedExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
   </Node>
 
-  <Node Name="BoundUnaryExpression" Base="BoundExpression">
+  <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="UnaryOperatorSymbol" />
-    <Field Name="Operand" Type="BoundExpression" />
+    <Field Name="Operand" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundBinaryExpression" Base="BoundExpression">
+  <Node Name="UntypedBinaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="BinaryOperatorSymbol" />
-    <Field Name="Left" Type="BoundExpression" />
-    <Field Name="Right" Type="BoundExpression" />
+    <Field Name="Left" Type="UntypedExpression" />
+    <Field Name="Right" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundAndExpression" Base="BoundExpression">
-    <Field Name="Left" Type="BoundExpression" />
-    <Field Name="Right" Type="BoundExpression" />
+  <Node Name="UntypedAndExpression" Base="UntypedExpression">
+    <Field Name="Left" Type="UntypedExpression" />
+    <Field Name="Right" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundOrExpression" Base="BoundExpression">
-    <Field Name="Left" Type="BoundExpression" />
-    <Field Name="Right" Type="BoundExpression" />
+  <Node Name="UntypedOrExpression" Base="UntypedExpression">
+    <Field Name="Left" Type="UntypedExpression" />
+    <Field Name="Right" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundAssignmentExpression" Base="BoundExpression">
-    <Field Name="Left" Type="BoundLvalue" />
-    <Field Name="Right" Type="BoundExpression" />
+  <Node Name="UntypedAssignmentExpression" Base="UntypedExpression">
+    <Field Name="Left" Type="UntypedLvalue" />
+    <Field Name="Right" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="BoundLocalExpression" Base="BoundExpression">
+  <Node Name="UntypedLocalExpression" Base="UntypedExpression">
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
 
-  <Node Name="BoundLiteralExpression" Base="BoundExpression">
+  <Node Name="UntypedLiteralExpression" Base="UntypedExpression">
     <Field Name="Value" Type="object" />
   </Node>
 
-  <Node Name="BoundRelationalExpression" Base="BoundExpression">
-    <Field Name="First" Type="BoundExpression" />
-    <Field Name="Comparisons" Type="ImmutableArray&lt;BoundComparison&gt;" />
+  <Node Name="UntypedRelationalExpression" Base="UntypedExpression">
+    <Field Name="First" Type="UntypedExpression" />
+    <Field Name="Comparisons" Type="ImmutableArray&lt;UntypedComparison&gt;" />
   </Node>
 
-  <Node Name="BoundComparison" Base="BoundNode">
+  <Node Name="UntypedComparison" Base="UntypedNode">
     <Field Name="Operator" Type="ComparisonOperatorSymbol" />
-    <Field Name="Next" Type="BoundExpression" />
+    <Field Name="Next" Type="UntypedExpression" />
   </Node>
 
   <!-- LValues -->
 
-  <Node Name="BoundLocalLvalue" Base="BoundLvalue">
+  <Node Name="UntypedLocalLvalue" Base="UntypedLvalue">
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
 </Tree>

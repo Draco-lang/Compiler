@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Tree
+  xmlns="http://draco-lang.com/bound-tree/bound-nodes"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/bound-tree/bound-nodes ../../../Draco.SourceGeneration/BoundTree/BoundNodes.xsd"
+  Root="BoundNode">
+  <PredefinedNode Name="BoundNode" />
+
+  <AbstractNode Name="BoundStatement" Base="BoundNode" />
+  <AbstractNode Name="BoundExpression" Base="BoundNode" />
+  <AbstractNode Name="BoundLvalue" Base="BoundNode" />
+
+  <!-- Statements -->
+
+  <Node Name="BoundLabelStatement" Base="BoundStatement">
+    <Field Name="Label" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="BoundExpressionStatement" Base="BoundStatement">
+    <Field Name="Expression" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundSequencePoint" Base="BoundStatement">
+    <Field Name="Statement" Type="BoundStatement?" />
+  </Node>
+
+  <Node Name="BoundLocalDeclaration" Base="BoundStatement">
+    <Field Name="Local" Type="LocalSymbol" />
+    <Field Name="Value" Type="BoundExpression?" />
+  </Node>
+
+  <!-- Expressions -->
+
+  <Node Name="BoundGotoExpression" Base="BoundExpression">
+    <Field Name="Target" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="BoundBlockExpression" Base="BoundExpression">
+    <Field Name="Locals" Type="ImmutableArray&lt;LocalSymbol&gt;" />
+    <Field Name="Statements" Type="ImmutableArray&lt;BoundStatement&gt;" />
+    <Field Name="Value" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundReturnExpression" Base="BoundExpression">
+    <Field Name="Value" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundIfExpression" Base="BoundExpression">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Then" Type="BoundExpression" />
+    <Field Name="Else" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundWhileExpression" Base="BoundExpression">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Then" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundCallExpression" Base="BoundExpression">
+    <Field Name="Method" Type="BoundExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
+  <Node Name="BoundIndexExpression" Base="BoundExpression">
+    <Field Name="Collection" Type="BoundExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
+  <Node Name="BoundUnaryExpression" Base="BoundExpression">
+    <Field Name="Operator" Type="UnaryOperatorSymbol" />
+    <Field Name="Operand" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundBinaryExpression" Base="BoundExpression">
+    <Field Name="Operator" Type="BinaryOperatorSymbol" />
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundAndExpression" Base="BoundExpression">
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundOrExpression" Base="BoundExpression">
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundAssignmentExpression" Base="BoundExpression">
+    <Field Name="Left" Type="BoundLvalue" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundLocalExpression" Base="BoundExpression">
+    <Field Name="Local" Type="LocalSymbol" />
+  </Node>
+
+  <Node Name="BoundLiteralExpression" Base="BoundExpression">
+    <Field Name="Value" Type="object" />
+  </Node>
+
+  <Node Name="BoundRelationalExpression" Base="BoundExpression">
+    <Field Name="First" Type="BoundExpression" />
+    <Field Name="Comparisons" Type="ImmutableArray&lt;BoundComparison&gt;" />
+  </Node>
+
+  <Node Name="BoundComparison" Base="BoundNode">
+    <Field Name="Operator" Type="ComparisonOperatorSymbol" />
+    <Field Name="Next" Type="BoundExpression" />
+  </Node>
+
+  <!-- LValues -->
+
+  <Node Name="BoundLocalLvalue" Base="BoundLvalue">
+    <Field Name="Local" Type="LocalSymbol" />
+  </Node>
+</Tree>

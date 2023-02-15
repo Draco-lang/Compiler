@@ -1,4 +1,5 @@
 using Draco.Fuzzer.Testing;
+using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer;
 
@@ -6,7 +7,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var tester = new ParserFuzzer();
+        var tester = new LexerFuzzer(new RandomTextGenerator());
         tester.StartTesting(50000, 0);
     }
 }

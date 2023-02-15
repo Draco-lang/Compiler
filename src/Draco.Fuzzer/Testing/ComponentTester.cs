@@ -1,5 +1,3 @@
-using System.Reflection.Emit;
-
 namespace Draco.Fuzzer.Testing;
 
 internal abstract class ComponentTester

@@ -6,14 +6,10 @@ namespace Draco.Fuzzer.Testing;
 
 internal class LexerFuzzer : ComponentTester
 {
-    private IInputGenerator generator;
-    public LexerFuzzer(FuzzType fuzzType)
+    private IInputGenerator<string> generator;
+    public LexerFuzzer(IInputGenerator<string> generator)
     {
-        switch (fuzzType)
-        {
-        case FuzzType.RandomText: this.generator = new RandomTextGenerator(); break;
-        default: throw new NotImplementedException();
-        }
+        this.generator = generator;
     }
     public override void RunEpoch()
     {

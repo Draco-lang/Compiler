@@ -1,8 +1,8 @@
 namespace Draco.Fuzzer.Testing.Generators;
 
-internal interface IInputGenerator
+internal interface IInputGenerator<T>
 {
-    public string NextExpoch();
+    public T NextExpoch();
 
-    public string NextMutation();
+    public T NextMutation();
 }

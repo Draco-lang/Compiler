@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Internal.Syntax.ParseNode;
@@ -53,10 +55,40 @@ internal static class TokenSource
         }
     }
 
+    private sealed class MemoryTokenSource : ITokenSource
+    {
+        private readonly IEnumerator<Token> tokens;
+        private readonly RingBuffer<Token> lookahead = new();
+
+        public MemoryTokenSource(IEnumerable<Token> tokens)
+        {
+            this.tokens = tokens.GetEnumerator();
+        }
+
+        public Token Peek(int offset = 0)
+        {
+            while (offset >= this.lookahead.Count && this.tokens.MoveNext()) this.lookahead.AddBack(this.tokens.Current);
+            return this.lookahead[offset];
+        }
+
+        public void Advance(int amount = 1)
+        {
+            this.Peek();
+            this.lookahead.RemoveFront();
+        }
+    }
+
     /// <summary>
     /// Constructs a new <see cref="ITokenSource"/> that reads tokens from <paramref name="lexer"/>.
     /// </summary>
     /// <param name="lexer">The <see cref="Lexer"/> to read <see cref="Token"/>s from.</param>
     /// <returns>The constructed <see cref="ITokenSource"/> that reads from <paramref name="lexer"/>.</returns>
     public static ITokenSource From(Lexer lexer) => new LexerTokenSource(lexer);
+
+    /// <summary>
+    /// Constructs a new <see cref="ITokenSource"/> that reads tokens from input.
+    /// </summary>
+    /// <param name="tokens">The <see cref="Token"/>s to read from.</param>
+    /// <returns>The constructed <see cref="ITokenSource"/>.</returns>
+    public static ITokenSource From(IEnumerable<Token> tokens) => new MemoryTokenSource(tokens);
 }

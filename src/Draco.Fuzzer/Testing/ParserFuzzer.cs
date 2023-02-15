@@ -1,18 +1,15 @@
-using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Syntax;
 using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
 internal class ParserFuzzer : ComponentTester
 {
-    private IInputGenerator generator;
-    public ParserFuzzer(FuzzType fuzzType)
+    private IInputGenerator<ParseNode.Token[]> generator;
+
+    public ParserFuzzer(IInputGenerator<ParseNode.Token[]> generator)
     {
-        switch (fuzzType)
-        {
-        case FuzzType.RandomText: this.generator = new RandomTextGenerator(); break;
-        default: throw new NotImplementedException();
-        }
+        this.generator = generator;
     }
 
     public override void RunEpoch()
@@ -20,11 +17,12 @@ internal class ParserFuzzer : ComponentTester
         var input = this.generator.NextExpoch();
         try
         {
-            ParseTree.Parse(input);
+            // We just care about the parsing into compilation unit part
+            new Parser(TokenSource.From(input)).ParseCompilationUnit();
         }
         catch (Exception ex)
         {
-            Helper.PrintError(ex, input);
+            Helper.PrintError(ex, string.Join(Environment.NewLine, (IEnumerable<ParseNode.Token>)input));
         }
     }
     public override void RunMutation() => throw new NotImplementedException();

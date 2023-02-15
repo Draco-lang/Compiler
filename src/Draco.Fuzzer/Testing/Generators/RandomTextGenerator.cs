@@ -1,6 +1,6 @@
 namespace Draco.Fuzzer.Testing.Generators;
 
-internal class RandomTextGenerator : IInputGenerator
+internal class RandomTextGenerator : IInputGenerator<string>
 {
     private string? currentEpoch;
     private Random random;

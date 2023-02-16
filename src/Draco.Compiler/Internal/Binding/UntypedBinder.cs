@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -26,12 +27,12 @@ internal abstract partial class UntypedBinder
     protected UntypedBinder? Parent { get; }
 
     /// <summary>
-    /// Attempts to look up a symbol in this scope.
+    /// Binds the given syntaxes to a symbol representing the entire module for compilation.
     /// </summary>
-    /// <param name="result">The result to write the found symbols to.</param>
-    /// <param name="name">The name of the symbol.</param>
-    /// <param name="filter">The filter to use for the symbols.</param>
-    protected virtual void LookupLocal(LookupResult result, string name, SymbolFilter filter)
+    /// <param name="syntaxes">The <see cref="CompilationUnitSyntax"/>es to bind.</param>
+    /// <returns>The bound <see cref="ModuleSymbol"/> with potential type-info still missing.</returns>
+    public static ModuleSymbol Bind(IEnumerable<CompilationUnitSyntax> syntaxes)
     {
+        throw new NotImplementedException();
     }
 }

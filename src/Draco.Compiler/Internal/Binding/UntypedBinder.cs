@@ -14,13 +14,6 @@ namespace Draco.Compiler.Internal.Binding;
 internal abstract partial class UntypedBinder
 {
     /// <summary>
-    /// A filter delegate for symbols.
-    /// </summary>
-    /// <param name="symbol">The symbol to check.</param>
-    /// <returns>True, if the filter accepts <paramref name="symbol"/>.</returns>
-    protected delegate bool SymbolFilter(Symbol symbol);
-
-    /// <summary>
     /// The binder that gets invoked, if something could not be resolved in this one.
     /// In other terms, this is the parent scope.
     /// </summary>

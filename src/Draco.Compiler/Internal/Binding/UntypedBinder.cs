@@ -24,7 +24,7 @@ internal abstract partial class UntypedBinder
     /// </summary>
     /// <param name="syntaxes">The <see cref="CompilationUnitSyntax"/>es to bind.</param>
     /// <returns>The bound <see cref="ModuleSymbol"/> with potential type-info still missing.</returns>
-    public static ModuleSymbol Bind(IEnumerable<CompilationUnitSyntax> syntaxes)
+    public ModuleSymbol Bind(IEnumerable<CompilationUnitSyntax> syntaxes)
     {
         throw new NotImplementedException();
     }

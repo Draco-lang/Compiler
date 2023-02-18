@@ -5,7 +5,7 @@ using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
-internal sealed class CompilerFuzzer : ComponentTester
+internal sealed class CompilerFuzzer : ComponentFuzzer
 {
     private IInputGenerator<string> generator;
 

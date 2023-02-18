@@ -1,6 +1,6 @@
 namespace Draco.Fuzzer.Testing;
 
-internal abstract class ComponentTester
+internal abstract class ComponentFuzzer
 {
     public virtual void StartTesting(int numEpoch, int numMutations)
     {

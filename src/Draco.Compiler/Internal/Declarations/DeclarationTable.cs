@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Declarations;
 
@@ -39,4 +40,26 @@ internal sealed class DeclarationTable
     /// <returns>The new table, containing <paramref name="compilationUnit"/>.</returns>
     public DeclarationTable AddCompilationUnit(CompilationUnitSyntax compilationUnit) =>
         new(this.compilationUnits.Add(compilationUnit));
+
+    /// <summary>
+    /// Retrieves the DOT graph of the declaration tree for debugging purposes.
+    /// </summary>
+    /// <returns>The DOT graph code for the declaration tree.</returns>
+    public string ToDot()
+    {
+        var graph = new DotGraphBuilder<Declaration>(isDirected: true);
+
+        void Recurse(Declaration declaration)
+        {
+            graph!
+                .AddVertex(declaration)
+                .WithLabel(declaration.Name)
+                .WithXLabel(declaration.GetType().Name);
+            foreach (var child in declaration.Children) graph!.AddEdge(declaration, child);
+        }
+
+        Recurse(this.MergedRoot);
+
+        return graph.ToDot();
+    }
 }

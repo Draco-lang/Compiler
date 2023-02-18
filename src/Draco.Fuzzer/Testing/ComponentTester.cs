@@ -12,6 +12,7 @@ internal abstract class ComponentTester
                 this.RunMutation();
             }
         }
+        Helper.PrintResult();
     }
 
     public abstract void RunEpoch();

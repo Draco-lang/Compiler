@@ -1,17 +1,29 @@
+using System.Diagnostics;
+using System.Text;
+
 namespace Draco.Fuzzer;
 
 internal static class Helper
 {
-    public static void PrintError(Exception ex, string input)
+    private static List<(string input, Exception ex)> errors = new();
+
+    public static void PrintError(Exception ex, string input) => errors.Add((input, ex));
+
+    public static void PrintResult()
     {
-        Console.WriteLine(input);
-        Console.WriteLine();
-        Console.WriteLine(ex.Message);
-        Console.WriteLine();
-        Console.WriteLine(ex.StackTrace);
         var color = Console.ForegroundColor;
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(new string('-', 80));
-        Console.ForegroundColor = color;
+        var errorCount = errors.GroupBy(x => x.ex.StackTrace);
+        foreach (var error in errorCount)
+        {
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine($"{error.Count()} error/s : ");
+            Console.ForegroundColor = color;
+            Console.WriteLine();
+            Console.WriteLine(error.First().input);
+            Console.WriteLine(error.Key);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(new string('-', Console.WindowWidth));
+            Console.ForegroundColor = color;
+        }
     }
 }

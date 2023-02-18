@@ -1,10 +1,10 @@
 namespace Draco.Fuzzer.Testing.Generators;
 
-internal class RandomTextGenerator : IInputGenerator<string>
+internal sealed class RandomTextGenerator : IInputGenerator<string>
 {
     private string? currentEpoch;
-    private Random random;
-    private int maxLength;
+    private readonly Random random;
+    private readonly int maxLength;
 
     public RandomTextGenerator(int maxLength = 5000)
     {

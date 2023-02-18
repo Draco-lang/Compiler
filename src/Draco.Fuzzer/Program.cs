@@ -7,7 +7,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var tester = new LexerFuzzer(new RandomTextGenerator());
-        tester.StartTesting(50000, 0);
+        var tester = new CompilerFuzzer(new RandomTextGenerator());
+        tester.StartTesting(50, 0);
     }
 }

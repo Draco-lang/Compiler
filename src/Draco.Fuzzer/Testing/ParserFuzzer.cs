@@ -3,7 +3,7 @@ using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
-internal class ParserFuzzer : ComponentTester
+internal sealed class ParserFuzzer : ComponentTester
 {
     private IInputGenerator<ParseNode.Token[]> generator;
 

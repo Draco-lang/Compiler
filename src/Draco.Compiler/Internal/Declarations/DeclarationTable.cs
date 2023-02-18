@@ -14,7 +14,17 @@ namespace Draco.Compiler.Internal.Declarations;
 /// </summary>
 internal sealed class DeclarationTable
 {
-    public static DeclarationTable Empty { get; } = new(ImmutableArray<CompilationUnitSyntax>.Empty);
+    /// <summary>
+    /// Constructs a new declaration table from the given syntax trees.
+    /// </summary>
+    /// <param name="syntaxTrees">The syntax trees to construct the declarations from.</param>
+    /// <returns>The declaration table containing <paramref name="syntaxTrees"/>.</returns>
+    public static DeclarationTable From(ImmutableArray<SyntaxTree> syntaxTrees) => new(syntaxTrees);
+
+    /// <summary>
+    /// An empty declaration table.
+    /// </summary>
+    public static DeclarationTable Empty { get; } = new(ImmutableArray<SyntaxTree>.Empty);
 
     /// <summary>
     /// The merged root module.
@@ -22,24 +32,32 @@ internal sealed class DeclarationTable
     public MergedModuleDeclaration MergedRoot => this.mergedRoot ??= this.BuildMergedRoot();
     private MergedModuleDeclaration? mergedRoot;
 
-    private readonly ImmutableArray<CompilationUnitSyntax> compilationUnits;
+    private readonly ImmutableArray<SyntaxTree> syntaxTrees;
 
-    private DeclarationTable(ImmutableArray<CompilationUnitSyntax> compilationUnits)
+    private DeclarationTable(ImmutableArray<SyntaxTree> syntaxTrees)
     {
-        this.compilationUnits = compilationUnits;
+        this.syntaxTrees = syntaxTrees;
     }
 
     // NOTE: We don't have modules specified yet, so all added syntaxes are assumed to be in a global module with empty name
     private MergedModuleDeclaration BuildMergedRoot() =>
-        new(this.compilationUnits.Select(s => new SingleModuleDeclaration(string.Empty, s)).ToImmutableArray());
+        new(this.syntaxTrees.Select(s => new SingleModuleDeclaration(string.Empty, (CompilationUnitSyntax)s.Root)).ToImmutableArray());
 
     /// <summary>
-    /// Adds a top-level compilation unit syntax to this table.
+    /// Adds a syntax-tree to this table.
     /// </summary>
-    /// <param name="compilationUnit">The syntax to add.</param>
-    /// <returns>The new table, containing <paramref name="compilationUnit"/>.</returns>
-    public DeclarationTable AddCompilationUnit(CompilationUnitSyntax compilationUnit) =>
-        new(this.compilationUnits.Add(compilationUnit));
+    /// <param name="syntaxTree">The syntax tree to add.</param>
+    /// <returns>The new table, containing declarations in <paramref name="syntaxTree"/>.</returns>
+    public DeclarationTable AddCompilationUnit(SyntaxTree syntaxTree) =>
+        new(this.syntaxTrees.Add(syntaxTree));
+
+    /// <summary>
+    /// Adds a syntax-trees to this table.
+    /// </summary>
+    /// <param name="syntaxTrees">The syntax trees to add.</param>
+    /// <returns>The new table, containing <paramref name="syntaxTrees"/>.</returns>
+    public DeclarationTable AddCompilationUnits(IEnumerable<SyntaxTree> syntaxTrees) =>
+        new(this.syntaxTrees.AddRange(syntaxTrees));
 
     /// <summary>
     /// Retrieves the DOT graph of the declaration tree for debugging purposes.
@@ -53,9 +71,12 @@ internal sealed class DeclarationTable
         {
             graph!
                 .AddVertex(declaration)
-                .WithLabel(declaration.Name)
-                .WithXLabel(declaration.GetType().Name);
-            foreach (var child in declaration.Children) graph!.AddEdge(declaration, child);
+                .WithLabel($"{declaration.GetType().Name}\n{declaration.Name}");
+            foreach (var child in declaration.Children)
+            {
+                graph!.AddEdge(declaration, child);
+                Recurse(child);
+            }
         }
 
         Recurse(this.MergedRoot);

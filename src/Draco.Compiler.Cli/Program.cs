@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
@@ -17,7 +18,7 @@ internal class Program
 
     private static RootCommand ConfigureCommands()
     {
-        var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
+        var fileArgument = new Argument<FileInfo[]>("files", description: "The Draco source files to compile");
         var emitIROutputOption = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
         var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
@@ -57,52 +58,25 @@ internal class Program
         rootCommand.AddCommand(formatCodeCommand);
         return rootCommand;
     }
-    private static void Run(FileInfo input)
+
+    private static void Run(FileInfo[] input)
     {
-        var sourceText = SourceText.FromFile(input.FullName);
-        var syntaxTree = SyntaxTree.Parse(sourceText);
-        var compilation = Compilation.Create(syntaxTree);
-        var execResult = ScriptingEngine.Execute(compilation);
-        if (!execResult.Success)
-        {
-            foreach (var diag in execResult.Diagnostics) Console.WriteLine(diag);
-            return;
-        }
-        Console.WriteLine($"Result: {execResult.Result}");
+        var sourceTexts = input.Select(i => SourceText.FromFile(i.FullName));
+        var syntaxTrees = sourceTexts.Select(SyntaxTree.Parse);
+        var compilation = Compilation.Create(syntaxTrees.ToImmutableArray());
+        compilation.Dump();
     }
 
-    private static void GenerateDracoIR(FileInfo input, FileInfo? emitCS)
+    private static void GenerateDracoIR(FileInfo[] input, FileInfo? emitCS)
     {
-        var sourceText = SourceText.FromFile(input.FullName);
-        var syntaxTree = SyntaxTree.Parse(sourceText);
-        var compilation = Compilation.Create(syntaxTree);
-        using var irStream = new MemoryStream();
-        var emitResult = compilation.Emit(
-            peStream: new MemoryStream(),
-            dracoIrStream: irStream);
-        if (!emitResult.Success)
-        {
-            foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
-            return;
-        }
-        irStream.Position = 0;
-        var generatedIr = new StreamReader(irStream).ReadToEnd();
-        Console.WriteLine(generatedIr);
-        if (emitCS is not null) File.WriteAllText(emitCS.FullName, generatedIr);
+        var sourceTexts = input.Select(i => SourceText.FromFile(i.FullName));
+        var syntaxTrees = sourceTexts.Select(SyntaxTree.Parse);
+        var compilation = Compilation.Create(syntaxTrees.ToImmutableArray());
+        compilation.Dump();
     }
 
-    private static void GenerateExe(FileInfo input, FileInfo output, bool msbuildDiags)
-    {
-        var sourceText = SourceText.FromFile(input.FullName);
-        var syntaxTree = SyntaxTree.Parse(sourceText);
-        var compilation = Compilation.Create(syntaxTree, output.Name);
-        using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
-        var emitResult = compilation.Emit(dllStream);
-        if (!emitResult.Success)
-        {
-            foreach (var diag in emitResult.Diagnostics.Select(x => msbuildDiags ? MakeMsbuildDiag(x) : x.ToString())) Console.WriteLine(diag);
-        }
-    }
+    private static void GenerateExe(FileInfo[] input, FileInfo output, bool msbuildDiags) =>
+        throw new NotImplementedException();
 
     private static string MakeMsbuildDiag(Diagnostic original)
     {
@@ -115,10 +89,5 @@ internal class Program
         return $"{file} : {original.Severity.ToString().ToLower()} {original.Template.Code} : {original.Message}";
     }
 
-    private static void FormatCode(FileInfo input)
-    {
-        var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = SyntaxTree.Parse(sourceText);
-        Console.WriteLine(parseTree.Format().ToString());
-    }
+    private static void FormatCode(FileInfo[] input) => throw new NotImplementedException();
 }

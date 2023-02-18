@@ -27,15 +27,19 @@ internal sealed class MergedModuleDeclaration : Declaration
     {
         var children = ImmutableArray.CreateBuilder<Declaration>();
         var submodules = new List<SingleModuleDeclaration>();
-        foreach (var declaration in this.declarations)
+        foreach (var singleModule in this.declarations)
         {
-            if (declaration is SingleModuleDeclaration module)
+            // singleModule is a piece of this module, we need to go through each element of that
+            foreach (var declaration in singleModule.Children)
             {
-                submodules.Add(module);
-            }
-            else
-            {
-                children.Add(declaration);
+                if (declaration is SingleModuleDeclaration module)
+                {
+                    submodules.Add(module);
+                }
+                else
+                {
+                    children.Add(declaration);
+                }
             }
         }
         // We need to merge submodules by name

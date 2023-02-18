@@ -28,7 +28,7 @@ internal sealed class SingleModuleDeclaration : Declaration
     }
 
     private ImmutableArray<Declaration> BuildChildren() =>
-        this.Syntax.Children.Select(BuildChild).OfType<Declaration>().ToImmutableArray();
+        this.Syntax.Declarations.Select(BuildChild).OfType<Declaration>().ToImmutableArray();
 
     private static Declaration? BuildChild(SyntaxNode node) => node switch
     {

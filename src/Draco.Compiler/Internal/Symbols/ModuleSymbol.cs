@@ -16,4 +16,9 @@ internal abstract partial class ModuleSymbol : Symbol
     /// The functions defined within this module.
     /// </summary>
     public abstract ImmutableArray<FunctionSymbol> Functions { get; }
+
+    /// <summary>
+    /// The globals defined within this module.
+    /// </summary>
+    public abstract ImmutableArray<GlobalSymbol> Globals { get; }
 }

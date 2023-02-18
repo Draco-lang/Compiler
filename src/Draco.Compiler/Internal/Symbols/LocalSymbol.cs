@@ -9,15 +9,6 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// A local variable.
 /// </summary>
-internal abstract partial class LocalSymbol : Symbol
+internal abstract partial class LocalSymbol : VariableSymbol
 {
-    /// <summary>
-    /// The type of the local.
-    /// </summary>
-    public abstract Type Type { get; }
-
-    /// <summary>
-    /// True, if this local is mutable.
-    /// </summary>
-    public abstract bool IsMutable { get; }
 }

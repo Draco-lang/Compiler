@@ -9,10 +9,6 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// A global variable.
 /// </summary>
-internal abstract partial class GlobalSymbol : Symbol
+internal abstract partial class GlobalSymbol : VariableSymbol
 {
-    /// <summary>
-    /// The type of the global.
-    /// </summary>
-    public abstract Type Type { get; }
 }

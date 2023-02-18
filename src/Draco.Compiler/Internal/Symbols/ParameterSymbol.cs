@@ -11,4 +11,5 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class ParameterSymbol : LocalSymbol
 {
+    public override bool IsMutable => false;
 }

@@ -28,12 +28,13 @@ internal sealed class SingleModuleDeclaration : Declaration
     }
 
     private ImmutableArray<Declaration> BuildChildren() =>
-        this.Syntax.Children.Select(BuildChild).ToImmutableArray();
+        this.Syntax.Children.Select(BuildChild).OfType<Declaration>().ToImmutableArray();
 
-    private static Declaration BuildChild(SyntaxNode node) => node switch
+    private static Declaration? BuildChild(SyntaxNode node) => node switch
     {
         VariableDeclarationSyntax var => new GlobalDeclaration(var),
         FunctionDeclarationSyntax func => new FunctionDeclaration(func),
+        UnexpectedDeclarationSyntax => null,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 }

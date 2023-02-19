@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -47,7 +48,12 @@ internal abstract partial class Binder
     /// <param name="result">The result to write the lookup results to.</param>
     /// <param name="name">The name of the symbols to search for.</param>
     /// <param name="filter">The filter to use.</param>
-    protected virtual void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter)
+    /// <param name="reference">The referencing syntax.</param>
+    protected virtual void LookupSymbolsLocally(
+        LookupResult result,
+        string name,
+        SymbolFilter filter,
+        SyntaxNode? reference)
     {
     }
 
@@ -55,14 +61,16 @@ internal abstract partial class Binder
     /// Implements a trivial, local lookup.
     /// </summary>
     /// <param name="symbols">The symbols to base the lookup on.</param>
-    /// <param name="result">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter)"/>.</param>
-    /// <param name="name">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter)"/>.</param>
-    /// <param name="filter">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter)"/>.</param>
+    /// <param name="result">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter, SyntaxNode?)"/>.</param>
+    /// <param name="name">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter, SyntaxNode?)"/>.</param>
+    /// <param name="filter">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter, SyntaxNode?)"/>.</param>
+    /// <param name="reference">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter, SyntaxNode?)"/>.</param>
     protected static void LookupSymbolsLocallyTrivial(
         IEnumerable<Symbol> symbols,
         LookupResult result,
         string name,
-        SymbolFilter filter)
+        SymbolFilter filter,
+        SyntaxNode? reference)
     {
         foreach (var member in symbols)
         {

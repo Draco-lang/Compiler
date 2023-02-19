@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -20,6 +21,6 @@ internal sealed class ModuleBinder : Binder
         this.symbol = symbol;
     }
 
-    protected override void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter) =>
-        LookupSymbolsLocallyTrivial(this.symbol.Members, result, name, filter);
+    protected override void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter, SyntaxNode? reference) =>
+        LookupSymbolsLocallyTrivial(this.symbol.Members, result, name, filter, reference);
 }

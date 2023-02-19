@@ -19,17 +19,22 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
 
     public override Type ReturnType => throw new System.NotImplementedException();
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.declaration.Name;
+    public override string Name => this.syntax.Name.Text;
 
-    private readonly FunctionDeclaration declaration;
+    private readonly FunctionDeclarationSyntax syntax;
 
-    public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclaration declaration)
+    public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.declaration = declaration;
+        this.syntax = syntax;
     }
 
-    private ImmutableArray<ParameterSymbol> BuildParameters() => this.declaration.Syntax.ParameterList.Values
+    public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclaration declaration)
+        : this(containingSymbol, declaration.Syntax)
+    {
+    }
+
+    private ImmutableArray<ParameterSymbol> BuildParameters() => this.syntax.ParameterList.Values
         .Select(this.BuildParameter)
         .ToImmutableArray();
 

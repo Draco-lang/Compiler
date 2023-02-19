@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -26,20 +28,109 @@ internal sealed class LocalBinder : Binder
 {
     private readonly record struct LocalDeclaration(int Position, Symbol Symbol);
 
-    private ImmutableArray<LocalDeclaration> LocalDeclarations => this.localDeclarations ??= this.BuildLocalDeclarations();
-    private ImmutableArray<LocalDeclaration>? localDeclarations;
+    private ImmutableDictionary<SyntaxNode, int> RelativePositions
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.relativePositions!;
+        }
+    }
 
-    private readonly BlockExpressionSyntax syntax;
+    private ImmutableArray<Symbol> Declarations
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.declarations;
+        }
+    }
 
-    public LocalBinder(Binder parent, BlockExpressionSyntax syntax)
+    private ImmutableArray<LocalDeclaration> LocalDeclarations
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.localDeclarations;
+        }
+    }
+
+    private bool NeedsBuild => this.relativePositions is null;
+
+    private ImmutableDictionary<SyntaxNode, int>? relativePositions;
+    private ImmutableArray<Symbol> declarations;
+    private ImmutableArray<LocalDeclaration> localDeclarations;
+
+    private readonly Symbol containingSymbol;
+    private readonly SyntaxNode syntax;
+
+    public LocalBinder(Binder parent, Symbol containingSymbol, SyntaxNode syntax)
         : base(parent)
     {
+        this.containingSymbol = containingSymbol;
         this.syntax = syntax;
     }
 
-    protected override void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter) =>
+    protected override void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter, SyntaxNode? reference) =>
         throw new NotImplementedException();
 
-    private ImmutableArray<LocalDeclaration> BuildLocalDeclarations() =>
-        throw new NotImplementedException();
+    private void Build()
+    {
+        var relativePositionsBuilder = ImmutableDictionary.CreateBuilder<SyntaxNode, int>();
+        var declarationsBuilder = ImmutableArray.CreateBuilder<Symbol>();
+        var localDeclarationsBuilder = ImmutableArray.CreateBuilder<LocalDeclaration>();
+        var position = 0;
+        foreach (var syntax in EnumerateNodesInSameScope(this.syntax))
+        {
+            // First off, we add to the position translator
+            relativePositionsBuilder.Add(syntax, position);
+            // Next, we check if the syntax defines some kind of symbol
+            var symbol = this.BuildSymbol(syntax);
+            if (symbol is not null)
+            {
+                // There is a symbol being built
+                // If it's a local, it depends on position, otherwise we don't care
+                if (symbol is LocalSymbol) localDeclarationsBuilder.Add(new(position, symbol));
+                else declarationsBuilder.Add(symbol);
+            }
+            // Increment relative position
+            ++position;
+        }
+        this.relativePositions = relativePositionsBuilder.ToImmutable();
+        this.declarations = declarationsBuilder.ToImmutable();
+        this.localDeclarations = localDeclarationsBuilder.ToImmutable();
+    }
+
+    private Symbol? BuildSymbol(SyntaxNode syntax) => syntax switch
+    {
+        FunctionDeclarationSyntax function => new SourceFunctionSymbol(this.containingSymbol, function),
+        ParameterSyntax parameter => new SourceParameterSymbol(this.containingSymbol, parameter),
+        // TODO
+        VariableDeclarationSyntax variable => throw new NotImplementedException(),
+        // TODO
+        LabelDeclarationSyntax label => throw new NotImplementedException(),
+        _ => null,
+    };
+
+    private static IEnumerable<SyntaxNode> EnumerateNodesInSameScope(SyntaxNode tree)
+    {
+        // We go through each child of the current tree
+        foreach (var child in tree.Children)
+        {
+            // We yield the child first
+            yield return child;
+
+            // If the child defines a scope, we don't recurse
+            if (DefinesScope(child)) continue;
+
+            // Otherwise, we can recurse
+            foreach (var item in EnumerateNodesInSameScope(child)) yield return item;
+        }
+    }
+
+    private static bool DefinesScope(SyntaxNode node) => node
+        is CompilationUnitSyntax
+        or FunctionDeclarationSyntax
+        or FunctionBodySyntax
+        or BlockExpressionSyntax;
 }

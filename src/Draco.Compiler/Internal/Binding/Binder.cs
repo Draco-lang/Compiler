@@ -28,8 +28,8 @@ internal abstract partial class Binder
     }
 
     protected Binder(Binder parent)
+        : this(parent.Compilation)
     {
-        this.Compilation = parent.Compilation;
         this.Parent = parent;
     }
 

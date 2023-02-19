@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -21,4 +22,16 @@ internal abstract partial class FunctionSymbol : Symbol
     /// The return type of this function.
     /// </summary>
     public abstract Type ReturnType { get; }
+
+    public override void ToDot(DotGraphBuilder<Symbol> builder)
+    {
+        builder
+            .AddVertex(this)
+            .WithLabel($"function '{this.Name}'");
+        foreach (var m in this.Parameters)
+        {
+            builder.AddEdge(this, m);
+            m.ToDot(builder);
+        }
+    }
 }

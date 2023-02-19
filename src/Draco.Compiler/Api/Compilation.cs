@@ -67,11 +67,8 @@ public sealed class Compilation
         Console.WriteLine("Declaration-tree:");
         Console.WriteLine(this.declarationTable.ToDot());
 
-        Console.WriteLine("Module symbol:");
+        Console.WriteLine("Symbol-tree:");
         var module = new SourceModuleSymbol(null, this.declarationTable.MergedRoot);
-        foreach (var m in module.Members)
-        {
-            Console.WriteLine(m.Name);
-        }
+        Console.WriteLine(module.ToDot());
     }
 }

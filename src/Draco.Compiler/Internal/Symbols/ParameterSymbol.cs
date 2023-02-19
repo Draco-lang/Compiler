@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -12,4 +13,11 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract partial class ParameterSymbol : LocalSymbol
 {
     public override bool IsMutable => false;
+
+    public override void ToDot(DotGraphBuilder<Symbol> builder)
+    {
+        builder
+            .AddVertex(this)
+            .WithLabel($"parameter '{this.Name}'");
+    }
 }

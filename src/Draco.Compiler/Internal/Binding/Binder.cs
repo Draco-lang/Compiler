@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -13,14 +14,26 @@ namespace Draco.Compiler.Internal.Binding;
 internal abstract partial class Binder
 {
     /// <summary>
+    /// A predicate for filtering symbols.
+    /// </summary>
+    /// <param name="symbol">The symbol to be considered.</param>
+    /// <returns>True, if the symbol should be considered in the filtering.</returns>
+    protected delegate bool SymbolFilter(Symbol symbol);
+
+    /// <summary>
     /// The compilation this binder was created for.
     /// </summary>
-    public Compilation Compilation { get; }
+    protected Compilation Compilation { get; }
 
     /// <summary>
     /// The parent binder of this one.
     /// </summary>
     protected Binder? Parent { get; }
+
+    /// <summary>
+    /// The symbols defined in the scope of this binder.
+    /// </summary>
+    protected virtual IEnumerable<Symbol> Symbols => Enumerable.Empty<Symbol>();
 
     protected Binder(Compilation compilation)
     {
@@ -38,5 +51,14 @@ internal abstract partial class Binder
     /// </summary>
     /// <param name="result">The result to write the lookup results to.</param>
     /// <param name="name">The name of the symbols to search for.</param>
-    protected virtual void LookupSymbolsLocally(LookupResult result, string name) { }
+    /// <param name="filter">The filter to use.</param>
+    protected void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter)
+    {
+        foreach (var member in this.Symbols)
+        {
+            if (member.Name != name) continue;
+            if (!filter(member)) continue;
+            result.Symbols.Add(member);
+        }
+    }
 }

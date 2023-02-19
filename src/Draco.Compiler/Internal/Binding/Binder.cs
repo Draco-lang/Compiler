@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -12,9 +13,25 @@ namespace Draco.Compiler.Internal.Binding;
 internal abstract partial class Binder
 {
     /// <summary>
+    /// The compilation this binder was created for.
+    /// </summary>
+    public Compilation Compilation { get; }
+
+    /// <summary>
     /// The parent binder of this one.
     /// </summary>
     protected Binder? Parent { get; }
+
+    protected Binder(Compilation compilation)
+    {
+        this.Compilation = compilation;
+    }
+
+    protected Binder(Binder parent)
+    {
+        this.Compilation = parent.Compilation;
+        this.Parent = parent;
+    }
 
     /// <summary>
     /// Attempts to look up symbols in this binder only.

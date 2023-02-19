@@ -16,6 +16,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     public override ImmutableArray<ParameterSymbol> Parameters => throw new System.NotImplementedException();
     public override Type ReturnType => throw new System.NotImplementedException();
     public override Symbol? ContainingSymbol { get; }
+    public override string Name => this.declaration.Name;
 
     private readonly FunctionDeclaration declaration;
 

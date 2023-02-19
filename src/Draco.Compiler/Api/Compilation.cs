@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api;
 
@@ -65,5 +66,12 @@ public sealed class Compilation
     {
         Console.WriteLine("Declaration-tree:");
         Console.WriteLine(this.declarationTable.ToDot());
+
+        Console.WriteLine("Module symbol:");
+        var module = new SourceModuleSymbol(null, this.declarationTable.MergedRoot);
+        foreach (var m in module.Members)
+        {
+            Console.WriteLine(m.Name);
+        }
     }
 }

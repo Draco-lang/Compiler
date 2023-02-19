@@ -17,24 +17,23 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
     private ImmutableArray<Symbol>? members;
 
     public override Symbol? ContainingSymbol { get; }
-    public override string Name { get; }
+    public override string Name => this.declaration.Name;
 
     private readonly Declaration declaration;
 
-    private SourceModuleSymbol(Symbol? containingSymbol, string name, Declaration declaration)
+    private SourceModuleSymbol(Symbol? containingSymbol, Declaration declaration)
     {
         this.ContainingSymbol = containingSymbol;
-        this.Name = name;
         this.declaration = declaration;
     }
 
     public SourceModuleSymbol(Symbol? containingSymbol, SingleModuleDeclaration declaration)
-        : this(containingSymbol, declaration.Name, declaration)
+        : this(containingSymbol, declaration as Declaration)
     {
     }
 
     public SourceModuleSymbol(Symbol? containingSymbol, MergedModuleDeclaration declaration)
-        : this(containingSymbol, declaration.Name, declaration)
+        : this(containingSymbol, declaration as Declaration)
     {
     }
 

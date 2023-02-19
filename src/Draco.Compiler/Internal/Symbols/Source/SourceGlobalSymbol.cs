@@ -13,6 +13,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol
     public override Type Type => throw new System.NotImplementedException();
     public override bool IsMutable => this.declaration.Syntax.Keyword.Kind == TokenKind.KeywordVar;
     public override Symbol? ContainingSymbol { get; }
+    public override string Name => this.declaration.Name;
 
     private readonly GlobalDeclaration declaration;
 

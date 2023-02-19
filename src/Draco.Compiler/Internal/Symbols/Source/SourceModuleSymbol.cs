@@ -13,15 +13,8 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceModuleSymbol : ModuleSymbol
 {
-    public override ImmutableArray<FunctionSymbol> Functions => this.functions ??= this.BuildFunctions();
-    private ImmutableArray<FunctionSymbol>? functions;
-
-    public override ImmutableArray<GlobalSymbol> Globals => this.globals ??= this.BuildGlobals();
-    private ImmutableArray<GlobalSymbol>? globals;
-
-    public override IEnumerable<Symbol> Members => this.Functions
-        .Cast<Symbol>()
-        .Concat(this.Globals);
+    public override ImmutableArray<Symbol> Members => this.members ??= this.BuildMembers();
+    private ImmutableArray<Symbol>? members;
 
     public override Symbol? ContainingSymbol { get; }
     public override string Name { get; }
@@ -45,15 +38,16 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
     {
     }
 
-    private ImmutableArray<FunctionSymbol> BuildFunctions() => this.declaration.Children
-        .OfType<FunctionDeclaration>()
-        .Select(this.BuildFunction)
+    private ImmutableArray<Symbol> BuildMembers() => this.declaration.Children
+        .Select(this.BuildMember)
         .ToImmutableArray();
 
-    private ImmutableArray<GlobalSymbol> BuildGlobals() => this.declaration.Children
-        .OfType<GlobalDeclaration>()
-        .Select(this.BuildGlobal)
-        .ToImmutableArray();
+    private Symbol BuildMember(Declaration declaration) => declaration switch
+    {
+        FunctionDeclaration f => this.BuildFunction(f),
+        GlobalDeclaration g => this.BuildGlobal(g),
+        _ => throw new ArgumentOutOfRangeException(nameof(declaration)),
+    };
 
     private FunctionSymbol BuildFunction(FunctionDeclaration declaration) => new SourceFunctionSymbol(this, declaration);
     private GlobalSymbol BuildGlobal(GlobalDeclaration declaration) => new SourceGlobalSymbol(this, declaration);

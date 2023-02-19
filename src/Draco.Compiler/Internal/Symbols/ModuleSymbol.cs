@@ -13,17 +13,7 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract partial class ModuleSymbol : Symbol
 {
     /// <summary>
-    /// The functions defined within this module.
-    /// </summary>
-    public abstract ImmutableArray<FunctionSymbol> Functions { get; }
-
-    /// <summary>
-    /// The globals defined within this module.
-    /// </summary>
-    public abstract ImmutableArray<GlobalSymbol> Globals { get; }
-
-    /// <summary>
     /// All members within this module.
     /// </summary>
-    public abstract IEnumerable<Symbol> Members { get; }
+    public abstract ImmutableArray<Symbol> Members { get; }
 }

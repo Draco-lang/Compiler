@@ -23,15 +23,5 @@ internal abstract partial class FunctionSymbol : Symbol
     /// </summary>
     public abstract Type ReturnType { get; }
 
-    public override void ToDot(DotGraphBuilder<Symbol> builder)
-    {
-        builder
-            .AddVertex(this)
-            .WithLabel($"function '{this.Name}'");
-        foreach (var m in this.Parameters)
-        {
-            builder.AddEdge(this, m);
-            m.ToDot(builder);
-        }
-    }
+    public override IEnumerable<Symbol> Members => this.Parameters;
 }

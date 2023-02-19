@@ -13,20 +13,4 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class ModuleSymbol : Symbol
 {
-    /// <summary>
-    /// All members within this module.
-    /// </summary>
-    public abstract ImmutableArray<Symbol> Members { get; }
-
-    public override void ToDot(DotGraphBuilder<Symbol> builder)
-    {
-        builder
-            .AddVertex(this)
-            .WithLabel($"module '{this.Name}'");
-        foreach (var m in this.Members)
-        {
-            builder.AddEdge(this, m);
-            m.ToDot(builder);
-        }
-    }
 }

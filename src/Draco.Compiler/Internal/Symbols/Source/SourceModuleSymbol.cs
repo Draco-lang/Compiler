@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceModuleSymbol : ModuleSymbol
 {
-    public override ImmutableArray<Symbol> Members => this.members ??= this.BuildMembers();
+    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
     public override Symbol? ContainingSymbol { get; }

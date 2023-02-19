@@ -13,11 +13,4 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract partial class ParameterSymbol : LocalSymbol
 {
     public override bool IsMutable => false;
-
-    public override void ToDot(DotGraphBuilder<Symbol> builder)
-    {
-        builder
-            .AddVertex(this)
-            .WithLabel($"parameter '{this.Name}'");
-    }
 }

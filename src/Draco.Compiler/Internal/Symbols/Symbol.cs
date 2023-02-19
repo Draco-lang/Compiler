@@ -23,19 +23,32 @@ internal abstract partial class Symbol
     public virtual string Name => string.Empty;
 
     /// <summary>
+    /// All the members within this symbol.
+    /// </summary>
+    public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();
+
+    /// <summary>
     /// Converts the symbol-tree to a DOT graph for debugging purposes.
     /// </summary>
     /// <returns>The DOT graph of the symbol-tree.</returns>
     public string ToDot()
     {
         var builder = new DotGraphBuilder<Symbol>(isDirected: true);
-        this.ToDot(builder);
+
+        void Recurse(Symbol symbol)
+        {
+            builder!
+                .AddVertex(symbol)
+                .WithLabel($"{symbol.GetType().Name}\n{symbol.Name}");
+            foreach (var m in symbol.Members)
+            {
+                builder.AddEdge(symbol, m);
+                Recurse(m);
+            }
+        }
+
+        Recurse(this);
+
         return builder.ToDot();
     }
-
-    /// <summary>
-    /// Turns the subtree of the symbol into a DOT graph.
-    /// </summary>
-    /// <param name="builder">The builder to use for adding children.</param>
-    public virtual void ToDot(DotGraphBuilder<Symbol> builder) { }
 }

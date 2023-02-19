@@ -30,11 +30,6 @@ internal abstract partial class Binder
     /// </summary>
     protected Binder? Parent { get; }
 
-    /// <summary>
-    /// The symbols defined in the scope of this binder.
-    /// </summary>
-    protected virtual IEnumerable<Symbol> Symbols => Enumerable.Empty<Symbol>();
-
     protected Binder(Compilation compilation)
     {
         this.Compilation = compilation;
@@ -52,9 +47,24 @@ internal abstract partial class Binder
     /// <param name="result">The result to write the lookup results to.</param>
     /// <param name="name">The name of the symbols to search for.</param>
     /// <param name="filter">The filter to use.</param>
-    protected void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter)
+    protected virtual void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter)
     {
-        foreach (var member in this.Symbols)
+    }
+
+    /// <summary>
+    /// Implements a trivial, local lookup.
+    /// </summary>
+    /// <param name="symbols">The symbols to base the lookup on.</param>
+    /// <param name="result">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter)"/>.</param>
+    /// <param name="name">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter)"/>.</param>
+    /// <param name="filter">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter)"/>.</param>
+    protected static void LookupSymbolsLocallyTrivial(
+        IEnumerable<Symbol> symbols,
+        LookupResult result,
+        string name,
+        SymbolFilter filter)
+    {
+        foreach (var member in symbols)
         {
             if (member.Name != name) continue;
             if (!filter(member)) continue;

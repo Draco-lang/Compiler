@@ -12,8 +12,6 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ModuleBinder : Binder
 {
-    protected override IEnumerable<Symbol> Symbols => this.symbol.Members;
-
     private readonly ModuleSymbol symbol;
 
     public ModuleBinder(Binder parent, ModuleSymbol symbol)
@@ -21,4 +19,7 @@ internal sealed class ModuleBinder : Binder
     {
         this.symbol = symbol;
     }
+
+    protected override void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter) =>
+        LookupSymbolsLocallyTrivial(this.symbol.Members, result, name, filter);
 }

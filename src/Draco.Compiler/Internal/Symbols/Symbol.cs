@@ -34,6 +34,7 @@ internal abstract partial class Symbol
     public string ToDot()
     {
         var builder = new DotGraphBuilder<Symbol>(isDirected: true);
+        builder.WithName("SymbolTree");
 
         void Recurse(Symbol symbol)
         {

@@ -66,6 +66,7 @@ internal sealed class DeclarationTable
     public string ToDot()
     {
         var graph = new DotGraphBuilder<Declaration>(isDirected: true);
+        graph.WithName("DeclarationTree");
 
         void Recurse(Declaration declaration)
         {

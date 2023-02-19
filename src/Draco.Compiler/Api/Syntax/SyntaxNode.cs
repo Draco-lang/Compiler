@@ -79,7 +79,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public override bool Equals(object? obj) => this.Equals(obj as SyntaxNode);
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this.Green);
 
-    public override string ToString() => SyntaxTreePrinter.ToCodeWithoutSurroundingTrivia(this.Green);
+    public override string ToString() => this.Green.ToCodeWithoutSurroundingTrivia();
 
     /// <summary>
     /// Preorder traverses the subtree with this node being the root.

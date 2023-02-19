@@ -8,15 +8,15 @@ using Draco.Compiler.Internal.Symbols;
 namespace Draco.Compiler.Internal.Binding;
 
 /// <summary>
-/// Binds on a module level.
+/// Binds on a function level, including its parameters.
 /// </summary>
-internal sealed class ModuleBinder : Binder
+internal sealed class FunctionBinder : Binder
 {
-    protected override IEnumerable<Symbol> Symbols => this.symbol.Members;
+    protected override IEnumerable<Symbol> Symbols => this.symbol.Parameters;
 
-    private readonly ModuleSymbol symbol;
+    private readonly FunctionSymbol symbol;
 
-    public ModuleBinder(Binder parent, ModuleSymbol symbol)
+    public FunctionBinder(Binder parent, FunctionSymbol symbol)
         : base(parent)
     {
         this.symbol = symbol;

@@ -124,16 +124,10 @@ internal sealed class LocalBinder : Binder
             yield return child;
 
             // If the child defines a scope, we don't recurse
-            if (DefinesScope(child)) continue;
+            if (BinderFacts.DefinesScope(child)) continue;
 
             // Otherwise, we can recurse
             foreach (var item in EnumerateNodesInSameScope(child)) yield return item;
         }
     }
-
-    private static bool DefinesScope(SyntaxNode node) => node
-        is CompilationUnitSyntax
-        or FunctionDeclarationSyntax
-        or FunctionBodySyntax
-        or BlockExpressionSyntax;
 }

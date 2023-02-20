@@ -15,13 +15,6 @@ namespace Draco.Compiler.Internal.Binding;
 internal abstract partial class Binder
 {
     /// <summary>
-    /// A predicate for filtering symbols.
-    /// </summary>
-    /// <param name="symbol">The symbol to be considered.</param>
-    /// <returns>True, if the symbol should be considered in the filtering.</returns>
-    protected delegate bool SymbolFilter(Symbol symbol);
-
-    /// <summary>
     /// The compilation this binder was created for.
     /// </summary>
     protected Compilation Compilation { get; }
@@ -43,40 +36,60 @@ internal abstract partial class Binder
     }
 
     /// <summary>
-    /// Attempts to look up symbols in this binder only.
+    /// Attempts to look up a symbol that can be used in value-context (like a function or a variable).
     /// </summary>
-    /// <param name="result">The result to write the lookup results to.</param>
-    /// <param name="name">The name of the symbols to search for.</param>
-    /// <param name="filter">The filter to use.</param>
-    /// <param name="reference">The referencing syntax.</param>
-    protected virtual void LookupSymbolsLocally(
-        LookupResult result,
-        string name,
-        SymbolFilter filter,
-        SyntaxNode? reference)
+    /// <param name="name">The name of the symbol to look up.</param>
+    /// <param name="reference">The syntax referencing the symbol.</param>
+    /// <returns>The result of the lookup.</returns>
+    protected LookupResult LookupValueSymbol(string name, SyntaxNode? reference)
     {
+        var result = new LookupResult();
+        this.LookupValueSymbol(result, name, reference);
+        return result;
     }
 
     /// <summary>
-    /// Implements a trivial, local lookup.
+    /// Attempts to look up a symbol that can be used in type-context (mainly type-definitions).
     /// </summary>
-    /// <param name="symbols">The symbols to base the lookup on.</param>
-    /// <param name="result">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter, SyntaxNode?)"/>.</param>
-    /// <param name="name">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter, SyntaxNode?)"/>.</param>
-    /// <param name="filter">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter, SyntaxNode?)"/>.</param>
-    /// <param name="reference">See <see cref="LookupSymbolsLocally(LookupResult, string, SymbolFilter, SyntaxNode?)"/>.</param>
-    protected static void LookupSymbolsLocallyTrivial(
-        IEnumerable<Symbol> symbols,
-        LookupResult result,
-        string name,
-        SymbolFilter filter,
-        SyntaxNode? reference)
+    /// <param name="name">The name of the symbol to look up.</param>
+    /// <param name="reference">The syntax referencing the symbol.</param>
+    /// <returns>The result of the lookup.</returns>
+    protected LookupResult LookupTypeSymbol(string name, SyntaxNode? reference)
     {
-        foreach (var member in symbols)
-        {
-            if (member.Name != name) continue;
-            if (!filter(member)) continue;
-            result.Symbols.Add(member);
-        }
+        var result = new LookupResult();
+        this.LookupTypeSymbol(result, name, reference);
+        return result;
     }
+
+    /// <summary>
+    /// Attempts to look up a symbol that can be used in value-context (like a function or a variable).
+    /// </summary>
+    /// <param name="result">The result of the lookup.</param>
+    /// <param name="name">The name of the symbol to look up.</param>
+    /// <param name="reference">The syntax referencing the symbol.</param>
+    protected abstract void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference);
+
+    /// <summary>
+    /// Attempts to look up a symbol that can be used in type-context (mainly type-definitions).
+    /// </summary>
+    /// <param name="result">The result of the lookup.</param>
+    /// <param name="name">The name of the symbol to look up.</param>
+    /// <param name="reference">The syntax referencing the symbol.</param>
+    protected abstract void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference);
+
+    /// <summary>
+    /// Checks, if a symbol can be used in value-context.
+    /// </summary>
+    /// <param name="symbol">The symbol to check.</param>
+    /// <returns>True, if <paramref name="symbol"/> can be used in a value-context.</returns>
+    protected static bool IsValueSymbol(Symbol symbol) => symbol
+        is VariableSymbol
+        or FunctionSymbol;
+
+    /// <summary>
+    /// Checks, if a symbol can be used in type-context.
+    /// </summary>
+    /// <param name="symbol">The symbol to check.</param>
+    /// <returns>True, if <paramref name="symbol"/> can be used in a type-context.</returns>
+    protected static bool IsTypeSymbol(Symbol symbol) => !IsValueSymbol(symbol);
 }

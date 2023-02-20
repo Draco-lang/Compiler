@@ -71,7 +71,10 @@ internal sealed class LocalBinder : Binder
         this.syntax = syntax;
     }
 
-    protected override void LookupSymbolsLocally(LookupResult result, string name, SymbolFilter filter, SyntaxNode? reference) =>
+    protected override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference) =>
+        throw new NotImplementedException();
+
+    protected override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
         throw new NotImplementedException();
 
     private void Build()

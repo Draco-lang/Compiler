@@ -7,7 +7,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var tester = new CompilerFuzzer(new RandomTextGenerator());
-        tester.StartTesting(50, 0);
+        var tester = new ParserFuzzer(new RandomValidTokenGenerator());
+        tester.StartTesting(50000, 0);
     }
 }

@@ -20,6 +20,7 @@ internal static class Helper
             Console.ForegroundColor = color;
             Console.WriteLine();
             Console.WriteLine(error.First().input);
+            Console.WriteLine();
             Console.WriteLine(error.Key);
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(new string('-', Console.WindowWidth));

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Declarations;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -13,6 +14,8 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceModuleSymbol : ModuleSymbol
 {
+    public override Compilation DeclaringCompilation { get; }
+
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
@@ -21,19 +24,29 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
 
     private readonly Declaration declaration;
 
-    private SourceModuleSymbol(Symbol? containingSymbol, Declaration declaration)
+    private SourceModuleSymbol(
+        Compilation compilation,
+        Symbol? containingSymbol,
+        Declaration declaration)
     {
+        this.DeclaringCompilation = compilation;
         this.ContainingSymbol = containingSymbol;
         this.declaration = declaration;
     }
 
-    public SourceModuleSymbol(Symbol? containingSymbol, SingleModuleDeclaration declaration)
-        : this(containingSymbol, declaration as Declaration)
+    public SourceModuleSymbol(
+        Compilation compilation,
+        Symbol? containingSymbol,
+        SingleModuleDeclaration declaration)
+        : this(compilation, containingSymbol, declaration as Declaration)
     {
     }
 
-    public SourceModuleSymbol(Symbol? containingSymbol, MergedModuleDeclaration declaration)
-        : this(containingSymbol, declaration as Declaration)
+    public SourceModuleSymbol(
+        Compilation compilation,
+        Symbol? containingSymbol,
+        MergedModuleDeclaration declaration)
+        : this(compilation, containingSymbol, declaration as Declaration)
     {
     }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -49,5 +50,10 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
 
     private Type BuildReturnType() => throw new System.NotImplementedException();
 
-    private BoundStatement BuildBody() => throw new System.NotImplementedException();
+    private BoundStatement BuildBody()
+    {
+        Debug.Assert(this.DeclaringCompilation is not null);
+        var binder = this.DeclaringCompilation.GetBinder(this.syntax.Body);
+        return binder.BindFunctionBody(this.syntax.Body);
+    }
 }

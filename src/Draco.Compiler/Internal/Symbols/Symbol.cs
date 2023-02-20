@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -12,6 +13,11 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class Symbol
 {
+    /// <summary>
+    /// The <see cref="Compilation"/> that defines this symbol.
+    /// </summary>
+    public virtual Compilation? DeclaringCompilation => this.ContainingSymbol?.DeclaringCompilation;
+
     /// <summary>
     /// The symbol directly containing this one.
     /// </summary>

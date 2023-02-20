@@ -16,7 +16,7 @@ internal partial class Binder
     /// </summary>
     /// <param name="lvalue">The untyped lvalue to bind.</param>
     /// <returns>The bound lvalue for <paramref name="lvalue"/>.</returns>
-    protected BoundLvalue BindExpression(UntypedLvalue lvalue) => lvalue switch
+    protected BoundLvalue TypeLvalue(UntypedLvalue lvalue) => lvalue switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };

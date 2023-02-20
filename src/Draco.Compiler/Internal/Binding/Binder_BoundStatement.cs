@@ -16,7 +16,7 @@ internal partial class Binder
     /// </summary>
     /// <param name="statement">The untyped statement to bind.</param>
     /// <returns>The bound statement for <paramref name="statement"/>.</returns>
-    protected BoundStatement BindStatement(UntypedStatement statement) => statement switch
+    protected BoundStatement TypeStatement(UntypedStatement statement) => statement switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(statement)),
     };

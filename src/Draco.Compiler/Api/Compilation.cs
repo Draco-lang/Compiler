@@ -97,5 +97,5 @@ public sealed class Compilation
     internal Binder GetBinder(SyntaxNode syntax) => this.binderCache.GetBinder(syntax);
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
-    private ModuleSymbol BuildGlobalModule() => new SourceModuleSymbol(null, this.DeclarationTable.MergedRoot);
+    private ModuleSymbol BuildGlobalModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
 }

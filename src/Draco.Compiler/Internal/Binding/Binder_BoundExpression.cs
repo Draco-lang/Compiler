@@ -16,7 +16,7 @@ internal partial class Binder
     /// </summary>
     /// <param name="expression">The untyped expression to bind.</param>
     /// <returns>The bound expression for <paramref name="expression"/>.</returns>
-    protected BoundExpression BindExpression(UntypedExpression expression) => expression switch
+    protected BoundExpression TypeExpression(UntypedExpression expression) => expression switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };

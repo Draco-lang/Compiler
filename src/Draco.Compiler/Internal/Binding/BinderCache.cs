@@ -24,8 +24,8 @@ internal sealed class BinderCache
     /// <summary>
     /// Retrieves a <see cref="Binder"/> for the given syntax node.
     /// </summary>
-    /// <param name="syntaxNode">The syntax node to retrieve the binder for.</param>
-    /// <returns>The binder for <paramref name="syntaxNode"/>.</returns>
-    public Binder Get(SyntaxNode syntaxNode) =>
+    /// <param name="syntax">The syntax node to retrieve the binder for.</param>
+    /// <returns>The binder for <paramref name="syntax"/>.</returns>
+    public Binder Get(SyntaxNode syntax) =>
         throw new NotImplementedException();
 }

@@ -44,3 +44,34 @@ html, body, #app {
         background-color: #1e1e1e;
     }
 }
+
+#output-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+#output-viewer {
+    height: 100%;
+}
+
+#info-panel {
+    border-top: 1px solid gray;
+    min-height: 40px;
+}
+
+#download-panel {
+    height: 100%;
+}
+
+.hidden {
+    display: none;
+}
+
+.download-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.downloadProgress {
+    padding-left: 25px;
+}

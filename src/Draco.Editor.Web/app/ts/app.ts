@@ -58,6 +58,104 @@ function updateHash() {
     history.replaceState(undefined, undefined, '#' + fromBase64ToBase64URL(toBase64(buffer)));
 }
 
+function wait(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+async function progressFetch(url: string, onProgress: (loaded: number, total: number)=>void) : Promise<Blob> {
+    const response = await fetch(url);
+    const contentLength = response.headers.get('content-length');
+    const total = parseInt(contentLength, 10);
+    let loaded = 0;
+
+    const res = new Response(new ReadableStream({
+        async start(controller) {
+            const reader = response.body.getReader();
+            for (;;) {
+                const {done, value} = await reader.read();
+                if (done) break;
+                loaded += value.byteLength;
+                onProgress(loaded, total);
+                controller.enqueue(value);
+            }
+            controller.close();
+        },
+    }));
+    return await res.blob();
+}
+
+const downloadProgressList = document.getElementById('download-panel');
+
+function downloadView(enable: boolean) {
+    const output = document.getElementById('output-viewer');
+    const download = document.getElementById('download-panel');
+    if (enable) {
+        output.classList.add('hidden');
+        download.classList.remove('hidden');
+    } else {
+        output.classList.remove('hidden');
+        download.classList.add('hidden');
+    }
+}
+
+function blobToBase64(blob) : Promise<string>
+{
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = error => reject(error);
+    });
+}
+
+async function downloadAssembly(dlPath: string, asset: unknown) : Promise<void> {
+    const cache = await caches.open('assembly-cache');
+    const cached = await cache.match(asset['name']);
+    if (cached) {
+        const assemblyB64 = await cached.text();
+        asset['buffer'] = assemblyB64;
+        return;
+    }
+    const progressContainer = document.createElement('div');
+    const progressText = document.createElement('span');
+    progressText.classList.add('monaco-editor');
+    progressText.innerText = asset['name'];
+    const progress = document.createElement('progress');
+    progressContainer.appendChild(progressText);
+    progressContainer.appendChild(progress);
+    progress.classList.add('downloadProgress');
+    downloadProgressList.appendChild(progressContainer);
+    const assemblyBlob = await progressFetch(dlPath+'/'+asset['name'], (loaded, total) => {
+        progress.max = total;
+        progress.value = loaded;
+    });
+    const assemblyB64 = await(blobToBase64(assemblyBlob));
+    asset['buffer'] = assemblyB64;
+    const response = new Response(assemblyB64);
+    await cache.put(asset['name'], response);
+    progress.remove();
+    progressText.remove();
+    progressContainer.remove();
+}
+
+async function downloadAssemblies(cfg: unknown) {
+    console.log(performance.now());
+    downloadView(true);
+
+    const assets = cfg['assets'];
+    if(assets != null)  {
+
+        const promises = assets.map(async (asset) => {
+            if(asset['buffer'] == null) {
+                await downloadAssembly(cfg['assemblyRootFolder'], asset);
+            }
+        });
+        await Promise.all(promises);
+    }
+    downloadView(false);
+    console.log(performance.now());
+}
+
 // this is the element that allow to select the output type.
 const outputTypeSelector = document.getElementById('output-type-selector') as HTMLSelectElement;
 
@@ -157,7 +255,7 @@ compilerWorker.onmessage = async (ev) => {
         outputEditor.getModel().setValue(msg.message);
         break;
     case 'runtimeAssembly': {
-        if(runtimeWorker != undefined) {
+        if (runtimeWorker != undefined) {
             runtimeWorker.terminate();
         }
         stdoutBuffer = '';
@@ -166,26 +264,27 @@ compilerWorker.onmessage = async (ev) => {
         const cfg = JSON.parse(msg.message);
         console.log('Starting worker with boot config:');
         cfg['disableInterop'] = true;
+        await downloadAssemblies(cfg);
         runtimeWorker.postMessage(cfg);
         runtimeWorker.onmessage = (e) => {
-            const runtimeMsg =  e.data as {
-                type:string;
-                message: string;
-            };
-            switch(runtimeMsg.type) {
+            const runtimeMsg = e.data as {
+                    type: string;
+                    message: string;
+                };
+            switch (runtimeMsg.type) {
             case 'stdout':
                 stdoutBuffer += runtimeMsg.message + '\n';
                 outputEditor.getModel().setValue(stdoutBuffer);
                 break;
             default:
-                console.log('Runtime sent unknown message',runtimeMsg);
+                console.log('Runtime sent unknown message', runtimeMsg);
                 break;
             }
         };
         break;
     }
     default:
-        console.log('Runtime sent unknown message',msg);
+        console.log('Runtime sent unknown message', msg);
         break;
     }
 };
@@ -209,6 +308,7 @@ async function main() {
         assemblyRootFolder: '_framework',
         assets: dlls,
     };
+    await downloadAssemblies(bootCfg);
     compilerWorker.postMessage(bootCfg);
     compilerWorker.postMessage({
         type: 'OnInit',
@@ -217,6 +317,12 @@ async function main() {
             Code: dracoEditor.getModel().createSnapshot().read()
         }
     });
+
+
+}
+main();
+
+async function loadThemes() {
     const wasmPromise = loadWASM(onigasmWasm.buffer); // https://www.npmjs.com/package/onigasm;
 
     const choosenTheme = window.localStorage.getItem('theme'); // get previous user theme choice
@@ -299,4 +405,4 @@ async function main() {
     }
     await wireTmGrammars(monaco, registry, grammars);
 }
-main();
+loadThemes();

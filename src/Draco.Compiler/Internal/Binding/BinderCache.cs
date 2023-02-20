@@ -44,6 +44,22 @@ internal sealed class BinderCache
 
     private Binder BuildBinder(SyntaxNode syntax) => syntax switch
     {
+        CompilationUnitSyntax => this.BuildCompilationUnitBinder(),
+        FunctionDeclarationSyntax decl => this.BuildFunctionDeclarationBinder(decl),
+        FunctionBodySyntax body => this.BuildFunctionBodyBinder(body),
+        BlockExpressionSyntax block => this.BuildLocalBinder(block),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private Binder BuildCompilationUnitBinder() =>
+        new ModuleBinder(this.compilation, this.compilation.GlobalModule);
+
+    private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax) =>
+        throw new NotImplementedException();
+
+    private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax) =>
+        throw new NotImplementedException();
+
+    private Binder BuildLocalBinder(BlockExpressionSyntax syntax) =>
+        throw new NotImplementedException();
 }

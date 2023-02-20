@@ -5,6 +5,7 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.DracoIr;
@@ -59,6 +60,8 @@ public sealed class Compilation
     internal DeclarationTable DeclarationTable => this.declarationTable ??= this.BuildDeclarationTable();
     private DeclarationTable? declarationTable;
 
+    private readonly BinderCache binderCache;
+
     /// <summary>
     /// The name of the output assembly.
     /// </summary>
@@ -68,6 +71,7 @@ public sealed class Compilation
     {
         this.SyntaxTrees = syntaxTrees;
         this.AssemblyName = assemblyName;
+        this.binderCache = new(this);
     }
 
     public void Dump()
@@ -75,7 +79,22 @@ public sealed class Compilation
         Console.WriteLine(this.SyntaxTrees.First().GreenRoot.ToDot());
         Console.WriteLine(this.DeclarationTable.ToDot());
         Console.WriteLine(this.GlobalModule.ToDot());
+
+        foreach (var m in this.GlobalModule.Members)
+        {
+            if (m is SourceFunctionSymbol func)
+            {
+                var body = func.Body;
+            }
+        }
     }
+
+    /// <summary>
+    /// Retrieves the <see cref="Binder"/> for a given syntax node.
+    /// </summary>
+    /// <param name="syntax">The syntax node to retrieve the binder for.</param>
+    /// <returns>The binder that corresponds to <paramref name="syntax"/>.</returns>
+    internal Binder GetBinder(SyntaxNode syntax) => this.binderCache.GetBinder(syntax);
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
     private ModuleSymbol BuildGlobalModule() => new SourceModuleSymbol(null, this.DeclarationTable.MergedRoot);

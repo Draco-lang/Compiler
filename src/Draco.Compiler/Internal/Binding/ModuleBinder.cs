@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 
@@ -14,6 +15,12 @@ namespace Draco.Compiler.Internal.Binding;
 internal sealed class ModuleBinder : Binder
 {
     private readonly ModuleSymbol symbol;
+
+    public ModuleBinder(Compilation compilation, ModuleSymbol symbol)
+        : base(compilation)
+    {
+        this.symbol = symbol;
+    }
 
     public ModuleBinder(Binder parent, ModuleSymbol symbol)
         : base(parent)

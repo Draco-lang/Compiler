@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Query;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api;
@@ -41,14 +42,22 @@ public sealed class Compilation
         syntaxTrees: syntaxTrees,
         assemblyName: assemblyName);
 
-    private readonly QueryDatabase db = new();
-
     /// <summary>
     /// The trees that are being compiled.
     /// </summary>
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
 
-    private readonly DeclarationTable declarationTable;
+    /// <summary>
+    /// The global module symbol of the compilation.
+    /// </summary>
+    internal ModuleSymbol GlobalModule => this.globalModule ??= this.BuildGlobalModule();
+    private ModuleSymbol? globalModule;
+
+    /// <summary>
+    /// The declaration table managing the top-level declarations of the compilation.
+    /// </summary>
+    internal DeclarationTable DeclarationTable => this.declarationTable ??= this.BuildDeclarationTable();
+    private DeclarationTable? declarationTable;
 
     /// <summary>
     /// The name of the output assembly.
@@ -58,7 +67,6 @@ public sealed class Compilation
     private Compilation(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName)
     {
         this.SyntaxTrees = syntaxTrees;
-        this.declarationTable = DeclarationTable.From(syntaxTrees);
         this.AssemblyName = assemblyName;
     }
 
@@ -69,4 +77,7 @@ public sealed class Compilation
         var module = new SourceModuleSymbol(null, this.declarationTable.MergedRoot);
         Console.WriteLine(module.ToDot());
     }
+
+    private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
+    private ModuleSymbol BuildGlobalModule() => new SourceModuleSymbol(null, this.DeclarationTable.MergedRoot);
 }

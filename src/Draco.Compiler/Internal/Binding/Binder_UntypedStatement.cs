@@ -18,6 +18,10 @@ internal partial class Binder
     /// <returns>The untyped statement for <paramref name="syntax"/>.</returns>
     protected UntypedStatement BindStatement(SyntaxNode syntax) => syntax switch
     {
+        LabelDeclarationSyntax label => this.BindLabelStatement(label),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax) =>
+        throw new NotImplementedException();
 }

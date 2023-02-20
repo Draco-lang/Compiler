@@ -73,9 +73,8 @@ public sealed class Compilation
     public void Dump()
     {
         Console.WriteLine(this.SyntaxTrees.First().GreenRoot.ToDot());
-        Console.WriteLine(this.declarationTable.ToDot());
-        var module = new SourceModuleSymbol(null, this.declarationTable.MergedRoot);
-        Console.WriteLine(module.ToDot());
+        Console.WriteLine(this.DeclarationTable.ToDot());
+        Console.WriteLine(this.GlobalModule.ToDot());
     }
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);

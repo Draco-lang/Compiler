@@ -1,13 +1,14 @@
 using Draco.Compiler.Internal.Syntax;
+using static Draco.Compiler.Internal.Syntax.ParseNode;
 using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
 internal sealed class ParserFuzzer : ComponentFuzzer
 {
-    private IInputGenerator<ParseNode.Token[]> generator;
+    private IInputGenerator<IEnumerable<Token>> generator;
 
-    public ParserFuzzer(IInputGenerator<ParseNode.Token[]> generator)
+    public ParserFuzzer(IInputGenerator<IEnumerable<Token>> generator)
     {
         this.generator = generator;
     }
@@ -22,7 +23,7 @@ internal sealed class ParserFuzzer : ComponentFuzzer
         }
         catch (Exception ex)
         {
-            Helper.PrintError(ex, string.Join(Environment.NewLine, (IEnumerable<ParseNode.Token>)input));
+            Helper.PrintError(ex, string.Join("", input.Select(x => x.Text)));
         }
     }
     public override void RunMutation() => throw new NotImplementedException();

@@ -12,11 +12,11 @@ namespace Draco.Compiler.Internal.Binding;
 internal partial class Binder
 {
     /// <summary>
-    /// Binds the given syntax node to an untyped expression.
+    /// Binds the given syntax node to an untyped lvalue.
     /// </summary>
-    /// <param name="lvalue">The syntax to bind.</param>
-    /// <returns>The untyped expression for <paramref name="lvalue"/>.</returns>
-    protected UntypedExpression BindExpression(SyntaxNode lvalue) => lvalue switch
+    /// <param name="lvalue">The lvalue to bind.</param>
+    /// <returns>The untyped lvalue for <paramref name="lvalue"/>.</returns>
+    protected UntypedLvalue BindLvalue(SyntaxNode lvalue) => lvalue switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Types;
 
@@ -17,9 +18,14 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
     private ImmutableArray<ParameterSymbol>? parameters;
 
-    public override Type ReturnType => throw new System.NotImplementedException();
+    public override Type ReturnType => this.returnType ??= this.BuildReturnType();
+    private Type? returnType;
+
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.syntax.Name.Text;
+
+    public BoundStatement Body => this.body ??= this.BuildBody();
+    private BoundStatement? body;
 
     private readonly FunctionDeclarationSyntax syntax;
 
@@ -40,4 +46,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
 
     private ParameterSymbol BuildParameter(ParameterSyntax syntax) =>
         new SourceParameterSymbol(this, syntax);
+
+    private Type BuildReturnType() => throw new System.NotImplementedException();
+
+    private BoundStatement BuildBody() => throw new System.NotImplementedException();
 }

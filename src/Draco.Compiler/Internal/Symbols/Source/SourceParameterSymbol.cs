@@ -12,7 +12,9 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceParameterSymbol : ParameterSymbol
 {
-    public override Type Type => throw new System.NotImplementedException();
+    public override Type Type => this.type ??= this.BuildType();
+    private Type? type;
+
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.syntax.Name.Text;
 
@@ -23,4 +25,6 @@ internal sealed class SourceParameterSymbol : ParameterSymbol
         this.ContainingSymbol = containingSymbol;
         this.syntax = syntax;
     }
+
+    private Type BuildType() => throw new System.NotImplementedException();
 }

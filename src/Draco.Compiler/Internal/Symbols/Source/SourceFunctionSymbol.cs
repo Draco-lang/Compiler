@@ -23,17 +23,20 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     private Type? returnType;
 
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.syntax.Name.Text;
+    public override string Name => this.Syntax.Name.Text;
+
+    /// <summary>
+    /// The syntax the symbol was constructed from.
+    /// </summary>
+    public FunctionDeclarationSyntax Syntax { get; }
 
     public BoundStatement Body => this.body ??= this.BuildBody();
     private BoundStatement? body;
 
-    private readonly FunctionDeclarationSyntax syntax;
-
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.syntax = syntax;
+        this.Syntax = syntax;
     }
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclaration declaration)
@@ -41,7 +44,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     {
     }
 
-    private ImmutableArray<ParameterSymbol> BuildParameters() => this.syntax.ParameterList.Values
+    private ImmutableArray<ParameterSymbol> BuildParameters() => this.Syntax.ParameterList.Values
         .Select(this.BuildParameter)
         .ToImmutableArray();
 
@@ -53,7 +56,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     private BoundStatement BuildBody()
     {
         Debug.Assert(this.DeclaringCompilation is not null);
-        var binder = this.DeclaringCompilation.GetBinder(this.syntax.Body);
-        return binder.BindFunctionBody(this.syntax.Body);
+        var binder = this.DeclaringCompilation.GetBinder(this.Syntax.Body);
+        return binder.BindFunctionBody(this.Syntax.Body);
     }
 }

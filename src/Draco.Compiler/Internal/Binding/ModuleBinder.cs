@@ -14,6 +14,8 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ModuleBinder : Binder
 {
+    public override Symbol? ContainingSymbol => this.symbol;
+
     private readonly ModuleSymbol symbol;
 
     public ModuleBinder(Compilation compilation, ModuleSymbol symbol)

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -54,12 +55,29 @@ internal sealed class BinderCache
     private Binder BuildCompilationUnitBinder() =>
         new ModuleBinder(this.compilation, this.compilation.GlobalModule);
 
-    private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax) =>
-        throw new NotImplementedException();
+    private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)
+    {
+        Debug.Assert(syntax.Parent is not null);
+        var parent = this.GetBinder(syntax.Parent);
+        // Search for the function in the parents container
+        var functionSymbol = parent.ContainingSymbol?.Members
+            .OfType<SourceFunctionSymbol>()
+            .FirstOrDefault(member => member.Syntax == syntax);
+        Debug.Assert(functionSymbol is not null);
+        return new FunctionBinder(parent, functionSymbol);
+    }
 
-    private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax) =>
-        throw new NotImplementedException();
+    private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax)
+    {
+        Debug.Assert(syntax.Parent is not null);
+        var parent = this.GetBinder(syntax.Parent);
+        return new LocalBinder(parent, syntax);
+    }
 
-    private Binder BuildLocalBinder(BlockExpressionSyntax syntax) =>
-        throw new NotImplementedException();
+    private Binder BuildLocalBinder(BlockExpressionSyntax syntax)
+    {
+        Debug.Assert(syntax.Parent is not null);
+        var parent = this.GetBinder(syntax.Parent);
+        return new LocalBinder(parent, syntax);
+    }
 }

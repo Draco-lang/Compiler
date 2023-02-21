@@ -61,13 +61,11 @@ internal sealed class LocalBinder : Binder
     private ImmutableArray<Symbol> declarations;
     private ImmutableArray<LocalDeclaration> localDeclarations;
 
-    private readonly Symbol containingSymbol;
     private readonly SyntaxNode syntax;
 
-    public LocalBinder(Binder parent, Symbol containingSymbol, SyntaxNode syntax)
+    public LocalBinder(Binder parent, SyntaxNode syntax)
         : base(parent)
     {
-        this.containingSymbol = containingSymbol;
         this.syntax = syntax;
     }
 
@@ -106,8 +104,8 @@ internal sealed class LocalBinder : Binder
 
     private Symbol? BuildSymbol(SyntaxNode syntax) => syntax switch
     {
-        FunctionDeclarationSyntax function => new SourceFunctionSymbol(this.containingSymbol, function),
-        ParameterSyntax parameter => new SourceParameterSymbol(this.containingSymbol, parameter),
+        FunctionDeclarationSyntax function => new SourceFunctionSymbol(this.ContainingSymbol, function),
+        ParameterSyntax parameter => new SourceParameterSymbol(this.ContainingSymbol, parameter),
         // TODO
         VariableDeclarationSyntax variable => throw new NotImplementedException(),
         // TODO

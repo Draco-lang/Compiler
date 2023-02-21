@@ -13,6 +13,8 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class FunctionBinder : Binder
 {
+    public override Symbol? ContainingSymbol => this.symbol;
+
     private readonly FunctionSymbol symbol;
 
     public FunctionBinder(Binder parent, FunctionSymbol symbol)

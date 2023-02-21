@@ -25,6 +25,11 @@ internal abstract partial class Binder
     /// </summary>
     protected Binder? Parent { get; }
 
+    /// <summary>
+    /// The symbol containing the binding context.
+    /// </summary>
+    public virtual Symbol? ContainingSymbol => this.Parent?.ContainingSymbol;
+
     protected Binder(Compilation compilation)
     {
         this.Compilation = compilation;

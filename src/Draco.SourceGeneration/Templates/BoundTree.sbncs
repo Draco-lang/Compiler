@@ -57,6 +57,7 @@ namespace Draco.Compiler.Internal.BoundTree;
     {{end}}
 {{end}}
 
+#pragma warning disable CS0162
 #nullable enable
 {{for $node in Nodes}}
     internal {{class_header($node)}}
@@ -84,9 +85,9 @@ namespace Draco.Compiler.Internal.BoundTree;
                 {{end}}
             )
             {
-                if (
-                    {{wrap separated(' && ', $node.Fields)}}
-                        Equals(this.{{$element.Name}}, {{camel_case($element.Name)}})
+                if (true
+                    {{for $element in $node.Fields}}
+                        && Equals(this.{{$element.Name}}, {{camel_case($element.Name)}})
                     {{end}}
                 ) return this;
                 else return new {{$node.Name}}(
@@ -166,3 +167,4 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{Root.Name
     {{end}}
 }
 #nullable restore
+#pragma warning restore CS0162

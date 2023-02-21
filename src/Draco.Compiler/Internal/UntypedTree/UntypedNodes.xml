@@ -27,6 +27,9 @@
 
   <!-- Expressions -->
 
+  <Node Name="UntypedUnitExpression" Base="UntypedExpression">
+  </Node>
+
   <Node Name="UntypedGotoExpression" Base="UntypedExpression">
     <Field Name="Target" Type="LabelSymbol" />
   </Node>

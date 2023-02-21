@@ -18,9 +18,20 @@ internal partial class Binder
     /// <returns>The untyped statement for <paramref name="syntax"/>.</returns>
     protected UntypedStatement BindStatement(SyntaxNode syntax) => syntax switch
     {
+        InlineFunctionBodySyntax body => this.BindInlineFunctionBody(body),
         LabelDeclarationSyntax label => this.BindLabelStatement(label),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax)
+    {
+        var binder = this.Compilation.GetBinder(syntax);
+        var value = binder.BindExpression(syntax.Value);
+        return binder.BindInlineFunctionBody(syntax, value);
+    }
+
+    private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, UntypedExpression value) =>
+        new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax, value));
 
     private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax) =>
         throw new NotImplementedException();

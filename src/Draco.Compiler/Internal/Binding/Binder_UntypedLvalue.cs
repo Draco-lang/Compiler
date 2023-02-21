@@ -14,10 +14,10 @@ internal partial class Binder
     /// <summary>
     /// Binds the given syntax node to an untyped lvalue.
     /// </summary>
-    /// <param name="lvalue">The lvalue to bind.</param>
-    /// <returns>The untyped lvalue for <paramref name="lvalue"/>.</returns>
-    protected UntypedLvalue BindLvalue(SyntaxNode lvalue) => lvalue switch
+    /// <param name="syntax">The lvalue to bind.</param>
+    /// <returns>The untyped lvalue for <paramref name="syntax"/>.</returns>
+    protected UntypedLvalue BindLvalue(SyntaxNode syntax) => syntax switch
     {
-        _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
+        _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 }

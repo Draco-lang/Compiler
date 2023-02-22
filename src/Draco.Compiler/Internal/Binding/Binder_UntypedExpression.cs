@@ -27,10 +27,21 @@ internal partial class Binder
     };
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax)
     {
-        // TODO: Look up name properly
-        var symbol = (Symbol?)null ?? throw new NotImplementedException();
-        // TODO: Based on symbol return something
-        throw new NotImplementedException();
+        var lookup = this.LookupValueSymbol(syntax.Name.Text, syntax);
+        if (!lookup.FoundAny)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+        if (lookup.Symbols.Count > 1)
+        {
+            // TODO: Multiple symbols, potental overloading
+            throw new NotImplementedException();
+        }
+        return lookup.Symbols[0] switch
+        {
+            _ => throw new InvalidOperationException(),
+        };
     }
 
     private UntypedExpression BindIfExpression(IfExpressionSyntax syntax)

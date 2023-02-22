@@ -30,9 +30,9 @@ internal sealed class ModuleBinder : Binder
         this.symbol = symbol;
     }
 
-    protected override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference) =>
+    public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference) =>
         throw new NotImplementedException();
 
-    protected override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
+    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
         throw new NotImplementedException();
 }

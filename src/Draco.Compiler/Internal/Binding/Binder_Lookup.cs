@@ -41,7 +41,7 @@ internal partial class Binder
     /// <param name="result">The result of the lookup.</param>
     /// <param name="name">The name of the symbol to look up.</param>
     /// <param name="reference">The syntax referencing the symbol.</param>
-    protected abstract void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference);
+    public abstract void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference);
 
     /// <summary>
     /// Attempts to look up a symbol that can be used in type-context (mainly type-definitions).
@@ -49,5 +49,5 @@ internal partial class Binder
     /// <param name="result">The result of the lookup.</param>
     /// <param name="name">The name of the symbol to look up.</param>
     /// <param name="reference">The syntax referencing the symbol.</param>
-    protected abstract void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference);
+    public abstract void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference);
 }

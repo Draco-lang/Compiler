@@ -69,10 +69,37 @@ internal sealed class LocalBinder : Binder
         this.syntax = syntax;
     }
 
-    protected override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference) =>
-        throw new NotImplementedException();
+    public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
+    {
+        // If there's a syntactic reference, check locals
+        if (reference is not null)
+        {
+            // Only check the ones that come before the reference position
+            var position = this.RelativePositions[reference];
+            var localSymbol = this.LocalDeclarations
+                .Where(decl => decl.Position < position && decl.Symbol.Name == name)
+                .Select(decl => decl.Symbol)
+                .LastOrDefault();
+            // If there was a symbol, we can reference it
+            if (localSymbol is not null) result.Add(localSymbol);
+        }
+        // Now we can check order-independent declarations
+        foreach (var decl in this.declarations)
+        {
+            if (decl.Name != name) continue;
+            if (!BinderFacts.IsValueSymbol(decl)) continue;
+            result.Add(decl);
+        }
+        // If we are collecting an overload-set or the result is empty, we try to continue upwards
+        // Otherwise we can stop
+        if (!result.FoundAny || result.IsOverloadSet)
+        {
+            var parentReference = BinderFacts.GetScopeDefiningAncestor(reference?.Parent);
+            this.Parent?.LookupValueSymbol(result, name, parentReference);
+        }
+    }
 
-    protected override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
+    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
         throw new NotImplementedException();
 
     private void Build()

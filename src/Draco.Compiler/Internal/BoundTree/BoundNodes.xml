@@ -96,6 +96,10 @@
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
 
+  <Node Name="BoundParameterExpression" Base="BoundExpression">
+    <Field Name="Parameter" Type="ParameterSymbol" />
+  </Node>
+
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object" />
   </Node>

@@ -40,6 +40,7 @@ internal partial class Binder
         }
         return lookup.Symbols[0] switch
         {
+            ParameterSymbol param => new UntypedParameterExpression(syntax, param),
             _ => throw new InvalidOperationException(),
         };
     }

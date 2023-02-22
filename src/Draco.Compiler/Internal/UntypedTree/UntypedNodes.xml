@@ -95,6 +95,10 @@
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
 
+  <Node Name="UntypedParameterExpression" Base="UntypedExpression">
+    <Field Name="Parameter" Type="ParameterSymbol" />
+  </Node>
+
   <Node Name="UntypedLiteralExpression" Base="UntypedExpression">
     <Field Name="Value" Type="object" />
   </Node>

@@ -4,7 +4,8 @@ internal abstract class ComponentFuzzer
 {
     public virtual void StartTesting(int numEpoch, int numMutations)
     {
-        for (int i = 0; i < numEpoch; i++)
+        // If number of epochs is -1 we run forever
+        for (int i = 0; i < numEpoch || numEpoch == -1; i++)
         {
             this.RunEpoch();
             for (int j = 0; j < numMutations; j++)

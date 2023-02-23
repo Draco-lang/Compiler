@@ -23,8 +23,9 @@ internal sealed class ParserFuzzer : ComponentFuzzer
         }
         catch (Exception ex)
         {
-            Helper.PrintError(ex, string.Join("", input.Select(x => x.Text)));
+            Helper.AddError(ex, string.Join("", input.Select(x => x.Text)));
         }
     }
+
     public override void RunMutation() => throw new NotImplementedException();
 }

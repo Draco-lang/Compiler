@@ -17,5 +17,6 @@ internal abstract class ComponentFuzzer
     }
 
     public abstract void RunEpoch();
+
     public abstract void RunMutation();
 }

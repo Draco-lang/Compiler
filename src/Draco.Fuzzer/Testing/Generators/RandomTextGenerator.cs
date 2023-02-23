@@ -2,7 +2,6 @@ namespace Draco.Fuzzer.Testing.Generators;
 
 internal sealed class RandomTextGenerator : IInputGenerator<string>
 {
-    private string? currentEpoch;
     private readonly Random random;
     private readonly int maxLength;
 
@@ -21,19 +20,9 @@ internal sealed class RandomTextGenerator : IInputGenerator<string>
     public string NextExpoch()
     {
         int length = this.random.Next(this.maxLength);
-        var chars = new List<char>();
-
-        for (int i = 0; i < length; i++)
-        {
-            chars.Add((char)this.random.Next(256));
-        }
-        this.currentEpoch = new string(chars.ToArray());
-        return this.currentEpoch;
+        var chars = new char[length];
+        return new string(chars.Select(x => x = (char)this.random.Next(256)).ToArray());
     }
 
-    public string NextMutation()
-    {
-        if (this.currentEpoch is null) throw new InvalidOperationException();
-        throw new NotImplementedException();
-    }
+    public string NextMutation() => throw new NotImplementedException();
 }

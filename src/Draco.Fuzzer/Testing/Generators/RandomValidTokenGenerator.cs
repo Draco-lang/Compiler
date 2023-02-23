@@ -7,7 +7,6 @@ namespace Draco.Fuzzer.Testing.Generators;
 
 internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<Token>>
 {
-    private Token[]? currentEpoch;
     private readonly Random random;
     private readonly int maxLength;
 

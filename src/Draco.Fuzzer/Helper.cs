@@ -7,7 +7,7 @@ internal static class Helper
 {
     private static List<(string input, Exception ex)> errors = new();
 
-    public static void PrintError(Exception ex, string input) => errors.Add((input, ex));
+    public static void AddError(Exception ex, string input) => errors.Add((input, ex));
 
     public static void PrintResult()
     {

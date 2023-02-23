@@ -1168,9 +1168,7 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out var token);
         Assert.Equal(TokenType.LineStringStart, token.Type);
-        Assert.Empty(token.LeadingTrivia);
-        Assert.Empty(token.TrailingTrivia);
-        Assert.Empty(token.Diagnostics);
+        AssertNoTriviaOrDiagnostics(token);
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.StringContent, token.Type);

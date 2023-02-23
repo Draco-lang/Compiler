@@ -6,8 +6,13 @@ namespace Draco.Fuzzer;
 
 internal class Program
 {
-    internal static int Main(string[] args) =>
-        ConfigureCommands().Invoke(args);
+    internal static int Main(string[] args)
+    {
+        Console.CancelKeyPress += new ConsoleCancelEventHandler(handleCancel);
+        return ConfigureCommands().Invoke(args);
+    }
+
+    private static void handleCancel(object? sender, ConsoleCancelEventArgs args) => Helper.PrintResult();
 
     private static RootCommand ConfigureCommands()
     {

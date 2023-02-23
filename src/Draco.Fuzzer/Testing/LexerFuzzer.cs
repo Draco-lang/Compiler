@@ -7,10 +7,12 @@ namespace Draco.Fuzzer.Testing;
 internal sealed class LexerFuzzer : ComponentFuzzer
 {
     private IInputGenerator<string> generator;
+
     public LexerFuzzer(IInputGenerator<string> generator)
     {
         this.generator = generator;
     }
+
     public override void RunEpoch()
     {
         var input = this.generator.NextExpoch();
@@ -25,8 +27,9 @@ internal sealed class LexerFuzzer : ComponentFuzzer
         }
         catch (Exception ex)
         {
-            Helper.PrintError(ex, input);
+            Helper.AddError(ex, input);
         }
     }
+
     public override void RunMutation() => throw new NotImplementedException();
 }

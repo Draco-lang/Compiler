@@ -19,7 +19,7 @@ internal static class Helper
             Console.WriteLine($"{error.Count()} error/s : ");
             Console.ForegroundColor = color;
             Console.WriteLine();
-            Console.WriteLine(error.First().input);
+            Console.WriteLine(error.MinBy(x => x.input.Length).input);
             Console.WriteLine();
             Console.WriteLine(error.Key);
             Console.ForegroundColor = ConsoleColor.Red;

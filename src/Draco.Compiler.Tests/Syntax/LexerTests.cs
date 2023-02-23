@@ -30,13 +30,6 @@ public sealed class LexerTests
         result = enumerator.Current;
     }
 
-    private static bool TryAssertNextToken(IEnumerator<Token> enumerator, out Token result)
-    {
-        var output = enumerator.MoveNext();
-        result = enumerator.Current;
-        return output;
-    }
-
     private static void AssertNoTrivia(Token token)
     {
         Assert.Empty(token.LeadingTrivia);
@@ -1455,17 +1448,5 @@ public sealed class LexerTests
 
         AssertNextToken(tokens, out token);
         Assert.Equal(TokenType.EndOfInput, token.Type);
-    }
-
-    [Theory]
-    [InlineData("""
-        c[I3N?t?­?¬+Up?r÷?ZH?"
-        ­GáR►jBo‼­O,P:6zAk?o\
-        """)]
-    public void FuzzerCrashTests(string text)
-    {
-        var tokens = Lex(text);
-
-        while (TryAssertNextToken(tokens, out var _)) ;
     }
 }

@@ -3,8 +3,10 @@ import { ComponentContainer } from 'golden-layout';
 import { inputCode } from '../app.js';
 export class TextInput {
     static editors = [];
+
     rootElement: HTMLElement;
     resizeWithContainerAutomatically = true;
+
     constructor(public container: ComponentContainer) {
         this.rootElement = container.element;
         const div = document.createElement('div');

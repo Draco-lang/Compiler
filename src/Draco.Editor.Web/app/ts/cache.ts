@@ -68,7 +68,7 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
     });
 }
 
-async function progressFetch(url: string, onProgress: (loaded: number, total: number)=>void) : Promise<Blob> {
+async function progressFetch(url: string, onProgress: (loaded: number, total: number) => void) : Promise<Blob> {
     const response = await fetch(url);
     const contentLength = response.headers.get('content-length');
     const total = parseInt(contentLength, 10);

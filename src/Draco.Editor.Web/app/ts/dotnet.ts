@@ -60,19 +60,19 @@ export function setCode(code: string) {
 }
 
 function onOutputChange(outputType: string, value: string, clear: boolean) {
-    listeners.forEach(s=>s({
+    listeners.forEach(s => s({
         outputType: outputType,
         value: value,
         clear: clear
     }));
 }
 
-export function subscribeOutputChange(listener: (arg: {outputType: string; value: string, clear:boolean}) => void) {
+export function subscribeOutputChange(listener: (arg: {outputType: string; value: string; clear:boolean}) => void) {
     listeners.push(listener);
 }
 
 export function unsubscribeOutputChange(listener: (arg: {outputType: string; value: string}) => void) {
-    listeners = listeners.filter(s=>s!=listener);
+    listeners = listeners.filter(s => s != listener);
 }
 
 export async function initDotnetWorkers(initCode: string) {

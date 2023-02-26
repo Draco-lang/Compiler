@@ -69,8 +69,7 @@ const config : LayoutConfig = {
                 title: 'Input',
                 type: 'component',
                 componentType: 'TextInput',
-                width: 50,
-                isClosable: false
+                width: 50
             },
             {
                 type: 'stack',

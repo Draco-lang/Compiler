@@ -20,7 +20,7 @@ internal sealed class CompilerFuzzer : ComponentFuzzer
         try
         {
             var sourceText = SourceText.FromText(input);
-            var parseTree = ParseTree.Parse(sourceText);
+            var parseTree = SyntaxTree.Parse(sourceText);
             var compilation = Compilation.Create(parseTree);
             var execResult = ScriptingEngine.Execute(compilation);
         }

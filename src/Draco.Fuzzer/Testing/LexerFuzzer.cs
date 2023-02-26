@@ -16,13 +16,13 @@ internal sealed class LexerFuzzer : ComponentFuzzer
     public override void RunEpoch()
     {
         var input = this.generator.NextExpoch();
-        var lexer = new Lexer(SourceReader.From(input));
+        var lexer = new Lexer(SourceReader.From(input), new SyntaxDiagnosticTable());
         try
         {
             while (true)
             {
                 var token = lexer.Lex();
-                if (token.Type == TokenType.EndOfInput) break;
+                if (token.Kind == TokenKind.EndOfInput) break;
             }
         }
         catch (Exception ex)

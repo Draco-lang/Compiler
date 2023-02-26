@@ -1,11 +1,11 @@
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
-using static Draco.Compiler.Internal.Syntax.ParseNode;
+using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Fuzzer.Testing.Generators;
 
-internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<Token>>
+internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<SyntaxToken>>
 {
     private readonly Random random;
     private readonly int maxLength;
@@ -22,7 +22,7 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<To
         this.maxLength = maxLength;
     }
 
-    public IEnumerable<Token> NextExpoch()
+    public IEnumerable<SyntaxToken> NextExpoch()
     {
         var max = this.random.Next(this.maxLength);
         var builder = new StringBuilder();
@@ -31,23 +31,23 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<To
             builder.Append(this.GetRandomToken());
         }
 
-        var lexer = new Lexer(SourceReader.From(builder.ToString()));
+        var lexer = new Lexer(SourceReader.From(builder.ToString()), new SyntaxDiagnosticTable());
 
         while (true)
         {
             var tok = lexer.Lex();
             yield return tok;
-            if (tok.Type == TokenType.EndOfInput) break;
+            if (tok.Kind == TokenKind.EndOfInput) break;
         }
     }
 
-    public IEnumerable<Token> NextMutation() => throw new NotImplementedException();
+    public IEnumerable<SyntaxToken> NextMutation() => throw new NotImplementedException();
 
     private string GetRandomToken()
     {
-        var max = Enum.GetValues(typeof(TokenType)).Length;
+        var max = Enum.GetValues(typeof(TokenKind)).Length;
         var rand = this.random.Next(max);
-        var text = TokenTypeExtensions.GetTokenTextOrNull((TokenType)rand);
+        var text = SyntaxFacts.GetTokenText((TokenKind)rand);
         if (text == null) text = this.GenerateValidIdentifier();
         var toAppend = this.random.Next(2) == 0 ? "" : " "; //Append space or not
         return $"{text}{toAppend}";

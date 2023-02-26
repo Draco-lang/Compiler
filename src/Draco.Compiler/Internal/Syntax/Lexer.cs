@@ -547,7 +547,7 @@ internal sealed class Lexer
                 offset += untilEndOffset;
 
                 this.tokenBuilder
-                    .SetType(TokenType.StringContent)
+                    .SetKind(TokenKind.StringContent)
                     .SetText(this.AdvanceWithText(offset))
                     .SetValue(this.valueBuilder.ToString());
                 return default;

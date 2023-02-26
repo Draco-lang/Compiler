@@ -934,10 +934,10 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenKind.LineStringStart);
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}");
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}", $"\\{ext}");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.EmptyEscapeSequence);
 
@@ -958,10 +958,10 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenKind.LineStringStart);
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenKind.StringContent, $"\\{ext} ");
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext} ", $" ");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
 
@@ -981,12 +981,12 @@ public sealed class LexerTests
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenKind.LineStringStart);
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}#\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenKind.StringContent, $"\\{ext} ");
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}", $"\\{ext}");
         this.AssertNoTrivia();
-        this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
+        this.AssertDiagnostics(SyntaxErrors.EmptyEscapeSequence);
 
         this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();

@@ -18,7 +18,7 @@ internal sealed class ParserFuzzer : ComponentFuzzer
         try
         {
             // We just care about the parsing into compilation unit part
-            new Parser(SyntaxTokenSource.From(input)).ParseCompilationUnit();
+            new Parser(TokenSource.From(input), new SyntaxDiagnosticTable()).ParseCompilationUnit();
         }
         catch (Exception ex)
         {

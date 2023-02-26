@@ -17,7 +17,8 @@ const __dirname = path.dirname(__filename);
 const outDir = path.join(__dirname, distDir);
 const binFolder = process.argv[2];
 const debug = binFolder.includes('Debug');
-console.log('Is Debug:'+debug);
+console.log(`Is Debug: ${debug}'`);
+
 async function dotnetjsBuild() {
     await viteBuild(defineConfig({ // Yes, I'm using another bundler, because this one bundle correctly dotnet.js to CJS...
         build: {

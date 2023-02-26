@@ -1,0 +1,12 @@
+{{# Expands the passed in block with a separator in-between the elements.}}
+{{# The element is called '$element'.}}
+{{func separated(separator, elements)}}
+    {{$first = true}}
+    {{for $element in elements}}
+        {{if !$first}}
+            {{separator}}
+        {{end}}
+        {{$first = false}}
+        {{$$}}
+    {{end}}
+{{end}}

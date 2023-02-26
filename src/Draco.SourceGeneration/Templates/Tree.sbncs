@@ -1,0 +1,99 @@
+{{include 'Utils.sbncs'}}
+
+{{func base(node)}}
+    {{if node.Base}}
+        : {{node.Base.Name}}
+    {{end}}
+{{end}}
+
+{{func abstract_sealed(node)}}
+    {{if node.IsAbstract}}
+        abstract
+    {{else}}
+        sealed
+    {{end}}
+{{end}}
+
+{{func protected_public(node)}}
+    {{if node.IsAbstract}}
+        protected
+    {{else}}
+        public
+    {{end}}
+{{end}}
+
+{{func nullable(field)}}
+    {{if field.IsNullable}}
+        ?
+    {{end}}
+{{end}}
+
+{{func class_header(node)}}
+    {{abstract_sealed(node)}} partial class {{node.Name}} {{base(node)}}
+{{end}}
+
+{{func field_prefix(field)}}
+    /// <summary>
+    /// {{field.Documentation}}
+    /// </summary>
+    public
+    {{if field.Override}}
+        override
+    {{end}}
+    {{field.Type}} {{field.Name}}
+{{end}}
+
+{{func children(node)}}
+    {{if !node.IsAbstract}}
+        public override IEnumerable<{{Root.Name}}> Children
+        {
+            get
+            {
+                {{for $field in node.Fields}}
+                    {{if $field.IsNullable}}
+                        if (this.{{$field.Name}} is not null)
+                    {{end}}
+                    yield return this.{{$field.Name}};
+                {{end}}
+                yield break;
+            }
+        }
+    {{end}}
+{{end}}
+
+{{func accept_functions(node)}}
+    {{if node.IsAbstract && !node.Base}}
+        public abstract void Accept(SyntaxVisitor visitor);
+        public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
+    {{else}}
+        public override void Accept(SyntaxVisitor visitor) =>
+            visitor.Visit{{remove_suffix(node.Name, 'Syntax')}}(this);
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+            visitor.Visit{{remove_suffix(node.Name, 'Syntax')}}(this);
+    {{end}}
+{{end}}
+
+{{func visitor_functions(nodes, return_type, return_value)}}
+    {{for $node in nodes}}
+        {{if $node.IsAbstract}}
+            public {{return_type}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
+            {
+                {{if return_value}}
+                    return node.Accept(this);
+                {{else}}
+                    node.Accept(this);
+                {{end}}
+            }
+        {{else}}
+            public virtual {{return_type}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
+            {
+                {{for $field in $node.Fields}}
+                    node.{{$field.Name}}{{nullable($field)}}.Accept(this);
+                {{end}}
+                {{if return_value}}
+                    return {{return_value}};
+                {{end}}
+            }
+        {{end}}
+    {{end}}
+{{end}}

@@ -17,14 +17,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("main"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")), LiteralExpr(0))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -45,14 +45,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("main"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), value: LiteralExpr(0))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", value: LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -73,14 +73,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("main"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), NameTypeExpr(Name("int32")))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32")))))));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -102,15 +102,15 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("main"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"))),
-                ExprStmt(BinaryExpr(NameExpr("x"), Assign, LiteralExpr(0))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x")),
+                ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -131,14 +131,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("main"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x"))))));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -161,12 +161,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
-            NameTypeExpr(Name("int32")),
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(ReturnExpr(StringExpr("Hello"))))))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(ReturnExpression(StringExpression("Hello")))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -184,11 +184,11 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // func foo(): int32 = "Hello";
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
-            NameTypeExpr(Name("int32")),
-            InlineBodyFuncBody(StringExpr("Hello")))));
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            InlineFunctionBody(StringExpression("Hello")))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -208,12 +208,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(IfExpr(LiteralExpr(true), BlockExpr())))))));
+            BlockFunctionBody(
+                ExpressionStatement(IfExpression(LiteralExpression(true), BlockExpression()))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -232,12 +232,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(IfExpr(LiteralExpr(1), BlockExpr())))))));
+            BlockFunctionBody(
+                ExpressionStatement(IfExpression(LiteralExpression(1), BlockExpression()))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -257,12 +257,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(WhileExpr(LiteralExpr(true), BlockExpr())))))));
+            BlockFunctionBody(
+                ExpressionStatement(WhileExpression(LiteralExpression(true), BlockExpression()))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -281,12 +281,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                ExprStmt(WhileExpr(LiteralExpr(1), BlockExpr())))))));
+            BlockFunctionBody(
+                ExpressionStatement(WhileExpression(LiteralExpression(1), BlockExpression()))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -306,17 +306,17 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(
-                    Name("x"),
-                    value: IfExpr(
-                        condition: LiteralExpr(true),
-                        then: LiteralExpr(0),
-                        @else: StringExpr("Hello")))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration(
+                    "x",
+                    value: IfExpression(
+                        condition: LiteralExpression(true),
+                        then: LiteralExpression(0),
+                        @else: StringExpression("Hello"))))))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -340,16 +340,16 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Arrange
         var tree = CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
-                NameTypeExpr(Name("int32")),
-                InlineBodyFuncBody(LiteralExpr(0))),
-            FuncDecl(
-                Name("bar"),
-                FuncParamList(),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                bar",
+                ParameterList(),
                 null,
-                InlineBodyFuncBody(CallExpr(NameExpr("foo")))));
+                InlineFunctionBody(CallExpr(NameExpression("foo")))));
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -378,18 +378,18 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    DeclStmt(LabelDecl("start")),
-                    DeclStmt(VariableDecl(Name("x"), value: IfExpr(LiteralExpr(true), LiteralExpr(0), ReturnExpr()))),
-                    DeclStmt(VariableDecl(Name("y"), value: IfExpr(LiteralExpr(true), LiteralExpr(0), GotoExpr("start")))))))));
+                BlockFunctionBody(
+                    DeclarationStatement(LabelDeclaration("start")),
+                    DeclarationStatement(VariableDeclaration("x", value: IfExpression(LiteralExpression(true), LiteralExpression(0), ReturnExpression()))),
+                    DeclarationStatement(VariableDeclaration("y", value: IfExpression(LiteralExpression(true), LiteralExpression(0), GotoExpression("start"))))))));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
-        var yDecl = tree.FindInChildren<ParseNode.Decl.Variable>(1);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
 
         // Act
         var compilation = Compilation.Create(tree);

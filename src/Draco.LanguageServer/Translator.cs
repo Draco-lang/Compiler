@@ -56,16 +56,16 @@ internal static class Translator
     public static LspModels.Position ToLsp(CompilerApi.Syntax.Position position) =>
         new(line: position.Line, character: position.Column);
 
-    public static SemanticToken? ToLsp(CompilerApi.Syntax.ParseNode.Token token) => token.Type switch
+    public static SemanticToken? ToLsp(CompilerApi.Syntax.SyntaxToken token) => token.Kind switch
     {
-        CompilerApi.Syntax.TokenType.LineStringStart
-     or CompilerApi.Syntax.TokenType.LineStringEnd
-     or CompilerApi.Syntax.TokenType.MultiLineStringStart
-     or CompilerApi.Syntax.TokenType.MultiLineStringEnd
-     or CompilerApi.Syntax.TokenType.LiteralCharacter => new SemanticToken(
-            LspModels.SemanticTokenType.String,
-            LspModels.SemanticTokenModifier.Defaults.ToImmutableList(),
-            token.Range),
+        CompilerApi.Syntax.TokenKind.LineStringStart
+     or CompilerApi.Syntax.TokenKind.LineStringEnd
+     or CompilerApi.Syntax.TokenKind.MultiLineStringStart
+     or CompilerApi.Syntax.TokenKind.MultiLineStringEnd
+     or CompilerApi.Syntax.TokenKind.LiteralCharacter => new SemanticToken(
+         Type: LspModels.SemanticTokenType.String,
+         Modifiers: LspModels.SemanticTokenModifier.Defaults.ToImmutableList(),
+         Range: token.Range),
         _ => null,
     };
 }

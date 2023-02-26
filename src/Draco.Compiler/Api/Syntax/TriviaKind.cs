@@ -3,7 +3,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// <summary>
 /// The different kinds of trivia.
 /// </summary>
-public enum TriviaType
+public enum TriviaKind
 {
     /// <summary>
     /// Any horizontal whitespace.

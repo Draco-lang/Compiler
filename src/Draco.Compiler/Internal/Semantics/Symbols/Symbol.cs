@@ -21,25 +21,25 @@ internal static partial class Symbol
     public static ISymbol MakeReferenceError(string name, ImmutableArray<Diagnostic> diagnostics) =>
         new ReferenceError(name, diagnostics);
 
-    public static ISymbol.ILabel MakeLabel(QueryDatabase db, string name, ParseNode definition) =>
+    public static ISymbol.ILabel MakeLabel(QueryDatabase db, string name, SyntaxNode definition) =>
         new Label(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static ISymbol.ILabel SynthetizeLabel(string? name = null) =>
         new SynthetizedLabel(name);
 
-    public static ISymbol.IVariable MakeVariable(QueryDatabase db, string name, ParseNode definition, bool isMutable) =>
+    public static ISymbol.IVariable MakeVariable(QueryDatabase db, string name, SyntaxNode definition, bool isMutable) =>
         new Variable(db, name, definition, ImmutableArray<Diagnostic>.Empty, isMutable);
 
     public static ISymbol.IVariable SynthetizeVariable(Type type, bool isMutable) =>
         new SynthetizedVariable(type, isMutable);
 
-    public static ISymbol.IParameter MakeParameter(QueryDatabase db, string name, ParseNode definition) =>
+    public static ISymbol.IParameter MakeParameter(QueryDatabase db, string name, SyntaxNode definition) =>
         new Parameter(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static ISymbol.IParameter SynthetizeParameter(Type type) =>
         new SynthetizedParameter(type);
 
-    public static ISymbol.IFunction MakeFunction(QueryDatabase db, string name, ParseNode definition) =>
+    public static ISymbol.IFunction MakeFunction(QueryDatabase db, string name, SyntaxNode definition) =>
         new Function(db, name, definition, ImmutableArray<Diagnostic>.Empty);
 
     public static ISymbol.IOverloadSet SynthetizeOverloadSet(ImmutableArray<ISymbol.IFunction> functions) =>
@@ -54,21 +54,21 @@ internal static partial class Symbol
     public static ISymbol.IFunction MakeIntrinsicFunction(string name, ImmutableArray<Type> paramTypes, Type returnType) =>
         new IntrinsicFunction(name, paramTypes, returnType);
 
-    public static ISymbol.IFunction MakeIntrinsicUnaryOperator(TokenType op, Type operandType, Type resultType) =>
+    public static ISymbol.IFunction MakeIntrinsicUnaryOperator(TokenKind op, Type operandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetUnaryOperatorName(op),
             ImmutableArray.Create(operandType),
             resultType);
 
     public static ISymbol.IFunction MakeIntrinsicBinaryOperator(
-        TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
+        TokenKind op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetBinaryOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
             ImmutableArray.Create(leftOperandType, rightrOperandType),
             resultType);
 
     public static ISymbol.IFunction MakeIntrinsicRelationalOperator(
-        TokenType op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
+        TokenKind op, Type leftOperandType, Type rightrOperandType, Type resultType) =>
         new IntrinsicFunction(
             SymbolResolution.GetRelationalOperatorName(op) ?? throw new ArgumentOutOfRangeException(nameof(op)),
             ImmutableArray.Create(leftOperandType, rightrOperandType),
@@ -77,12 +77,12 @@ internal static partial class Symbol
     public static ISymbol.ITypeDefinition MakeIntrinsicTypeDefinition(string name, Type type) =>
         new IntrinsicTypeDefinition(name, type);
 
-    private static string ExtractDocumentation(ParseNode? definition)
+    private static string ExtractDocumentation(SyntaxNode? definition)
     {
         if (definition is null) return string.Empty;
         // Get all the doc commemts above the declaration
         var token = definition.Tokens.FirstOrDefault();
-        var trivia = token?.LeadingTrivia.Where(x => x.Type == TriviaType.DocumentationComment);
+        var trivia = token?.LeadingTrivia.Where(x => x.Kind == TriviaKind.DocumentationComment);
         // Concatenate the text of all the doc comments
         return trivia is not null ? string.Join(Environment.NewLine, trivia.Select(x => x.Text.Remove(0, 3))) : string.Empty;
     }
@@ -126,9 +126,9 @@ internal partial interface ISymbol
     public IFunction? DefiningFunction { get; }
 
     /// <summary>
-    /// The <see cref="ParseNode"/> this symbol was defined by.
+    /// The <see cref="SyntaxNode"/> this symbol was defined by.
     /// </summary>
-    public ParseNode? Definition { get; }
+    public SyntaxNode? Definition { get; }
 
     /// <summary>
     /// True, if the symbol is visible externally.
@@ -287,7 +287,7 @@ internal static partial class Symbol
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public virtual IScope? DefiningScope => null;
         public virtual ISymbol.IFunction? DefiningFunction => null;
-        public virtual ParseNode? Definition => null;
+        public virtual SyntaxNode? Definition => null;
         public bool IsExternallyVisible => false;
         public bool IsGlobal => false;
         public string Documentation => string.Empty;
@@ -309,7 +309,7 @@ internal static partial class Symbol
     private abstract class InTreeBase : ISymbol
     {
         public string Name { get; }
-        public ParseNode Definition { get; }
+        public SyntaxNode Definition { get; }
         public bool IsError => this.Diagnostics.Length > 0;
         public bool IsIntrinsic => false;
         public ImmutableArray<Diagnostic> Diagnostics { get; }
@@ -350,7 +350,7 @@ internal static partial class Symbol
         protected InTreeBase(
             QueryDatabase db,
             string name,
-            ParseNode definition,
+            SyntaxNode definition,
             ImmutableArray<Diagnostic> diagnostics)
         {
             this.db = db;
@@ -380,7 +380,7 @@ internal static partial class Symbol
         public ImmutableArray<Diagnostic> Diagnostics => ImmutableArray<Diagnostic>.Empty;
         public IScope? DefiningScope => null;
         public ISymbol.IFunction? DefiningFunction => null;
-        public ParseNode? Definition => null;
+        public SyntaxNode? Definition => null;
         public virtual bool IsExternallyVisible => false;
         public virtual bool IsGlobal => false;
         public string Documentation => string.Empty;
@@ -423,7 +423,7 @@ internal static partial class Symbol
     /// </summary>
     private sealed class Label : InTreeBase, ISymbol.ILabel
     {
-        public Label(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
+        public Label(QueryDatabase db, string name, SyntaxNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
         {
         }
@@ -462,7 +462,7 @@ internal static partial class Symbol
         public Type Type => TypeChecker.TypeOf(this.db, this).UnwrapTypeVariable;
         public new string Documentation => ExtractDocumentation(this.Definition);
 
-        public Variable(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics, bool isMutable)
+        public Variable(QueryDatabase db, string name, SyntaxNode definition, ImmutableArray<Diagnostic> diagnostics, bool isMutable)
             : base(db, name, definition, diagnostics)
         {
             this.IsMutable = isMutable;
@@ -506,7 +506,7 @@ internal static partial class Symbol
         public bool IsMutable => false;
         public Type Type => TypeChecker.TypeOf(this.db, this);
 
-        public Parameter(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
+        public Parameter(QueryDatabase db, string name, SyntaxNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
         {
         }
@@ -560,10 +560,10 @@ internal static partial class Symbol
             get
             {
                 var builder = ImmutableArray.CreateBuilder<ISymbol.IParameter>();
-                var tree = (ParseNode.Decl.Func)this.Definition;
-                foreach (var param in tree.Params.Value.Elements)
+                var tree = (FunctionDeclarationSyntax)this.Definition;
+                foreach (var param in tree.ParameterList.Values)
                 {
-                    var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param.Value);
+                    var symbol = SymbolResolution.GetDefinedSymbolOrNull(this.db, param);
                     Debug.Assert(symbol is ISymbol.IParameter);
                     builder.Add((ISymbol.IParameter)symbol!);
                 }
@@ -574,7 +574,7 @@ internal static partial class Symbol
         {
             get
             {
-                var tree = (ParseNode.Decl.Func)this.Definition;
+                var tree = (FunctionDeclarationSyntax)this.Definition;
                 return tree.ReturnType is null
                     ? Types.Type.Unit
                     : TypeChecker.Evaluate(this.db, tree.ReturnType.Type);
@@ -585,7 +585,7 @@ internal static partial class Symbol
             this.ReturnType);
         Type ISymbol.ITyped.Type => this.Type;
 
-        public Function(QueryDatabase db, string name, ParseNode definition, ImmutableArray<Diagnostic> diagnostics)
+        public Function(QueryDatabase db, string name, SyntaxNode definition, ImmutableArray<Diagnostic> diagnostics)
             : base(db, name, definition, diagnostics)
         {
         }

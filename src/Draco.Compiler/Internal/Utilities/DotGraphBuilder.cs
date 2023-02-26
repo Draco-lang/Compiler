@@ -31,6 +31,7 @@ internal static class DotAttribs
 /// </summary>
 /// <typeparam name="TVertex">The vertex type mapped.</typeparam>
 internal sealed class DotGraphBuilder<TVertex>
+    where TVertex : notnull
 {
     public sealed class VertexBuilder
     {
@@ -259,6 +260,6 @@ internal sealed class DotGraphBuilder<TVertex>
             DotAttribs.RankDir.BottomToTop => "BT",
             _ => "LR",
         },
-        _ => value.ToString(),
+        _ => value.ToString() ?? "null",
     };
 }

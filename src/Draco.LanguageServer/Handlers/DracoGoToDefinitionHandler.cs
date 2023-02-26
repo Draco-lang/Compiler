@@ -30,11 +30,11 @@ internal sealed class DracoGoToDefinitionHandler : DefinitionHandlerBase
         var cursorPosition = Translator.ToCompiler(request.Position);
         // TODO: Share compilation
         var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
-        var parseTree = ParseTree.Parse(souceText);
-        var compilation = Compilation.Create(parseTree);
+        var syntaxTree = SyntaxTree.Parse(souceText);
+        var compilation = Compilation.Create(syntaxTree);
         var semanticModel = compilation.GetSemanticModel();
 
-        var referencedSymbol = parseTree
+        var referencedSymbol = syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
             .Select(semanticModel.GetReferencedSymbolOrNull)
             .LastOrDefault(symbol => symbol is not null);

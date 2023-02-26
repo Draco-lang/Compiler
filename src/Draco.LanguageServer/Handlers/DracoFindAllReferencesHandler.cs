@@ -32,11 +32,11 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
         // TODO: Share compilation
         var cursorPosition = Translator.ToCompiler(request.Position);
         var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
-        var parseTree = ParseTree.Parse(souceText);
-        var compilation = Compilation.Create(parseTree);
+        var syntaxTree = SyntaxTree.Parse(souceText);
+        var compilation = Compilation.Create(syntaxTree);
         var semanticModel = compilation.GetSemanticModel();
 
-        var referencedSymbol = parseTree
+        var referencedSymbol = syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
             .Select(symbol => semanticModel.GetReferencedSymbolOrNull(symbol) ?? semanticModel.GetDefinedSymbolOrNull(symbol))
             .LastOrDefault(symbol => symbol is not null);
@@ -46,7 +46,7 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
         if (referencedSymbol is not null)
         {
             var referencingNodes = FindAllReferences(
-                tree: parseTree,
+                tree: syntaxTree,
                 semanticModel: semanticModel,
                 symbol: referencedSymbol,
                 includeDeclaration: request.Context.IncludeDeclaration,
@@ -61,14 +61,14 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
         return Task.FromResult(new LocationContainer(references));
     }
 
-    private static IEnumerable<ParseNode> FindAllReferences(
-        ParseTree tree,
+    private static IEnumerable<SyntaxNode> FindAllReferences(
+        SyntaxTree tree,
         SemanticModel semanticModel,
         ISymbol symbol,
         bool includeDeclaration,
         CancellationToken cancellationToken)
     {
-        foreach (var node in tree.Root.InOrderTraverse())
+        foreach (var node in tree.Root.PreOrderTraverse())
         {
             if (cancellationToken.IsCancellationRequested) yield break;
 

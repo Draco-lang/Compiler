@@ -12,35 +12,35 @@ namespace Draco.Compiler.Internal.Semantics.AbstractSyntax;
 internal static class AstFactory
 {
     public static Decl Label(ISymbol.ILabel symbol) => new Decl.Label(
-        ParseNode: null,
+        SyntaxNode: null,
         LabelSymbol: symbol);
 
     public static Decl Var(ISymbol.IVariable varSymbol, Expr value) => new Decl.Variable(
-        ParseNode: null,
+        SyntaxNode: null,
         DeclarationSymbol: varSymbol,
         Value: value);
 
     public static Stmt Stmt(Decl decl) => new Stmt.Decl(
-        ParseNode: null,
+        SyntaxNode: null,
         Declaration: decl);
 
     public static Stmt Stmt(Expr expr) => new Stmt.Expr(
-        ParseNode: null,
+        SyntaxNode: null,
         Expression: expr);
 
     public static Expr Block(IEnumerable<Stmt> stmts, Expr? value = null) => new Expr.Block(
-        ParseNode: null,
+        SyntaxNode: null,
         Statements: stmts.ToImmutableArray(),
         Value: value ?? Expr.Unit.Default);
 
     public static Expr Block(params Stmt[] stmts) => Block(stmts as IEnumerable<Stmt>);
 
     public static Expr Goto(ISymbol.ILabel labelSymbol) => new Expr.Goto(
-        ParseNode: null,
+        SyntaxNode: null,
         Target: labelSymbol);
 
     public static Expr If(Expr condition, Expr then, Expr @else) => new Expr.If(
-        ParseNode: null,
+        SyntaxNode: null,
         Condition: condition,
         Then: then,
         Else: @else ?? Expr.Unit.Default);
@@ -51,29 +51,29 @@ internal static class AstFactory
         @else: Expr.Unit.Default));
 
     public static Expr Unary(ISymbol.IFunction op, Expr subexpr) => new Expr.Unary(
-        ParseNode: null,
+        SyntaxNode: null,
         Operator: op,
         Operand: subexpr);
 
     public static Expr Binary(Expr left, ISymbol.IFunction op, Expr right) => new Expr.Binary(
-        ParseNode: null,
+        SyntaxNode: null,
         Left: left,
         Operator: op,
         Right: right);
 
     public static Expr Assign(LValue target, Expr value) => new Expr.Assign(
-        ParseNode: null,
+        SyntaxNode: null,
         Target: target,
         CompoundOperator: null,
         Value: value);
 
     public static Expr And(Expr left, Expr right) => new Expr.And(
-        ParseNode: null,
+        SyntaxNode: null,
         Left: left,
         Right: right);
 
     public static Expr Or(Expr left, Expr right) => new Expr.Or(
-        ParseNode: null,
+        SyntaxNode: null,
         Left: left,
         Right: right);
 
@@ -82,15 +82,15 @@ internal static class AstFactory
         subexpr: subexpr);
 
     public static Expr Reference(ISymbol.ITyped symbol) => new Expr.Reference(
-        ParseNode: null,
+        SyntaxNode: null,
         Symbol: symbol);
 
     public static Expr Bool(bool value) => new Expr.Literal(
-        ParseNode: null,
+        SyntaxNode: null,
         Value: value,
         Type: Type.Bool);
 
     public static LValue LValueReference(ISymbol.IVariable symbol) => new LValue.Reference(
-        ParseNode: null,
+        SyntaxNode: null,
         Symbol: symbol);
 }

@@ -100,11 +100,20 @@ internal static class SyntaxErrors
         code: Code(10));
 
     /// <summary>
+    /// The literal ended unexpectedly.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedFloatingPointLiteralEnd = DiagnosticTemplate.Create(
+        title: "unexpected floating-point literal end",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected end of scientific notation floating-point literal, expected one or more digits after exponent",
+        code: Code(11));
+
+    /// <summary>
     /// There was end of input after start of escape sequence.
     /// </summary>
     public static readonly DiagnosticTemplate EmptyEscapeSequence = DiagnosticTemplate.Create(
         title: "escape sequence was empty",
         severity: DiagnosticSeverity.Error,
         format: "there was end of input after start of escape sequence",
-        code: Code(11));
+        code: Code(12));
 }

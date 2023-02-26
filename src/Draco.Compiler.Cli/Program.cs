@@ -44,18 +44,24 @@ internal class Program
         };
         generateExeCommand.SetHandler(GenerateExe, fileArgument, outputOption, msbuildDiagOption);
 
+        var formatCodeCommand = new Command("format", "Formats contents of specified Draco file and writes formatted code to the standard output")
+        {
+            fileArgument,
+        };
+        formatCodeCommand.SetHandler(FormatCode, fileArgument);
+
         var rootCommand = new RootCommand("CLI for the Draco compiler");
         rootCommand.AddCommand(runCommand);
         rootCommand.AddCommand(generateIRCommand);
         rootCommand.AddCommand(generateExeCommand);
+        rootCommand.AddCommand(formatCodeCommand);
         return rootCommand;
     }
-
     private static void Run(FileInfo input)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        var compilation = Compilation.Create(parseTree);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(syntaxTree);
         var execResult = ScriptingEngine.Execute(compilation);
         if (!execResult.Success)
         {
@@ -68,8 +74,8 @@ internal class Program
     private static void GenerateDracoIR(FileInfo input, FileInfo? emitCS)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        var compilation = Compilation.Create(parseTree);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(syntaxTree);
         using var irStream = new MemoryStream();
         var emitResult = compilation.Emit(
             peStream: new MemoryStream(),
@@ -88,8 +94,8 @@ internal class Program
     private static void GenerateExe(FileInfo input, FileInfo output, bool msbuildDiags)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var parseTree = ParseTree.Parse(sourceText);
-        var compilation = Compilation.Create(parseTree, output.Name);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(syntaxTree, output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(dllStream);
         if (!emitResult.Success)
@@ -107,5 +113,12 @@ internal class Program
             file = $"{original.Location.SourceText.Path.OriginalString}({range.Start.Line + 1},{range.Start.Column + 1},{range.End.Line + 1},{range.End.Column + 1})";
         }
         return $"{file} : {original.Severity.ToString().ToLower()} {original.Template.Code} : {original.Message}";
+    }
+
+    private static void FormatCode(FileInfo input)
+    {
+        var sourceText = SourceText.FromFile(input.FullName);
+        var parseTree = SyntaxTree.Parse(sourceText);
+        Console.WriteLine(parseTree.Format().ToString());
     }
 }

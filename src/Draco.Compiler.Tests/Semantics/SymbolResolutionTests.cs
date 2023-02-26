@@ -33,29 +33,29 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(
-                FuncParam(Name("n"), NameTypeExpr(Name("int32")))),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(
+                Parameter("n", NameType("int32"))),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x1"))),
-                ExprStmt(BlockExpr(
-                    DeclStmt(VariableDecl(Name("x2"))),
-                    ExprStmt(BlockExpr(DeclStmt(VariableDecl(Name("x3"))))))),
-                ExprStmt(BlockExpr(
-                    DeclStmt(VariableDecl(Name("x4"))),
-                    ExprStmt(BlockExpr(DeclStmt(VariableDecl(Name("x5"))))),
-                    ExprStmt(BlockExpr(DeclStmt(VariableDecl(Name("x6"))))))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x1")),
+                ExpressionStatement(BlockExpression(
+                    DeclarationStatement(VariableDeclaration("x2")),
+                    ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration("x3")))))),
+                ExpressionStatement(BlockExpression(
+                    DeclarationStatement(VariableDeclaration("x4")),
+                    ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration("x5")))),
+                    ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration("x6"))))))))));
 
-        var foo = tree.FindInChildren<ParseNode.Decl.Func>();
-        var n = tree.FindInChildren<ParseNode.FuncParam>();
-        var x1 = tree.FindInChildren<ParseNode.Decl.Variable>(0);
-        var x2 = tree.FindInChildren<ParseNode.Decl.Variable>(1);
-        var x3 = tree.FindInChildren<ParseNode.Decl.Variable>(2);
-        var x4 = tree.FindInChildren<ParseNode.Decl.Variable>(3);
-        var x5 = tree.FindInChildren<ParseNode.Decl.Variable>(4);
-        var x6 = tree.FindInChildren<ParseNode.Decl.Variable>(5);
+        var foo = tree.FindInChildren<FunctionDeclarationSyntax>();
+        var n = tree.FindInChildren<ParameterSyntax>();
+        var x1 = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var x2 = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var x3 = tree.FindInChildren<VariableDeclarationSyntax>(2);
+        var x4 = tree.FindInChildren<VariableDeclarationSyntax>(3);
+        var x5 = tree.FindInChildren<VariableDeclarationSyntax>(4);
+        var x6 = tree.FindInChildren<VariableDeclarationSyntax>(5);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -94,24 +94,24 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"), null, LiteralExpr(0))),
-                DeclStmt(VariableDecl(Name("x"), null, BinaryExpr(NameExpr("x"), Plus, LiteralExpr(1)))),
-                DeclStmt(VariableDecl(Name("x"), null, BinaryExpr(NameExpr("x"), Plus, LiteralExpr(1)))),
-                DeclStmt(VariableDecl(Name("x"), null, BinaryExpr(NameExpr("x"), Plus, LiteralExpr(1)))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", null, LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration("x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1)))),
+                DeclarationStatement(VariableDeclaration("x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1)))),
+                DeclarationStatement(VariableDeclaration("x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1))))))));
 
-        var x0 = tree.FindInChildren<ParseNode.Decl.Variable>(0);
-        var x1 = tree.FindInChildren<ParseNode.Decl.Variable>(1);
-        var x2 = tree.FindInChildren<ParseNode.Decl.Variable>(2);
-        var x3 = tree.FindInChildren<ParseNode.Decl.Variable>(3);
+        var x0 = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var x1 = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var x2 = tree.FindInChildren<VariableDeclarationSyntax>(2);
+        var x3 = tree.FindInChildren<VariableDeclarationSyntax>(3);
 
-        var x0ref = tree.FindInChildren<ParseNode.Expr.Name>(0);
-        var x1ref = tree.FindInChildren<ParseNode.Expr.Name>(1);
-        var x2ref = tree.FindInChildren<ParseNode.Expr.Name>(2);
+        var x0ref = tree.FindInChildren<NameExpressionSyntax>(0);
+        var x1ref = tree.FindInChildren<NameExpressionSyntax>(1);
+        var x2ref = tree.FindInChildren<NameExpressionSyntax>(2);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -144,30 +144,30 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // func baz() = foo();
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("bar"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "bar",
+                ParameterList(),
                 null,
-                InlineBodyFuncBody(CallExpr(NameExpr("foo")))),
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+                InlineFunctionBody(CallExpression(NameExpression("foo")))),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                InlineBodyFuncBody(CallExpr(NameExpr("foo")))),
-            FuncDecl(
-                Name("baz"),
-                FuncParamList(),
+                InlineFunctionBody(CallExpression(NameExpression("foo")))),
+            FunctionDeclaration(
+                "baz",
+                ParameterList(),
                 null,
-                InlineBodyFuncBody(CallExpr(NameExpr("foo"))))));
+                InlineFunctionBody(CallExpression(NameExpression("foo"))))));
 
-        var barDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
-        var fooDecl = tree.FindInChildren<ParseNode.Decl.Func>(1);
-        var bazDecl = tree.FindInChildren<ParseNode.Decl.Func>(2);
+        var barDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooDecl = tree.FindInChildren<FunctionDeclarationSyntax>(1);
+        var bazDecl = tree.FindInChildren<FunctionDeclarationSyntax>(2);
 
-        var call1 = tree.FindInChildren<ParseNode.Expr.Call>(0);
-        var call2 = tree.FindInChildren<ParseNode.Expr.Call>(1);
-        var call3 = tree.FindInChildren<ParseNode.Expr.Call>(2);
+        var call1 = tree.FindInChildren<CallExpressionSyntax>(0);
+        var call2 = tree.FindInChildren<CallExpressionSyntax>(1);
+        var call3 = tree.FindInChildren<CallExpressionSyntax>(2);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -177,9 +177,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var symFoo = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
         var symBaz = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(bazDecl));
 
-        var refFoo1 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call1.Called));
-        var refFoo2 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call2.Called));
-        var refFoo3 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call3.Called));
+        var refFoo1 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call1.Function));
+        var refFoo2 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call2.Function));
+        var refFoo3 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call3.Function));
 
         // Assert
         Assert.False(ReferenceEquals(symBar, symFoo));
@@ -200,21 +200,21 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"))),
-                DeclStmt(VariableDecl(Name("y"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("z")))),
-                DeclStmt(VariableDecl(Name("z"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x")),
+                DeclarationStatement(VariableDeclaration("y", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("z")))),
+                DeclarationStatement(VariableDeclaration("z"))))));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
-        var yDecl = tree.FindInChildren<ParseNode.Decl.Variable>(1);
-        var zDecl = tree.FindInChildren<ParseNode.Decl.Variable>(2);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var zDecl = tree.FindInChildren<VariableDeclarationSyntax>(2);
 
-        var xRef = tree.FindInChildren<ParseNode.Expr.Name>(0);
-        var zRef = tree.FindInChildren<ParseNode.Expr.Name>(1);
+        var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
+        var zRef = tree.FindInChildren<NameExpressionSyntax>(1);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -251,34 +251,34 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
             null,
-            BlockBodyFuncBody(BlockExpr(
-                DeclStmt(VariableDecl(Name("x"))),
-                ExprStmt(BlockExpr(
-                    DeclStmt(VariableDecl(Name("y"))),
-                    DeclStmt(VariableDecl(Name("z"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("y")))),
-                    DeclStmt(VariableDecl(Name("x"))),
-                    ExprStmt(BlockExpr(
-                        DeclStmt(VariableDecl(Name("k"), value: BinaryExpr(NameExpr("x"), Plus, NameExpr("w")))))),
-                    DeclStmt(VariableDecl(Name("w"))))),
-                DeclStmt(VariableDecl(Name("k"), value: NameExpr("w"))))))));
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x")),
+                ExpressionStatement(BlockExpression(
+                    DeclarationStatement(VariableDeclaration("y")),
+                    DeclarationStatement(VariableDeclaration("z", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("y")))),
+                    DeclarationStatement(VariableDeclaration("x")),
+                    ExpressionStatement(BlockExpression(
+                        DeclarationStatement(VariableDeclaration("k", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("w")))))),
+                    DeclarationStatement(VariableDeclaration("w")))),
+                DeclarationStatement(VariableDeclaration("k", value: NameExpression("w")))))));
 
-        var x1Decl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
-        var y1Decl = tree.FindInChildren<ParseNode.Decl.Variable>(1);
-        var z1Decl = tree.FindInChildren<ParseNode.Decl.Variable>(2);
-        var x2Decl = tree.FindInChildren<ParseNode.Decl.Variable>(3);
-        var k1Decl = tree.FindInChildren<ParseNode.Decl.Variable>(4);
-        var w1Decl = tree.FindInChildren<ParseNode.Decl.Variable>(5);
-        var k2Decl = tree.FindInChildren<ParseNode.Decl.Variable>(6);
+        var x1Decl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var y1Decl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var z1Decl = tree.FindInChildren<VariableDeclarationSyntax>(2);
+        var x2Decl = tree.FindInChildren<VariableDeclarationSyntax>(3);
+        var k1Decl = tree.FindInChildren<VariableDeclarationSyntax>(4);
+        var w1Decl = tree.FindInChildren<VariableDeclarationSyntax>(5);
+        var k2Decl = tree.FindInChildren<VariableDeclarationSyntax>(6);
 
-        var x1Ref1 = tree.FindInChildren<ParseNode.Expr.Name>(0);
-        var y1Ref1 = tree.FindInChildren<ParseNode.Expr.Name>(1);
-        var x2Ref1 = tree.FindInChildren<ParseNode.Expr.Name>(2);
-        var wRefErr1 = tree.FindInChildren<ParseNode.Expr.Name>(3);
-        var wRefErr2 = tree.FindInChildren<ParseNode.Expr.Name>(4);
+        var x1Ref1 = tree.FindInChildren<NameExpressionSyntax>(0);
+        var y1Ref1 = tree.FindInChildren<NameExpressionSyntax>(1);
+        var x2Ref1 = tree.FindInChildren<NameExpressionSyntax>(2);
+        var wRefErr1 = tree.FindInChildren<NameExpressionSyntax>(3);
+        var wRefErr2 = tree.FindInChildren<NameExpressionSyntax>(4);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -316,16 +316,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(FuncDecl(
-            Name("foo"),
-            FuncParamList(
-                FuncParam(Name("x"), NameTypeExpr(Name("int32"))),
-                FuncParam(Name("x"), NameTypeExpr(Name("int32")))),
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(
+                Parameter("x", NameType("int32")),
+                Parameter("x", NameType("int32"))),
             null,
-            BlockBodyFuncBody(BlockExpr()))));
+            BlockFunctionBody())));
 
-        var x1Decl = tree.FindInChildren<ParseNode.FuncParam>(0);
-        var x2Decl = tree.FindInChildren<ParseNode.FuncParam>(1);
+        var x1Decl = tree.FindInChildren<ParameterSyntax>(0);
+        var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -347,16 +347,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // func b(b: int32): int32 = b;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            VariableDecl(Name("b"), NameTypeExpr(Name("int32"))),
-            FuncDecl(
-                Name("b"),
-                FuncParamList(FuncParam(Name("b"), NameTypeExpr(Name("int32")))),
-                NameTypeExpr(Name("int32")),
-                InlineBodyFuncBody(NameExpr("b")))));
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("b", NameType("int32")),
+            FunctionDeclaration(
+                "b",
+                ParameterList(Parameter("b", NameType("int32"))),
+                NameType("int32"),
+                InlineFunctionBody(NameExpression("b")))));
 
-        var varDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
-        var funcDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
+        var varDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -380,23 +380,23 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // var x;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    DeclStmt(VariableDecl(Name("y"), value: NameExpr("x")))))),
-            VariableDecl(Name("x"))));
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("y", value: NameExpression("x"))))),
+            VariableDeclaration("x")));
 
-        var localVarDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
-        var globalVarDecl = tree.FindInChildren<ParseNode.Decl.Variable>(1);
+        var localVarDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var globalVarDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
 
         // Act
         var compilation = Compilation.Create(tree);
         var semanticModel = compilation.GetSemanticModel();
 
-        var varRefSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(localVarDecl.Initializer!.Value));
+        var varRefSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(localVarDecl.Value!.Value));
         var varDeclSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(globalVarDecl));
 
         // Assert
@@ -414,19 +414,19 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    ExprStmt(IfExpr(
-                        condition: LiteralExpr(false),
-                        then: BlockExpr(DeclStmt(LabelDecl("lbl"))))),
-                    ExprStmt(GotoExpr("lbl")))))));
+                BlockFunctionBody(
+                    ExpressionStatement(IfExpression(
+                        condition: LiteralExpression(false),
+                        then: BlockExpression(DeclarationStatement(LabelDeclaration("lbl"))))),
+                    ExpressionStatement(GotoExpression("lbl"))))));
 
-        var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
-        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
+        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -453,22 +453,22 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    DeclStmt(LabelDecl("lbl"))))),
-            FuncDecl(
-                Name("bar"),
-                FuncParamList(),
+                BlockFunctionBody(
+                    DeclarationStatement(LabelDeclaration("lbl")))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    ExprStmt(GotoExpr("lbl")))))));
+                BlockFunctionBody(
+                    ExpressionStatement(GotoExpression("lbl"))))));
 
-        var labelDecl = tree.FindInChildren<ParseNode.Decl.Label>(0);
-        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
+        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -490,12 +490,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // var y = x;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            VariableDecl(Name("x"), null, LiteralExpr(0)),
-            VariableDecl(Name("y"), null, NameExpr("x"))));
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("x", null, LiteralExpression(0)),
+            VariableDeclaration("y", null, NameExpression("x"))));
 
-        var xDecl = tree.FindInChildren<ParseNode.Decl.Variable>(0);
-        var xRef = tree.FindInChildren<ParseNode.Expr.Name>(0);
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -517,16 +517,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // func foo(): int32 = 0;
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            VariableDecl(Name("x"), null, CallExpr(NameExpr("foo"))),
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
-                NameTypeExpr(Name("int32")),
-                InlineBodyFuncBody(LiteralExpr(0)))));
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("x", null, CallExpression(NameExpression("foo"))),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))));
 
-        var fooDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
-        var fooRef = tree.FindInChildren<ParseNode.Expr.Name>(0);
+        var fooDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -547,15 +547,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    ExprStmt(GotoExpr("non_existing")))))));
+                BlockFunctionBody(
+                    ExpressionStatement(GotoExpression("non_existing"))))));
 
-        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -575,17 +575,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    ExprStmt(WhileExpr(
-                        condition: BlockExpr(ImmutableArray.Create(ExprStmt(GotoExpr("break"))), LiteralExpr(false)),
-                        body: BlockExpr())))))));
+                BlockFunctionBody(
+                    ExpressionStatement(WhileExpression(
+                        condition: BlockExpression(ImmutableArray.Create(ExpressionStatement(GotoExpression("break"))), LiteralExpression(false)),
+                        body: BlockExpression()))))));
 
-        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -605,17 +605,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    ExprStmt(WhileExpr(
-                        condition: LiteralExpr(false),
-                        body: GotoExpr("break"))))))));
+                BlockFunctionBody(
+                    ExpressionStatement(WhileExpression(
+                        condition: LiteralExpression(false),
+                        body: GotoExpression("break")))))));
 
-        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -635,17 +635,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    ExprStmt(WhileExpr(
-                        condition: LiteralExpr(false),
-                        body: BlockExpr(ExprStmt(GotoExpr("break"))))))))));
+                BlockFunctionBody(
+                    ExpressionStatement(WhileExpression(
+                        condition: LiteralExpression(false),
+                        body: BlockExpression(ExpressionStatement(GotoExpression("break")))))))));
 
-        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -666,18 +666,18 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    ExprStmt(WhileExpr(
-                        condition: LiteralExpr(false),
-                        body: BlockExpr())),
-                    ExprStmt(GotoExpr("break")))))));
+                BlockFunctionBody(
+                    ExpressionStatement(WhileExpression(
+                        condition: LiteralExpression(false),
+                        body: BlockExpression())),
+                    ExpressionStatement(GotoExpression("break"))))));
 
-        var labelRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
+        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = Compilation.Create(tree);
@@ -704,27 +704,27 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // }
 
         // Arrange
-        var tree = ParseTree.Create(CompilationUnit(
-            FuncDecl(
-                Name("foo"),
-                FuncParamList(),
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
                 null,
-                BlockBodyFuncBody(BlockExpr(
-                    ExprStmt(WhileExpr(
-                        condition: LiteralExpr(true),
-                        body: BlockExpr(
-                            ExprStmt(GotoExpr("continue")),
-                            ExprStmt(WhileExpr(
-                                condition: LiteralExpr(true),
-                                body: BlockExpr(
-                                    ExprStmt(GotoExpr("break")),
-                                    ExprStmt(GotoExpr("continue"))))),
-                            ExprStmt(GotoExpr("break"))))))))));
+                BlockFunctionBody(
+                    ExpressionStatement(WhileExpression(
+                        condition: LiteralExpression(true),
+                        body: BlockExpression(
+                            ExpressionStatement(GotoExpression("continue")),
+                            ExpressionStatement(WhileExpression(
+                                condition: LiteralExpression(true),
+                                body: BlockExpression(
+                                    ExpressionStatement(GotoExpression("break")),
+                                    ExpressionStatement(GotoExpression("continue"))))),
+                            ExpressionStatement(GotoExpression("break")))))))));
 
-        var outerContinueRef = tree.FindInChildren<ParseNode.Expr.Goto>(0).Target;
-        var innerBreakRef = tree.FindInChildren<ParseNode.Expr.Goto>(1).Target;
-        var innerContinueRef = tree.FindInChildren<ParseNode.Expr.Goto>(2).Target;
-        var outerBreakRef = tree.FindInChildren<ParseNode.Expr.Goto>(3).Target;
+        var outerContinueRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
+        var innerBreakRef = tree.FindInChildren<GotoExpressionSyntax>(1).Target;
+        var innerContinueRef = tree.FindInChildren<GotoExpressionSyntax>(2).Target;
+        var outerBreakRef = tree.FindInChildren<GotoExpressionSyntax>(3).Target;
 
         // Act
         var compilation = Compilation.Create(tree);

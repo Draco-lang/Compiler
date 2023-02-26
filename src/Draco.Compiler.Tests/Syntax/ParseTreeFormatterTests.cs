@@ -2,7 +2,7 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Tests.Syntax;
 
-public sealed class ParseTreeFormatterTests
+public sealed class SyntaxTreeFormatterTests
 {
     [Fact]
     public void TestFormatting()
@@ -44,6 +44,9 @@ public sealed class ParseTreeFormatterTests
                  4;
              if  ( x >=  7 ) t  =4; else t  = 3
              ;
+               var a = {
+               0
+            };
             goto
                myLabel ;
              return   x;
@@ -78,14 +81,16 @@ public sealed class ParseTreeFormatterTests
                 }
                 while (t < 5) x = 4;
                 if (x >= 7) t = 4; else t = 3;
+                var a = {
+                    0
+                };
                 goto myLabel;
                 return x;
             }
 
             """";
 
-        var actual = ParseTree.Parse(input).Format().ToString();
-
+        var actual = SyntaxTree.Parse(input).Format().ToString();
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 }

@@ -13,8 +13,8 @@ compilerWorker.onmessage = async (ev) => {
     case 'setOutputText': {
         const parsed = JSON.parse(msg.message);
         onOutputChange(parsed['OutputType'], parsed['Text'], true);
-    }
         break;
+    }
     case 'runtimeAssembly': {
         if (runtimeWorker != undefined) {
             runtimeWorker.terminate();

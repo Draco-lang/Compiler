@@ -38,7 +38,7 @@ export class TextDisplay {
             editor.layout();
         });
         subscribeOutputChange((arg) => {
-            if(arg.outputType == container.title) {
+            if (arg.outputType == container.title) {
                 editor.setValue(arg.value);
             }
         });

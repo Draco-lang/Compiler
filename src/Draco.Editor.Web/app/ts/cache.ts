@@ -77,7 +77,7 @@ async function progressFetch(url: string, onProgress: (loaded: number, total: nu
     const res = new Response(new ReadableStream({
         async start(controller) {
             const reader = response.body.getReader();
-            for (;;) {
+            while (true) {
                 const {done, value} = await reader.read();
                 if (done) break;
                 loaded += value.byteLength;

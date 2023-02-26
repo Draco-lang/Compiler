@@ -93,10 +93,10 @@ async function progressFetch(url: string, onProgress: (loaded: number, total: nu
 function setDownloadViewVisible(enable: boolean) {
     const outputs = Array.from(document.getElementsByClassName('output-viewer'));
     if (enable) {
-        outputs.forEach(s=>s.classList.add('download-hidden'));
-        elements.forEach(s=>s.classList.remove('download-hidden'));
+        outputs.forEach(s => s.classList.add('download-hidden'));
+        elements.forEach(s => s.classList.remove('download-hidden'));
     } else {
-        outputs.forEach(s=>s.classList.remove('download-hidden'));
-        elements.forEach(s=>s.classList.add('download-hidden'));
+        outputs.forEach(s => s.classList.remove('download-hidden'));
+        elements.forEach(s => s.classList.add('download-hidden'));
     }
 }

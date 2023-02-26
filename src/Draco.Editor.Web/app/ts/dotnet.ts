@@ -10,11 +10,10 @@ compilerWorker.onmessage = async (ev) => {
         message: string;
     };
     switch (msg.type) {
-    case 'setOutputText':
-        {
-            const parsed = JSON.parse(msg.message);
-            onOutputChange(parsed['OutputType'], parsed['Text'], true);
-        }
+    case 'setOutputText': {
+        const parsed = JSON.parse(msg.message);
+        onOutputChange(parsed['OutputType'], parsed['Text'], true);
+    }
         break;
     case 'runtimeAssembly': {
         if (runtimeWorker != undefined) {

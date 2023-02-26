@@ -14,21 +14,19 @@
     <div class="settings monaco-editor-background">
         <select class="monaco-editor-background monaco-editor" id="theme-selector">
         </select>
-        <select class="monaco-editor-background monaco-editor" id="output-type-selector">
-            <option value="Run">Run</option>
-            <option value="DracoIR">Draco-IR</option>
-            <option value="IL">IL</option>
-        </select>
     </div>
-    <div class="editors-container">
+    <div id="layoutContainer">
+
+    </div>
+    <!-- <div class="editors-container horizontal">
         <div id="draco-editor"></div>
         <div id="output-panel">
-            <div id="download-panel" class="hidden">
+            <div id="download-panel" class="download-hidden">
             </div>
+            <div id="tab-list"></div>
             <div id="output-viewer"></div>
-            <!-- <div id="info-panel"></div> -->
         </div>
-    </div>
+    </div> -->
     <script src="ts/app.js" type="module"></script>
 </body>
 

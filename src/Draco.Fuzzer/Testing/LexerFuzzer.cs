@@ -6,7 +6,7 @@ namespace Draco.Fuzzer.Testing;
 
 internal sealed class LexerFuzzer : ComponentFuzzer
 {
-    private IInputGenerator<string> generator;
+    private readonly IInputGenerator<string> generator;
 
     public LexerFuzzer(IInputGenerator<string> generator)
     {
@@ -27,7 +27,7 @@ internal sealed class LexerFuzzer : ComponentFuzzer
         }
         catch (Exception ex)
         {
-            Helper.AddError(ex, input);
+            this.AddError(ex, input);
         }
     }
 

@@ -48,12 +48,12 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<To
         var max = Enum.GetValues(typeof(TokenType)).Length;
         var rand = this.random.Next(max);
         var text = TokenTypeExtensions.GetTokenTextOrNull((TokenType)rand);
-        if (text == null) text = this.GenerateValidIndent();
+        if (text == null) text = this.GenerateValidIdentifier();
         var toAppend = this.random.Next(2) == 0 ? "" : " "; //Append space or not
         return $"{text}{toAppend}";
     }
 
-    private string GenerateValidIndent()
+    private string GenerateValidIdentifier()
     {
         var builder = new StringBuilder();
         builder.Append((char)this.random.Next(97, 123)); // Valid alpha char

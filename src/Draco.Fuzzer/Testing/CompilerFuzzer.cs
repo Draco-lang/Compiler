@@ -26,8 +26,9 @@ internal sealed class CompilerFuzzer : ComponentFuzzer
         }
         catch (Exception ex)
         {
-            Helper.AddError(ex, input);
+            this.AddError(ex, input);
         }
     }
+
     public override void RunMutation() => throw new NotImplementedException();
 }

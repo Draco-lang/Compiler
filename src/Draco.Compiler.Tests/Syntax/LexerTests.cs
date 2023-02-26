@@ -1183,6 +1183,63 @@ public sealed class LexerTests
     }
 
     [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestEndOfInputAfterEscapeSequenceStartAndWhitespace(string ext)
+    {
+        var text = $"""
+            {ext}"\{ext} 
+            """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal($"\\{ext} ", token.Text);
+        AssertNoTrivia(token);
+        Assert.Single(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestEndOfInputAfterEscapeSequenceStartLessDelimitersThanOnStringStart(string ext)
+    {
+        var text = $"""
+            {ext}#"\{ext}
+            """;
+        var tokens = Lex(text);
+
+        AssertNextToken(tokens, out var token);
+        Assert.Equal(TokenType.LineStringStart, token.Type);
+        AssertNoTriviaOrDiagnostics(token);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.StringContent, token.Type);
+        Assert.Equal($"\\{ext}", token.Text);
+        AssertNoTrivia(token);
+        Assert.Single(token.Diagnostics);
+
+        AssertNextToken(tokens, out token);
+        Assert.Equal(TokenType.EndOfInput, token.Type);
+        Assert.Equal(string.Empty, token.Text);
+        AssertNoTriviaOrDiagnostics(token);
+    }
+
+    [Theory]
     [InlineData("if", TokenType.KeywordIf)]
     [InlineData("else", TokenType.KeywordElse)]
     [InlineData("while", TokenType.KeywordWhile)]

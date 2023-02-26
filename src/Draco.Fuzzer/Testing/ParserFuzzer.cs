@@ -23,7 +23,7 @@ internal sealed class ParserFuzzer : ComponentFuzzer
         }
         catch (Exception ex)
         {
-            Helper.AddError(ex, string.Join("", input.Select(x => x.Text)));
+            this.AddError(ex, string.Join("", input.Select(x => x.Text)));
         }
     }
 

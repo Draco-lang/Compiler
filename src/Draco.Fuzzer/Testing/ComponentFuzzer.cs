@@ -2,18 +2,40 @@ namespace Draco.Fuzzer.Testing;
 
 internal abstract class ComponentFuzzer
 {
-    public virtual void StartTesting(int numEpoch, int numMutations)
+    private List<(string input, Exception ex)> errors = new();
+
+    public void AddError(Exception ex, string input) => this.errors.Add((input, ex));
+
+    public void PrintResult()
+    {
+        var color = Console.ForegroundColor;
+        var errorCount = this.errors.GroupBy(x => x.ex.StackTrace);
+        foreach (var error in errorCount)
+        {
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine($"{error.Count()} error/s : ");
+            Console.ForegroundColor = color;
+            Console.WriteLine();
+            Console.WriteLine(error.MinBy(x => x.input.Length).input);
+            Console.WriteLine();
+            Console.WriteLine(error.Key);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(new string('-', Console.WindowWidth));
+            Console.ForegroundColor = color;
+        }
+    }
+    public void StartTesting(int numEpochs, int numMutations)
     {
         // If number of epochs is -1 we run forever
-        for (int i = 0; i < numEpoch || numEpoch == -1; i++)
+        for (var i = 0; i < numEpochs || numEpochs == -1; i++)
         {
             this.RunEpoch();
-            for (int j = 0; j < numMutations; j++)
+            for (var j = 0; j < numMutations; j++)
             {
                 this.RunMutation();
             }
         }
-        Helper.PrintResult();
+        this.PrintResult();
     }
 
     public abstract void RunEpoch();

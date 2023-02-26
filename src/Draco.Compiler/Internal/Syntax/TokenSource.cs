@@ -66,7 +66,13 @@ internal static class TokenSource
 
         public Token Peek(int offset = 0)
         {
-            while (offset >= this.lookahead.Count && this.tokens.MoveNext()) this.lookahead.AddBack(this.tokens.Current);
+            while (offset >= this.lookahead.Count)
+            {
+                Token? token = null;
+                if (this.tokens.MoveNext()) token = this.tokens.Current;
+                else token = Token.From(TokenType.EndOfInput);
+                this.lookahead.AddBack(token);
+            }
             return this.lookahead[offset];
         }
 
@@ -85,9 +91,9 @@ internal static class TokenSource
     public static ITokenSource From(Lexer lexer) => new LexerTokenSource(lexer);
 
     /// <summary>
-    /// Constructs a new <see cref="ITokenSource"/> that reads tokens from input.
+    /// Constructs a new <see cref="ITokenSource"/> that reads tokens from a generic token sequence.
     /// </summary>
-    /// <param name="tokens">The <see cref="Token"/>s to read from.</param>
-    /// <returns>The constructed <see cref="ITokenSource"/>.</returns>
+    /// <param name="tokens">The sequence to read from.</param>
+    /// <returns>The constructed <see cref="ITokenSource"/> that reads tokens from <paramref name="tokens">.</returns>
     public static ITokenSource From(IEnumerable<Token> tokens) => new MemoryTokenSource(tokens);
 }

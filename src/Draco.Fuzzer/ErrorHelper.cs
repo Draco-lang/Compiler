@@ -3,16 +3,16 @@ using System.Text;
 
 namespace Draco.Fuzzer;
 
-internal static class Helper
+internal class ErrorHelper
 {
-    private static List<(string input, Exception ex)> errors = new();
+    private List<(string input, Exception ex)> errors = new();
 
-    public static void AddError(Exception ex, string input) => errors.Add((input, ex));
+    public void AddError(Exception ex, string input) => this.errors.Add((input, ex));
 
-    public static void PrintResult()
+    public void PrintResult()
     {
         var color = Console.ForegroundColor;
-        var errorCount = errors.GroupBy(x => x.ex.StackTrace);
+        var errorCount = this.errors.GroupBy(x => x.ex.StackTrace);
         foreach (var error in errorCount)
         {
             Console.ForegroundColor = ConsoleColor.Blue;

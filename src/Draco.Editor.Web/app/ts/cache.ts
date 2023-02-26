@@ -15,7 +15,6 @@ export function getDownloadViewElement() {
 export async function downloadAssemblies(cfg: unknown) {
     const assets = cfg['assets'];
     if(assets != null)  {
-
         const promises = assets.map(async (asset) => {
             if(asset['buffer'] == null) {
                 await downloadAssembly(cfg['assemblyRootFolder'], asset);

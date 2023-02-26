@@ -2,10 +2,13 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js';
 import { ComponentContainer } from 'golden-layout';
 import { getDownloadViewElement } from '../cache.js';
 import { subscribeOutputChange } from '../dotnet.js';
+
 export class TextDisplay {
     static editors = {};
+
     rootElement: HTMLElement;
     resizeWithContainerAutomatically = true;
+
     constructor(public container: ComponentContainer) {
         this.rootElement = container.element;
         this.rootElement.appendChild(getDownloadViewElement());

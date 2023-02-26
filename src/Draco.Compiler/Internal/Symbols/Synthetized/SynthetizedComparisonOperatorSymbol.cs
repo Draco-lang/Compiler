@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
@@ -18,4 +19,11 @@ internal sealed class SynthetizedComparisonOperatorSymbol : ComparisonOperatorSy
 
     public override Type ReturnType => throw new System.NotImplementedException();
     public override Symbol? ContainingSymbol => null;
+
+    public override string Name { get; }
+
+    public SynthetizedComparisonOperatorSymbol(TokenKind token)
+    {
+        this.Name = GetComparisonOperatorName(token);
+    }
 }

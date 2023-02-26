@@ -52,8 +52,15 @@ internal sealed class BinderCache
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private Binder BuildCompilationUnitBinder() =>
-        new ModuleBinder(this.compilation, this.compilation.GlobalModule);
+    private Binder BuildCompilationUnitBinder()
+    {
+        // We need to wrap up the module with builtins
+        var binder = new IntrinsicsBinder(this.compilation) as Binder;
+        // Finally add the module
+        binder = new ModuleBinder(binder, this.compilation.GlobalModule);
+
+        return binder;
+    }
 
     private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)
     {

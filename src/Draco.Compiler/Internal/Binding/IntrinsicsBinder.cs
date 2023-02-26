@@ -1,45 +1,49 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
 /// <summary>
-/// Binds on a module level.
+/// Binds compiler-intrinsic symbols
 /// </summary>
-internal sealed class ModuleBinder : Binder
+internal sealed class IntrinsicsBinder : Binder
 {
-    public override Symbol? ContainingSymbol => this.symbol;
+    private static ImmutableArray<Symbol> IntrinsicSymbols { get; } = ImmutableArray.Create(
+        Intrinsics.Int32_Equal,
+        Intrinsics.Int32_NotEqual,
+        Intrinsics.Int32_GreaterThan,
+        Intrinsics.Int32_LessThan,
+        Intrinsics.Int32_GreaterEqual,
+        Intrinsics.Int32_LessEqual);
 
-    private readonly ModuleSymbol symbol;
-
-    public ModuleBinder(Compilation compilation, ModuleSymbol symbol)
+    public IntrinsicsBinder(Compilation compilation)
         : base(compilation)
     {
-        this.symbol = symbol;
     }
 
-    public ModuleBinder(Binder parent, ModuleSymbol symbol)
+    public IntrinsicsBinder(Binder parent)
         : base(parent)
     {
-        this.symbol = symbol;
     }
 
     public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
     {
-        foreach (var symbol in this.symbol.Members)
+        foreach (var symbol in IntrinsicSymbols)
         {
             if (symbol.Name != name) continue;
             if (!BinderFacts.IsValueSymbol(symbol)) continue;
             result.Add(symbol);
         }
 
-        // TODO: Look at TODO in FunctionBinder
+        // TODO: Look at TODO in FunctionBinder  or ModuleBinder
 
         // If we are collecting an overload-set or the result is empty, we try to continue upwards
         // Otherwise we can stop

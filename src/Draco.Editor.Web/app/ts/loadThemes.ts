@@ -82,7 +82,6 @@ export async function loadThemes() {
     ]);
     for (const language of grammars.keys()) {
         monaco.languages.register({ id: language });
-
     }
     await wireTmGrammars(monaco, registry, grammars);
 }

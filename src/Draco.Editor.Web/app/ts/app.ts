@@ -78,22 +78,18 @@ const config : LayoutConfig = {
                     {
                         title: 'IR',
                         type: 'component',
-                        componentType: 'TextDisplay',
-                        isClosable: false
+                        componentType: 'TextDisplay'
                     },
                     {
                         title: 'IL',
                         type: 'component',
-                        componentType: 'TextDisplay',
-                        isClosable: false
+                        componentType: 'TextDisplay'
                     },
                     {
                         title: 'Console',
                         type: 'component',
-                        componentType: 'StdOut',
-                        isClosable: false
+                        componentType: 'StdOut'
                     }
-
                 ]
             }
         ]

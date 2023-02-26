@@ -73,3 +73,7 @@ html, body, #app {
 .downloadProgress {
     margin-left: 15px;
 }
+
+.lm_close_tab {
+    display: none;
+}

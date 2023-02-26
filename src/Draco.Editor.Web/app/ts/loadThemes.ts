@@ -5,8 +5,6 @@ import { Registry } from 'monaco-textmate';
 import { wireTmGrammars } from 'monaco-editor-textmate';
 import grammarDefinition from '../../../Draco.SyntaxHighlighting/draco.tmLanguage.json';
 import { isDarkMode } from './helpers.js';
-
-
 export async function loadThemes() {
     const wasmPromise = loadWASM(onigasmWasm.buffer); // https://www.npmjs.com/package/onigasm;
 

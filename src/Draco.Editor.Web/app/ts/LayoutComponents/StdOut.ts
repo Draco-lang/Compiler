@@ -31,6 +31,5 @@ export class StdOut {
                 fitAddon.fit();
             }, 1);
         });
-
     }
 }

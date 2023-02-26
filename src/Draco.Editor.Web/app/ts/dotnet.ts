@@ -3,7 +3,7 @@ import { downloadAssemblies } from './cache.js';
 const compilerWorker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
 let runtimeWorker: Worker | undefined;
 let listeners : ((arg: {outputType: string; value: string, clear: boolean}) => void)[] = [];
-let stdoutBuffer = 'Loading Compiler\'s .NET Runtime...';
+
 compilerWorker.onmessage = async (ev) => {
     const msg = ev.data as {
         type: string;
@@ -19,7 +19,6 @@ compilerWorker.onmessage = async (ev) => {
         if (runtimeWorker != undefined) {
             runtimeWorker.terminate();
         }
-        stdoutBuffer = '';
         onOutputChange('stdout', 'Loading script\'s .NET Runtime...', true);
         runtimeWorker = new Worker('worker.js');
         const cfg = JSON.parse(msg.message);
@@ -35,8 +34,7 @@ compilerWorker.onmessage = async (ev) => {
                 };
             switch (runtimeMsg.type) {
             case 'stdout':
-                stdoutBuffer += runtimeMsg.message + '\n';
-                onOutputChange('stdout', stdoutBuffer, shouldClean);
+                onOutputChange('stdout', runtimeMsg.message+'\n', shouldClean);
                 shouldClean = false;
                 break;
             default:

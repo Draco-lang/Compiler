@@ -61,8 +61,14 @@ internal partial class Binder
         var comparisons = ImmutableArray.CreateBuilder<UntypedComparison>();
         foreach (var cmpSyntax in syntax.Comparisons)
         {
-            // TODO: Look up operator properly
-            var symbol = (ComparisonOperatorSymbol?)null ?? throw new NotImplementedException();
+            var symbolName = ComparisonOperatorSymbol.GetComparisonOperatorName(cmpSyntax.Operator.Kind);
+            var lookup = this.LookupValueSymbol(symbolName, syntax);
+            if (!lookup.FoundAny || lookup.Symbols.Count > 1)
+            {
+                // TODO: Handle overload or illegal
+                throw new NotImplementedException();
+            }
+            var symbol = (ComparisonOperatorSymbol)lookup.Symbols[0];
             var right = this.BindExpression(cmpSyntax.Right);
             comparisons.Add(new UntypedComparison(cmpSyntax, symbol, right));
         }

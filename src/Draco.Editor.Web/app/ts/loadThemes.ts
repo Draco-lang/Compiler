@@ -5,8 +5,6 @@ import { Registry } from 'monaco-textmate';
 import { wireTmGrammars } from 'monaco-editor-textmate';
 import grammarDefinition from '../../../Draco.SyntaxHighlighting/draco.tmLanguage.json';
 import { isDarkMode } from './helpers.js';
-
-
 export async function loadThemes() {
     const wasmPromise = loadWASM(onigasmWasm.buffer); // https://www.npmjs.com/package/onigasm;
 
@@ -35,10 +33,8 @@ export async function loadThemes() {
     }
     setTheme(choosenTheme);
 
-
     const themeSelector = document.getElementById('theme-selector') as HTMLSelectElement;
     const defaultOption = document.createElement('option');
-
 
     defaultOption.innerText = defaultOption.value = 'Default';
     themeSelector.appendChild(defaultOption);
@@ -86,7 +82,6 @@ export async function loadThemes() {
     ]);
     for (const language of grammars.keys()) {
         monaco.languages.register({ id: language });
-
     }
     await wireTmGrammars(monaco, registry, grammars);
 }

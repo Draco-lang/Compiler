@@ -2,7 +2,7 @@ import { downloadAssemblies } from './cache.js';
 
 const compilerWorker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
 let runtimeWorker: Worker | undefined;
-let listeners : ((arg: {outputType: string; value: string}) => void)[] = [];
+let listeners : ((arg: {outputType: string; value: string, clear: boolean}) => void)[] = [];
 let stdoutBuffer = 'Loading Compiler\'s .NET Runtime...';
 
 
@@ -15,8 +15,7 @@ compilerWorker.onmessage = async (ev) => {
     case 'setOutputText':
         {
             const parsed = JSON.parse(msg.message);
-            console.log(parsed);
-            onOutputChange(parsed['OutputType'], parsed['Text']);
+            onOutputChange(parsed['OutputType'], parsed['Text'], true);
         }
         break;
     case 'runtimeAssembly': {
@@ -24,13 +23,14 @@ compilerWorker.onmessage = async (ev) => {
             runtimeWorker.terminate();
         }
         stdoutBuffer = '';
-        onOutputChange('stdout', 'Loading script\'s .NET Runtime...');
+        onOutputChange('stdout', 'Loading script\'s .NET Runtime...', true);
         runtimeWorker = new Worker('worker.js');
         const cfg = JSON.parse(msg.message);
         console.log('Starting worker with boot config:');
         cfg['disableInterop'] = true;
         await downloadAssemblies(cfg);
         runtimeWorker.postMessage(cfg);
+        let shouldClean = true;
         runtimeWorker.onmessage = (e) => {
             const runtimeMsg = e.data as {
                     type: string;
@@ -39,7 +39,8 @@ compilerWorker.onmessage = async (ev) => {
             switch (runtimeMsg.type) {
             case 'stdout':
                 stdoutBuffer += runtimeMsg.message + '\n';
-                onOutputChange('stdout', stdoutBuffer);
+                onOutputChange('stdout', stdoutBuffer, shouldClean);
+                shouldClean = false;
                 break;
             default:
                 console.error('Runtime sent unknown message', runtimeMsg);
@@ -61,14 +62,15 @@ export function setCode(code: string) {
     });
 }
 
-function onOutputChange(outputType: string, value: string) {
+function onOutputChange(outputType: string, value: string, clear: boolean) {
     listeners.forEach(s=>s({
         outputType: outputType,
-        value: value
+        value: value,
+        clear: clear
     }));
 }
 
-export function subscribeOutputChange(listener: (arg: {outputType: string; value: string}) => void) {
+export function subscribeOutputChange(listener: (arg: {outputType: string; value: string, clear:boolean}) => void) {
     listeners.push(listener);
 }
 

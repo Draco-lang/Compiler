@@ -1,12 +1,22 @@
-import { inflateRaw } from 'pako';
+import { deflateRaw, inflateRaw } from 'pako';
 import { GoldenLayout, LayoutConfig } from 'golden-layout';
-import { fromBase64, fromBase64URLToBase64 } from './helpers.js';
-import { initDotnetWorkers, setCode } from './dotnet.js';
+import { fromBase64, fromBase64ToBase64URL, fromBase64URLToBase64, toBase64 } from './helpers.js';
+import { initDotnetWorkers, setCode, subscribeOutputChange } from './dotnet.js';
 import { TextDisplay } from './LayoutComponents/TextDisplay.js';
 import { StdOut } from './LayoutComponents/StdOut.js';
 import { TextInput } from './LayoutComponents/TextInput.js';
 import { loadThemes } from './loadThemes.js';
 
+function updateHash(code: string) {
+    // setting the URL Hash with the state of the editor.
+    // Doing this before invoking DotNet will allow sharing hard crash.
+    const encoded = new TextEncoder().encode(code);
+    const compressed = deflateRaw(encoded);
+    const buffer = new Uint8Array(compressed.length + 1);
+    buffer[0] = 2; // version, for future use.
+    buffer.set(compressed, 1);
+    history.replaceState(undefined, undefined, '#' + fromBase64ToBase64URL(toBase64(buffer)));
+}
 // This file is run on page load.
 // This run before blazor load, and will tell blazor to start.
 
@@ -33,7 +43,7 @@ if (hash != null && hash.trim().length > 0) {
         buffer = buffer.subarray(1); // Version byte, for future usage.
         const uncompressed = inflateRaw(buffer);
         let str = new TextDecoder().decode(uncompressed);
-        if(version == 0) {
+        if(version == 1) {
             const firstNewLine = str.indexOf('\n');
             str.slice(0, firstNewLine);
             str = str.slice(firstNewLine + 1);
@@ -99,6 +109,16 @@ goldenLayout.registerComponentConstructor('TextDisplay', TextDisplay);
 goldenLayout.loadLayout(config);
 const inputEditor = TextInput.editors[0];
 inputEditor.getModel().onDidChangeContent(() => {
-    setCode(inputEditor.getModel().getValue());
-
+    const code = inputEditor.getModel().getValue();
+    setCode(code);
+    updateHash(code);
+});
+subscribeOutputChange((arg) => {
+    console.log(arg);
+    if(arg.outputType == 'stdout') {
+        if(arg.clear) {
+            StdOut.terminals[0].reset();
+        }
+        StdOut.terminals[0].write(arg.value);
+    }
 });

@@ -2,18 +2,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js';
 import { ComponentContainer } from 'golden-layout';
 import { inputCode } from '../app.js';
 
-// function updateHash() {
-//     const source = dracoEditor.getModel().createSnapshot().read();
-//     // setting the URL Hash with the state of the editor.
-//     // Doing this before invoking DotNet will allow sharing hard crash.
-//     const content = outputTypeSelector.value + '\n' + source;
-//     const encoded = new TextEncoder().encode(content);
-//     const compressed = deflateRaw(encoded);
-//     const buffer = new Uint8Array(compressed.length + 1);
-//     buffer[0] = 1; // version, for future use.
-//     buffer.set(compressed, 1);
-//     history.replaceState(undefined, undefined, '#' + fromBase64ToBase64URL(toBase64(buffer)));
-// }
+
 export class TextInput {
     static editors = [];
     rootElement: HTMLElement;

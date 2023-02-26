@@ -14,9 +14,9 @@ export function getDownloadViewElement() {
 
 export async function downloadAssemblies(cfg: unknown) {
     const assets = cfg['assets'];
-    if(assets != null)  {
+    if (assets != null)  {
         const promises = assets.map(async (asset) => {
-            if(asset['buffer'] == null) {
+            if (asset['buffer'] == null) {
                 await downloadAssembly(cfg['assemblyRootFolder'], asset);
             }
         });
@@ -35,7 +35,7 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
             asset['buffer'] = assemblyB64;
             return;
         }
-    } catch(e) {
+    } catch (e) {
         console.log('Could not open cache: ', e);
     }
     setDownloadViewVisible(true);
@@ -60,7 +60,7 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
     const assemblyB64 = await (blobToBase64(assemblyBlob));
     asset['buffer'] = assemblyB64;
     const response = new Response(assemblyB64);
-    if(cache != null) {
+    if (cache != null) {
         await cache.put(asset['name'], response);
     }
     progresses.forEach(progress=> {

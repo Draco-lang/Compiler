@@ -43,7 +43,7 @@ if (hash != null && hash.trim().length > 0) {
         buffer = buffer.subarray(1); // Version byte, for future usage.
         const uncompressed = inflateRaw(buffer);
         let str = new TextDecoder().decode(uncompressed);
-        if(version == 1) {
+        if (version == 1) {
             const firstNewLine = str.indexOf('\n');
             str.slice(0, firstNewLine);
             str = str.slice(firstNewLine + 1);
@@ -115,8 +115,8 @@ inputEditor.getModel().onDidChangeContent(() => {
 });
 subscribeOutputChange((arg) => {
     console.log(arg);
-    if(arg.outputType == 'stdout') {
-        if(arg.clear) {
+    if (arg.outputType == 'stdout') {
+        if (arg.clear) {
             StdOut.terminals[0].reset();
         }
         StdOut.terminals[0].write(arg.value);

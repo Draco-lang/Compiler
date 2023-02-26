@@ -109,7 +109,6 @@ inputEditor.getModel().onDidChangeContent(() => {
     updateHash(code);
 });
 subscribeOutputChange((arg) => {
-    console.log(arg);
     if (arg.outputType == 'stdout') {
         if (arg.clear) {
             StdOut.terminals[0].reset();

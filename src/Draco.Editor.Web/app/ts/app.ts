@@ -90,7 +90,6 @@ const config : LayoutConfig = {
                         type: 'component',
                         componentType: 'StdOut'
                     }
-
                 ]
             }
         ]

@@ -932,22 +932,17 @@ public sealed class LexerTests
         var text = $"""
             {ext}"\{ext}
             """;
-        var tokens = Lex(text);
+        this.Lex(text);
 
-        AssertNextToken(tokens, out var token);
-        Assert.Equal(TokenType.LineStringStart, token.Type);
-        AssertNoTriviaOrDiagnostics(token);
+        this.AssertNextToken(TokenKind.LineStringStart);
+        this.AssertNoTriviaOrDiagnostics();
 
-        AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.StringContent, token.Type);
-        Assert.Equal($"\\{ext}", token.Text);
-        AssertNoTrivia(token);
-        Assert.Single(token.Diagnostics);
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}");
+        this.AssertNoTrivia();
+        this.AssertDiagnostics(SyntaxErrors.EmptyEscapeSequence);
 
-        AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.EndOfInput, token.Type);
-        Assert.Equal(string.Empty, token.Text);
-        AssertNoTriviaOrDiagnostics(token);
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
     }
 
     [Theory]
@@ -961,22 +956,17 @@ public sealed class LexerTests
         var text = $"""
             {ext}"\{ext} 
             """;
-        var tokens = Lex(text);
+        this.Lex(text);
 
-        AssertNextToken(tokens, out var token);
-        Assert.Equal(TokenType.LineStringStart, token.Type);
-        AssertNoTriviaOrDiagnostics(token);
+        this.AssertNextToken(TokenKind.LineStringStart);
+        this.AssertNoTriviaOrDiagnostics();
 
-        AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.StringContent, token.Type);
-        Assert.Equal($"\\{ext} ", token.Text);
-        AssertNoTrivia(token);
-        Assert.Single(token.Diagnostics);
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext} ");
+        this.AssertNoTrivia();
+        this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
 
-        AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.EndOfInput, token.Type);
-        Assert.Equal(string.Empty, token.Text);
-        AssertNoTriviaOrDiagnostics(token);
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
     }
 
     [Theory]
@@ -989,36 +979,31 @@ public sealed class LexerTests
         var text = $"""
             {ext}#"\{ext}
             """;
-        var tokens = Lex(text);
+        this.Lex(text);
 
-        AssertNextToken(tokens, out var token);
-        Assert.Equal(TokenType.LineStringStart, token.Type);
-        AssertNoTriviaOrDiagnostics(token);
+        this.AssertNextToken(TokenKind.LineStringStart);
+        this.AssertNoTriviaOrDiagnostics();
 
-        AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.StringContent, token.Type);
-        Assert.Equal($"\\{ext}", token.Text);
-        AssertNoTrivia(token);
-        Assert.Single(token.Diagnostics);
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext} ");
+        this.AssertNoTrivia();
+        this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
 
-        AssertNextToken(tokens, out token);
-        Assert.Equal(TokenType.EndOfInput, token.Type);
-        Assert.Equal(string.Empty, token.Text);
-        AssertNoTriviaOrDiagnostics(token);
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
     }
 
     [Theory]
-    [InlineData("if", TokenType.KeywordIf)]
-    [InlineData("else", TokenType.KeywordElse)]
-    [InlineData("while", TokenType.KeywordWhile)]
-    [InlineData("if_", TokenType.Identifier)]
-    [InlineData("ifa", TokenType.Identifier)]
-    [InlineData("if0", TokenType.Identifier)]
-    [InlineData("_if", TokenType.Identifier)]
-    [InlineData("hello", TokenType.Identifier)]
-    [InlineData("hello123", TokenType.Identifier)]
-    [InlineData("hello_123", TokenType.Identifier)]
-    [InlineData("_hello_123", TokenType.Identifier)]
+    [InlineData("if", TokenKind.KeywordIf)]
+    [InlineData("else", TokenKind.KeywordElse)]
+    [InlineData("while", TokenKind.KeywordWhile)]
+    [InlineData("if_", TokenKind.Identifier)]
+    [InlineData("ifa", TokenKind.Identifier)]
+    [InlineData("if0", TokenKind.Identifier)]
+    [InlineData("_if", TokenKind.Identifier)]
+    [InlineData("hello", TokenKind.Identifier)]
+    [InlineData("hello123", TokenKind.Identifier)]
+    [InlineData("hello_123", TokenKind.Identifier)]
+    [InlineData("_hello_123", TokenKind.Identifier)]
     [Trait("Feature", "Words")]
     public void TestKeyword(string text, TokenKind tokenKind)
     {

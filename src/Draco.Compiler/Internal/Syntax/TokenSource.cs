@@ -5,17 +5,17 @@ using Draco.Compiler.Internal.Utilities;
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
-/// A source of <see cref="SyntaxToken"/>s.
+/// A source of <see cref="SyntaxSyntaxToken"/>s.
 /// </summary>
-internal interface ITokenSource
+internal interface ISyntaxTokenSource
 {
     /// <summary>
     /// Peeks ahead <paramref name="offset"/> of tokens in the source without consuming it.
-    /// If the source is past the end, it should return a <see cref="SyntaxToken"/> with kind
-    /// <see cref="TokenKind.EndOfInput"/>.
+    /// If the source is past the end, it should return a <see cref="SyntaxSyntaxToken"/> with kind
+    /// <see cref="SyntaxTokenKind.EndOfInput"/>.
     /// </summary>
     /// <param name="offset">The offset from the current source position.</param>
-    /// <returns>The <see cref="SyntaxToken"/> that is <paramref name="offset"/> amount of tokens ahead.</returns>
+    /// <returns>The <see cref="SyntaxSyntaxToken"/> that is <paramref name="offset"/> amount of tokens ahead.</returns>
     public SyntaxToken Peek(int offset = 0);
 
     /// <summary>
@@ -26,16 +26,16 @@ internal interface ITokenSource
 }
 
 /// <summary>
-/// Factory functions for constructing <see cref="ITokenSource"/>s.
+/// Factory functions for constructing <see cref="ISyntaxTokenSource"/>s.
 /// </summary>
-internal static class TokenSource
+internal static class SyntaxTokenSource
 {
-    private sealed class LexerTokenSource : ITokenSource
+    private sealed class LexerSyntaxTokenSource : ISyntaxTokenSource
     {
         private readonly Lexer lexer;
         private readonly RingBuffer<SyntaxToken> lookahead = new();
 
-        public LexerTokenSource(Lexer lexer)
+        public LexerSyntaxTokenSource(Lexer lexer)
         {
             this.lexer = lexer;
         }
@@ -53,23 +53,23 @@ internal static class TokenSource
         }
     }
 
-    private sealed class MemoryTokenSource : ITokenSource
+    private sealed class MemorySyntaxTokenSource : ISyntaxTokenSource
     {
-        private readonly IEnumerator<Token> tokens;
-        private readonly RingBuffer<Token> lookahead = new();
+        private readonly IEnumerator<SyntaxToken> tokens;
+        private readonly RingBuffer<SyntaxToken> lookahead = new();
 
-        public MemoryTokenSource(IEnumerable<Token> tokens)
+        public MemorySyntaxTokenSource(IEnumerable<SyntaxToken> tokens)
         {
             this.tokens = tokens.GetEnumerator();
         }
 
-        public Token Peek(int offset = 0)
+        public SyntaxToken Peek(int offset = 0)
         {
             while (offset >= this.lookahead.Count)
             {
-                Token? token = null;
+                SyntaxToken? token = null;
                 if (this.tokens.MoveNext()) token = this.tokens.Current;
-                else token = Token.From(TokenType.EndOfInput);
+                else token = SyntaxToken.From(TokenKind.EndOfInput);
                 this.lookahead.AddBack(token);
             }
             return this.lookahead[offset];
@@ -83,16 +83,16 @@ internal static class TokenSource
     }
 
     /// <summary>
-    /// Constructs a new <see cref="ITokenSource"/> that reads tokens from <paramref name="lexer"/>.
+    /// Constructs a new <see cref="ISyntaxTokenSource"/> that reads tokens from <paramref name="lexer"/>.
     /// </summary>
-    /// <param name="lexer">The <see cref="Lexer"/> to read <see cref="SyntaxToken"/>s from.</param>
-    /// <returns>The constructed <see cref="ITokenSource"/> that reads from <paramref name="lexer"/>.</returns>
-    public static ITokenSource From(Lexer lexer) => new LexerTokenSource(lexer);
+    /// <param name="lexer">The <see cref="Lexer"/> to read <see cref="SyntaxSyntaxToken"/>s from.</param>
+    /// <returns>The constructed <see cref="ISyntaxTokenSource"/> that reads from <paramref name="lexer"/>.</returns>
+    public static ISyntaxTokenSource From(Lexer lexer) => new LexerSyntaxTokenSource(lexer);
 
     /// <summary>
-    /// Constructs a new <see cref="ITokenSource"/> that reads tokens from a generic token sequence.
+    /// Constructs a new <see cref="ISyntaxTokenSource"/> that reads tokens from a generic token sequence.
     /// </summary>
     /// <param name="tokens">The sequence to read from.</param>
-    /// <returns>The constructed <see cref="ITokenSource"/> that reads tokens from <paramref name="tokens">.</returns>
-    public static ITokenSource From(IEnumerable<Token> tokens) => new MemoryTokenSource(tokens);
+    /// <returns>The constructed <see cref="ISyntaxTokenSource"/> that reads tokens from <paramref name="tokens">.</returns>
+    public static ISyntaxTokenSource From(IEnumerable<SyntaxToken> tokens) => new MemorySyntaxTokenSource(tokens);
 }

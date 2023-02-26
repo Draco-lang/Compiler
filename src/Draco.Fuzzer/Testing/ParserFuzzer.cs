@@ -1,14 +1,13 @@
 using Draco.Compiler.Internal.Syntax;
-using static Draco.Compiler.Internal.Syntax.ParseNode;
 using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
 internal sealed class ParserFuzzer : ComponentFuzzer
 {
-    private IInputGenerator<IEnumerable<Token>> generator;
+    private IInputGenerator<IEnumerable<SyntaxToken>> generator;
 
-    public ParserFuzzer(IInputGenerator<IEnumerable<Token>> generator)
+    public ParserFuzzer(IInputGenerator<IEnumerable<SyntaxToken>> generator)
     {
         this.generator = generator;
     }
@@ -19,7 +18,7 @@ internal sealed class ParserFuzzer : ComponentFuzzer
         try
         {
             // We just care about the parsing into compilation unit part
-            new Parser(TokenSource.From(input)).ParseCompilationUnit();
+            new Parser(SyntaxTokenSource.From(input)).ParseCompilationUnit();
         }
         catch (Exception ex)
         {

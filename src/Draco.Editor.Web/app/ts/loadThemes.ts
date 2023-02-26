@@ -33,10 +33,8 @@ export async function loadThemes() {
     }
     setTheme(choosenTheme);
 
-
     const themeSelector = document.getElementById('theme-selector') as HTMLSelectElement;
     const defaultOption = document.createElement('option');
-
 
     defaultOption.innerText = defaultOption.value = 'Default';
     themeSelector.appendChild(defaultOption);

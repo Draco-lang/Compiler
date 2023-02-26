@@ -4,8 +4,6 @@ const compilerWorker = new Worker('worker.js'); // first thing: we start the wor
 let runtimeWorker: Worker | undefined;
 let listeners : ((arg: {outputType: string; value: string, clear: boolean}) => void)[] = [];
 let stdoutBuffer = 'Loading Compiler\'s .NET Runtime...';
-
-
 compilerWorker.onmessage = async (ev) => {
     const msg = ev.data as {
         type: string;

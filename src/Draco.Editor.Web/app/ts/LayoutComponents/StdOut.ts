@@ -5,9 +5,11 @@ import { getDownloadViewElement } from '../cache.js';
 
 export class StdOut {
     static terminals: Terminal[] = [];
+
     rootElement: HTMLElement;
     resizeWithContainerAutomatically = true;
     terminal: Terminal;
+
     constructor(public container: ComponentContainer) {
         this.rootElement = container.element;
         this.rootElement.appendChild(getDownloadViewElement());

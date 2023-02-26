@@ -1,3 +1,7 @@
+@import url('../node_modules/golden-layout/dist/css/goldenlayout-base.css');
+@import url('../node_modules/golden-layout/dist/css/themes/goldenlayout-borderless-dark-theme.css');
+@import url('../node_modules/xterm/css/xterm.css');
+
 html, body, #app {
     height: 100%;
     width: 100%;
@@ -6,19 +10,13 @@ html, body, #app {
     flex-direction: column;
 }
 
-.editors-container {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: row;
+#layoutContainer {
+    height: 100%;
 }
 
-.editors-container > div {
-    width: 50%;
-    border-top: 1px solid gray
-}
-
-#draco-editor {
-    border-right: 1px solid gray
+.editor-container {
+    width: 100%;
+    height: 100%;
 }
 
 .settings {
@@ -43,4 +41,35 @@ html, body, #app {
     body {
         background-color: #1e1e1e;
     }
+}
+
+#output-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.output-viewer {
+    height: 100%;
+}
+
+#info-panel {
+    border-top: 1px solid gray;
+    min-height: 40px;
+}
+
+#download-panel {
+    height: 100%;
+}
+
+.download-hidden {
+    display: none;
+}
+
+.download-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.downloadProgress {
+    margin-left: 15px;
 }

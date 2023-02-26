@@ -16,6 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const outDir = path.join(__dirname, distDir);
 const binFolder = process.argv[2];
+const debug = binFolder.includes('Debug');
 
 async function dotnetjsBuild() {
     await viteBuild(defineConfig({ // Yes, I'm using another bundler, because this one bundle correctly dotnet.js to CJS...
@@ -66,6 +67,7 @@ const workerEntryPoints = [
 await build({
     entryPoints: workerEntryPoints.map((entry) => `node_modules/monaco-editor/esm/${entry}`),
     bundle: true,
+    minify: !debug,
     format: 'iife',
     outdir: outDir
 });
@@ -74,10 +76,12 @@ await build({
 await build({
     entryPoints: ['ts/app.ts', 'css/app.css'],
     bundle: true,
+    minify: !debug,
     format: 'esm',
     outdir: outDir,
     loader: {
-        '.ttf': 'file'
+        '.ttf': 'file',
+        '.png': 'dataurl'
     },
     inject: ['ts/process.ts'],
     plugins: [wasmPlugin],
@@ -88,6 +92,7 @@ await build({
 await build({
     entryPoints: ['ts/worker.ts'],
     bundle: true,
+    minify: true,
     format: 'cjs',
     outfile: path.join(outDir, 'worker.js'),
 });

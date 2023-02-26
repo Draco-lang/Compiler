@@ -44,6 +44,7 @@
         "semi": [
             "error",
             "always"
-        ]
+        ],
+        "no-constant-condition":"off"
     }
 }

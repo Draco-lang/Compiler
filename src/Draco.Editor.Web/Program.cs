@@ -88,13 +88,11 @@ public partial class Program
             {
                 var text = new PlainTextOutput();
                 var disassembler = new ReflectionDisassembler(text, default);
-                using (var pe = new PEFile("_", dllStream))
-                {
-                    disassembler.WriteAssemblyHeader(pe);
-                    text.WriteLine();
-                    disassembler.WriteModuleContents(pe);
-                }
-                SetOutputText("IL", text.ToString());
+                using var pe = new PEFile("_", dllStream);
+                disassembler.WriteAssemblyHeader(pe);
+                text.WriteLine();
+                disassembler.WriteModuleContents(pe);
+                SetOutputText("IL", text.ToString().TrimEnd());
             }
 
             if (!emitResult.Success)

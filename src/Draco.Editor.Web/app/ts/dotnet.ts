@@ -2,7 +2,7 @@ import { downloadAssemblies } from './cache.js';
 
 const compilerWorker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
 let runtimeWorker: Worker | undefined;
-let listeners : ((arg: {outputType: string; value: string, clear: boolean}) => void)[] = [];
+let listeners: ((arg: {outputType: string; value: string; clear: boolean}) => void)[] = [];
 
 compilerWorker.onmessage = async (ev) => {
     const msg = ev.data as {

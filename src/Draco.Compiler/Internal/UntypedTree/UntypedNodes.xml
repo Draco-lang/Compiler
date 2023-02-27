@@ -100,7 +100,7 @@
   </Node>
 
   <Node Name="UntypedLiteralExpression" Base="UntypedExpression">
-    <Field Name="Value" Type="object" />
+    <Field Name="Value" Type="object?" />
   </Node>
 
   <Node Name="UntypedRelationalExpression" Base="UntypedExpression">

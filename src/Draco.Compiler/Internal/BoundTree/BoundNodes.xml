@@ -101,7 +101,7 @@
   </Node>
 
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
-    <Field Name="Value" Type="object" />
+    <Field Name="Value" Type="object?" />
   </Node>
 
   <Node Name="BoundRelationalExpression" Base="BoundExpression">

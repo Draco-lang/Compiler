@@ -20,11 +20,15 @@ internal partial class Binder
     /// <returns>The untyped expression for <paramref name="syntax"/>.</returns>
     protected UntypedExpression BindExpression(SyntaxNode syntax) => syntax switch
     {
+        LiteralExpressionSyntax lit => this.BindLiteralExpression(lit),
         NameExpressionSyntax name => this.BindNameExpression(name),
         IfExpressionSyntax @if => this.BindIfExpression(@if),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax) =>
+        new UntypedLiteralExpression(syntax, syntax.Literal.Value);
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax)
     {

@@ -44,6 +44,8 @@
         "semi": [
             "error",
             "always"
-        ]
+        ],
+        "no-constant-condition":"off",
+        "keyword-spacing":"warn"
     }
 }

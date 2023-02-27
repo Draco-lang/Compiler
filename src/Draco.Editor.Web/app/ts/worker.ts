@@ -1,6 +1,7 @@
 importScripts('./dotnet.js');
 declare global { // Blazor does not provide types, so we have our own to please typescript.
     interface Window {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dotnet: any;
     }
 }

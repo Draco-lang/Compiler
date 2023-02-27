@@ -8,13 +8,16 @@
     "@octokit/auth-action": "^2.0.2",
     "buffer": "^6.0.3",
     "fs-extra": "^11.1.0",
+    "golden-layout": "^2.6.0",
     "monaco-editor": "^0.34.1",
     "monaco-editor-textmate": "^4.0.0",
     "monaco-textmate": "^3.0.1",
     "onigasm": "^2.2.5",
     "pako": "^2.1.0",
     "path": "^0.12.7",
-    "tslib": "^2.4.1"
+    "tslib": "^2.4.1",
+    "xterm": "^5.1.0",
+    "xterm-addon-fit": "^0.7.0"
   },
   "devDependencies": {
     "@octokit/rest": "^19.0.5",

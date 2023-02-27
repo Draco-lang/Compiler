@@ -61,11 +61,19 @@ internal partial class Binder
         return new UntypedIfExpression(syntax, condition, then, @else);
     }
 
-    private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax ury)
+    private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax)
     {
-        var subexpr = this.BindExpression(ury.Operand);
-        // TODO: Look up operator
-        throw new NotImplementedException();
+        // Get the unary operator symbol
+        var operatorName = UnaryOperatorSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
+        var operatorLookup = this.LookupValueSymbol(operatorName, syntax);
+        if (!operatorLookup.FoundAny || operatorLookup.Symbols.Count > 1)
+        {
+            // TODO: Handle overload or illegal
+            throw new NotImplementedException();
+        }
+        var operatorSymbol = (UnaryOperatorSymbol)operatorLookup.Symbols[0];
+        var operand = this.BindExpression(syntax.Operand);
+        return new UntypedUnaryExpression(syntax, operatorSymbol, operand);
     }
 
     private UntypedExpression BindRelationalExpression(RelationalExpressionSyntax syntax)
@@ -80,15 +88,15 @@ internal partial class Binder
     private UntypedComparison BindComparison(ComparisonElementSyntax syntax)
     {
         // Get the comparison operator symbol
-        var symbolName = ComparisonOperatorSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
-        var lookup = this.LookupValueSymbol(symbolName, syntax);
-        if (!lookup.FoundAny || lookup.Symbols.Count > 1)
+        var operatorName = ComparisonOperatorSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
+        var operatorLookup = this.LookupValueSymbol(operatorName, syntax);
+        if (!operatorLookup.FoundAny || operatorLookup.Symbols.Count > 1)
         {
             // TODO: Handle overload or illegal
             throw new NotImplementedException();
         }
-        var symbol = (ComparisonOperatorSymbol)lookup.Symbols[0];
+        var operatorSymbol = (ComparisonOperatorSymbol)operatorLookup.Symbols[0];
         var right = this.BindExpression(syntax.Right);
-        return new UntypedComparison(syntax, symbol, right);
+        return new UntypedComparison(syntax, operatorSymbol, right);
     }
 }

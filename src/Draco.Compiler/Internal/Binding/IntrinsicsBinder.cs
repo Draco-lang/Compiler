@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
@@ -16,13 +17,12 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class IntrinsicsBinder : Binder
 {
-    private static ImmutableArray<Symbol> IntrinsicSymbols { get; } = ImmutableArray.Create(
-        Intrinsics.Int32_Equal,
-        Intrinsics.Int32_NotEqual,
-        Intrinsics.Int32_GreaterThan,
-        Intrinsics.Int32_LessThan,
-        Intrinsics.Int32_GreaterEqual,
-        Intrinsics.Int32_LessEqual);
+    private static ImmutableArray<Symbol> IntrinsicSymbols { get; } = typeof(Intrinsics)
+        .GetProperties(BindingFlags.Public | BindingFlags.Static)
+        .Where(prop => prop.PropertyType == typeof(Symbol))
+        .Select(prop => prop.GetValue(null))
+        .Cast<Symbol>()
+        .ToImmutableArray();
 
     public IntrinsicsBinder(Compilation compilation)
         : base(compilation)

@@ -2,6 +2,7 @@ import { ComponentContainer } from 'golden-layout';
 
 export class Settings {
     static instance: Settings;
+
     rootElement: HTMLElement;
     resizeWithContainerAutomatically = true;
 

@@ -5,7 +5,9 @@ const elements = [];
 export function getDownloadViewElement() {
     const downloadViewElement = document.createElement('div');
     downloadViewElement.classList.add('monaco-editor');
+    downloadViewElement.classList.add('download-hidden');
     const text = document.createElement('h3');
+    text.className = 'tab-title';
     text.innerText = 'Downloading ressources:';
     downloadViewElement.appendChild(text);
     elements.push(downloadViewElement);
@@ -38,6 +40,7 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
     } catch (e) {
         console.log('Could not open cache: ', e);
     }
+    console.log('Cache miss:'+dlPath);
     setDownloadViewVisible(true);
     const progresses = elements.map( (element) => {
         const progressContainer = document.createElement('div');
@@ -68,7 +71,11 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
     });
 }
 
-async function progressFetch(url: string, onProgress: (loaded: number, total: number)=>void) : Promise<Blob> {
+function wait(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+async function progressFetch(url: string, onProgress: (loaded: number, total: number) => void) : Promise<Blob> {
     const response = await fetch(url);
     const contentLength = response.headers.get('content-length');
     const total = parseInt(contentLength, 10);

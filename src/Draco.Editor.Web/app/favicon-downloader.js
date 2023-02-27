@@ -25,13 +25,13 @@ export async function createThemeBasedLogo() {
             <style>
             @media (prefers-color-scheme: dark) {
                 .light{
-                    visibility: download-hidden;
+                    visibility: hidden;
                 }
             }
 
             @media (prefers-color-scheme: light) {
                 .dark{
-                    visibility: download-hidden;
+                    visibility: hidden;
                 }
             }
             </style>

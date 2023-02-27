@@ -11,7 +11,7 @@ public static partial class Interop
     public static void OnMessage(string type, string message)
     {
         var msgs = Messages;
-        if (msgs is not null) msgs.Invoke(type, message);
+        msgs?.Invoke(type, message);
     }
 
     public static event Action<string, string>? Messages;

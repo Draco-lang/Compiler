@@ -34,7 +34,7 @@ compilerWorker.onmessage = async (ev) => {
                 };
             switch (runtimeMsg.type) {
             case 'stdout':
-                onOutputChange('stdout', runtimeMsg.message+'\n', shouldClean);
+                onOutputChange('stdout', runtimeMsg.message + '\n', shouldClean);
                 shouldClean = false;
                 break;
             default:

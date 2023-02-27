@@ -6,6 +6,7 @@ import { TextDisplay } from './LayoutComponents/TextDisplay.js';
 import { StdOut } from './LayoutComponents/StdOut.js';
 import { TextInput } from './LayoutComponents/TextInput.js';
 import { loadThemes } from './loadThemes.js';
+import { Settings } from './LayoutComponents/Settings.js';
 
 function updateHash(code: string) {
     // setting the URL Hash with the state of the editor.
@@ -54,10 +55,7 @@ if (hash != null && hash.trim().length > 0) {
     }
 }
 
-// We can now lazy load these functions.
-// They are asynchronous and will complete in background.
-loadThemes();
-initDotnetWorkers(inputCode);
+
 
 const layoutElement = document.querySelector('#layoutContainer') as HTMLElement;
 
@@ -88,6 +86,11 @@ const config : LayoutConfig = {
                         title: 'Console',
                         type: 'component',
                         componentType: 'StdOut'
+                    },
+                    {
+                        title: 'Settings',
+                        type: 'component',
+                        componentType: 'Settings'
                     }
                 ]
             }
@@ -100,6 +103,7 @@ const goldenLayout = new GoldenLayout(layoutElement);
 goldenLayout.registerComponentConstructor('TextInput', TextInput);
 goldenLayout.registerComponentConstructor('StdOut', StdOut);
 goldenLayout.registerComponentConstructor('TextDisplay', TextDisplay);
+goldenLayout.registerComponentConstructor('Settings', Settings);
 
 goldenLayout.loadLayout(config);
 const inputEditor = TextInput.editors[0];
@@ -116,3 +120,6 @@ subscribeOutputChange((arg) => {
         StdOut.terminals[0].write(arg.value);
     }
 });
+
+loadThemes();
+initDotnetWorkers(inputCode);

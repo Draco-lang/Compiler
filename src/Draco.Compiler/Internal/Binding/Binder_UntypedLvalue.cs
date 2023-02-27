@@ -15,8 +15,9 @@ internal partial class Binder
     /// Binds the given syntax node to an untyped lvalue.
     /// </summary>
     /// <param name="syntax">The lvalue to bind.</param>
+    /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <returns>The untyped lvalue for <paramref name="syntax"/>.</returns>
-    protected UntypedLvalue BindLvalue(SyntaxNode syntax) => syntax switch
+    protected UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintBag constraints) => syntax switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };

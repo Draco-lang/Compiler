@@ -25,6 +25,7 @@ internal partial class Binder
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax)
     {
         var lookup = this.LookupValueSymbol(syntax.Name.Text, syntax);

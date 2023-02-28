@@ -15,8 +15,10 @@ internal partial class Binder
     /// Binds the given untyped statement to a bound statement.
     /// </summary>
     /// <param name="statement">The untyped statement to bind.</param>
+    /// <param name="constraints">The constraints that has been collected during the binding process.</param>
+    /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The bound statement for <paramref name="statement"/>.</returns>
-    protected BoundStatement TypeStatement(UntypedStatement statement) => statement switch
+    protected BoundStatement TypeStatement(UntypedStatement statement, ConstraintBag constraints, DiagnosticBag diagnostics) => statement switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(statement)),
     };

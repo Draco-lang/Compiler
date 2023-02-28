@@ -18,21 +18,22 @@ internal partial class Binder
     /// </summary>
     /// <param name="syntax">The syntax to bind.</param>
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
+    /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped expression for <paramref name="syntax"/>.</returns>
-    protected UntypedExpression BindExpression(SyntaxNode syntax, ConstraintBag constraints) => syntax switch
+    protected UntypedExpression BindExpression(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
-        LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints),
-        NameExpressionSyntax name => this.BindNameExpression(name, constraints),
-        IfExpressionSyntax @if => this.BindIfExpression(@if, constraints),
-        UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints),
-        RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints),
+        LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),
+        NameExpressionSyntax name => this.BindNameExpression(name, constraints, diagnostics),
+        IfExpressionSyntax @if => this.BindIfExpression(@if, constraints, diagnostics),
+        UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
+        RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintBag constraints) =>
+    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new UntypedLiteralExpression(syntax, syntax.Literal.Value);
 
-    private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintBag constraints)
+    private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var lookup = this.LookupValueSymbol(syntax.Name.Text, syntax);
         if (!lookup.FoundAny)
@@ -52,17 +53,17 @@ internal partial class Binder
         };
     }
 
-    private UntypedExpression BindIfExpression(IfExpressionSyntax syntax, ConstraintBag constraints)
+    private UntypedExpression BindIfExpression(IfExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var condition = this.BindExpression(syntax.Condition, constraints);
-        var then = this.BindExpression(syntax.Then, constraints);
+        var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
+        var then = this.BindExpression(syntax.Then, constraints, diagnostics);
         var @else = syntax.Else is null
             ? UntypedTreeFactory.UnitExpression()
-            : this.BindExpression(syntax.Else.Expression, constraints);
+            : this.BindExpression(syntax.Else.Expression, constraints, diagnostics);
         return new UntypedIfExpression(syntax, condition, then, @else);
     }
 
-    private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintBag constraints)
+    private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         // Get the unary operator symbol
         var operatorName = UnaryOperatorSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
@@ -73,20 +74,20 @@ internal partial class Binder
             throw new NotImplementedException();
         }
         var operatorSymbol = (UnaryOperatorSymbol)operatorLookup.Symbols[0];
-        var operand = this.BindExpression(syntax.Operand, constraints);
+        var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
         return new UntypedUnaryExpression(syntax, operatorSymbol, operand);
     }
 
-    private UntypedExpression BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintBag constraints)
+    private UntypedExpression BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var first = this.BindExpression(syntax.Left, constraints);
+        var first = this.BindExpression(syntax.Left, constraints, diagnostics);
         var comparisons = syntax.Comparisons
-            .Select(cmp => this.BindComparison(cmp, constraints))
+            .Select(cmp => this.BindComparison(cmp, constraints, diagnostics))
             .ToImmutableArray();
         return new UntypedRelationalExpression(syntax, first, comparisons);
     }
 
-    private UntypedComparison BindComparison(ComparisonElementSyntax syntax, ConstraintBag constraints)
+    private UntypedComparison BindComparison(ComparisonElementSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         // Get the comparison operator symbol
         var operatorName = ComparisonOperatorSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
@@ -97,7 +98,7 @@ internal partial class Binder
             throw new NotImplementedException();
         }
         var operatorSymbol = (ComparisonOperatorSymbol)operatorLookup.Symbols[0];
-        var right = this.BindExpression(syntax.Right, constraints);
+        var right = this.BindExpression(syntax.Right, constraints, diagnostics);
         return new UntypedComparison(syntax, operatorSymbol, right);
     }
 }

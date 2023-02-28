@@ -44,8 +44,9 @@ internal abstract partial class Binder
     public BoundStatement BindFunctionBody(FunctionBodySyntax syntax)
     {
         var constraints = new ConstraintBag();
-        var untypedStatement = this.BindStatement(syntax, constraints);
-        var boundStatement = this.TypeStatement(untypedStatement);
+        var diagnostics = new DiagnosticBag();
+        var untypedStatement = this.BindStatement(syntax, constraints, diagnostics);
+        var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
         return boundStatement;
     }
 }

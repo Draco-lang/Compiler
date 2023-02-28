@@ -15,8 +15,10 @@ internal partial class Binder
     /// Binds the given untyped expression to a bound expression.
     /// </summary>
     /// <param name="expression">The untyped expression to bind.</param>
+    /// <param name="constraints">The constraints that has been collected during the binding process.</param>
+    /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The bound expression for <paramref name="expression"/>.</returns>
-    protected BoundExpression TypeExpression(UntypedExpression expression) => expression switch
+    protected BoundExpression TypeExpression(UntypedExpression expression, ConstraintBag constraints, DiagnosticBag diagnostics) => expression switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };

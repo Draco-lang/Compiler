@@ -16,8 +16,9 @@ internal partial class Binder
     /// </summary>
     /// <param name="syntax">The lvalue to bind.</param>
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
+    /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped lvalue for <paramref name="syntax"/>.</returns>
-    protected UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintBag constraints) => syntax switch
+    protected UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,21 +21,38 @@ internal partial class Binder
     /// <returns>The untyped statement for <paramref name="syntax"/>.</returns>
     protected UntypedStatement BindStatement(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
+        DeclarationStatementSyntax decl => this.BindStatement(decl.Declaration, constraints, diagnostics),
+        BlockFunctionBodySyntax body => this.BindBlockFunctionBody(body, constraints, diagnostics),
         InlineFunctionBodySyntax body => this.BindInlineFunctionBody(body, constraints, diagnostics),
         LabelDeclarationSyntax label => this.BindLabelStatement(label, constraints, diagnostics),
+        VariableDeclarationSyntax decl => this.BindVariableDeclaration(decl, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private UntypedStatement BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var binder = this.Compilation.GetBinder(syntax);
+        var statements = syntax.Statements
+            .Select(s => binder.BindStatement(s, constraints, diagnostics))
+            .ToImmutableArray();
+        return new UntypedExpressionStatement(
+            syntax,
+            new UntypedBlockExpression(syntax, statements, UntypedUnitExpression.Default));
+    }
 
     private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var binder = this.Compilation.GetBinder(syntax);
         var value = binder.BindExpression(syntax.Value, constraints, diagnostics);
-        return binder.BindInlineFunctionBody(syntax, value, constraints, diagnostics);
+        return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax, value));
     }
-
-    private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, UntypedExpression value, ConstraintBag constraints, DiagnosticBag diagnostics) =>
-        new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax, value));
 
     private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         throw new NotImplementedException();
+
+    private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax decl, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
 }

@@ -29,3 +29,8 @@ internal abstract partial class UntypedNode
         return left.SequenceEqual(right);
     }
 }
+
+internal partial class UntypedUnitExpression
+{
+    public static UntypedUnitExpression Default { get; } = new(null);
+}

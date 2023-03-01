@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -527,31 +528,6 @@ internal sealed class Lexer
         // Check for escape sequence
         if (ch == '\\')
         {
-            // End of file after the escape
-            // Pop the string mode so the next token is End of input
-            if (this.Peek(offset + mode.ExtendedDelims + 1) == '\0')
-            {
-                this.PopMode();
-
-                var untilEndOffset = 0;
-                while (this.Peek(offset + untilEndOffset) != '\0')
-                {
-                    this.valueBuilder.Append(this.Peek(offset + untilEndOffset));
-                    ++untilEndOffset;
-                }
-                this.AddError(
-                    template: SyntaxErrors.EmptyEscapeSequence,
-                    offset: offset,
-                    width: untilEndOffset);
-
-                offset += untilEndOffset;
-
-                this.tokenBuilder
-                    .SetKind(TokenKind.StringContent)
-                    .SetText(this.AdvanceWithText(offset))
-                    .SetValue(this.valueBuilder.ToString());
-                return default;
-            }
             var escapeStart = offset;
 
             // Count the number of required delimiters
@@ -618,6 +594,24 @@ internal sealed class Lexer
                 }
             }
 
+            // End of file after the escape
+            if (this.Peek(offset + mode.ExtendedDelims + 1) == '\0')
+            {
+                this.valueBuilder.Append($"\\{new string('#', mode.ExtendedDelims)}");
+                this.AddError(
+                    template: SyntaxErrors.EmptyEscapeSequence,
+                    offset: offset,
+                    width: mode.ExtendedDelims);
+
+                offset += mode.ExtendedDelims + 1;
+
+                this.tokenBuilder
+                    .SetKind(TokenKind.StringContent)
+                    .SetText(this.AdvanceWithText(offset))
+                    .SetValue(this.valueBuilder.ToString());
+                return default;
+            }
+
             offset += mode.ExtendedDelims + 1;
             // Try to parse an escape
             var escaped = this.ParseEscapeSequence(escapeStart, ref offset);
@@ -627,6 +621,28 @@ internal sealed class Lexer
         }
 
     not_escape_sequence:
+        var untilEndOffset = 0;
+        while (untilEndOffset <= mode.ExtendedDelims)
+        {
+            if (this.Peek(offset + untilEndOffset) == '\0')
+            {
+                this.valueBuilder.Append($"\\{new string('#', untilEndOffset - 1)}");
+                this.AddError(
+                    template: SyntaxErrors.EmptyEscapeSequence,
+                    offset: offset,
+                    width: untilEndOffset);
+
+                offset += untilEndOffset;
+
+                this.tokenBuilder
+                    .SetKind(TokenKind.StringContent)
+                    .SetText(this.AdvanceWithText(offset))
+                    .SetValue(this.valueBuilder.ToString());
+                return default;
+            }
+            ++untilEndOffset;
+        }
+
         // Check for newline
         if (this.TryParseNewline(offset, out var newlineLength))
         {

@@ -114,6 +114,6 @@ internal static class SyntaxErrors
     public static readonly DiagnosticTemplate EmptyEscapeSequence = DiagnosticTemplate.Create(
         title: "escape sequence was empty",
         severity: DiagnosticSeverity.Error,
-        format: "there was end of input after start of escape sequence",
+        format: "end of input encountered after the start of an escape sequence",
         code: Code(12));
 }

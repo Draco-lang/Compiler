@@ -5,26 +5,24 @@ internal sealed class RandomTextGenerator : IInputGenerator<string>
     private readonly Random random;
     private readonly int maxLength;
     private readonly string charset;
+    private const string defaultCharset = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\r\n\t";
 
-    public RandomTextGenerator(int maxLength = 5000, string charset = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\r\n\t")
+    public RandomTextGenerator(int maxLength = 5000, string charset = defaultCharset)
     {
         this.random = new Random();
         this.maxLength = maxLength;
         this.charset = charset;
     }
 
-    public RandomTextGenerator(int seed, int maxLength = 5000, string charset = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\r\n\t")
+    public RandomTextGenerator(int seed, int maxLength = 5000, string charset = defaultCharset) : this(maxLength, charset)
     {
         this.random = new Random(seed);
-        this.maxLength = maxLength;
-        this.charset = charset;
     }
 
     public string NextExpoch()
     {
         int length = this.random.Next(this.maxLength);
-        var chars = new char[length];
-        return new string(chars.Select(x => x = this.charset[this.random.Next(this.charset.Length)]).ToArray());
+        return new string(Enumerable.Range(0, length).Select(x => this.charset[this.random.Next(this.charset.Length)]).ToArray());
     }
 
     public string NextMutation() => throw new NotImplementedException();

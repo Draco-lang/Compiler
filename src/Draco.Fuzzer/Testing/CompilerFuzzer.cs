@@ -5,29 +5,16 @@ using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
-internal sealed class CompilerFuzzer : ComponentFuzzer
+internal sealed class CompilerFuzzer : ComponentFuzzer<string>
 {
-    private IInputGenerator<string> generator;
+    public CompilerFuzzer(IInputGenerator<string> generator) : base(generator) { }
 
-    public CompilerFuzzer(IInputGenerator<string> generator)
+    public override void RunEpoch(string input)
     {
-        this.generator = generator;
-    }
-
-    public override void RunEpoch()
-    {
-        var input = this.generator.NextExpoch();
-        try
-        {
-            var sourceText = SourceText.FromText(input);
-            var parseTree = SyntaxTree.Parse(sourceText);
-            var compilation = Compilation.Create(parseTree);
-            var execResult = ScriptingEngine.Execute(compilation);
-        }
-        catch (Exception ex)
-        {
-            this.AddError(ex, input);
-        }
+        var sourceText = SourceText.FromText(input);
+        var parseTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(parseTree);
+        var execResult = ScriptingEngine.Execute(compilation);
     }
 
     public override void RunMutation() => throw new NotImplementedException();

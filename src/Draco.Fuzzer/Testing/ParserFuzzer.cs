@@ -3,27 +3,14 @@ using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
-internal sealed class ParserFuzzer : ComponentFuzzer
+internal sealed class ParserFuzzer : ComponentFuzzer<TokenArray>
 {
-    private IInputGenerator<IEnumerable<SyntaxToken>> generator;
+    public ParserFuzzer(IInputGenerator<TokenArray> generator) : base(generator) { }
 
-    public ParserFuzzer(IInputGenerator<IEnumerable<SyntaxToken>> generator)
+    public override void RunEpoch(TokenArray input)
     {
-        this.generator = generator;
-    }
-
-    public override void RunEpoch()
-    {
-        var input = this.generator.NextExpoch();
-        try
-        {
-            // We just care about the parsing into compilation unit part
-            new Parser(TokenSource.From(input), new SyntaxDiagnosticTable()).ParseCompilationUnit();
-        }
-        catch (Exception ex)
-        {
-            this.AddError(ex, string.Join("", input.Select(x => x.Text)));
-        }
+        // We just care about the parsing into compilation unit part
+        new Parser(TokenSource.From(input.GetTokens()), new SyntaxDiagnosticTable()).ParseCompilationUnit();
     }
 
     public override void RunMutation() => throw new NotImplementedException();

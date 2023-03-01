@@ -1,3 +1,4 @@
+using System.CommandLine.Parsing;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
@@ -5,7 +6,7 @@ using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Fuzzer.Testing.Generators;
 
-internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<SyntaxToken>>
+internal sealed class RandomValidTokenGenerator : IInputGenerator<TokenArray>
 {
     private readonly Random random;
     private readonly int maxLength;
@@ -16,13 +17,12 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<Sy
         this.maxLength = maxLength;
     }
 
-    public RandomValidTokenGenerator(int seed, int maxLength = 500)
+    public RandomValidTokenGenerator(int seed, int maxLength = 500) : this(maxLength)
     {
         this.random = new Random(seed);
-        this.maxLength = maxLength;
     }
 
-    public IEnumerable<SyntaxToken> NextExpoch()
+    public TokenArray NextExpoch()
     {
         var max = this.random.Next(this.maxLength);
         var builder = new StringBuilder();
@@ -32,7 +32,13 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<Sy
         }
 
         var lexer = new Lexer(SourceReader.From(builder.ToString()), new SyntaxDiagnosticTable());
+        return new TokenArray(this.LexTokens(lexer));
+    }
 
+    public TokenArray NextMutation() => throw new NotImplementedException();
+
+    private IEnumerable<SyntaxToken> LexTokens(Lexer lexer)
+    {
         while (true)
         {
             var tok = lexer.Lex();
@@ -40,8 +46,6 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<Sy
             if (tok.Kind == TokenKind.EndOfInput) break;
         }
     }
-
-    public IEnumerable<SyntaxToken> NextMutation() => throw new NotImplementedException();
 
     private string GetRandomToken()
     {
@@ -55,12 +59,14 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<IEnumerable<Sy
 
     private string GenerateValidIdentifier()
     {
+        var lowerBound = (int)'a';
+        var upperBound = ((int)'z' + 1);
         var builder = new StringBuilder();
-        builder.Append((char)this.random.Next(97, 123)); // Valid alpha char
+        builder.Append((char)this.random.Next(lowerBound, upperBound)); // Valid alpha char
         var len = this.random.Next(25);
-        for (int i = 0; i < len; i++)
+        for (var i = 0; i < len; i++)
         {
-            builder.Append((char)this.random.Next(97, 123));
+            builder.Append((char)this.random.Next(lowerBound, upperBound));
         }
         return builder.ToString();
     }

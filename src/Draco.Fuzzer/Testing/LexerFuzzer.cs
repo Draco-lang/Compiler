@@ -4,30 +4,17 @@ using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer.Testing;
 
-internal sealed class LexerFuzzer : ComponentFuzzer
+internal sealed class LexerFuzzer : ComponentFuzzer<string>
 {
-    private readonly IInputGenerator<string> generator;
+    public LexerFuzzer(IInputGenerator<string> generator) : base(generator) { }
 
-    public LexerFuzzer(IInputGenerator<string> generator)
+    public override void RunEpoch(string input)
     {
-        this.generator = generator;
-    }
-
-    public override void RunEpoch()
-    {
-        var input = this.generator.NextExpoch();
         var lexer = new Lexer(SourceReader.From(input), new SyntaxDiagnosticTable());
-        try
+        while (true)
         {
-            while (true)
-            {
-                var token = lexer.Lex();
-                if (token.Kind == TokenKind.EndOfInput) break;
-            }
-        }
-        catch (Exception ex)
-        {
-            this.AddError(ex, input);
+            var token = lexer.Lex();
+            if (token.Kind == TokenKind.EndOfInput) break;
         }
     }
 

@@ -4,16 +4,10 @@ using Draco.Fuzzer.Testing.Generators;
 
 namespace Draco.Fuzzer;
 
-internal class Program
+internal static class Program
 {
-    private static ComponentFuzzer? Fuzzer;
-    internal static int Main(string[] args)
-    {
-        Console.CancelKeyPress += new ConsoleCancelEventHandler(HandleCancel);
-        return ConfigureCommands().Invoke(args);
-    }
-
-    private static void HandleCancel(object? sender, ConsoleCancelEventArgs args) => Fuzzer!.PrintResult();
+    //TODO: test!!!
+    internal static int Main(string[] args) => ConfigureCommands().Invoke(args);
 
     private static RootCommand ConfigureCommands()
     {
@@ -48,19 +42,9 @@ internal class Program
         return rootCommand;
     }
 
-    private static void FuzzLexer(int numEpochs, int numMutations)
-    {
-        Fuzzer = new LexerFuzzer(new RandomTextGenerator());
-        Fuzzer.StartTesting(numEpochs, numMutations);
-    }
-    private static void FuzzParser(int numEpochs, int numMutations)
-    {
-        Fuzzer = new ParserFuzzer(new RandomValidTokenGenerator());
-        Fuzzer.StartTesting(numEpochs, numMutations);
-    }
-    private static void FuzzCompiler(int numEpochs, int numMutations)
-    {
-        Fuzzer = new CompilerFuzzer(new RandomTextGenerator());
-        Fuzzer.StartTesting(numEpochs, numMutations);
-    }
+    private static void FuzzLexer(int numEpochs, int numMutations) => new LexerFuzzer(new RandomTextGenerator()).StartTesting(numEpochs, numMutations);
+
+    private static void FuzzParser(int numEpochs, int numMutations) => new ParserFuzzer(new RandomValidTokenGenerator()).StartTesting(numEpochs, numMutations);
+
+    private static void FuzzCompiler(int numEpochs, int numMutations) => new CompilerFuzzer(new RandomTextGenerator()).StartTesting(numEpochs, numMutations);
 }

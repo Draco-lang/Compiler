@@ -953,15 +953,16 @@ public sealed class LexerTests
     [Trait("Feature", "Strings")]
     public void TestEndOfInputAfterEscapeSequenceStartAndWhitespace(string ext)
     {
+        string space = " ";
         var text = $"""
-            {ext}"\{ext} 
+            {ext}"\{ext}{space}
             """;
         this.Lex(text);
 
         this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenKind.StringContent, $"\\{ext} ", $" ");
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}{space}", $"{space}");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
 

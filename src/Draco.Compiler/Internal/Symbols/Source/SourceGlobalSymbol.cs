@@ -8,12 +8,14 @@ using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
-internal sealed class SourceGlobalSymbol : GlobalSymbol
+internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 {
     public override Type Type => throw new System.NotImplementedException();
     public override bool IsMutable => this.declaration.Syntax.Keyword.Kind == TokenKind.KeywordVar;
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
+
+    public SyntaxNode DefinitionSyntax => this.declaration.Syntax;
 
     private readonly GlobalDeclaration declaration;
 

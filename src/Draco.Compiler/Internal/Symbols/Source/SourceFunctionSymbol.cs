@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// An in-source function-definition.
 /// </summary>
-internal sealed class SourceFunctionSymbol : FunctionSymbol
+internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
     private ImmutableArray<ParameterSymbol>? parameters;
@@ -23,20 +23,22 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     private Type? returnType;
 
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.Syntax.Name.Text;
+    public override string Name => this.DefinitionSyntax.Name.Text;
 
     /// <summary>
     /// The syntax the symbol was constructed from.
     /// </summary>
-    public FunctionDeclarationSyntax Syntax { get; }
+    public FunctionDeclarationSyntax DefinitionSyntax { get; }
+    SyntaxNode ISourceSymbol.DefinitionSyntax => this.DefinitionSyntax;
 
     public BoundStatement Body => this.body ??= this.BuildBody();
+
     private BoundStatement? body;
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.Syntax = syntax;
+        this.DefinitionSyntax = syntax;
     }
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclaration declaration)
@@ -44,7 +46,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     {
     }
 
-    private ImmutableArray<ParameterSymbol> BuildParameters() => this.Syntax.ParameterList.Values
+    private ImmutableArray<ParameterSymbol> BuildParameters() => this.DefinitionSyntax.ParameterList.Values
         .Select(this.BuildParameter)
         .ToImmutableArray();
 
@@ -56,7 +58,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     private BoundStatement BuildBody()
     {
         Debug.Assert(this.DeclaringCompilation is not null);
-        var binder = this.DeclaringCompilation.GetBinder(this.Syntax.Body);
-        return binder.BindFunctionBody(this.Syntax.Body);
+        var binder = this.DeclaringCompilation.GetBinder(this.DefinitionSyntax.Body);
+        return binder.BindFunctionBody(this.DefinitionSyntax.Body);
     }
 }

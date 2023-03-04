@@ -49,4 +49,11 @@ internal abstract partial class Binder
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
         return boundStatement;
     }
+
+    /// <summary>
+    /// Retrieves the symbol defined by this binder.
+    /// </summary>
+    /// <param name="node">The syntax defining the symbol.</param>
+    /// <returns>The symbol defined by <paramref name="node"/>, or null if it can't be found in this binder.</returns>
+    protected virtual Symbol? GetDefinedSymbol(SyntaxNode node) => null;
 }

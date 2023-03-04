@@ -69,7 +69,7 @@ internal sealed class BinderCache
         // Search for the function in the parents container
         var functionSymbol = parent.ContainingSymbol?.Members
             .OfType<SourceFunctionSymbol>()
-            .FirstOrDefault(member => member.Syntax == syntax);
+            .FirstOrDefault(member => member.DefinitionSyntax == syntax);
         Debug.Assert(functionSymbol is not null);
         return new FunctionBinder(parent, functionSymbol);
     }

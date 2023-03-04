@@ -69,6 +69,11 @@ internal sealed class LocalBinder : Binder
         this.syntax = syntax;
     }
 
+    protected override Symbol? GetDefinedSymbol(SyntaxNode node) => (Symbol?)this.Declarations
+        .Concat(this.LocalDeclarations.Select(d => d.Symbol))
+        .OfType<ISourceSymbol>()
+        .FirstOrDefault(s => s.DefinitionSyntax == node);
+
     public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
     {
         // If there's a syntactic reference, check locals

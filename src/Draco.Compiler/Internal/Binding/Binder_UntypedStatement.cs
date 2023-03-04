@@ -52,6 +52,8 @@ internal partial class Binder
 
     private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
+        var localSymbol = this.GetDefinedSymbol(syntax);
+
         // TODO
         throw new NotImplementedException();
     }

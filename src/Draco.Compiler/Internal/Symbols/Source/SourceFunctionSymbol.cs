@@ -23,13 +23,13 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private Type? returnType;
 
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.DefinitionSyntax.Name.Text;
+    public override string Name => this.DeclarationSyntax.Name.Text;
 
     /// <summary>
     /// The syntax the symbol was constructed from.
     /// </summary>
-    public FunctionDeclarationSyntax DefinitionSyntax { get; }
-    SyntaxNode ISourceSymbol.DeclarationSyntax => this.DefinitionSyntax;
+    public FunctionDeclarationSyntax DeclarationSyntax { get; }
+    SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
 
     public BoundStatement Body => this.body ??= this.BuildBody();
 
@@ -38,7 +38,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.DefinitionSyntax = syntax;
+        this.DeclarationSyntax = syntax;
     }
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclaration declaration)
@@ -46,7 +46,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     {
     }
 
-    private ImmutableArray<ParameterSymbol> BuildParameters() => this.DefinitionSyntax.ParameterList.Values
+    private ImmutableArray<ParameterSymbol> BuildParameters() => this.DeclarationSyntax.ParameterList.Values
         .Select(this.BuildParameter)
         .ToImmutableArray();
 
@@ -58,7 +58,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private BoundStatement BuildBody()
     {
         Debug.Assert(this.DeclaringCompilation is not null);
-        var binder = this.DeclaringCompilation.GetBinder(this.DefinitionSyntax.Body);
-        return binder.BindFunctionBody(this.DefinitionSyntax.Body);
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Body);
+        return binder.BindFunctionBody(this.DeclarationSyntax.Body);
     }
 }

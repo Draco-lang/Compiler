@@ -8,9 +8,9 @@ using Draco.Compiler.Internal.Types;
 namespace Draco.Compiler.Internal.Symbols.Source;
 
 /// <summary>
-/// A function parameter defined in-source.
+/// An in-source local declaration.
 /// </summary>
-internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
+internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
 {
     public override Type Type => this.type ??= this.BuildType();
     private Type? type;
@@ -18,10 +18,12 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.DeclarationSyntax.Name.Text;
 
-    public ParameterSyntax DeclarationSyntax { get; }
+    public VariableDeclarationSyntax DeclarationSyntax { get; }
     SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
 
-    public SourceParameterSymbol(Symbol? containingSymbol, ParameterSyntax syntax)
+    public override bool IsMutable => this.DeclarationSyntax.Keyword.Kind == TokenKind.KeywordVar;
+
+    public SourceLocalSymbol(Symbol? containingSymbol, VariableDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
         this.DeclarationSyntax = syntax;

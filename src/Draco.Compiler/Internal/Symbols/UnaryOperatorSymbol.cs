@@ -19,8 +19,8 @@ internal abstract partial class UnaryOperatorSymbol : FunctionSymbol
     /// <returns>The name of the symbol to look up the unary operator.</returns>
     public static string GetUnaryOperatorName(TokenKind token) => token switch
     {
-        TokenKind.Plus => "unary +",
-        TokenKind.Minus => "unary -",
+        TokenKind.Plus => "operator +",
+        TokenKind.Minus => "operator -",
         _ => throw new ArgumentOutOfRangeException(nameof(token)),
     };
 

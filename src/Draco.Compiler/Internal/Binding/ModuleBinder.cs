@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -29,6 +30,10 @@ internal sealed class ModuleBinder : Binder
     {
         this.symbol = symbol;
     }
+
+    protected override Symbol? GetDefinedSymbol(SyntaxNode node) => (Symbol?)this.symbol.Members
+        .OfType<ISourceSymbol>()
+        .FirstOrDefault(s => s.DefinitionSyntax == node);
 
     public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
     {

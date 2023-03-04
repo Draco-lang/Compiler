@@ -84,7 +84,7 @@ internal sealed class LocalBinder : Binder
             if (localSymbol is not null) result.Add(localSymbol);
         }
         // Now we can check order-independent declarations
-        foreach (var decl in this.declarations)
+        foreach (var decl in this.Declarations)
         {
             if (decl.Name != name) continue;
             if (!BinderFacts.IsValueSymbol(decl)) continue;

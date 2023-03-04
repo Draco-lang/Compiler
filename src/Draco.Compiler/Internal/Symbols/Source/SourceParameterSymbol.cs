@@ -19,7 +19,7 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     public override string Name => this.DefinitionSyntax.Name.Text;
 
     public ParameterSyntax DefinitionSyntax { get; }
-    SyntaxNode ISourceSymbol.DefinitionSyntax => this.DefinitionSyntax;
+    SyntaxNode ISourceSymbol.DeclarationSyntax => this.DefinitionSyntax;
 
     public SourceParameterSymbol(Symbol? containingSymbol, ParameterSyntax syntax)
     {

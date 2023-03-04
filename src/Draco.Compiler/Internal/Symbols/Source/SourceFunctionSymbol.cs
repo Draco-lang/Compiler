@@ -29,7 +29,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     /// The syntax the symbol was constructed from.
     /// </summary>
     public FunctionDeclarationSyntax DefinitionSyntax { get; }
-    SyntaxNode ISourceSymbol.DefinitionSyntax => this.DefinitionSyntax;
+    SyntaxNode ISourceSymbol.DeclarationSyntax => this.DefinitionSyntax;
 
     public BoundStatement Body => this.body ??= this.BuildBody();
 

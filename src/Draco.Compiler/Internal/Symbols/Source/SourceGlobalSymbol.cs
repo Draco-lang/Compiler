@@ -15,7 +15,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public SyntaxNode DefinitionSyntax => this.declaration.Syntax;
+    public SyntaxNode DeclarationSyntax => this.declaration.Syntax;
 
     private readonly GlobalDeclaration declaration;
 

@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -52,7 +55,11 @@ internal partial class Binder
 
     private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var localSymbol = this.GetDefinedSymbol(syntax);
+        var localSymbol = (Symbol?)((LocalBinder)this).LocalDeclarations
+            .Select(decl => decl.Symbol)
+            .OfType<ISourceSymbol>()
+            .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
+        Debug.Assert(localSymbol is not null);
 
         // TODO
         throw new NotImplementedException();

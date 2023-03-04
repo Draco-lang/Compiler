@@ -26,7 +26,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class LocalBinder : Binder
 {
-    private readonly record struct LocalDeclaration(int Position, Symbol Symbol);
+    public readonly record struct LocalDeclaration(int Position, Symbol Symbol);
 
     private ImmutableDictionary<SyntaxNode, int> RelativePositions
     {
@@ -37,7 +37,10 @@ internal sealed class LocalBinder : Binder
         }
     }
 
-    private ImmutableArray<Symbol> Declarations
+    /// <summary>
+    /// The position-independent symbols declared in this scope.
+    /// </summary>
+    public ImmutableArray<Symbol> Declarations
     {
         get
         {
@@ -46,7 +49,10 @@ internal sealed class LocalBinder : Binder
         }
     }
 
-    private ImmutableArray<LocalDeclaration> LocalDeclarations
+    /// <summary>
+    /// The locals (position-dependent symbols) declared in this scope.
+    /// </summary>
+    public ImmutableArray<LocalDeclaration> LocalDeclarations
     {
         get
         {
@@ -68,11 +74,6 @@ internal sealed class LocalBinder : Binder
     {
         this.syntax = syntax;
     }
-
-    protected override Symbol? GetDefinedSymbol(SyntaxNode node) => (Symbol?)this.Declarations
-        .Concat(this.LocalDeclarations.Select(d => d.Symbol))
-        .OfType<ISourceSymbol>()
-        .FirstOrDefault(s => s.DefinitionSyntax == node);
 
     public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
     {

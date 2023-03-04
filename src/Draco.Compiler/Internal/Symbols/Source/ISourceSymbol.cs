@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 internal interface ISourceSymbol
 {
     /// <summary>
-    /// The syntax defining this symbol.
+    /// The syntax declaring this symbol.
     /// </summary>
-    public SyntaxNode? DefinitionSyntax { get; }
+    public SyntaxNode? DeclarationSyntax { get; }
 }

@@ -31,10 +31,6 @@ internal sealed class ModuleBinder : Binder
         this.symbol = symbol;
     }
 
-    protected override Symbol? GetDefinedSymbol(SyntaxNode node) => (Symbol?)this.symbol.Members
-        .OfType<ISourceSymbol>()
-        .FirstOrDefault(s => s.DefinitionSyntax == node);
-
     public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
     {
         foreach (var symbol in this.symbol.Members)

@@ -23,7 +23,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public SyntaxNode? DefinitionSyntax => null;
+    public SyntaxNode? DeclarationSyntax => null;
 
     private readonly Declaration declaration;
 

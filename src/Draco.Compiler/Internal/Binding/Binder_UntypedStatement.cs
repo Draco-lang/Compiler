@@ -50,7 +50,7 @@ internal partial class Binder
     private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         throw new NotImplementedException();
 
-    private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax decl, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         // TODO
         throw new NotImplementedException();

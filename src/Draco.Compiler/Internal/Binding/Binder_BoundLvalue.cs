@@ -20,6 +20,10 @@ internal partial class Binder
     /// <returns>The bound lvalue for <paramref name="lvalue"/>.</returns>
     protected BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintBag constraints, DiagnosticBag diagnostics) => lvalue switch
     {
+        UntypedLocalLvalue local => this.TypeLocalLvalue(local, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };
+
+    private BoundLvalue TypeLocalLvalue(UntypedLocalLvalue local, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundLocalLvalue(local.Syntax, local.Local);
 }

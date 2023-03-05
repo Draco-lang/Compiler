@@ -29,3 +29,8 @@ internal abstract partial class BoundNode
         return left.SequenceEqual(right);
     }
 }
+
+internal partial class BoundUnitExpression
+{
+    public static BoundUnitExpression Default { get; } = new(null);
+}

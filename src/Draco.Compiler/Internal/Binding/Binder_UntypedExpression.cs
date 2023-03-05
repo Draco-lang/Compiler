@@ -26,6 +26,7 @@ internal partial class Binder
         NameExpressionSyntax name => this.BindNameExpression(name, constraints, diagnostics),
         IfExpressionSyntax @if => this.BindIfExpression(@if, constraints, diagnostics),
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
+        BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
@@ -76,6 +77,35 @@ internal partial class Binder
         var operatorSymbol = (UnaryOperatorSymbol)operatorLookup.Symbols[0];
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
         return new UntypedUnaryExpression(syntax, operatorSymbol, operand);
+    }
+
+    private UntypedExpression BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        if (syntax.Operator.Kind == TokenKind.Assign)
+        {
+            // TODO: Assignment
+            throw new NotImplementedException();
+        }
+        else if (SyntaxFacts.IsCompoundAssignmentOperator(syntax.Operator.Kind))
+        {
+            // TODO: Compound assignment
+            throw new NotImplementedException();
+        }
+        else
+        {
+            // Get the binary operator symbol
+            var operatorName = BinaryOperatorSymbol.GetBinaryOperatorName(syntax.Operator.Kind);
+            var operatorLookup = this.LookupValueSymbol(operatorName, syntax);
+            if (!operatorLookup.FoundAny || operatorLookup.Symbols.Count > 1)
+            {
+                // TODO: Handle overload or illegal
+                throw new NotImplementedException();
+            }
+            var operatorSymbol = (BinaryOperatorSymbol)operatorLookup.Symbols[0];
+            var left = this.BindExpression(syntax.Left, constraints, diagnostics);
+            var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+            return new UntypedBinaryExpression(syntax, operatorSymbol, left, right);
+        }
     }
 
     private UntypedExpression BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)

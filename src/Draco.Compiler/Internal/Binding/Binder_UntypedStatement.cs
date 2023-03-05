@@ -25,12 +25,19 @@ internal partial class Binder
     protected UntypedStatement BindStatement(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
         DeclarationStatementSyntax decl => this.BindStatement(decl.Declaration, constraints, diagnostics),
+        ExpressionStatementSyntax expr => this.BindExpressionStatement(expr, constraints, diagnostics),
         BlockFunctionBodySyntax body => this.BindBlockFunctionBody(body, constraints, diagnostics),
         InlineFunctionBodySyntax body => this.BindInlineFunctionBody(body, constraints, diagnostics),
         LabelDeclarationSyntax label => this.BindLabelStatement(label, constraints, diagnostics),
         VariableDeclarationSyntax decl => this.BindVariableDeclaration(decl, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private UntypedStatement BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var expr = this.BindExpression(syntax.Expression, constraints, diagnostics);
+        return new UntypedExpressionStatement(syntax, expr);
+    }
 
     private UntypedStatement BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
@@ -55,13 +62,15 @@ internal partial class Binder
 
     private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var localSymbol = (Symbol?)((LocalBinder)this).LocalDeclarations
+        // Look up the corresponding symbol defined
+        var localSymbol = (LocalSymbol?)((LocalBinder)this).LocalDeclarations
             .Select(decl => decl.Symbol)
             .OfType<ISourceSymbol>()
             .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
         Debug.Assert(localSymbol is not null);
 
-        // TODO
-        throw new NotImplementedException();
+        var value = syntax.Value is null ? null : this.BindExpression(syntax.Value, constraints, diagnostics);
+
+        return new UntypedLocalDeclaration(syntax, localSymbol, value);
     }
 }

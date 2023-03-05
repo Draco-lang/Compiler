@@ -83,8 +83,9 @@ internal partial class Binder
     {
         if (syntax.Operator.Kind == TokenKind.Assign)
         {
-            // TODO: Assignment
-            throw new NotImplementedException();
+            var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
+            var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+            return new UntypedAssignmentExpression(syntax, left, right);
         }
         else if (SyntaxFacts.IsCompoundAssignmentOperator(syntax.Operator.Kind))
         {

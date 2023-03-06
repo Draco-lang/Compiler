@@ -16,10 +16,21 @@ internal sealed class BuiltinType : Type
     /// </summary>
     public System.Type UnderylingType { get; }
 
-    public BuiltinType(System.Type underylingType)
+    /// <summary>
+    /// The name that should be shown.
+    /// </summary>
+    public string Name { get; }
+
+    public BuiltinType(System.Type underylingType, string name)
     {
         this.UnderylingType = underylingType;
+        this.Name = name;
     }
 
-    public override string ToString() => this.UnderylingType.ToString();
+    public BuiltinType(System.Type underylingType)
+        : this(underylingType, underylingType.ToString())
+    {
+    }
+
+    public override string ToString() => this.Name;
 }

@@ -27,4 +27,6 @@ internal sealed class FunctionType
         this.ParameterTypes = parameterTypes;
         this.ReturnType = returnType;
     }
+
+    public override string ToString() => $"({string.Join(", ", this.ParameterTypes)}) -> {this.ReturnType}";
 }

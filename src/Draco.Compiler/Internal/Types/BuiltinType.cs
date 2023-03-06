@@ -20,4 +20,6 @@ internal sealed class BuiltinType : Type
     {
         this.UnderylingType = underylingType;
     }
+
+    public override string ToString() => this.UnderylingType.ToString();
 }

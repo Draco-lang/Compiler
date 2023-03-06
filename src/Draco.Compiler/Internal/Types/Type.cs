@@ -11,4 +11,5 @@ namespace Draco.Compiler.Internal.Types;
 /// </summary>
 internal abstract partial class Type
 {
+    public abstract override string ToString();
 }

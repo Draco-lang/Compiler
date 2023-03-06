@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Types;
 
@@ -11,6 +13,8 @@ namespace Draco.Compiler.Internal.Types;
 /// </summary>
 internal sealed class TypeVariable : Type
 {
+    private static int idCounter = -1;
+
     /// <summary>
     /// The substitution of this type variable.
     /// </summary>
@@ -30,4 +34,11 @@ internal sealed class TypeVariable : Type
         }
     }
     private Type? substitution;
+
+    // NOTE: This makes printing types nondeterministic
+    private readonly int id = Interlocked.Increment(ref idCounter);
+
+    public override string ToString() => this.substitution is null
+        ? $"{StringUtils.IndexToExcelColumnName(this.id)}'"
+        : this.substitution.ToString();
 }

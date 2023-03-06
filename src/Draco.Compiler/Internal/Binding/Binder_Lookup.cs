@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -14,12 +15,13 @@ internal partial class Binder
     /// </summary>
     /// <param name="name">The name of the symbol to look up.</param>
     /// <param name="reference">The syntax referencing the symbol.</param>
+    /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
     /// <returns>The result of the lookup.</returns>
-    protected LookupResult LookupValueSymbol(string name, SyntaxNode? reference)
+    protected Symbol LookupValueSymbol(string name, SyntaxNode? reference, DiagnosticBag diagnostics)
     {
         var result = new LookupResult();
         this.LookupValueSymbol(result, name, reference);
-        return result;
+        return result.GetValue(reference, diagnostics);
     }
 
     /// <summary>
@@ -27,12 +29,13 @@ internal partial class Binder
     /// </summary>
     /// <param name="name">The name of the symbol to look up.</param>
     /// <param name="reference">The syntax referencing the symbol.</param>
+    /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
     /// <returns>The result of the lookup.</returns>
-    protected LookupResult LookupTypeSymbol(string name, SyntaxNode? reference)
+    protected Symbol LookupTypeSymbol(string name, SyntaxNode? reference, DiagnosticBag diagnostics)
     {
         var result = new LookupResult();
         this.LookupTypeSymbol(result, name, reference);
-        return result;
+        return result.GetType(reference, diagnostics);
     }
 
     /// <summary>

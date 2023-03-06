@@ -65,12 +65,12 @@
   </Node>
 
   <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
-    <Field Name="Operator" Type="UnaryOperatorSymbol" />
+    <Field Name="Operator" Type="Symbol" />
     <Field Name="Operand" Type="UntypedExpression" />
   </Node>
 
   <Node Name="UntypedBinaryExpression" Base="UntypedExpression">
-    <Field Name="Operator" Type="BinaryOperatorSymbol" />
+    <Field Name="Operator" Type="Symbol" />
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
   </Node>
@@ -108,7 +108,7 @@
   </Node>
 
   <Node Name="UntypedComparison" Base="UntypedNode">
-    <Field Name="Operator" Type="ComparisonOperatorSymbol" />
+    <Field Name="Operator" Type="Symbol" />
     <Field Name="Next" Type="UntypedExpression" />
   </Node>
 

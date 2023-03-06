@@ -36,18 +36,8 @@ internal partial class Binder
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var lookup = this.LookupValueSymbol(syntax.Name.Text, syntax);
-        if (!lookup.FoundAny)
-        {
-            // TODO
-            throw new NotImplementedException();
-        }
-        if (lookup.Symbols.Count > 1)
-        {
-            // TODO: Multiple symbols, potental overloading
-            throw new NotImplementedException();
-        }
-        return lookup.Symbols[0] switch
+        var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        return symbol switch
         {
             ParameterSymbol param => new UntypedParameterExpression(syntax, param),
             _ => throw new InvalidOperationException(),
@@ -68,13 +58,7 @@ internal partial class Binder
     {
         // Get the unary operator symbol
         var operatorName = UnaryOperatorSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
-        var operatorLookup = this.LookupValueSymbol(operatorName, syntax);
-        if (!operatorLookup.FoundAny || operatorLookup.Symbols.Count > 1)
-        {
-            // TODO: Handle overload or illegal
-            throw new NotImplementedException();
-        }
-        var operatorSymbol = (UnaryOperatorSymbol)operatorLookup.Symbols[0];
+        var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
         return new UntypedUnaryExpression(syntax, operatorSymbol, operand);
     }
@@ -96,13 +80,7 @@ internal partial class Binder
         {
             // Get the binary operator symbol
             var operatorName = BinaryOperatorSymbol.GetBinaryOperatorName(syntax.Operator.Kind);
-            var operatorLookup = this.LookupValueSymbol(operatorName, syntax);
-            if (!operatorLookup.FoundAny || operatorLookup.Symbols.Count > 1)
-            {
-                // TODO: Handle overload or illegal
-                throw new NotImplementedException();
-            }
-            var operatorSymbol = (BinaryOperatorSymbol)operatorLookup.Symbols[0];
+            var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
             var left = this.BindExpression(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
             return new UntypedBinaryExpression(syntax, operatorSymbol, left, right);
@@ -122,13 +100,7 @@ internal partial class Binder
     {
         // Get the comparison operator symbol
         var operatorName = ComparisonOperatorSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
-        var operatorLookup = this.LookupValueSymbol(operatorName, syntax);
-        if (!operatorLookup.FoundAny || operatorLookup.Symbols.Count > 1)
-        {
-            // TODO: Handle overload or illegal
-            throw new NotImplementedException();
-        }
-        var operatorSymbol = (ComparisonOperatorSymbol)operatorLookup.Symbols[0];
+        var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var right = this.BindExpression(syntax.Right, constraints, diagnostics);
         return new UntypedComparison(syntax, operatorSymbol, right);
     }

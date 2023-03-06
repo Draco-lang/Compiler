@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -60,4 +61,34 @@ internal sealed class LookupResult
             return true;
         }
     }
+
+    /// <summary>
+    /// Retrieves the symbol looked up in a value context.
+    /// </summary>
+    /// <param name="syntax">The referencing syntax, if any.</param>
+    /// <param name="diagnostics">The diagnostics are added here.</param>
+    /// <returns>The <see cref="Symbol"/> retrieved in a value context.</returns>
+    public Symbol GetValue(SyntaxNode? syntax, DiagnosticBag diagnostics)
+    {
+        if (!this.FoundAny)
+        {
+            // TODO: Return a reference error symbol, add diagnostic
+            throw new NotImplementedException();
+        }
+        if (this.Symbols.Count > 1)
+        {
+            // TODO: Multiple symbols, potential overloading
+            throw new NotImplementedException();
+        }
+        return this.Symbols[0];
+    }
+
+    /// <summary>
+    /// Retrieves the symbol looked up in a type context.
+    /// </summary>
+    /// <param name="syntax">The referencing syntax, if any.</param>
+    /// <param name="diagnostics">The diagnostics are added here.</param>
+    /// <returns>The <see cref="Symbol"/> retrieved in a type context.</returns>
+    public Symbol GetType(SyntaxNode? syntax, DiagnosticBag diagnostics) =>
+        throw new NotImplementedException();
 }

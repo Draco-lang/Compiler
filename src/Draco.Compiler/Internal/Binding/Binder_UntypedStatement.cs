@@ -57,8 +57,16 @@ internal partial class Binder
         return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
     }
 
-    private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
-        throw new NotImplementedException();
+    private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        // Look up the corresponding symbol defined
+        var labelSymbol = (LabelSymbol?)((LocalBinder)this).Declarations
+            .OfType<ISourceSymbol>()
+            .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
+        Debug.Assert(labelSymbol is not null);
+
+        return new UntypedLabelStatement(syntax, labelSymbol);
+    }
 
     private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {

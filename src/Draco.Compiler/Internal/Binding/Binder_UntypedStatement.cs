@@ -54,7 +54,7 @@ internal partial class Binder
     {
         var binder = this.Compilation.GetBinder(syntax);
         var value = binder.BindExpression(syntax.Value, constraints, diagnostics);
-        return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax, value));
+        return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
     }
 
     private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>

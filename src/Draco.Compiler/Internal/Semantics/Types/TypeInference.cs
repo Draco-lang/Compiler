@@ -144,7 +144,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
             // TODO: Not the right constraint, we need "Assignable"
             this.solver.Same(declaredType, valueType).ConfigureDiagnostic(diag => diag
                 .WithLocation(new Location.TreeReference(node.Value!.Value))
-                .AddRelatedInformation(
+                .WithRelatedInformation(
                     format: "the variable type vas declared to be {0} here",
                     formatArgs: declaredType,
                     location: new Location.TreeReference(node.Type!.Type)));
@@ -172,7 +172,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
         if (returnContext.Specifier is not null)
         {
             promise.ConfigureDiagnostic(diag => diag
-                .AddRelatedInformation(
+                .WithRelatedInformation(
                     format: "the return type was specified to be {0} here",
                     formatArgs: returnContext.ReturnType,
                     location: new Location.TreeReference(returnContext.Specifier.Type)));
@@ -195,7 +195,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
         if (returnContext.Specifier is not null)
         {
             promise.ConfigureDiagnostic(diag => diag
-                .AddRelatedInformation(
+                .WithRelatedInformation(
                     format: "the return type was specified to be {0} here",
                     formatArgs: returnContext.ReturnType,
                     location: new Location.TreeReference(returnContext.Specifier.Type)));
@@ -243,7 +243,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
             if (leftSymbol is ISymbol.IVariable varSymbol && varSymbol.Definition is not null)
             {
                 promise.ConfigureDiagnostic(diag => diag
-                    .AddRelatedInformation(
+                    .WithRelatedInformation(
                         format: "the variable was declared to be {0} here",
                         formatArgs: leftType,
                         location: new Location.TreeReference(varSymbol.Definition)));
@@ -287,7 +287,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
             this.solver.Same(leftType, Type.Unit)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(ExtractReturnLocation(node.Then))
-                    .AddRelatedInformation("an if-expression without an else branch must result in unit"));
+                    .WithRelatedInformation("an if-expression without an else branch must result in unit"));
             resultType = leftType;
         }
         else
@@ -297,7 +297,7 @@ internal sealed class TypeInferenceVisitor : SyntaxVisitor
             resultType = this.solver.Same(leftType, rightType)
                 .ConfigureDiagnostic(diags => diags
                     .WithLocation(ExtractReturnLocation(node.Else.Expression))
-                    .AddRelatedInformation(
+                    .WithRelatedInformation(
                         format: "the other branch was inferred to be {0} here",
                         formatArgs: new[] { leftType },
                         location: ExtractReturnLocation(node.Then)))

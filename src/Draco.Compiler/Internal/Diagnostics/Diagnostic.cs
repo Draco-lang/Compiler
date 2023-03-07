@@ -201,17 +201,17 @@ internal sealed partial class Diagnostic
             .WithTemplate(template)
             .WithFormatArgs(args);
 
-        public Builder AddRelatedInformation(DiagnosticRelatedInformation relatedInformation)
+        public Builder WithRelatedInformation(DiagnosticRelatedInformation relatedInformation)
         {
             this.RelatedInformation ??= ImmutableArray.CreateBuilder<DiagnosticRelatedInformation>();
             this.RelatedInformation.Add(relatedInformation);
             return this;
         }
 
-        public Builder AddRelatedInformation(Location location, string format, params object?[] formatArgs) => this
-            .AddRelatedInformation(new DiagnosticRelatedInformation(location, format, formatArgs));
+        public Builder WithRelatedInformation(Location location, string format, params object?[] formatArgs) => this
+            .WithRelatedInformation(new DiagnosticRelatedInformation(location, format, formatArgs));
 
-        public Builder AddRelatedInformation(string format, params object?[] formatArgs) => this
-            .AddRelatedInformation(Location.None, format, formatArgs);
+        public Builder WithRelatedInformation(string format, params object?[] formatArgs) => this
+            .WithRelatedInformation(Location.None, format, formatArgs);
     }
 }

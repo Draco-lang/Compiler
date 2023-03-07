@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -9,6 +8,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -30,7 +30,7 @@ internal partial class Binder
         InlineFunctionBodySyntax body => this.BindInlineFunctionBody(body, constraints, diagnostics),
         LabelDeclarationSyntax label => this.BindLabelStatement(label, constraints, diagnostics),
         VariableDeclarationSyntax decl => this.BindVariableDeclaration(decl, constraints, diagnostics),
-        _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
+        _ => throw new System.ArgumentOutOfRangeException(nameof(syntax)),
     };
 
     private UntypedStatement BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
@@ -77,7 +77,11 @@ internal partial class Binder
             .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
         Debug.Assert(localSymbol is not null);
 
+        var type = syntax.Type is null ? null : this.BindType(syntax.Type, constraints, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value, constraints, diagnostics);
+
+        // TODO: If type not null, constraint that variable has exact type
+        // TODO: If value not null, constraint that its assignable to variable type
 
         return new UntypedLocalDeclaration(syntax, localSymbol, value);
     }

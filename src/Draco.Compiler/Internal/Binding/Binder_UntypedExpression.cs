@@ -51,6 +51,10 @@ internal partial class Binder
         var @else = syntax.Else is null
             ? UntypedTreeFactory.UnitExpression()
             : this.BindExpression(syntax.Else.Expression, constraints, diagnostics);
+
+        // TODO: Constraint that condition is bool
+        // TODO: Constraint that then and else are compatible types for if-else branches
+
         return new UntypedIfExpression(syntax, condition, then, @else);
     }
 
@@ -60,6 +64,9 @@ internal partial class Binder
         var operatorName = UnaryOperatorSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
+
+        // TODO: Constraint that operator is callable and produces type
+
         return new UntypedUnaryExpression(syntax, operatorSymbol, operand);
     }
 
@@ -69,6 +76,9 @@ internal partial class Binder
         {
             var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+
+            // TODO: Constraint that right is assignable to left
+
             return new UntypedAssignmentExpression(syntax, left, right);
         }
         else if (SyntaxFacts.IsCompoundAssignmentOperator(syntax.Operator.Kind))
@@ -83,6 +93,9 @@ internal partial class Binder
             var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
             var left = this.BindExpression(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+
+            // TODO: Constraint that operator is applicable
+
             return new UntypedBinaryExpression(syntax, operatorSymbol, left, right);
         }
     }
@@ -102,6 +115,10 @@ internal partial class Binder
         var operatorName = ComparisonOperatorSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+
+        // TODO: We need to feed in the prev argument for the constraint
+        // TODO: Constraint that operator is applicable
+
         return new UntypedComparison(syntax, operatorSymbol, right);
     }
 }

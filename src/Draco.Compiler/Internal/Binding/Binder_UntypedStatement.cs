@@ -77,7 +77,7 @@ internal partial class Binder
             .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
         Debug.Assert(localSymbol is not null);
 
-        var type = syntax.Type is null ? null : this.BindType(syntax.Type, constraints, diagnostics);
+        var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, constraints, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value, constraints, diagnostics);
 
         // TODO: If type not null, constraint that variable has exact type

@@ -103,20 +103,28 @@ internal partial class Binder
     private UntypedExpression BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var first = this.BindExpression(syntax.Left, constraints, diagnostics);
-        var comparisons = syntax.Comparisons
-            .Select(cmp => this.BindComparison(cmp, constraints, diagnostics))
-            .ToImmutableArray();
-        return new UntypedRelationalExpression(syntax, first, comparisons);
+        var comparisons = ImmutableArray.CreateBuilder<UntypedComparison>();
+        var prev = first;
+        foreach (var comparisonSyntax in syntax.Comparisons)
+        {
+            var comparison = this.BindComparison(prev, comparisonSyntax, constraints, diagnostics);
+            prev = comparison.Next;
+            comparisons.Add(comparison);
+        }
+        return new UntypedRelationalExpression(syntax, first, comparisons.ToImmutable());
     }
 
-    private UntypedComparison BindComparison(ComparisonElementSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedComparison BindComparison(
+        UntypedExpression prev,
+        ComparisonElementSyntax syntax,
+        ConstraintBag constraints,
+        DiagnosticBag diagnostics)
     {
         // Get the comparison operator symbol
         var operatorName = ComparisonOperatorSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-        // TODO: We need to feed in the prev argument for the constraint
         // TODO: Constraint that operator is applicable
 
         return new UntypedComparison(syntax, operatorSymbol, right);

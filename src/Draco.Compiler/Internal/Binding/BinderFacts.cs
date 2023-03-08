@@ -24,6 +24,13 @@ internal static class BinderFacts
         or FunctionSymbol;
 
     /// <summary>
+    /// Checks, if a given symbol can be referenced in a type-context.
+    /// </summary>
+    /// <param name="symbol">The symbol to check.</param>
+    /// <returns>True, if <paramref name="symbol"/> can be referenced in a type-context.</returns>
+    public static bool IsTypeSymbol(Symbol symbol) => false; // TODO
+
+    /// <summary>
     /// Retrieves the first scope defining ancestor of a given syntax node.
     /// </summary>
     /// <param name="node">The node to get the scope defining ancestor of.</param>

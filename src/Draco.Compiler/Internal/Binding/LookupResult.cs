@@ -72,6 +72,8 @@ internal sealed class LookupResult
     {
         if (!this.FoundAny)
         {
+            // TODO: The wrong syntax is passed into here, this could be many parents over the original referencing syntax
+            // Lookup needs an extra parameter for the original syntax
             // TODO: Return a reference error symbol, add diagnostic
             throw new NotImplementedException();
         }

@@ -48,5 +48,5 @@ internal sealed class FunctionBinder : Binder
     }
 
     public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
-        throw new NotImplementedException();
+        this.Parent?.LookupTypeSymbol(result, name, reference);
 }

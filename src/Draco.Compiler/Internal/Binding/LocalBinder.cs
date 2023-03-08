@@ -105,8 +105,16 @@ internal sealed class LocalBinder : Binder
         }
     }
 
-    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
-        throw new NotImplementedException();
+    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference)
+    {
+        foreach (var decl in this.Declarations)
+        {
+            if (decl.Name != name) continue;
+            if (!BinderFacts.IsTypeSymbol(decl)) continue;
+            result.Add(decl);
+        }
+        if (!result.FoundAny) this.Parent?.LookupTypeSymbol(result, name, reference);
+    }
 
     private void Build()
     {

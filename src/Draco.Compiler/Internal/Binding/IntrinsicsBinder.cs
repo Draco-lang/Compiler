@@ -54,6 +54,15 @@ internal sealed class IntrinsicsBinder : Binder
         }
     }
 
-    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
-        throw new NotImplementedException();
+    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference)
+    {
+        // TODO: Copypaste from local binder and module binder
+        foreach (var decl in IntrinsicSymbols)
+        {
+            if (decl.Name != name) continue;
+            if (!BinderFacts.IsTypeSymbol(decl)) continue;
+            result.Add(decl);
+        }
+        if (!result.FoundAny) this.Parent?.LookupTypeSymbol(result, name, reference);
+    }
 }

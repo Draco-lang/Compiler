@@ -1,9 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -12,6 +12,14 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal static class Intrinsics
 {
+    // Types
+
+    private static Symbol Type(string name, System.Type underlying) => new SynthetizedTypeSymbol(new BuiltinType(underlying, name));
+
+    public static Symbol Int32 { get; } = Type("int32", typeof(int));
+
+    // Operators
+
     private static Symbol Comparison(TokenKind token) => new SynthetizedComparisonOperatorSymbol(token);
     private static Symbol Unary(TokenKind token) => new SynthetizedUnaryOperatorSymbol(token);
 

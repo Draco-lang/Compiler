@@ -28,6 +28,7 @@ internal partial class Binder
         var symbol = this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
         return symbol switch
         {
+            TypeSymbol t => t,
             _ => throw new InvalidOperationException(),
         };
     }

@@ -91,6 +91,19 @@ internal sealed class LookupResult
     /// <param name="syntax">The referencing syntax, if any.</param>
     /// <param name="diagnostics">The diagnostics are added here.</param>
     /// <returns>The <see cref="Symbol"/> retrieved in a type context.</returns>
-    public Symbol GetType(SyntaxNode? syntax, DiagnosticBag diagnostics) =>
-        throw new NotImplementedException();
+    public Symbol GetType(SyntaxNode? syntax, DiagnosticBag diagnostics)
+    {
+        if (!this.FoundAny)
+        {
+            // TODO: Return a reference error symbol, add diagnostic
+            throw new NotImplementedException();
+        }
+        if (this.Symbols.Count > 1)
+        {
+            // TODO: Can this even happen?
+            // This should have been handled by binder when constructing the scope
+            throw new NotImplementedException();
+        }
+        return this.Symbols[0];
+    }
 }

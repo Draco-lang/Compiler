@@ -19,6 +19,16 @@ internal partial class Binder
     /// <returns>The looked up type symbol for <paramref name="syntax"/>.</returns>
     protected Symbol BindType(TypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
+        NameTypeSyntax name => this.BindNameType(name, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private Symbol BindNameType(NameTypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var symbol = this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
+        return symbol switch
+        {
+            _ => throw new InvalidOperationException(),
+        };
+    }
 }

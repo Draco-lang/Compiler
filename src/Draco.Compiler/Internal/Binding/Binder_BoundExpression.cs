@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -75,7 +76,9 @@ internal partial class Binder
     private BoundExpression TypeUnaryExpression(UntypedUnaryExpression ury, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var typedOperand = this.TypeExpression(ury.Operand, constraints, diagnostics);
-        return new BoundUnaryExpression(ury.Syntax, ury.Operator, typedOperand);
+        // TODO: Resolve operator from possible overload set
+        var unaryOperator = (UnaryOperatorSymbol?)null ?? throw new NotImplementedException();
+        return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand);
     }
 
     private BoundExpression TypeRelationalExpression(UntypedRelationalExpression rel, ConstraintBag constraints, DiagnosticBag diagnostics)
@@ -90,6 +93,8 @@ internal partial class Binder
     private BoundComparison TypeComparison(UntypedComparison cmp, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var next = this.TypeExpression(cmp.Next, constraints, diagnostics);
-        return new BoundComparison(cmp.Syntax, cmp.Operator, next);
+        // TODO: Resolve comparison operator from possible overload set
+        var comparisonOperator = (ComparisonOperatorSymbol?)null ?? throw new NotImplementedException();
+        return new BoundComparison(cmp.Syntax, comparisonOperator, next);
     }
 }

@@ -58,6 +58,16 @@ internal partial class UntypedWhileExpression
     public override Type? Type => Intrinsics.Unit;
 }
 
+internal partial class UntypedAndExpression
+{
+    public override Type? Type => Intrinsics.Bool;
+}
+
+internal partial class UntypedOrExpression
+{
+    public override Type? Type => Intrinsics.Bool;
+}
+
 internal partial class UntypedLocalExpression
 {
     public override Type? Type => this.Local.Type;

@@ -37,6 +37,7 @@
   <Node Name="UntypedBlockExpression" Base="UntypedExpression">
     <Field Name="Statements" Type="ImmutableArray&lt;UntypedStatement&gt;" />
     <Field Name="Value" Type="UntypedExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="UntypedReturnExpression" Base="UntypedExpression">
@@ -47,6 +48,7 @@
     <Field Name="Condition" Type="UntypedExpression" />
     <Field Name="Then" Type="UntypedExpression" />
     <Field Name="Else" Type="UntypedExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="UntypedWhileExpression" Base="UntypedExpression">
@@ -57,22 +59,26 @@
   <Node Name="UntypedCallExpression" Base="UntypedExpression">
     <Field Name="Method" Type="UntypedExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="UntypedIndexExpression" Base="UntypedExpression">
     <Field Name="Collection" Type="UntypedExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="Symbol" />
     <Field Name="Operand" Type="UntypedExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="UntypedBinaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="Symbol" />
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="UntypedAndExpression" Base="UntypedExpression">
@@ -88,6 +94,7 @@
   <Node Name="UntypedAssignmentExpression" Base="UntypedExpression">
     <Field Name="Left" Type="UntypedLvalue" />
     <Field Name="Right" Type="UntypedExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="UntypedLocalExpression" Base="UntypedExpression">

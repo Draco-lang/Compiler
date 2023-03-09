@@ -14,9 +14,13 @@ internal static class Intrinsics
 {
     // Types
 
-    private static Symbol Type(string name, System.Type underlying) => new SynthetizedTypeSymbol(new BuiltinType(underlying, name));
+    private static Symbol Type(Type type) => type switch
+    {
+        BuiltinType builtin => new SynthetizedTypeSymbol(builtin),
+        _ => throw new System.ArgumentOutOfRangeException(nameof(type)),
+    };
 
-    public static Symbol Int32 { get; } = Type("int32", typeof(int));
+    public static Symbol Int32 { get; } = Type(Types.Intrinsics.Int32);
 
     // Operators
 

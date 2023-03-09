@@ -1,10 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.UntypedTree;
 
@@ -28,6 +28,11 @@ internal abstract partial class UntypedNode
         if (left.Length != right.Length) return false;
         return left.SequenceEqual(right);
     }
+}
+
+internal partial class UntypedExpression
+{
+    public virtual Type? Type => null;
 }
 
 internal partial class UntypedUnitExpression

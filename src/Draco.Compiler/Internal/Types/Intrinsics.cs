@@ -1,0 +1,18 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Draco.Compiler.Internal.Types;
+
+/// <summary>
+/// Types known by the compiler.
+/// </summary>
+internal static class Intrinsics
+{
+    private readonly record struct NeverTag;
+
+    public static Type Never { get; } = new BuiltinType(typeof(NeverTag), "never");
+    public static Type Unit { get; } = new BuiltinType(typeof(void), "unit");
+    public static Type Int32 { get; } = new BuiltinType(typeof(int), "int32");
+}

@@ -10,9 +10,7 @@ namespace Draco.Compiler.Internal.Types;
 /// </summary>
 internal static class Intrinsics
 {
-    private readonly record struct NeverTag;
-
-    public static Type Never { get; } = new BuiltinType(typeof(NeverTag), "never");
+    public static Type Never { get; } = NeverType.Instance;
     public static Type Unit { get; } = new BuiltinType(typeof(void), "unit");
     public static Type Int32 { get; } = new BuiltinType(typeof(int), "int32");
 }

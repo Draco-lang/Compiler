@@ -30,6 +30,8 @@ internal abstract partial class UntypedNode
     }
 }
 
+// Expressions
+
 internal partial class UntypedExpression
 {
     public virtual Type? Type => null;
@@ -38,4 +40,55 @@ internal partial class UntypedExpression
 internal partial class UntypedUnitExpression
 {
     public static UntypedUnitExpression Default { get; } = new(null);
+    public override Type? Type => Intrinsics.Unit;
+}
+
+internal partial class UntypedGotoExpression
+{
+    public override Type? Type => Intrinsics.Never;
+}
+
+internal partial class UntypedReturnExpression
+{
+    public override Type? Type => Intrinsics.Never;
+}
+
+internal partial class UntypedWhileExpression
+{
+    public override Type? Type => Intrinsics.Unit;
+}
+
+internal partial class UntypedLocalExpression
+{
+    public override Type? Type => this.Local.Type;
+}
+
+internal partial class UntypedParameterExpression
+{
+    public override Type? Type => this.Parameter.Type;
+}
+
+internal partial class UntypedLiteralExpression
+{
+    public override Type? Type => this.Value switch
+    {
+        _ => throw new System.InvalidOperationException(),
+    };
+}
+
+internal partial class UntypedRelationalExpression
+{
+    public override Type? Type => Intrinsics.Bool;
+}
+
+// Lvalues
+
+internal partial class UntypedLvalue
+{
+    public abstract Type? Type { get; }
+}
+
+internal partial class UntypedLocalLvalue
+{
+    public override Type? Type => this.Local.Type;
 }

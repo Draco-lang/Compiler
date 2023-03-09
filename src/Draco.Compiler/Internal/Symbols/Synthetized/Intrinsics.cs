@@ -21,6 +21,7 @@ internal static class Intrinsics
     };
 
     public static Symbol Int32 { get; } = Type(Types.Intrinsics.Int32);
+    public static Symbol Bool { get; } = Type(Types.Intrinsics.Bool);
 
     // Operators
 

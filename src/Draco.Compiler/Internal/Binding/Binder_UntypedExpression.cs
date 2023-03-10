@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.UntypedTree;
 
@@ -52,10 +53,10 @@ internal partial class Binder
             ? UntypedTreeFactory.UnitExpression()
             : this.BindExpression(syntax.Else.Expression, constraints, diagnostics);
 
-        // TODO: Constraint that condition is bool
-        // TODO: Constraint that then and else are compatible types for if-else branches
+        constraints.HasType(condition, Types.Intrinsics.Bool);
+        var resultType = constraints.CommonType(then, @else);
 
-        return new UntypedIfExpression(syntax, condition, then, @else);
+        return new UntypedIfExpression(syntax, condition, then, @else, resultType);
     }
 
     private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
@@ -65,9 +66,9 @@ internal partial class Binder
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
 
-        // TODO: Constraint that operator is callable and produces type
+        var resultType = constraints.CallUnaryOperator(operatorSymbol, operand);
 
-        return new UntypedUnaryExpression(syntax, operatorSymbol, operand);
+        return new UntypedUnaryExpression(syntax, operatorSymbol, operand, resultType);
     }
 
     private UntypedExpression BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
@@ -77,7 +78,7 @@ internal partial class Binder
             var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            // TODO: Constraint that right is assignable to left
+            constraints.IsAssignable(left, right);
 
             return new UntypedAssignmentExpression(syntax, left, right);
         }
@@ -94,9 +95,9 @@ internal partial class Binder
             var left = this.BindExpression(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            // TODO: Constraint that operator is applicable
+            var resultType = constraints.CallBinaryOperator(operatorSymbol, left, right);
 
-            return new UntypedBinaryExpression(syntax, operatorSymbol, left, right);
+            return new UntypedBinaryExpression(syntax, operatorSymbol, left, right, resultType);
         }
     }
 
@@ -125,7 +126,8 @@ internal partial class Binder
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-        // TODO: Constraint that operator is applicable
+        // NOTE: We know it must be bool, no need to pass it on to comparison
+        constraints.CallComparisonOperator(operatorSymbol, prev, right);
 
         return new UntypedComparison(syntax, operatorSymbol, right);
     }

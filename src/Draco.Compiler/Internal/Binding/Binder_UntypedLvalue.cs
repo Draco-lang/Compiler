@@ -30,7 +30,7 @@ internal partial class Binder
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         return symbol switch
         {
-            LocalSymbol local => new UntypedLocalLvalue(syntax, local),
+            LocalSymbol local => new UntypedLocalLvalue(syntax, local, constraints.LocalReference(local, syntax)),
             _ => throw new InvalidOperationException(),
         };
     }

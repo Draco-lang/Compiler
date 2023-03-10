@@ -35,6 +35,8 @@ internal abstract partial class UntypedNode
 internal partial class UntypedExpression
 {
     public virtual Type? Type => null;
+
+    public Type TypeRequired => this.Type ?? throw new System.InvalidOperationException();
 }
 
 internal partial class UntypedUnitExpression
@@ -68,11 +70,6 @@ internal partial class UntypedOrExpression
     public override Type? Type => Intrinsics.Bool;
 }
 
-internal partial class UntypedLocalExpression
-{
-    public override Type? Type => this.Local.Type;
-}
-
 internal partial class UntypedParameterExpression
 {
     public override Type? Type => this.Parameter.Type;
@@ -91,14 +88,14 @@ internal partial class UntypedRelationalExpression
     public override Type? Type => Intrinsics.Bool;
 }
 
+internal partial class UntypedAssignmentExpression
+{
+    public override Type? Type => this.Left.Type;
+}
+
 // Lvalues
 
 internal partial class UntypedLvalue
 {
-    public abstract Type? Type { get; }
-}
-
-internal partial class UntypedLocalLvalue
-{
-    public override Type? Type => this.Local.Type;
+    public abstract Type Type { get; }
 }

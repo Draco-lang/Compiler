@@ -85,7 +85,7 @@ internal sealed class ConstraintBag
     {
         var leftType = left.Type;
         var rightType = right.Type;
-        // Optimization: if the left and right type reference the same
+        // Optimization: if the left and right reference the same type, we know it's assignable
         if (ReferenceEquals(leftType, rightType)) return;
         // TODO
         throw new System.NotImplementedException();

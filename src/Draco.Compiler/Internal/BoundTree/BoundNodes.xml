@@ -16,6 +16,12 @@
     <Field Name="Label" Type="LabelSymbol" />
   </Node>
 
+  <!-- Used for desugaring -->
+  <Node Name="BoundConditionalGotoStatement" Base="BoundStatement">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Target" Type="LabelSymbol" />
+  </Node>
+
   <Node Name="BoundExpressionStatement" Base="BoundStatement">
     <Field Name="Expression" Type="BoundExpression" />
   </Node>
@@ -57,6 +63,8 @@
   <Node Name="BoundWhileExpression" Base="BoundExpression">
     <Field Name="Condition" Type="BoundExpression" />
     <Field Name="Then" Type="BoundExpression" />
+    <Field Name="ContinueLabel" Type="LabelSymbol" />
+    <Field Name="BreakLabel" Type="LabelSymbol" />
   </Node>
 
   <Node Name="BoundCallExpression" Base="BoundExpression">

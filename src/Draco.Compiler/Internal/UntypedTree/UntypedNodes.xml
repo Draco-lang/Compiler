@@ -55,6 +55,8 @@
   <Node Name="UntypedWhileExpression" Base="UntypedExpression">
     <Field Name="Condition" Type="UntypedExpression" />
     <Field Name="Then" Type="UntypedExpression" />
+    <Field Name="ContinueLabel" Type="LabelSymbol" />
+    <Field Name="BreakLabel" Type="LabelSymbol" />
   </Node>
 
   <Node Name="UntypedCallExpression" Base="UntypedExpression">

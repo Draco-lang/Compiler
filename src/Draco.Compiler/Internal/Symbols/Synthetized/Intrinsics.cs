@@ -25,16 +25,18 @@ internal static class Intrinsics
 
     // Operators
 
-    private static Symbol Comparison(TokenKind token) => new SynthetizedComparisonOperatorSymbol(token);
-    private static Symbol Unary(TokenKind token) => new SynthetizedUnaryOperatorSymbol(token);
+    private static ComparisonOperatorSymbol Comparison(TokenKind token) => new SynthetizedComparisonOperatorSymbol(token);
+    private static UnaryOperatorSymbol Unary(TokenKind token) => new SynthetizedUnaryOperatorSymbol(token);
 
-    public static Symbol Int32_Equal { get; } = Comparison(TokenKind.Equal);
-    public static Symbol Int32_NotEqual { get; } = Comparison(TokenKind.NotEqual);
-    public static Symbol Int32_GreaterThan { get; } = Comparison(TokenKind.GreaterThan);
-    public static Symbol Int32_LessThan { get; } = Comparison(TokenKind.LessThan);
-    public static Symbol Int32_GreaterEqual { get; } = Comparison(TokenKind.GreaterEqual);
-    public static Symbol Int32_LessEqual { get; } = Comparison(TokenKind.LessEqual);
+    public static UnaryOperatorSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot);
 
-    public static Symbol Int32_Plus { get; } = Unary(TokenKind.Plus);
-    public static Symbol Int32_Minus { get; } = Unary(TokenKind.Minus);
+    public static ComparisonOperatorSymbol Int32_Equal { get; } = Comparison(TokenKind.Equal);
+    public static ComparisonOperatorSymbol Int32_NotEqual { get; } = Comparison(TokenKind.NotEqual);
+    public static ComparisonOperatorSymbol Int32_GreaterThan { get; } = Comparison(TokenKind.GreaterThan);
+    public static ComparisonOperatorSymbol Int32_LessThan { get; } = Comparison(TokenKind.LessThan);
+    public static ComparisonOperatorSymbol Int32_GreaterEqual { get; } = Comparison(TokenKind.GreaterEqual);
+    public static ComparisonOperatorSymbol Int32_LessEqual { get; } = Comparison(TokenKind.LessEqual);
+
+    public static UnaryOperatorSymbol Int32_Plus { get; } = Unary(TokenKind.Plus);
+    public static UnaryOperatorSymbol Int32_Minus { get; } = Unary(TokenKind.Minus);
 }

@@ -8,23 +8,25 @@ using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.Symbols;
 using SemanticType = Draco.Compiler.Internal.Semantics.Types.Type;
 using IrType = Draco.Compiler.Internal.DracoIr.Type;
+using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Codegen;
 
 /// <summary>
-/// Generates Draco IR from the <see cref="Ast"/>.
+/// Generates Draco IR from the given bound tree.
 /// </summary>
-internal sealed class DracoIrCodegen : AstVisitorBase<Value>
+internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
 {
     /// <summary>
-    /// Generates IR code in the given <see cref="Assembly"/> for the given <see cref="Ast"/>.
+    /// Generates IR code in the given <see cref="Assembly"/> for the given <see cref="BoundNode"/>.
     /// </summary>
     /// <param name="assembly">The <see cref="Assembly"/> to generate the IR into.</param>
-    /// <param name="ast">The <see cref="Ast"/> to generate IR code for.</param>
-    public static void Generate(Assembly assembly, Ast ast)
+    /// <param name="node">The <see cref="BoundNode"/> to generate IR code for.</param>
+    public static void Generate(Assembly assembly, BoundNode node)
     {
         var codegen = new DracoIrCodegen(assembly);
-        codegen.Visit(ast);
+        node.Accept(codegen);
         codegen.Finish();
     }
 
@@ -32,36 +34,37 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
     private Procedure currentProcedure = null!;
     private InstructionWriter writer = null!;
 
-    private readonly Dictionary<ISymbol.IFunction, Procedure> procedures = new();
-    private readonly Dictionary<ISymbol.ILabel, Label> labels = new();
-    private readonly Dictionary<ISymbol.IParameter, Parameter> parameters = new();
-    private readonly Dictionary<ISymbol.IVariable, Local> locals = new();
-    private readonly Dictionary<ISymbol.IVariable, Global> globals = new();
+    private readonly Dictionary<FunctionSymbol, Procedure> procedures = new();
+    private readonly Dictionary<LabelSymbol, Label> labels = new();
+    private readonly Dictionary<ParameterSymbol, Parameter> parameters = new();
+    private readonly Dictionary<LocalSymbol, Local> locals = new();
+    private readonly Dictionary<GlobalSymbol, Global> globals = new();
 
     private DracoIrCodegen(Assembly assembly)
     {
         this.assembly = assembly;
     }
 
-    private IrType TranslateType(Semantics.Types.Type type)
+    private IrType TranslateType(Types.Type type)
     {
-        if (type == Semantics.Types.Type.Unit) return IrType.Unit;
-        if (type == Semantics.Types.Type.Bool) return IrType.Bool;
-        if (type == Semantics.Types.Type.Int32) return IrType.Int32;
-        if (type == Semantics.Types.Type.Float64) return IrType.Float64;
-        if (type == Semantics.Types.Type.String) return IrType.String;
+        if (ReferenceEquals(type, Types.Intrinsics.Unit)) return IrType.Unit;
+        if (ReferenceEquals(type, Types.Intrinsics.Bool)) return IrType.Bool;
+        if (ReferenceEquals(type, Types.Intrinsics.Int32)) return IrType.Int32;
+        // TODO
+        // if (type == Types.Intrinsics.Float64) return IrType.Float64;
+        // if (type == Types.Intrinsics.String) return IrType.String;
 
-        if (type is Semantics.Types.Type.Function func)
+        if (type is Types.FunctionType func)
         {
-            var args = func.Params.Select(this.TranslateType).ToImmutableArray();
-            var ret = this.TranslateType(func.Return);
+            var args = func.ParameterTypes.Select(this.TranslateType).ToImmutableArray();
+            var ret = this.TranslateType(func.ReturnType);
             return new IrType.Proc(args, ret);
         }
 
         throw new NotImplementedException();
     }
 
-    private Procedure GetProcedure(ISymbol.IFunction function)
+    private Procedure GetProcedure(FunctionSymbol function)
     {
         if (!this.procedures.TryGetValue(function, out var proc))
         {
@@ -77,7 +80,7 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return proc;
     }
 
-    private Label GetLabel(ISymbol.ILabel label)
+    private Label GetLabel(LabelSymbol label)
     {
         if (!this.labels.TryGetValue(label, out var lbl))
         {
@@ -87,9 +90,8 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return lbl;
     }
 
-    private Global GetGlobal(ISymbol.IVariable variable)
+    private Global GetGlobal(GlobalSymbol variable)
     {
-        Debug.Assert(variable.IsGlobal);
         if (!this.globals.TryGetValue(variable, out var glob))
         {
             glob = this.assembly.DefineGlobal(variable.Name, this.TranslateType(variable.Type));
@@ -110,6 +112,8 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         if (mainMethod is not null) this.assembly.EntryPoint = mainMethod;
     }
 
+    // TODO: Functions aren't visited in the classical way anymore
+    /*
     public override Value VisitFuncDecl(Ast.Decl.Func node)
     {
         // TODO: Maybe introduce context instead of this juggling?
@@ -127,7 +131,12 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         this.currentProcedure = oldProcedure;
         return this.Default;
     }
+    */
 
+    // TODO: Variables will have to be separated into globals and locals
+    // Globals aren't visited in the classical way anymore,
+    // only locals are
+    /*
     public override Value VisitVariableDecl(Ast.Decl.Variable node)
     {
         if (node.DeclarationSymbol.IsGlobal)
@@ -160,44 +169,45 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         }
         return this.Default;
     }
+    */
 
-    public override Value VisitLabelDecl(Ast.Decl.Label node)
+    public override Value VisitLabelStatement(BoundLabelStatement node)
     {
-        var label = this.GetLabel(node.LabelSymbol);
+        var label = this.GetLabel(node.Label);
         this.writer.PlaceLabel(label);
-        return this.Default;
+        return default!;
     }
 
-    public override Value VisitBlockExpr(Ast.Expr.Block node)
+    public override Value VisitBlockExpression(BoundBlockExpression node)
     {
-        foreach (var stmt in node.Statements) this.VisitStmt(stmt);
-        return this.VisitExpr(node.Value);
+        foreach (var stmt in node.Statements) stmt.Accept(this);
+        return node.Value.Accept(this);
     }
 
-    public override Value VisitIfExpr(Ast.Expr.If node)
+    public override Value VisitIfExpression(BoundIfExpression node)
     {
         var thenLabel = this.writer.DeclareLabel();
         var elseLabel = this.writer.DeclareLabel();
         var endLabel = this.writer.DeclareLabel();
 
         // Allcoate value for result
-        var result = this.currentProcedure.DefineLocal(null, this.TranslateType(node.EvaluationType));
+        var result = this.currentProcedure.DefineLocal(null, this.TranslateType(node.TypeRequired));
 
-        var condition = this.VisitExpr(node.Condition);
+        var condition = node.Condition.Accept(this);
         // In case the condition is a never type, we don't bother writing out the then and else bodies,
         // as they can not be evaluated
         // Note, that for side-effects we still emit the condition code
-        if (node.Condition.EvaluationType.Equals(SemanticType.Never_)) return Value.Unit.Instance;
+        if (ReferenceEquals(node.Condition.TypeRequired, SemanticType.Never_)) return Value.Unit.Instance;
 
         this.writer.JmpIf(condition, thenLabel, elseLabel);
 
         this.writer.PlaceLabel(thenLabel);
-        var thenValue = this.VisitExpr(node.Then);
+        var thenValue = node.Then.Accept(this);
         this.writer.Store(result, thenValue);
         this.writer.Jmp(endLabel);
 
         this.writer.PlaceLabel(elseLabel);
-        var elseValue = this.VisitExpr(node.Else);
+        var elseValue = node.Else.Accept(this);
         this.writer.Store(result, elseValue);
 
         this.writer.PlaceLabel(endLabel);
@@ -205,23 +215,23 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         return this.writer.Load(result);
     }
 
-    public override Value VisitReturnExpr(Ast.Expr.Return node)
+    public override Value VisitReturnExpression(BoundReturnExpression node)
     {
-        var value = this.VisitExpr(node.Expression);
+        var value = node.Value.Accept(this);
         this.writer.Ret(value);
         return Value.Unit.Instance;
     }
 
-    public override Value VisitGotoExpr(Ast.Expr.Goto node)
+    public override Value VisitGotoExpression(BoundGotoExpression node)
     {
         var label = this.GetLabel(node.Target);
         this.writer.Jmp(label);
         return Value.Unit.Instance;
     }
 
-    public override Value VisitUnaryExpr(Ast.Expr.Unary node)
+    public override Value VisitUnaryExpression(BoundUnaryExpression node)
     {
-        var sub = this.VisitExpr(node.Operand);
+        var sub = node.Operand.Accept(this);
         if (node.Operator == Intrinsics.Operators.Not_Bool) return this.writer.Equal(sub, new Value.Const(false));
         if (node.Operator == Intrinsics.Operators.Pos_Int32) return sub;
         if (node.Operator == Intrinsics.Operators.Neg_Int32) return this.writer.Neg(sub);
@@ -229,10 +239,10 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         throw new NotImplementedException();
     }
 
-    public override Value VisitBinaryExpr(Ast.Expr.Binary node)
+    public override Value VisitBinaryExpression(BoundBinaryExpression node)
     {
-        var left = this.VisitExpr(node.Left);
-        var right = this.VisitExpr(node.Right);
+        var left = node.Left.Accept(this);
+        var right = node.Right.Accept(this);
         if (node.Operator == Intrinsics.Operators.Add_Int32) return this.writer.Add(left, right);
         if (node.Operator == Intrinsics.Operators.Sub_Int32) return this.writer.Sub(left, right);
         if (node.Operator == Intrinsics.Operators.Mul_Int32) return this.writer.Mul(left, right);
@@ -272,18 +282,22 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         throw new NotImplementedException();
     }
 
-    public override Value VisitCallExpr(Ast.Expr.Call node)
+    public override Value VisitCallExpression(BoundCallExpression node)
     {
-        var called = this.VisitExpr(node.Called);
-        var args = node.Args.Select(this.VisitExpr).ToImmutableArray();
+        var called = node.Method.Accept(this);
+        var args = node.Arguments
+            .Select(a => a.Accept(this))
+            .ToImmutableArray();
         return this.writer.Call(called, args);
     }
 
-    public override Value VisitAssignExpr(Ast.Expr.Assign node)
+    public override Value VisitAssignmentExpression(BoundAssignmentExpression node)
     {
-        var target = this.CompileLValue(node.Target);
-        var right = this.VisitExpr(node.Value);
+        var target = this.CompileLValue(node.Left);
+        var right = node.Right.Accept(this);
         var toStore = right;
+        // TODO: Compound operator?
+        /*
         if (node.CompoundOperator is not null)
         {
             var left = this.LoadLValue(target);
@@ -293,28 +307,23 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
             else if (node.CompoundOperator == Intrinsics.Operators.Div_Int32) toStore = this.writer.Div(left, right);
             else throw new NotImplementedException();
         }
+        */
         if (target.IsGlobal()) this.writer.Store(target.AsGlobal(), toStore);
         else this.writer.Store(target.AsLocal(), toStore);
         return right;
     }
 
-    public override Value VisitReferenceExpr(Ast.Expr.Reference node) => node.Symbol switch
-    {
-        ISymbol.IParameter p => new Value.Param(this.parameters[p]),
-        ISymbol.IVariable v when v.IsGlobal => this.writer.Load(this.GetGlobal(v)),
-        ISymbol.IVariable v => this.writer.Load(this.locals[v]),
-        ISymbol.IFunction f => f.IsIntrinsic
-            ? new Value.Intrinsic(f, this.TranslateType(f.Type))
-            : new Value.Proc(this.GetProcedure(f)),
-        _ => throw new ArgumentOutOfRangeException(nameof(node)),
-    };
-    public override Value VisitUnitExpr(Ast.Expr.Unit node) => Value.Unit.Instance;
-    public override Value VisitLiteralExpr(Ast.Expr.Literal node) => new Value.Const(node.Value);
+    public override Value VisitParameterExpression(BoundParameterExpression node) => new Value.Param(this.parameters[node.Parameter]);
+    public override Value VisitLocalExpression(BoundLocalExpression node) => this.writer.Load(this.locals[node.Local]);
 
+    public override Value VisitUnitExpression(BoundUnitExpression node) => Value.Unit.Instance;
+    public override Value VisitLiteralExpression(BoundLiteralExpression node) => new Value.Const(node.Value);
+
+    // TODO
     // Should have been desugared
-    public override Value VisitStringExpr(Ast.Expr.String node) => throw new InvalidOperationException();
+    // public override Value VisitStringExpr(Ast.Expr.String node) => throw new InvalidOperationException();
 
-    public override Value VisitLValue(Ast.LValue node) => throw new InvalidOperationException("use CompileLValue instead");
+    public override Value VisitLocalLvalue(BoundLocalLvalue node) => throw new InvalidOperationException("use CompileLValue instead");
 
     private Value LoadLValue(IInstructionOperand lvalue) => lvalue switch
     {
@@ -323,14 +332,9 @@ internal sealed class DracoIrCodegen : AstVisitorBase<Value>
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };
 
-    private IInstructionOperand CompileLValue(Ast.LValue expr) => expr switch
+    private IInstructionOperand CompileLValue(BoundLvalue expr) => expr switch
     {
-        Ast.LValue.Reference reference => reference.Symbol switch
-        {
-            ISymbol.IVariable v when v.IsGlobal => this.GetGlobal(v),
-            ISymbol.IVariable v => this.locals[v],
-            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-        },
+        BoundLocalLvalue l => this.locals[l.Local],
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 }

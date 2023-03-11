@@ -11,5 +11,8 @@ namespace Draco.Compiler.Internal.Types;
 /// </summary>
 internal abstract partial class Type
 {
+    public override bool Equals(object? obj) => throw new InvalidOperationException("do not use equality for types");
+    public override int GetHashCode() => throw new InvalidOperationException("do not use equality for types");
+
     public abstract override string ToString();
 }

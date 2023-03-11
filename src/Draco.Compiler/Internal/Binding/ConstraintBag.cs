@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
@@ -14,6 +15,9 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ConstraintBag
 {
+    private readonly ConstraintSolver solver = new();
+    private readonly Dictionary<LocalSymbol, Type> localTypes = new();
+
     /// <summary>
     /// Adds a constraint that declared the local with the given type and given initial value.
     /// </summary>
@@ -21,8 +25,30 @@ internal sealed class ConstraintBag
     /// <param name="type">The declared type of the local.</param>
     /// <param name="value">The declared initial value of the local.</param>
     /// <param name="syntax">The syntax declaring the local.</param>
-    public void LocalDeclaration(LocalSymbol symbol, Symbol? type, UntypedExpression? value, VariableDeclarationSyntax syntax) =>
-        throw new System.NotImplementedException();
+    public void LocalDeclaration(LocalSymbol symbol, Symbol? type, UntypedExpression? value, VariableDeclarationSyntax syntax)
+    {
+        if (type is not null && value is not null)
+        {
+            // var x: T = v;
+            throw new System.NotImplementedException();
+        }
+        else if (type is not null)
+        {
+            // var x: T;
+            var typeSymbol = (TypeSymbol)type;
+            this.localTypes.Add(symbol, typeSymbol.Type);
+        }
+        else if (value is not null)
+        {
+            // var x = v;
+            throw new System.NotImplementedException();
+        }
+        else
+        {
+            // var x;
+            throw new System.NotImplementedException();
+        }
+    }
 
     /// <summary>
     /// References a local.
@@ -30,8 +56,7 @@ internal sealed class ConstraintBag
     /// <param name="local">The local symbol being referenced.</param>
     /// <param name="syntax">The referencing syntax.</param>
     /// <returns>The type of the local that can be used for further typing rules.</returns>
-    public Type LocalReference(LocalSymbol local, NameExpressionSyntax syntax) =>
-        throw new System.NotImplementedException();
+    public Type LocalReference(LocalSymbol local, NameExpressionSyntax syntax) => this.localTypes[local];
 
     /// <summary>
     /// Enforces a type to be a boolean for a condition.
@@ -56,8 +81,15 @@ internal sealed class ConstraintBag
     /// <param name="left">The lvalue to assign to.</param>
     /// <param name="right">The expression to assign.</param>
     /// <param name="syntax">The assignment syntax.</param>
-    public void IsAssignable(UntypedLvalue left, UntypedExpression right, BinaryExpressionSyntax syntax) =>
+    public void IsAssignable(UntypedLvalue left, UntypedExpression right, BinaryExpressionSyntax syntax)
+    {
+        var leftType = left.Type;
+        var rightType = right.Type;
+        // Optimization: if the left and right type reference the same
+        if (ReferenceEquals(leftType, rightType)) return;
+        // TODO
         throw new System.NotImplementedException();
+    }
 
     /// <summary>
     /// Constraints that an unary operator is being invoked.

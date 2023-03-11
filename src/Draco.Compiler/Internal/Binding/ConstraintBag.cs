@@ -14,13 +14,80 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ConstraintBag
 {
-    public void LocalDeclaration(LocalSymbol symbol, Symbol type, SyntaxNode syntax) => throw new System.NotImplementedException();
-    internal void LocalAssignment(LocalSymbol symbol, UntypedExpression value, SyntaxNode syntax) => throw new System.NotImplementedException();
-    public Type LocalReference(LocalSymbol local, SyntaxNode syntax) => throw new System.NotImplementedException();
-    public void HasType(UntypedExpression expr, Type type) => throw new System.NotImplementedException();
-    public void IsAssignable(UntypedLvalue left, UntypedExpression right) => throw new System.NotImplementedException();
-    public Type CommonType(UntypedExpression first, UntypedExpression second) => throw new System.NotImplementedException();
-    public Type CallUnaryOperator(Symbol @operator, UntypedExpression operand) => throw new System.NotImplementedException();
-    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right) => throw new System.NotImplementedException();
-    public Type CallComparisonOperator(Symbol @operator, UntypedExpression left, UntypedExpression right) => throw new System.NotImplementedException();
+    /// <summary>
+    /// Adds a constraint that declared the local with the given type and given initial value.
+    /// </summary>
+    /// <param name="symbol">The symbol for the local.</param>
+    /// <param name="type">The declared type of the local.</param>
+    /// <param name="value">The declared initial value of the local.</param>
+    /// <param name="syntax">The syntax declaring the local.</param>
+    public void LocalDeclaration(LocalSymbol symbol, Symbol? type, UntypedExpression? value, VariableDeclarationSyntax syntax) =>
+        throw new System.NotImplementedException();
+
+    /// <summary>
+    /// References a local.
+    /// </summary>
+    /// <param name="local">The local symbol being referenced.</param>
+    /// <param name="syntax">The referencing syntax.</param>
+    /// <returns>The type of the local that can be used for further typing rules.</returns>
+    public Type LocalReference(LocalSymbol local, NameExpressionSyntax syntax) =>
+        throw new System.NotImplementedException();
+
+    /// <summary>
+    /// Enforces a type to be a boolean for a condition.
+    /// </summary>
+    /// <param name="expr">The expression that has to be enforced.</param>
+    public void IsCondition(UntypedExpression expr) =>
+        throw new System.NotImplementedException();
+
+    /// <summary>
+    /// Enforces two expressions to have compatible types (for an if-expression for example).
+    /// </summary>
+    /// <param name="first">The first expression.</param>
+    /// <param name="second">The second expression.</param>
+    /// <returns>A type that can be used to reference the common type of <paramref name="first"/>
+    /// and <paramref name="second"/>.</returns>
+    public Type CommonType(UntypedExpression first, UntypedExpression second) =>
+        throw new System.NotImplementedException();
+
+    /// <summary>
+    /// Constraints that an expression is assignable to an lvalue.
+    /// </summary>
+    /// <param name="left">The lvalue to assign to.</param>
+    /// <param name="right">The expression to assign.</param>
+    /// <param name="syntax">The assignment syntax.</param>
+    public void IsAssignable(UntypedLvalue left, UntypedExpression right, BinaryExpressionSyntax syntax) =>
+        throw new System.NotImplementedException();
+
+    /// <summary>
+    /// Constraints that an unary operator is being invoked.
+    /// </summary>
+    /// <param name="operator">The operator symbol.</param>
+    /// <param name="operand">The operand.</param>
+    /// <param name="syntax">The syntax invoking the operator.</param>
+    /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
+    public Type CallUnaryOperator(Symbol @operator, UntypedExpression operand, UnaryExpressionSyntax syntax) =>
+        throw new System.NotImplementedException();
+
+    /// <summary>
+    /// Constraints that a binary operator is being invoked.
+    /// </summary>
+    /// <param name="operator">The operator symbol.</param>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <param name="syntax">The syntax invoking the operator.</param>
+    /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
+    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) =>
+        throw new System.NotImplementedException();
+
+    /// <summary>
+    /// Constraints that a comparison operator is being invoked.
+    /// </summary>
+    /// <param name="operator">The operator symbol.</param>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <param name="syntax">The syntax invoking the operator.</param>
+    /// <returns>The result of the comparison, the boolean type.</returns>
+    public Type CallComparisonOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, ComparisonElementSyntax syntax) =>
+        throw new System.NotImplementedException();
 }

@@ -53,7 +53,7 @@ internal partial class Binder
             ? UntypedTreeFactory.UnitExpression()
             : this.BindExpression(syntax.Else.Expression, constraints, diagnostics);
 
-        constraints.HasType(condition, Types.Intrinsics.Bool);
+        constraints.IsCondition(condition);
         var resultType = constraints.CommonType(then, @else);
 
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
@@ -66,7 +66,7 @@ internal partial class Binder
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
 
-        var resultType = constraints.CallUnaryOperator(operatorSymbol, operand);
+        var resultType = constraints.CallUnaryOperator(operatorSymbol, operand, syntax);
 
         return new UntypedUnaryExpression(syntax, operatorSymbol, operand, resultType);
     }
@@ -78,7 +78,7 @@ internal partial class Binder
             var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            constraints.IsAssignable(left, right);
+            constraints.IsAssignable(left, right, syntax);
 
             return new UntypedAssignmentExpression(syntax, left, right);
         }
@@ -95,7 +95,7 @@ internal partial class Binder
             var left = this.BindExpression(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            var resultType = constraints.CallBinaryOperator(operatorSymbol, left, right);
+            var resultType = constraints.CallBinaryOperator(operatorSymbol, left, right, syntax);
 
             return new UntypedBinaryExpression(syntax, operatorSymbol, left, right, resultType);
         }
@@ -127,7 +127,7 @@ internal partial class Binder
         var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
         // NOTE: We know it must be bool, no need to pass it on to comparison
-        constraints.CallComparisonOperator(operatorSymbol, prev, right);
+        constraints.CallComparisonOperator(operatorSymbol, prev, right, syntax);
 
         return new UntypedComparison(syntax, operatorSymbol, right);
     }

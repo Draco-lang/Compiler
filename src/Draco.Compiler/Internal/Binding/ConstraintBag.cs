@@ -14,11 +14,13 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ConstraintBag
 {
-    public Type LocalReference(LocalSymbol local, NameExpressionSyntax syntax) => throw new System.NotImplementedException();
-    public void HasType(UntypedExpression condition, Types.Type @bool) => throw new System.NotImplementedException();
+    public void LocalDeclaration(LocalSymbol symbol, Symbol type, SyntaxNode syntax) => throw new System.NotImplementedException();
+    internal void LocalAssignment(LocalSymbol symbol, UntypedExpression value, SyntaxNode syntax) => throw new System.NotImplementedException();
+    public Type LocalReference(LocalSymbol local, SyntaxNode syntax) => throw new System.NotImplementedException();
+    public void HasType(UntypedExpression expr, Type type) => throw new System.NotImplementedException();
     public void IsAssignable(UntypedLvalue left, UntypedExpression right) => throw new System.NotImplementedException();
-    public Type CommonType(UntypedExpression then, UntypedExpression @else) => throw new System.NotImplementedException();
-    public Type CallUnaryOperator(Symbol operatorSymbol, UntypedExpression operand) => throw new System.NotImplementedException();
-    public Type CallBinaryOperator(Symbol operatorSymbol, UntypedExpression left, UntypedExpression right) => throw new System.NotImplementedException();
-    public Type CallComparisonOperator(Symbol operatorSymbol, UntypedExpression prev, UntypedExpression right) => throw new System.NotImplementedException();
+    public Type CommonType(UntypedExpression first, UntypedExpression second) => throw new System.NotImplementedException();
+    public Type CallUnaryOperator(Symbol @operator, UntypedExpression operand) => throw new System.NotImplementedException();
+    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right) => throw new System.NotImplementedException();
+    public Type CallComparisonOperator(Symbol @operator, UntypedExpression left, UntypedExpression right) => throw new System.NotImplementedException();
 }

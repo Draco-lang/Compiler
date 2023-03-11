@@ -80,8 +80,8 @@ internal partial class Binder
         var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, constraints, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value, constraints, diagnostics);
 
-        // TODO: If type not null, constraint that variable has exact type
-        // TODO: If value not null, constraint that its assignable to variable type
+        if (type is not null) constraints.LocalDeclaration(localSymbol, type, syntax);
+        if (value is not null) constraints.LocalAssignment(localSymbol, value, syntax);
 
         return new UntypedLocalDeclaration(syntax, localSymbol, value);
     }

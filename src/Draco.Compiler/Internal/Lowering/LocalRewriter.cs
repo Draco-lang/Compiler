@@ -44,7 +44,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
                         operand: condition),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
-                ExpressionStatement(GotoExpression(node.ContinueLabel))),
+                ExpressionStatement(GotoExpression(node.ContinueLabel)),
+                LabelStatement(node.BreakLabel)),
             value: BoundUnitExpression.Default);
     }
 }

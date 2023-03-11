@@ -13,6 +13,8 @@ namespace Draco.Compiler.Internal.Types;
 /// </summary>
 internal sealed class TypeVariable : Type
 {
+    public override bool IsTypeVariable => true;
+
     private readonly int index;
 
     public TypeVariable(int index)

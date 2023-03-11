@@ -12,6 +12,9 @@
 
   <!-- Statements -->
 
+  <Node Name="BoundNoOpStatement" Base="BoundStatement">
+  </Node>
+
   <Node Name="BoundLabelStatement" Base="BoundStatement">
     <Field Name="Label" Type="LabelSymbol" />
   </Node>

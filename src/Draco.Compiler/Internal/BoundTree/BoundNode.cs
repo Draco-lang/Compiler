@@ -30,6 +30,11 @@ internal abstract partial class BoundNode
     }
 }
 
+internal partial class BoundNoOpStatement
+{
+    public static BoundNoOpStatement Default { get; } = new(null);
+}
+
 internal partial class BoundUnitExpression
 {
     public static BoundUnitExpression Default { get; } = new(null);

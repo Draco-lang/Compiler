@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
-using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 
 /// <summary>
-/// Translates an <see cref="Ast"/> to a <see cref="AstToDataFlowGraph"/>.
+/// Translates a bound tree to a <see cref="DataFlowGraph"/>.
 /// </summary>
-internal sealed class AstToDataFlowGraph
+internal sealed class BoundTreeToDataFlowGraph
 {
-    public static DataFlowGraph ToDataFlowGraph(Ast ast)
+    public static DataFlowGraph ToDataFlowGraph(BoundNode node)
     {
-        var converter = new AstToDataFlowGraph();
-        converter.Translate(ast);
+        var converter = new BoundTreeToDataFlowGraph();
+        converter.Translate(node);
         converter.FillNullNodes();
         return new(
             Entry: converter.First,
@@ -25,26 +25,28 @@ internal sealed class AstToDataFlowGraph
 
     private DataFlowOperation First => this.first;
 
-    private readonly Dictionary<ISymbol.ILabel, DataFlowOperation> labels = new();
+    private readonly Dictionary<LabelSymbol, DataFlowOperation> labels = new();
     private readonly ImmutableArray<DataFlowOperation>.Builder exits = ImmutableArray.CreateBuilder<DataFlowOperation>();
     private readonly DataFlowOperation first = new(NoOp());
     private DataFlowOperation? prev;
 
-    private AstToDataFlowGraph()
+    private BoundTreeToDataFlowGraph()
     {
         this.prev = this.first;
     }
 
-    private static Ast NoOp() => new Ast.Stmt.NoOp(SyntaxNode: null);
+    private static BoundNode NoOp() => new BoundNoOpStatement(syntax: null);
 
-    private DataFlowOperation GetLabel(ISymbol.ILabel label)
+    private DataFlowOperation GetLabel(LabelSymbol label)
     {
         if (!this.labels.TryGetValue(label, out var op))
         {
             // NOTE: AST node filled out later
             // For error labels, we jump to the beginning for safety
             // This pervents most flow-errors to cascade
-            op = label.IsError ? this.first : new(null!);
+            // TODO: Unhandled
+            // op = label.IsError ? this.first : new(null!);
+            op = new(null!);
             this.labels.Add(label, op);
         }
         return op;
@@ -66,84 +68,90 @@ internal sealed class AstToDataFlowGraph
         return next;
     }
 
-    private DataFlowOperation Append(Ast node) => this.Append(new DataFlowOperation(node));
+    private DataFlowOperation Append(BoundNode node) => this.Append(new DataFlowOperation(node));
 
     private void Disjoin() => this.prev = null;
 
-    private DataFlowOperation? Translate(Ast node) => node switch
+    private DataFlowOperation? Translate(BoundNode node) => node switch
     {
-        Ast.Stmt.Expr n => this.Translate(n.Expression),
-        Ast.Stmt.Decl n => this.Translate(n.Declaration),
-        Ast.Decl.Variable n => this.Translate(n),
-        Ast.Decl.Label n => this.Translate(n),
-        Ast.Expr.Return n => this.Translate(n),
-        Ast.Expr.Goto n => this.Translate(n),
-        Ast.Expr.Block n => this.Translate(n),
-        Ast.Expr.If n => this.Translate(n),
-        Ast.Expr.While n => this.Translate(n),
-        Ast.Expr.Unary n => this.Translate(n),
-        Ast.Expr.Binary n => this.Translate(n),
-        Ast.Expr.Assign n => this.Translate(n),
-        Ast.Expr.String n => this.Translate(n),
-        Ast.Expr.And n => this.Translate(n),
-        Ast.Expr.Or n => this.Translate(n),
-        Ast.Expr.Relational n => this.Translate(n),
-        Ast.Expr.Call n => this.Translate(n),
-        Ast.Expr.Reference n => this.Append(n),
-        Ast.LValue.Reference n => this.Append(n),
-        Ast.StringPart.Interpolation i => this.Translate(i.Expression),
+        BoundExpressionStatement n => this.Translate(n.Expression),
+        BoundLocalDeclaration n => this.Translate(n),
+        BoundLabelStatement n => this.Translate(n),
+        BoundReturnExpression n => this.Translate(n),
+        BoundGotoExpression n => this.Translate(n),
+        BoundBlockExpression n => this.Translate(n),
+        BoundIfExpression n => this.Translate(n),
+        BoundWhileExpression n => this.Translate(n),
+        BoundUnaryExpression n => this.Translate(n),
+        BoundBinaryExpression n => this.Translate(n),
+        BoundAssignmentExpression n => this.Translate(n),
+        // TODO: String expr
+        // TODO: String interpolation
+        BoundAndExpression n => this.Translate(n),
+        BoundOrExpression n => this.Translate(n),
+        BoundRelationalExpression n => this.Translate(n),
+        BoundCallExpression n => this.Translate(n),
+        BoundLocalExpression n => this.Append(n),
+        BoundParameterExpression n => this.Append(n),
+        BoundLocalLvalue n => this.Append(n),
         // For a complete flow, even inert nodes are added
-        Ast.Stmt.Unexpected or Ast.Expr.Unexpected or Ast.Expr.Literal => this.Append(node),
-        Ast.LValue.Unexpected or Ast.LValue.Illegal => this.Append(node),
+        // TODO: What do we do here?
+        // Ast.Stmt.Unexpected or Ast.Expr.Unexpected or Ast.Expr.Literal => this.Append(node),
+        // Ast.LValue.Unexpected or Ast.LValue.Illegal => this.Append(node),
+        // ==============
         // To avoid reference-equality problems
-        Ast.Expr.Unit => this.Append(NoOp()),
+        BoundUnitExpression => this.Append(NoOp()),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 
-    private DataFlowOperation? Translate(Ast.Decl.Variable node)
+    private DataFlowOperation? Translate(BoundLocalDeclaration node)
     {
         if (node.Value is not null) this.Translate(node.Value);
         return this.Append(node);
     }
 
-    private DataFlowOperation? Translate(Ast.Decl.Label node)
+    private DataFlowOperation? Translate(BoundLabelStatement node)
     {
         // Connect up
-        var op = this.GetLabel(node.LabelSymbol);
+        var op = this.GetLabel(node.Label);
         op.Node = node;
         // No new operation, already got one
         return this.Append(op);
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.Unary node)
+    private DataFlowOperation? Translate(BoundUnaryExpression node)
     {
         this.Translate(node.Operand);
         return this.Append(node);
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.Binary node)
+    private DataFlowOperation? Translate(BoundBinaryExpression node)
     {
         this.Translate(node.Left);
         this.Translate(node.Right);
         return this.Append(node);
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.Assign node)
+    private DataFlowOperation? Translate(BoundAssignmentExpression node)
     {
-        this.Translate(node.Value);
-        this.Translate(node.Target);
+        // NOTE: Reverse order, it's right-associative
+        this.Translate(node.Right);
+        this.Translate(node.Left);
         return this.Append(node);
     }
 
+    // TODO: Implement
+    /*
     private DataFlowOperation? Translate(Ast.Expr.String node)
     {
         foreach (var part in node.Parts.OfType<Ast.StringPart.Interpolation>()) this.Translate(part);
         return this.Append(node);
     }
+    */
 
-    private DataFlowOperation? Translate(Ast.Expr.Return node)
+    private DataFlowOperation? Translate(BoundReturnExpression node)
     {
-        this.Translate(node.Expression);
+        this.Translate(node.Value);
         var op = this.Append(node);
         this.exits.Add(op);
 
@@ -152,7 +160,7 @@ internal sealed class AstToDataFlowGraph
         return null;
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.Goto node)
+    private DataFlowOperation? Translate(BoundGotoExpression node)
     {
         // Join back to the referenced label
         var label = this.GetLabel(node.Target);
@@ -164,14 +172,14 @@ internal sealed class AstToDataFlowGraph
         return null;
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.Block node)
+    private DataFlowOperation? Translate(BoundBlockExpression node)
     {
         foreach (var stmt in node.Statements) this.Translate(stmt);
         this.Translate(node.Value);
         return null;
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.If node)
+    private DataFlowOperation? Translate(BoundIfExpression node)
     {
         this.Translate(node.Condition);
 
@@ -197,7 +205,7 @@ internal sealed class AstToDataFlowGraph
         return null;
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.While node)
+    private DataFlowOperation? Translate(BoundWhileExpression node)
     {
         // Connect up continue label
         var continueOp = this.GetLabel(node.ContinueLabel);
@@ -208,7 +216,7 @@ internal sealed class AstToDataFlowGraph
         var afterCondition = this.prev;
 
         // The first alternative is that after the condition the body evaluates then jumps back
-        this.Translate(node.Expression);
+        this.Translate(node.Then);
         this.Append(continueOp);
 
         // Break label
@@ -221,7 +229,7 @@ internal sealed class AstToDataFlowGraph
         return null;
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.And node)
+    private DataFlowOperation? Translate(BoundAndExpression node)
     {
         // First one always translates
         this.Translate(node.Left);
@@ -240,7 +248,7 @@ internal sealed class AstToDataFlowGraph
         return this.Append(node);
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.Or node)
+    private DataFlowOperation? Translate(BoundOrExpression node)
     {
         // First one always translates
         this.Translate(node.Left);
@@ -259,19 +267,19 @@ internal sealed class AstToDataFlowGraph
         return this.Append(node);
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.Relational node)
+    private DataFlowOperation? Translate(BoundRelationalExpression node)
     {
         // The first 2 are guaranteed to evaluate, the rest are optional
         // First, chain the first 2
-        this.Translate(node.Left);
-        this.Translate(node.Comparisons[0].Right);
+        this.Translate(node.First);
+        this.Translate(node.Comparisons[0].Next);
         var afterLast = this.prev;
 
         // Allocate a no-op for the end
         var noOp = this.Append(NoOp());
 
         // Now each one is optional
-        foreach (var element in node.Comparisons.Skip(1).Select(c => c.Right))
+        foreach (var element in node.Comparisons.Skip(1).Select(c => c.Next))
         {
             this.prev = afterLast;
             this.Translate(element);
@@ -282,10 +290,10 @@ internal sealed class AstToDataFlowGraph
         return this.Append(node);
     }
 
-    private DataFlowOperation? Translate(Ast.Expr.Call node)
+    private DataFlowOperation? Translate(BoundCallExpression node)
     {
-        this.Translate(node.Called);
-        foreach (var arg in node.Args) this.Translate(arg);
+        this.Translate(node.Method);
+        foreach (var arg in node.Arguments) this.Translate(arg);
         return this.Append(node);
     }
 }

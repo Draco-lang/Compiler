@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
@@ -49,11 +50,11 @@ internal static class DataFlowAnalysis
         return ops.Select(selector).Aggregate(lattice.Meet);
     }
 
-    public static ImmutableDictionary<Ast, DataFlowInfo<TElement>> Analyze<TElement>(
+    public static ImmutableDictionary<BoundNode, DataFlowInfo<TElement>> Analyze<TElement>(
         ILattice<TElement> lattice,
         DataFlowGraph graph)
     {
-        var result = ImmutableDictionary.CreateBuilder<Ast, DataFlowInfo<TElement>>(ReferenceEqualityComparer.Instance);
+        var result = ImmutableDictionary.CreateBuilder<BoundNode, DataFlowInfo<TElement>>(ReferenceEqualityComparer.Instance);
 
         if (lattice.Direction == FlowDirection.Forward)
         {

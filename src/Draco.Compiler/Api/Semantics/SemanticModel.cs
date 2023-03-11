@@ -56,11 +56,13 @@ public sealed class SemanticModel
         var ast = SyntaxTreeToAst.ToAst(this.db, this.Tree.Root);
 
         IEnumerable<Diagnostic> GetAstErrors() => ast!.GetAllDiagnostics();
-        IEnumerable<Diagnostic> GetDataFlowErrors() => DataFlowPasses.Analyze(ast);
+        // TODO: DataFlow
+        //IEnumerable<Diagnostic> GetDataFlowErrors() => DataFlowPasses.Analyze(ast);
 
         return GetSymbolAndTypeErrors(this.Tree.Root)
             .Concat(GetAstErrors())
-            .Concat(GetDataFlowErrors());
+            //.Concat(GetDataFlowErrors())
+            ;
     }
 
     // NOTE: These OrNull functions are not too pretty

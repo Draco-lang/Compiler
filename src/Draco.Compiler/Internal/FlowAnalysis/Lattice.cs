@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
 namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
@@ -56,5 +57,5 @@ internal interface ILattice<TElement> : IEqualityComparer<TElement>
     /// </summary>
     /// <param name="node">The node that is being transfered through.</param>
     /// <returns>The lattice element that is produced by transfering <see cref="Identity"/> over <paramref name="node"/>.</returns>
-    public TElement Transfer(Ast node);
+    public TElement Transfer(BoundNode node);
 }

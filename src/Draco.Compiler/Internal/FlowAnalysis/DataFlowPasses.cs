@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 using Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
 using Draco.Compiler.Internal.Semantics.Symbols;
@@ -15,17 +16,17 @@ namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
 /// <summary>
 /// Accumulates all data-flow passes as one.
 /// </summary>
-internal sealed class DataFlowPasses : AstVisitorBase<Unit>
+internal sealed class DataFlowPasses : BoundTreeVisitor
 {
     /// <summary>
-    /// Performs all DFA analysis on the given AST.
+    /// Performs all DFA analysis on the given bound tree.
     /// </summary>
-    /// <param name="ast">The AST to perform the analysis on.</param>
+    /// <param name="node">The bound tree to perform the analysis on.</param>
     /// <returns>The list of <see cref="Diagnostic"/>s produced during analysis.</returns>
-    public static ImmutableArray<Diagnostic> Analyze(Ast ast)
+    public static ImmutableArray<Diagnostic> Analyze(BoundNode node)
     {
         var passes = new DataFlowPasses();
-        passes.Visit(ast);
+        node.Accept(passes);
         return passes.diagnostics.ToImmutable();
     }
 
@@ -35,58 +36,57 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
     {
     }
 
-    public override Unit VisitVariableDecl(Ast.Decl.Variable node)
+    public override void VisitLocalDeclaration(BoundLocalDeclaration node)
     {
-        base.VisitVariableDecl(node);
-
+        base.VisitLocalDeclaration(node);
         this.CheckIfValIsInitialized(node);
-
-        return this.Default;
     }
 
-    public override Unit VisitAssignExpr(Ast.Expr.Assign node)
+    public override void VisitAssignmentExpression(BoundAssignmentExpression node)
     {
-        base.VisitAssignExpr(node);
-
-        this.CheckIsValIsNotAssigned(node);
-
-        return this.Default;
+        base.VisitAssignmentExpression(node);
+        this.CheckIfValIsNotAssigned(node);
     }
 
+    // TODO: We'll need to make this a recursor on a module symbol
+    // instead of just being a bound tree visitor
+    // Since functions are not considered in visitation anymore
+    /*
     public override Unit VisitFuncDecl(Ast.Decl.Func node)
     {
         base.VisitFuncDecl(node);
 
-        var graph = AstToDataFlowGraph.ToDataFlowGraph(node.Body);
+        var graph = BoundTreeToDataFlowGraph.ToDataFlowGraph(node.Body);
 
         this.CheckReturnsOnAllPaths(node, graph);
         this.CheckIfOnlyInitializedVariablesAreUsed(graph);
 
         return this.Default;
     }
+    */
 
-    private void CheckIfValIsInitialized(Ast.Decl.Variable node)
+    private void CheckIfValIsInitialized(BoundLocalDeclaration node)
     {
-        if (node.DeclarationSymbol.IsMutable) return;
+        if (node.Local.IsMutable) return;
         if (node.Value is not null) return;
 
         // Not initialized
         this.diagnostics.Add(Diagnostic.Create(
             template: DataflowErrors.ImmutableVariableMustBeInitialized,
-            location: node.SyntaxNode?.Location,
-            formatArgs: node.DeclarationSymbol.Name));
+            location: node.Syntax?.Location,
+            formatArgs: node.Local.Name));
     }
 
-    private void CheckIsValIsNotAssigned(Ast.Expr.Assign node)
+    private void CheckIfValIsNotAssigned(BoundAssignmentExpression node)
     {
-        if (node.Target is not Ast.LValue.Reference reference) return;
-        if (reference.Symbol.IsMutable) return;
+        if (node.Left is not BoundLocalLvalue reference) return;
+        if (reference.Local.IsMutable) return;
 
         // Immutable and modified
         this.diagnostics.Add(Diagnostic.Create(
             template: DataflowErrors.ImmutableVariableCanNotBeAssignedTo,
-            location: node.SyntaxNode?.Location,
-            formatArgs: reference.Symbol.Name));
+            location: node.Syntax?.Location,
+            formatArgs: reference.Local.Name));
     }
 
     private void CheckReturnsOnAllPaths(Ast.Decl.Func node, DataFlowGraph graph)
@@ -94,7 +94,7 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         // We check if all operations without a successor are a return
         var allReturns = graph.Operations
             .Where(op => op.Successors.Count == 0)
-            .All(op => op.Node is Ast.Expr.Return);
+            .All(op => op.Node is BoundReturnExpression);
         if (!allReturns)
         {
             // Does not return on all paths
@@ -113,18 +113,16 @@ internal sealed class DataFlowPasses : AstVisitorBase<Unit>
         foreach (var (node, info) in infos)
         {
             // We only care about references that reference local variables
-            if (node is not Ast.Expr.Reference r) continue;
-            if (r.Symbol.IsError) continue;
-            if (r.Symbol is not ISymbol.IVariable var) continue;
-            if (var.IsGlobal || var is ISymbol.IParameter) continue;
+            if (node is not BoundLocalExpression localExpr) continue;
 
-            if (info.In[var] != DefiniteAssignment.Status.Initialized)
+            var local = localExpr.Local;
+            if (info.In[local] != DefiniteAssignment.Status.Initialized)
             {
                 // Use of uninitialized variable
                 this.diagnostics.Add(Diagnostic.Create(
                     template: DataflowErrors.VariableUsedBeforeInit,
-                    location: node.SyntaxNode?.Location,
-                    formatArgs: var.Name));
+                    location: node.Syntax?.Location,
+                    formatArgs: local.Name));
             }
         }
     }

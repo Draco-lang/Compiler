@@ -35,6 +35,7 @@
   </Node>
 
   <Node Name="UntypedBlockExpression" Base="UntypedExpression">
+    <Field Name="Locals" Type="ImmutableArray&lt;LocalSymbol&gt;" />
     <Field Name="Statements" Type="ImmutableArray&lt;UntypedStatement&gt;" />
     <Field Name="Value" Type="UntypedExpression" />
     <Field Name="Type" Type="Type" Override="true" />

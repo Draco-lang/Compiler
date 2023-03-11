@@ -55,7 +55,7 @@ internal partial class Binder
             .Select(s => this.TypeStatement(s, constraints, diagnostics))
             .ToImmutableArray();
         var typedValue = this.TypeExpression(block.Value, constraints, diagnostics);
-        return new BoundBlockExpression(block.Syntax, typedStatements, typedValue);
+        return new BoundBlockExpression(block.Syntax, block.Locals, typedStatements, typedValue);
     }
 
     private BoundExpression TypeIfExpression(UntypedIfExpression @if, ConstraintBag constraints, DiagnosticBag diagnostics)

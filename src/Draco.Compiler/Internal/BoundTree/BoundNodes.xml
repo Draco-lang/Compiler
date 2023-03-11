@@ -39,6 +39,7 @@
   </Node>
 
   <Node Name="BoundBlockExpression" Base="BoundExpression">
+    <Field Name="Locals" Type="ImmutableArray&lt;LocalSymbol&gt;" />
     <Field Name="Statements" Type="ImmutableArray&lt;BoundStatement&gt;" />
     <Field Name="Value" Type="BoundExpression" />
   </Node>

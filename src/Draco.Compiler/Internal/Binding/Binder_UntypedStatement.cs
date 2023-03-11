@@ -42,12 +42,16 @@ internal partial class Binder
     private UntypedStatement BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var binder = this.Compilation.GetBinder(syntax);
+        var locals = ((LocalBinder)binder).LocalDeclarations
+            .Select(decl => decl.Symbol)
+            .Cast<LocalSymbol>()
+            .ToImmutableArray();
         var statements = syntax.Statements
             .Select(s => binder.BindStatement(s, constraints, diagnostics))
             .ToImmutableArray();
         return new UntypedExpressionStatement(
             syntax,
-            new UntypedBlockExpression(syntax, statements, UntypedUnitExpression.Default, Types.Intrinsics.Unit));
+            new UntypedBlockExpression(syntax, locals, statements, UntypedUnitExpression.Default, Types.Intrinsics.Unit));
     }
 
     private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)

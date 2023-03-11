@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Types;
 /// <summary>
 /// Represents the type of a callable function.
 /// </summary>
-internal sealed class FunctionType
+internal sealed class FunctionType : Type
 {
     /// <summary>
     /// The parameter types of the function.

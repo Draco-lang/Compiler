@@ -19,11 +19,7 @@ internal sealed class RandomTextGenerator : IInputGenerator<string>
         this.random = new Random(seed);
     }
 
-    public string NextExpoch()
-    {
-        int length = this.random.Next(this.maxLength);
-        return new string(Enumerable.Range(0, length).Select(x => this.charset[this.random.Next(this.charset.Length)]).ToArray());
-    }
+    public string NextExpoch() => new string(Enumerable.Range(0, this.random.Next(this.maxLength)).Select(x => this.charset[this.random.Next(this.charset.Length)]).ToArray());
 
     public string NextMutation() => throw new NotImplementedException();
 }

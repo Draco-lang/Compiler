@@ -6,7 +6,6 @@ namespace Draco.Fuzzer;
 
 internal static class Program
 {
-    //TODO: test!!!
     internal static int Main(string[] args) => ConfigureCommands().Invoke(args);
 
     private static RootCommand ConfigureCommands()

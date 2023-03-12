@@ -2,11 +2,11 @@ using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Fuzzer;
 
-internal class TokenArray
+internal sealed class TokenArray
 {
     private readonly IEnumerable<SyntaxToken> tokens;
 
-    public IEnumerable<SyntaxToken> GetTokens() => this.tokens;
+    public ReadOnlyMemory<SyntaxToken> GetReadOnlyMemoryTokens() => new ReadOnlyMemory<SyntaxToken>(this.tokens.ToArray());
 
     public TokenArray(IEnumerable<SyntaxToken> tokens)
     {

@@ -627,11 +627,6 @@ internal sealed class Lexer
             if (this.Peek(offset + untilEndOffset) == '\0')
             {
                 this.valueBuilder.Append($"\\{new string('#', untilEndOffset - 1)}");
-                this.AddError(
-                    template: SyntaxErrors.EmptyEscapeSequence,
-                    offset: offset,
-                    width: untilEndOffset);
-
                 offset += untilEndOffset;
 
                 this.tokenBuilder

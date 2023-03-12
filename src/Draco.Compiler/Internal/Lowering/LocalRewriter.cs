@@ -7,12 +7,9 @@ using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
-using Draco.Compiler.Internal.Semantics.Types;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
-using static Draco.Compiler.Internal.Semantics.AbstractSyntax.Ast.Expr;
 
 namespace Draco.Compiler.Internal.Lowering;
 

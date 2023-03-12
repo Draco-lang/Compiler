@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
-using Draco.Compiler.Internal.Semantics.Symbols;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
+namespace Draco.Compiler.Internal.FlowAnalysis.Lattices;
 
 /// <summary>
 /// A lattice for checking if all variable uses happen after an assignment.

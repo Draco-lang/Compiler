@@ -4,12 +4,11 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Internal.DracoIr;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
-using Draco.Compiler.Internal.Semantics.Symbols;
-using SemanticType = Draco.Compiler.Internal.Semantics.Types.Type;
-using IrType = Draco.Compiler.Internal.DracoIr.Type;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Types;
+using IrType = Draco.Compiler.Internal.DracoIr.Type;
+using IntrinsicSymbols = Draco.Compiler.Internal.Symbols.Synthetized.Intrinsics;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -197,7 +196,7 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         // In case the condition is a never type, we don't bother writing out the then and else bodies,
         // as they can not be evaluated
         // Note, that for side-effects we still emit the condition code
-        if (ReferenceEquals(node.Condition.TypeRequired, SemanticType.Never_)) return Value.Unit.Instance;
+        if (ReferenceEquals(node.Condition.TypeRequired, NeverType.Instance)) return Value.Unit.Instance;
 
         this.writer.JmpIf(condition, thenLabel, elseLabel);
 
@@ -232,9 +231,9 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
     public override Value VisitUnaryExpression(BoundUnaryExpression node)
     {
         var sub = node.Operand.Accept(this);
-        if (node.Operator == Intrinsics.Operators.Not_Bool) return this.writer.Equal(sub, new Value.Const(false));
-        if (node.Operator == Intrinsics.Operators.Pos_Int32) return sub;
-        if (node.Operator == Intrinsics.Operators.Neg_Int32) return this.writer.Neg(sub);
+        if (node.Operator == IntrinsicSymbols.Bool_Not) return this.writer.Equal(sub, new Value.Const(false));
+        if (node.Operator == IntrinsicSymbols.Int32_Plus) return sub;
+        if (node.Operator == IntrinsicSymbols.Int32_Minus) return this.writer.Neg(sub);
         // TODO
         throw new NotImplementedException();
     }
@@ -243,12 +242,14 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
     {
         var left = node.Left.Accept(this);
         var right = node.Right.Accept(this);
-        if (node.Operator == Intrinsics.Operators.Add_Int32) return this.writer.Add(left, right);
-        if (node.Operator == Intrinsics.Operators.Sub_Int32) return this.writer.Sub(left, right);
-        if (node.Operator == Intrinsics.Operators.Mul_Int32) return this.writer.Mul(left, right);
-        if (node.Operator == Intrinsics.Operators.Div_Int32) return this.writer.Div(left, right);
-        if (node.Operator == Intrinsics.Operators.Rem_Int32) return this.writer.Rem(left, right);
-        if (node.Operator == Intrinsics.Operators.Mod_Int32)
+        // TODO
+        /*
+        if (node.Operator == IntrinsicSymbols.Int32_Add) return this.writer.Add(left, right);
+        if (node.Operator == IntrinsicSymbols.Int32_Sub) return this.writer.Sub(left, right);
+        if (node.Operator == IntrinsicSymbols.Int32_Mul) return this.writer.Mul(left, right);
+        if (node.Operator == IntrinsicSymbols.Int32_Div) return this.writer.Div(left, right);
+        if (node.Operator == IntrinsicSymbols.Int32_Rem) return this.writer.Rem(left, right);
+        if (node.Operator == IntrinsicSymbols.Int32_Mod)
         {
             // a mod b
             // <=>
@@ -257,20 +258,21 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
             var tmp2 = this.writer.Add(tmp1, right);
             return this.writer.Rem(tmp2, right);
         }
-        if (node.Operator == Intrinsics.Operators.Less_Int32) return this.writer.Less(left, right);
-        if (node.Operator == Intrinsics.Operators.Greater_Int32) return this.writer.Less(right, left);
-        if (node.Operator == Intrinsics.Operators.LessEqual_Int32)
+        */
+        if (node.Operator == IntrinsicSymbols.Int32_LessThan) return this.writer.Less(left, right);
+        if (node.Operator == IntrinsicSymbols.Int32_GreaterThan) return this.writer.Less(right, left);
+        if (node.Operator == IntrinsicSymbols.Int32_LessEqual)
         {
             var tmp = this.writer.Less(right, left);
             return this.writer.Equal(tmp, new Value.Const(false));
         }
-        if (node.Operator == Intrinsics.Operators.GreaterEqual_Int32)
+        if (node.Operator == IntrinsicSymbols.Int32_GreaterEqual)
         {
             var tmp = this.writer.Less(left, right);
             return this.writer.Equal(tmp, new Value.Const(false));
         }
-        if (node.Operator == Intrinsics.Operators.Equal_Int32) return this.writer.Equal(left, right);
-        if (node.Operator == Intrinsics.Operators.NotEqual_Int32)
+        if (node.Operator == IntrinsicSymbols.Int32_Equal) return this.writer.Equal(left, right);
+        if (node.Operator == IntrinsicSymbols.Int32_NotEqual)
         {
             // a != b
             // <=>

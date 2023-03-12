@@ -1,6 +1,6 @@
 using Draco.Compiler.Api.Diagnostics;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.Binding;
 
 /// <summary>
 /// Holds constants for symbol resolution errors.

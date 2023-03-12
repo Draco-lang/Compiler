@@ -1,6 +1,6 @@
 using Draco.Compiler.Api.Diagnostics;
 
-namespace Draco.Compiler.Internal.Semantics;
+namespace Draco.Compiler.Internal.FlowAnalysis;
 
 /// <summary>
 /// Holds constants for dataflow resolution errors.

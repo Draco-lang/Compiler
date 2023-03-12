@@ -4,7 +4,7 @@ using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
+namespace Draco.Compiler.Internal.FlowAnalysis;
 
 /// <summary>
 /// A graph of <see cref="DataFlowOperation"/>s for analysis.

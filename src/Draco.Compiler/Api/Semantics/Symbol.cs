@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
-using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 
 namespace Draco.Compiler.Api.Semantics;
 

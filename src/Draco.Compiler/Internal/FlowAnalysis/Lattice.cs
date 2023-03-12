@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
-namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
+namespace Draco.Compiler.Internal.FlowAnalysis;
 
 /// <summary>
 /// Represents a flow direction in DFA.

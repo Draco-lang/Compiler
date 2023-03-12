@@ -6,7 +6,7 @@ using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 
-namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
+namespace Draco.Compiler.Internal.FlowAnalysis;
 
 /// <summary>
 /// Translates a bound tree to a <see cref="DataFlowGraph"/>.

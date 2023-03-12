@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
 
-namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
+namespace Draco.Compiler.Internal.FlowAnalysis;
 
 /// <summary>
 /// Stores information about the in and out state during data flow analysis.

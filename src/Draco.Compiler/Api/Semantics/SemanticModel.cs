@@ -25,13 +25,8 @@ public sealed class SemanticModel
     /// </summary>
     public IEnumerable<Diagnostic> Diagnostics => this.GetAllDiagnostics();
 
-    internal QueryDatabase QueryDatabase => this.db;
-
-    private readonly QueryDatabase db;
-
-    internal SemanticModel(QueryDatabase db, SyntaxTree tree)
+    internal SemanticModel(SyntaxTree tree)
     {
-        this.db = db;
         this.Tree = tree;
     }
 

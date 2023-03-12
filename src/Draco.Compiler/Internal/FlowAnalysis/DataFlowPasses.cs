@@ -2,12 +2,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
-using Draco.Compiler.Internal.Semantics.FlowAnalysis.Lattices;
-using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.FlowAnalysis.Lattices;
 using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Internal.Semantics.FlowAnalysis;
+namespace Draco.Compiler.Internal.FlowAnalysis;
 
 // TODO: This is definitely not incremental
 // We don't care for now, but later the flow graph construction and the passes should become incremental
@@ -89,6 +87,11 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
             formatArgs: reference.Local.Name));
     }
 
+    // TODO: We'll need to make this a recursor on a module symbol
+    // instead of just being a bound tree visitor
+    // Since functions are not considered in visitation anymore
+    // Same todo as above
+    /*
     private void CheckReturnsOnAllPaths(Ast.Decl.Func node, DataFlowGraph graph)
     {
         // We check if all operations without a successor are a return
@@ -104,6 +107,7 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
                 formatArgs: node.DeclarationSymbol.Name));
         }
     }
+    */
 
     private void CheckIfOnlyInitializedVariablesAreUsed(DataFlowGraph graph)
     {

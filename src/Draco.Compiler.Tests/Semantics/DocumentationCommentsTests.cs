@@ -1,7 +1,8 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -33,7 +34,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var funcSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(funcDecl));
+        var funcSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(funcDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -65,7 +66,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -101,7 +102,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var labelSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
+        var labelSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetDefinedSymbol(labelDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);

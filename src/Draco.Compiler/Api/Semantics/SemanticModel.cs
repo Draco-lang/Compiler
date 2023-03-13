@@ -64,33 +64,23 @@ public sealed class SemanticModel
 
     // NOTE: These OrNull functions are not too pretty
     // For now public API is not that big of a concern, so they can stay
+    // Instead we could just always return a nullable or an error symbol when appropriate
 
-    // TODO
-    /*
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> defined by <paramref name="subtree"/>.
     /// </summary>
     /// <param name="subtree">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// define any.</returns>
-    public ISymbol? GetDefinedSymbolOrNull(SyntaxNode subtree) =>
-        SymbolResolution.GetDefinedSymbolOrNull(this.db, subtree)?.ToApiSymbol();
+    public ISymbol? GetDefinedSymbol(SyntaxNode subtree) =>
+        throw new System.NotImplementedException();
 
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> referenced by <paramref name="subtree"/>.
     /// </summary>
     /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
-    /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
-    /// reference any.</returns>
-    public ISymbol? GetReferencedSymbolOrNull(SyntaxNode subtree) =>
-        SymbolResolution.GetReferencedSymbolOrNull(this.db, subtree)?.ToApiSymbol();
-
-    /// <summary>
-    /// Retrieves the <see cref="ISymbol"/> referenced by <paramref name="subtree"/>.
-    /// </summary>
-    /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
-    /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>.</returns>
-    public ISymbol GetReferencedSymbol(SyntaxNode subtree) =>
-        SymbolResolution.GetReferencedSymbol(this.db, subtree).ToApiSymbol();
-    */
+    /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>, or null
+    /// if it does not reference any.</returns>
+    public ISymbol? GetReferencedSymbol(SyntaxNode subtree) =>
+        throw new System.NotImplementedException();
 }

@@ -1,17 +1,19 @@
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
-using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Tests.Semantics;
 
 public abstract class SemanticTestsBase
 {
     private protected static TSymbol GetInternalSymbol<TSymbol>(ISymbol? symbol)
-        where TSymbol : IInternalSymbol
+        where TSymbol : Symbol
     {
         Assert.NotNull(symbol);
-        var symbolBase = (SymbolBase)symbol!;
-        return (TSymbol)symbolBase.Symbol;
+        // TODO
+        //var symbolBase = (SymbolBase)symbol!;
+        //return (TSymbol)symbolBase.Symbol;
+        throw new NotImplementedException();
     }
 
     private protected static void AssertDiagnostic(IEnumerable<Diagnostic> diagnostics, DiagnosticTemplate diagTemplate) =>

@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
 
@@ -26,4 +27,6 @@ internal sealed class SynthetizedComparisonOperatorSymbol : ComparisonOperatorSy
     {
         this.Name = GetComparisonOperatorName(token);
     }
+
+    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
 }

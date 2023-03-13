@@ -44,6 +44,12 @@ internal abstract partial class Symbol
     public virtual string Documentation => string.Empty;
 
     /// <summary>
+    /// Converts this symbol into an API symbol.
+    /// </summary>
+    /// <returns>The equivalent API symbol.</returns>
+    public abstract Api.Semantics.ISymbol ToApiSymbol();
+
+    /// <summary>
     /// Converts the symbol-tree to a DOT graph for debugging purposes.
     /// </summary>
     /// <returns>The DOT graph of the symbol-tree.</returns>

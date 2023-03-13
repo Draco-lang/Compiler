@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
 
@@ -26,6 +27,8 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
         this.ContainingSymbol = containingSymbol;
         this.DeclarationSyntax = syntax;
     }
+
+    public override ISymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
 
     private Type BuildType() => throw new System.NotImplementedException();
 }

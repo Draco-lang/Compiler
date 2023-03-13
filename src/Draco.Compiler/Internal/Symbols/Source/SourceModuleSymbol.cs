@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Declarations;
 
@@ -52,6 +53,8 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
         : this(compilation, containingSymbol, declaration as Declaration)
     {
     }
+
+    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
 
     private ImmutableArray<Symbol> BuildMembers() => this.declaration.Children
         .Select(this.BuildMember)

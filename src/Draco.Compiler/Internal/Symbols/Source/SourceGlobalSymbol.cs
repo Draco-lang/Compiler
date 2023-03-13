@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Types;
@@ -24,4 +25,6 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         this.ContainingSymbol = containingSymbol;
         this.declaration = declaration;
     }
+
+    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
 }

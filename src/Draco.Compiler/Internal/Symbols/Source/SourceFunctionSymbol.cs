@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
@@ -45,6 +46,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         : this(containingSymbol, declaration.Syntax)
     {
     }
+
+    public override ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.DeclarationSyntax.ParameterList.Values
         .Select(this.BuildParameter)

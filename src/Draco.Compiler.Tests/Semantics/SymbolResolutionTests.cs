@@ -78,16 +78,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var sym6 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x6));
 
         // Assert
-        AssertParentOf(compilation.GetBinder(sym2), compilation.GetBinder(sym3));
-        AssertParentOf(compilation.GetBinder(sym1), compilation.GetBinder(sym2));
-        AssertParentOf(compilation.GetBinder(sym4), compilation.GetBinder(sym5));
-        AssertParentOf(compilation.GetBinder(sym4), compilation.GetBinder(sym6));
-        AssertParentOf(compilation.GetBinder(sym1), compilation.GetBinder(sym4));
+        AssertParentOf(GetDefiningScope(compilation, sym2), GetDefiningScope(compilation, sym3));
+        AssertParentOf(GetDefiningScope(compilation, sym1), GetDefiningScope(compilation, sym2));
+        AssertParentOf(GetDefiningScope(compilation, sym4), GetDefiningScope(compilation, sym5));
+        AssertParentOf(GetDefiningScope(compilation, sym4), GetDefiningScope(compilation, sym6));
+        AssertParentOf(GetDefiningScope(compilation, sym1), GetDefiningScope(compilation, sym4));
 
-        AssertParentOf(compilation.GetBinder(symn), compilation.GetBinder(sym1));
+        AssertParentOf(GetDefiningScope(compilation, symn), GetDefiningScope(compilation, sym1));
 
-        AssertParentOf(compilation.GetBinder(symFoo), compilation.GetBinder(symn));
-        Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), compilation.GetBinder(symn)));
+        AssertParentOf(GetDefiningScope(compilation, symFoo), GetDefiningScope(compilation, symn));
+        Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), GetDefiningScope(compilation, symn)));
     }
 
     [Fact]

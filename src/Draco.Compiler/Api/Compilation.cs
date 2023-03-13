@@ -72,6 +72,15 @@ public sealed class Compilation
         this.binderCache = new(this);
     }
 
+    /// <summary>
+    ///  Retrieves the <see cref="SemanticModel"/> for for a <see cref="SyntaxTree"/> within this compilation.
+    /// </summary>
+    /// <param name="tree">The syntax tree to get the semantic model for.</param>
+    /// <returns>The semantic model for <paramref name="tree"/>.</returns>
+    public SemanticModel GetSemanticModel(SyntaxTree tree) => new(this, tree);
+
+    // TODO: Expose these nicely
+    /*
     public void Dump()
     {
         Console.WriteLine(this.SyntaxTrees.First().GreenRoot.ToDot());
@@ -86,6 +95,7 @@ public sealed class Compilation
             }
         }
     }
+    */
 
     /// <summary>
     /// Retrieves the <see cref="Binder"/> for a given syntax node.

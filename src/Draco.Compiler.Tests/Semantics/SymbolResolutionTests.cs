@@ -58,8 +58,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x6 = tree.FindInChildren<VariableDeclarationSyntax>(5);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var symFoo = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(foo));
         var symn = GetInternalSymbol<IInternalSymbol.IParameter>(semanticModel.GetDefinedSymbolOrNull(n));
@@ -114,8 +114,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x2ref = tree.FindInChildren<NameExpressionSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var symx0 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x0));
         var symx1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x1));
@@ -170,8 +170,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var call3 = tree.FindInChildren<CallExpressionSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var symBar = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(barDecl));
         var symFoo = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
@@ -217,8 +217,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var zRef = tree.FindInChildren<NameExpressionSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var symx = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
         var symy = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(yDecl));
@@ -281,8 +281,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var wRefErr2 = tree.FindInChildren<NameExpressionSyntax>(4);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var x1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x1Decl));
         var y1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(y1Decl));
@@ -328,8 +328,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var x1SymDecl = GetInternalSymbol<IInternalSymbol.IParameter>(semanticModel.GetDefinedSymbolOrNull(x1Decl));
         var x2SymDecl = semanticModel.GetDefinedSymbolOrNull(x2Decl);
@@ -359,8 +359,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var varSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(varDecl));
         var funcSym = semanticModel.GetDefinedSymbolOrNull(funcDecl);
@@ -393,8 +393,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var globalVarDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var varRefSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(localVarDecl.Value!.Value));
         var varDeclSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(globalVarDecl));
@@ -429,8 +429,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelDeclSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
@@ -471,8 +471,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelDeclSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
@@ -498,8 +498,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var xDeclSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
         var xRefSym = semanticModel.GetReferencedSymbol(xRef);
@@ -529,8 +529,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var fooDeclSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
         var fooRefSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(fooRef));
@@ -558,8 +558,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
@@ -588,8 +588,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
@@ -618,8 +618,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(labelRef));
 
@@ -648,8 +648,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(labelRef));
 
@@ -680,8 +680,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
@@ -727,8 +727,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var outerBreakRef = tree.FindInChildren<GotoExpressionSyntax>(3).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var outerContinueRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(outerContinueRef));
         var innerBreakRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(innerBreakRef));

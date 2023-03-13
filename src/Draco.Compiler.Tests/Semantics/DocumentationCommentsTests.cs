@@ -30,8 +30,8 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var funcSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(funcDecl));
 
@@ -62,8 +62,8 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
@@ -82,7 +82,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
     {
         // func main() {
         //     /// This is doc comment
-        //     myLabel:        
+        //     myLabel:
         // }
 
         // Arrange
@@ -98,8 +98,8 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
 

@@ -1,9 +1,8 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
-using Type = Draco.Compiler.Internal.Semantics.Types.Type;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -27,8 +26,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
@@ -55,8 +54,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
@@ -83,8 +82,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
@@ -113,8 +112,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
@@ -141,8 +140,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
@@ -169,8 +168,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(ReturnExpression(StringExpression("Hello")))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -191,8 +190,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             InlineFunctionBody(StringExpression("Hello")))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -216,8 +215,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(IfExpression(LiteralExpression(true), BlockExpression()))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -240,8 +239,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(IfExpression(LiteralExpression(1), BlockExpression()))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -265,8 +264,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(WhileExpression(LiteralExpression(true), BlockExpression()))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -289,8 +288,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(WhileExpression(LiteralExpression(1), BlockExpression()))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -319,8 +318,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         @else: StringExpression("Hello"))))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -352,8 +351,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 InlineFunctionBody(CallExpr(NameExpression("foo")))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
         var fooDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
@@ -392,8 +391,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));

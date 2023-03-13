@@ -20,9 +20,12 @@ public sealed class SemanticModel
     /// </summary>
     public IEnumerable<Diagnostic> Diagnostics => this.GetAllDiagnostics();
 
-    internal SemanticModel(SyntaxTree tree)
+    private readonly Compilation compilation;
+
+    internal SemanticModel(Compilation compilation, SyntaxTree tree)
     {
         this.Tree = tree;
+        this.compilation = compilation;
     }
 
     /// <summary>

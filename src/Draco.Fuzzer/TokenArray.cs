@@ -5,8 +5,7 @@ namespace Draco.Fuzzer;
 internal sealed class TokenArray
 {
     private readonly IEnumerable<SyntaxToken> tokens;
-
-    public ReadOnlyMemory<SyntaxToken> GetReadOnlyMemoryTokens() => new ReadOnlyMemory<SyntaxToken>(this.tokens.ToArray());
+    public ReadOnlyMemory<SyntaxToken> Memory => new ReadOnlyMemory<SyntaxToken>(this.tokens.ToArray());
 
     public TokenArray(IEnumerable<SyntaxToken> tokens)
     {

@@ -5,7 +5,7 @@ namespace Draco.Fuzzer.Testing;
 internal abstract class ComponentFuzzer<T>
 {
     private readonly List<(string input, Exception ex)> errors = new();
-    private string path = "lastinputlog.txt";
+    private const string path = "lastinputlog.txt";
     private bool shouldStop = false;
     protected readonly IInputGenerator<T> generator;
 
@@ -13,14 +13,14 @@ internal abstract class ComponentFuzzer<T>
     {
         this.generator = generator;
         Console.CancelKeyPress += new ConsoleCancelEventHandler(this.HandleCancel);
-        if (File.Exists(this.path)) File.Delete(this.path);
-        Console.WriteLine($"in case of stack overflow look at this log for the last input: {Path.GetFullPath(this.path)}");
+        if (File.Exists(path)) File.Delete(path);
+        Console.WriteLine($"in case of stack overflow look at this log for the last input: {Path.GetFullPath(path)}");
     }
 
     private void AddError(Exception ex, string input) => this.errors.Add((input, ex));
 
     // Note: We are writing the input to the log from the start, because if we get stack overflow, we wouldn't be able to get to the input
-    private void AddInput(string input) => File.WriteAllText(this.path, input);
+    private void AddInput(string input) => File.WriteAllText(path, input);
 
     private void PrintResult()
     {

@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -621,23 +620,6 @@ internal sealed class Lexer
         }
 
     not_escape_sequence:
-        var untilEndOffset = 0;
-        while (untilEndOffset <= mode.ExtendedDelims)
-        {
-            if (this.Peek(offset + untilEndOffset) == '\0')
-            {
-                this.valueBuilder.Append($"\\{new string('#', untilEndOffset - 1)}");
-                offset += untilEndOffset;
-
-                this.tokenBuilder
-                    .SetKind(TokenKind.StringContent)
-                    .SetText(this.AdvanceWithText(offset))
-                    .SetValue(this.valueBuilder.ToString());
-                return default;
-            }
-            ++untilEndOffset;
-        }
-
         // Check for newline
         if (this.TryParseNewline(offset, out var newlineLength))
         {

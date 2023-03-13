@@ -10,7 +10,7 @@ internal sealed class ParserFuzzer : ComponentFuzzer<TokenArray>
     public override void RunEpoch(TokenArray input)
     {
         // We just care about the parsing into compilation unit part
-        new Parser(TokenSource.From(input.Memory), new SyntaxDiagnosticTable()).ParseCompilationUnit();
+        new Parser(TokenSource.From(input.Tokens), new SyntaxDiagnosticTable()).ParseCompilationUnit();
     }
 
     public override void RunMutation() => throw new NotImplementedException();

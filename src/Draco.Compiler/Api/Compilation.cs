@@ -42,9 +42,19 @@ public sealed class Compilation
         assemblyName: assemblyName);
 
     /// <summary>
+    /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
+    /// </summary>
+    public ImmutableArray<Diagnostic> Diagnostics => throw new System.NotImplementedException();
+
+    /// <summary>
     /// The trees that are being compiled.
     /// </summary>
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
+
+    /// <summary>
+    /// The name of the output assembly.
+    /// </summary>
+    public string? AssemblyName { get; }
 
     /// <summary>
     /// The global module symbol of the compilation.
@@ -60,11 +70,6 @@ public sealed class Compilation
 
     private readonly BinderCache binderCache;
 
-    /// <summary>
-    /// The name of the output assembly.
-    /// </summary>
-    public string? AssemblyName { get; }
-
     private Compilation(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName)
     {
         this.SyntaxTrees = syntaxTrees;
@@ -78,6 +83,17 @@ public sealed class Compilation
     /// <param name="tree">The syntax tree to get the semantic model for.</param>
     /// <returns>The semantic model for <paramref name="tree"/>.</returns>
     public SemanticModel GetSemanticModel(SyntaxTree tree) => new(this, tree);
+
+    // TODO: Add more streams for the other outputs, like the commented out thing above?
+
+    /// <summary>
+    /// Emits compiled binary to a <see cref="Stream"/>.
+    /// </summary>
+    /// <param name="peStream">The stream to write the PE to.</param>
+    /// <param name="dracoIrStream">The stream to write a textual representation of the Draco IR to.</param>
+    /// <returns>The result of the emission.</returns>
+    public EmitResult Emit(Stream peStream, Stream? dracoIrStream = null) =>
+        throw new System.NotImplementedException();
 
     // TODO: Expose these nicely
     /*

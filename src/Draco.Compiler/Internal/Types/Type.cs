@@ -16,6 +16,11 @@ internal abstract partial class Type
     /// </summary>
     public virtual bool IsTypeVariable => false;
 
+    /// <summary>
+    /// True, if this is type represents some error.
+    /// </summary>
+    public virtual bool IsError => false;
+
     public override bool Equals(object? obj) => throw new InvalidOperationException("do not use equality for types");
     public override int GetHashCode() => throw new InvalidOperationException("do not use equality for types");
 

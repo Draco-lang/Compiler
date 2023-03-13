@@ -39,6 +39,11 @@ internal abstract partial class Symbol
     public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();
 
     /// <summary>
+    /// Documentation attached to this symbol.
+    /// </summary>
+    public virtual string Documentation => string.Empty;
+
+    /// <summary>
     /// Converts the symbol-tree to a DOT graph for debugging purposes.
     /// </summary>
     /// <returns>The DOT graph of the symbol-tree.</returns>

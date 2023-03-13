@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 
@@ -134,7 +135,7 @@ public sealed class Issue139Tests
     public void DoesNotCrash(string source)
     {
         var syntaxTree = SyntaxTree.Parse(source);
-        var compilation = Compilation.Create(syntaxTree);
+        var compilation = Compilation.Create(ImmutableArray.Create(syntaxTree));
         _ = compilation.Diagnostics.ToList();
         compilation.Emit(new MemoryStream());
     }

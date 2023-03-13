@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -72,8 +73,12 @@ public sealed class SemanticModel
     /// <param name="subtree">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
     /// define any.</returns>
-    public ISymbol? GetDefinedSymbol(SyntaxNode subtree) =>
-        throw new System.NotImplementedException();
+    public ISymbol? GetDefinedSymbol(SyntaxNode subtree)
+    {
+        var binder = this.compilation.GetBinder(subtree);
+        // TODO: Lookup symbol
+        throw new NotImplementedException();
+    }
 
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> referenced by <paramref name="subtree"/>.
@@ -81,6 +86,10 @@ public sealed class SemanticModel
     /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>, or null
     /// if it does not reference any.</returns>
-    public ISymbol? GetReferencedSymbol(SyntaxNode subtree) =>
-        throw new System.NotImplementedException();
+    public ISymbol? GetReferencedSymbol(SyntaxNode subtree)
+    {
+        var binder = this.compilation.GetBinder(subtree);
+        // TODO: Lookup symbol
+        throw new NotImplementedException();
+    }
 }

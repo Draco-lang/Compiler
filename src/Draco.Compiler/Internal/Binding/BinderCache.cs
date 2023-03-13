@@ -36,7 +36,7 @@ internal sealed class BinderCache
 
         if (!this.binders.TryGetValue(scopeDefiningAncestor, out var binder))
         {
-            binder = this.BuildBinder(syntax);
+            binder = this.BuildBinder(scopeDefiningAncestor);
             this.binders.Add(scopeDefiningAncestor, binder);
         }
 

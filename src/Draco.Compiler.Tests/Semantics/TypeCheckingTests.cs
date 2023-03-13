@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
@@ -29,11 +30,11 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, Type.Int32);
+        Assert.Equal(xSym.Type, Internal.Types.Intrinsics.Int32);
     }
 
     [Fact]
@@ -57,11 +58,11 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, Type.Int32);
+        Assert.Equal(xSym.Type, Internal.Types.Intrinsics.Int32);
     }
 
     [Fact]
@@ -85,11 +86,11 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, Type.Int32);
+        Assert.Equal(xSym.Type, Internal.Types.Intrinsics.Int32);
     }
 
     [Fact]
@@ -115,11 +116,11 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, Type.Int32);
+        Assert.Equal(xSym.Type, Internal.Types.Intrinsics.Int32);
     }
 
     [Fact]
@@ -144,7 +145,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
-        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbolOrNull(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -362,7 +363,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(Type.Int32, fooSymbol.ReturnType);
+        Assert.Equal(Internal.Types.Intrinsics.Int32, fooSymbol.ReturnType);
         Assert.Equal(Type.Unit, barSymbol.ReturnType);
     }
 #endif
@@ -395,12 +396,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
-        var ySym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(yDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var ySym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbolOrNull(yDecl));
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(Type.Int32, xSym.Type);
-        Assert.Equal(Type.Int32, ySym.Type);
+        Assert.Equal(Internal.Types.Intrinsics.Int32, xSym.Type);
+        Assert.Equal(Internal.Types.Intrinsics.Int32, ySym.Type);
     }
 }

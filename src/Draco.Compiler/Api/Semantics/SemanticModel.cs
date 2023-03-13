@@ -31,6 +31,8 @@ public sealed class SemanticModel
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     internal IEnumerable<Diagnostic> GetAllDiagnostics()
     {
+        // TODO
+        /*
         IEnumerable<Diagnostic> GetSymbolAndTypeErrors(SyntaxNode tree)
         {
             // Symbol
@@ -53,6 +55,8 @@ public sealed class SemanticModel
             .Concat(GetAstErrors())
             //.Concat(GetDataFlowErrors())
             ;
+        */
+        return Enumerable.Empty<Diagnostic>();
     }
 
     // NOTE: These OrNull functions are not too pretty

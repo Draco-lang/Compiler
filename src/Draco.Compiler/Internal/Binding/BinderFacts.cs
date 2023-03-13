@@ -58,4 +58,13 @@ internal static class BinderFacts
         or FunctionDeclarationSyntax
         or FunctionBodySyntax
         or BlockExpressionSyntax;
+
+    /// <summary>
+    /// Checks, if a given syntax node references a symbol.
+    /// </summary>
+    /// <param name="node">The syntax node to check.</param>
+    /// <returns>True, if <paramref name="node"/> references a symbol.</returns>
+    public static bool ReferencesSymbol(SyntaxNode node) => node
+        is NameExpressionSyntax
+        or NameTypeSyntax;
 }

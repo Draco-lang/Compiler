@@ -61,6 +61,9 @@ internal sealed class LocalBinder : Binder
         }
     }
 
+    public override IEnumerable<Symbol> Symbols => this.Declarations
+        .Concat(this.LocalDeclarations.Select(d => d.Symbol));
+
     private bool NeedsBuild => this.relativePositions is null;
 
     private ImmutableDictionary<SyntaxNode, int>? relativePositions;
@@ -124,6 +127,8 @@ internal sealed class LocalBinder : Binder
         var position = 0;
         foreach (var syntax in EnumerateNodesInSameScope(this.syntax))
         {
+            // We skip tokens, those are cached
+            if (syntax is SyntaxToken) continue;
             // First off, we add to the position translator
             relativePositionsBuilder.Add(syntax, position);
             // Next, we check if the syntax defines some kind of symbol

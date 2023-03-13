@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -76,7 +78,9 @@ public sealed class SemanticModel
     public ISymbol? GetDefinedSymbol(SyntaxNode subtree)
     {
         var binder = this.compilation.GetBinder(subtree);
-        // TODO: Lookup symbol
+        var internalSymbol = (Symbol?)binder.Symbols
+            .OfType<ISourceSymbol>()
+            .FirstOrDefault(sym => subtree.Equals(sym.DeclarationSyntax));
         throw new NotImplementedException();
     }
 

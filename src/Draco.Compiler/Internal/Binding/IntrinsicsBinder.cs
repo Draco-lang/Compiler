@@ -24,6 +24,8 @@ internal sealed class IntrinsicsBinder : Binder
         .Cast<Symbol>()
         .ToImmutableArray();
 
+    public override IEnumerable<Symbol> Symbols => IntrinsicSymbols;
+
     public IntrinsicsBinder(Compilation compilation)
         : base(compilation)
     {

@@ -104,6 +104,25 @@ public sealed class Compilation
     /// <returns>The binder that corresponds to <paramref name="syntax"/>.</returns>
     internal Binder GetBinder(SyntaxNode syntax) => this.binderCache.GetBinder(syntax);
 
+    /// <summary>
+    /// Retrieves the <see cref="Binder"/> for a given symbol definition.
+    /// </summary>
+    /// <param name="symbol">The symbol to retrieve the binder for.</param>
+    /// <returns>The binder that corresponds to <paramref name="symbol"/>.</returns>
+    internal Binder GetBinder(Symbol symbol)
+    {
+        if (symbol is not ISourceSymbol sourceSymbol)
+        {
+            throw new ArgumentException("symbol must be an in-source defined symbol", nameof(symbol));
+        }
+        if (sourceSymbol.DeclarationSyntax is null)
+        {
+            throw new ArgumentException("source symbol must have a declaration syntax", nameof(symbol));
+        }
+
+        return this.GetBinder(sourceSymbol.DeclarationSyntax);
+    }
+
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
     private ModuleSymbol BuildGlobalModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
 }

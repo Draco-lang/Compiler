@@ -3,16 +3,24 @@ using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using System.Collections.Immutable;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Binding;
+using System.Reflection;
+using Binder = Draco.Compiler.Internal.Binding.Binder;
 
 namespace Draco.Compiler.Tests.Semantics;
 
 public sealed class SymbolResolutionTests : SemanticTestsBase
 {
-    private static void AssertParentOf(IInternalScope? parent, IInternalScope? child)
+    private static PropertyInfo BinderParentProperty { get; } = typeof(Binder)
+        .GetProperty("Parent", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private static void AssertParentOf(Binder? parent, Binder? child)
     {
         Assert.NotNull(child);
         Assert.False(ReferenceEquals(parent, child));
-        Assert.True(ReferenceEquals(child!.Parent, parent));
+        // Since the Parent property is protected, we need to access it via reflection
+        var childParent = (Binder?)BinderParentProperty.GetValue(child);
+        Assert.True(ReferenceEquals(childParent, parent));
     }
 
     [Fact]
@@ -70,16 +78,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var sym6 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x6));
 
         // Assert
-        AssertParentOf(sym2.DefiningScope, sym3.DefiningScope);
-        AssertParentOf(sym1.DefiningScope, sym2.DefiningScope);
-        AssertParentOf(sym4.DefiningScope, sym5.DefiningScope);
-        AssertParentOf(sym4.DefiningScope, sym6.DefiningScope);
-        AssertParentOf(sym1.DefiningScope, sym4.DefiningScope);
+        AssertParentOf(compilation.GetBinder(sym2), compilation.GetBinder(sym3));
+        AssertParentOf(compilation.GetBinder(sym1), compilation.GetBinder(sym2));
+        AssertParentOf(compilation.GetBinder(sym4), compilation.GetBinder(sym5));
+        AssertParentOf(compilation.GetBinder(sym4), compilation.GetBinder(sym6));
+        AssertParentOf(compilation.GetBinder(sym1), compilation.GetBinder(sym4));
 
-        AssertParentOf(symn.DefiningScope, sym1.DefiningScope);
+        AssertParentOf(compilation.GetBinder(symn), compilation.GetBinder(sym1));
 
-        AssertParentOf(symFoo.DefiningScope, symn.DefiningScope);
-        Assert.True(ReferenceEquals(symFoo.DefinedScope, symn.DefiningScope));
+        AssertParentOf(compilation.GetBinder(symFoo), compilation.GetBinder(symn));
+        Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), compilation.GetBinder(symn)));
     }
 
     [Fact]

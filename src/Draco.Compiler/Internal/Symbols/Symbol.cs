@@ -24,6 +24,11 @@ internal abstract partial class Symbol
     public abstract Symbol? ContainingSymbol { get; }
 
     /// <summary>
+    /// True, if this symbol represents some error.
+    /// </summary>
+    public virtual bool IsError => false;
+
+    /// <summary>
     /// The name of this symbol.
     /// </summary>
     public virtual string Name => string.Empty;

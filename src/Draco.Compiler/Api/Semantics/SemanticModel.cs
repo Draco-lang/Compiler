@@ -2,11 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Query;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
-using Draco.Compiler.Internal.Semantics.FlowAnalysis;
-using Draco.Compiler.Internal.Semantics.Symbols;
-using Draco.Compiler.Internal.Semantics.Types;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -63,6 +58,8 @@ public sealed class SemanticModel
     // NOTE: These OrNull functions are not too pretty
     // For now public API is not that big of a concern, so they can stay
 
+    // TODO
+    /*
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> defined by <paramref name="subtree"/>.
     /// </summary>
@@ -88,4 +85,5 @@ public sealed class SemanticModel
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>.</returns>
     public ISymbol GetReferencedSymbol(SyntaxNode subtree) =>
         SymbolResolution.GetReferencedSymbol(this.db, subtree).ToApiSymbol();
+    */
 }

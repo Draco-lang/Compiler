@@ -77,6 +77,8 @@ public interface ITypeSymbol : ISymbol
 {
 }
 
+// TODO
+/*
 // Proxy classes ///////////////////////////////////////////////////////////////
 
 internal abstract class SymbolBase : ISymbol
@@ -165,3 +167,4 @@ internal sealed class TypeSymbol : SymbolBase<IInternalSymbol.ITypeDefinition>, 
     {
     }
 }
+*/

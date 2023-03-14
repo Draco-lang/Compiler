@@ -18,6 +18,9 @@ internal sealed class ConstraintBag
 {
     private readonly ConstraintSolver solver = new();
     private readonly Dictionary<LocalSymbol, Type> localTypes = new();
+    private int typeVariableCount;
+
+    private TypeVariable NextTypeVariable => new TypeVariable(typeVariableCount++);
 
     /// <summary>
     /// Adds a constraint that declared the local with the given type and given initial value.
@@ -47,7 +50,8 @@ internal sealed class ConstraintBag
         else
         {
             // var x;
-            throw new System.NotImplementedException();
+            var typeVar = this.NextTypeVariable;
+            this.localTypes.Add(symbol, typeVar);
         }
     }
 
@@ -99,8 +103,12 @@ internal sealed class ConstraintBag
     /// <param name="args">The arguments the method is called with.</param>
     /// <param name="syntax">The syntax invoking the function.</param>
     /// <returns>A type that can be used to reference the result of the function invocation.</returns>
-    internal Type CallFunction(UntypedExpression method, ImmutableArray<UntypedExpression> args, CallExpressionSyntax syntax) =>
+    internal Type CallFunction(UntypedExpression method, ImmutableArray<UntypedExpression> args, CallExpressionSyntax syntax)
+    {
+        var methodType = method.TypeRequired;
+        // TODO: Match args
         throw new System.NotImplementedException();
+    }
 
     /// <summary>
     /// Constraints that an unary operator is being invoked.

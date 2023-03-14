@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Types;
@@ -33,7 +34,6 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
 
     public BoundStatement Body => this.body ??= this.BuildBody();
-
     private BoundStatement? body;
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
@@ -56,7 +56,20 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private ParameterSymbol BuildParameter(ParameterSyntax syntax) =>
         new SourceParameterSymbol(this, syntax);
 
-    private Type BuildReturnType() => throw new System.NotImplementedException();
+    private Type BuildReturnType()
+    {
+        // If the return type is unspecified, it's assumed to be unit
+        if (this.DeclarationSyntax.ReturnType is null) return Intrinsics.Unit;
+
+        // Otherwise, we need to resolve
+        Debug.Assert(this.DeclaringCompilation is not null);
+        // TODO: These are not exposed
+        var constraints = new ConstraintBag();
+        var diagnostics = new DiagnosticBag();
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Body);
+        var returnTypeSymbol = binder.BindType(this.DeclarationSyntax.ReturnType.Type, constraints, diagnostics);
+        return ((TypeSymbol)returnTypeSymbol).Type;
+    }
 
     private BoundStatement BuildBody()
     {

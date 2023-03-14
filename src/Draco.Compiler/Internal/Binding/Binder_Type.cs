@@ -17,7 +17,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The looked up type symbol for <paramref name="syntax"/>.</returns>
-    protected Symbol BindType(TypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
+    public Symbol BindType(TypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
         NameTypeSyntax name => this.BindNameType(name, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),

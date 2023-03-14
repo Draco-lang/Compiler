@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,42 +43,52 @@ internal partial class UntypedExpression
 internal partial class UntypedUnitExpression
 {
     public static UntypedUnitExpression Default { get; } = new(null);
-    public override Type? Type => Intrinsics.Unit;
+    public override Type Type => Intrinsics.Unit;
 }
 
 internal partial class UntypedGotoExpression
 {
-    public override Type? Type => Intrinsics.Never;
+    public override Type Type => Intrinsics.Never;
 }
 
 internal partial class UntypedReturnExpression
 {
-    public override Type? Type => Intrinsics.Never;
+    public override Type Type => Intrinsics.Never;
 }
 
 internal partial class UntypedWhileExpression
 {
-    public override Type? Type => Intrinsics.Unit;
+    public override Type Type => Intrinsics.Unit;
 }
 
 internal partial class UntypedAndExpression
 {
-    public override Type? Type => Intrinsics.Bool;
+    public override Type Type => Intrinsics.Bool;
 }
 
 internal partial class UntypedOrExpression
 {
-    public override Type? Type => Intrinsics.Bool;
+    public override Type Type => Intrinsics.Bool;
 }
 
 internal partial class UntypedParameterExpression
 {
-    public override Type? Type => this.Parameter.Type;
+    public override Type Type => this.Parameter.Type;
+}
+
+internal partial class UntypedFunctionExpression
+{
+    public override Type Type => this.type ??= BuildType();
+    private Type? type;
+
+    private Type BuildType() => new FunctionType(
+        this.Function.Parameters.Select(p => p.Type).ToImmutableArray(),
+        this.Function.ReturnType);
 }
 
 internal partial class UntypedLiteralExpression
 {
-    public override Type? Type => this.Value switch
+    public override Type Type => this.Value switch
     {
         int => Intrinsics.Int32,
         _ => throw new System.InvalidOperationException(),
@@ -86,12 +97,12 @@ internal partial class UntypedLiteralExpression
 
 internal partial class UntypedRelationalExpression
 {
-    public override Type? Type => Intrinsics.Bool;
+    public override Type Type => Intrinsics.Bool;
 }
 
 internal partial class UntypedAssignmentExpression
 {
-    public override Type? Type => this.Left.Type;
+    public override Type Type => this.Left.Type;
 }
 
 // Lvalues

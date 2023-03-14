@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -90,6 +91,16 @@ internal sealed class ConstraintBag
         // TODO
         throw new System.NotImplementedException();
     }
+
+    /// <summary>
+    /// Constraints that a function is being invoked.
+    /// </summary>
+    /// <param name="method">The called method expression.</param>
+    /// <param name="args">The arguments the method is called with.</param>
+    /// <param name="syntax">The syntax invoking the function.</param>
+    /// <returns>A type that can be used to reference the result of the function invocation.</returns>
+    internal Type CallFunction(UntypedExpression method, ImmutableArray<UntypedExpression> args, CallExpressionSyntax syntax) =>
+        throw new System.NotImplementedException();
 
     /// <summary>
     /// Constraints that an unary operator is being invoked.

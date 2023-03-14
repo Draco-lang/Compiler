@@ -105,8 +105,16 @@
     <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
+  <Node Name="UntypedGlobalExpression" Base="UntypedExpression">
+    <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
   <Node Name="UntypedParameterExpression" Base="UntypedExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />
+  </Node>
+
+  <Node Name="UntypedFunctionExpression" Base="UntypedExpression">
+    <Field Name="Function" Type="FunctionSymbol" />
   </Node>
 
   <Node Name="UntypedLiteralExpression" Base="UntypedExpression">

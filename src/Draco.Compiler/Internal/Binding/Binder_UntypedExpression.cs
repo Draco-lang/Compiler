@@ -26,6 +26,7 @@ internal partial class Binder
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameExpression(name, constraints, diagnostics),
         IfExpressionSyntax @if => this.BindIfExpression(@if, constraints, diagnostics),
+        CallExpressionSyntax call => this.BindCallExpression(call, constraints, diagnostics),
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
@@ -41,6 +42,9 @@ internal partial class Binder
         return symbol switch
         {
             ParameterSymbol param => new UntypedParameterExpression(syntax, param),
+            LocalSymbol local => new UntypedLocalExpression(syntax, local, constraints.LocalReference(local, syntax)),
+            GlobalSymbol global => new UntypedGlobalExpression(syntax, global),
+            FunctionSymbol func => new UntypedFunctionExpression(syntax, func),
             _ => throw new InvalidOperationException(),
         };
     }
@@ -57,6 +61,18 @@ internal partial class Binder
         var resultType = constraints.CommonType(then, @else);
 
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
+    }
+
+    private UntypedExpression BindCallExpression(CallExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var method = this.BindExpression(syntax.Function, constraints, diagnostics);
+        var args = syntax.ArgumentList.Values
+            .Select(arg => this.BindExpression(arg, constraints, diagnostics))
+            .ToImmutableArray();
+
+        var returnType = constraints.CallFunction(method, args, syntax);
+
+        return new UntypedCallExpression(syntax, method, args, returnType);
     }
 
     private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)

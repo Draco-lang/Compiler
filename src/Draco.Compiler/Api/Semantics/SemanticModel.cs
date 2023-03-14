@@ -97,7 +97,16 @@ public sealed class SemanticModel
     {
         if (!BinderFacts.ReferencesSymbol(subtree)) return null;
         var binder = this.compilation.GetBinder(subtree);
-        // TODO: Lookup symbol
-        throw new NotImplementedException();
+        if (binder.ContainingSymbol is SourceFunctionSymbol functionSymbol)
+        {
+            var boundBody = functionSymbol.Body;
+            // TODO
+            throw new NotImplementedException();
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
     }
 }

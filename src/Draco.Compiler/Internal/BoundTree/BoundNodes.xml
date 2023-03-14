@@ -114,6 +114,10 @@
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
 
+  <Node Name="BoundFunctionExpression" Base="BoundExpression">
+    <Field Name="Function" Type="FunctionSymbol" />
+  </Node>
+
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object?" />
   </Node>

@@ -41,7 +41,7 @@ internal partial class Binder
 
     private UntypedStatement BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var binder = this.Compilation.GetBinder(syntax);
+        var binder = this.GetBinder(syntax);
         var locals = ((LocalBinder)binder).LocalDeclarations
             .Select(decl => decl.Symbol)
             .Cast<LocalSymbol>()
@@ -56,7 +56,7 @@ internal partial class Binder
 
     private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var binder = this.Compilation.GetBinder(syntax);
+        var binder = this.GetBinder(syntax);
         var value = binder.BindExpression(syntax.Value, constraints, diagnostics);
         return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
     }

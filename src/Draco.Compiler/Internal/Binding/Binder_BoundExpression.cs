@@ -20,11 +20,12 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The bound expression for <paramref name="expression"/>.</returns>
-    protected BoundExpression TypeExpression(UntypedExpression expression, ConstraintBag constraints, DiagnosticBag diagnostics) => expression switch
+    internal virtual BoundExpression TypeExpression(UntypedExpression expression, ConstraintBag constraints, DiagnosticBag diagnostics) => expression switch
     {
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedParameterExpression @param => this.TypeParameterExpression(param, constraints, diagnostics),
+        UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
         UntypedBlockExpression block => this.TypeBlockExpression(block, constraints, diagnostics),
         UntypedIfExpression @if => this.TypeIfExpression(@if, constraints, diagnostics),
@@ -43,6 +44,9 @@ internal partial class Binder
 
     private BoundExpression TypeParameterExpression(UntypedParameterExpression param, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundParameterExpression(param.Syntax, param.Parameter);
+
+    private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundFunctionExpression(func.Syntax, func.Function);
 
     private BoundExpression TypeReturnExpression(UntypedReturnExpression @return, ConstraintBag constraints, DiagnosticBag diagnostics)
     {

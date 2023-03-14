@@ -18,7 +18,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The bound lvalue for <paramref name="lvalue"/>.</returns>
-    protected BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintBag constraints, DiagnosticBag diagnostics) => lvalue switch
+    internal virtual BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintBag constraints, DiagnosticBag diagnostics) => lvalue switch
     {
         UntypedLocalLvalue local => this.TypeLocalLvalue(local, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),

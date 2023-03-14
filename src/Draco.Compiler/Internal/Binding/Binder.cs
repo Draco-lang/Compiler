@@ -18,12 +18,12 @@ internal abstract partial class Binder
     /// <summary>
     /// The compilation this binder was created for.
     /// </summary>
-    protected Compilation Compilation { get; }
+    internal Compilation Compilation { get; }
 
     /// <summary>
     /// The parent binder of this one.
     /// </summary>
-    protected Binder? Parent { get; }
+    internal Binder? Parent { get; }
 
     /// <summary>
     /// The symbol containing the binding context.
@@ -35,16 +35,29 @@ internal abstract partial class Binder
     /// </summary>
     public virtual IEnumerable<Symbol> Symbols => Enumerable.Empty<Symbol>();
 
-    protected Binder(Compilation compilation)
+    protected Binder(Compilation compilation, Binder? parent)
     {
         this.Compilation = compilation;
+        this.Parent = parent;
+    }
+
+    protected Binder(Compilation compilation)
+        : this(compilation, null)
+    {
     }
 
     protected Binder(Binder parent)
-        : this(parent.Compilation)
+        : this(parent.Compilation, parent)
     {
-        this.Parent = parent;
     }
+
+    /// <summary>
+    /// Retrieves the appropriate binder for the given syntax node.
+    /// </summary>
+    /// <param name="node">The node to retrieve the binder for.</param>
+    /// <returns>The appropriate binder for the node.</returns>
+    protected virtual Binder GetBinder(SyntaxNode node) =>
+        this.Compilation.GetBinder(node);
 
     public BoundStatement BindFunctionBody(FunctionBodySyntax syntax)
     {

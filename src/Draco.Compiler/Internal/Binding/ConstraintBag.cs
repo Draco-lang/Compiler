@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
@@ -18,9 +19,6 @@ internal sealed class ConstraintBag
 {
     private readonly ConstraintSolver solver = new();
     private readonly Dictionary<LocalSymbol, Type> localTypes = new();
-    private int typeVariableCount;
-
-    private TypeVariable NextTypeVariable => new TypeVariable(typeVariableCount++);
 
     /// <summary>
     /// Adds a constraint that declared the local with the given type and given initial value.
@@ -50,7 +48,7 @@ internal sealed class ConstraintBag
         else
         {
             // var x;
-            var typeVar = this.NextTypeVariable;
+            var typeVar = this.solver.NextTypeVariable;
             this.localTypes.Add(symbol, typeVar);
         }
     }
@@ -106,8 +104,14 @@ internal sealed class ConstraintBag
     internal Type CallFunction(UntypedExpression method, ImmutableArray<UntypedExpression> args, CallExpressionSyntax syntax)
     {
         var methodType = method.TypeRequired;
-        // TODO: Match args
-        throw new System.NotImplementedException();
+        var argumentTypes = args.Select(arg => arg.TypeRequired);
+        return this.solver
+            .Call(methodType, argumentTypes)
+            .ConfigureDiagnostic(diag => diag
+                // TODO: This is a horrible way to set the reference...
+                // We should definitely rework the location API...
+                .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)))
+            .Result;
     }
 
     /// <summary>

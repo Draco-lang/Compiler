@@ -28,6 +28,7 @@ internal partial class Binder
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
         UntypedBlockExpression block => this.TypeBlockExpression(block, constraints, diagnostics),
         UntypedIfExpression @if => this.TypeIfExpression(@if, constraints, diagnostics),
+        UntypedCallExpression call => this.TypeCallExpression(call, constraints, diagnostics),
         UntypedAssignmentExpression assignment => this.TypeAssignmentExpression(assignment, constraints, diagnostics),
         UntypedUnaryExpression ury => this.TypeUnaryExpression(ury, constraints, diagnostics),
         UntypedRelationalExpression rel => this.TypeRelationalExpression(rel, constraints, diagnostics),
@@ -64,6 +65,15 @@ internal partial class Binder
         var typedThen = this.TypeExpression(@if.Then, constraints, diagnostics);
         var typedElse = this.TypeExpression(@if.Else, constraints, diagnostics);
         return new BoundIfExpression(@if.Syntax, typedCondition, typedThen, typedElse);
+    }
+
+    private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
+        var typedArgs = call.Arguments
+            .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+            .ToImmutableArray();
+        return new BoundCallExpression(call.Syntax, typedFunction, typedArgs);
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintBag constraints, DiagnosticBag diagnostics)

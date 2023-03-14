@@ -21,6 +21,7 @@ internal abstract partial class UnaryOperatorSymbol : FunctionSymbol
     {
         TokenKind.Plus => "operator +",
         TokenKind.Minus => "operator -",
+        TokenKind.KeywordNot => "operator not",
         _ => throw new ArgumentOutOfRangeException(nameof(token)),
     };
 

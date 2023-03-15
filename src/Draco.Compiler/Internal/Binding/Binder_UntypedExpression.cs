@@ -53,11 +53,7 @@ internal partial class Binder
 
     private UntypedExpression BindGotoExpression(GotoExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        // TODO: For now we only handle name labels, later we might want to extend this...
-        var nameLabel = (NameLabelSyntax)syntax.Target;
-
-        // TODO: We could definitely annotate that we are looking for a label...
-        var target = (LabelSymbol)this.LookupValueSymbol(nameLabel.Name.Text, syntax, diagnostics);
+        var target = (LabelSymbol)this.BindLabel(syntax.Target, constraints, diagnostics);
         return new UntypedGotoExpression(syntax, target);
     }
 

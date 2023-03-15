@@ -11,24 +11,25 @@ namespace Draco.Compiler.Internal.Binding;
 internal partial class Binder
 {
     /// <summary>
-    /// Binds the given syntax node to a type symbol.
+    /// Binds the given syntax node to a label symbol.
     /// </summary>
     /// <param name="syntax">The type to bind.</param>
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
-    /// <returns>The looked up type symbol for <paramref name="syntax"/>.</returns>
-    internal virtual Symbol BindType(TypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
+    /// <returns>The looked up label symbol for <paramref name="syntax"/>.</returns>
+    internal virtual Symbol BindLabel(LabelSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
-        NameTypeSyntax name => this.BindNameType(name, constraints, diagnostics),
+        NameLabelSyntax name => this.BindNameLabel(name, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private Symbol BindNameType(NameTypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private Symbol BindNameLabel(NameLabelSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var symbol = this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
+        // TODO: Value? We could explicitly look for labels...
+        var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         return symbol switch
         {
-            TypeSymbol t => t,
+            LabelSymbol l => l,
             _ => throw new InvalidOperationException(),
         };
     }

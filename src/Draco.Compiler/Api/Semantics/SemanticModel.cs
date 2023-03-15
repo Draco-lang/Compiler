@@ -30,6 +30,7 @@ public sealed partial class SemanticModel
 
     private readonly Compilation compilation;
     private readonly Dictionary<SyntaxNode, IList<BoundNode>> syntaxMap = new();
+    private readonly Dictionary<SyntaxNode, Symbol> symbolMap = new();
 
     internal SemanticModel(Compilation compilation, SyntaxTree tree)
     {
@@ -110,21 +111,37 @@ public sealed partial class SemanticModel
             // Or define an accessor for body that takes an optional semantic model?
             // var boundBody = functionSymbol.Body;
 
-            if (!this.syntaxMap.ContainsKey(subtree))
+            if (subtree is TypeSyntax or LabelSyntax)
             {
-                var bodyBinder = this.GetBinder(functionSymbol);
-                _ = bodyBinder.BindFunctionBody(functionSymbol.DeclarationSyntax.Body);
-            }
+                // Labels and types bind to a symbol directly
+                if (!this.symbolMap.ContainsKey(subtree))
+                {
+                    var bodyBinder = this.GetBinder(functionSymbol);
+                    _ = bodyBinder.BindFunctionBody(functionSymbol.DeclarationSyntax.Body);
+                }
 
-            // Now the syntax node should be in the map
-            var boundNodes = this.syntaxMap[subtree];
-            // TODO: We need to deal with potential multiple returns here
-            if (boundNodes.Count != 1) throw new NotImplementedException();
-            return boundNodes[0] switch
+                // Now the syntax node should be in the map
+                return this.symbolMap[subtree].ToApiSymbol();
+            }
+            else
             {
-                BoundFunctionExpression f => f.Function.ToApiSymbol(),
-                _ => throw new NotImplementedException(),
-            };
+                // Expressions and statements are different, they become bound nodes
+                if (!this.syntaxMap.ContainsKey(subtree))
+                {
+                    var bodyBinder = this.GetBinder(functionSymbol);
+                    _ = bodyBinder.BindFunctionBody(functionSymbol.DeclarationSyntax.Body);
+                }
+
+                // Now the syntax node should be in the map
+                var boundNodes = this.syntaxMap[subtree];
+                // TODO: We need to deal with potential multiple returns here
+                if (boundNodes.Count != 1) throw new NotImplementedException();
+                return boundNodes[0] switch
+                {
+                    BoundFunctionExpression f => f.Function.ToApiSymbol(),
+                    _ => throw new NotImplementedException(),
+                };
+            }
         }
         else
         {

@@ -64,6 +64,12 @@ public sealed partial class SemanticModel
         internal override BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintBag constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(lvalue, () => base.TypeLvalue(lvalue, constraints, diagnostics));
 
+        internal override Symbol BindLabel(LabelSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+            this.LookupNode(syntax, () => base.BindLabel(syntax, constraints, diagnostics));
+
+        internal override Symbol BindType(TypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+            this.LookupNode(syntax, () => base.BindType(syntax, constraints, diagnostics));
+
         // TODO: There's nothing incremental in this,
         // but current usage doesn't require it either
         private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode node, Func<TBoundNode> binder)
@@ -79,6 +85,18 @@ public sealed partial class SemanticModel
             var boundNode = binder();
             nodeList.Add(boundNode);
             return boundNode;
+        }
+
+        // TODO: There's nothing incremental in this,
+        // but current usage doesn't require it either
+        private Symbol LookupNode(SyntaxNode node, Func<Symbol> binder)
+        {
+            if (!this.semanticModel.symbolMap.TryGetValue(node, out var symbol))
+            {
+                symbol = binder();
+                this.semanticModel.symbolMap.Add(node, symbol);
+            }
+            return symbol;
         }
     }
 }

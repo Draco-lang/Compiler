@@ -14,10 +14,10 @@ internal sealed class SynthetizedLabelSymbol : LabelSymbol
     public override string Name { get; }
     public override Symbol? ContainingSymbol => throw new NotImplementedException();
 
-    public override Api.Semantics.ISymbol ToApiSymbol() => throw new NotImplementedException();
-
     public SynthetizedLabelSymbol(string name)
     {
         this.Name = name;
     }
+
+    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
 }

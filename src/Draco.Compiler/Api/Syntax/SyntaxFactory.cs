@@ -196,8 +196,8 @@ public static partial class SyntaxFactory
     public static SyntaxToken Val { get; } = MakeToken(TokenKind.KeywordVal);
     public static SyntaxToken Func { get; } = MakeToken(TokenKind.KeywordFunc);
     public static SyntaxToken Goto { get; } = MakeToken(TokenKind.KeywordGoto);
-    public static SyntaxToken True { get; } = MakeToken(TokenKind.KeywordTrue);
-    public static SyntaxToken False { get; } = MakeToken(TokenKind.KeywordFalse);
+    public static SyntaxToken True { get; } = MakeToken(TokenKind.KeywordTrue, true);
+    public static SyntaxToken False { get; } = MakeToken(TokenKind.KeywordFalse, false);
     public static SyntaxToken OpenBrace { get; } = MakeToken(TokenKind.CurlyOpen);
     public static SyntaxToken CloseBrace { get; } = MakeToken(TokenKind.CurlyClose);
     public static SyntaxToken OpenParen { get; } = MakeToken(TokenKind.ParenOpen);
@@ -212,4 +212,6 @@ public static partial class SyntaxFactory
         Internal.Syntax.SyntaxToken.From(tokenKind, text).ToRedNode(null!, null);
     private static SyntaxToken MakeToken(TokenKind tokenKind, string text, object? value) =>
         Internal.Syntax.SyntaxToken.From(tokenKind, text, value).ToRedNode(null!, null);
+    private static SyntaxToken MakeToken(TokenKind tokenKind, object? value) =>
+        Internal.Syntax.SyntaxToken.From(tokenKind, value: value).ToRedNode(null!, null);
 }

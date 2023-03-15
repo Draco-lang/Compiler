@@ -91,6 +91,7 @@ internal partial class UntypedLiteralExpression
     public override Type Type => this.Value switch
     {
         int => Intrinsics.Int32,
+        bool => Intrinsics.Bool,
         _ => throw new System.InvalidOperationException(),
     };
 }

@@ -85,10 +85,10 @@ internal partial class Binder
         constraints.IsCondition(condition);
         constraints.IsUnit(then);
 
-        var continueLabel = this.DeclaredSymbols
+        var continueLabel = bodyBinder.DeclaredSymbols
             .OfType<LabelSymbol>()
             .First(sym => sym.Name == "continue");
-        var breakLabel = this.DeclaredSymbols
+        var breakLabel = bodyBinder.DeclaredSymbols
             .OfType<LabelSymbol>()
             .First(sym => sym.Name == "break");
 

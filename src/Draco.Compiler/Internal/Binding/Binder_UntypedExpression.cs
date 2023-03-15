@@ -25,7 +25,9 @@ internal partial class Binder
     {
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameExpression(name, constraints, diagnostics),
+        GotoExpressionSyntax @goto => this.BindGotoExpression(@goto, constraints, diagnostics),
         IfExpressionSyntax @if => this.BindIfExpression(@if, constraints, diagnostics),
+        WhileExpressionSyntax @while => this.BindWhileExpression(@while, constraints, diagnostics),
         CallExpressionSyntax call => this.BindCallExpression(call, constraints, diagnostics),
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
@@ -49,6 +51,16 @@ internal partial class Binder
         };
     }
 
+    private UntypedExpression BindGotoExpression(GotoExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        // TODO: For now we only handle name labels, later we might want to extend this...
+        var nameLabel = (NameLabelSyntax)syntax.Target;
+
+        // TODO: We could definitely annotate that we are looking for a label...
+        var target = (LabelSymbol)this.LookupValueSymbol(nameLabel.Name.Text, syntax, diagnostics);
+        return new UntypedGotoExpression(syntax, target);
+    }
+
     private UntypedExpression BindIfExpression(IfExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
@@ -61,6 +73,26 @@ internal partial class Binder
         var resultType = constraints.CommonType(then, @else);
 
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
+    }
+
+    private UntypedExpression BindWhileExpression(WhileExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
+
+        var bodyBinder = this.GetBinder(syntax.Then);
+        var then = bodyBinder.BindExpression(syntax.Then, constraints, diagnostics);
+
+        constraints.IsCondition(condition);
+        constraints.IsUnit(then);
+
+        var continueLabel = this.DeclaredSymbols
+            .OfType<LabelSymbol>()
+            .First(sym => sym.Name == "continue");
+        var breakLabel = this.DeclaredSymbols
+            .OfType<LabelSymbol>()
+            .First(sym => sym.Name == "break");
+
+        return new UntypedWhileExpression(syntax, condition, then, continueLabel, breakLabel);
     }
 
     private UntypedExpression BindCallExpression(CallExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)

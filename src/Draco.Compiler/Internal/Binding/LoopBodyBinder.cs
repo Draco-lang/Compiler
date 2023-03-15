@@ -17,12 +17,12 @@ internal sealed class LoopBodyBinder : Binder
     /// <summary>
     /// The break label.
     /// </summary>
-    public LabelSymbol BreakLabel { get; } = new SynthetizedLabelSymbol();
+    public LabelSymbol BreakLabel { get; } = new SynthetizedLabelSymbol("break");
 
     /// <summary>
     /// The continue label.
     /// </summary>
-    public LabelSymbol ContinueLabel { get; } = new SynthetizedLabelSymbol();
+    public LabelSymbol ContinueLabel { get; } = new SynthetizedLabelSymbol("continue");
 
     public override IEnumerable<Symbol> DeclaredSymbols => new[] { this.BreakLabel, this.ContinueLabel };
 

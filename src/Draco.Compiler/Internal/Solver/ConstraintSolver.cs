@@ -27,6 +27,19 @@ internal sealed class ConstraintSolver
     public void Solve() => throw new System.NotImplementedException();
 
     /// <summary>
+    /// Adds a same-type constraint to the solver.
+    /// </summary>
+    /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
+    /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
+    /// <returns>The promise for the constraint added.</returns>
+    public ConstraintSolverPromise<Unit> SameType(Type first, Type second)
+    {
+        var constraint = new SameTypeConstraint(first, second);
+        this.constraints.Add(constraint);
+        return new(default, constraint);
+    }
+
+    /// <summary>
     /// Adds an assignable constraint to the solver.
     /// </summary>
     /// <param name="targetType">The type being assigned to.</param>

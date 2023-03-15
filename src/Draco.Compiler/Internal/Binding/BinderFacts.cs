@@ -53,11 +53,11 @@ internal static class BinderFacts
     /// </summary>
     /// <param name="node">The syntax node to check.</param>
     /// <returns>True, if <paramref name="node"/> defines its own scope.</returns>
-    public static bool DefinesScope(SyntaxNode node) => node
+    public static bool DefinesScope(SyntaxNode node) => (node
         is CompilationUnitSyntax
         or FunctionDeclarationSyntax
         or FunctionBodySyntax
-        or BlockExpressionSyntax;
+        or BlockExpressionSyntax) || IsLoopBody(node);
 
     /// <summary>
     /// Checks, if a given syntax node references a symbol.
@@ -66,5 +66,14 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="node"/> references a symbol.</returns>
     public static bool ReferencesSymbol(SyntaxNode node) => node
         is NameExpressionSyntax
-        or NameTypeSyntax;
+        or NameTypeSyntax
+        or NameLabelSyntax;
+
+    /// <summary>
+    /// Checks, if the given node is a loop body.
+    /// </summary>
+    /// <param name="node">The syntax node to check.</param>
+    /// <returns>True, if <paramref name="node"/> is a loop body.</returns>
+    public static bool IsLoopBody(SyntaxNode node) => node.Parent
+        is WhileExpressionSyntax;
 }

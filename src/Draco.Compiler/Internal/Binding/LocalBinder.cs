@@ -81,10 +81,9 @@ internal sealed class LocalBinder : Binder
     public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
     {
         // If there's a syntactic reference, check locals
-        if (reference is not null)
+        if (reference is not null && this.RelativePositions.TryGetValue(reference, out var position))
         {
             // Only check the ones that come before the reference position
-            var position = this.RelativePositions[reference];
             var localSymbol = this.LocalDeclarations
                 .Where(decl => decl.Position < position && decl.Symbol.Name == name)
                 .Select(decl => decl.Symbol)

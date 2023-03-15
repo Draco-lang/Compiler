@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -59,8 +60,31 @@ internal sealed class ConstraintBag
     /// Enforces a type to be a boolean for a condition.
     /// </summary>
     /// <param name="expr">The expression that has to be enforced.</param>
-    public void IsCondition(UntypedExpression expr) =>
-        throw new System.NotImplementedException();
+    public void IsCondition(UntypedExpression expr)
+    {
+        Debug.Assert(expr.Syntax is not null);
+        this.solver
+            .SameType(expr.TypeRequired, Intrinsics.Bool)
+            .ConfigureDiagnostic(diag => diag
+                // TODO: This is a horrible way to set the reference...
+                // We should definitely rework the location API...
+                .WithLocation(new Internal.Diagnostics.Location.TreeReference(expr.Syntax)));
+    }
+
+    /// <summary>
+    /// Enforces a type to be unit.
+    /// </summary>
+    /// <param name="expr">The expression that has to be enforced.</param>
+    public void IsUnit(UntypedExpression expr)
+    {
+        Debug.Assert(expr.Syntax is not null);
+        this.solver
+            .SameType(expr.TypeRequired, Intrinsics.Unit)
+            .ConfigureDiagnostic(diag => diag
+                // TODO: This is a horrible way to set the reference...
+                // We should definitely rework the location API...
+                .WithLocation(new Internal.Diagnostics.Location.TreeReference(expr.Syntax)));
+    }
 
     /// <summary>
     /// Enforces two expressions to have compatible types (for an if-expression for example).

@@ -49,6 +49,7 @@ internal sealed class BinderCache
         FunctionDeclarationSyntax decl => this.BuildFunctionDeclarationBinder(decl),
         FunctionBodySyntax body => this.BuildFunctionBodyBinder(body),
         BlockExpressionSyntax block => this.BuildLocalBinder(block),
+        _ when BinderFacts.IsLoopBody(syntax) => this.BuildLoopBodyBinder(syntax),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -85,6 +86,16 @@ internal sealed class BinderCache
     {
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);
-        return new LocalBinder(parent, syntax);
+        var binder = new LocalBinder(parent, syntax) as Binder;
+        // If this is a loop body, wrap it up
+        if (BinderFacts.IsLoopBody(syntax)) binder = new LoopBodyBinder(binder);
+        return binder;
+    }
+
+    private Binder BuildLoopBodyBinder(SyntaxNode syntax)
+    {
+        Debug.Assert(syntax.Parent is not null);
+        var parent = this.GetBinder(syntax.Parent);
+        return new LoopBodyBinder(parent);
     }
 }

@@ -11,6 +11,13 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class SynthetizedLabelSymbol : LabelSymbol
 {
+    public override string Name { get; }
     public override Symbol? ContainingSymbol => throw new NotImplementedException();
+
     public override Api.Semantics.ISymbol ToApiSymbol() => throw new NotImplementedException();
+
+    public SynthetizedLabelSymbol(string name)
+    {
+        this.Name = name;
+    }
 }

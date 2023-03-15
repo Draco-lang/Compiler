@@ -72,13 +72,6 @@ public interface IParameterSymbol : IVariableSymbol
 }
 
 /// <summary>
-/// Represents a label symbol.
-/// </summary>
-public interface ILabelSymbol : ISymbol
-{
-}
-
-/// <summary>
 /// Represents a parameter symbol.
 /// </summary>
 public interface IFunctionSymbol : ISymbol
@@ -89,6 +82,13 @@ public interface IFunctionSymbol : ISymbol
 /// Represents a type symbol.
 /// </summary>
 public interface ITypeSymbol : ISymbol
+{
+}
+
+/// <summary>
+/// Represents a label symbol.
+/// </summary>
+public interface ILabelSymbol : ISymbol
 {
 }
 
@@ -169,6 +169,14 @@ internal sealed class FunctionSymbol : SymbolBase<Internal.Symbols.FunctionSymbo
 {
     public FunctionSymbol(Internal.Symbols.FunctionSymbol function)
         : base(function)
+    {
+    }
+}
+
+internal sealed class LabelSymbol : SymbolBase<Internal.Symbols.LabelSymbol>, ILabelSymbol
+{
+    public LabelSymbol(Internal.Symbols.LabelSymbol label)
+        : base(label)
     {
     }
 }

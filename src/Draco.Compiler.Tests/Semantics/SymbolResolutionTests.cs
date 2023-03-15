@@ -574,6 +574,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(labelRefSym.IsError);
     }
 
+    // TODO: Should this actually be an error?
+    // Does it make sense that this goto break would bind to the surrounding loop?
     [Fact]
     public void GotoBreakLabelInCondition()
     {

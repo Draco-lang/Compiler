@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -24,6 +25,20 @@ internal sealed class ConstraintSolver
     /// Solves all constraints within the solver.
     /// </summary>
     public void Solve() => throw new System.NotImplementedException();
+
+    /// <summary>
+    /// Adds an assignable constraint to the solver.
+    /// </summary>
+    /// <param name="targetType">The type being assigned to.</param>
+    /// <param name="targetType">The type assigned.</param>
+    /// <returns>The promise for the constraint added.</returns>
+    public ConstraintSolverPromise<Unit> Assignable(Type targetType, Type assignedType)
+    {
+        // TODO: Hack, this is temporary until we have other constraints
+        var constraint = new SameTypeConstraint(targetType, assignedType);
+        this.constraints.Add(constraint);
+        return new(default, constraint);
+    }
 
     /// <summary>
     /// Adds a call constraint to the solver.

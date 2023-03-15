@@ -29,27 +29,21 @@ internal sealed class ConstraintBag
     /// <param name="syntax">The syntax declaring the local.</param>
     public void LocalDeclaration(LocalSymbol symbol, Symbol? type, UntypedExpression? value, VariableDeclarationSyntax syntax)
     {
-        if (type is not null && value is not null)
+        // If the type is not specified, we assume it still can be anything
+        var inferredType = type is null
+            ? this.solver.NextTypeVariable
+            : ((TypeSymbol)type).Type;
+        this.localTypes.Add(symbol, inferredType);
+
+        // If there's a value, it has to be assignable
+        if (value is not null)
         {
-            // var x: T = v;
-            throw new System.NotImplementedException();
-        }
-        else if (type is not null)
-        {
-            // var x: T;
-            var typeSymbol = (TypeSymbol)type;
-            this.localTypes.Add(symbol, typeSymbol.Type);
-        }
-        else if (value is not null)
-        {
-            // var x = v;
-            throw new System.NotImplementedException();
-        }
-        else
-        {
-            // var x;
-            var typeVar = this.solver.NextTypeVariable;
-            this.localTypes.Add(symbol, typeVar);
+            this.solver
+                .Assignable(inferredType, value.TypeRequired)
+                .ConfigureDiagnostic(diag => diag
+                    // TODO: This is a horrible way to set the reference...
+                    // We should definitely rework the location API...
+                    .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)));
         }
     }
 

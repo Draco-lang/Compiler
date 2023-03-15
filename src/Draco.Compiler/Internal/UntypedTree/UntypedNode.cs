@@ -56,6 +56,11 @@ internal partial class UntypedReturnExpression
     public override Type Type => Intrinsics.Never;
 }
 
+internal partial class UntypedBlockExpression
+{
+    public override Type Type => this.Value.TypeRequired;
+}
+
 internal partial class UntypedWhileExpression
 {
     public override Type Type => Intrinsics.Unit;
@@ -78,7 +83,7 @@ internal partial class UntypedParameterExpression
 
 internal partial class UntypedFunctionExpression
 {
-    public override Type Type => this.type ??= BuildType();
+    public override Type Type => this.type ??= this.BuildType();
     private Type? type;
 
     private Type BuildType() => new FunctionType(

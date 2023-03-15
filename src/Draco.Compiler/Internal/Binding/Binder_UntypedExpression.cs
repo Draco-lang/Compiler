@@ -25,6 +25,7 @@ internal partial class Binder
     {
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameExpression(name, constraints, diagnostics),
+        BlockExpressionSyntax block => this.BindBlockExpression(block, constraints, diagnostics),
         GotoExpressionSyntax @goto => this.BindGotoExpression(@goto, constraints, diagnostics),
         IfExpressionSyntax @if => this.BindIfExpression(@if, constraints, diagnostics),
         WhileExpressionSyntax @while => this.BindWhileExpression(@while, constraints, diagnostics),
@@ -49,6 +50,21 @@ internal partial class Binder
             FunctionSymbol func => new UntypedFunctionExpression(syntax, func),
             _ => throw new InvalidOperationException(),
         };
+    }
+
+    private UntypedExpression BindBlockExpression(BlockExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var binder = this.GetBinder(syntax);
+        var locals = binder.DeclaredSymbols
+            .OfType<LocalSymbol>()
+            .ToImmutableArray();
+        var statements = syntax.Statements
+            .Select(s => binder.BindStatement(s, constraints, diagnostics))
+            .ToImmutableArray();
+        var value = syntax.Value is null
+            ? UntypedUnitExpression.Default
+            : binder.BindExpression(syntax.Value, constraints, diagnostics);
+        return new UntypedBlockExpression(syntax, locals, statements, value);
     }
 
     private UntypedExpression BindGotoExpression(GotoExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)

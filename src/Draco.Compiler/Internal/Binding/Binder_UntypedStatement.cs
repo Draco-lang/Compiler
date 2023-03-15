@@ -50,7 +50,7 @@ internal partial class Binder
             .ToImmutableArray();
         return new UntypedExpressionStatement(
             syntax,
-            new UntypedBlockExpression(syntax, locals, statements, UntypedUnitExpression.Default, Types.Intrinsics.Unit));
+            new UntypedBlockExpression(syntax, locals, statements, UntypedUnitExpression.Default));
     }
 
     private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)

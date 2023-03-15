@@ -2,8 +2,8 @@ import { downloadAssemblies } from './cache.js';
 
 const compilerWorker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
 let runtimeWorker: Worker | undefined;
-let listeners : ((arg: {outputType: string; value: string, clear: boolean}) => void)[] = [];
-let stdoutBuffer = 'Loading Compiler\'s .NET Runtime...';
+let listeners: ((arg: {outputType: string; value: string; clear: boolean}) => void)[] = [];
+
 compilerWorker.onmessage = async (ev) => {
     const msg = ev.data as {
         type: string;
@@ -19,7 +19,6 @@ compilerWorker.onmessage = async (ev) => {
         if (runtimeWorker != undefined) {
             runtimeWorker.terminate();
         }
-        stdoutBuffer = '';
         onOutputChange('stdout', 'Loading script\'s .NET Runtime...', true);
         runtimeWorker = new Worker('worker.js');
         const cfg = JSON.parse(msg.message);
@@ -35,8 +34,7 @@ compilerWorker.onmessage = async (ev) => {
                 };
             switch (runtimeMsg.type) {
             case 'stdout':
-                stdoutBuffer += runtimeMsg.message + '\n';
-                onOutputChange('stdout', stdoutBuffer, shouldClean);
+                onOutputChange('stdout', runtimeMsg.message + '\n', shouldClean);
                 shouldClean = false;
                 break;
             default:
@@ -60,19 +58,19 @@ export function setCode(code: string) {
 }
 
 function onOutputChange(outputType: string, value: string, clear: boolean) {
-    listeners.forEach(s=>s({
+    listeners.forEach(s => s({
         outputType: outputType,
         value: value,
         clear: clear
     }));
 }
 
-export function subscribeOutputChange(listener: (arg: {outputType: string; value: string, clear:boolean}) => void) {
+export function subscribeOutputChange(listener: (arg: {outputType: string; value: string; clear:boolean}) => void) {
     listeners.push(listener);
 }
 
 export function unsubscribeOutputChange(listener: (arg: {outputType: string; value: string}) => void) {
-    listeners = listeners.filter(s=>s!=listener);
+    listeners = listeners.filter(s => s != listener);
 }
 
 export async function initDotnetWorkers(initCode: string) {

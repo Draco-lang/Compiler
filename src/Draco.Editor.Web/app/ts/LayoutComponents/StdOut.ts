@@ -17,7 +17,7 @@ export class StdOut {
         this.rootElement.appendChild(div);
         div.classList.add('editor-container');
         div.classList.add('output-viewer');
-        this.terminal = new Terminal();
+        this.terminal = new Terminal({convertEol: true});
         const fitAddon = new FitAddon();
         this.terminal.loadAddon(fitAddon);
         this.terminal.open(div);

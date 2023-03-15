@@ -28,7 +28,9 @@ internal partial class Binder
         UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
         UntypedBlockExpression block => this.TypeBlockExpression(block, constraints, diagnostics),
+        UntypedGotoExpression @goto => this.TypeGotoExpression(@goto, constraints, diagnostics),
         UntypedIfExpression @if => this.TypeIfExpression(@if, constraints, diagnostics),
+        UntypedWhileExpression @while => this.TypeWhileExpression(@while, constraints, diagnostics),
         UntypedCallExpression call => this.TypeCallExpression(call, constraints, diagnostics),
         UntypedAssignmentExpression assignment => this.TypeAssignmentExpression(assignment, constraints, diagnostics),
         UntypedUnaryExpression ury => this.TypeUnaryExpression(ury, constraints, diagnostics),
@@ -63,12 +65,22 @@ internal partial class Binder
         return new BoundBlockExpression(block.Syntax, block.Locals, typedStatements, typedValue);
     }
 
+    private BoundExpression TypeGotoExpression(UntypedGotoExpression @goto, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundGotoExpression(@goto.Syntax, @goto.Target);
+
     private BoundExpression TypeIfExpression(UntypedIfExpression @if, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var typedCondition = this.TypeExpression(@if.Condition, constraints, diagnostics);
         var typedThen = this.TypeExpression(@if.Then, constraints, diagnostics);
         var typedElse = this.TypeExpression(@if.Else, constraints, diagnostics);
         return new BoundIfExpression(@if.Syntax, typedCondition, typedThen, typedElse);
+    }
+
+    private BoundExpression TypeWhileExpression(UntypedWhileExpression @while, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var typedCondition = this.TypeExpression(@while.Condition, constraints, diagnostics);
+        var typedThen = this.TypeExpression(@while.Then, constraints, diagnostics);
+        return new BoundWhileExpression(@while.Syntax, typedCondition, typedThen, @while.ContinueLabel, @while.BreakLabel);
     }
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintBag constraints, DiagnosticBag diagnostics)

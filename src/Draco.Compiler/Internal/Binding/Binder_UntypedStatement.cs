@@ -63,7 +63,8 @@ internal partial class Binder
     private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
-        var labelSymbol = (LabelSymbol?)((LocalBinder)this).Declarations
+        var labelSymbol = (LabelSymbol?)this.DeclaredSymbols
+            .OfType<LabelSymbol>()
             .OfType<ISourceSymbol>()
             .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
         Debug.Assert(labelSymbol is not null);

@@ -26,5 +26,5 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         this.declaration = declaration;
     }
 
-    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
+    public override ISymbol ToApiSymbol() => new Api.Semantics.GlobalSymbol(this);
 }

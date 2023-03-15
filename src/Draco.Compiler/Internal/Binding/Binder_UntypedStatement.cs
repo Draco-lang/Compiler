@@ -42,9 +42,8 @@ internal partial class Binder
     private UntypedStatement BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
-        var locals = ((LocalBinder)binder).LocalDeclarations
-            .Select(decl => decl.Symbol)
-            .Cast<LocalSymbol>()
+        var locals = binder.DeclaredSymbols
+            .OfType<LocalSymbol>()
             .ToImmutableArray();
         var statements = syntax.Statements
             .Select(s => binder.BindStatement(s, constraints, diagnostics))
@@ -75,8 +74,8 @@ internal partial class Binder
     private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
-        var localSymbol = (LocalSymbol?)((LocalBinder)this).LocalDeclarations
-            .Select(decl => decl.Symbol)
+        var localSymbol = (LocalSymbol?)this.DeclaredSymbols
+            .OfType<LocalSymbol>()
             .OfType<ISourceSymbol>()
             .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
         Debug.Assert(localSymbol is not null);

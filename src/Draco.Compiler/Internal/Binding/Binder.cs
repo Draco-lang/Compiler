@@ -31,9 +31,9 @@ internal abstract partial class Binder
     public virtual Symbol? ContainingSymbol => this.Parent?.ContainingSymbol;
 
     /// <summary>
-    /// The symbols defined in this binder scope.
+    /// The symbols declared in this binder scope.
     /// </summary>
-    public virtual IEnumerable<Symbol> Symbols => Enumerable.Empty<Symbol>();
+    public virtual IEnumerable<Symbol> DeclaredSymbols => Enumerable.Empty<Symbol>();
 
     protected Binder(Compilation compilation, Binder? parent)
     {

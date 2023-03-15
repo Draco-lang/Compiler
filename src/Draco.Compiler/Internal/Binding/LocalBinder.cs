@@ -61,7 +61,7 @@ internal sealed class LocalBinder : Binder
         }
     }
 
-    public override IEnumerable<Symbol> Symbols => this.Declarations
+    public override IEnumerable<Symbol> DeclaredSymbols => this.Declarations
         .Concat(this.LocalDeclarations.Select(d => d.Symbol));
 
     private bool NeedsBuild => this.relativePositions is null;

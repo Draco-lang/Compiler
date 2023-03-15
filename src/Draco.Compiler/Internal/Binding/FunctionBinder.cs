@@ -16,7 +16,7 @@ internal sealed class FunctionBinder : Binder
 {
     public override Symbol? ContainingSymbol => this.symbol;
 
-    public override IEnumerable<Symbol> Symbols => this.symbol.Parameters;
+    public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Parameters;
 
     private readonly FunctionSymbol symbol;
 

@@ -17,7 +17,7 @@ internal sealed class ModuleBinder : Binder
 {
     public override Symbol? ContainingSymbol => this.symbol;
 
-    public override IEnumerable<Symbol> Symbols => this.symbol.Members;
+    public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Members;
 
     private readonly ModuleSymbol symbol;
 

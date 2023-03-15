@@ -86,7 +86,7 @@ public sealed class SemanticModel
         // NOTE: We expect the parent to define the symbol, so we look up the parent node
         if (subtree.Parent is null) return null;
         var binder = this.compilation.GetBinder(subtree.Parent);
-        var internalSymbol = (Symbol?)binder.Symbols
+        var internalSymbol = (Symbol?)binder.DeclaredSymbols
             .OfType<ISourceSymbol>()
             .FirstOrDefault(sym => subtree.Equals(sym.DeclarationSyntax));
         return internalSymbol?.ToApiSymbol();
@@ -151,6 +151,10 @@ public sealed class SemanticModel
         /// The binder being wrapped by this one.
         /// </summary>
         public Binder UnderlyingBinder { get; }
+
+        public override Symbol? ContainingSymbol => this.UnderlyingBinder.ContainingSymbol;
+
+        public override IEnumerable<Symbol> DeclaredSymbols => this.UnderlyingBinder.DeclaredSymbols;
 
         private readonly SemanticModel semanticModel;
 

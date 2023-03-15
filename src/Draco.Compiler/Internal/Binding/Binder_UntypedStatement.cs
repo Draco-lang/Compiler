@@ -81,7 +81,7 @@ internal partial class Binder
         Debug.Assert(localSymbol is not null);
 
         var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, constraints, diagnostics);
-        var value = syntax.Value is null ? null : this.BindExpression(syntax.Value, constraints, diagnostics);
+        var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);
 
         constraints.LocalDeclaration(localSymbol, type, value, syntax);
 

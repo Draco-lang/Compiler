@@ -150,8 +150,21 @@ internal sealed class ConstraintBag
     /// <param name="right">The right operand.</param>
     /// <param name="syntax">The syntax invoking the operator.</param>
     /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
-    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) =>
-        throw new System.NotImplementedException();
+    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax)
+    {
+        var functionSymbol = (FunctionSymbol)@operator;
+        var methodType = new FunctionType(
+            functionSymbol.Parameters.Select(p => p.Type).ToImmutableArray(),
+            functionSymbol.ReturnType);
+        var argumentTypes = new[] { left.TypeRequired, right.TypeRequired };
+        return this.solver
+            .Call(methodType, argumentTypes)
+            .ConfigureDiagnostic(diag => diag
+                // TODO: This is a horrible way to set the reference...
+                // We should definitely rework the location API...
+                .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)))
+            .Result;
+    }
 
     /// <summary>
     /// Constraints that a comparison operator is being invoked.

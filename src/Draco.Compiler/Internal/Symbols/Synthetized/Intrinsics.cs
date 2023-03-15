@@ -26,9 +26,10 @@ internal static class Intrinsics
     // Operators
 
     private static ComparisonOperatorSymbol Comparison(TokenKind token) => new SynthetizedComparisonOperatorSymbol(token);
-    private static UnaryOperatorSymbol Unary(TokenKind token) => new SynthetizedUnaryOperatorSymbol(token);
+    private static UnaryOperatorSymbol Unary(TokenKind token, Type operandType, Type returnType) =>
+        new SynthetizedUnaryOperatorSymbol(token, operandType, returnType);
 
-    public static UnaryOperatorSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot);
+    public static UnaryOperatorSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Types.Intrinsics.Bool, Types.Intrinsics.Bool);
 
     public static ComparisonOperatorSymbol Int32_Equal { get; } = Comparison(TokenKind.Equal);
     public static ComparisonOperatorSymbol Int32_NotEqual { get; } = Comparison(TokenKind.NotEqual);
@@ -37,6 +38,6 @@ internal static class Intrinsics
     public static ComparisonOperatorSymbol Int32_GreaterEqual { get; } = Comparison(TokenKind.GreaterEqual);
     public static ComparisonOperatorSymbol Int32_LessEqual { get; } = Comparison(TokenKind.LessEqual);
 
-    public static UnaryOperatorSymbol Int32_Plus { get; } = Unary(TokenKind.Plus);
-    public static UnaryOperatorSymbol Int32_Minus { get; } = Unary(TokenKind.Minus);
+    public static UnaryOperatorSymbol Int32_Plus { get; } = Unary(TokenKind.Plus, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static UnaryOperatorSymbol Int32_Minus { get; } = Unary(TokenKind.Minus, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
 }

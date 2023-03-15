@@ -12,9 +12,14 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class SynthetizedParameterSymbol : ParameterSymbol
 {
-    public override Type Type => throw new System.NotImplementedException();
+    public override Type Type { get; }
 
     public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
+
+    public SynthetizedParameterSymbol(Type type)
+    {
+        this.Type = type;
+    }
 
     public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
 }

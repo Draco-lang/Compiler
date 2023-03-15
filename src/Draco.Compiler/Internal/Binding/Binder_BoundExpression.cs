@@ -25,6 +25,7 @@ internal partial class Binder
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedParameterExpression @param => this.TypeParameterExpression(param, constraints, diagnostics),
+        UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
         UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
         UntypedBlockExpression block => this.TypeBlockExpression(block, constraints, diagnostics),
@@ -34,6 +35,7 @@ internal partial class Binder
         UntypedCallExpression call => this.TypeCallExpression(call, constraints, diagnostics),
         UntypedAssignmentExpression assignment => this.TypeAssignmentExpression(assignment, constraints, diagnostics),
         UntypedUnaryExpression ury => this.TypeUnaryExpression(ury, constraints, diagnostics),
+        UntypedBinaryExpression bin => this.TypeBinaryExpression(bin, constraints, diagnostics),
         UntypedRelationalExpression rel => this.TypeRelationalExpression(rel, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
@@ -46,6 +48,9 @@ internal partial class Binder
 
     private BoundExpression TypeParameterExpression(UntypedParameterExpression param, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundParameterExpression(param.Syntax, param.Parameter);
+
+    private BoundExpression TypeLocalExpression(UntypedLocalExpression local, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundLocalExpression(local.Syntax, local.Local);
 
     private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundFunctionExpression(func.Syntax, func.Function);
@@ -105,6 +110,15 @@ internal partial class Binder
         // TODO: Resolve operator from possible overload set
         var unaryOperator = (UnaryOperatorSymbol?)null ?? throw new NotImplementedException();
         return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand);
+    }
+
+    private BoundExpression TypeBinaryExpression(UntypedBinaryExpression bin, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var typedLeft = this.TypeExpression(bin.Left, constraints, diagnostics);
+        var typedRight = this.TypeExpression(bin.Right, constraints, diagnostics);
+        // TODO: Resolve operator from possible overload set
+        var binaryOperator = (BinaryOperatorSymbol?)null ?? throw new NotImplementedException();
+        return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight);
     }
 
     private BoundExpression TypeRelationalExpression(UntypedRelationalExpression rel, ConstraintBag constraints, DiagnosticBag diagnostics)

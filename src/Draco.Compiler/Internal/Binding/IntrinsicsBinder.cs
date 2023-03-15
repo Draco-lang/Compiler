@@ -19,7 +19,7 @@ internal sealed class IntrinsicsBinder : Binder
 {
     private static ImmutableArray<Symbol> IntrinsicSymbols { get; } = typeof(Intrinsics)
         .GetProperties(BindingFlags.Public | BindingFlags.Static)
-        .Where(prop => prop.PropertyType == typeof(Symbol))
+        .Where(prop => prop.PropertyType.IsAssignableTo(typeof(Symbol)))
         .Select(prop => prop.GetValue(null))
         .Cast<Symbol>()
         .ToImmutableArray();

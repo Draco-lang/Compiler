@@ -75,6 +75,10 @@ internal sealed class LocalBinder : Binder
     public LocalBinder(Binder parent, SyntaxNode syntax)
         : base(parent)
     {
+        if (!BinderFacts.DefinesScope(syntax))
+        {
+            throw new ArgumentException("the bound syntax must define a scope for local binding", nameof(syntax));
+        }
         this.syntax = syntax;
     }
 
@@ -126,8 +130,6 @@ internal sealed class LocalBinder : Binder
         var position = 0;
         foreach (var syntax in EnumerateNodesInSameScope(this.syntax))
         {
-            // We skip tokens, those are cached
-            if (syntax is SyntaxToken) continue;
             // First off, we add to the position translator
             relativePositionsBuilder.Add(syntax, position);
             // Next, we check if the syntax defines some kind of symbol
@@ -136,8 +138,16 @@ internal sealed class LocalBinder : Binder
             {
                 // There is a symbol being built
                 // If it's a local, it depends on position, otherwise we don't care
-                if (symbol is LocalSymbol) localDeclarationsBuilder.Add(new(position, symbol));
-                else declarationsBuilder.Add(symbol);
+                if (symbol is LocalSymbol)
+                {
+                    // Locals need to be offset by their width
+                    var width = EnumerateNodesInSameScope(syntax).Count();
+                    localDeclarationsBuilder.Add(new(position + width, symbol));
+                }
+                else
+                {
+                    declarationsBuilder.Add(symbol);
+                }
             }
             // Increment relative position
             ++position;
@@ -161,6 +171,9 @@ internal sealed class LocalBinder : Binder
         // We go through each child of the current tree
         foreach (var child in tree.Children)
         {
+            // We skip tokens
+            if (child is SyntaxToken) continue;
+
             // We yield the child first
             yield return child;
 

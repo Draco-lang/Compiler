@@ -108,7 +108,7 @@ internal partial class Binder
     {
         var typedOperand = this.TypeExpression(ury.Operand, constraints, diagnostics);
         // TODO: Resolve operator from possible overload set
-        var unaryOperator = (UnaryOperatorSymbol?)null ?? throw new NotImplementedException();
+        var unaryOperator = (UnaryOperatorSymbol)ury.Operator;
         return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand);
     }
 
@@ -117,7 +117,7 @@ internal partial class Binder
         var typedLeft = this.TypeExpression(bin.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(bin.Right, constraints, diagnostics);
         // TODO: Resolve operator from possible overload set
-        var binaryOperator = (BinaryOperatorSymbol?)null ?? throw new NotImplementedException();
+        var binaryOperator = (BinaryOperatorSymbol)bin.Operator;
         return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight);
     }
 
@@ -134,7 +134,7 @@ internal partial class Binder
     {
         var next = this.TypeExpression(cmp.Next, constraints, diagnostics);
         // TODO: Resolve comparison operator from possible overload set
-        var comparisonOperator = (ComparisonOperatorSymbol?)null ?? throw new NotImplementedException();
+        var comparisonOperator = (ComparisonOperatorSymbol)cmp.Operator;
         return new BoundComparison(cmp.Syntax, comparisonOperator, next);
     }
 }

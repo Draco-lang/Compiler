@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Any variable-like symbol.
 /// </summary>
-internal abstract partial class VariableSymbol : Symbol
+internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
 {
     /// <summary>
     /// The type of the local.

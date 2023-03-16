@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a free-function.
 /// </summary>
-internal abstract partial class FunctionSymbol : Symbol
+internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
 {
     /// <summary>
     /// The parameters of this function.
@@ -24,4 +24,11 @@ internal abstract partial class FunctionSymbol : Symbol
     public abstract Type ReturnType { get; }
 
     public override IEnumerable<Symbol> Members => this.Parameters;
+
+    public Type Type => this.type ??= this.BuildType();
+    private Type? type;
+
+    private Type BuildType() => new FunctionType(
+        this.Parameters.Select(p => p.Type).ToImmutableArray(),
+        this.ReturnType);
 }

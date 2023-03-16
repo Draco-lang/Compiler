@@ -152,7 +152,7 @@ internal sealed class ConstraintBag
     /// <param name="syntax">The syntax invoking the operator.</param>
     /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
     public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) => this
-        .CallOperator(@operator, new[] { left.TypeRequired, right.TypeRequired })
+        .CallSymbol(@operator, new[] { left.TypeRequired, right.TypeRequired })
         .ConfigureDiagnostic(diag => diag
             // TODO: This is a horrible way to set the reference...
             // We should definitely rework the location API...
@@ -170,7 +170,7 @@ internal sealed class ConstraintBag
     public Type CallComparisonOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, ComparisonElementSyntax syntax) =>
         throw new System.NotImplementedException();
 
-    private ConstraintSolverPromise<Type> CallOperator(Symbol @operator, Type[] args)
+    private ConstraintSolverPromise<Type> CallSymbol(Symbol @operator, Type[] args)
     {
         if (@operator is FunctionSymbol functionSymbol)
         {

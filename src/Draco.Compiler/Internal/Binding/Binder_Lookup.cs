@@ -20,7 +20,7 @@ internal partial class Binder
     protected Symbol LookupValueSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
     {
         var result = this.LookupInternal(name, BinderFacts.IsValueSymbol, reference);
-        return result.GetValue(reference, diagnostics);
+        return result.GetValue(name, reference, diagnostics);
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ internal partial class Binder
     protected TypeSymbol LookupTypeSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
     {
         var result = this.LookupInternal(name, BinderFacts.IsTypeSymbol, reference);
-        return result.GetType(reference, diagnostics);
+        return result.GetType(name, reference, diagnostics);
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ internal partial class Binder
     protected LabelSymbol LookupLabelSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
     {
         var result = this.LookupInternal(name, BinderFacts.IsLabelSymbol, reference);
-        return result.GetLabel(reference, diagnostics);
+        return result.GetLabel(name, reference, diagnostics);
     }
 
     /// <summary>

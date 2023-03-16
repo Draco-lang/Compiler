@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -71,10 +72,11 @@ internal sealed class LookupResult
     /// <summary>
     /// Retrieves the symbol looked up in a value context.
     /// </summary>
+    /// <param name="name">The referenced symbol name.</param>
     /// <param name="syntax">The referencing syntax, if any.</param>
     /// <param name="diagnostics">The diagnostics are added here.</param>
     /// <returns>The <see cref="Symbol"/> retrieved in a value context.</returns>
-    public Symbol GetValue(SyntaxNode? syntax, DiagnosticBag diagnostics)
+    public Symbol GetValue(string name, SyntaxNode? syntax, DiagnosticBag diagnostics)
     {
         if (!this.FoundAny)
         {
@@ -94,10 +96,11 @@ internal sealed class LookupResult
     /// <summary>
     /// Retrieves the symbol looked up in a type context.
     /// </summary>
+    /// <param name="name">The referenced symbol name.</param>
     /// <param name="syntax">The referencing syntax, if any.</param>
     /// <param name="diagnostics">The diagnostics are added here.</param>
     /// <returns>The <see cref="TypeSymbol"/> retrieved in a type context.</returns>
-    public TypeSymbol GetType(SyntaxNode? syntax, DiagnosticBag diagnostics)
+    public TypeSymbol GetType(string name, SyntaxNode? syntax, DiagnosticBag diagnostics)
     {
         if (!this.FoundAny)
         {
@@ -116,15 +119,17 @@ internal sealed class LookupResult
     /// <summary>
     /// Retrieves the symbol looked up in a label context.
     /// </summary>
+    /// <param name="name">The referenced symbol name.</param>
     /// <param name="syntax">The referencing syntax, if any.</param>
     /// <param name="diagnostics">The diagnostics are added here.</param>
     /// <returns>The <see cref="LabelSymbol"/> retrieved in a label context.</returns>
-    public LabelSymbol GetLabel(SyntaxNode? syntax, DiagnosticBag diagnostics)
+    public LabelSymbol GetLabel(string name, SyntaxNode? syntax, DiagnosticBag diagnostics)
     {
         if (!this.FoundAny)
         {
-            // TODO: Return a reference error symbol, add diagnostic
-            throw new NotImplementedException();
+            // TODO: Log error
+            // Return a sentinel label error
+            return new ErrorLabelSymbol(name);
         }
         if (this.Symbols.Count > 1)
         {

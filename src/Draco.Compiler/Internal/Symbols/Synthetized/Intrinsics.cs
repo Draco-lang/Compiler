@@ -28,6 +28,8 @@ internal static class Intrinsics
     private static ComparisonOperatorSymbol Comparison(TokenKind token) => new SynthetizedComparisonOperatorSymbol(token);
     private static UnaryOperatorSymbol Unary(TokenKind token, Type operandType, Type returnType) =>
         new SynthetizedUnaryOperatorSymbol(token, operandType, returnType);
+    private static BinaryOperatorSymbol Binary(TokenKind token, Type leftType, Type rightType, Type returnType) =>
+        new SynthetizedBinaryOperatorSymbol(token, leftType, rightType, returnType);
 
     public static UnaryOperatorSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Types.Intrinsics.Bool, Types.Intrinsics.Bool);
 
@@ -40,4 +42,11 @@ internal static class Intrinsics
 
     public static UnaryOperatorSymbol Int32_Plus { get; } = Unary(TokenKind.Plus, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
     public static UnaryOperatorSymbol Int32_Minus { get; } = Unary(TokenKind.Minus, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+
+    public static BinaryOperatorSymbol Int32_Add { get; } = Binary(TokenKind.Plus, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static BinaryOperatorSymbol Int32_Sub { get; } = Binary(TokenKind.Minus, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static BinaryOperatorSymbol Int32_Mul { get; } = Binary(TokenKind.Star, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static BinaryOperatorSymbol Int32_Div { get; } = Binary(TokenKind.Slash, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static BinaryOperatorSymbol Int32_Mod { get; } = Binary(TokenKind.KeywordMod, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static BinaryOperatorSymbol Int32_Rem { get; } = Binary(TokenKind.KeywordRem, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
 }

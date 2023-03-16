@@ -21,6 +21,10 @@ internal abstract partial class BinaryOperatorSymbol : FunctionSymbol
     {
         TokenKind.Plus => "operator +",
         TokenKind.Minus => "operator -",
+        TokenKind.Star => "operator *",
+        TokenKind.Slash => "operator /",
+        TokenKind.KeywordMod => "operator mod",
+        TokenKind.KeywordRem => "operator rem",
         _ => throw new ArgumentOutOfRangeException(nameof(token)),
     };
 

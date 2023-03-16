@@ -74,4 +74,8 @@ internal abstract partial class Symbol
 
         return builder.ToDot();
     }
+
+    public override string ToString() => this is ITypedSymbol typed
+        ? $"{this.Name}: {typed.Type}"
+        : this.Name;
 }

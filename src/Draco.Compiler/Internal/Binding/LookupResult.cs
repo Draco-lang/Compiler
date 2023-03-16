@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -82,7 +83,11 @@ internal sealed class LookupResult
     {
         if (!this.FoundAny)
         {
-            // TODO: Log error
+            // Report error
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.UndefinedReference,
+                location: syntax is null ? null : new Location.TreeReference(syntax),
+                formatArgs: name));
             // Return a sentinel value error
             return new ErrorValueSymbol(name);
         }
@@ -114,7 +119,11 @@ internal sealed class LookupResult
     {
         if (!this.FoundAny)
         {
-            // TODO: Log error
+            // Report error
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.UndefinedReference,
+                location: syntax is null ? null : new Location.TreeReference(syntax),
+                formatArgs: name));
             // Return a sentinel type error
             return new ErrorTypeSymbol(name);
         }
@@ -138,7 +147,11 @@ internal sealed class LookupResult
     {
         if (!this.FoundAny)
         {
-            // TODO: Log error
+            // Report error
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.UndefinedReference,
+                location: syntax is null ? null : new Location.TreeReference(syntax),
+                formatArgs: name));
             // Return a sentinel label error
             return new ErrorLabelSymbol(name);
         }

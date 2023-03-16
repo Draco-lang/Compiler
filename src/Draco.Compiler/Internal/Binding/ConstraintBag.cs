@@ -8,6 +8,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
 
@@ -64,7 +65,7 @@ internal sealed class ConstraintBag
     {
         Debug.Assert(expr.Syntax is not null);
         this.solver
-            .SameType(expr.TypeRequired, Intrinsics.Bool)
+            .SameType(expr.TypeRequired, Types.Intrinsics.Bool)
             .ConfigureDiagnostic(diag => diag
                 // TODO: This is a horrible way to set the reference...
                 // We should definitely rework the location API...
@@ -79,7 +80,7 @@ internal sealed class ConstraintBag
     {
         Debug.Assert(expr.Syntax is not null);
         this.solver
-            .SameType(expr.TypeRequired, Intrinsics.Unit)
+            .SameType(expr.TypeRequired, Types.Intrinsics.Unit)
             .ConfigureDiagnostic(diag => diag
                 // TODO: This is a horrible way to set the reference...
                 // We should definitely rework the location API...
@@ -150,21 +151,13 @@ internal sealed class ConstraintBag
     /// <param name="right">The right operand.</param>
     /// <param name="syntax">The syntax invoking the operator.</param>
     /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
-    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax)
-    {
-        var functionSymbol = (FunctionSymbol)@operator;
-        var methodType = new FunctionType(
-            functionSymbol.Parameters.Select(p => p.Type).ToImmutableArray(),
-            functionSymbol.ReturnType);
-        var argumentTypes = new[] { left.TypeRequired, right.TypeRequired };
-        return this.solver
-            .Call(methodType, argumentTypes)
-            .ConfigureDiagnostic(diag => diag
-                // TODO: This is a horrible way to set the reference...
-                // We should definitely rework the location API...
-                .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)))
-            .Result;
-    }
+    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) => this
+        .CallOperator(@operator, new[] { left.TypeRequired, right.TypeRequired })
+        .ConfigureDiagnostic(diag => diag
+            // TODO: This is a horrible way to set the reference...
+            // We should definitely rework the location API...
+            .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)))
+        .Result;
 
     /// <summary>
     /// Constraints that a comparison operator is being invoked.
@@ -176,4 +169,23 @@ internal sealed class ConstraintBag
     /// <returns>The result of the comparison, the boolean type.</returns>
     public Type CallComparisonOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, ComparisonElementSyntax syntax) =>
         throw new System.NotImplementedException();
+
+    private ConstraintSolverPromise<Type> CallOperator(Symbol @operator, Type[] args)
+    {
+        if (@operator is FunctionSymbol functionSymbol)
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
+        else if (@operator is OverloadSymbol overloadSymbol)
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
+        else
+        {
+            // Should never happen
+            throw new System.InvalidOperationException();
+        }
+    }
 }

@@ -23,14 +23,6 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private Symbol BindNameLabel(NameLabelSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
-    {
-        // TODO: Value? We could explicitly look for labels...
-        var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        return symbol switch
-        {
-            LabelSymbol l => l,
-            _ => throw new InvalidOperationException(),
-        };
-    }
+    private Symbol BindNameLabel(NameLabelSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        this.LookupLabelSymbol(syntax.Name.Text, syntax, diagnostics);
 }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -13,6 +14,11 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class LookupResult
 {
+    /// <summary>
+    /// True, if the lookup should continue.
+    /// </summary>
+    public bool ShouldContinue => !this.FoundAny || this.IsOverloadSet;
+
     /// <summary>
     /// True, if symbols have been found during the lookup.
     /// </summary>
@@ -90,8 +96,8 @@ internal sealed class LookupResult
     /// </summary>
     /// <param name="syntax">The referencing syntax, if any.</param>
     /// <param name="diagnostics">The diagnostics are added here.</param>
-    /// <returns>The <see cref="Symbol"/> retrieved in a type context.</returns>
-    public Symbol GetType(SyntaxNode? syntax, DiagnosticBag diagnostics)
+    /// <returns>The <see cref="TypeSymbol"/> retrieved in a type context.</returns>
+    public TypeSymbol GetType(SyntaxNode? syntax, DiagnosticBag diagnostics)
     {
         if (!this.FoundAny)
         {
@@ -104,6 +110,28 @@ internal sealed class LookupResult
             // This should have been handled by binder when constructing the scope
             throw new NotImplementedException();
         }
-        return this.Symbols[0];
+        return (TypeSymbol)this.Symbols[0];
+    }
+
+    /// <summary>
+    /// Retrieves the symbol looked up in a label context.
+    /// </summary>
+    /// <param name="syntax">The referencing syntax, if any.</param>
+    /// <param name="diagnostics">The diagnostics are added here.</param>
+    /// <returns>The <see cref="LabelSymbol"/> retrieved in a label context.</returns>
+    public LabelSymbol GetLabel(SyntaxNode? syntax, DiagnosticBag diagnostics)
+    {
+        if (!this.FoundAny)
+        {
+            // TODO: Return a reference error symbol, add diagnostic
+            throw new NotImplementedException();
+        }
+        if (this.Symbols.Count > 1)
+        {
+            // TODO: Can this even happen?
+            // This should have been handled by binder when constructing the scope
+            throw new NotImplementedException();
+        }
+        return (LabelSymbol)this.Symbols[0];
     }
 }

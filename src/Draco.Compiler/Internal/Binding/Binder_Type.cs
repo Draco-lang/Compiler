@@ -23,13 +23,6 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private Symbol BindNameType(NameTypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
-    {
-        var symbol = this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
-        return symbol switch
-        {
-            TypeSymbol t => t,
-            _ => throw new InvalidOperationException(),
-        };
-    }
+    private Symbol BindNameType(NameTypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
 }

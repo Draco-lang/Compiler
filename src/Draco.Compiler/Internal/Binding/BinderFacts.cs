@@ -32,6 +32,14 @@ internal static class BinderFacts
         is TypeSymbol;
 
     /// <summary>
+    /// Checks, if a given symbol can be referenced in a label-context.
+    /// </summary>
+    /// <param name="symbol">The symbol to check.</param>
+    /// <returns>True, if <paramref name="symbol"/> can be referenced in a label-context.</returns>
+    public static bool IsLabelSymbol(Symbol symbol) => symbol
+        is LabelSymbol;
+
+    /// <summary>
     /// Retrieves the first scope defining ancestor of a given syntax node.
     /// </summary>
     /// <param name="node">The node to get the scope defining ancestor of.</param>

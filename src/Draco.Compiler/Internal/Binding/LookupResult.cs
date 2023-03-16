@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -86,8 +88,17 @@ internal sealed class LookupResult
         }
         if (this.Symbols.Count > 1)
         {
-            // TODO: Multiple symbols, potential overloading
-            throw new NotImplementedException();
+            // Multiple symbols, potential overloading
+            if (this.IsOverloadSet)
+            {
+                var functions = this.Symbols.Cast<FunctionSymbol>().ToImmutableArray();
+                return new OverloadSymbol(functions);
+            }
+            else
+            {
+                // TODO: Can this happen?
+                throw new NotImplementedException();
+            }
         }
         return this.Symbols[0];
     }

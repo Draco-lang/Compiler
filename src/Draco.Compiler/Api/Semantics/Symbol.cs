@@ -180,3 +180,20 @@ internal sealed class LabelSymbol : SymbolBase<Internal.Symbols.LabelSymbol>, IL
     {
     }
 }
+
+internal sealed class TypeSymbol : SymbolBase<Internal.Symbols.TypeSymbol>, ITypeSymbol
+{
+    public TypeSymbol(Internal.Symbols.TypeSymbol type)
+        : base(type)
+    {
+    }
+}
+
+// NOTE: Mostly for generic error sentinel values
+internal sealed class AnySymbol : SymbolBase<Internal.Symbols.Symbol>
+{
+    public AnySymbol(Internal.Symbols.Symbol type)
+        : base(type)
+    {
+    }
+}

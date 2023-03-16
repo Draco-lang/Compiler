@@ -96,7 +96,9 @@ internal sealed class LookupResult
             // Multiple symbols, potential overloading
             if (this.IsOverloadSet)
             {
-                var functions = this.Symbols.Cast<FunctionSymbol>().ToImmutableArray();
+                var functions = this.Symbols
+                    .Cast<FunctionSymbol>()
+                    .ToImmutableArray();
                 return new OverloadSymbol(functions);
             }
             else

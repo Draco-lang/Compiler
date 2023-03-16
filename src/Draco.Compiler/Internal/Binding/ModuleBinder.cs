@@ -33,35 +33,13 @@ internal sealed class ModuleBinder : Binder
         this.symbol = symbol;
     }
 
-    public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
+    internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {
         foreach (var symbol in this.symbol.Members)
         {
             if (symbol.Name != name) continue;
-            if (!BinderFacts.IsValueSymbol(symbol)) continue;
+            if (!allowSymbol(symbol)) continue;
             result.Add(symbol);
         }
-
-        // TODO: Look at TODO in FunctionBinder
-
-        // If we are collecting an overload-set or the result is empty, we try to continue upwards
-        // Otherwise we can stop
-        if (!result.FoundAny || result.IsOverloadSet)
-        {
-            var parentReference = BinderFacts.GetScopeDefiningAncestor(reference?.Parent);
-            this.Parent?.LookupValueSymbol(result, name, parentReference);
-        }
-    }
-
-    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference)
-    {
-        // TODO: Mostly copypaste from local binder
-        foreach (var decl in this.symbol.Members)
-        {
-            if (decl.Name != name) continue;
-            if (!BinderFacts.IsTypeSymbol(decl)) continue;
-            result.Add(decl);
-        }
-        if (!result.FoundAny) this.Parent?.LookupTypeSymbol(result, name, reference);
     }
 }

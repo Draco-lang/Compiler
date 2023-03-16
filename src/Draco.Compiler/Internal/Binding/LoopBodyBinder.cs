@@ -31,24 +31,11 @@ internal sealed class LoopBodyBinder : Binder
     {
     }
 
-    public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
+    internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {
-        // TODO: Are labels values? Is this a good system we have currently?
-        // Maybe we should just merge all lookup logic and start using flags...
-        // With the exception of local binder, it shouldn't be that hard
+        if (flags.HasFlag(LookupFlags.DisallowLocals)) return;
 
-        if (name == this.BreakLabel.Name) result.Add(this.BreakLabel);
-        if (name == this.ContinueLabel.Name) result.Add(this.ContinueLabel);
-
-        // If we are collecting an overload-set or the result is empty, we try to continue upwards
-        // Otherwise we can stop
-        if (!result.FoundAny || result.IsOverloadSet)
-        {
-            var parentReference = BinderFacts.GetScopeDefiningAncestor(reference?.Parent);
-            this.Parent?.LookupValueSymbol(result, name, parentReference);
-        }
+        if (name == this.BreakLabel.Name && allowSymbol(this.BreakLabel)) result.Add(this.BreakLabel);
+        if (name == this.ContinueLabel.Name && allowSymbol(this.ContinueLabel)) result.Add(this.ContinueLabel);
     }
-
-    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
-        this.Parent?.LookupTypeSymbol(result, name, reference);
 }

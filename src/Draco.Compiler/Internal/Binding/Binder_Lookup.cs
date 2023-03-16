@@ -71,7 +71,10 @@ internal partial class Binder
             if (!lookupResult.ShouldContinue) break;
 
             // Look up in the current scope
-            scope.LookupLocal(lookupResult, name, ref flags, allowSymbol, ref currentReference);
+            scope.LookupLocal(lookupResult, name, ref flags, allowSymbol, currentReference);
+
+            // Step reference up
+            currentReference = BinderFacts.GetScopeDefiningAncestor(currentReference?.Parent);
         }
 
         return lookupResult;
@@ -85,12 +88,12 @@ internal partial class Binder
     /// <param name="flags">The active lookup flags.</param>
     /// <param name="allowSymbol">A predicate to check, if the symbol is allowed to be looked up.</param>
     /// <param name="currentReference">The syntax that references the symbol in the current scope.</param>
-    protected virtual void LookupLocal(
+    internal virtual void LookupLocal(
         LookupResult result,
         string name,
         ref LookupFlags flags,
         Predicate<Symbol> allowSymbol,
-        ref SyntaxNode? currentReference)
+        SyntaxNode? currentReference)
     {
     }
 }

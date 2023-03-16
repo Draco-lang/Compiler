@@ -49,11 +49,8 @@ public sealed partial class SemanticModel
                 : new IncrementalBinder(binder, this.semanticModel);
         }
 
-        public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference) =>
-            this.UnderlyingBinder.LookupValueSymbol(result, name, reference);
-
-        public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference) =>
-            this.UnderlyingBinder.LookupTypeSymbol(result, name, reference);
+        internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference) =>
+            this.UnderlyingBinder.LookupLocal(result, name, ref flags, allowSymbol, currentReference);
 
         internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintBag constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));

@@ -82,13 +82,16 @@ internal sealed class LocalBinder : Binder
         this.syntax = syntax;
     }
 
-    public override void LookupValueSymbol(LookupResult result, string name, SyntaxNode? reference)
+    internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {
-        // If there's a syntactic reference, check locals
-        if (reference is not null && this.RelativePositions.TryGetValue(reference, out var position))
+        // If there's a syntactic reference, and we allow for locals check locals
+        if (!flags.HasFlag(LookupFlags.DisallowLocals)
+            && currentReference is not null
+            && this.RelativePositions.TryGetValue(currentReference, out var position))
         {
             // Only check the ones that come before the reference position
             var localSymbol = this.LocalDeclarations
+                .Where(decl => allowSymbol(decl.Symbol))
                 .Where(decl => decl.Position < position && decl.Symbol.Name == name)
                 .Select(decl => decl.Symbol)
                 .LastOrDefault();
@@ -99,27 +102,9 @@ internal sealed class LocalBinder : Binder
         foreach (var decl in this.Declarations)
         {
             if (decl.Name != name) continue;
-            if (!BinderFacts.IsValueSymbol(decl)) continue;
+            if (!allowSymbol(decl)) continue;
             result.Add(decl);
         }
-        // If we are collecting an overload-set or the result is empty, we try to continue upwards
-        // Otherwise we can stop
-        if (!result.FoundAny || result.IsOverloadSet)
-        {
-            var parentReference = BinderFacts.GetScopeDefiningAncestor(reference?.Parent);
-            this.Parent?.LookupValueSymbol(result, name, parentReference);
-        }
-    }
-
-    public override void LookupTypeSymbol(LookupResult result, string name, SyntaxNode? reference)
-    {
-        foreach (var decl in this.Declarations)
-        {
-            if (decl.Name != name) continue;
-            if (!BinderFacts.IsTypeSymbol(decl)) continue;
-            result.Add(decl);
-        }
-        if (!result.FoundAny) this.Parent?.LookupTypeSymbol(result, name, reference);
     }
 
     private void Build()

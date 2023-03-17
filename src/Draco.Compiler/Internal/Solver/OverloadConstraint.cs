@@ -22,9 +22,15 @@ internal sealed class OverloadConstraint : Constraint
     /// </summary>
     public Type CallSite { get; }
 
+    /// <summary>
+    /// The promise of this constraint.
+    /// </summary>
+    public ConstraintPromise<FunctionSymbol> Promise { get; }
+
     public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, Type callSite)
     {
         this.Candidates = candidates.ToList();
         this.CallSite = callSite;
+        this.Promise = ConstraintPromise.Create<FunctionSymbol>(this);
     }
 }

@@ -53,7 +53,7 @@ internal partial class Binder
         new BoundLocalExpression(local.Syntax, local.Local);
 
     private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintBag constraints, DiagnosticBag diagnostics) =>
-        new BoundFunctionExpression(func.Syntax, func.Function);
+        new BoundFunctionExpression(func.Syntax, func.Function.Result);
 
     private BoundExpression TypeReturnExpression(UntypedReturnExpression @return, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
@@ -107,8 +107,7 @@ internal partial class Binder
     private BoundExpression TypeUnaryExpression(UntypedUnaryExpression ury, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var typedOperand = this.TypeExpression(ury.Operand, constraints, diagnostics);
-        // TODO: Resolve operator from possible overload set
-        var unaryOperator = (UnaryOperatorSymbol)ury.Operator;
+        var unaryOperator = (UnaryOperatorSymbol)ury.Operator.Result;
         return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand);
     }
 
@@ -116,8 +115,7 @@ internal partial class Binder
     {
         var typedLeft = this.TypeExpression(bin.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(bin.Right, constraints, diagnostics);
-        // TODO: Resolve operator from possible overload set
-        var binaryOperator = (BinaryOperatorSymbol)bin.Operator;
+        var binaryOperator = (BinaryOperatorSymbol)bin.Operator.Result;
         return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight);
     }
 
@@ -133,8 +131,7 @@ internal partial class Binder
     private BoundComparison TypeComparison(UntypedComparison cmp, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var next = this.TypeExpression(cmp.Next, constraints, diagnostics);
-        // TODO: Resolve comparison operator from possible overload set
-        var comparisonOperator = (ComparisonOperatorSymbol)cmp.Operator;
+        var comparisonOperator = (ComparisonOperatorSymbol)cmp.Operator.Result;
         return new BoundComparison(cmp.Syntax, comparisonOperator, next);
     }
 }

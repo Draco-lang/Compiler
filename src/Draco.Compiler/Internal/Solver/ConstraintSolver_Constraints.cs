@@ -10,7 +10,6 @@ namespace Draco.Compiler.Internal.Solver;
 internal sealed partial class ConstraintSolver
 {
     private readonly Dictionary<TypeVariable, Type> substitutions = new(ReferenceEqualityComparer.Instance);
-    private readonly Dictionary<Type, Symbol> resolvedOverloads = new(ReferenceEqualityComparer.Instance);
 
     private SolveState Solve(Constraint constraint) => constraint switch
     {
@@ -56,7 +55,7 @@ internal sealed partial class ConstraintSolver
         if (constraint.Candidates.Count == 1)
         {
             this.Unify(constraint.Candidates[0].Type, constraint.CallSite);
-            this.resolvedOverloads.Add(constraint.CallSite, constraint.Candidates[0]);
+            constraint.Promise.Resolve(constraint.Candidates[0]);
             return SolveState.Finished;
         }
         // Depends if we removed anything

@@ -150,8 +150,11 @@ internal sealed class ConstraintBag
     /// <param name="operator">The operator symbol.</param>
     /// <param name="operand">The operand.</param>
     /// <param name="syntax">The syntax invoking the operator.</param>
-    /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
-    public Type CallUnaryOperator(Symbol @operator, UntypedExpression operand, UnaryExpressionSyntax syntax) =>
+    /// <returns>A pair of the operator symbol promise and the return-type.</returns>
+    public (ConstraintPromise<FunctionSymbol> Symbol, Type ReturnType) CallUnaryOperator(
+        Symbol @operator,
+        UntypedExpression operand,
+        UnaryExpressionSyntax syntax) =>
         throw new System.NotImplementedException();
 
     /// <summary>
@@ -161,14 +164,24 @@ internal sealed class ConstraintBag
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
     /// <param name="syntax">The syntax invoking the operator.</param>
-    /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
-    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) => this.Solver
-        .Call(this.FunctionType(@operator), new[] { left.TypeRequired, right.TypeRequired })
-        .ConfigureDiagnostic(diag => diag
+    /// <returns>A pair of the operator symbol promise and the return-type.</returns>
+    public (ConstraintPromise<FunctionSymbol> Symbol, Type ReturnType) CallBinaryOperator(
+        Symbol @operator,
+        UntypedExpression left,
+        UntypedExpression right,
+        BinaryExpressionSyntax syntax)
+    {
+        // TODO: This promise isn't configured with diagnostics
+        var (promise, callSite) = this.Overload(@operator);
+        var returnType = this.Solver
+            .Call(callSite, new[] { left.TypeRequired, right.TypeRequired })
+            .ConfigureDiagnostic(diag => diag
             // TODO: This is a horrible way to set the reference...
             // We should definitely rework the location API...
             .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)))
-        .Result;
+            .Result;
+        return (promise, returnType);
+    }
 
     /// <summary>
     /// Constraints that a comparison operator is being invoked.
@@ -177,16 +190,19 @@ internal sealed class ConstraintBag
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
     /// <param name="syntax">The syntax invoking the operator.</param>
-    /// <returns>The result of the comparison, the boolean type.</returns>
-    public Type CallComparisonOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, ComparisonElementSyntax syntax) =>
+    /// <returns>The symbol promise.</returns>
+    public ConstraintPromise<FunctionSymbol> CallComparisonOperator(
+        Symbol @operator,
+        UntypedExpression left,
+        UntypedExpression right,
+        ComparisonElementSyntax syntax) =>
         throw new System.NotImplementedException();
 
-    // Utility to retrieve the type of a function that's potentially overloaded
-    private Type FunctionType(Symbol symbol) => symbol switch
+    // Utility to retrieve the promise and function type of a potential overload
+    private (ConstraintPromise<FunctionSymbol> Symbol, Type CallSite) Overload(Symbol symbol) => symbol switch
     {
-        FunctionSymbol function => function.Type,
-        // TODO: We are throwing away this promise, but we might want to add a diagnostic behind it?
-        OverloadSymbol overload => this.Solver.Overload(overload.Functions).Result,
+        FunctionSymbol function => (ConstraintPromise.FromResult(function), function.Type),
+        OverloadSymbol overload => this.Solver.Overload(overload.Functions),
         _ => throw new System.InvalidOperationException(),
     };
 }

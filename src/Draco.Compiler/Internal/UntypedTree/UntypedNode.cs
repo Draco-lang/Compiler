@@ -86,16 +86,6 @@ internal partial class UntypedGlobalExpression
     public override Type Type => this.Global.Type;
 }
 
-internal partial class UntypedFunctionExpression
-{
-    public override Type Type => this.type ??= this.BuildType();
-    private Type? type;
-
-    private Type BuildType() => new FunctionType(
-        this.Function.Parameters.Select(p => p.Type).ToImmutableArray(),
-        this.Function.ReturnType);
-}
-
 internal partial class UntypedLiteralExpression
 {
     public override Type Type => this.Value switch

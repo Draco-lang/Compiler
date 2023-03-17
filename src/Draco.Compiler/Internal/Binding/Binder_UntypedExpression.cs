@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.DracoIr;
+using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.UntypedTree;
 
@@ -47,7 +48,7 @@ internal partial class Binder
             ParameterSymbol param => new UntypedParameterExpression(syntax, param),
             LocalSymbol local => new UntypedLocalExpression(syntax, local, constraints.LocalReference(local, syntax)),
             GlobalSymbol global => new UntypedGlobalExpression(syntax, global),
-            FunctionSymbol func => new UntypedFunctionExpression(syntax, func),
+            FunctionSymbol func => new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type),
             _ => throw new InvalidOperationException(),
         };
     }
@@ -126,9 +127,9 @@ internal partial class Binder
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
 
-        var resultType = constraints.CallUnaryOperator(operatorSymbol, operand, syntax);
+        var (symbolPromise, resultType) = constraints.CallUnaryOperator(operatorSymbol, operand, syntax);
 
-        return new UntypedUnaryExpression(syntax, operatorSymbol, operand, resultType);
+        return new UntypedUnaryExpression(syntax, symbolPromise, operand, resultType);
     }
 
     private UntypedExpression BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
@@ -155,9 +156,9 @@ internal partial class Binder
             var left = this.BindExpression(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            var resultType = constraints.CallBinaryOperator(operatorSymbol, left, right, syntax);
+            var (symbolPromise, resultType) = constraints.CallBinaryOperator(operatorSymbol, left, right, syntax);
 
-            return new UntypedBinaryExpression(syntax, operatorSymbol, left, right, resultType);
+            return new UntypedBinaryExpression(syntax, symbolPromise, left, right, resultType);
         }
     }
 
@@ -187,8 +188,8 @@ internal partial class Binder
         var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
         // NOTE: We know it must be bool, no need to pass it on to comparison
-        constraints.CallComparisonOperator(operatorSymbol, prev, right, syntax);
+        var symbolPromise = constraints.CallComparisonOperator(operatorSymbol, prev, right, syntax);
 
-        return new UntypedComparison(syntax, operatorSymbol, right);
+        return new UntypedComparison(syntax, symbolPromise, right);
     }
 }

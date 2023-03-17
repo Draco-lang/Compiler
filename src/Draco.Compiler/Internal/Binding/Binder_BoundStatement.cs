@@ -20,10 +20,14 @@ internal partial class Binder
     /// <returns>The bound statement for <paramref name="statement"/>.</returns>
     internal virtual BoundStatement TypeStatement(UntypedStatement statement, ConstraintBag constraints, DiagnosticBag diagnostics) => statement switch
     {
+        UntypedLabelStatement label => this.TypeLabelStatement(label, constraints, diagnostics),
         UntypedLocalDeclaration local => this.TypeLocalDeclaration(local, constraints, diagnostics),
         UntypedExpressionStatement expr => this.TypeExpressionStatement(expr, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(statement)),
     };
+
+    private BoundStatement TypeLabelStatement(UntypedLabelStatement label, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundLabelStatement(label.Syntax, label.Label);
 
     private BoundStatement TypeLocalDeclaration(UntypedLocalDeclaration local, ConstraintBag constraints, DiagnosticBag diagnostics)
     {

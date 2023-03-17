@@ -158,8 +158,8 @@ internal sealed class ConstraintBag
     /// <param name="right">The right operand.</param>
     /// <param name="syntax">The syntax invoking the operator.</param>
     /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
-    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) => this
-        .CallSymbol(@operator, new[] { left.TypeRequired, right.TypeRequired })
+    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) => this.solver
+        .Call(this.FunctionType(@operator), new[] { left.TypeRequired, right.TypeRequired })
         .ConfigureDiagnostic(diag => diag
             // TODO: This is a horrible way to set the reference...
             // We should definitely rework the location API...
@@ -177,22 +177,12 @@ internal sealed class ConstraintBag
     public Type CallComparisonOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, ComparisonElementSyntax syntax) =>
         throw new System.NotImplementedException();
 
-    private ConstraintSolverPromise<Type> CallSymbol(Symbol @operator, Type[] args)
+    // Utility to retrieve the type of a function that's potentially overloaded
+    private Type FunctionType(Symbol symbol) => symbol switch
     {
-        if (@operator is FunctionSymbol functionSymbol)
-        {
-            // TODO
-            throw new System.NotImplementedException();
-        }
-        else if (@operator is OverloadSymbol overloadSymbol)
-        {
-            // TODO
-            throw new System.NotImplementedException();
-        }
-        else
-        {
-            // Should never happen
-            throw new System.InvalidOperationException();
-        }
-    }
+        FunctionSymbol function => function.Type,
+        // TODO: We are throwing away this promise, but we might want to add a diagnostic behind it?
+        OverloadSymbol overload => this.solver.Overload(overload.Functions).Result,
+        _ => throw new System.InvalidOperationException(),
+    };
 }

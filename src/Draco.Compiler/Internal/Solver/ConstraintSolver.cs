@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.Utilities;
 
@@ -16,7 +17,7 @@ internal sealed class ConstraintSolver
     /// <summary>
     /// Allocates a type-variable.
     /// </summary>
-    public TypeVariable NextTypeVariable => new TypeVariable(this.typeVariableCounter++);
+    public TypeVariable NextTypeVariable => new(this.typeVariableCounter++);
     private int typeVariableCounter = 0;
 
     private readonly List<Constraint> constraints = new();
@@ -69,5 +70,17 @@ internal sealed class ConstraintSolver
         var constraint = new SameTypeConstraint(functionType, callSiteType);
         this.constraints.Add(constraint);
         return new(returnType, constraint);
+    }
+
+    /// <summary>
+    /// Adds an overload constraint to the solver.
+    /// </summary>
+    /// <param name="functions">The list of functions to choose an overload from.</param>
+    /// <returns>A type that represents the type of the function on the call-site.</returns>
+    public ConstraintSolverPromise<Type> Overload(IEnumerable<FunctionSymbol> functions)
+    {
+        var callSite = this.NextTypeVariable;
+        var constraint = new OverloadConstraint(functions, callSite);
+        return new(callSite, constraint);
     }
 }

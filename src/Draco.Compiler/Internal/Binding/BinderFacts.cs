@@ -83,5 +83,5 @@ internal static class BinderFacts
     /// <param name="node">The syntax node to check.</param>
     /// <returns>True, if <paramref name="node"/> is a loop body.</returns>
     public static bool IsLoopBody(SyntaxNode node) => node.Parent
-        is WhileExpressionSyntax;
+        is WhileExpressionSyntax @while && node.Equals(@while.Then);
 }

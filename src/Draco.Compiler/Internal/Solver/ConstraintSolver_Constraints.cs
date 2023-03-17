@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -9,6 +10,7 @@ namespace Draco.Compiler.Internal.Solver;
 internal sealed partial class ConstraintSolver
 {
     private readonly Dictionary<TypeVariable, Type> substitutions = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Type, Symbol> resolvedOverloads = new(ReferenceEqualityComparer.Instance);
 
     private SolveState Solve(Constraint constraint) => constraint switch
     {
@@ -51,7 +53,12 @@ internal sealed partial class ConstraintSolver
             return SolveState.Finished;
         }
         // Ok solve
-        if (constraint.Candidates.Count == 1) return SolveState.Finished;
+        if (constraint.Candidates.Count == 1)
+        {
+            this.Unify(constraint.Candidates[0].Type, constraint.CallSite);
+            this.resolvedOverloads.Add(constraint.CallSite, constraint.Candidates[0]);
+            return SolveState.Finished;
+        }
         // Depends if we removed anything
         return advanced ? SolveState.Progressing : SolveState.Stale;
     }
@@ -110,6 +117,20 @@ internal sealed partial class ConstraintSolver
         {
             this.Substitute(v, other);
             return true;
+        }
+
+        case (BuiltinType t1, BuiltinType t2):
+            return t1.Name == t2.Name
+                && t1.UnderylingType == t2.UnderylingType;
+
+        case (FunctionType f1, FunctionType f2):
+        {
+            if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
+            for (var i = 0; i < f1.ParameterTypes.Length; ++i)
+            {
+                if (!this.Unify(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+            }
+            return this.Unify(f1.ReturnType, f2.ReturnType);
         }
 
         default:

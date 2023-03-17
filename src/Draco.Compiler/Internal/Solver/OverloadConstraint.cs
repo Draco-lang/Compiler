@@ -15,7 +15,7 @@ internal sealed class OverloadConstraint : Constraint
     /// <summary>
     /// The candidate functions to search among.
     /// </summary>
-    public IReadOnlyList<FunctionSymbol> Candidates { get; }
+    public IList<FunctionSymbol> Candidates { get; }
 
     /// <summary>
     /// The call-site to match.

@@ -19,12 +19,102 @@ internal sealed partial class ConstraintSolver
 
     private SolveState Solve(SameTypeConstraint constraint)
     {
-        throw new System.NotImplementedException();
+        if (!this.Unify(constraint.First, constraint.Second))
+        {
+            // TODO: Fill out error
+            throw new System.NotImplementedException();
+        }
+        return SolveState.Finished;
     }
 
     private SolveState Solve(OverloadConstraint constraint)
     {
-        throw new System.NotImplementedException();
+        var advanced = false;
+        for (var i = 0; i < constraint.Candidates.Count;)
+        {
+            var candidate = constraint.Candidates[i];
+            if (!this.Matches(candidate.Type, constraint.CallSite))
+            {
+                constraint.Candidates.RemoveAt(i);
+                advanced = true;
+            }
+            else
+            {
+                ++i;
+            }
+        }
+        // No overload matches
+        if (constraint.Candidates.Count == 0)
+        {
+            // TODO: Fill out error
+            throw new System.NotImplementedException();
+            return SolveState.Finished;
+        }
+        // Ok solve
+        if (constraint.Candidates.Count == 1) return SolveState.Finished;
+        // Depends if we removed anything
+        return advanced ? SolveState.Progressing : SolveState.Stale;
+    }
+
+    private bool Matches(Type left, Type right)
+    {
+        left = this.Unwrap(left);
+        right = this.Unwrap(right);
+
+        switch (left, right)
+        {
+        case (TypeVariable, _):
+        case (_, TypeVariable):
+            return true;
+
+        case (BuiltinType t1, BuiltinType t2):
+            return t1.Name == t2.Name
+                && t1.UnderylingType == t2.UnderylingType;
+
+        case (FunctionType f1, FunctionType f2):
+        {
+            if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
+            for (var i = 0; i < f1.ParameterTypes.Length; ++i)
+            {
+                if (!this.Matches(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+            }
+            return this.Matches(f1.ReturnType, f2.ReturnType);
+        }
+
+        default:
+            throw new System.NotImplementedException();
+        }
+    }
+
+    private bool Unify(Type left, Type right)
+    {
+        left = this.Unwrap(left);
+        right = this.Unwrap(right);
+
+        switch (left, right)
+        {
+        case (TypeVariable v1, TypeVariable v2):
+        {
+            // Check for circularity
+            if (ReferenceEquals(v1, v2)) return true;
+            this.Substitute(v1, v2);
+            return true;
+        }
+
+        case (TypeVariable v, Type other):
+        {
+            this.Substitute(v, other);
+            return true;
+        }
+        case (Type other, TypeVariable v):
+        {
+            this.Substitute(v, other);
+            return true;
+        }
+
+        default:
+            throw new System.NotImplementedException();
+        }
     }
 
     private void Substitute(TypeVariable typeVar, Type type) =>

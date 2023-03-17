@@ -65,6 +65,7 @@ internal abstract partial class Binder
         var constraints = new ConstraintBag();
         var diagnostics = new DiagnosticBag();
         var untypedStatement = this.BindStatement(syntax, constraints, diagnostics);
+        constraints.Solver.Solve();
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
         return boundStatement;
     }

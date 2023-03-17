@@ -19,7 +19,11 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ConstraintBag
 {
-    private readonly ConstraintSolver solver = new();
+    /// <summary>
+    /// The solved behind the constraint bag.
+    /// </summary>
+    public ConstraintSolver Solver { get; } = new();
+
     private readonly Dictionary<LocalSymbol, Type> localTypes = new();
 
     /// <summary>
@@ -33,14 +37,14 @@ internal sealed class ConstraintBag
     {
         // If the type is not specified, we assume it still can be anything
         var inferredType = type is null
-            ? this.solver.NextTypeVariable
+            ? this.Solver.NextTypeVariable
             : ((TypeSymbol)type).Type;
         this.localTypes.Add(symbol, inferredType);
 
         // If there's a value, it has to be assignable
         if (value is not null)
         {
-            this.solver
+            this.Solver
                 .Assignable(inferredType, value.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     // TODO: This is a horrible way to set the reference...
@@ -64,7 +68,7 @@ internal sealed class ConstraintBag
     public void IsCondition(UntypedExpression expr)
     {
         Debug.Assert(expr.Syntax is not null);
-        this.solver
+        this.Solver
             .SameType(expr.TypeRequired, Types.Intrinsics.Bool)
             .ConfigureDiagnostic(diag => diag
                 // TODO: This is a horrible way to set the reference...
@@ -79,7 +83,7 @@ internal sealed class ConstraintBag
     public void IsUnit(UntypedExpression expr)
     {
         Debug.Assert(expr.Syntax is not null);
-        this.solver
+        this.Solver
             .SameType(expr.TypeRequired, Types.Intrinsics.Unit)
             .ConfigureDiagnostic(diag => diag
                 // TODO: This is a horrible way to set the reference...
@@ -131,7 +135,7 @@ internal sealed class ConstraintBag
     {
         var methodType = method.TypeRequired;
         var argumentTypes = args.Select(arg => arg.TypeRequired);
-        return this.solver
+        return this.Solver
             .Call(methodType, argumentTypes)
             .ConfigureDiagnostic(diag => diag
                 // TODO: This is a horrible way to set the reference...
@@ -158,7 +162,7 @@ internal sealed class ConstraintBag
     /// <param name="right">The right operand.</param>
     /// <param name="syntax">The syntax invoking the operator.</param>
     /// <returns>A type that can be used to reference the result of the operator invocation.</returns>
-    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) => this.solver
+    public Type CallBinaryOperator(Symbol @operator, UntypedExpression left, UntypedExpression right, BinaryExpressionSyntax syntax) => this.Solver
         .Call(this.FunctionType(@operator), new[] { left.TypeRequired, right.TypeRequired })
         .ConfigureDiagnostic(diag => diag
             // TODO: This is a horrible way to set the reference...
@@ -182,7 +186,7 @@ internal sealed class ConstraintBag
     {
         FunctionSymbol function => function.Type,
         // TODO: We are throwing away this promise, but we might want to add a diagnostic behind it?
-        OverloadSymbol overload => this.solver.Overload(overload.Functions).Result,
+        OverloadSymbol overload => this.Solver.Overload(overload.Functions).Result,
         _ => throw new System.InvalidOperationException(),
     };
 }

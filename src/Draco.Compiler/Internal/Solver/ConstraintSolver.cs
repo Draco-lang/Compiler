@@ -12,8 +12,15 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// Solves type-constraint problems for the binder.
 /// </summary>
-internal sealed class ConstraintSolver
+internal sealed partial class ConstraintSolver
 {
+    private enum SolveState
+    {
+        Stale,
+        Progressing,
+        Finished,
+    }
+
     /// <summary>
     /// Allocates a type-variable.
     /// </summary>
@@ -25,7 +32,27 @@ internal sealed class ConstraintSolver
     /// <summary>
     /// Solves all constraints within the solver.
     /// </summary>
-    public void Solve() => throw new System.NotImplementedException();
+    public void Solve()
+    {
+        while (true)
+        {
+            var advanced = false;
+            for (var i = 0; i < this.constraints.Count;)
+            {
+                var state = this.Solve(this.constraints[i]);
+                advanced = advanced || state != SolveState.Stale;
+
+                if (state == SolveState.Finished) this.constraints.RemoveAt(i);
+                else ++i;
+            }
+            if (!advanced) break;
+        }
+        if (this.constraints.Count > 0)
+        {
+            // TODO: Didn't solve all constraints
+            throw new System.InvalidOperationException();
+        }
+    }
 
     /// <summary>
     /// Adds a same-type constraint to the solver.
@@ -81,6 +108,7 @@ internal sealed class ConstraintSolver
     {
         var callSite = this.NextTypeVariable;
         var constraint = new OverloadConstraint(functions, callSite);
+        this.constraints.Add(constraint);
         return new(callSite, constraint);
     }
 }

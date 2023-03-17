@@ -94,8 +94,15 @@ internal sealed class ConstraintBag
     /// <param name="second">The second expression.</param>
     /// <returns>A type that can be used to reference the common type of <paramref name="first"/>
     /// and <paramref name="second"/>.</returns>
-    public Type CommonType(UntypedExpression first, UntypedExpression second) =>
+    public Type CommonType(UntypedExpression first, UntypedExpression second)
+    {
+        var firstType = first.TypeRequired;
+        var secondType = second.TypeRequired;
+        // Optimization: if the left and right reference the same type, we know they are the common type
+        if (ReferenceEquals(firstType, secondType)) return firstType;
+        // TODO
         throw new System.NotImplementedException();
+    }
 
     /// <summary>
     /// Constraints that an expression is assignable to an lvalue.

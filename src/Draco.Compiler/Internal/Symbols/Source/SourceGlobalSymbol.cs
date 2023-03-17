@@ -7,6 +7,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -58,8 +59,12 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         else
         {
             // A global without a type or value, error
-            // TODO
-            throw new System.NotImplementedException();
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.CouldNotInferType,
+                // TODO: Ugly location API
+                location: new Internal.Diagnostics.Location.TreeReference(this.DeclarationSyntax),
+                formatArgs: this.Name));
+            return ErrorType.Instance;
         }
     }
 }

@@ -404,7 +404,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var varRefSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetReferencedSymbol(localVarDecl.Value!.Value));
-        var varDeclSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(globalVarDecl));
+        var varDeclSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(globalVarDecl));
 
         // Assert
         Assert.True(ReferenceEquals(varDeclSym, varRefSym));

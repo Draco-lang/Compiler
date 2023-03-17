@@ -26,6 +26,7 @@ internal partial class Binder
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedParameterExpression @param => this.TypeParameterExpression(param, constraints, diagnostics),
         UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
+        UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
         UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
         UntypedBlockExpression block => this.TypeBlockExpression(block, constraints, diagnostics),
@@ -51,6 +52,9 @@ internal partial class Binder
 
     private BoundExpression TypeLocalExpression(UntypedLocalExpression local, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundLocalExpression(local.Syntax, local.Local);
+
+    private BoundExpression TypeGlobalExpression(UntypedGlobalExpression global, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundGlobalExpression(global.Syntax, global.Global);
 
     private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundFunctionExpression(func.Syntax, func.Function.Result);

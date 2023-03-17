@@ -110,6 +110,10 @@
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
 
+  <Node Name="BoundGlobalExpression" Base="BoundExpression">
+    <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
   <Node Name="BoundParameterExpression" Base="BoundExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>

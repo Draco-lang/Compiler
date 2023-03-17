@@ -69,6 +69,13 @@ internal sealed partial class ConstraintSolver
 
         switch (left, right)
         {
+        // Never type is never reached, matches everything
+        case (NeverType, _):
+        case (_, NeverType):
+        // Error type matches everything to avoid cascading type errors
+        case (ErrorType, _):
+        case (_, ErrorType):
+        // Type variables could match anything
         case (TypeVariable, _):
         case (_, TypeVariable):
             return true;
@@ -99,6 +106,14 @@ internal sealed partial class ConstraintSolver
 
         switch (left, right)
         {
+        // Never type is never reached, unifies with everything
+        case (NeverType, _):
+        case (_, NeverType):
+        // Error type unifies with everything to avoid cascading type errors
+        case (ErrorType, _):
+        case (_, ErrorType):
+            return true;
+
         case (TypeVariable v1, TypeVariable v2):
         {
             // Check for circularity

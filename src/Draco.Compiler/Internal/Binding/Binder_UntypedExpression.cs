@@ -9,6 +9,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -46,7 +47,7 @@ internal partial class Binder
         return symbol switch
         {
             ParameterSymbol param => new UntypedParameterExpression(syntax, param),
-            LocalSymbol local => new UntypedLocalExpression(syntax, local, constraints.LocalReference(local, syntax)),
+            UntypedLocalSymbol local => new UntypedLocalExpression(syntax, local, constraints.LocalReference(local, syntax)),
             GlobalSymbol global => new UntypedGlobalExpression(syntax, global),
             FunctionSymbol func => new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type),
             _ => throw new InvalidOperationException(),

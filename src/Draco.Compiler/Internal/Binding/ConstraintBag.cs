@@ -8,6 +8,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
@@ -24,7 +25,25 @@ internal sealed class ConstraintBag
     /// </summary>
     public ConstraintSolver Solver { get; } = new();
 
-    private readonly Dictionary<LocalSymbol, Type> localTypes = new();
+    private readonly Dictionary<UntypedLocalSymbol, Type> localTypes = new();
+    private readonly Dictionary<UntypedLocalSymbol, SourceLocalSymbol> mappedLocals = new();
+
+    /// <summary>
+    /// Maps the untyped local to a well-typed local symbol.
+    /// </summary>
+    /// <param name="symbol">The untyped local to map.</param>
+    /// <returns>The mapped, well-typed local symbol.</returns>
+    public LocalSymbol GetTypedLocal(UntypedLocalSymbol symbol)
+    {
+        if (!this.mappedLocals.TryGetValue(symbol, out var typedSymbol))
+        {
+            var localType = this.Solver.Unwrap(this.localTypes[symbol]);
+            // TODO: This would be a good place to check for type variables and report an uninferred error in case
+            typedSymbol = new(symbol, localType);
+            this.mappedLocals.Add(symbol, typedSymbol);
+        }
+        return typedSymbol;
+    }
 
     /// <summary>
     /// Adds a constraint that declared the local with the given type and given initial value.
@@ -33,7 +52,7 @@ internal sealed class ConstraintBag
     /// <param name="type">The declared type of the local.</param>
     /// <param name="value">The declared initial value of the local.</param>
     /// <param name="syntax">The syntax declaring the local.</param>
-    public void LocalDeclaration(LocalSymbol symbol, Symbol? type, UntypedExpression? value, VariableDeclarationSyntax syntax)
+    public void LocalDeclaration(UntypedLocalSymbol symbol, Symbol? type, UntypedExpression? value, VariableDeclarationSyntax syntax)
     {
         // If the type is not specified, we assume it still can be anything
         var inferredType = type is null
@@ -59,7 +78,7 @@ internal sealed class ConstraintBag
     /// <param name="local">The local symbol being referenced.</param>
     /// <param name="syntax">The referencing syntax.</param>
     /// <returns>The type of the local that can be used for further typing rules.</returns>
-    public Type LocalReference(LocalSymbol local, NameExpressionSyntax syntax) => this.localTypes[local];
+    public Type LocalReference(UntypedLocalSymbol local, NameExpressionSyntax syntax) => this.localTypes[local];
 
     /// <summary>
     /// Enforces a type to be a boolean for a condition.

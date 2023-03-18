@@ -13,24 +13,23 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
 {
-    public override Type Type => this.type ??= this.BuildType();
-    private Type? type;
+    public override Type Type { get; }
 
-    public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.DeclarationSyntax.Name.Text;
+    public override Symbol? ContainingSymbol => this.untypedSymbol.ContainingSymbol;
+    public override string Name => this.untypedSymbol.Name;
 
-    public VariableDeclarationSyntax DeclarationSyntax { get; }
+    public VariableDeclarationSyntax DeclarationSyntax => this.untypedSymbol.DeclarationSyntax;
     SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
 
-    public override bool IsMutable => this.DeclarationSyntax.Keyword.Kind == TokenKind.KeywordVar;
+    public override bool IsMutable => this.untypedSymbol.IsMutable;
 
-    public SourceLocalSymbol(Symbol? containingSymbol, VariableDeclarationSyntax syntax)
+    private readonly UntypedLocalSymbol untypedSymbol;
+
+    public SourceLocalSymbol(UntypedLocalSymbol untypedSymbol, Type type)
     {
-        this.ContainingSymbol = containingSymbol;
-        this.DeclarationSyntax = syntax;
+        this.untypedSymbol = untypedSymbol;
+        this.Type = type;
     }
 
     public override ISymbol ToApiSymbol() => new Api.Semantics.LocalSymbol(this);
-
-    private Type BuildType() => throw new System.NotImplementedException();
 }

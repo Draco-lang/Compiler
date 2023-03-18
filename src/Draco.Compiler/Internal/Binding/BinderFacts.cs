@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -20,6 +21,7 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="symbol"/> can be referenced in a value-context.</returns>
     public static bool IsValueSymbol(Symbol symbol) => symbol
         is LocalSymbol
+        or UntypedLocalSymbol
         or GlobalSymbol
         or FunctionSymbol;
 
@@ -66,6 +68,15 @@ internal static class BinderFacts
         or FunctionDeclarationSyntax
         or FunctionBodySyntax
         or BlockExpressionSyntax) || IsLoopBody(node);
+
+    /// <summary>
+    /// Checks, if a given syntax node defines a symbol.
+    /// </summary>
+    /// <param name="node">The syntax node to check.</param>
+    /// <returns>True, if <paramref name="node"/> defines a symbol.</returns>
+    public static bool DefinesSymbol(SyntaxNode node) => node
+        is FunctionDeclarationSyntax
+        or VariableDeclarationSyntax;
 
     /// <summary>
     /// Checks, if a given syntax node references a symbol.

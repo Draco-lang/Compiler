@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -30,7 +31,7 @@ internal partial class Binder
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         return symbol switch
         {
-            LocalSymbol local => new UntypedLocalLvalue(syntax, local, constraints.LocalReference(local, syntax)),
+            UntypedLocalSymbol local => new UntypedLocalLvalue(syntax, local, constraints.LocalReference(local, syntax)),
             _ => throw new InvalidOperationException(),
         };
     }

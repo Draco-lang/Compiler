@@ -21,7 +21,7 @@
   </Node>
 
   <Node Name="UntypedLocalDeclaration" Base="UntypedStatement">
-    <Field Name="Local" Type="LocalSymbol" />
+    <Field Name="Local" Type="UntypedLocalSymbol" />
     <Field Name="Value" Type="UntypedExpression?" />
   </Node>
 
@@ -99,7 +99,8 @@
   </Node>
 
   <Node Name="UntypedLocalExpression" Base="UntypedExpression">
-    <Field Name="Local" Type="LocalSymbol" />
+    <!-- Locals are special, they are remapped after binding to a typed variant -->
+    <Field Name="Local" Type="UntypedLocalSymbol" />
     <!-- Locals are uninferred, can't rely on symbol type -->
     <Field Name="Type" Type="Type" Override="true" />
   </Node>
@@ -134,7 +135,8 @@
   <!-- LValues -->
 
   <Node Name="UntypedLocalLvalue" Base="UntypedLvalue">
-    <Field Name="Local" Type="LocalSymbol" />
+    <!-- Locals are special, they are remapped after binding to a typed variant -->
+    <Field Name="Local" Type="UntypedLocalSymbol" />
     <!-- Locals are uninferred, can't rely on symbol type -->
     <Field Name="Type" Type="Type" Override="true" />
   </Node>

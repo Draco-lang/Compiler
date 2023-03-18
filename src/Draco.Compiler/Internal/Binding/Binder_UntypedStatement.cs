@@ -75,8 +75,8 @@ internal partial class Binder
     private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
-        var localSymbol = (LocalSymbol?)this.DeclaredSymbols
-            .OfType<LocalSymbol>()
+        var localSymbol = (UntypedLocalSymbol?)this.DeclaredSymbols
+            .OfType<UntypedLocalSymbol>()
             .OfType<ISourceSymbol>()
             .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
         Debug.Assert(localSymbol is not null);

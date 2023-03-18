@@ -1,4 +1,5 @@
 using System;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Utilities;
@@ -46,7 +47,12 @@ public sealed class DracoCompiler : ToolTask
             return false;
         }
 
-        this.ExecuteTool(this.GenerateFullPathToTool(), "", $"exec \"{this.DracoCompilerPath}\" compile {mainFile} --output {this.OutputFile} --msbuild-diags");
+        var exitCode = this.ExecuteTool(this.GenerateFullPathToTool(), "", $"exec \"{this.DracoCompilerPath}\" compile {mainFile} --output {this.OutputFile} --msbuild-diags");
+        // Checking for compiler crash
+        if (!this.HasLoggedErrors && exitCode != 0)
+        {
+            this.LogEventsFromTextOutput("draco compiler : error DR0001 : The compiler failed unexpectedly, please report this as bug.", Microsoft.Build.Framework.MessageImportance.Normal); // TODO: Is this the correct way?
+        }
         return !this.HasLoggedErrors;
     }
 

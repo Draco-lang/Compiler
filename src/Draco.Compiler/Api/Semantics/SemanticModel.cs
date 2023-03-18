@@ -145,6 +145,11 @@ public sealed partial class SemanticModel
                 };
             }
         }
+        else if (binder.ContainingSymbol is SourceModuleSymbol module)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
         else
         {
             // TODO

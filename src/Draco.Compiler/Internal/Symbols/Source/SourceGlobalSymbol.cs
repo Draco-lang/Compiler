@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Types;
@@ -23,6 +24,11 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 
     public VariableDeclarationSyntax DeclarationSyntax => this.declaration.Syntax;
     SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
+
+    public BoundExpression? Value => this.DeclarationSyntax.Value is null
+        ? null
+        : (this.value ??= this.BuildValue());
+    private BoundExpression? value;
 
     private readonly GlobalDeclaration declaration;
 
@@ -67,4 +73,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
             return ErrorType.Instance;
         }
     }
+
+    private BoundExpression BuildValue() =>
+        throw new System.NotImplementedException();
 }

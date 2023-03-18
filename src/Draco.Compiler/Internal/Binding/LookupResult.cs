@@ -89,7 +89,7 @@ internal sealed class LookupResult
                 location: syntax is null ? null : new Location.TreeReference(syntax),
                 formatArgs: name));
             // Return a sentinel value error
-            return new ErrorValueSymbol(name);
+            return new UndefinedValueSymbol(name);
         }
         if (this.Symbols.Count > 1)
         {
@@ -127,7 +127,7 @@ internal sealed class LookupResult
                 location: syntax is null ? null : new Location.TreeReference(syntax),
                 formatArgs: name));
             // Return a sentinel type error
-            return new ErrorTypeSymbol(name);
+            return new UndefinedTypeSymbol(name);
         }
         if (this.Symbols.Count > 1)
         {
@@ -155,7 +155,7 @@ internal sealed class LookupResult
                 location: syntax is null ? null : new Location.TreeReference(syntax),
                 formatArgs: name));
             // Return a sentinel label error
-            return new ErrorLabelSymbol(name);
+            return new UndefinedLabelSymbol(name);
         }
         if (this.Symbols.Count > 1)
         {

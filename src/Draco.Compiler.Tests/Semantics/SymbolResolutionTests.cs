@@ -339,12 +339,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var x1SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x1Decl));
-        var x2SymDecl = semanticModel.GetDefinedSymbol(x2Decl);
+        var x2SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x2Decl));
 
         // Assert
-        Assert.False(x1SymDecl.IsError);
-        Assert.NotNull(x2SymDecl);
-        Assert.True(x2SymDecl!.IsError);
+        Assert.True(x1SymDecl.IsError);
+        Assert.True(x2SymDecl.IsError);
     }
 
     [Fact]

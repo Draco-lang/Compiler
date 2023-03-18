@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -49,12 +50,36 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public override ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 
-    private ImmutableArray<ParameterSymbol> BuildParameters() => this.DeclarationSyntax.ParameterList.Values
-        .Select(this.BuildParameter)
-        .ToImmutableArray();
+    private ImmutableArray<ParameterSymbol> BuildParameters()
+    {
+        var parameterSyntaxes = this.DeclarationSyntax.ParameterList.Values.ToList();
+        var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
-    private ParameterSymbol BuildParameter(ParameterSyntax syntax) =>
-        new SourceParameterSymbol(this, syntax);
+        for (var i = 0; i < parameterSyntaxes.Count; ++i)
+        {
+            var parameterSyntax = parameterSyntaxes[i];
+            var parameterName = parameterSyntax.Name.Text;
+
+            var usedBefore = parameters.Any(p => p.Name == parameterName);
+            var usedAfter = parameterSyntaxes.Skip(i + 1).Any(s => s.Name.Text == parameterName);
+
+            if (usedBefore)
+            {
+                // NOTE: We only report later duplicates, no need to report the first instance
+                // TODO: Report an error
+                // The problem is, we have no interface here to wire out duplicate definition errors...
+            }
+
+            var parameter = usedBefore || usedAfter
+                // Duplicate either way, we create an error symbol to swallow cascading type-errors from it
+                ? new DuplicateParameterSymbol(this, parameterSyntax) as ParameterSymbol
+                // Regular parameter
+                : new SourceParameterSymbol(this, parameterSyntax);
+            parameters.Add(parameter);
+        }
+
+        return parameters.ToImmutable();
+    }
 
     private Type BuildReturnType()
     {

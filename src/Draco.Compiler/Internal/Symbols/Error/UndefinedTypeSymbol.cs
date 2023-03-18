@@ -7,19 +7,20 @@ using System.Threading.Tasks;
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// Represents an illegal, in-source label reference.
+/// Represents an undefined, in-source type reference.
 /// </summary>
-internal sealed class ErrorLabelSymbol : LabelSymbol
+internal sealed class UndefinedTypeSymbol : TypeSymbol
 {
     public override bool IsError => true;
+    public override Types.Type Type => Types.Intrinsics.Error;
     public override Symbol? ContainingSymbol => throw new NotImplementedException();
 
     public override string Name { get; }
 
-    public ErrorLabelSymbol(string name)
+    public UndefinedTypeSymbol(string name)
     {
         this.Name = name;
     }
 
-    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
+    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 }

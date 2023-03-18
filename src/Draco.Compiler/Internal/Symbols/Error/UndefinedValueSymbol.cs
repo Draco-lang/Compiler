@@ -7,9 +7,9 @@ using Draco.Compiler.Internal.Types;
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// Represents an illegal, in-source value reference.
+/// Represents an undefined, in-source value reference.
 /// </summary>
-internal sealed class ErrorValueSymbol : Symbol, ITypedSymbol
+internal sealed class UndefinedValueSymbol : Symbol, ITypedSymbol
 {
     public override bool IsError => true;
     public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
@@ -18,7 +18,7 @@ internal sealed class ErrorValueSymbol : Symbol, ITypedSymbol
 
     public Type Type => Intrinsics.Error;
 
-    public ErrorValueSymbol(string name)
+    public UndefinedValueSymbol(string name)
     {
         this.Name = name;
     }

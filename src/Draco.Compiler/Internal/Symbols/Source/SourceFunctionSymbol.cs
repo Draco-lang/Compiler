@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Types;
 
@@ -52,6 +53,9 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     private ImmutableArray<ParameterSymbol> BuildParameters()
     {
+        Debug.Assert(this.DeclaringCompilation is not null);
+        var diagnostics = this.DeclaringCompilation.GlobalDiagnostics;
+
         var parameterSyntaxes = this.DeclarationSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
@@ -66,8 +70,11 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
             if (usedBefore)
             {
                 // NOTE: We only report later duplicates, no need to report the first instance
-                // TODO: Report an error
-                // The problem is, we have no interface here to wire out duplicate definition errors...
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.IllegalShadowing,
+                    // TODO: Ugly location API
+                    new Internal.Diagnostics.Location.TreeReference(parameterSyntax),
+                    formatArgs: parameterName));
             }
 
             var parameter = usedBefore || usedAfter

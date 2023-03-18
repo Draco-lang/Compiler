@@ -68,6 +68,11 @@ public sealed class Compilation
     internal DeclarationTable DeclarationTable => this.declarationTable ??= this.BuildDeclarationTable();
     private DeclarationTable? declarationTable;
 
+    /// <summary>
+    /// A global diagnostic bag to hold non-local diagnostic messages.
+    /// </summary>
+    internal DiagnosticBag GlobalDiagnostics { get; } = new();
+
     private readonly BinderCache binderCache;
 
     private Compilation(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName)

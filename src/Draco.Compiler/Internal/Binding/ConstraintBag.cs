@@ -125,7 +125,7 @@ internal sealed class ConstraintBag
         if (ReferenceEquals(firstType, secondType)) return firstType;
         // Add constraint
         return this.Solver
-            .Assignable(firstType, secondType)
+            .CommonType(firstType, secondType)
             // TODO: We should extract syntax here to point to inferred common types
             // Like in if-else branches
             .ConfigureDiagnostic(diag => { })
@@ -141,11 +141,17 @@ internal sealed class ConstraintBag
     public void IsAssignable(UntypedLvalue left, UntypedExpression right, BinaryExpressionSyntax syntax)
     {
         var leftType = left.Type;
-        var rightType = right.Type;
+        var rightType = right.TypeRequired;
         // Optimization: if the left and right reference the same type, we know it's assignable
         if (ReferenceEquals(leftType, rightType)) return;
-        // TODO
-        throw new System.NotImplementedException();
+        // Add constraint
+        this.Solver
+            .Assignable(leftType, rightType)
+            // TODO: Ugly location API
+            .ConfigureDiagnostic(diag => diag
+                // TODO: This is a horrible way to set the reference...
+                // We should definitely rework the location API...
+                .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)));
     }
 
     /// <summary>

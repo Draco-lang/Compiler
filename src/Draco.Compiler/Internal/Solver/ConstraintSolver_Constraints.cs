@@ -53,7 +53,7 @@ internal sealed partial class ConstraintSolver
         return SolveState.Finished;
     }
 
-    private SolveState Solve(OverloadConstraint constraint)
+    private SolveState Solve(DiagnosticBag diagnostics, OverloadConstraint constraint)
     {
         var advanced = false;
         for (var i = 0; i < constraint.Candidates.Count;)

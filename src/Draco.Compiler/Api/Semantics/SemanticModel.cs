@@ -45,32 +45,12 @@ public sealed partial class SemanticModel
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     internal IEnumerable<Diagnostic> GetAllDiagnostics()
     {
+        // Retrieve all syntax errors
+        var syntaxDiagnostics = this.compilation.SyntaxTrees.SelectMany(tree => tree.Diagnostics);
+        foreach (var diag in syntaxDiagnostics) yield return diag;
+
+        // Next, we enforce binding everywhere
         // TODO
-        /*
-        IEnumerable<Diagnostic> GetSymbolAndTypeErrors(SyntaxNode tree)
-        {
-            // Symbol
-            foreach (var diag in SymbolResolution.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
-
-            // Type
-            foreach (var diag in TypeChecker.GetDiagnostics(this.db, tree)) yield return diag.ToApiDiagnostic(tree);
-
-            // Children
-            foreach (var diag in tree.Children.SelectMany(GetSymbolAndTypeErrors)) yield return diag;
-        }
-
-        var ast = SyntaxTreeToAst.ToAst(this.db, this.Tree.Root);
-
-        IEnumerable<Diagnostic> GetAstErrors() => ast!.GetAllDiagnostics();
-        // TODO: DataFlow
-        //IEnumerable<Diagnostic> GetDataFlowErrors() => DataFlowPasses.Analyze(ast);
-
-        return GetSymbolAndTypeErrors(this.Tree.Root)
-            .Concat(GetAstErrors())
-            //.Concat(GetDataFlowErrors())
-            ;
-        */
-        return Enumerable.Empty<Diagnostic>();
     }
 
     // NOTE: These OrNull functions are not too pretty

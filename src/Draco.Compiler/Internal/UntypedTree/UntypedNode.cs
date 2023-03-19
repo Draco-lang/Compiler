@@ -86,6 +86,11 @@ internal partial class UntypedGlobalExpression
     public override Type Type => this.Global.Type;
 }
 
+internal partial class UntypedReferenceErrorExpression
+{
+    public override Type? Type => Types.Intrinsics.Error;
+}
+
 internal partial class UntypedLiteralExpression
 {
     public override Type Type => this.Value switch

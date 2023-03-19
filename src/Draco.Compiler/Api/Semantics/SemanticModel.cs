@@ -212,6 +212,7 @@ public sealed partial class SemanticModel
                     BoundFunctionExpression f => f.Function.ToApiSymbol(),
                     BoundLocalExpression l => l.Local.ToApiSymbol(),
                     BoundGlobalExpression g => g.Global.ToApiSymbol(),
+                    BoundReferenceErrorExpression e => e.Symbol.ToApiSymbol(),
                     _ => throw new NotImplementedException(),
                 };
             }

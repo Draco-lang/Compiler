@@ -57,6 +57,7 @@ internal partial class Binder
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        if (symbol.IsError) return new UntypedReferenceErrorExpression(syntax, symbol);
         return symbol switch
         {
             ParameterSymbol param => new UntypedParameterExpression(syntax, param),

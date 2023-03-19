@@ -118,6 +118,10 @@
     <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
+  <Node Name="UntypedReferenceErrorExpression" Base="UntypedExpression">
+    <Field Name="Symbol" Type="Symbol" />
+  </Node>
+
   <Node Name="UntypedLiteralExpression" Base="UntypedExpression">
     <Field Name="Value" Type="object?" />
   </Node>

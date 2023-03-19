@@ -30,6 +30,7 @@ internal partial class Binder
         UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
         UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
         UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
+        UntypedReferenceErrorExpression err => this.TypeReferenceErrorExpression(err, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
         UntypedBlockExpression block => this.TypeBlockExpression(block, constraints, diagnostics),
         UntypedGotoExpression @goto => this.TypeGotoExpression(@goto, constraints, diagnostics),
@@ -69,6 +70,9 @@ internal partial class Binder
 
     private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundFunctionExpression(func.Syntax, func.Function.Result);
+
+    private BoundExpression TypeReferenceErrorExpression(UntypedReferenceErrorExpression err, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundReferenceErrorExpression(err.Syntax, err.Symbol);
 
     private BoundExpression TypeReturnExpression(UntypedReturnExpression @return, ConstraintBag constraints, DiagnosticBag diagnostics)
     {

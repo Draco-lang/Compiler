@@ -56,7 +56,8 @@ public sealed partial class SemanticModel
             {
                 _ = func.Parameters.Count();
                 _ = func.ReturnType;
-                _ = func.Body;
+                // Avoid double-evaluation of diagnostics
+                if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body)) _ = func.Body;
             }
             else if (symbol is SourceGlobalSymbol global)
             {

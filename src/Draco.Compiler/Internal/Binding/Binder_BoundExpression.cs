@@ -62,7 +62,7 @@ internal partial class Binder
         new BoundParameterExpression(param.Syntax, param.Parameter);
 
     private BoundExpression TypeLocalExpression(UntypedLocalExpression local, ConstraintBag constraints, DiagnosticBag diagnostics) =>
-        new BoundLocalExpression(local.Syntax, constraints.GetTypedLocal(null, local.Local));
+        new BoundLocalExpression(local.Syntax, constraints.GetTypedLocal(diagnostics, local.Local));
 
     private BoundExpression TypeGlobalExpression(UntypedGlobalExpression global, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalExpression(global.Syntax, global.Global);

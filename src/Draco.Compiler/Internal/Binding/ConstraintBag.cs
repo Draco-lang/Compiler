@@ -36,12 +36,12 @@ internal sealed class ConstraintBag
     /// <param name="diagnostics">The diagnostics during inference.</param>
     /// <param name="symbol">The untyped local to map.</param>
     /// <returns>The mapped, well-typed local symbol.</returns>
-    public LocalSymbol GetTypedLocal(DiagnosticBag? diagnostics, UntypedLocalSymbol symbol)
+    public LocalSymbol GetTypedLocal(DiagnosticBag diagnostics, UntypedLocalSymbol symbol)
     {
         if (!this.mappedLocals.TryGetValue(symbol, out var typedSymbol))
         {
             var localType = this.Solver.Unwrap(this.localTypes[symbol]);
-            if (localType.IsTypeVariable && diagnostics is not null)
+            if (localType.IsTypeVariable)
             {
                 // We could not infer the type
                 diagnostics.Add(Diagnostic.Create(
@@ -49,6 +49,8 @@ internal sealed class ConstraintBag
                     // TODO: Ugly location API
                     location: new Internal.Diagnostics.Location.TreeReference(symbol.DeclarationSyntax),
                     formatArgs: symbol.Name));
+                // We use an error type
+                localType = Types.Intrinsics.Error;
             }
             typedSymbol = new(symbol, localType);
             this.mappedLocals.Add(symbol, typedSymbol);

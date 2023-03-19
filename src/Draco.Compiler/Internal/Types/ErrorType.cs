@@ -13,6 +13,8 @@ internal sealed class ErrorType : Type
 {
     public static ErrorType Instance { get; } = new();
 
+    public override bool IsError => true;
+
     private ErrorType()
     {
     }

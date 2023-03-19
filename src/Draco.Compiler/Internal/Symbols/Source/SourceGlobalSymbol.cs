@@ -43,7 +43,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     private Type BuildType()
     {
         Debug.Assert(this.DeclaringCompilation is not null);
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnostics;
+        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
         // var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
 
         if (this.DeclarationSyntax.Type is not null)

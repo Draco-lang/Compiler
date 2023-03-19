@@ -60,7 +60,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         // No need for special symbol treatment
 
         Debug.Assert(this.DeclaringCompilation is not null);
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnostics;
+        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
 
         var parameterSyntaxes = this.DeclarationSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
@@ -101,9 +101,10 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
         // Otherwise, we need to resolve
         Debug.Assert(this.DeclaringCompilation is not null);
-        // TODO: These are not exposed
+
+        // NOTE: We are using the global diagnostic bag, maybe that's not a good idea here?
         var constraints = new ConstraintBag();
-        var diagnostics = new DiagnosticBag();
+        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
         var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
         var returnTypeSymbol = binder.BindType(this.DeclarationSyntax.ReturnType.Type, constraints, diagnostics);
         return ((TypeSymbol)returnTypeSymbol).Type;

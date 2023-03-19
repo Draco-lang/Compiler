@@ -61,9 +61,9 @@ internal abstract partial class Binder
 
     public BoundStatement BindFunctionBody(FunctionBodySyntax syntax)
     {
-        // TODO: These are not exposed
+        // NOTE: We are reusing the global bag, maybe not the best idea
         var constraints = new ConstraintBag();
-        var diagnostics = new DiagnosticBag();
+        var diagnostics = this.Compilation.GlobalDiagnosticBag;
         var untypedStatement = this.BindStatement(syntax, constraints, diagnostics);
         constraints.Solver.Solve();
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);

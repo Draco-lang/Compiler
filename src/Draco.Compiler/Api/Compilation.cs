@@ -71,7 +71,7 @@ public sealed class Compilation
     /// <summary>
     /// A global diagnostic bag to hold non-local diagnostic messages.
     /// </summary>
-    internal DiagnosticBag GlobalDiagnostics { get; } = new();
+    internal DiagnosticBag GlobalDiagnosticBag { get; } = new();
 
     private readonly BinderCache binderCache;
 

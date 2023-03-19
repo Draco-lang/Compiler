@@ -49,7 +49,6 @@ public sealed partial class SemanticModel
         var syntaxDiagnostics = this.compilation.SyntaxTrees.SelectMany(tree => tree.Diagnostics);
         foreach (var diag in syntaxDiagnostics) yield return diag;
 
-        //*
         // Next, we enforce binding everywhere
         foreach (var symbol in this.compilation.GlobalModule.Members)
         {
@@ -57,6 +56,7 @@ public sealed partial class SemanticModel
             {
                 _ = func.Parameters.Count();
                 _ = func.ReturnType;
+                _ = func.Body;
             }
             else if (symbol is SourceGlobalSymbol global)
             {
@@ -64,7 +64,9 @@ public sealed partial class SemanticModel
                 _ = global.Value;
             }
         }
-        //*/
+
+        // Dump back all diagnostics
+        foreach (var diag in this.compilation.GlobalDiagnosticBag) yield return diag.ToApiDiagnostic(null);
     }
 
     // NOTE: These OrNull functions are not too pretty

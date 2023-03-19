@@ -38,6 +38,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     public BoundStatement Body => this.body ??= this.BuildBody();
     private BoundStatement? body;
 
+    public override string Documentation => this.DeclarationSyntax.Documentation;
+
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;

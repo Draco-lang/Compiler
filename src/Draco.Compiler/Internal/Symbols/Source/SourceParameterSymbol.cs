@@ -22,6 +22,8 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     public ParameterSyntax DeclarationSyntax { get; }
     SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
 
+    // TODO: Extracting parameter docs involves looking into the function docs and searching in the MD
+
     public SourceParameterSymbol(Symbol? containingSymbol, ParameterSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;

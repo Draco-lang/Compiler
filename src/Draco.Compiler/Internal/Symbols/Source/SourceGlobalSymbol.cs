@@ -30,6 +30,8 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         : (this.value ??= this.BuildValue());
     private BoundExpression? value;
 
+    public override string Documentation => this.DeclarationSyntax.Documentation;
+
     private readonly GlobalDeclaration declaration;
 
     public SourceGlobalSymbol(Symbol? containingSymbol, GlobalDeclaration declaration)

@@ -54,6 +54,11 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public IEnumerable<SyntaxToken> Tokens => this.PreOrderTraverse().OfType<SyntaxToken>();
 
     /// <summary>
+    /// The documentation attacked before this node.
+    /// </summary>
+    public string Documentation => this.Green.Documentation;
+
+    /// <summary>
     /// The internal green node that this node wraps.
     /// </summary>
     internal abstract Internal.Syntax.SyntaxNode Green { get; }

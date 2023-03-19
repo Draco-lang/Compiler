@@ -38,7 +38,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, funcSym.Documentation, ignoreLineEndingDifferences: true);
+        Assert.Equal(docComment, funcSym.Documentation);
     }
 
     [Theory]
@@ -70,7 +70,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, xSym.Documentation, ignoreLineEndingDifferences: true);
+        Assert.Equal(docComment, xSym.Documentation);
     }
 
     [Theory]
@@ -106,6 +106,6 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(string.Empty, labelSym.Documentation, ignoreLineEndingDifferences: true);
+        Assert.Equal(string.Empty, labelSym.Documentation);
     }
 }

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -15,9 +17,9 @@ public static partial class SyntaxFactory
     private sealed class AddLeadingTriviaRewriter : SyntaxRewriter
     {
         private bool firstToken = true;
-        private readonly Internal.Syntax.SyntaxTrivia[] triviaToAdd;
+        private readonly IEnumerable<Internal.Syntax.SyntaxTrivia> triviaToAdd;
 
-        public AddLeadingTriviaRewriter(Internal.Syntax.SyntaxTrivia[] triviaToAdd)
+        public AddLeadingTriviaRewriter(IEnumerable<Internal.Syntax.SyntaxTrivia> triviaToAdd)
         {
             this.triviaToAdd = triviaToAdd;
         }
@@ -34,7 +36,7 @@ public static partial class SyntaxFactory
 
     // NODES ///////////////////////////////////////////////////////////////////
 
-    private static TNode WithLeadingTrivia<TNode>(TNode node, params Internal.Syntax.SyntaxTrivia[] trivia)
+    private static TNode WithLeadingTrivia<TNode>(TNode node, IEnumerable<Internal.Syntax.SyntaxTrivia> trivia)
         where TNode : SyntaxNode
     {
         var rewriter = new AddLeadingTriviaRewriter(trivia);
@@ -42,15 +44,25 @@ public static partial class SyntaxFactory
         return (TNode)green.ToRedNode(null!, null);
     }
 
-    public static TNode WithDocumentation<TNode>(TNode node, string docs)
-        where TNode : SyntaxNode =>
-        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
-            .Select(x => Internal.Syntax.SyntaxTrivia.From(TriviaKind.DocumentationComment, $"///{x}")).ToArray());
+    private static IEnumerable<Internal.Syntax.SyntaxTrivia> CreateCommentBlockTrivia(string prefix, string docs)
+    {
+        foreach (var (line, newline) in StringUtils.SplitIntoLines(docs))
+        {
+            yield return Internal.Syntax.SyntaxTrivia.From(TriviaKind.DocumentationComment, $"{prefix}{line}");
+            if (newline is not null)
+            {
+                yield return Internal.Syntax.SyntaxTrivia.From(TriviaKind.Newline, newline);
+            }
+        }
+    }
 
     public static TNode WithComments<TNode>(TNode node, string docs)
         where TNode : SyntaxNode =>
-        WithLeadingTrivia(node, docs.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
-            .Select(x => Internal.Syntax.SyntaxTrivia.From(TriviaKind.DocumentationComment, $"//{x}")).ToArray());
+        WithLeadingTrivia(node, CreateCommentBlockTrivia("//", docs));
+
+    public static TNode WithDocumentation<TNode>(TNode node, string docs)
+        where TNode : SyntaxNode =>
+        WithLeadingTrivia(node, CreateCommentBlockTrivia("///", docs));
 
     public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);

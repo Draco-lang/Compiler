@@ -26,6 +26,11 @@ internal abstract class SyntaxNode
     public IEnumerable<SyntaxToken> Tokens => this.PreOrderTraverse().OfType<SyntaxToken>();
 
     /// <summary>
+    /// The documentation attached before this node.
+    /// </summary>
+    public string Documentation => this.ExtractDocumentation();
+
+    /// <summary>
     /// Preorder traverses the subtree with this node being the root.
     /// </summary>
     /// <returns>The enumerator that performs a preorder traversal.</returns>
@@ -125,6 +130,38 @@ internal abstract class SyntaxNode
         Recurse(this);
 
         return graph.ToDot();
+    }
+
+    private string ExtractDocumentation()
+    {
+        // The documentation is in the leading trivia of the first token
+        var firstToken = this.Tokens.FirstOrDefault();
+        if (firstToken is null) return string.Empty;
+
+        var trivia = firstToken.LeadingTrivia;
+        var i = 0;
+
+        // We skip trivia that isn't documentation
+        while (i < trivia.Count && trivia[i].Kind != Api.Syntax.TriviaKind.DocumentationComment) ++i;
+        if (i == trivia.Count) return string.Empty;
+
+        // We have at least one line of trivia
+        var result = new StringBuilder();
+        result.Append(trivia[i].Text[3..]);
+        ++i;
+
+        // After that, we consume pairs of newline and doc comment trivia
+        while (i + 1 < trivia.Count
+            && trivia[i].Kind == Api.Syntax.TriviaKind.Newline
+            && trivia[i + 1].Kind == Api.Syntax.TriviaKind.DocumentationComment)
+        {
+            result
+                .Append(trivia[i].Text)
+                .Append(trivia[i + 1].Text[3..]);
+            i += 2;
+        }
+
+        return result.ToString();
     }
 
     public abstract Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent);

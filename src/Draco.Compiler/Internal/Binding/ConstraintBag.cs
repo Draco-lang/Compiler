@@ -6,12 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
+using Diagnostic = Draco.Compiler.Internal.Diagnostics.Diagnostic;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -31,14 +33,23 @@ internal sealed class ConstraintBag
     /// <summary>
     /// Maps the untyped local to a well-typed local symbol.
     /// </summary>
+    /// <param name="diagnostics">The diagnostics during inference.</param>
     /// <param name="symbol">The untyped local to map.</param>
     /// <returns>The mapped, well-typed local symbol.</returns>
-    public LocalSymbol GetTypedLocal(UntypedLocalSymbol symbol)
+    public LocalSymbol GetTypedLocal(DiagnosticBag? diagnostics, UntypedLocalSymbol symbol)
     {
         if (!this.mappedLocals.TryGetValue(symbol, out var typedSymbol))
         {
             var localType = this.Solver.Unwrap(this.localTypes[symbol]);
-            // TODO: This would be a good place to check for type variables and report an uninferred error in case
+            if (localType.IsTypeVariable && diagnostics is not null)
+            {
+                // We could not infer the type
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.CouldNotInferType,
+                    // TODO: Ugly location API
+                    location: new Internal.Diagnostics.Location.TreeReference(symbol.DeclarationSyntax),
+                    formatArgs: symbol.Name));
+            }
             typedSymbol = new(symbol, localType);
             this.mappedLocals.Add(symbol, typedSymbol);
         }

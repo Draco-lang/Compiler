@@ -33,7 +33,7 @@ internal partial class Binder
     private BoundStatement TypeLocalDeclaration(UntypedLocalDeclaration local, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var typedValue = local.Value is null ? null : this.TypeExpression(local.Value, constraints, diagnostics);
-        var typedLocal = constraints.GetTypedLocal(local.Local);
+        var typedLocal = constraints.GetTypedLocal(diagnostics, local.Local);
         return new BoundLocalDeclaration(local.Syntax, typedLocal, typedValue);
     }
 

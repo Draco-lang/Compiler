@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -25,9 +26,10 @@ public sealed partial class SemanticModel
     public SyntaxTree Tree { get; }
 
     /// <summary>
-    /// The semantic <see cref="Diagnostic"/>s in this model.
+    /// All <see cref="Diagnostic"/>s in this model.
     /// </summary>
-    public IEnumerable<Diagnostic> Diagnostics => this.GetAllDiagnostics();
+    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics ??= this.GetAllDiagnostics();
+    private ImmutableArray<Diagnostic>? diagnostics;
 
     private readonly Compilation compilation;
     private readonly Dictionary<SyntaxNode, IList<BoundNode>> syntaxMap = new();
@@ -39,15 +41,18 @@ public sealed partial class SemanticModel
         this.compilation = compilation;
     }
 
+    // TODO: This isn't exactly retrieving the diags only for this tree...
     /// <summary>
     /// Retrieves all semantic <see cref="Diagnostic"/>s.
     /// </summary>
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
-    internal IEnumerable<Diagnostic> GetAllDiagnostics()
+    private ImmutableArray<Diagnostic> GetAllDiagnostics()
     {
+        var result = ImmutableArray.CreateBuilder<Diagnostic>();
+
         // Retrieve all syntax errors
         var syntaxDiagnostics = this.compilation.SyntaxTrees.SelectMany(tree => tree.Diagnostics);
-        foreach (var diag in syntaxDiagnostics) yield return diag;
+        result.AddRange(syntaxDiagnostics);
 
         // Next, we enforce binding everywhere
         foreach (var symbol in this.compilation.GlobalModule.Members)
@@ -67,7 +72,9 @@ public sealed partial class SemanticModel
         }
 
         // Dump back all diagnostics
-        foreach (var diag in this.compilation.GlobalDiagnosticBag) yield return diag.ToApiDiagnostic(null);
+        result.AddRange(this.compilation.GlobalDiagnosticBag.Select(diag => diag.ToApiDiagnostic(null)));
+
+        return result.ToImmutable();
     }
 
     // NOTE: These OrNull functions are not too pretty

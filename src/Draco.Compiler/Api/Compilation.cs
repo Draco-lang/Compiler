@@ -43,10 +43,14 @@ public sealed class Compilation
         syntaxTrees: syntaxTrees,
         assemblyName: assemblyName);
 
+    // TODO: Probably not the smartest idea, will only work for single files (likely)
     /// <summary>
     /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
     /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics => throw new System.NotImplementedException();
+    public ImmutableArray<Diagnostic> Diagnostics => this.SyntaxTrees
+        .Select(this.GetSemanticModel)
+        .SelectMany(model => model.Diagnostics)
+        .ToImmutableArray();
 
     /// <summary>
     /// The trees that are being compiled.

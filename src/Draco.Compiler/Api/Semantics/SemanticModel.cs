@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Draco.Compiler.Api.Diagnostics;
@@ -91,6 +92,15 @@ public sealed partial class SemanticModel
         var binder = this.compilation.GetBinder(subtree);
         if (binder.ContainingSymbol is SourceFunctionSymbol functionSymbol)
         {
+            if (subtree is ParameterSyntax)
+            {
+                // We can just search in the function symbol
+                var parameterSymbol = (Internal.Symbols.ParameterSymbol)functionSymbol.Parameters
+                    .Cast<ISourceSymbol>()
+                    .First(sym => subtree == sym.DeclarationSyntax);
+                return parameterSymbol.ToApiSymbol();
+            }
+
             // TODO: We should somehow get the function to use the incremental binder in this context...
             // Maybe don't expose the body at all?
             // Or should the function symbol know about semantic context?

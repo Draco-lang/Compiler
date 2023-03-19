@@ -76,7 +76,8 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="node"/> defines a symbol.</returns>
     public static bool DefinesSymbol(SyntaxNode node) => node
         is FunctionDeclarationSyntax
-        or VariableDeclarationSyntax;
+        or VariableDeclarationSyntax
+        or ParameterSyntax;
 
     /// <summary>
     /// Checks, if a given syntax node references a symbol.

@@ -32,9 +32,8 @@ internal interface ISourceReader
     /// </summary>
     /// <param name="result">The character at the peeked position.</param>
     /// <param name="offset">The amount to look ahead from the current position.</param>
-    /// <param name="default">The character to return, in case the peek would overrun the end of the source.</param>
     /// <returns>False, if peek overran the end of source, otherwise true.</returns>
-    public bool TryPeek(out char result, int offset = 0, char @default = '\0');
+    public bool TryPeek(out char result, int offset = 0);
 
     /// <summary>
     /// Advances <paramref name="amount"/> amount in the source.
@@ -72,11 +71,11 @@ internal static class SourceReader
             ? @default
             : this.source.Span[this.Position + offset];
 
-        public bool TryPeek(out char result, int offset = 0, char @default = '\0')
+        public bool TryPeek(out char result, int offset = 0)
         {
             if (this.Position + offset >= this.source.Length)
             {
-                result = @default;
+                result = default;
                 return false;
             }
             result = this.Peek(offset);

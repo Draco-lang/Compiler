@@ -53,6 +53,12 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     private ImmutableArray<ParameterSymbol> BuildParameters()
     {
+        // TODO: We should totally get rid of this
+        // Instead, we should make both valid but always make referencing the letter
+        // This would also get rid of the DuplicateParameterSymbol
+        // On their own they are fine, let's just report an error that this is an illegal shadowing
+        // No need for special symbol treatment
+
         Debug.Assert(this.DeclaringCompilation is not null);
         var diagnostics = this.DeclaringCompilation.GlobalDiagnostics;
 

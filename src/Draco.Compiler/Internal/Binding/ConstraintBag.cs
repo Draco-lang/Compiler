@@ -155,6 +155,28 @@ internal sealed class ConstraintBag
     }
 
     /// <summary>
+    /// Constraints that an expression is returnable from a function.
+    /// </summary>
+    /// <param name="value">The returned value.</param>
+    /// <param name="function">The function being returned from.</param>
+    /// <param name="syntax">The syntax returning.</param>
+    public void Return(UntypedExpression value, FunctionSymbol function, SyntaxNode syntax)
+    {
+        var returnType = function.ReturnType;
+        var valueType = value.TypeRequired;
+        // Optimization: if the left and right reference the same type, we know it's assignable
+        if (ReferenceEquals(returnType, valueType)) return;
+        // TODO: Maybe not the correct constraint
+        this.Solver
+            .Assignable(returnType, valueType)
+            // TODO: Ugly location API
+            .ConfigureDiagnostic(diag => diag
+                // TODO: This is a horrible way to set the reference...
+                // We should definitely rework the location API...
+                .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)));
+    }
+
+    /// <summary>
     /// Constraints that a function is being invoked.
     /// </summary>
     /// <param name="method">The called method expression.</param>

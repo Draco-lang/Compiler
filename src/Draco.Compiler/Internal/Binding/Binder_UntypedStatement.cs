@@ -58,6 +58,12 @@ internal partial class Binder
     {
         var binder = this.GetBinder(syntax);
         var value = binder.BindExpression(syntax.Value, constraints, diagnostics);
+
+        // Constraint return type
+        var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
+        Debug.Assert(containingFunction is not null);
+        constraints.Return(value, containingFunction, syntax);
+
         return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
     }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -92,6 +93,12 @@ internal partial class Binder
         var value = syntax.Value is null
             ? UntypedUnitExpression.Default
             : this.BindExpression(syntax.Value, constraints, diagnostics);
+
+        // Return type constraint
+        var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
+        Debug.Assert(containingFunction is not null);
+        constraints.Return(value, containingFunction, syntax);
+
         return new UntypedReturnExpression(syntax, value);
     }
 

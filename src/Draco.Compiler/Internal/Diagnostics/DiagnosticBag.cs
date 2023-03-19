@@ -4,9 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Draco.Compiler.Internal.Diagnostics;
 
-namespace Draco.Compiler.Internal.Binding;
+namespace Draco.Compiler.Internal.Diagnostics;
 
 /// <summary>
 /// Holds diagnostic messages.

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
 
@@ -34,18 +36,18 @@ internal sealed partial class ConstraintSolver
     private void Substitute(TypeVariable typeVar, Type type) =>
         this.substitutions.Add(typeVar, type);
 
-    private SolveState Solve(Constraint constraint) => constraint switch
+    private SolveState Solve(DiagnosticBag diagnostics, Constraint constraint) => constraint switch
     {
-        SameTypeConstraint c => this.Solve(c),
-        OverloadConstraint c => this.Solve(c),
+        SameTypeConstraint c => this.Solve(diagnostics, c),
+        OverloadConstraint c => this.Solve(diagnostics, c),
         _ => throw new System.ArgumentOutOfRangeException(nameof(constraint)),
     };
 
-    private SolveState Solve(SameTypeConstraint constraint)
+    private SolveState Solve(DiagnosticBag diagnostics, SameTypeConstraint constraint)
     {
         if (!this.Unify(constraint.First, constraint.Second))
         {
-            // TODO: Fill out error
+            // TODO
             throw new System.NotImplementedException();
         }
         return SolveState.Finished;

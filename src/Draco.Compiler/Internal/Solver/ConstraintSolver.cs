@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.Utilities;
@@ -32,14 +33,14 @@ internal sealed partial class ConstraintSolver
     /// <summary>
     /// Solves all constraints within the solver.
     /// </summary>
-    public void Solve()
+    public void Solve(DiagnosticBag diagnostics)
     {
         while (true)
         {
             var advanced = false;
             for (var i = 0; i < this.constraints.Count;)
             {
-                var state = this.Solve(this.constraints[i]);
+                var state = this.Solve(diagnostics, this.constraints[i]);
                 advanced = advanced || state != SolveState.Stale;
 
                 if (state == SolveState.Finished) this.constraints.RemoveAt(i);

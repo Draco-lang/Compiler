@@ -50,7 +50,7 @@ public sealed class DracoCompiler : ToolTask
         // Checking for compiler crash
         if (!this.HasLoggedErrors && exitCode != 0)
         {
-            this.LogEventsFromTextOutput("draco compiler : error DR0001 : The compiler failed unexpectedly, please report this as bug.", Microsoft.Build.Framework.MessageImportance.Normal); // TODO: Is this the correct way?
+            this.LogEventsFromTextOutput("draco compiler : error DR0001 : The compiler failed unexpectedly, please report this as bug.", Microsoft.Build.Framework.MessageImportance.Normal);
         }
         return !this.HasLoggedErrors;
     }

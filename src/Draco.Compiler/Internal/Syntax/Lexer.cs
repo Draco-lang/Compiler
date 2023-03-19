@@ -894,12 +894,8 @@ internal sealed class Lexer
     // later for performance reasons
     private char Peek(int offset = 0, char @default = '\0') =>
         this.SourceReader.Peek(offset: offset, @default: @default);
-    private bool TryPeek(out char result, int offset = 0)
-    {
-        var res = this.SourceReader.TryPeek(result: out char resultChar, offset: offset);
-        result = resultChar;
-        return res;
-    }
+    private bool TryPeek(out char result, int offset = 0) =>
+        this.SourceReader.TryPeek(result: out result, offset: offset);
     private ReadOnlyMemory<char> Advance(int amount) => this.SourceReader.Advance(amount);
     private string AdvanceWithText(int amount) => this.Advance(amount).ToString();
 

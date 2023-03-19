@@ -123,8 +123,13 @@ internal sealed class ConstraintBag
         var secondType = second.TypeRequired;
         // Optimization: if the left and right reference the same type, we know they are the common type
         if (ReferenceEquals(firstType, secondType)) return firstType;
-        // TODO
-        throw new System.NotImplementedException();
+        // Add constraint
+        return this.Solver
+            .Assignable(firstType, secondType)
+            // TODO: We should extract syntax here to point to inferred common types
+            // Like in if-else branches
+            .ConfigureDiagnostic(diag => { })
+            .Result;
     }
 
     /// <summary>

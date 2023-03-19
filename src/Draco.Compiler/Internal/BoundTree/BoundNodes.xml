@@ -126,6 +126,10 @@
     <Field Name="Value" Type="object?" />
   </Node>
 
+  <Node Name="BoundStringExpression" Base="BoundExpression">
+    <Field Name="Parts" Type="ImmutableArray&lt;BoundStringPart&gt;" />
+  </Node>
+
   <Node Name="BoundRelationalExpression" Base="BoundExpression">
     <Field Name="First" Type="BoundExpression" />
     <Field Name="Comparisons" Type="ImmutableArray&lt;BoundComparison&gt;" />
@@ -134,6 +138,16 @@
   <Node Name="BoundComparison" Base="BoundNode">
     <Field Name="Operator" Type="ComparisonOperatorSymbol" />
     <Field Name="Next" Type="BoundExpression" />
+  </Node>
+
+  <AbstractNode Name="BoundStringPart" Base="BoundNode" />
+
+  <Node Name="BoundStringText" Base="BoundStringPart">
+    <Field Name="Text" Type="string" />
+  </Node>
+
+  <Node Name="BoundStringInterpolation" Base="BoundStringPart">
+    <Field Name="Value" Type="BoundExpression" />
   </Node>
 
   <!-- LValues -->

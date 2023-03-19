@@ -31,6 +31,7 @@ internal partial class Binder
         NameExpressionSyntax name => this.BindNameExpression(name, constraints, diagnostics),
         BlockExpressionSyntax block => this.BindBlockExpression(block, constraints, diagnostics),
         GotoExpressionSyntax @goto => this.BindGotoExpression(@goto, constraints, diagnostics),
+        ReturnExpressionSyntax @return => this.BindReturnExpression(@return, constraints, diagnostics),
         IfExpressionSyntax @if => this.BindIfExpression(@if, constraints, diagnostics),
         WhileExpressionSyntax @while => this.BindWhileExpression(@while, constraints, diagnostics),
         CallExpressionSyntax call => this.BindCallExpression(call, constraints, diagnostics),
@@ -84,6 +85,14 @@ internal partial class Binder
     {
         var target = (LabelSymbol)this.BindLabel(syntax.Target, constraints, diagnostics);
         return new UntypedGotoExpression(syntax, target);
+    }
+
+    private UntypedExpression BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var value = syntax.Value is null
+            ? UntypedUnitExpression.Default
+            : this.BindExpression(syntax.Value, constraints, diagnostics);
+        return new UntypedReturnExpression(syntax, value);
     }
 
     private UntypedExpression BindIfExpression(IfExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)

@@ -72,7 +72,7 @@ internal sealed partial class ConstraintSolver
     /// Adds an assignable constraint to the solver.
     /// </summary>
     /// <param name="targetType">The type being assigned to.</param>
-    /// <param name="targetType">The type assigned.</param>
+    /// <param name="assignedType">The type assigned.</param>
     /// <returns>The promise for the constraint added.</returns>
     public ConstraintPromise<Type> Assignable(Type targetType, Type assignedType)
     {
@@ -80,6 +80,18 @@ internal sealed partial class ConstraintSolver
         var constraint = new SameTypeConstraint(targetType, assignedType);
         this.constraints.Add(constraint);
         return constraint.Promise;
+    }
+
+    /// <summary>
+    /// Adds a common-type constraint to the solver.
+    /// </summary>
+    /// <param name="first">The first type to search a common type for.</param>
+    /// <param name="second">The second type to search a common type for.</param>
+    /// <returns>The promise for the constraint added.</returns>
+    public ConstraintPromise<Type> CommonType(Type first, Type second)
+    {
+        // TODO: Hack, this is temporary until we have other constraints
+        return this.SameType(first, second);
     }
 
     /// <summary>

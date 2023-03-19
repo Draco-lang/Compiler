@@ -25,6 +25,7 @@ internal partial class Binder
     {
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
+        UntypedStringExpression str => this.TypeStringExpression(str, constraints, diagnostics),
         UntypedParameterExpression @param => this.TypeParameterExpression(param, constraints, diagnostics),
         UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
         UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
@@ -47,6 +48,15 @@ internal partial class Binder
 
     private BoundExpression TypeLiteralExpression(UntypedLiteralExpression literal, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundLiteralExpression(literal.Syntax, literal.Value);
+
+    private BoundExpression TypeStringExpression(UntypedStringExpression str, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundStringExpression(str.Syntax, str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray());
+
+    private BoundStringPart TypeStringPart(UntypedStringPart part, ConstraintBag constraints, DiagnosticBag diagnostics) => part switch
+    {
+        UntypedStringText text => new BoundStringText(text.Syntax, text.Text),
+        _ => throw new ArgumentOutOfRangeException(nameof(part)),
+    };
 
     private BoundExpression TypeParameterExpression(UntypedParameterExpression param, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundParameterExpression(param.Syntax, param.Parameter);

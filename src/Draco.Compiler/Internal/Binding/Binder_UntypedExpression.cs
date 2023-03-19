@@ -27,6 +27,7 @@ internal partial class Binder
     protected UntypedExpression BindExpression(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),
+        StringExpressionSyntax str => this.BindStringExpression(str, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameExpression(name, constraints, diagnostics),
         BlockExpressionSyntax block => this.BindBlockExpression(block, constraints, diagnostics),
         GotoExpressionSyntax @goto => this.BindGotoExpression(@goto, constraints, diagnostics),
@@ -41,6 +42,15 @@ internal partial class Binder
 
     private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new UntypedLiteralExpression(syntax, syntax.Literal.Value);
+
+    private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new UntypedStringExpression(syntax, syntax.Parts.Select(p => this.BindStringPart(p, constraints, diagnostics)).ToImmutableArray());
+
+    private UntypedStringPart BindStringPart(StringPartSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
+    {
+        TextStringPartSyntax text => new UntypedStringText(syntax, text.Content.ValueText!),
+        _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
+    };
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {

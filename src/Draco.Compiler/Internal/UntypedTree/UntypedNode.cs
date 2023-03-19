@@ -96,6 +96,11 @@ internal partial class UntypedLiteralExpression
     };
 }
 
+internal partial class UntypedStringExpression
+{
+    public override Type? Type => Intrinsics.String;
+}
+
 internal partial class UntypedRelationalExpression
 {
     public override Type Type => Intrinsics.Bool;

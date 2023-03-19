@@ -3,9 +3,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
+using Diagnostic = Draco.Compiler.Internal.Diagnostics.Diagnostic;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -47,8 +49,11 @@ internal sealed partial class ConstraintSolver
     {
         if (!this.Unify(constraint.First, constraint.Second))
         {
-            // TODO
-            throw new System.NotImplementedException();
+            var diagnostic = constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(this.Unwrap(constraint.First), this.Unwrap(constraint.Second))
+                .Build();
+            diagnostics.Add(diagnostic);
         }
         return SolveState.Finished;
     }

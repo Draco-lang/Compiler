@@ -92,6 +92,12 @@ public sealed partial class SemanticModel
         var binder = this.compilation.GetBinder(subtree);
         if (binder.ContainingSymbol is SourceFunctionSymbol functionSymbol)
         {
+            if (subtree is FunctionDeclarationSyntax)
+            {
+                // It's just the containing symbol
+                return functionSymbol.ToApiSymbol();
+            }
+
             if (subtree is ParameterSyntax)
             {
                 // We can just search in the function symbol
@@ -135,14 +141,17 @@ public sealed partial class SemanticModel
                 return boundNodes[0] switch
                 {
                     BoundLocalDeclaration l => l.Local.ToApiSymbol(),
+                    BoundLabelStatement l => l.Label.ToApiSymbol(),
                     _ => throw new NotImplementedException(),
                 };
             }
         }
         else if (binder.ContainingSymbol is SourceModuleSymbol module)
         {
-            // TODO
-            throw new NotImplementedException();
+            var symbol = (Symbol)module.Members
+                .OfType<ISourceSymbol>()
+                .First(sym => sym.DeclarationSyntax == subtree);
+            return symbol.ToApiSymbol();
         }
         else
         {

@@ -214,7 +214,7 @@ internal sealed class Parser
                 TokenKind.Identifier when this.Peek(1) == TokenKind.Colon => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(Range: new(Offset: 0, Width: input.Width));
+            var location = new Location.RelativeToTree(Range: new(Offset: 0, Width: input.FullWidth));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
             var node = new UnexpectedDeclarationSyntax(input);
             this.AddDiagnostic(node, diag);
@@ -366,7 +366,7 @@ internal sealed class Parser
                 or TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.FullWidth));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
             var node = new UnexpectedFunctionBodySyntax(input);
             this.AddDiagnostic(node, diag);
@@ -406,7 +406,7 @@ internal sealed class Parser
                 var kind when expressionStarters.Contains(kind) => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.FullWidth));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "type");
             var node = new UnexpectedTypeSyntax(input);
             this.AddDiagnostic(node, diag);
@@ -542,7 +542,7 @@ internal sealed class Parser
                         var tt when expressionStarters.Contains(tt) => false,
                         _ => true,
                     });
-                    var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
+                    var location = new Location.RelativeToTree(new(Offset: 0, Width: input.FullWidth));
                     var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "statement");
                     var errNode = new UnexpectedStatementSyntax(input);
                     this.AddDiagnostic(errNode, diag);
@@ -763,7 +763,7 @@ internal sealed class Parser
                 var kind when expressionStarters.Contains(kind) => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.FullWidth));
             var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
             var node = new UnexpectedExpressionSyntax(input);
             this.AddDiagnostic(node, diag);
@@ -822,7 +822,7 @@ internal sealed class Parser
                 TokenKind.MultiLineStringEnd or TokenKind.StringNewline => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.FullWidth));
             var diag = Diagnostic.Create(
                 SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString,
                 location);
@@ -909,7 +909,7 @@ internal sealed class Parser
         else
         {
             // Error, the closing quotes are not on a newline
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: closeQuote.Width));
+            var location = new Location.RelativeToTree(new(Offset: 0, Width: closeQuote.FullWidth));
             var diag = Diagnostic.Create(
                 SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
                 location);

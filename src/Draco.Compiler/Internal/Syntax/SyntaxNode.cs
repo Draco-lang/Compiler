@@ -11,9 +11,25 @@ namespace Draco.Compiler.Internal.Syntax;
 internal abstract class SyntaxNode
 {
     /// <summary>
-    /// The width of this node in characters.
+    /// The width of this node in characters, including the leading and trailing trivia.
     /// </summary>
-    public virtual int Width => this.Children.Select(c => c.Width).Sum();
+    public virtual int FullWidth => this.Children.Select(c => c.FullWidth).Sum();
+
+    /// <summary>
+    /// The width of this node in characters, not including the surrounding trivia.
+    /// </summary>
+    public int Width
+    {
+        get
+        {
+            var width = this.FullWidth;
+            var leadingTrivia = this.FirstToken?.LeadingTrivia;
+            var trailingTrivia = this.LastToken?.TrailingTrivia;
+            if (leadingTrivia is not null) width -= leadingTrivia.FullWidth;
+            if (trailingTrivia is not null) width -= trailingTrivia.FullWidth;
+            return width;
+        }
+    }
 
     /// <summary>
     /// The immediate descendant nodes of this one.
@@ -24,6 +40,40 @@ internal abstract class SyntaxNode
     /// All <see cref="SyntaxToken"/>s this node consists of.
     /// </summary>
     public IEnumerable<SyntaxToken> Tokens => this.PreOrderTraverse().OfType<SyntaxToken>();
+
+    /// <summary>
+    /// Retrieves the first token within this node.
+    /// </summary>
+    public SyntaxToken? FirstToken
+    {
+        get
+        {
+            var node = this;
+            while (true)
+            {
+                if (node is SyntaxTrivia) return null;
+                if (node is SyntaxToken token) return token;
+                node = node.Children.First();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the last token within this node.
+    /// </summary>
+    public SyntaxToken? LastToken
+    {
+        get
+        {
+            var node = this;
+            while (true)
+            {
+                if (node is SyntaxTrivia) return null;
+                if (node is SyntaxToken token) return token;
+                node = node.Children.Last();
+            }
+        }
+    }
 
     /// <summary>
     /// The documentation attached before this node.

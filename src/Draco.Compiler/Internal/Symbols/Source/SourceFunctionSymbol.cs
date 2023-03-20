@@ -105,7 +105,6 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         Debug.Assert(this.DeclaringCompilation is not null);
 
         // NOTE: We are using the global diagnostic bag, maybe that's not a good idea here?
-        var constraints = new ConstraintBag();
         var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
         var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
         var returnTypeSymbol = binder.BindType(this.DeclarationSyntax.ReturnType.Type, diagnostics);

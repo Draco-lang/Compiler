@@ -59,7 +59,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The span of this syntax node, excluding the trivia surrounding the node.
     /// </summary>
-    public TextSpan Span => new(Start: this.Position, Length: this.Green.Width);
+    public SourceSpan Span => new(Start: this.Position, Length: this.Green.Width);
 
     /// <summary>
     /// The <see cref="SyntaxRange"/> of this node within the source file, excluding the trivia surrounding the node.

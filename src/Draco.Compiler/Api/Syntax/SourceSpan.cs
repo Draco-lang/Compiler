@@ -11,4 +11,4 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 /// <param name="Start">The start index of the text.</param>
 /// <param name="Length">The length of the text.</param>
-public readonly record struct TextSpan(int Start, int Length);
+public readonly record struct SourceSpan(int Start, int Length);

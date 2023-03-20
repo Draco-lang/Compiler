@@ -56,6 +56,7 @@ internal sealed partial class SyntaxToken : SyntaxNode
     public SyntaxList<SyntaxTrivia> TrailingTrivia { get; }
 
     public override int Width { get; }
+    public override SyntaxOffset Offset { get; }
 
     public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxToken>();
 
@@ -72,6 +73,9 @@ internal sealed partial class SyntaxToken : SyntaxNode
         this.LeadingTrivia = leadingTrivia;
         this.TrailingTrivia = trailingTrivia;
         this.Width = leadingTrivia.Width + text.Length + trailingTrivia.Width;
+        this.Offset = leadingTrivia.Offset
+            .OffsetBy(new(Lines: 0, Columns: text.Length))
+            .OffsetBy(trailingTrivia.Offset);
     }
 
     /// <summary>

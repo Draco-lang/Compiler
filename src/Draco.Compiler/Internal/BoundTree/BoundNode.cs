@@ -49,6 +49,92 @@ internal partial class BoundExpression
 internal partial class BoundUnitExpression
 {
     public static BoundUnitExpression Default { get; } = new(null);
+    public override Type? Type => Intrinsics.Unit;
+}
+
+internal partial class BoundGotoExpression
+{
+    public override Type Type => Intrinsics.Never;
+}
+
+internal partial class BoundReturnExpression
+{
+    public override Type Type => Intrinsics.Never;
+}
+
+internal partial class BoundBlockExpression
+{
+    public override Type Type => this.Value.TypeRequired;
+}
+
+internal partial class BoundWhileExpression
+{
+    public override Type Type => Intrinsics.Unit;
+}
+
+internal partial class BoundAndExpression
+{
+    public override Type Type => Intrinsics.Bool;
+}
+
+internal partial class BoundOrExpression
+{
+    public override Type Type => Intrinsics.Bool;
+}
+
+internal partial class BoundParameterExpression
+{
+    public override Type Type => this.Parameter.Type;
+}
+
+internal partial class BoundGlobalExpression
+{
+    public override Type Type => this.Global.Type;
+}
+
+internal partial class BoundLocalExpression
+{
+    public override Type Type => this.Local.Type;
+}
+
+internal partial class BoundReferenceErrorExpression
+{
+    public override Type Type => Intrinsics.Error;
+}
+
+internal partial class BoundLiteralExpression
+{
+    public override Type Type => this.Value switch
+    {
+        int => Intrinsics.Int32,
+        bool => Intrinsics.Bool,
+        _ => throw new System.InvalidOperationException(),
+    };
+}
+
+internal partial class BoundStringExpression
+{
+    public override Type Type => Intrinsics.String;
+}
+
+internal partial class BoundRelationalExpression
+{
+    public override Type Type => Intrinsics.Bool;
+}
+
+internal partial class BoundAssignmentExpression
+{
+    public override Type Type => this.Left.Type;
 }
 
 // Lvalues
+
+internal partial class BoundLvalue
+{
+    public abstract Type Type { get; }
+}
+
+internal partial class BoundLocalLvalue
+{
+    public override Type Type => this.Local.Type;
+}

@@ -69,4 +69,15 @@ internal abstract partial class Binder
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
         return boundStatement;
     }
+
+    public BoundExpression BindGlobalValue(ExpressionSyntax syntax)
+    {
+        // NOTE: We are reusing the global bag, maybe not the best idea
+        var constraints = new ConstraintBag();
+        var diagnostics = this.Compilation.GlobalDiagnosticBag;
+        var untypedExpression = this.BindExpression(syntax, constraints, diagnostics);
+        constraints.Solver.Solve(diagnostics);
+        var boundExpression = this.TypeExpression(untypedExpression, constraints, diagnostics);
+        return boundExpression;
+    }
 }

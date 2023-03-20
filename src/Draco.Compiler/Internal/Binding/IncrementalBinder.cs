@@ -65,8 +65,8 @@ public sealed partial class SemanticModel
         internal override Symbol BindLabel(LabelSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
             this.LookupNode(syntax, () => base.BindLabel(syntax, constraints, diagnostics));
 
-        internal override Symbol BindType(TypeSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
-            this.LookupNode(syntax, () => base.BindType(syntax, constraints, diagnostics));
+        internal override Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) =>
+            this.LookupNode(syntax, () => base.BindType(syntax, diagnostics));
 
         // TODO: There's nothing incremental in this,
         // but current usage doesn't require it either

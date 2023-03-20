@@ -108,7 +108,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         var constraints = new ConstraintBag();
         var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
         var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
-        var returnTypeSymbol = binder.BindType(this.DeclarationSyntax.ReturnType.Type, constraints, diagnostics);
+        var returnTypeSymbol = binder.BindType(this.DeclarationSyntax.ReturnType.Type, diagnostics);
         return ((TypeSymbol)returnTypeSymbol).Type;
     }
 

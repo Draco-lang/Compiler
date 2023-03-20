@@ -46,21 +46,19 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     {
         Debug.Assert(this.DeclaringCompilation is not null);
         var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
-        // var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
 
         if (this.DeclarationSyntax.Type is not null)
         {
             // var x: T;
             // Type is present
-            // TODO: Check value type if present?
+            // TODO
             throw new System.NotImplementedException();
         }
         else if (this.DeclarationSyntax.Value is not null)
         {
             // var x = value;
             // Infer from value type
-            // TODO
-            throw new System.NotImplementedException();
+            return this.Value!.TypeRequired;
         }
         else
         {
@@ -74,6 +72,11 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         }
     }
 
-    private BoundExpression BuildValue() =>
-        throw new System.NotImplementedException();
+    private BoundExpression BuildValue()
+    {
+        Debug.Assert(this.DeclaringCompilation is not null);
+
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Value!.Value);
+        return binder.BindGlobalValue(this.DeclarationSyntax.Value!.Value);
+    }
 }

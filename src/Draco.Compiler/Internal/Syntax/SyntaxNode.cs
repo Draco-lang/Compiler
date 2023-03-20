@@ -16,13 +16,6 @@ internal abstract class SyntaxNode
     public virtual int Width => this.Children.Select(c => c.Width).Sum();
 
     /// <summary>
-    /// The offset caused by this node.
-    /// </summary>
-    public virtual SyntaxOffset Offset => this.Children.Aggregate(
-        seed: new SyntaxOffset(Lines: 0, Columns: 0),
-        func: (acc, child) => acc.OffsetBy(child.Offset));
-
-    /// <summary>
     /// The immediate descendant nodes of this one.
     /// </summary>
     public abstract IEnumerable<SyntaxNode> Children { get; }

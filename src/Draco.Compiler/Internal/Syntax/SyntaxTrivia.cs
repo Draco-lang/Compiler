@@ -29,9 +29,6 @@ internal sealed class SyntaxTrivia : SyntaxNode
     public string Text { get; }
 
     public override int Width => this.Text.Length;
-    public override SyntaxOffset Offset => this.Kind == TriviaKind.Newline
-        ? new(Lines: 1, Columns: 0)
-        : new(Lines: 0, Columns: this.Width);
 
     public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
 

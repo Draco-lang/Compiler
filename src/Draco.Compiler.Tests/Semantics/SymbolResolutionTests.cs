@@ -67,6 +67,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
 
         var symFoo = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(foo));
         var symn = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(n));

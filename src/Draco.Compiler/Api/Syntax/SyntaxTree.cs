@@ -81,7 +81,7 @@ public sealed class SyntaxTree
     /// </summary>
     /// <param name="position">The position that has to be contained.</param>
     /// <returns>All subtree nodes containing <paramref name="position"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(Position position) => this.Root.TraverseSubtreesAtPosition(position);
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(SyntaxPosition position) => this.Root.TraverseSubtreesAtPosition(position);
 
     /// <summary>
     /// Syntactically formats this <see cref="SyntaxTree"/>.

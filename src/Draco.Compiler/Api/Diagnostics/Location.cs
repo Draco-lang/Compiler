@@ -25,7 +25,7 @@ public abstract partial class Location
     /// <summary>
     /// The range of this location.
     /// </summary>
-    public virtual Range? Range => null;
+    public virtual SyntaxRange? Range => null;
 }
 
 public abstract partial class Location
@@ -51,9 +51,9 @@ public abstract partial class Location
     internal sealed class InFile : Location
     {
         public override SourceText SourceText { get; }
-        public override Range? Range { get; }
+        public override SyntaxRange? Range { get; }
 
-        public InFile(SourceText sourceText, Range range)
+        public InFile(SourceText sourceText, SyntaxRange range)
         {
             this.SourceText = sourceText;
             this.Range = range;

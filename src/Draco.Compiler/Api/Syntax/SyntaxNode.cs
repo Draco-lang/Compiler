@@ -28,20 +28,20 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public Location Location => new Location.InFile(this.Tree.SourceText, this.Range);
 
     /// <summary>
-    /// The <see cref="Syntax.Range"/> of this node within the source file, excluding the trivia surrounding the node.
+    /// The <see cref="Syntax.SyntaxRange"/> of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
-    public Range Range => this.range ??= this.ComputeRange();
-    private Range? range;
+    public SyntaxRange Range => this.range ??= this.ComputeRange();
+    private SyntaxRange? range;
 
     /// <summary>
     /// The position of the first character of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
-    public Position StartPosition => this.Range.Start;
+    public SyntaxPosition StartPosition => this.Range.Start;
 
     /// <summary>
     /// The position after the last character of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
-    public Position EndPosition => this.Range.End;
+    public SyntaxPosition EndPosition => this.Range.End;
 
     /// <summary>
     /// The immediate descendant nodes of this one.
@@ -64,7 +64,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     internal abstract Internal.Syntax.SyntaxNode Green { get; }
 
     // TODO: Better way?
-    internal Range TranslateRelativeRange(Internal.Diagnostics.RelativeRange range)
+    internal SyntaxRange TranslateRelativeRange(Internal.Diagnostics.RelativeRange range)
     {
         var text = this.ToString().AsSpan();
         var start = StepPositionByText(this.Range.Start, text[..range.Offset]);
@@ -116,7 +116,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// </summary>
     /// <param name="position">The position that has to be contained.</param>
     /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(Position position)
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(SyntaxPosition position)
     {
         var root = this;
         while (true)
@@ -139,12 +139,12 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
 
-    private Range ComputeRange()
+    private SyntaxRange ComputeRange()
     {
         var line = 0;
         var column = 0;
 
-        Position CurrentPosition() => new(Line: line, Column: column);
+        SyntaxPosition CurrentPosition() => new(Line: line, Column: column);
 
         void AdvanceToken(SyntaxToken token)
         {
@@ -225,7 +225,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
         // If there was a first token, there is a last
         var lastToken = this.Tokens.Last();
 
-        Range MakeRange() =>
+        SyntaxRange MakeRange() =>
             new(Start: firstToken!.range!.Value.Start, End: lastToken!.range!.Value.End);
 
         // The tokens already have a range
@@ -244,7 +244,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     }
 
     // NOTE: This might be a good general utility somewhere else?
-    private static Position StepPositionByText(Position start, ReadOnlySpan<char> text)
+    private static SyntaxPosition StepPositionByText(SyntaxPosition start, ReadOnlySpan<char> text)
     {
         var currLine = start.Line;
         var currCol = start.Column;

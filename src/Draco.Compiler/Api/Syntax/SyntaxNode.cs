@@ -57,7 +57,12 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     internal void SetFullPosition(int fullPosition) => this.fullPosition = fullPosition;
 
     /// <summary>
-    /// The <see cref="Syntax.SyntaxRange"/> of this node within the source file, excluding the trivia surrounding the node.
+    /// The span of this syntax node, excluding the trivia surrounding the node.
+    /// </summary>
+    public TextSpan Span => new(Start: this.Position, Length: this.Green.Width);
+
+    /// <summary>
+    /// The <see cref="SyntaxRange"/> of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
     public SyntaxRange Range
     {

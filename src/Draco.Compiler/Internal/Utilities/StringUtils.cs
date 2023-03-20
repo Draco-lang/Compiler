@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -86,7 +87,7 @@ internal static class StringUtils
     /// <param name="str">The string to check the newline for.</param>
     /// <param name="offset">The offset to check the newline at.</param>
     /// <returns>The length of the newline sequence, which is 0, if there is no newline.</returns>
-    public static int NewlineLength(string str, int offset)
+    public static int NewlineLength(ReadOnlySpan<char> str, int offset)
     {
         if (offset < 0 || offset >= str.Length) return 0;
         if (str[offset] == '\r')

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -107,4 +108,14 @@ public sealed class SyntaxTree
     }
 
     public override string ToString() => this.Root.ToString();
+
+    internal void ComputeFullPositions()
+    {
+        var position = 0;
+        foreach (var node in this.Root.PreOrderTraverse())
+        {
+            node.SetFullPosition(position);
+            if (node is SyntaxToken token) position += token.Green.FullWidth;
+        }
+    }
 }

@@ -60,4 +60,11 @@ public abstract class SourceText
     /// Retrieves an <see cref="ISourceReader"/> for this text.
     /// </summary>
     internal abstract ISourceReader SourceReader { get; }
+
+    /// <summary>
+    /// Translates an index position into a syntax position.
+    /// </summary>
+    /// <param name="index">The index to translate.</param>
+    /// <returns>The syntax position equivalent to <paramref name="index"/>.</returns>
+    internal abstract SyntaxPosition IndexToSyntaxPosition(int index);
 }

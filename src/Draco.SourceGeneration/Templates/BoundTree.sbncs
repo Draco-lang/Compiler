@@ -86,8 +86,11 @@ namespace Draco.Compiler.Internal.BoundTree;
                 result.Append("{{$node.Name}}");
                 result.Append('(');
 
+                {{has_more_fields = array.size($node.Fields) > 1}}
                 {{wrap separated('result.Append(", ");', $node.Fields)}}
-                    result.Append("{{$element.Name}}: ");
+                    {{if has_more_fields}}
+                        result.Append("{{$element.Name}}: ");
+                    {{end}}
                     {{if $element.IsArray}}
                         result.Append('[');
                         result.AppendJoin(", ", this.{{$element.Name}});

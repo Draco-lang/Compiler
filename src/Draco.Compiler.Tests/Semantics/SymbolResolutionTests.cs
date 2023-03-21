@@ -341,13 +341,50 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
 
         var x1SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x1Decl));
         var x2SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x2Decl));
 
         // Assert
-        Assert.True(x1SymDecl.IsError);
-        Assert.True(x2SymDecl.IsError);
+        Assert.False(x1SymDecl.IsError);
+        Assert.False(x2SymDecl.IsError);
+        Assert.Single(diagnostics);
+        Assert.Equal(SymbolResolutionErrors.IllegalShadowing, diagnostics[0].Template);
+    }
+
+    [Fact]
+    public void RedefinedParameterReference()
+    {
+        // func foo(x: int32, x: int32) {
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(
+                Parameter("x", NameType("int32")),
+                Parameter("x", NameType("int32"))),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+
+        var x1Decl = tree.FindInChildren<ParameterSyntax>(0);
+        var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
+        var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        var x1SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x1Decl));
+        var x2SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x2Decl));
+        var x2SymRef = GetInternalSymbol<ParameterSymbol>(semanticModel.GetReferencedSymbol(xRef));
+
+        // Assert
+        Assert.Equal(x2SymDecl, x2SymRef);
     }
 
     [Fact]

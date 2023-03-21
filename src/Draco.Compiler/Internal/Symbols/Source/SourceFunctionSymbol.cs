@@ -81,11 +81,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
                     formatArgs: parameterName));
             }
 
-            var parameter = usedBefore || usedAfter
-                // Duplicate either way, we create an error symbol to swallow cascading type-errors from it
-                ? new DuplicateParameterSymbol(this, parameterSyntax) as ParameterSymbol
-                // Regular parameter
-                : new SourceParameterSymbol(this, parameterSyntax);
+            var parameter = new SourceParameterSymbol(this, parameterSyntax);
             parameters.Add(parameter);
         }
 

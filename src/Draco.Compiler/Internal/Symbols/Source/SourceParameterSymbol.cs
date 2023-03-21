@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
@@ -28,5 +29,14 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 
     public override ISymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
 
-    private Type BuildType() => throw new System.NotImplementedException();
+    private Type BuildType()
+    {
+        Debug.Assert(this.DeclaringCompilation is not null);
+
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Type);
+        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
+        var typeSymbol = (TypeSymbol)binder.BindType(this.DeclarationSyntax.Type, diagnostics);
+
+        return typeSymbol.Type;
+    }
 }

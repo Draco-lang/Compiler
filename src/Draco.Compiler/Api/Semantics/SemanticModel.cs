@@ -206,6 +206,7 @@ public sealed partial class SemanticModel
                 return boundNodes[0] switch
                 {
                     BoundFunctionExpression f => f.Function.ToApiSymbol(),
+                    BoundParameterExpression p => p.Parameter.ToApiSymbol(),
                     BoundLocalExpression l => l.Local.ToApiSymbol(),
                     BoundGlobalExpression g => g.Global.ToApiSymbol(),
                     BoundReferenceErrorExpression e => e.Symbol.ToApiSymbol(),

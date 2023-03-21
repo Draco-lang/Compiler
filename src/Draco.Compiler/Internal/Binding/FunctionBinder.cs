@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 
@@ -27,11 +28,15 @@ internal sealed class FunctionBinder : Binder
         if (flags.HasFlag(LookupFlags.DisallowLocals)) return;
 
         // Check parameters
-        foreach (var param in this.symbol.Parameters)
+        // We go in reverse-order, as these are technically locals
+        // In case there are duplicate parameters, we resolve to the last one only,
+        // To be closer to the shadowing semantics we have for locals
+        foreach (var param in this.symbol.Parameters.Reverse())
         {
             if (param.Name != name) continue;
             if (!allowSymbol(param)) continue;
             result.Add(param);
+            break;
         }
 
         // From now on we disallow locals

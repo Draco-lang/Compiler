@@ -72,7 +72,7 @@ public sealed partial class SemanticModel
         }
 
         // Dump back all diagnostics
-        result.AddRange(this.compilation.GlobalDiagnosticBag.Select(diag => diag.ToApiDiagnostic(null)));
+        result.AddRange(this.compilation.GlobalDiagnosticBag);
 
         return result.ToImmutable();
     }

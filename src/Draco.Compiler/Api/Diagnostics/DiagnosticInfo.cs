@@ -13,6 +13,34 @@ namespace Draco.Compiler.Api.Diagnostics;
 internal sealed class DiagnosticInfo
 {
     /// <summary>
+    /// Constructs a <see cref="DiagnosticInfo"/> message.
+    /// </summary>
+    /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
+    /// <param name="relatedInformation">Related information about the diagnostic.</param>
+    /// <param name="formatArgs">The format arguments of the message.</param>
+    /// <returns>The constructed <see cref="DiagnosticInfo"/>.</returns>
+    public static DiagnosticInfo Create(
+        DiagnosticTemplate template,
+        ImmutableArray<DiagnosticRelatedInformation> relatedInformation,
+        params object?[] formatArgs) => new(
+            template: template,
+            formatArgs: formatArgs,
+            relatedInformation: relatedInformation);
+
+    /// <summary>
+    /// Constructs a <see cref="DiagnosticInfo"/> message.
+    /// </summary>
+    /// <param name="template">The <see cref="DiagnosticTemplate"/> that describes this kind of message.</param>
+    /// <param name="formatArgs">The format arguments of the message.</param>
+    /// <returns>The constructed <see cref="DiagnosticInfo"/>.</returns>
+    public static DiagnosticInfo Create(
+        DiagnosticTemplate template,
+        params object?[] formatArgs) => Create(
+            template: template,
+            formatArgs: formatArgs,
+            relatedInformation: ImmutableArray<DiagnosticRelatedInformation>.Empty);
+
+    /// <summary>
     /// The template for this message.
     /// </summary>
     public DiagnosticTemplate Template { get; }

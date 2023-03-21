@@ -7,7 +7,6 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
-using Diagnostic = Draco.Compiler.Internal.Diagnostics.Diagnostic;
 
 namespace Draco.Compiler.Internal.Solver;
 

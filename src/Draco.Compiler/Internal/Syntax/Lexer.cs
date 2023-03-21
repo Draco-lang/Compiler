@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
@@ -875,12 +876,8 @@ internal sealed class Lexer
     // Errors
     private void AddError(DiagnosticTemplate template, int offset, int width, params object?[] args)
     {
-        var range = new RelativeRange(Offset: offset, Width: width);
-        var location = new Location.RelativeToTree(Range: range);
-        var diag = Diagnostic.Create(
-            template: template,
-            location: location,
-            formatArgs: args);
+        var info = DiagnosticInfo.Create(template, args);
+        var diag = new SyntaxDiagnosticInfo(info, Offset: offset, Width: width);
         this.diagnosticBuilder.Add(diag);
     }
 

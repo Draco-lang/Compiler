@@ -47,13 +47,6 @@ public sealed class DiagnosticRelatedInformation
     public string Message => string.Format(this.Format, this.FormatArgs);
 
     internal DiagnosticRelatedInformation(
-        Internal.Diagnostics.DiagnosticRelatedInformation internalInfo,
-        Location location)
-        : this(location, internalInfo.Format, internalInfo.FormatArgs)
-    {
-    }
-
-    internal DiagnosticRelatedInformation(
         Location location,
         string format,
         object?[] formatArgs)

@@ -12,9 +12,6 @@ public abstract partial class Location
     /// </summary>
     public static Location None { get; } = new NullLocation();
 
-    // TODO
-    public static Location Create() => new SourceLocation(null, default);
-
     /// <summary>
     /// True, if this location represents no location.
     /// </summary>

@@ -15,10 +15,15 @@ internal sealed class SourceLocation : Location
     public override SourceText SourceText { get; }
     public override SyntaxRange? Range { get; }
 
-    public SourceLocation(SyntaxTree syntaxTree, SourceSpan span)
+    public SourceLocation(SourceText sourceText, SourceSpan span)
     {
-        this.SourceText = syntaxTree.SourceText;
-        this.Range = (SyntaxRange?)null ?? throw new NotImplementedException();
+        this.SourceText = sourceText;
+        this.Range = sourceText.SourceSpanToSyntaxRange(span);
+    }
+
+    public SourceLocation(SyntaxTree syntaxTree, SourceSpan span)
+        : this(syntaxTree.SourceText, span)
+    {
     }
 
     public SourceLocation(SyntaxNode node)

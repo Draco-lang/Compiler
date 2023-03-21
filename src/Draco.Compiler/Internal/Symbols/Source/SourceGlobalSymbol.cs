@@ -53,8 +53,16 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
             // Check for value
             if (this.DeclarationSyntax.Value is not null)
             {
-                // TODO: We need to create a constraint bag and check assignability
-                throw new System.NotImplementedException();
+                var value = this.Value!;
+                // TODO: In reality we should check assignability, but that's
+                // not exposed, only in constraint bag
+                if (!ReferenceEquals(type, value.TypeRequired))
+                {
+                    diagnostics.Add(Diagnostic.Create(
+                        template: TypeCheckingErrors.TypeMismatch,
+                        location: new SourceLocation(this.DeclarationSyntax.Value.Value),
+                        formatArgs: new[] { type, value.TypeRequired }));
+                }
             }
             return type;
         }

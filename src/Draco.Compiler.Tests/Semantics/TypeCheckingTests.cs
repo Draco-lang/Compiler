@@ -222,6 +222,123 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void GlobalVariableExplicitlyTyped()
+    {
+        // var x: int32 = 0;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("x", NameType("int32"), LiteralExpression(0))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(xSym.Type, Internal.Types.Intrinsics.Int32);
+    }
+
+    [Fact]
+    public void GlobalVariableTypeInferredFromValue()
+    {
+        // var x = 0;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("x", value: LiteralExpression(0))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(xSym.Type, Internal.Types.Intrinsics.Int32);
+    }
+
+    [Fact]
+    public void GlobalVariableExplicitlyTypedWithoutValue()
+    {
+        // var x: int32;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("x", NameType("int32"))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(xSym.Type, Internal.Types.Intrinsics.Int32);
+    }
+
+    [Fact]
+    public void GlobalVariableTypeCanNotBeInferred()
+    {
+        // var x;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("x")));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        Assert.True(xSym.Type.IsError);
+    }
+
+    [Fact]
+    public void GlobalVariableIncompatibleType()
+    {
+        // var x: int32 = "Hello";
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration(
+                "x",
+                NameType("int32"),
+                StringExpression("Hello"))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        Assert.False(xSym.Type.IsError);
+    }
+
+    [Fact]
     public void BlockBodyFunctionReturnTypeMismatch()
     {
         // func foo(): int32 {

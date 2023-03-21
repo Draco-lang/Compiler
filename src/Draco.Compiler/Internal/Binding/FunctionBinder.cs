@@ -40,6 +40,7 @@ internal sealed class FunctionBinder : Binder
         }
 
         // From now on we disallow locals
-        flags |= LookupFlags.DisallowLocals;
+        // We also allow globals to be referenced, globals can only be referenced from function-local context
+        flags |= LookupFlags.DisallowLocals | LookupFlags.AllowGlobals;
     }
 }

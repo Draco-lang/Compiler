@@ -20,12 +20,21 @@ internal static class SymbolResolutionErrors
         code: Code(1));
 
     /// <summary>
+    /// An illegal reference.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalReference = DiagnosticTemplate.Create(
+        title: "illegal reference",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal reference to symbol {0}",
+        code: Code(2));
+
+    /// <summary>
     /// A shadowing error.
     /// </summary>
     public static readonly DiagnosticTemplate IllegalShadowing = DiagnosticTemplate.Create(
         title: "illegal shadowing",
         severity: DiagnosticSeverity.Error,
         format: "symbol {0} illegally shadows symbol with the same name",
-        code: Code(2));
+        code: Code(3));
 }
 

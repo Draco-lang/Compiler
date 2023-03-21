@@ -6,9 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Draco.SourceGeneration;
 

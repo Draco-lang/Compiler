@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Cli;

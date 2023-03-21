@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Immutable;
-using System.IO;
-using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Internal.Codegen;
 
 namespace Draco.Compiler.Api.Scripting;
 

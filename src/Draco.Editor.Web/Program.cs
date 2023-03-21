@@ -1,4 +1,3 @@
-using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using Draco.Compiler.Api;
@@ -6,7 +5,6 @@ using Draco.Compiler.Api.Syntax;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
-using Microsoft.JSInterop;
 
 namespace Draco.Editor.Web;
 

@@ -1,5 +1,4 @@
 using System;
-using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Api.Syntax;
 

@@ -1,9 +1,7 @@
 using System.Collections.Immutable;
-using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.FlowAnalysis.Lattices;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 

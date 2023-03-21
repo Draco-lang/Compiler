@@ -3,7 +3,6 @@ using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using System.Collections.Immutable;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Binding;
 using System.Reflection;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
 

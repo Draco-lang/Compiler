@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using Draco.Compiler.Internal.Symbols;
 using System.Reflection;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
+using Draco.Compiler.Internal.Binding;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -88,6 +89,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         AssertParentOf(GetDefiningScope(compilation, symFoo), GetDefiningScope(compilation, symn));
         Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), GetDefiningScope(compilation, symn)));
+
+        Assert.True(diagnostics.Length == 6);
+        Assert.All(diagnostics, diag => Assert.Equal(TypeCheckingErrors.CouldNotInferType, diag.Template));
     }
 
     [Fact]

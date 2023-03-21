@@ -78,11 +78,14 @@ internal partial class Binder
 
     private BoundExpression TypeBlockExpression(UntypedBlockExpression block, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
+        var locals = block.Locals
+            .Select(l => constraints.GetTypedLocal(diagnostics, l))
+            .ToImmutableArray();
         var typedStatements = block.Statements
             .Select(s => this.TypeStatement(s, constraints, diagnostics))
             .ToImmutableArray();
         var typedValue = this.TypeExpression(block.Value, constraints, diagnostics);
-        return new BoundBlockExpression(block.Syntax, block.Locals, typedStatements, typedValue);
+        return new BoundBlockExpression(block.Syntax, locals, typedStatements, typedValue);
     }
 
     private BoundExpression TypeGotoExpression(UntypedGotoExpression @goto, ConstraintBag constraints, DiagnosticBag diagnostics) =>

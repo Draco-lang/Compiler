@@ -39,7 +39,7 @@ internal partial class Binder
     {
         var binder = this.GetBinder(syntax);
         var locals = binder.DeclaredSymbols
-            .OfType<LocalSymbol>()
+            .OfType<UntypedLocalSymbol>()
             .ToImmutableArray();
         var statements = syntax.Statements
             .Select(s => binder.BindStatement(s, constraints, diagnostics))

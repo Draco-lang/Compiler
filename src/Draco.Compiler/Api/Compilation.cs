@@ -103,8 +103,6 @@ public sealed class Compilation
     public EmitResult Emit(Stream peStream, Stream? dracoIrStream = null) =>
         throw new System.NotImplementedException();
 
-    // TODO: Expose these nicely
-    /*
     public void Dump()
     {
         Console.WriteLine(this.SyntaxTrees.First().GreenRoot.ToDot());
@@ -116,10 +114,12 @@ public sealed class Compilation
             if (m is SourceFunctionSymbol func)
             {
                 var body = func.Body;
+                Console.WriteLine($"function {func.Name}");
+                Console.WriteLine(body);
+                Console.WriteLine("==================");
             }
         }
     }
-    */
 
     /// <summary>
     /// Retrieves the <see cref="Binder"/> for a given syntax node.

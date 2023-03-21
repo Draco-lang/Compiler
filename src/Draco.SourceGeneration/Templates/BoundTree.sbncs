@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.BoundTree;
@@ -77,6 +78,29 @@ namespace Draco.Compiler.Internal.BoundTree;
                 this.{{$field.Name}} = {{camel_case($field.Name)}};
             {{end}}
         }
+
+        {{if !$node.IsAbstract}}
+            public override string ToString()
+            {
+                var result = new StringBuilder();
+                result.Append("{{$node.Name}}");
+                result.Append('(');
+
+                {{wrap separated('result.Append(", ");', $node.Fields)}}
+                    result.Append("{{$element.Name}}: ");
+                    {{if $element.IsArray}}
+                        result.Append('[');
+                        result.AppendJoin(", ", this.{{$element.Name}});
+                        result.Append(']');
+                    {{else}}
+                        result.Append(this.{{$element.Name}});
+                    {{end}}
+                {{end}}
+
+                result.Append(')');
+                return result.ToString();
+            }
+        {{end}}
 
         {{if !$node.IsAbstract}}
             public {{$node.Name}} Update(

@@ -61,7 +61,7 @@ public sealed class SyntaxTree
     /// </summary>
     public IEnumerable<Diagnostic> Diagnostics => this
         .PreOrderTraverse()
-        .SelectMany(this.syntaxDiagnostics.Get);
+        .SelectMany(n => n.Diagnostics);
 
     /// <summary>
     /// Preorder traverses the thee with this node being the root.
@@ -96,7 +96,10 @@ public sealed class SyntaxTree
     /// </summary>
     internal Internal.Syntax.SyntaxNode GreenRoot { get; }
 
-    private readonly SyntaxDiagnosticTable syntaxDiagnostics;
+    /// <summary>
+    /// The table where internal diagnostics are written to.
+    /// </summary>
+    internal SyntaxDiagnosticTable SyntaxDiagnosticTable { get; }
 
     internal SyntaxTree(
         SourceText sourceText,
@@ -105,7 +108,7 @@ public sealed class SyntaxTree
     {
         this.SourceText = sourceText;
         this.GreenRoot = greenRoot;
-        this.syntaxDiagnostics = syntaxDiagnostics;
+        this.SyntaxDiagnosticTable = syntaxDiagnostics;
     }
 
     public override string ToString() => this.Root.ToString();

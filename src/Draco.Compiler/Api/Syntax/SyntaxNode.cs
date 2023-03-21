@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
@@ -21,6 +22,13 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// The parent <see cref="SyntaxNode"/> of this one.
     /// </summary>
     public SyntaxNode? Parent { get; }
+
+    /// <summary>
+    /// The diagnostics on this tree node.
+    /// </summary>
+    public ImmutableArray<Diagnostic> Diagnostics =>
+        this.diagnostics ??= this.Tree.SyntaxDiagnosticTable.Get(this).ToImmutableArray();
+    private ImmutableArray<Diagnostic>? diagnostics;
 
     /// <summary>
     /// The <see cref="Diagnostics.Location"/> of this node, excluding the trivia surrounding the node.

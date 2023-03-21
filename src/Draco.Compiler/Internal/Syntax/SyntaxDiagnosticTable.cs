@@ -23,9 +23,9 @@ internal readonly struct SyntaxDiagnosticTable
     /// </summary>
     /// <param name="node">The <see cref="SyntaxNode"/> to retrieve the <see cref="Diagnostic"/> messages for.</param>
     /// <returns>All <see cref="Diagnostic"/> messages for <paramref name="node"/>.</returns>
-    public IReadOnlyCollection<Diagnostic> Get(Api.Syntax.SyntaxNode node) => this.diagnostics.TryGetValue(node.Green, out var diagnostics)
-        ? diagnostics.Select(diag => diag.ToDiagnostic(node)).ToImmutableArray()
-        : ImmutableArray<Diagnostic>.Empty;
+    public IEnumerable<Diagnostic> Get(Api.Syntax.SyntaxNode node) => this.diagnostics.TryGetValue(node.Green, out var diagnostics)
+        ? diagnostics.Select(diag => diag.ToDiagnostic(node))
+        : Enumerable.Empty<Diagnostic>();
 
     /// <summary>
     /// Adds a <see cref="SyntaxDiagnosticInfo"/> to the given <see cref="SyntaxNode"/>.

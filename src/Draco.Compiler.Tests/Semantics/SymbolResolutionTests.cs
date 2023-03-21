@@ -551,6 +551,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var xDeclSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
         var xRefSym = semanticModel.GetReferencedSymbol(xRef);
 
+        // TODO: Should see it, but should report illegal reference error
         // Assert
         Assert.False(ReferenceEquals(xDeclSym, xRefSym));
         Assert.False(xDeclSym.IsError);

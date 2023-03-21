@@ -8,6 +8,8 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal static class SymbolResolutionErrors
 {
+    // TODO: Look through where IllegalReference makes more sense than UndefinedReference
+
     private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.SymbolResolution, index);
 
     /// <summary>

@@ -114,18 +114,18 @@ internal partial class Binder
 
     private UntypedExpression BindWhileExpression(WhileExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
-        var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
+        var binder = this.GetBinder(syntax);
 
-        var bodyBinder = this.GetBinder(syntax.Then);
-        var then = bodyBinder.BindExpression(syntax.Then, constraints, diagnostics);
+        var condition = binder.BindExpression(syntax.Condition, constraints, diagnostics);
+        var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
 
         constraints.IsCondition(condition);
         constraints.IsUnit(then);
 
-        var continueLabel = bodyBinder.DeclaredSymbols
+        var continueLabel = binder.DeclaredSymbols
             .OfType<LabelSymbol>()
             .First(sym => sym.Name == "continue");
-        var breakLabel = bodyBinder.DeclaredSymbols
+        var breakLabel = binder.DeclaredSymbols
             .OfType<LabelSymbol>()
             .First(sym => sym.Name == "break");
 

@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Binds the break and continue labels in the loop body.
 /// </summary>
-internal sealed class LoopBodyBinder : Binder
+internal sealed class LoopBinder : Binder
 {
     /// <summary>
     /// The break label.
@@ -23,7 +23,7 @@ internal sealed class LoopBodyBinder : Binder
 
     public override IEnumerable<Symbol> DeclaredSymbols => new[] { this.BreakLabel, this.ContinueLabel };
 
-    public LoopBodyBinder(Binder parent)
+    public LoopBinder(Binder parent)
         : base(parent)
     {
     }

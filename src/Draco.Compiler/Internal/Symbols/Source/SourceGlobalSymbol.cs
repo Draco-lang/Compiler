@@ -66,8 +66,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
             // A global without a type or value, error
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.CouldNotInferType,
-                // TODO: Ugly location API
-                location: new Internal.Diagnostics.Location.TreeReference(this.DeclarationSyntax),
+                location: new SourceLocation(this.DeclarationSyntax),
                 formatArgs: this.Name));
             return ErrorType.Instance;
         }

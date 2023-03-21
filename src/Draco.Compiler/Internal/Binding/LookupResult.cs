@@ -87,7 +87,7 @@ internal sealed class LookupResult
             // Report error
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.UndefinedReference,
-                location: syntax is null ? null : new Location.TreeReference(syntax),
+                location: syntax is null ? null : new SourceLocation(syntax),
                 formatArgs: name));
             // Return a sentinel value error
             return new UndefinedValueSymbol(name);
@@ -125,7 +125,7 @@ internal sealed class LookupResult
             // Report error
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.UndefinedReference,
-                location: syntax is null ? null : new Location.TreeReference(syntax),
+                location: syntax is null ? null : new SourceLocation(syntax),
                 formatArgs: name));
             // Return a sentinel type error
             return new UndefinedTypeSymbol(name);
@@ -153,7 +153,7 @@ internal sealed class LookupResult
             // Report error
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.UndefinedReference,
-                location: syntax is null ? null : new Location.TreeReference(syntax),
+                location: syntax is null ? null : new SourceLocation(syntax),
                 formatArgs: name));
             // Return a sentinel label error
             return new UndefinedLabelSymbol(name);

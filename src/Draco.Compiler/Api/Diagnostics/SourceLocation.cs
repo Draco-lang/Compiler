@@ -21,6 +21,11 @@ internal sealed class SourceLocation : Location
         this.Range = (SyntaxRange?)null ?? throw new NotImplementedException();
     }
 
+    public SourceLocation(SyntaxNode node)
+        : this(node.Tree, node.Span)
+    {
+    }
+
     public override string ToString()
     {
         var position = this.Range!.Value.Start;

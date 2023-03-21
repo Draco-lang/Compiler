@@ -33,7 +33,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The <see cref="Diagnostics.Location"/> of this node, excluding the trivia surrounding the node.
     /// </summary>
-    public Location Location => new Location.InFile(this.Tree.SourceText, this.Range);
+    public Location Location => new SourceLocation(this);
 
     /// <summary>
     /// The position of the node, including leading trivia.

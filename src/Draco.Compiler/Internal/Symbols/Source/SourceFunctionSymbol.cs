@@ -81,8 +81,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
                 // NOTE: We only report later duplicates, no need to report the first instance
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalShadowing,
-                    // TODO: Ugly location API
-                    new Internal.Diagnostics.Location.TreeReference(parameterSyntax),
+                    new SourceLocation(parameterSyntax),
                     formatArgs: parameterName));
             }
 

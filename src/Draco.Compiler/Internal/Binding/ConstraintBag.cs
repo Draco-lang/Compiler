@@ -45,8 +45,7 @@ internal sealed class ConstraintBag
                 // We could not infer the type
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
-                    // TODO: Ugly location API
-                    location: new Internal.Diagnostics.Location.TreeReference(symbol.DeclarationSyntax),
+                    location: new SourceLocation(symbol.DeclarationSyntax),
                     formatArgs: symbol.Name));
                 // We use an error type
                 localType = Types.Intrinsics.Error;
@@ -78,9 +77,7 @@ internal sealed class ConstraintBag
             this.Solver
                 .Assignable(inferredType, value.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
-                    // TODO: This is a horrible way to set the reference...
-                    // We should definitely rework the location API...
-                    .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)));
+                    .WithLocation(new SourceLocation(syntax)));
         }
     }
 
@@ -102,9 +99,7 @@ internal sealed class ConstraintBag
         this.Solver
             .SameType(expr.TypeRequired, Types.Intrinsics.Bool)
             .ConfigureDiagnostic(diag => diag
-                // TODO: This is a horrible way to set the reference...
-                // We should definitely rework the location API...
-                .WithLocation(new Internal.Diagnostics.Location.TreeReference(expr.Syntax)));
+                .WithLocation(new SourceLocation(expr.Syntax)));
     }
 
     /// <summary>
@@ -117,9 +112,7 @@ internal sealed class ConstraintBag
         this.Solver
             .SameType(expr.TypeRequired, Types.Intrinsics.Unit)
             .ConfigureDiagnostic(diag => diag
-                // TODO: This is a horrible way to set the reference...
-                // We should definitely rework the location API...
-                .WithLocation(new Internal.Diagnostics.Location.TreeReference(expr.Syntax)));
+                .WithLocation(new SourceLocation(expr.Syntax)));
     }
 
     /// <summary>
@@ -159,11 +152,8 @@ internal sealed class ConstraintBag
         // Add constraint
         this.Solver
             .Assignable(leftType, rightType)
-            // TODO: Ugly location API
             .ConfigureDiagnostic(diag => diag
-                // TODO: This is a horrible way to set the reference...
-                // We should definitely rework the location API...
-                .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)));
+                .WithLocation(new SourceLocation(syntax)));
     }
 
     /// <summary>
@@ -181,11 +171,8 @@ internal sealed class ConstraintBag
         // TODO: Maybe not the correct constraint
         this.Solver
             .Assignable(returnType, valueType)
-            // TODO: Ugly location API
             .ConfigureDiagnostic(diag => diag
-                // TODO: This is a horrible way to set the reference...
-                // We should definitely rework the location API...
-                .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)));
+                .WithLocation(new SourceLocation(syntax)));
     }
 
     /// <summary>
@@ -202,9 +189,7 @@ internal sealed class ConstraintBag
         return this.Solver
             .Call(methodType, argumentTypes)
             .ConfigureDiagnostic(diag => diag
-                // TODO: This is a horrible way to set the reference...
-                // We should definitely rework the location API...
-                .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)))
+                .WithLocation(new SourceLocation(syntax)))
             .Result;
     }
 
@@ -240,9 +225,7 @@ internal sealed class ConstraintBag
         var returnType = this.Solver
             .Call(callSite, new[] { left.TypeRequired, right.TypeRequired })
             .ConfigureDiagnostic(diag => diag
-            // TODO: This is a horrible way to set the reference...
-            // We should definitely rework the location API...
-            .WithLocation(new Internal.Diagnostics.Location.TreeReference(syntax)))
+                .WithLocation(new SourceLocation(syntax)))
             .Result;
         return (promise, returnType);
     }

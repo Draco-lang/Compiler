@@ -79,7 +79,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
             Debug.Assert(syntax is not null);
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalShadowing,
-                location: new SourceLocation(syntax),
+                location: syntax.Location,
                 formatArgs: member.Name));
         }
 

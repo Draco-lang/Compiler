@@ -60,7 +60,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
                 {
                     diagnostics.Add(Diagnostic.Create(
                         template: TypeCheckingErrors.TypeMismatch,
-                        location: new SourceLocation(this.DeclarationSyntax.Value.Value),
+                        location: this.DeclarationSyntax.Value.Value.Location,
                         formatArgs: new[] { type, value.TypeRequired }));
                 }
             }
@@ -77,7 +77,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
             // A global without a type or value, error
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.CouldNotInferType,
-                location: new SourceLocation(this.DeclarationSyntax),
+                location: this.DeclarationSyntax.Location,
                 formatArgs: this.Name));
             return ErrorType.Instance;
         }

@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 
@@ -69,6 +70,10 @@ public sealed partial class SemanticModel
 
         // Dump back all diagnostics
         result.AddRange(this.compilation.GlobalDiagnosticBag);
+
+        // Dump in DFA analysis results
+        var dfaDiags = DataFlowPasses.Analyze((SourceModuleSymbol)this.compilation.GlobalModule);
+        result.AddRange(dfaDiags);
 
         return result.ToImmutable();
     }

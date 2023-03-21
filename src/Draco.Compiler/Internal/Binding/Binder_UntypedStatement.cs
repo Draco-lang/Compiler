@@ -42,11 +42,22 @@ internal partial class Binder
             .OfType<UntypedLocalSymbol>()
             .ToImmutableArray();
         var statements = syntax.Statements
-            .Select(s => binder.BindStatement(s, constraints, diagnostics))
-            .ToImmutableArray();
+            .Select(s => binder.BindStatement(s, constraints, diagnostics));
+        // TODO: Do we want to handle this here, or during DFA?
+        // If this function returns unit, we implicitly append a return expression
+        var function = (FunctionSymbol)this.ContainingSymbol!;
+        if (ReferenceEquals(function.ReturnType, Types.Intrinsics.Unit))
+        {
+            statements = statements
+                .Append(new UntypedExpressionStatement(
+                    syntax: null,
+                    expression: new UntypedReturnExpression(
+                        syntax: null,
+                        value: UntypedUnitExpression.Default)));
+        }
         return new UntypedExpressionStatement(
             syntax,
-            new UntypedBlockExpression(syntax, locals, statements, UntypedUnitExpression.Default));
+            new UntypedBlockExpression(syntax, locals, statements.ToImmutableArray(), UntypedUnitExpression.Default));
     }
 
     private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)

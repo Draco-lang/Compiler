@@ -1,7 +1,10 @@
 using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.FlowAnalysis.Lattices;
+using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
@@ -17,12 +20,12 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
     /// <summary>
     /// Performs all DFA analysis on the given bound tree.
     /// </summary>
-    /// <param name="node">The bound tree to perform the analysis on.</param>
+    /// <param name="module">The module to perform the analysis on.</param>
     /// <returns>The list of <see cref="Diagnostic"/>s produced during analysis.</returns>
-    public static ImmutableArray<Diagnostic> Analyze(BoundNode node)
+    public static ImmutableArray<Diagnostic> Analyze(SourceModuleSymbol module)
     {
         var passes = new DataFlowPasses();
-        node.Accept(passes);
+        passes.AnalyzeModule(module);
         return passes.diagnostics.ToImmutable();
     }
 
@@ -30,6 +33,24 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
 
     private DataFlowPasses()
     {
+    }
+
+    private void AnalyzeModule(SourceModuleSymbol module)
+    {
+        foreach (var symbol in module.Members)
+        {
+            if (symbol is SourceFunctionSymbol function) this.AnalyzeFunction(function);
+        }
+    }
+
+    private void AnalyzeFunction(SourceFunctionSymbol function)
+    {
+        var graph = BoundTreeToDataFlowGraph.ToDataFlowGraph(function.Body);
+
+        this.CheckReturnsOnAllPaths(function, graph);
+        this.CheckIfOnlyInitializedVariablesAreUsed(graph);
+
+        function.Body.Accept(this);
     }
 
     public override void VisitLocalDeclaration(BoundLocalDeclaration node)
@@ -43,23 +64,6 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
         base.VisitAssignmentExpression(node);
         this.CheckIfValIsNotAssigned(node);
     }
-
-    // TODO: We'll need to make this a recursor on a module symbol
-    // instead of just being a bound tree visitor
-    // Since functions are not considered in visitation anymore
-    /*
-    public override Unit VisitFuncDecl(Ast.Decl.Func node)
-    {
-        base.VisitFuncDecl(node);
-
-        var graph = BoundTreeToDataFlowGraph.ToDataFlowGraph(node.Body);
-
-        this.CheckReturnsOnAllPaths(node, graph);
-        this.CheckIfOnlyInitializedVariablesAreUsed(graph);
-
-        return this.Default;
-    }
-    */
 
     private void CheckIfValIsInitialized(BoundLocalDeclaration node)
     {
@@ -85,12 +89,7 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
             formatArgs: reference.Local.Name));
     }
 
-    // TODO: We'll need to make this a recursor on a module symbol
-    // instead of just being a bound tree visitor
-    // Since functions are not considered in visitation anymore
-    // Same todo as above
-    /*
-    private void CheckReturnsOnAllPaths(Ast.Decl.Func node, DataFlowGraph graph)
+    private void CheckReturnsOnAllPaths(SourceFunctionSymbol function, DataFlowGraph graph)
     {
         // We check if all operations without a successor are a return
         var allReturns = graph.Operations
@@ -101,11 +100,10 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
             // Does not return on all paths
             this.diagnostics.Add(Diagnostic.Create(
                 template: DataflowErrors.DoesNotReturn,
-                location: node.DeclarationSymbol.Definition?.Location,
-                formatArgs: node.DeclarationSymbol.Name));
+                location: function.DeclarationSyntax.Location,
+                formatArgs: function.Name));
         }
     }
-    */
 
     private void CheckIfOnlyInitializedVariablesAreUsed(DataFlowGraph graph)
     {

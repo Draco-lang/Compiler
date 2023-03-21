@@ -75,6 +75,7 @@ internal sealed class BoundTreeToDataFlowGraph
     private DataFlowOperation? Translate(BoundNode node) => node switch
     {
         BoundExpressionStatement n => this.Translate(n.Expression),
+        BoundStringInterpolation n => this.Translate(n.Value),
         BoundLocalDeclaration n => this.Translate(n),
         BoundLabelStatement n => this.Translate(n),
         BoundReturnExpression n => this.Translate(n),
@@ -85,14 +86,15 @@ internal sealed class BoundTreeToDataFlowGraph
         BoundUnaryExpression n => this.Translate(n),
         BoundBinaryExpression n => this.Translate(n),
         BoundAssignmentExpression n => this.Translate(n),
-        // TODO: String expr
-        // TODO: String interpolation
+        BoundStringExpression n => this.Translate(n),
         BoundAndExpression n => this.Translate(n),
         BoundOrExpression n => this.Translate(n),
         BoundRelationalExpression n => this.Translate(n),
         BoundCallExpression n => this.Translate(n),
         BoundLocalExpression n => this.Append(n),
+        BoundGlobalExpression n => this.Append(n),
         BoundParameterExpression n => this.Append(n),
+        BoundLiteralExpression n => this.Append(n),
         BoundLocalLvalue n => this.Append(n),
         // For a complete flow, even inert nodes are added
         // TODO: What do we do here?
@@ -140,14 +142,11 @@ internal sealed class BoundTreeToDataFlowGraph
         return this.Append(node);
     }
 
-    // TODO: Implement
-    /*
-    private DataFlowOperation? Translate(Ast.Expr.String node)
+    private DataFlowOperation? Translate(BoundStringExpression node)
     {
-        foreach (var part in node.Parts.OfType<Ast.StringPart.Interpolation>()) this.Translate(part);
+        foreach (var part in node.Parts.OfType<BoundStringInterpolation>()) this.Translate(part);
         return this.Append(node);
     }
-    */
 
     private DataFlowOperation? Translate(BoundReturnExpression node)
     {

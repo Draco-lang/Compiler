@@ -43,7 +43,7 @@ internal sealed class ConstraintBag
                 // We could not infer the type
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
-                    location: new SourceLocation(symbol.DeclarationSyntax),
+                    location: symbol.DeclarationSyntax.Location,
                     formatArgs: symbol.Name));
                 // We use an error type
                 localType = Types.Intrinsics.Error;
@@ -75,7 +75,7 @@ internal sealed class ConstraintBag
             this.Solver
                 .Assignable(inferredType, value.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
-                    .WithLocation(new SourceLocation(syntax)));
+                    .WithLocation(syntax.Location));
         }
     }
 
@@ -97,7 +97,7 @@ internal sealed class ConstraintBag
         this.Solver
             .SameType(expr.TypeRequired, Types.Intrinsics.Bool)
             .ConfigureDiagnostic(diag => diag
-                .WithLocation(new SourceLocation(expr.Syntax)));
+                .WithLocation(expr.Syntax.Location));
     }
 
     /// <summary>
@@ -110,7 +110,7 @@ internal sealed class ConstraintBag
         this.Solver
             .SameType(expr.TypeRequired, Types.Intrinsics.Unit)
             .ConfigureDiagnostic(diag => diag
-                .WithLocation(new SourceLocation(expr.Syntax)));
+                .WithLocation(expr.Syntax.Location));
     }
 
     /// <summary>
@@ -151,7 +151,7 @@ internal sealed class ConstraintBag
         this.Solver
             .Assignable(leftType, rightType)
             .ConfigureDiagnostic(diag => diag
-                .WithLocation(new SourceLocation(syntax)));
+                .WithLocation(syntax.Location));
     }
 
     /// <summary>
@@ -170,7 +170,7 @@ internal sealed class ConstraintBag
         this.Solver
             .Assignable(returnType, valueType)
             .ConfigureDiagnostic(diag => diag
-                .WithLocation(new SourceLocation(syntax)));
+                .WithLocation(syntax.Location));
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ internal sealed class ConstraintBag
         return this.Solver
             .Call(methodType, argumentTypes)
             .ConfigureDiagnostic(diag => diag
-                .WithLocation(new SourceLocation(syntax)))
+                .WithLocation(syntax.Location))
             .Result;
     }
 
@@ -223,7 +223,7 @@ internal sealed class ConstraintBag
         var returnType = this.Solver
             .Call(callSite, new[] { left.TypeRequired, right.TypeRequired })
             .ConfigureDiagnostic(diag => diag
-                .WithLocation(new SourceLocation(syntax)))
+                .WithLocation(syntax.Location))
             .Result;
         return (promise, returnType);
     }

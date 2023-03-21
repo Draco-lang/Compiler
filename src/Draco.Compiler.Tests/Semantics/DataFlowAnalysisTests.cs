@@ -419,7 +419,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
                 ExpressionStatement(WhileExpression(
                     condition: LiteralExpression(false),
-                    body: BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))),
+                    body: BlockExpression(
+                        ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))),
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act

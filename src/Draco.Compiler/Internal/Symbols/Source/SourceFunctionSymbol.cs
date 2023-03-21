@@ -76,7 +76,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
                 // NOTE: We only report later duplicates, no need to report the first instance
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalShadowing,
-                    new SourceLocation(parameterSyntax),
+                    location: parameterSyntax.Location,
                     formatArgs: parameterName));
             }
 

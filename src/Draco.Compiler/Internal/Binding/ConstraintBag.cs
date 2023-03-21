@@ -13,7 +13,6 @@ using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
-using Diagnostic = Draco.Compiler.Internal.Diagnostics.Diagnostic;
 
 namespace Draco.Compiler.Internal.Binding;
 

@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -54,9 +57,34 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 
     public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
 
-    private ImmutableArray<Symbol> BuildMembers() => this.declaration.Children
-        .Select(this.BuildMember)
-        .ToImmutableArray();
+    private ImmutableArray<Symbol> BuildMembers()
+    {
+        var result = ImmutableArray.CreateBuilder<Symbol>();
+        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
+
+        foreach (var declaration in this.declaration.Children)
+        {
+            var member = this.BuildMember(declaration);
+            var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
+            result.Add(member);
+
+            // We chech for illegal shadowing
+            if (earlierMember is null) continue;
+
+            // Overloading is legal
+            if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
+
+            // Illegal
+            var syntax = ((ISourceSymbol)member).DeclarationSyntax;
+            Debug.Assert(syntax is not null);
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalShadowing,
+                location: new SourceLocation(syntax),
+                formatArgs: member.Name));
+        }
+
+        return result.ToImmutable();
+    }
 
     private Symbol BuildMember(Declaration declaration) => declaration switch
     {

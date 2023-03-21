@@ -47,8 +47,16 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         {
             // var x: T;
             // Type is present
-            // TODO
-            throw new System.NotImplementedException();
+            var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Type.Type);
+            var typeSymbol = (TypeSymbol)binder.BindType(this.DeclarationSyntax.Type.Type, diagnostics);
+            var type = typeSymbol.Type;
+            // Check for value
+            if (this.DeclarationSyntax.Value is not null)
+            {
+                // TODO: We need to create a constraint bag and check assignability
+                throw new System.NotImplementedException();
+            }
+            return type;
         }
         else if (this.DeclarationSyntax.Value is not null)
         {

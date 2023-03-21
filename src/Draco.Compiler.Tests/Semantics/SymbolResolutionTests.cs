@@ -316,8 +316,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // TODO: Maybe we should still resolve the reference, but mark it that it's something that comes later?
         // (so it is still an error)
         // It would definitely help reduce error cascading
-        Assert.True(wSymRef1.IsError);
-        Assert.True(wSymRef2.IsError);
+        Assert.True(wSymRef1!.IsError);
+        Assert.True(wSymRef2!.IsError);
     }
 
     [Fact]
@@ -408,14 +408,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
 
         var varSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(varDecl));
-        var funcSym = semanticModel.GetDefinedSymbol(funcDecl);
+        var funcSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(funcDecl));
 
         // Assert
         Assert.False(varSym.IsError);
-        Assert.NotNull(funcSym);
-        Assert.True(funcSym!.IsError);
+        Assert.False(funcSym.IsError);
+        Assert.Single(diagnostics);
+        Assert.Equal(SymbolResolutionErrors.IllegalShadowing, diagnostics[0].Template);
     }
 
     [Fact]
@@ -485,7 +487,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.False(ReferenceEquals(labelDeclSym, labelRefSym));
         Assert.False(labelDeclSym.IsError);
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     [Fact]
@@ -527,7 +529,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.False(ReferenceEquals(labelDeclSym, labelRefSym));
         Assert.False(labelDeclSym.IsError);
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     [Fact]
@@ -555,7 +557,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.False(ReferenceEquals(xDeclSym, xRefSym));
         Assert.False(xDeclSym.IsError);
-        Assert.True(xRefSym.IsError);
+        Assert.True(xRefSym!.IsError);
     }
 
     [Fact]
@@ -612,7 +614,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
         // Assert
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     // TODO: Should this actually be an error?
@@ -644,7 +646,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
         // Assert
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     [Fact]
@@ -736,7 +738,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
         // Assert
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     [Fact]

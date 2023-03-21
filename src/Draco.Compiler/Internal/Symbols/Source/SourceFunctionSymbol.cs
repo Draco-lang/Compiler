@@ -70,7 +70,6 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
             var parameterName = parameterSyntax.Name.Text;
 
             var usedBefore = parameters.Any(p => p.Name == parameterName);
-            var usedAfter = parameterSyntaxes.Skip(i + 1).Any(s => s.Name.Text == parameterName);
 
             if (usedBefore)
             {

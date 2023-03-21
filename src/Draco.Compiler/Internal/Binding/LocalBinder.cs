@@ -81,6 +81,10 @@ internal sealed class LocalBinder : Binder
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {
+        // NOTE: In case there is a local later, we could add it, but if it ends up being referenced,
+        // we should log a diagnostic message
+        // Maybe we can utilize the lookup result storing multiple symbols this way as well
+
         // If there's a syntactic reference, and we allow for locals check locals
         if (!flags.HasFlag(LookupFlags.DisallowLocals)
             && currentReference is not null

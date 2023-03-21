@@ -187,6 +187,41 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void LocalVariableIncompatibleTypeInferredFromUsage()
+    {
+        // func main() {
+        //     var x;
+        //     x = 0;
+        //     x = "Hello";
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x")),
+                ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0))),
+                ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, StringExpression("Hello")))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Equal(Internal.Types.Intrinsics.Int32, xSym.Type);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        Assert.False(xSym.Type.IsError);
+    }
+
+    [Fact]
     public void BlockBodyFunctionReturnTypeMismatch()
     {
         // func foo(): int32 {

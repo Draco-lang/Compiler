@@ -88,7 +88,7 @@ public sealed class LexerTests
     {
         var gotDiags = this.diagnostics.Get(this.Current);
         Assert.Equal(diags.Length, gotDiags!.Count);
-        Assert.True(diags.SequenceEqual(gotDiags.Select(d => d.Template)));
+        Assert.True(diags.SequenceEqual(gotDiags.Select(d => d.Info.Template)));
     }
 
     [Fact]

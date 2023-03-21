@@ -139,6 +139,10 @@ public sealed class Compilation
         {
             throw new ArgumentException("symbol must be an in-source defined symbol", nameof(symbol));
         }
+        if (symbol is SourceModuleSymbol)
+        {
+            return this.binderCache.ModuleBinder;
+        }
         if (sourceSymbol.DeclarationSyntax is null)
         {
             throw new ArgumentException("source symbol must have a declaration syntax", nameof(symbol));

@@ -13,6 +13,9 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class BinderCache
 {
+    public Binder ModuleBinder => this.moduleBinder ??= this.BuildCompilationUnitBinder();
+    private Binder? moduleBinder;
+
     private readonly Compilation compilation;
     private readonly Dictionary<SyntaxNode, Binder> binders = new();
 
@@ -42,7 +45,7 @@ internal sealed class BinderCache
 
     private Binder BuildBinder(SyntaxNode syntax) => syntax switch
     {
-        CompilationUnitSyntax => this.BuildCompilationUnitBinder(),
+        CompilationUnitSyntax => this.ModuleBinder,
         FunctionDeclarationSyntax decl => this.BuildFunctionDeclarationBinder(decl),
         FunctionBodySyntax body => this.BuildFunctionBodyBinder(body),
         BlockExpressionSyntax block => this.BuildLocalBinder(block),

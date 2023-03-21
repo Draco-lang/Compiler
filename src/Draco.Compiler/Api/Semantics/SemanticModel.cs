@@ -216,8 +216,46 @@ public sealed partial class SemanticModel
         }
         else if (binder.ContainingSymbol is SourceModuleSymbol module)
         {
-            // TODO
-            throw new NotImplementedException();
+            if (!this.syntaxMap.ContainsKey(subtree))
+            {
+                // We don't have a choice, we need to go through top-level module elements
+                // and bind everything incrementally
+                var moduleBinder = this.GetBinder(module);
+                var diagnostics = this.compilation.GlobalDiagnosticBag;
+                foreach (var symbol in module.Members)
+                {
+                    if (symbol is SourceGlobalSymbol global)
+                    {
+                        if (global.DeclarationSyntax.Type is not null)
+                        {
+                            _ = moduleBinder.BindType(global.DeclarationSyntax.Type.Type, diagnostics);
+                        }
+                        if (global.DeclarationSyntax.Value is not null)
+                        {
+                            _ = moduleBinder.BindGlobalValue(global.DeclarationSyntax.Value.Value);
+                        }
+                    }
+                    else
+                    {
+                        // NOTE: Anything else to handle?
+                    }
+                }
+            }
+
+            // TODO: Copypasted from above, maybe just factor out a method to collect bound nodes?
+            // Now the syntax node should be in the map
+            var boundNodes = this.syntaxMap[subtree];
+            // TODO: We need to deal with potential multiple returns here
+            if (boundNodes.Count != 1) throw new NotImplementedException();
+            return boundNodes[0] switch
+            {
+                BoundFunctionExpression f => f.Function.ToApiSymbol(),
+                BoundParameterExpression p => p.Parameter.ToApiSymbol(),
+                BoundLocalExpression l => l.Local.ToApiSymbol(),
+                BoundGlobalExpression g => g.Global.ToApiSymbol(),
+                BoundReferenceErrorExpression e => e.Symbol.ToApiSymbol(),
+                _ => throw new NotImplementedException(),
+            };
         }
         else
         {

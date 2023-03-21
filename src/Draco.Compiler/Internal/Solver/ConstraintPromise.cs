@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
 
@@ -49,7 +50,7 @@ internal abstract class ConstraintPromise<TResult>
     public abstract TResult Result { get; }
 
     /// <summary>
-    /// The builder for a <see cref="Diagnostics.Diagnostic"/>.
+    /// The builder for a <see cref="Api.Diagnostics.Diagnostic"/>.
     /// </summary>
     public abstract Diagnostic.Builder Diagnostic { get; }
 

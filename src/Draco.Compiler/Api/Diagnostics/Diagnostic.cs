@@ -88,14 +88,6 @@ public sealed partial class Diagnostic
     /// </summary>
     public ImmutableArray<DiagnosticRelatedInformation> RelatedInformation { get; }
 
-    internal Diagnostic(
-        Internal.Diagnostics.Diagnostic internalDiagnostic,
-        Location location,
-        ImmutableArray<DiagnosticRelatedInformation> relatedInformation)
-        : this(internalDiagnostic.Template, internalDiagnostic.FormatArgs, location, relatedInformation)
-    {
-    }
-
     private Diagnostic(
         DiagnosticTemplate template,
         object?[] formatArgs,

@@ -10,7 +10,7 @@ namespace Draco.Compiler.Tests.Semantics;
 public sealed class TypeCheckingTests : SemanticTestsBase
 {
     [Fact]
-    public void VariableExplicitlyTyped()
+    public void LocalVariableExplicitlyTyped()
     {
         // func main() {
         //     var x: int32 = 0;
@@ -38,7 +38,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void VariableTypeInferredFromValue()
+    public void LocalVariableTypeInferredFromValue()
     {
         // func main() {
         //     var x = 0;
@@ -66,7 +66,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void VariableExplicitlyTypedWithoutValue()
+    public void LocalVariableExplicitlyTypedWithoutValue()
     {
         // func main() {
         //     var x: int32;
@@ -94,7 +94,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void VariableTypeInferredFromLaterAssignment()
+    public void LocalVariableTypeInferredFromLaterAssignment()
     {
         // func main() {
         //     var x;
@@ -124,7 +124,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void VariableTypeCanNotBeInferred()
+    public void LocalVariableTypeCanNotBeInferred()
     {
         // func main() {
         //     var x;
@@ -151,6 +151,39 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
         Assert.True(xSym.Type.IsError);
+    }
+
+    [Fact]
+    public void LocalVariableIncompatibleType()
+    {
+        // func main() {
+        //     var x: int32 = "Hello";
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration(
+                    "x",
+                    NameType("int32"),
+                    StringExpression("Hello")))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        Assert.False(xSym.Type.IsError);
     }
 
     [Fact]

@@ -5,8 +5,10 @@ using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Diagnostic = Draco.Compiler.Api.Diagnostics.Diagnostic;
@@ -100,8 +102,36 @@ public sealed class Compilation
     /// <param name="peStream">The stream to write the PE to.</param>
     /// <param name="dracoIrStream">The stream to write a textual representation of the Draco IR to.</param>
     /// <returns>The result of the emission.</returns>
-    public EmitResult Emit(Stream peStream, Stream? dracoIrStream = null) =>
-        throw new System.NotImplementedException();
+    public EmitResult Emit(Stream peStream, Stream? dracoIrStream = null)
+    {
+        var existingDiags = this.Diagnostics;
+        if (existingDiags.Length > 0)
+        {
+            return new(
+                Success: false,
+                Diagnostics: existingDiags);
+        }
+
+        // Generate Draco IR
+        var asm = new Assembly(this.AssemblyName ?? "output");
+        DracoIrCodegen.Generate(asm, (SourceModuleSymbol)this.GlobalModule);
+        // Optimize the IR
+        // TODO: Options for optimization
+        OptimizationPipeline.Instance.Apply(asm);
+        // Write the IR, if needed
+        if (dracoIrStream is not null)
+        {
+            var irWriter = new StreamWriter(dracoIrStream);
+            irWriter.Write(asm.ToString());
+            irWriter.Flush();
+        }
+        // Generate CIL
+        CilCodegen.Generate(asm, peStream);
+
+        return new(
+            Success: true,
+            Diagnostics: ImmutableArray<Diagnostic>.Empty);
+    }
 
     public void Dump()
     {

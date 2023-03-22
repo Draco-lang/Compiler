@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
 using IrType = Draco.Compiler.Internal.DracoIr.Type;
 using IntrinsicSymbols = Draco.Compiler.Internal.Symbols.Synthetized.Intrinsics;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -17,14 +18,14 @@ namespace Draco.Compiler.Internal.Codegen;
 internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
 {
     /// <summary>
-    /// Generates IR code in the given <see cref="Assembly"/> for the given <see cref="BoundNode"/>.
+    /// Generates IR code in the given <see cref="Assembly"/> for the given <see cref="SourceModuleSymbol"/>.
     /// </summary>
     /// <param name="assembly">The <see cref="Assembly"/> to generate the IR into.</param>
-    /// <param name="node">The <see cref="BoundNode"/> to generate IR code for.</param>
-    public static void Generate(Assembly assembly, BoundNode node)
+    /// <param name="module">The <see cref="SourceModuleSymbol"/> to generate IR code for.</param>
+    public static void Generate(Assembly assembly, SourceModuleSymbol module)
     {
         var codegen = new DracoIrCodegen(assembly);
-        node.Accept(codegen);
+        codegen.CodegenModule(module);
         codegen.Finish();
     }
 
@@ -110,64 +111,62 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         if (mainMethod is not null) this.assembly.EntryPoint = mainMethod;
     }
 
-    // TODO: Functions aren't visited in the classical way anymore
-    /*
-    public override Value VisitFuncDecl(Ast.Decl.Func node)
+    private void CodegenModule(SourceModuleSymbol module)
+    {
+        foreach (var member in module.Members)
+        {
+            if (member is SourceFunctionSymbol function) this.CodegenFunction(function);
+            else if (member is SourceGlobalSymbol global) this.CodegenGlobal(global);
+        }
+    }
+
+    private void CodegenFunction(SourceFunctionSymbol symbol)
     {
         // TODO: Maybe introduce context instead of this juggling?
         var oldWriter = this.writer;
         var oldProcedure = this.currentProcedure;
 
-        var procedure = this.GetProcedure(node.DeclarationSymbol);
+        var procedure = this.GetProcedure(symbol);
         this.currentProcedure = procedure;
         this.writer = procedure.Writer();
 
-        this.VisitBlockExpr(node.Body);
+        symbol.Body.Accept(this);
 
         // TODO: Maybe introduce context instead of this juggling?
         this.writer = oldWriter;
         this.currentProcedure = oldProcedure;
-        return this.Default;
     }
-    */
 
-    // TODO: Variables will have to be separated into globals and locals
-    // Globals aren't visited in the classical way anymore,
-    // only locals are
-    /*
-    public override Value VisitVariableDecl(Ast.Decl.Variable node)
+    private void CodegenGlobal(SourceGlobalSymbol symbol)
     {
-        if (node.DeclarationSymbol.IsGlobal)
+        var global = this.GetGlobal(symbol);
+        if (symbol.Value is not null)
         {
-            var global = this.GetGlobal(node.DeclarationSymbol);
-            if (node.Value is not null)
-            {
-                // TODO: Context juggling again...
-                var oldWriter = this.writer;
-                var oldProcedure = this.currentProcedure;
-                this.writer = this.assembly.GlobalInitializer.Writer();
+            // TODO: Context juggling again...
+            var oldWriter = this.writer;
+            var oldProcedure = this.currentProcedure;
+            this.writer = this.assembly.GlobalInitializer.Writer();
 
-                var value = this.VisitExpr(node.Value);
-                this.writer.Store(global, value);
+            var value = symbol.Value.Accept(this);
+            this.writer.Store(global, value);
 
-                // TODO: Context juggling again...
-                this.writer = oldWriter;
-                this.currentProcedure = oldProcedure;
-            }
+            // TODO: Context juggling again...
+            this.writer = oldWriter;
+            this.currentProcedure = oldProcedure;
         }
-        else
-        {
-            var local = this.currentProcedure.DefineLocal(node.DeclarationSymbol.Name, this.TranslateType(node.Type));
-            this.locals.Add(node.DeclarationSymbol, local);
-            if (node.Value is not null)
-            {
-                var value = this.VisitExpr(node.Value);
-                this.writer.Store(local, value);
-            }
-        }
-        return this.Default;
     }
-    */
+
+    public override Value VisitLocalDeclaration(BoundLocalDeclaration node)
+    {
+        var local = this.currentProcedure.DefineLocal(node.Local.Name, this.TranslateType(node.Local.Type));
+        this.locals.Add(node.Local, local);
+        if (node.Value is not null)
+        {
+            var value = node.Value.Accept(this);
+            this.writer.Store(local, value);
+        }
+        return default!;
+    }
 
     public override Value VisitLabelStatement(BoundLabelStatement node)
     {

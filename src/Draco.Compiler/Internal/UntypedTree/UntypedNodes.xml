@@ -94,6 +94,7 @@
   </Node>
 
   <Node Name="UntypedAssignmentExpression" Base="UntypedExpression">
+    <Field Name="CompoundOperator" Type="ConstraintPromise&lt;FunctionSymbol&gt;?" />
     <Field Name="Left" Type="UntypedLvalue" />
     <Field Name="Right" Type="UntypedExpression" />
   </Node>

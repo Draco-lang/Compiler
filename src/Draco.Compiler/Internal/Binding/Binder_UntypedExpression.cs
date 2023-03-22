@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
@@ -22,6 +23,7 @@ internal partial class Binder
     /// <returns>The untyped expression for <paramref name="syntax"/>.</returns>
     protected UntypedExpression BindExpression(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
+        StatementExpressionSyntax stmt => this.BindStatementExpression(stmt, constraints, diagnostics),
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),
         StringExpressionSyntax str => this.BindStringExpression(str, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameExpression(name, constraints, diagnostics),
@@ -36,6 +38,17 @@ internal partial class Binder
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private UntypedExpression BindStatementExpression(StatementExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        // We just desugar stmt; into { stmt; }
+        var stmt = this.BindStatement(syntax.Statement, constraints, diagnostics);
+        return new UntypedBlockExpression(
+            syntax: syntax,
+            locals: ImmutableArray<UntypedLocalSymbol>.Empty,
+            statements: ImmutableArray.Create(stmt),
+            value: UntypedUnitExpression.Default);
+    }
 
     private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new UntypedLiteralExpression(syntax, syntax.Literal.Value);
@@ -165,7 +178,12 @@ internal partial class Binder
 
             constraints.IsAssignable(left, right, syntax);
 
-            return new UntypedAssignmentExpression(syntax, left, right);
+            return new UntypedAssignmentExpression(syntax, null, left, right);
+        }
+        else if (syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr)
+        {
+            // TODO
+            throw new NotImplementedException();
         }
         else if (SyntaxFacts.IsCompoundAssignmentOperator(syntax.Operator.Kind))
         {

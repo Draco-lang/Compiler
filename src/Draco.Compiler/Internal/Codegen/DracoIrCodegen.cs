@@ -300,18 +300,15 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         var target = this.CompileLValue(node.Left);
         var right = node.Right.Accept(this);
         var toStore = right;
-        // TODO: Compound operator?
-        /*
         if (node.CompoundOperator is not null)
         {
             var left = this.LoadLValue(target);
-            if (node.CompoundOperator == Intrinsics.Operators.Add_Int32) toStore = this.writer.Add(left, right);
-            else if (node.CompoundOperator == Intrinsics.Operators.Sub_Int32) toStore = this.writer.Sub(left, right);
-            else if (node.CompoundOperator == Intrinsics.Operators.Mul_Int32) toStore = this.writer.Mul(left, right);
-            else if (node.CompoundOperator == Intrinsics.Operators.Div_Int32) toStore = this.writer.Div(left, right);
+            if (node.CompoundOperator == IntrinsicSymbols.Int32_Add) toStore = this.writer.Add(left, right);
+            else if (node.CompoundOperator == IntrinsicSymbols.Int32_Sub) toStore = this.writer.Sub(left, right);
+            else if (node.CompoundOperator == IntrinsicSymbols.Int32_Mul) toStore = this.writer.Mul(left, right);
+            else if (node.CompoundOperator == IntrinsicSymbols.Int32_Div) toStore = this.writer.Div(left, right);
             else throw new NotImplementedException();
         }
-        */
         if (target.IsGlobal()) this.writer.Store(target.AsGlobal(), toStore);
         else this.writer.Store(target.AsLocal(), toStore);
         return right;

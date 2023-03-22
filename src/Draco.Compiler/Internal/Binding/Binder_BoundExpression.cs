@@ -121,7 +121,8 @@ internal partial class Binder
     {
         var typedLeft = this.TypeLvalue(assignment.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
-        return new BoundAssignmentExpression(assignment.Syntax, typedLeft, typedRight);
+        var compoundOperator = (BinaryOperatorSymbol?)assignment.CompoundOperator?.Result;
+        return new BoundAssignmentExpression(assignment.Syntax, compoundOperator, typedLeft, typedRight);
     }
 
     private BoundExpression TypeUnaryExpression(UntypedUnaryExpression ury, ConstraintBag constraints, DiagnosticBag diagnostics)

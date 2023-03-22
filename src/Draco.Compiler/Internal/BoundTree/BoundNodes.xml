@@ -107,6 +107,7 @@
   </Node>
 
   <Node Name="BoundAssignmentExpression" Base="BoundExpression">
+    <Field Name="CompoundOperator" Type="BinaryOperatorSymbol?" />
     <Field Name="Left" Type="BoundLvalue" />
     <Field Name="Right" Type="BoundExpression" />
   </Node>

@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Immutable;
+using System.IO;
+using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Codegen;
 
 namespace Draco.Compiler.Api.Scripting;
 
@@ -39,6 +42,42 @@ public static class ScriptingEngine
     public static ExecutionResult<TResult> Execute<TResult>(
         Compilation compilation)
     {
-        throw new NotImplementedException();
+        using var peStream = new MemoryStream();
+        var emitResult = compilation.Emit(peStream);
+
+        // Check emission results
+        if (!emitResult.Success)
+        {
+            return new(
+                Success: false,
+                Result: default,
+                Diagnostics: emitResult.Diagnostics);
+        }
+
+        // Load emitted bytes as assembly
+        peStream.Position = 0;
+        var peBytes = peStream.ToArray();
+        var assembly = Assembly.Load(peBytes);
+
+        var mainMethod = assembly
+            .GetType("FreeFunctions")?
+            .GetMethod("main");
+
+        if (mainMethod is null)
+        {
+            var diag = Diagnostic.Create(
+                template: CodegenErrors.NoMainMethod,
+                location: Location.None);
+            return new(
+                Success: false,
+                Result: default,
+                Diagnostics: ImmutableArray.Create(diag));
+        }
+
+        var result = (TResult?)mainMethod.Invoke(null, Array.Empty<string>());
+        return new(
+            Success: true,
+            Result: result,
+            Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
 }

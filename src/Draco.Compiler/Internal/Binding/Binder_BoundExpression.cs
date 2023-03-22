@@ -96,7 +96,8 @@ internal partial class Binder
         var typedCondition = this.TypeExpression(@if.Condition, constraints, diagnostics);
         var typedThen = this.TypeExpression(@if.Then, constraints, diagnostics);
         var typedElse = this.TypeExpression(@if.Else, constraints, diagnostics);
-        return new BoundIfExpression(@if.Syntax, typedCondition, typedThen, typedElse);
+        var resultType = constraints.Solver.Unwrap(@if.TypeRequired);
+        return new BoundIfExpression(@if.Syntax, typedCondition, typedThen, typedElse, resultType);
     }
 
     private BoundExpression TypeWhileExpression(UntypedWhileExpression @while, ConstraintBag constraints, DiagnosticBag diagnostics)
@@ -112,7 +113,8 @@ internal partial class Binder
         var typedArgs = call.Arguments
             .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
-        return new BoundCallExpression(call.Syntax, typedFunction, typedArgs);
+        var resultType = constraints.Solver.Unwrap(call.TypeRequired);
+        return new BoundCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintBag constraints, DiagnosticBag diagnostics)
@@ -126,7 +128,8 @@ internal partial class Binder
     {
         var typedOperand = this.TypeExpression(ury.Operand, constraints, diagnostics);
         var unaryOperator = (UnaryOperatorSymbol)ury.Operator.Result;
-        return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand);
+        var resultType = constraints.Solver.Unwrap(ury.TypeRequired);
+        return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand, resultType);
     }
 
     private BoundExpression TypeBinaryExpression(UntypedBinaryExpression bin, ConstraintBag constraints, DiagnosticBag diagnostics)
@@ -134,7 +137,8 @@ internal partial class Binder
         var typedLeft = this.TypeExpression(bin.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(bin.Right, constraints, diagnostics);
         var binaryOperator = (BinaryOperatorSymbol)bin.Operator.Result;
-        return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight);
+        var resultType = constraints.Solver.Unwrap(bin.TypeRequired);
+        return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight, resultType);
     }
 
     private BoundExpression TypeRelationalExpression(UntypedRelationalExpression rel, ConstraintBag constraints, DiagnosticBag diagnostics)

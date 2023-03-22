@@ -58,7 +58,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 ConditionalGotoStatement(
                     condition: UnaryExpression(
                         @operator: Intrinsics.Bool_Not,
-                        operand: condition),
+                        operand: condition,
+                        type: Types.Intrinsics.Bool),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
@@ -98,7 +99,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
             comparisons.Add(BinaryExpression(
                 left: left,
                 @operator: op,
-                right: right));
+                right: right,
+                type: Types.Intrinsics.Bool));
         }
 
         // Fold them into conjunctions
@@ -130,7 +132,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return IfExpression(
             condition: left,
             then: right,
-            @else: LiteralExpression(false));
+            @else: LiteralExpression(false),
+            type: Types.Intrinsics.Bool);
     }
 
     public override BoundNode VisitOrExpression(BoundOrExpression node)
@@ -147,7 +150,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return IfExpression(
             condition: left,
             then: LiteralExpression(true),
-            @else: right);
+            @else: right,
+            type: Types.Intrinsics.Bool);
     }
 
     // Utility to store an expression to a temporary variable

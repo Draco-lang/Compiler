@@ -201,8 +201,17 @@ internal sealed class ConstraintBag
     public (ConstraintPromise<FunctionSymbol> Symbol, Type ReturnType) CallUnaryOperator(
         Symbol @operator,
         UntypedExpression operand,
-        UnaryExpressionSyntax syntax) =>
-        throw new System.NotImplementedException();
+        UnaryExpressionSyntax syntax)
+    {
+        // TODO: This promise isn't configured with diagnostics
+        var (promise, callSite) = this.Overload(@operator);
+        var returnType = this.Solver
+            .Call(callSite, new[] { operand.TypeRequired })
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location))
+            .Result;
+        return (promise, returnType);
+    }
 
     /// <summary>
     /// Constraints that a binary operator is being invoked.
@@ -240,8 +249,21 @@ internal sealed class ConstraintBag
         Symbol @operator,
         UntypedExpression left,
         UntypedExpression right,
-        ComparisonElementSyntax syntax) =>
-        throw new System.NotImplementedException();
+        ComparisonElementSyntax syntax)
+    {
+        // TODO: This promise isn't configured with diagnostics
+        var (promise, callSite) = this.Overload(@operator);
+        var returnType = Types.Intrinsics.Bool;
+        var gotReturnType = this.Solver
+            .Call(callSite, new[] { left.TypeRequired, right.TypeRequired })
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location))
+            .Result;
+        // TODO: Might be redundant
+        // TODO: Also no diag configured...
+        this.Solver.SameType(returnType, gotReturnType);
+        return promise;
+    }
 
     // Utility to retrieve the promise and function type of a potential overload
     private (ConstraintPromise<FunctionSymbol> Symbol, Type CallSite) Overload(Symbol symbol) => symbol switch

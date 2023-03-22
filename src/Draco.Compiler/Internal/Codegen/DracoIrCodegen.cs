@@ -9,6 +9,7 @@ using Draco.Compiler.Internal.Types;
 using IrType = Draco.Compiler.Internal.DracoIr.Type;
 using IntrinsicSymbols = Draco.Compiler.Internal.Symbols.Synthetized.Intrinsics;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Lowering;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -130,7 +131,10 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         this.currentProcedure = procedure;
         this.writer = procedure.Writer();
 
-        symbol.Body.Accept(this);
+        // Desugar
+        var body = symbol.Body.Accept(LocalRewriter.Instance);
+        // Actual codegen
+        body.Accept(this);
 
         // TODO: Maybe introduce context instead of this juggling?
         this.writer = oldWriter;
@@ -147,8 +151,11 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
             var oldProcedure = this.currentProcedure;
             this.writer = this.assembly.GlobalInitializer.Writer();
 
-            var value = symbol.Value.Accept(this);
-            this.writer.Store(global, value);
+            // Desugar
+            var value = symbol.Value.Accept(LocalRewriter.Instance);
+            // Actual codegen
+            var irValue = value.Accept(this);
+            this.writer.Store(global, irValue);
 
             // TODO: Context juggling again...
             this.writer = oldWriter;

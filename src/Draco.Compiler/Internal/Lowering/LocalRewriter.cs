@@ -167,7 +167,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         }
 
         // Otherwise compute and store
-        var symbol = new SynthetizedLocalSymbol();
+        var symbol = new SynthetizedLocalSymbol(expr.TypeRequired);
         var symbolRef = LocalExpression(symbol);
         var assignment = LocalDeclaration(
             local: symbol,

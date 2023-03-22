@@ -1,5 +1,5 @@
-using System;
 using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -8,11 +8,14 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class SynthetizedLocalSymbol : LocalSymbol
 {
-    public override Types.Type Type => throw new NotImplementedException();
+    public override Type Type { get; }
+    public override bool IsMutable => throw new System.NotImplementedException();
+    public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
 
-    public override bool IsMutable => throw new NotImplementedException();
-
-    public override Symbol? ContainingSymbol => throw new NotImplementedException();
+    public SynthetizedLocalSymbol(Type type)
+    {
+        this.Type = type;
+    }
 
     public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
 }

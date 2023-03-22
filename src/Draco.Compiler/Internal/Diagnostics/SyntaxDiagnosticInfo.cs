@@ -24,6 +24,10 @@ internal readonly record struct SyntaxDiagnosticInfo(
     /// </summary>
     /// <param name="node">The red node wrapper of the green node this diagnostic was attached to.</param>
     /// <returns>The diagnostic with source location pointing at <paramref name="node"/>.</returns>
-    public Diagnostic ToDiagnostic(SyntaxNode node) =>
-        throw new NotImplementedException();
+    public Diagnostic ToDiagnostic(SyntaxNode node) => Diagnostic.Create(
+        template: this.Info.Template,
+        location: new SourceLocation(node.Tree, new SourceSpan(
+            Start: node.Span.Start + this.Offset,
+            Length: this.Width)),
+        formatArgs: this.Info.FormatArgs);
 }

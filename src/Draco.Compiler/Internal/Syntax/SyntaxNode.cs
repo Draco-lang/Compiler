@@ -53,7 +53,8 @@ internal abstract class SyntaxNode
             {
                 if (node is SyntaxTrivia) return null;
                 if (node is SyntaxToken token) return token;
-                node = node.Children.First();
+                node = node.Children.FirstOrDefault();
+                if (node is null) return null;
             }
         }
     }
@@ -70,7 +71,8 @@ internal abstract class SyntaxNode
             {
                 if (node is SyntaxTrivia) return null;
                 if (node is SyntaxToken token) return token;
-                node = node.Children.Last();
+                node = node.Children.LastOrDefault();
+                if (node is null) return null;
             }
         }
     }

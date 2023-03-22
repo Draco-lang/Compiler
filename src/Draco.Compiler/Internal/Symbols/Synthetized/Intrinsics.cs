@@ -17,6 +17,7 @@ internal static class Intrinsics
     };
 
     public static Symbol Int32 { get; } = Type(Types.Intrinsics.Int32);
+    public static Symbol Float64 { get; } = Type(Types.Intrinsics.Float64);
     public static Symbol Bool { get; } = Type(Types.Intrinsics.Bool);
 
     // Operators
@@ -46,4 +47,7 @@ internal static class Intrinsics
     public static BinaryOperatorSymbol Int32_Div { get; } = Binary(TokenKind.Slash, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
     public static BinaryOperatorSymbol Int32_Mod { get; } = Binary(TokenKind.KeywordMod, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
     public static BinaryOperatorSymbol Int32_Rem { get; } = Binary(TokenKind.KeywordRem, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+
+    // TODO: Rest of float operators
+    public static BinaryOperatorSymbol Float64_Mul { get; } = Binary(TokenKind.Star, Types.Intrinsics.Float64, Types.Intrinsics.Float64, Types.Intrinsics.Float64);
 }

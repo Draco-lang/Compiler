@@ -50,9 +50,8 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         if (ReferenceEquals(type, Types.Intrinsics.Unit)) return IrType.Unit;
         if (ReferenceEquals(type, Types.Intrinsics.Bool)) return IrType.Bool;
         if (ReferenceEquals(type, Types.Intrinsics.Int32)) return IrType.Int32;
-        // TODO
-        // if (type == Types.Intrinsics.Float64) return IrType.Float64;
-        // if (type == Types.Intrinsics.String) return IrType.String;
+        if (type == Types.Intrinsics.Float64) return IrType.Float64;
+        if (type == Types.Intrinsics.String) return IrType.String;
 
         if (type is Types.FunctionType func)
         {
@@ -260,6 +259,7 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         if (node.Operator == IntrinsicSymbols.Int32_Add) return this.writer.Add(left, right);
         if (node.Operator == IntrinsicSymbols.Int32_Sub) return this.writer.Sub(left, right);
         if (node.Operator == IntrinsicSymbols.Int32_Mul) return this.writer.Mul(left, right);
+        if (node.Operator == IntrinsicSymbols.Float64_Mul) return this.writer.Mul(left, right);
         if (node.Operator == IntrinsicSymbols.Int32_Div) return this.writer.Div(left, right);
         if (node.Operator == IntrinsicSymbols.Int32_Rem) return this.writer.Rem(left, right);
         if (node.Operator == IntrinsicSymbols.Int32_Mod)
@@ -316,6 +316,7 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
             if (node.CompoundOperator == IntrinsicSymbols.Int32_Add) toStore = this.writer.Add(left, right);
             else if (node.CompoundOperator == IntrinsicSymbols.Int32_Sub) toStore = this.writer.Sub(left, right);
             else if (node.CompoundOperator == IntrinsicSymbols.Int32_Mul) toStore = this.writer.Mul(left, right);
+            else if (node.CompoundOperator == IntrinsicSymbols.Float64_Mul) toStore = this.writer.Mul(left, right);
             else if (node.CompoundOperator == IntrinsicSymbols.Int32_Div) toStore = this.writer.Div(left, right);
             else throw new NotImplementedException();
         }

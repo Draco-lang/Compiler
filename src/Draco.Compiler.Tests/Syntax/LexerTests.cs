@@ -1086,6 +1086,7 @@ public sealed class LexerTests
     }
 
     [Fact]
+    [Trait("Feature", "Literals")]
     public void TestUnclosedCharLiteral()
     {
         var text = "'a";
@@ -1094,6 +1095,21 @@ public sealed class LexerTests
         this.AssertNextToken(TokenKind.LiteralCharacter, text, "a");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnclosedCharacterLiteral);
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Fact]
+    [Trait("Feature", "Literals")]
+    public void TestEndOfInputAfterSingleQuote()
+    {
+        var text = "'";
+        this.Lex(text);
+
+        this.AssertNextToken(TokenKind.LiteralCharacter, text, ' ');
+        this.AssertNoTrivia();
+        this.AssertDiagnostics(SyntaxErrors.UnexpectedCharacterLiteralEnd);
 
         this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();

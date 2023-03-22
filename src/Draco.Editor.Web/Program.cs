@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Text.Json;
 using Draco.Compiler.Api;
@@ -32,7 +33,8 @@ public partial class Program
         try
         {
             var tree = SyntaxTree.Parse(code);
-            var compilation = Compilation.Create(tree);
+            var compilation = Compilation.Create(
+                syntaxTrees: ImmutableArray.Create(tree));
             RunScript(compilation);
         }
         catch (Exception e)

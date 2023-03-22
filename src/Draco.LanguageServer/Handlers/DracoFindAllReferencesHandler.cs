@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,12 +34,13 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
         var cursorPosition = Translator.ToCompiler(request.Position);
         var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
         var syntaxTree = SyntaxTree.Parse(souceText);
-        var compilation = Compilation.Create(syntaxTree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree));
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         var referencedSymbol = syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(symbol => semanticModel.GetReferencedSymbolOrNull(symbol) ?? semanticModel.GetDefinedSymbolOrNull(symbol))
+            .Select(symbol => semanticModel.GetReferencedSymbol(symbol) ?? semanticModel.GetDefinedSymbol(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
         var references = new List<Location>();
@@ -72,11 +74,11 @@ internal sealed class DracoFindAllReferencesHandler : ReferencesHandlerBase
         {
             if (cancellationToken.IsCancellationRequested) yield break;
 
-            if (symbol.Equals(semanticModel.GetReferencedSymbolOrNull(node)))
+            if (symbol.Equals(semanticModel.GetReferencedSymbol(node)))
             {
                 yield return node;
             }
-            if (includeDeclaration && symbol.Equals(semanticModel.GetDefinedSymbolOrNull(node)))
+            if (includeDeclaration && symbol.Equals(semanticModel.GetDefinedSymbol(node)))
             {
                 yield return node;
             }

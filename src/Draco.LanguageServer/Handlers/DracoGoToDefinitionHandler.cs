@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,12 +32,13 @@ internal sealed class DracoGoToDefinitionHandler : DefinitionHandlerBase
         // TODO: Share compilation
         var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
         var syntaxTree = SyntaxTree.Parse(souceText);
-        var compilation = Compilation.Create(syntaxTree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree));
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         var referencedSymbol = syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(semanticModel.GetReferencedSymbolOrNull)
+            .Select(semanticModel.GetReferencedSymbol)
             .LastOrDefault(symbol => symbol is not null);
 
         if (referencedSymbol is not null && referencedSymbol.Definition is not null)

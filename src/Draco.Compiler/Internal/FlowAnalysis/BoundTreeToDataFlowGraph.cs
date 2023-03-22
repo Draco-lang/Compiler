@@ -94,6 +94,7 @@ internal sealed class BoundTreeToDataFlowGraph
         BoundLocalExpression n => this.Append(n),
         BoundGlobalExpression n => this.Append(n),
         BoundParameterExpression n => this.Append(n),
+        BoundFunctionExpression n => this.Append(n),
         BoundLiteralExpression n => this.Append(n),
         BoundLocalLvalue n => this.Append(n),
         // For a complete flow, even inert nodes are added

@@ -247,8 +247,6 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
     {
         var left = node.Left.Accept(this);
         var right = node.Right.Accept(this);
-        // TODO
-        /*
         if (node.Operator == IntrinsicSymbols.Int32_Add) return this.writer.Add(left, right);
         if (node.Operator == IntrinsicSymbols.Int32_Sub) return this.writer.Sub(left, right);
         if (node.Operator == IntrinsicSymbols.Int32_Mul) return this.writer.Mul(left, right);
@@ -263,7 +261,6 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
             var tmp2 = this.writer.Add(tmp1, right);
             return this.writer.Rem(tmp2, right);
         }
-        */
         if (node.Operator == IntrinsicSymbols.Int32_LessThan) return this.writer.Less(left, right);
         if (node.Operator == IntrinsicSymbols.Int32_GreaterThan) return this.writer.Less(right, left);
         if (node.Operator == IntrinsicSymbols.Int32_LessEqual)
@@ -322,6 +319,8 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
 
     public override Value VisitParameterExpression(BoundParameterExpression node) => new Value.Param(this.parameters[node.Parameter]);
     public override Value VisitLocalExpression(BoundLocalExpression node) => this.writer.Load(this.locals[node.Local]);
+    public override Value VisitGlobalExpression(BoundGlobalExpression node) => this.writer.Load(this.GetGlobal(node.Global));
+    public override Value VisitFunctionExpression(BoundFunctionExpression node) => new Value.Proc(this.GetProcedure(node.Function));
 
     public override Value VisitUnitExpression(BoundUnitExpression node) => Value.Unit.Instance;
     public override Value VisitLiteralExpression(BoundLiteralExpression node) => new Value.Const(node.Value);

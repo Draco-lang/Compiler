@@ -233,6 +233,16 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         return Value.Unit.Instance;
     }
 
+    public override Value VisitConditionalGotoStatement(BoundConditionalGotoStatement node)
+    {
+        var condition = node.Condition.Accept(this);
+        var thenLabel = this.GetLabel(node.Target);
+        var elseLabel = this.writer.DeclareLabel();
+        this.writer.JmpIf(condition, thenLabel, elseLabel);
+        this.writer.PlaceLabel(elseLabel);
+        return Value.Unit.Instance;
+    }
+
     public override Value VisitUnaryExpression(BoundUnaryExpression node)
     {
         var sub = node.Operand.Accept(this);

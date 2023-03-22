@@ -359,7 +359,20 @@ internal sealed class Lexer
         if (ch == '\'')
         {
             var offset = 1;
-            var ch2 = this.Peek(offset);
+            if (!this.TryPeek(offset, out var ch2))
+            {
+                // Unexpected end of input
+                this.AddError(
+                    template: SyntaxErrors.UnexpectedCharacterLiteralEnd,
+                    offset: offset,
+                    width: 1);
+                var errText = this.AdvanceWithText(offset);
+                this.tokenBuilder
+                    .SetKind(TokenKind.LiteralCharacter)
+                    .SetText(errText)
+                    .SetValue(' ');
+                return default;
+            }
             var resultChar = string.Empty;
             if (ch2 == '\\')
             {
@@ -449,8 +462,8 @@ internal sealed class Lexer
 
         // NOTE: We are checking end of input differently here, because SourceReader.IsEnd is based on its
         // current position, but we are peeking in this input way ahead
-        // End of input
-        if (!this.TryPeek(out var ch, offset) && offset > 0)
+        // End of input with nonzero offset
+        if (!this.TryPeek(offset, out var ch))
         {
             // return the section we have consumed so far
             this.tokenBuilder
@@ -686,7 +699,15 @@ internal sealed class Lexer
     /// <returns>True, if an escape was successfully parsed.</returns>
     private string ParseEscapeSequence(int escapeStart, ref int offset)
     {
-        var esc = this.Peek(offset);
+        if (!this.TryPeek(offset, out var esc))
+        {
+            // Unexpected end of input
+            this.AddError(
+                template: SyntaxErrors.UnexpectedEscapeSequenceEnd,
+                offset: offset,
+                width: 1);
+            return string.Empty;
+        }
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')
         {
@@ -891,8 +912,8 @@ internal sealed class Lexer
     // later for performance reasons
     private char Peek(int offset = 0, char @default = '\0') =>
         this.SourceReader.Peek(offset: offset, @default: @default);
-    private bool TryPeek(out char result, int offset = 0) =>
-        this.SourceReader.TryPeek(result: out result, offset: offset);
+    private bool TryPeek(int offset, out char result) =>
+        this.SourceReader.TryPeek(offset, out result);
     private ReadOnlyMemory<char> Advance(int amount) => this.SourceReader.Advance(amount);
     private string AdvanceWithText(int amount) => this.Advance(amount).ToString();
 

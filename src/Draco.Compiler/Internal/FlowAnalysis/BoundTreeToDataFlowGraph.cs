@@ -89,6 +89,7 @@ internal sealed class BoundTreeToDataFlowGraph
         BoundOrExpression n => this.Translate(n),
         BoundRelationalExpression n => this.Translate(n),
         BoundCallExpression n => this.Translate(n),
+        BoundNoOpStatement n => this.Append(n),
         BoundLocalExpression n => this.Append(n),
         BoundGlobalExpression n => this.Append(n),
         BoundParameterExpression n => this.Append(n),

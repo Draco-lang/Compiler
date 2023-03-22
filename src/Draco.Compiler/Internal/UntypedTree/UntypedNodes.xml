@@ -15,6 +15,9 @@
   <Node Name="UntypedUnexpectedStatement" Base="UntypedStatement">
   </Node>
 
+  <Node Name="UntypedNoOpStatement" Base="UntypedStatement">
+  </Node>
+
   <Node Name="UntypedLabelStatement" Base="UntypedStatement">
     <Field Name="Label" Type="LabelSymbol" />
   </Node>

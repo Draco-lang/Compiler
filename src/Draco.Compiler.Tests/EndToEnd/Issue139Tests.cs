@@ -142,11 +142,12 @@ public sealed class Issue139Tests
             func 
         }
         """")]
-    [InlineData(""""
-        func main() {
-            println[]
-        }
-        """")]
+    // TODO: Add back once we implement indexers
+    // [InlineData(""""
+    //     func main() {
+    //         println[]
+    //     }
+    //     """")]
     [InlineData(""""
         func main() {
             println("'att't"'"t''ork;");

@@ -27,6 +27,13 @@ internal abstract partial class UntypedNode
     }
 }
 
+// Statements
+
+internal partial class UntypedNoOpStatement
+{
+    public static UntypedNoOpStatement Default { get; } = new(null);
+}
+
 // Expressions
 
 internal partial class UntypedExpression

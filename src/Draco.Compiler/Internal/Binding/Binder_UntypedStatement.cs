@@ -22,6 +22,9 @@ internal partial class Binder
     {
         // NOTE: The syntax error is already reported
         UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => new UntypedUnexpectedStatement(syntax),
+        // Function declarations get discarded, as they become symbols
+        // TODO: Actually make local functions work by making them symbols
+        FunctionDeclarationSyntax func => UntypedNoOpStatement.Default,
         DeclarationStatementSyntax decl => this.BindStatement(decl.Declaration, constraints, diagnostics),
         ExpressionStatementSyntax expr => this.BindExpressionStatement(expr, constraints, diagnostics),
         BlockFunctionBodySyntax body => this.BindBlockFunctionBody(body, constraints, diagnostics),

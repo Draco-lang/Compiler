@@ -17,11 +17,18 @@ internal partial class Binder
     internal virtual BoundStatement TypeStatement(UntypedStatement statement, ConstraintBag constraints, DiagnosticBag diagnostics) => statement switch
     {
         UntypedUnexpectedStatement unexpected => new BoundUnexpectedStatement(unexpected.Syntax),
+        UntypedNoOpStatement noOp => this.TypeNoOpStatement(noOp, constraints, diagnostics),
         UntypedLabelStatement label => this.TypeLabelStatement(label, constraints, diagnostics),
         UntypedLocalDeclaration local => this.TypeLocalDeclaration(local, constraints, diagnostics),
         UntypedExpressionStatement expr => this.TypeExpressionStatement(expr, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(statement)),
     };
+
+    private BoundStatement TypeNoOpStatement(UntypedNoOpStatement noOp, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        if (noOp.Syntax is null) return BoundNoOpStatement.Default;
+        return new BoundNoOpStatement(noOp.Syntax);
+    }
 
     private BoundStatement TypeLabelStatement(UntypedLabelStatement label, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundLabelStatement(label.Syntax, label.Label);

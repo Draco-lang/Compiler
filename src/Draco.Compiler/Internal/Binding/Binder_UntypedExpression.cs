@@ -60,6 +60,9 @@ internal partial class Binder
     private UntypedStringPart BindStringPart(StringPartSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
         TextStringPartSyntax text => new UntypedStringText(syntax, text.Content.ValueText!),
+        InterpolationStringPartSyntax interpolation => new UntypedStringInterpolation(
+            syntax,
+            this.BindExpression(interpolation.Expression, constraints, diagnostics)),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 

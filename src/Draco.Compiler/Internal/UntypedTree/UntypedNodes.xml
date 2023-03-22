@@ -12,6 +12,9 @@
 
   <!-- Statements -->
 
+  <Node Name="UntypedUnexpectedStatement" Base="UntypedStatement">
+  </Node>
+
   <Node Name="UntypedLabelStatement" Base="UntypedStatement">
     <Field Name="Label" Type="LabelSymbol" />
   </Node>
@@ -26,6 +29,9 @@
   </Node>
 
   <!-- Expressions -->
+
+  <Node Name="UntypedUnexpectedExpression" Base="UntypedExpression">
+  </Node>
 
   <Node Name="UntypedUnitExpression" Base="UntypedExpression">
   </Node>

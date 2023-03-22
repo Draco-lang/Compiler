@@ -20,6 +20,8 @@ internal partial class Binder
     /// <returns>The untyped statement for <paramref name="syntax"/>.</returns>
     protected UntypedStatement BindStatement(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
+        // NOTE: The syntax error is already reported
+        UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => new UntypedUnexpectedStatement(syntax),
         DeclarationStatementSyntax decl => this.BindStatement(decl.Declaration, constraints, diagnostics),
         ExpressionStatementSyntax expr => this.BindExpressionStatement(expr, constraints, diagnostics),
         BlockFunctionBodySyntax body => this.BindBlockFunctionBody(body, constraints, diagnostics),

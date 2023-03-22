@@ -16,6 +16,7 @@ internal partial class Binder
     /// <returns>The bound statement for <paramref name="statement"/>.</returns>
     internal virtual BoundStatement TypeStatement(UntypedStatement statement, ConstraintBag constraints, DiagnosticBag diagnostics) => statement switch
     {
+        UntypedUnexpectedStatement unexpected => new BoundUnexpectedStatement(unexpected.Syntax),
         UntypedLabelStatement label => this.TypeLabelStatement(label, constraints, diagnostics),
         UntypedLocalDeclaration local => this.TypeLocalDeclaration(local, constraints, diagnostics),
         UntypedExpressionStatement expr => this.TypeExpressionStatement(expr, constraints, diagnostics),

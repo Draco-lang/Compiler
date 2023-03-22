@@ -43,6 +43,11 @@ internal partial class BoundExpression
     public Type TypeRequired => this.Type ?? throw new System.InvalidOperationException();
 }
 
+internal partial class BoundUnexpectedExpression
+{
+    public override Type Type => Intrinsics.Error;
+}
+
 internal partial class BoundUnitExpression
 {
     public static BoundUnitExpression Default { get; } = new(null);

@@ -19,6 +19,7 @@ internal partial class Binder
     /// <returns>The bound expression for <paramref name="expression"/>.</returns>
     internal virtual BoundExpression TypeExpression(UntypedExpression expression, ConstraintBag constraints, DiagnosticBag diagnostics) => expression switch
     {
+        UntypedUnexpectedExpression unexpected => new BoundUnexpectedExpression(unexpected.Syntax),
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedStringExpression str => this.TypeStringExpression(str, constraints, diagnostics),

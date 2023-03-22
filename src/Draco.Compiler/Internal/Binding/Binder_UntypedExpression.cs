@@ -23,6 +23,8 @@ internal partial class Binder
     /// <returns>The untyped expression for <paramref name="syntax"/>.</returns>
     protected UntypedExpression BindExpression(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
+        // NOTE: The syntax error is already reported
+        UnexpectedExpressionSyntax => new UntypedUnexpectedExpression(syntax),
         GroupingExpressionSyntax grp => this.BindExpression(grp.Expression, constraints, diagnostics),
         StatementExpressionSyntax stmt => this.BindStatementExpression(stmt, constraints, diagnostics),
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),

@@ -2,6 +2,9 @@ using System;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -16,6 +19,8 @@ internal partial class Binder
     /// <returns>The looked up type symbol for <paramref name="syntax"/>.</returns>
     internal virtual Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) => syntax switch
     {
+        // NOTE: The syntax error is already reported
+        UnexpectedTypeSyntax => new UndefinedTypeSymbol("<error>"),
         NameTypeSyntax name => this.BindNameType(name, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };

@@ -36,6 +36,11 @@ internal partial class UntypedExpression
     public Type TypeRequired => this.Type ?? throw new System.InvalidOperationException();
 }
 
+internal partial class UntypedUnexpectedExpression
+{
+    public override Type Type => Intrinsics.Error;
+}
+
 internal partial class UntypedUnitExpression
 {
     public static UntypedUnitExpression Default { get; } = new(null);

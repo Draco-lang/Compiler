@@ -12,6 +12,9 @@
 
   <!-- Statements -->
 
+  <Node Name="BoundUnexpectedStatement" Base="BoundStatement">
+  </Node>
+
   <Node Name="BoundNoOpStatement" Base="BoundStatement">
   </Node>
 
@@ -39,6 +42,9 @@
   </Node>
 
   <!-- Expressions -->
+
+  <Node Name="BoundUnexpectedExpression" Base="BoundExpression">
+  </Node>
 
   <Node Name="BoundUnitExpression" Base="BoundExpression">
   </Node>

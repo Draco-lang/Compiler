@@ -44,9 +44,7 @@ internal sealed class BoundTreeToDataFlowGraph
             // NOTE: AST node filled out later
             // For error labels, we jump to the beginning for safety
             // This pervents most flow-errors to cascade
-            // TODO: Unhandled
-            // op = label.IsError ? this.first : new(null!);
-            op = new(null!);
+            op = label.IsError ? this.first : new(null!);
             this.labels.Add(label, op);
         }
         return op;

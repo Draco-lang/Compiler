@@ -135,3 +135,8 @@ internal partial class BoundLocalLvalue
 {
     public override Type Type => this.Local.Type;
 }
+
+internal partial class BoundGlobalLvalue
+{
+    public override Type Type => this.Global.Type;
+}

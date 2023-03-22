@@ -520,7 +520,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
     }
 
     [Fact]
-    public void ValReassigned()
+    public void LocalValReassigned()
     {
         // func foo() {
         //     val x: int32 = 0;
@@ -535,6 +535,34 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
             BlockFunctionBody(
                 DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0))),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, DataflowErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void GlobalValReassigned()
+    {
+        // val x: int32 = 0;
+        // func foo() {    
+        //     x = 1;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))));
 
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));

@@ -165,4 +165,8 @@
   <Node Name="BoundLocalLvalue" Base="BoundLvalue">
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
+
+  <Node Name="BoundGlobalLvalue" Base="BoundLvalue">
+    <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
 </Tree>

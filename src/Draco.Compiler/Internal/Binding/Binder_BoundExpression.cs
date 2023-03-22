@@ -37,6 +37,8 @@ internal partial class Binder
         UntypedUnaryExpression ury => this.TypeUnaryExpression(ury, constraints, diagnostics),
         UntypedBinaryExpression bin => this.TypeBinaryExpression(bin, constraints, diagnostics),
         UntypedRelationalExpression rel => this.TypeRelationalExpression(rel, constraints, diagnostics),
+        UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
+        UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
 
@@ -156,5 +158,19 @@ internal partial class Binder
         var next = this.TypeExpression(cmp.Next, constraints, diagnostics);
         var comparisonOperator = (ComparisonOperatorSymbol)cmp.Operator.Result;
         return new BoundComparison(cmp.Syntax, comparisonOperator, next);
+    }
+
+    private BoundExpression TypeAndExpression(UntypedAndExpression and, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.TypeExpression(and.Left, constraints, diagnostics);
+        var right = this.TypeExpression(and.Right, constraints, diagnostics);
+        return new BoundAndExpression(and.Syntax, left, right);
+    }
+
+    private BoundExpression TypeOrExpression(UntypedOrExpression or, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.TypeExpression(or.Left, constraints, diagnostics);
+        var right = this.TypeExpression(or.Right, constraints, diagnostics);
+        return new BoundOrExpression(or.Syntax, left, right);
     }
 }

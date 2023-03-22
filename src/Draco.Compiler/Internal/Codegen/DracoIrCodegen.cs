@@ -348,6 +348,7 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
     private IInstructionOperand CompileLValue(BoundLvalue expr) => expr switch
     {
         BoundLocalLvalue l => this.locals[l.Local],
+        BoundGlobalLvalue g => this.GetGlobal(g.Global),
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 }

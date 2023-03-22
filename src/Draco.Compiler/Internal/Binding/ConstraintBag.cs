@@ -100,6 +100,20 @@ internal sealed class ConstraintBag
                 .WithLocation(expr.Syntax.Location));
     }
 
+    // TODO: Copypasta of condition
+    /// <summary>
+    /// Enforces a type to be a boolean.
+    /// </summary>
+    /// <param name="expr">The expression that has to be enforced.</param>
+    public void IsBool(UntypedExpression expr)
+    {
+        Debug.Assert(expr.Syntax is not null);
+        this.Solver
+            .SameType(expr.TypeRequired, Types.Intrinsics.Bool)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(expr.Syntax.Location));
+    }
+
     /// <summary>
     /// Enforces a type to be unit.
     /// </summary>

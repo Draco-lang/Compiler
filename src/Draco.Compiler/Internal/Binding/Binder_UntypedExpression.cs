@@ -183,8 +183,15 @@ internal partial class Binder
         }
         else if (syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr)
         {
-            // TODO
-            throw new NotImplementedException();
+            var left = this.BindExpression(syntax.Left, constraints, diagnostics);
+            var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+
+            constraints.IsBool(left);
+            constraints.IsBool(right);
+
+            return syntax.Operator.Kind == TokenKind.KeywordAnd
+                ? new UntypedAndExpression(syntax, left, right)
+                : new UntypedOrExpression(syntax, left, right);
         }
         else if (SyntaxFacts.TryGetOperatorOfCompoundAssignment(syntax.Operator.Kind, out var nonCompound))
         {

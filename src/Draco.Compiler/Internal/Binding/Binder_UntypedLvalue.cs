@@ -1,7 +1,7 @@
 using System;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.UntypedTree;
 
@@ -28,6 +28,7 @@ internal partial class Binder
         return symbol switch
         {
             UntypedLocalSymbol local => new UntypedLocalLvalue(syntax, local, constraints.LocalReference(local, syntax)),
+            GlobalSymbol global => new UntypedGlobalLvalue(syntax, global),
             _ => throw new InvalidOperationException(),
         };
     }

@@ -118,3 +118,8 @@ internal partial class UntypedLvalue
 {
     public abstract Type Type { get; }
 }
+
+internal partial class UntypedGlobalLvalue
+{
+    public override Type Type => this.Global.Type;
+}

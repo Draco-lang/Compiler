@@ -159,4 +159,8 @@
     <!-- Locals are uninferred, can't rely on symbol type -->
     <Field Name="Type" Type="Type" Override="true" />
   </Node>
+
+  <Node Name="UntypedGlobalLvalue" Base="UntypedLvalue">
+    <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
 </Tree>

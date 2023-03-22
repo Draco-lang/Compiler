@@ -17,9 +17,13 @@ internal partial class Binder
     internal virtual BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintBag constraints, DiagnosticBag diagnostics) => lvalue switch
     {
         UntypedLocalLvalue local => this.TypeLocalLvalue(local, constraints, diagnostics),
+        UntypedGlobalLvalue global => this.TypeGlobalLvalue(global, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };
 
     private BoundLvalue TypeLocalLvalue(UntypedLocalLvalue local, ConstraintBag constraints, DiagnosticBag diagnostics) =>
         new BoundLocalLvalue(local.Syntax, constraints.GetTypedLocal(diagnostics, local.Local));
+
+    private BoundLvalue TypeGlobalLvalue(UntypedGlobalLvalue global, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        new BoundGlobalLvalue(global.Syntax, global.Global);
 }

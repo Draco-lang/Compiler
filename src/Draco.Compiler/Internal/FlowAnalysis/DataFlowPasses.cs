@@ -41,6 +41,7 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
         foreach (var symbol in module.Members)
         {
             if (symbol is SourceFunctionSymbol function) this.AnalyzeFunction(function);
+            else if (symbol is SourceGlobalSymbol global) this.CheckIfGlobalValIsInitialized(global);
         }
     }
 
@@ -57,7 +58,7 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
     public override void VisitLocalDeclaration(BoundLocalDeclaration node)
     {
         base.VisitLocalDeclaration(node);
-        this.CheckIfValIsInitialized(node);
+        this.CheckIfLocalValIsInitialized(node);
     }
 
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
@@ -66,7 +67,7 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
         this.CheckIfValIsNotAssigned(node);
     }
 
-    private void CheckIfValIsInitialized(BoundLocalDeclaration node)
+    private void CheckIfLocalValIsInitialized(BoundLocalDeclaration node)
     {
         if (node.Local.IsMutable) return;
         if (node.Value is not null) return;
@@ -76,6 +77,19 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
             template: DataflowErrors.ImmutableVariableMustBeInitialized,
             location: node.Syntax?.Location,
             formatArgs: node.Local.Name));
+    }
+
+    // TODO: Copypasta, can we get rid of it?
+    private void CheckIfGlobalValIsInitialized(SourceGlobalSymbol global)
+    {
+        if (global.IsMutable) return;
+        if (global.Value is not null) return;
+
+        // Not initialized
+        this.diagnostics.Add(Diagnostic.Create(
+            template: DataflowErrors.ImmutableVariableMustBeInitialized,
+            location: global.DeclarationSyntax.Location,
+            formatArgs: global.Name));
     }
 
     private void CheckIfValIsNotAssigned(BoundAssignmentExpression node)

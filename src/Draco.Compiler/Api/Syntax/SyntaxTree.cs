@@ -110,6 +110,12 @@ public sealed class SyntaxTree
         this.SyntaxDiagnosticTable = syntaxDiagnostics;
     }
 
+    /// <summary>
+    /// Constructs a DOT representation of this syntax tree.
+    /// </summary>
+    /// <returns>The DOT code of this syntax tree.</returns>
+    public string ToDot() => this.GreenRoot.ToDot();
+
     public override string ToString() => this.Root.ToString();
 
     internal void ComputeFullPositions()

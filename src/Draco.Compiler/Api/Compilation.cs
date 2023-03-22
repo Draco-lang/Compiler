@@ -100,10 +100,32 @@ public sealed class Compilation
     /// Emits compiled binary to a <see cref="Stream"/>.
     /// </summary>
     /// <param name="peStream">The stream to write the PE to.</param>
+    /// <param name="declarationTreeStream">The stream to write the DOT graph of the declaration tree to.</param>
+    /// <param name="symbolTreeStream">The stream to write the DOT graph of the symbol tree to.</param>
     /// <param name="dracoIrStream">The stream to write a textual representation of the Draco IR to.</param>
     /// <returns>The result of the emission.</returns>
-    public EmitResult Emit(Stream peStream, Stream? dracoIrStream = null)
+    public EmitResult Emit(
+        Stream peStream,
+        Stream? declarationTreeStream = null,
+        Stream? symbolTreeStream = null,
+        Stream? dracoIrStream = null)
     {
+        // Write the declaration tree, if needed
+        if (declarationTreeStream is not null)
+        {
+            var declarationWriter = new StreamWriter(declarationTreeStream);
+            declarationWriter.Write(this.DeclarationTable.ToDot());
+            declarationWriter.Flush();
+        }
+
+        // Write the symbol tree, if needed
+        if (symbolTreeStream is not null)
+        {
+            var symbolWriter = new StreamWriter(symbolTreeStream);
+            symbolWriter.Write(this.GlobalModule.ToDot());
+            symbolWriter.Flush();
+        }
+
         var existingDiags = this.Diagnostics;
         if (existingDiags.Length > 0)
         {
@@ -115,9 +137,11 @@ public sealed class Compilation
         // Generate Draco IR
         var asm = new Assembly(this.AssemblyName ?? "output");
         DracoIrCodegen.Generate(asm, (SourceModuleSymbol)this.GlobalModule);
+
         // Optimize the IR
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(asm);
+
         // Write the IR, if needed
         if (dracoIrStream is not null)
         {
@@ -125,30 +149,13 @@ public sealed class Compilation
             irWriter.Write(asm.ToString());
             irWriter.Flush();
         }
+
         // Generate CIL
         CilCodegen.Generate(asm, peStream);
 
         return new(
             Success: true,
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
-    }
-
-    public void Dump()
-    {
-        Console.WriteLine(this.SyntaxTrees.First().GreenRoot.ToDot());
-        Console.WriteLine(this.DeclarationTable.ToDot());
-        Console.WriteLine(this.GlobalModule.ToDot());
-
-        foreach (var m in this.GlobalModule.Members)
-        {
-            if (m is SourceFunctionSymbol func)
-            {
-                var body = func.Body;
-                Console.WriteLine($"function {func.Name}");
-                Console.WriteLine(body);
-                Console.WriteLine("==================");
-            }
-        }
     }
 
     /// <summary>

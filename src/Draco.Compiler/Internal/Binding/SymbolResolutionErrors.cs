@@ -38,5 +38,14 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "symbol {0} illegally shadows symbol with the same name",
         code: Code(3));
+
+    /// <summary>
+    /// Illegal lvalue.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalLvalue = DiagnosticTemplate.Create(
+        title: "illegal lvalue",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal expression on the left-hand side of assignment",
+        code: Code(4));
 }
 

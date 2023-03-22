@@ -120,6 +120,16 @@ internal partial class UntypedAssignmentExpression
 
 // Lvalues
 
+internal partial class UntypedUnexpectedLvalue
+{
+    public override Type Type => Intrinsics.Error;
+}
+
+internal partial class UntypedIllegalLvalue
+{
+    public override Type Type => Intrinsics.Error;
+}
+
 internal partial class UntypedLvalue
 {
     public abstract Type Type { get; }

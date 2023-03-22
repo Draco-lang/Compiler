@@ -1,4 +1,5 @@
 using System;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -18,18 +19,38 @@ internal partial class Binder
     /// <returns>The untyped lvalue for <paramref name="syntax"/>.</returns>
     protected UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
+        // NOTE: The syntax error is already reported
+        UnexpectedExpressionSyntax => new UntypedUnexpectedLvalue(syntax),
         NameExpressionSyntax name => this.BindNameLvalue(name, constraints, diagnostics),
-        _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
+        _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
     private UntypedLvalue BindNameLvalue(NameExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        return symbol switch
+        switch (symbol)
         {
-            UntypedLocalSymbol local => new UntypedLocalLvalue(syntax, local, constraints.LocalReference(local, syntax)),
-            GlobalSymbol global => new UntypedGlobalLvalue(syntax, global),
-            _ => throw new InvalidOperationException(),
-        };
+        case UntypedLocalSymbol local:
+            return new UntypedLocalLvalue(syntax, local, constraints.LocalReference(local, syntax));
+        case GlobalSymbol global:
+            return new UntypedGlobalLvalue(syntax, global);
+        default:
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalLvalue,
+                location: syntax?.Location));
+            return new UntypedIllegalLvalue(syntax);
+        }
+        }
+    }
+
+    private UntypedLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    {
+        // TODO: Should illegal lvalues contain an expression we still bind?
+        // It could result in more errors within the expression, which might be useful
+        diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.IllegalLvalue,
+            location: syntax?.Location));
+        return new UntypedIllegalLvalue(syntax);
     }
 }

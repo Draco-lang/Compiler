@@ -171,6 +171,14 @@
 
   <!-- LValues -->
 
+  <!-- Used for syntax errors -->
+  <Node Name="BoundUnexpectedLvalue" Base="BoundLvalue">
+  </Node>
+
+  <!-- Used when syntax is ok, but illegal as an LValue -->
+  <Node Name="BoundIllegalLvalue" Base="BoundLvalue">
+  </Node>
+
   <Node Name="BoundLocalLvalue" Base="BoundLvalue">
     <Field Name="Local" Type="LocalSymbol" />
   </Node>

@@ -16,6 +16,8 @@ internal partial class Binder
     /// <returns>The bound lvalue for <paramref name="lvalue"/>.</returns>
     internal virtual BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintBag constraints, DiagnosticBag diagnostics) => lvalue switch
     {
+        UntypedUnexpectedLvalue unexpected => new BoundUnexpectedLvalue(unexpected.Syntax),
+        UntypedIllegalLvalue illegal => new BoundIllegalLvalue(illegal.Syntax),
         UntypedLocalLvalue local => this.TypeLocalLvalue(local, constraints, diagnostics),
         UntypedGlobalLvalue global => this.TypeGlobalLvalue(global, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),

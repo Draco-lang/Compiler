@@ -136,6 +136,16 @@ internal partial class BoundLvalue
     public abstract Type Type { get; }
 }
 
+internal partial class BoundUnexpectedLvalue
+{
+    public override Type Type => Intrinsics.Error;
+}
+
+internal partial class BoundIllegalLvalue
+{
+    public override Type Type => Intrinsics.Error;
+}
+
 internal partial class BoundLocalLvalue
 {
     public override Type Type => this.Local.Type;

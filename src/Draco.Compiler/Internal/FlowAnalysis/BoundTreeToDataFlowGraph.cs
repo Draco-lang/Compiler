@@ -100,7 +100,8 @@ internal sealed class BoundTreeToDataFlowGraph
         BoundGlobalLvalue n => this.Append(n),
         // For a complete flow, even inert nodes are added
         BoundReferenceErrorExpression n => this.Append(n),
-        BoundUnexpectedStatement or BoundUnexpectedExpression => this.Append(node),
+        BoundUnexpectedStatement or BoundUnexpectedExpression
+        or BoundIllegalLvalue or BoundUnexpectedLvalue => this.Append(node),
         // To avoid reference-equality problems
         BoundUnitExpression => this.Append(NoOp()),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),

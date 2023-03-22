@@ -162,6 +162,14 @@
 
   <!-- LValues -->
 
+  <!-- Used for syntax errors -->
+  <Node Name="UntypedUnexpectedLvalue" Base="UntypedLvalue">
+  </Node>
+
+  <!-- Used when syntax is ok, but illegal as an LValue -->
+  <Node Name="UntypedIllegalLvalue" Base="UntypedLvalue">
+  </Node>
+
   <Node Name="UntypedLocalLvalue" Base="UntypedLvalue">
     <!-- Locals are special, they are remapped after binding to a typed variant -->
     <Field Name="Local" Type="UntypedLocalSymbol" />

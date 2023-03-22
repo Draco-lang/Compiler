@@ -33,6 +33,29 @@ internal partial class LocalRewriter : BoundTreeRewriter
     {
     }
 
+    public override BoundNode VisitBlockExpression(BoundBlockExpression node)
+    {
+        // We only keep useful statements
+        var statements = node.Statements
+            .Select(s => s.Accept(this))
+            .Cast<BoundStatement>()
+            .Where(s => !IsUseless(s))
+            .ToImmutableArray();
+        var value = (BoundExpression)node.Value.Accept(this);
+
+        // If the node became empty, we can erase it
+        if (node.Locals.Length == 0 && statements.Length == 0 && IsUseless(value))
+        {
+            // Useless block, erase it
+            return BoundUnitExpression.Default;
+        }
+        else
+        {
+            // Just update it
+            return node.Update(node.Locals, statements, value);
+        }
+    }
+
     public override BoundNode VisitWhileExpression(BoundWhileExpression node)
     {
         // while (condition)
@@ -51,7 +74,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         var condition = (BoundExpression)node.Condition.Accept(this);
         var body = (BoundExpression)node.Then.Accept(this);
 
-        return BlockExpression(
+        var result = BlockExpression(
             locals: ImmutableArray<LocalSymbol>.Empty,
             statements: ImmutableArray.Create<BoundStatement>(
                 LabelStatement(node.ContinueLabel),
@@ -65,6 +88,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
                 LabelStatement(node.BreakLabel)),
             value: BoundUnitExpression.Default);
+        // Blocks can be desugared too, pass through
+        return result.Accept(this);
     }
 
     public override BoundNode VisitRelationalExpression(BoundRelationalExpression node)
@@ -174,4 +199,20 @@ internal partial class LocalRewriter : BoundTreeRewriter
             value: (BoundExpression)expr.Accept(this));
         return new(symbol, symbolRef, assignment);
     }
+
+    private static bool IsUseless(BoundStatement stmt) => stmt switch
+    {
+        BoundExpressionStatement s => IsUseless(s.Expression),
+        BoundNoOpStatement => true,
+        _ => false,
+    };
+
+    private static bool IsUseless(BoundExpression expr) => expr switch
+    {
+        BoundBlockExpression block => block.Locals.Length == 0
+                                   && block.Statements.All(IsUseless)
+                                   && IsUseless(block.Value),
+        BoundUnitExpression => true,
+        _ => false,
+    };
 }

@@ -696,13 +696,13 @@ internal sealed class Parser
             }
             else if (peek == TokenKind.BracketOpen)
             {
-                var openParen = this.Expect(TokenKind.ParenOpen);
+                var openBracket = this.Expect(TokenKind.BracketOpen);
                 var args = this.ParseSeparatedSyntaxList(
                     elementParser: this.ParseExpression,
                     separatorKind: TokenKind.Comma,
                     stopKind: TokenKind.BracketClose);
-                var closeParen = this.Expect(TokenKind.ParenClose);
-                result = new IndexExpressionSyntax(result, openParen, args, closeParen);
+                var closeBracket = this.Expect(TokenKind.BracketClose);
+                result = new IndexExpressionSyntax(result, openBracket, args, closeBracket);
             }
             else if (this.Matches(TokenKind.Dot, out var dot))
             {

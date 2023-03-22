@@ -447,14 +447,11 @@ internal sealed class Lexer
             return default;
         }
 
-        var ch = this.Peek(offset);
-
         // NOTE: We are checking end of input differently here, because SourceReader.IsEnd is based on its
         // current position, but we are peeking in this input way ahead
         // End of input
-        if (ch == '\0' && offset > 0)
+        if (!this.TryPeek(out var ch, offset) && offset > 0)
         {
-            // NOTE: Not a nice assumption to rely on '\0', but let's assume the input could end here,
             // return the section we have consumed so far
             this.tokenBuilder
                 .SetKind(TokenKind.StringContent)
@@ -894,6 +891,8 @@ internal sealed class Lexer
     // later for performance reasons
     private char Peek(int offset = 0, char @default = '\0') =>
         this.SourceReader.Peek(offset: offset, @default: @default);
+    private bool TryPeek(out char result, int offset = 0) =>
+        this.SourceReader.TryPeek(result: out result, offset: offset);
     private ReadOnlyMemory<char> Advance(int amount) => this.SourceReader.Advance(amount);
     private string AdvanceWithText(int amount) => this.Advance(amount).ToString();
 

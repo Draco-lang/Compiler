@@ -154,6 +154,25 @@ internal sealed class ConstraintBag
                 .WithLocation(syntax.Location));
     }
 
+    // TODO: Copy-pasta, clean up this API
+    /// <summary>
+    /// Constraints that a type is assignable to an lvalue.
+    /// </summary>
+    /// <param name="left">The lvalue to assign to.</param>
+    /// <param name="right">The type to assign.</param>
+    /// <param name="syntax">The assignment syntax.</param>
+    public void IsAssignable(UntypedLvalue left, Type right, BinaryExpressionSyntax syntax)
+    {
+        var leftType = left.Type;
+        // Optimization: if the left and right reference the same type, we know it's assignable
+        if (ReferenceEquals(leftType, right)) return;
+        // Add constraint
+        this.Solver
+            .Assignable(leftType, right)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+    }
+
     /// <summary>
     /// Constraints that an expression is returnable from a function.
     /// </summary>
@@ -231,6 +250,31 @@ internal sealed class ConstraintBag
         var (promise, callSite) = this.Overload(@operator);
         var returnType = this.Solver
             .Call(callSite, new[] { left.TypeRequired, right.TypeRequired })
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location))
+            .Result;
+        return (promise, returnType);
+    }
+
+    // TODO: Copy-pasta again
+    /// <summary>
+    /// Constraints that a binary operator is being invoked.
+    /// </summary>
+    /// <param name="operator">The operator symbol.</param>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <param name="syntax">The syntax invoking the operator.</param>
+    /// <returns>A pair of the operator symbol promise and the return-type.</returns>
+    public (ConstraintPromise<FunctionSymbol> Symbol, Type ReturnType) CallBinaryOperator(
+        Symbol @operator,
+        UntypedLvalue left,
+        UntypedExpression right,
+        BinaryExpressionSyntax syntax)
+    {
+        // TODO: This promise isn't configured with diagnostics
+        var (promise, callSite) = this.Overload(@operator);
+        var returnType = this.Solver
+            .Call(callSite, new[] { left.Type, right.TypeRequired })
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location))
             .Result;

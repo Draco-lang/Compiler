@@ -185,10 +185,19 @@ internal partial class Binder
             // TODO
             throw new NotImplementedException();
         }
-        else if (SyntaxFacts.IsCompoundAssignmentOperator(syntax.Operator.Kind))
+        else if (SyntaxFacts.TryGetOperatorOfCompoundAssignment(syntax.Operator.Kind, out var nonCompound))
         {
-            // TODO: Compound assignment
-            throw new NotImplementedException();
+            // Get the binary operator symbol
+            var operatorName = BinaryOperatorSymbol.GetBinaryOperatorName(nonCompound);
+            var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
+
+            var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
+            var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+
+            var (symbolPromise, resultType) = constraints.CallBinaryOperator(operatorSymbol, left, right, syntax);
+            constraints.IsAssignable(left, resultType, syntax);
+
+            return new UntypedAssignmentExpression(syntax, symbolPromise, left, right);
         }
         else
         {

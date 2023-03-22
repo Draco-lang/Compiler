@@ -93,6 +93,7 @@ internal partial class UntypedLiteralExpression
     {
         int => Intrinsics.Int32,
         bool => Intrinsics.Bool,
+        double => Intrinsics.Float64,
         _ => throw new System.InvalidOperationException(),
     };
 }

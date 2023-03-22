@@ -99,6 +99,7 @@ internal sealed class BoundTreeToDataFlowGraph
         BoundLocalLvalue n => this.Append(n),
         BoundGlobalLvalue n => this.Append(n),
         // For a complete flow, even inert nodes are added
+        BoundReferenceErrorExpression n => this.Append(n),
         // TODO: What do we do here?
         // Ast.Stmt.Unexpected or Ast.Expr.Unexpected or Ast.Expr.Literal => this.Append(node),
         // Ast.LValue.Unexpected or Ast.LValue.Illegal => this.Append(node),

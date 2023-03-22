@@ -54,6 +54,7 @@ internal partial class Binder
 
     private BoundStringPart TypeStringPart(UntypedStringPart part, ConstraintBag constraints, DiagnosticBag diagnostics) => part switch
     {
+        UntypedUnexpectedStringPart unexpected => new BoundUnexpectedStringPart(unexpected.Syntax),
         UntypedStringText text => new BoundStringText(text.Syntax, text.Text),
         UntypedStringInterpolation interpolation => new BoundStringInterpolation(
             interpolation.Syntax,

@@ -149,6 +149,9 @@
 
   <AbstractNode Name="UntypedStringPart" Base="UntypedNode" />
 
+  <Node Name="UntypedUnexpectedStringPart" Base="UntypedStringPart">
+  </Node>
+
   <Node Name="UntypedStringText" Base="UntypedStringPart">
     <Field Name="Text" Type="string" />
   </Node>

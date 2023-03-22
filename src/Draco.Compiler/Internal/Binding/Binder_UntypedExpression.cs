@@ -61,6 +61,8 @@ internal partial class Binder
 
     private UntypedStringPart BindStringPart(StringPartSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
     {
+        // NOTE: The syntax error is already reported
+        UnexpectedStringPartSyntax => new UntypedUnexpectedStringPart(syntax),
         TextStringPartSyntax text => new UntypedStringText(syntax, text.Content.ValueText!),
         InterpolationStringPartSyntax interpolation => new UntypedStringInterpolation(
             syntax,

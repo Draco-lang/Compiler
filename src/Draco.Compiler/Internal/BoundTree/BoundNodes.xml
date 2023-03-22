@@ -158,6 +158,9 @@
 
   <AbstractNode Name="BoundStringPart" Base="BoundNode" />
 
+  <Node Name="BoundUnexpectedStringPart" Base="BoundStringPart">
+  </Node>
+
   <Node Name="BoundStringText" Base="BoundStringPart">
     <Field Name="Text" Type="string" />
   </Node>

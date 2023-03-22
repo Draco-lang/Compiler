@@ -3,6 +3,7 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.FlowAnalysis.Lattices;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Utilities;
 
@@ -79,14 +80,20 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
 
     private void CheckIfValIsNotAssigned(BoundAssignmentExpression node)
     {
-        if (node.Left is not BoundLocalLvalue reference) return;
-        if (reference.Local.IsMutable) return;
+        var symbol = node.Left switch
+        {
+            BoundLocalLvalue local => local.Local as VariableSymbol,
+            BoundGlobalLvalue global => global.Global,
+            _ => null,
+        };
+        if (symbol is null) return;
+        if (symbol.IsMutable) return;
 
         // Immutable and modified
         this.diagnostics.Add(Diagnostic.Create(
             template: DataflowErrors.ImmutableVariableCanNotBeAssignedTo,
             location: node.Syntax?.Location,
-            formatArgs: reference.Local.Name));
+            formatArgs: symbol.Name));
     }
 
     private void CheckReturnsOnAllPaths(SourceFunctionSymbol function, DataFlowGraph graph)

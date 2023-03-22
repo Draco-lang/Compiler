@@ -25,10 +25,16 @@ internal sealed class OverloadConstraint : Constraint
     /// </summary>
     public ConstraintPromise<FunctionSymbol> Promise { get; }
 
+    /// <summary>
+    /// The name of the overloaded set of functions.
+    /// </summary>
+    public string FunctionName { get; }
+
     public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, Type callSite)
     {
         this.Candidates = candidates.ToList();
         this.CallSite = callSite;
         this.Promise = ConstraintPromise.Create<FunctionSymbol>(this);
+        this.FunctionName = this.Candidates[0].Name;
     }
 }

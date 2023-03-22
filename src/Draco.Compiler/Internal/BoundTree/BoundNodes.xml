@@ -90,13 +90,13 @@
   </Node>
 
   <Node Name="BoundUnaryExpression" Base="BoundExpression">
-    <Field Name="Operator" Type="UnaryOperatorSymbol" />
+    <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Operand" Type="BoundExpression" />
     <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="BoundBinaryExpression" Base="BoundExpression">
-    <Field Name="Operator" Type="BinaryOperatorSymbol" />
+    <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
     <Field Name="Type" Type="Type" Override="true" />
@@ -113,7 +113,7 @@
   </Node>
 
   <Node Name="BoundAssignmentExpression" Base="BoundExpression">
-    <Field Name="CompoundOperator" Type="BinaryOperatorSymbol?" />
+    <Field Name="CompoundOperator" Type="FunctionSymbol?" />
     <Field Name="Left" Type="BoundLvalue" />
     <Field Name="Right" Type="BoundExpression" />
   </Node>
@@ -152,7 +152,7 @@
   </Node>
 
   <Node Name="BoundComparison" Base="BoundNode">
-    <Field Name="Operator" Type="ComparisonOperatorSymbol" />
+    <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Next" Type="BoundExpression" />
   </Node>
 

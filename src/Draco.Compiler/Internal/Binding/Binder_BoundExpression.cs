@@ -128,14 +128,14 @@ internal partial class Binder
     {
         var typedLeft = this.TypeLvalue(assignment.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
-        var compoundOperator = (BinaryOperatorSymbol?)assignment.CompoundOperator?.Result;
+        var compoundOperator = assignment.CompoundOperator?.Result;
         return new BoundAssignmentExpression(assignment.Syntax, compoundOperator, typedLeft, typedRight);
     }
 
     private BoundExpression TypeUnaryExpression(UntypedUnaryExpression ury, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var typedOperand = this.TypeExpression(ury.Operand, constraints, diagnostics);
-        var unaryOperator = (UnaryOperatorSymbol)ury.Operator.Result;
+        var unaryOperator = ury.Operator.Result;
         var resultType = constraints.Solver.Unwrap(ury.TypeRequired);
         return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand, resultType);
     }
@@ -144,7 +144,7 @@ internal partial class Binder
     {
         var typedLeft = this.TypeExpression(bin.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(bin.Right, constraints, diagnostics);
-        var binaryOperator = (BinaryOperatorSymbol)bin.Operator.Result;
+        var binaryOperator = bin.Operator.Result;
         var resultType = constraints.Solver.Unwrap(bin.TypeRequired);
         return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight, resultType);
     }
@@ -161,7 +161,7 @@ internal partial class Binder
     private BoundComparison TypeComparison(UntypedComparison cmp, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         var next = this.TypeExpression(cmp.Next, constraints, diagnostics);
-        var comparisonOperator = (ComparisonOperatorSymbol)cmp.Operator.Result;
+        var comparisonOperator = cmp.Operator.Result;
         return new BoundComparison(cmp.Syntax, comparisonOperator, next);
     }
 

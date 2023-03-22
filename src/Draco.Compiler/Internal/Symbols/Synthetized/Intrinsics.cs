@@ -22,32 +22,32 @@ internal static class Intrinsics
 
     // Operators
 
-    private static ComparisonOperatorSymbol Comparison(TokenKind token, Type leftType, Type rightType) =>
-        new SynthetizedComparisonOperatorSymbol(token, leftType, rightType);
-    private static UnaryOperatorSymbol Unary(TokenKind token, Type operandType, Type returnType) =>
-        new SynthetizedUnaryOperatorSymbol(token, operandType, returnType);
-    private static BinaryOperatorSymbol Binary(TokenKind token, Type leftType, Type rightType, Type returnType) =>
-        new SynthetizedBinaryOperatorSymbol(token, leftType, rightType, returnType);
+    private static FunctionSymbol Unary(TokenKind token, Type operandType, Type returnType) =>
+        SynthetizedFunctionSymbol.UnaryOperator(token, operandType, returnType);
+    private static FunctionSymbol Binary(TokenKind token, Type leftType, Type rightType, Type returnType) =>
+        SynthetizedFunctionSymbol.BinaryOperator(token, leftType, rightType, returnType);
+    private static FunctionSymbol Comparison(TokenKind token, Type leftType, Type rightType) =>
+        SynthetizedFunctionSymbol.ComparisonOperator(token, leftType, rightType);
 
-    public static UnaryOperatorSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Types.Intrinsics.Bool, Types.Intrinsics.Bool);
+    public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Types.Intrinsics.Bool, Types.Intrinsics.Bool);
 
-    public static ComparisonOperatorSymbol Int32_Equal { get; } = Comparison(TokenKind.Equal, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static ComparisonOperatorSymbol Int32_NotEqual { get; } = Comparison(TokenKind.NotEqual, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static ComparisonOperatorSymbol Int32_GreaterThan { get; } = Comparison(TokenKind.GreaterThan, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static ComparisonOperatorSymbol Int32_LessThan { get; } = Comparison(TokenKind.LessThan, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static ComparisonOperatorSymbol Int32_GreaterEqual { get; } = Comparison(TokenKind.GreaterEqual, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static ComparisonOperatorSymbol Int32_LessEqual { get; } = Comparison(TokenKind.LessEqual, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Equal { get; } = Comparison(TokenKind.Equal, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_NotEqual { get; } = Comparison(TokenKind.NotEqual, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_GreaterThan { get; } = Comparison(TokenKind.GreaterThan, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_LessThan { get; } = Comparison(TokenKind.LessThan, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_GreaterEqual { get; } = Comparison(TokenKind.GreaterEqual, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_LessEqual { get; } = Comparison(TokenKind.LessEqual, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
 
-    public static UnaryOperatorSymbol Int32_Plus { get; } = Unary(TokenKind.Plus, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static UnaryOperatorSymbol Int32_Minus { get; } = Unary(TokenKind.Minus, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Plus { get; } = Unary(TokenKind.Plus, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Minus { get; } = Unary(TokenKind.Minus, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
 
-    public static BinaryOperatorSymbol Int32_Add { get; } = Binary(TokenKind.Plus, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static BinaryOperatorSymbol Int32_Sub { get; } = Binary(TokenKind.Minus, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static BinaryOperatorSymbol Int32_Mul { get; } = Binary(TokenKind.Star, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static BinaryOperatorSymbol Int32_Div { get; } = Binary(TokenKind.Slash, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static BinaryOperatorSymbol Int32_Mod { get; } = Binary(TokenKind.KeywordMod, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
-    public static BinaryOperatorSymbol Int32_Rem { get; } = Binary(TokenKind.KeywordRem, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Add { get; } = Binary(TokenKind.Plus, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Sub { get; } = Binary(TokenKind.Minus, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Mul { get; } = Binary(TokenKind.Star, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Div { get; } = Binary(TokenKind.Slash, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Mod { get; } = Binary(TokenKind.KeywordMod, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
+    public static FunctionSymbol Int32_Rem { get; } = Binary(TokenKind.KeywordRem, Types.Intrinsics.Int32, Types.Intrinsics.Int32, Types.Intrinsics.Int32);
 
     // TODO: Rest of float operators
-    public static BinaryOperatorSymbol Float64_Mul { get; } = Binary(TokenKind.Star, Types.Intrinsics.Float64, Types.Intrinsics.Float64, Types.Intrinsics.Float64);
+    public static FunctionSymbol Float64_Mul { get; } = Binary(TokenKind.Star, Types.Intrinsics.Float64, Types.Intrinsics.Float64, Types.Intrinsics.Float64);
 }

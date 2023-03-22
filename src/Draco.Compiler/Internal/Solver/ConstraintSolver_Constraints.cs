@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -71,8 +72,16 @@ internal sealed partial class ConstraintSolver
         // No overload matches
         if (constraint.Candidates.Count == 0)
         {
-            // TODO: Fill out error
-            throw new System.NotImplementedException();
+            var diagnostic = constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
+                .WithFormatArgs(constraint.FunctionName)
+                .Build();
+            diagnostics.Add(diagnostic);
+            // Best-effort shape approximation
+            var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionType functionType
+                ? new NoOverloadFunctionSymbol(functionType.ParameterTypes.Length)
+                : new NoOverloadFunctionSymbol(1);
+            constraint.Promise.Resolve(errorSymbol);
             return SolveState.Finished;
         }
         // Ok solve

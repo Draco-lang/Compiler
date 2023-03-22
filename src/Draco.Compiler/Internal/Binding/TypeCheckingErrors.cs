@@ -27,5 +27,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "type mismatch between {0} and {1}",
         code: Code(2));
+
+    /// <summary>
+    /// No matching overload found.
+    /// </summary>
+    public static readonly DiagnosticTemplate NoMatchingOverload = DiagnosticTemplate.Create(
+        title: "no matching overload",
+        severity: DiagnosticSeverity.Error,
+        format: "no matching overload found for {0}",
+        code: Code(3));
 }
 

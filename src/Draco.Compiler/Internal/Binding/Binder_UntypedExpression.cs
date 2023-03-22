@@ -168,7 +168,7 @@ internal partial class Binder
     private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
     {
         // Get the unary operator symbol
-        var operatorName = UnaryOperatorSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
+        var operatorName = FunctionSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
 
@@ -203,7 +203,7 @@ internal partial class Binder
         else if (SyntaxFacts.TryGetOperatorOfCompoundAssignment(syntax.Operator.Kind, out var nonCompound))
         {
             // Get the binary operator symbol
-            var operatorName = BinaryOperatorSymbol.GetBinaryOperatorName(nonCompound);
+            var operatorName = FunctionSymbol.GetBinaryOperatorName(nonCompound);
             var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
 
             var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
@@ -217,7 +217,7 @@ internal partial class Binder
         else
         {
             // Get the binary operator symbol
-            var operatorName = BinaryOperatorSymbol.GetBinaryOperatorName(syntax.Operator.Kind);
+            var operatorName = FunctionSymbol.GetBinaryOperatorName(syntax.Operator.Kind);
             var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
             var left = this.BindExpression(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
@@ -249,7 +249,7 @@ internal partial class Binder
         DiagnosticBag diagnostics)
     {
         // Get the comparison operator symbol
-        var operatorName = ComparisonOperatorSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
+        var operatorName = FunctionSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 

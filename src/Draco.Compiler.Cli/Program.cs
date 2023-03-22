@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Cli;
@@ -17,7 +18,7 @@ internal class Program
 
     private static RootCommand ConfigureCommands()
     {
-        var fileArgument = new Argument<FileInfo[]>("files", description: "The Draco source files to compile");
+        var fileArgument = new Argument<FileInfo>("file", description: "Draco file");
         var emitIROutputOption = new Option<FileInfo>("--output-ir", description: "Specifies output file for generated IR, if not specified, generated code is not saved to the disk");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
         var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
@@ -57,25 +58,56 @@ internal class Program
         rootCommand.AddCommand(formatCodeCommand);
         return rootCommand;
     }
-
-    private static void Run(FileInfo[] input)
+    private static void Run(FileInfo input)
     {
-        var sourceTexts = input.Select(i => SourceText.FromFile(i.FullName));
-        var syntaxTrees = sourceTexts.Select(SyntaxTree.Parse);
-        var compilation = Compilation.Create(syntaxTrees.ToImmutableArray());
-        compilation.Dump();
+        var sourceText = SourceText.FromFile(input.FullName);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree));
+        var execResult = ScriptingEngine.Execute(compilation);
+        if (!execResult.Success)
+        {
+            foreach (var diag in execResult.Diagnostics) Console.WriteLine(diag);
+            return;
+        }
+        Console.WriteLine($"Result: {execResult.Result}");
     }
 
-    private static void GenerateDracoIR(FileInfo[] input, FileInfo? emitCS)
+    private static void GenerateDracoIR(FileInfo input, FileInfo? emitCS)
     {
-        var sourceTexts = input.Select(i => SourceText.FromFile(i.FullName));
-        var syntaxTrees = sourceTexts.Select(SyntaxTree.Parse);
-        var compilation = Compilation.Create(syntaxTrees.ToImmutableArray());
-        compilation.Dump();
+        var sourceText = SourceText.FromFile(input.FullName);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree));
+        using var irStream = new MemoryStream();
+        var emitResult = compilation.Emit(
+            peStream: new MemoryStream(),
+            dracoIrStream: irStream);
+        if (!emitResult.Success)
+        {
+            foreach (var diag in emitResult.Diagnostics) Console.WriteLine(diag);
+            return;
+        }
+        irStream.Position = 0;
+        var generatedIr = new StreamReader(irStream).ReadToEnd();
+        Console.WriteLine(generatedIr);
+        if (emitCS is not null) File.WriteAllText(emitCS.FullName, generatedIr);
     }
 
-    private static void GenerateExe(FileInfo[] input, FileInfo output, bool msbuildDiags) =>
-        throw new NotImplementedException();
+    private static void GenerateExe(FileInfo input, FileInfo output, bool msbuildDiags)
+    {
+        var sourceText = SourceText.FromFile(input.FullName);
+        var syntaxTree = SyntaxTree.Parse(sourceText);
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            assemblyName: output.Name);
+        using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
+        var emitResult = compilation.Emit(dllStream);
+        if (!emitResult.Success)
+        {
+            foreach (var diag in emitResult.Diagnostics.Select(x => msbuildDiags ? MakeMsbuildDiag(x) : x.ToString())) Console.WriteLine(diag);
+        }
+    }
 
     private static string MakeMsbuildDiag(Diagnostic original)
     {
@@ -88,5 +120,10 @@ internal class Program
         return $"{file} : {original.Severity.ToString().ToLower()} {original.Template.Code} : {original.Message}";
     }
 
-    private static void FormatCode(FileInfo[] input) => throw new NotImplementedException();
+    private static void FormatCode(FileInfo input)
+    {
+        var sourceText = SourceText.FromFile(input.FullName);
+        var parseTree = SyntaxTree.Parse(sourceText);
+        Console.WriteLine(parseTree.Format().ToString());
+    }
 }

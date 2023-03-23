@@ -328,14 +328,30 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
     public override Value VisitParameterExpression(BoundParameterExpression node) => new Value.Param(this.parameters[node.Parameter]);
     public override Value VisitLocalExpression(BoundLocalExpression node) => this.writer.Load(this.locals[node.Local]);
     public override Value VisitGlobalExpression(BoundGlobalExpression node) => this.writer.Load(this.GetGlobal(node.Global));
-    public override Value VisitFunctionExpression(BoundFunctionExpression node) => new Value.Proc(this.GetProcedure(node.Function));
+    public override Value VisitFunctionExpression(BoundFunctionExpression node)
+    {
+        // We temporarily handle intrinsics here
+        if (node.Function == IntrinsicSymbols.Println) return new Value.Intrinsic(node.Function, this.TranslateType(node.Function.Type));
+
+        // Default to procedure
+        return new Value.Proc(this.GetProcedure(node.Function));
+    }
 
     public override Value VisitUnitExpression(BoundUnitExpression node) => Value.Unit.Instance;
     public override Value VisitLiteralExpression(BoundLiteralExpression node) => new Value.Const(node.Value);
 
-    // TODO
-    // Should have been desugared
-    // public override Value VisitStringExpr(Ast.Expr.String node) => throw new InvalidOperationException();
+    public override Value VisitStringExpression(BoundStringExpression node)
+    {
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText text)
+        {
+            return new Value.Const(text.Text);
+        }
+        else
+        {
+            // TODO: Should have been desugared
+            throw new System.NotImplementedException();
+        }
+    }
 
     public override Value VisitLocalLvalue(BoundLocalLvalue node) => throw new InvalidOperationException("use CompileLValue instead");
 

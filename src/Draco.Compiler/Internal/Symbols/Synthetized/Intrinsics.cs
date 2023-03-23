@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
 
@@ -28,6 +30,8 @@ internal static class Intrinsics
         SynthetizedFunctionSymbol.BinaryOperator(token, leftType, rightType, returnType);
     private static FunctionSymbol Comparison(TokenKind token, Type leftType, Type rightType) =>
         SynthetizedFunctionSymbol.ComparisonOperator(token, leftType, rightType);
+    private static FunctionSymbol Function(string name, IEnumerable<Type> paramTypes, Type returnType) =>
+        new SynthetizedFunctionSymbol(name, paramTypes, returnType);
 
     public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Types.Intrinsics.Bool, Types.Intrinsics.Bool);
 
@@ -50,4 +54,7 @@ internal static class Intrinsics
 
     // TODO: Rest of float operators
     public static FunctionSymbol Float64_Mul { get; } = Binary(TokenKind.Star, Types.Intrinsics.Float64, Types.Intrinsics.Float64, Types.Intrinsics.Float64);
+
+    // NOTE: Temporary until we access BCL
+    public static FunctionSymbol Println { get; } = Function("println", new[] { Types.Intrinsics.String }, Types.Intrinsics.Unit);
 }

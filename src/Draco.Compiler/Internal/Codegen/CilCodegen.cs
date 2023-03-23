@@ -410,12 +410,9 @@ internal sealed class CilCodegen
             }
             else if (called is Value.Intrinsic intrinsic)
             {
+                if (intrinsic.Symbol == Symbols.Synthetized.Intrinsics.Println) encoder.Call(this.consoleWriteLineHandle);
                 // TODO
-                // if (intrinsic.Symbol == Intrinsics.Functions.Println) encoder.Call(this.consoleWriteLineHandle);
-                // TODO
-                // else throw new NotImplementedException();
-
-                throw new NotImplementedException();
+                else throw new NotImplementedException();
             }
             else
             {

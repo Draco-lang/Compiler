@@ -5,7 +5,7 @@ namespace Draco.Compiler.Api.Diagnostics;
 /// <summary>
 /// Information about a diagnostic message without location information.
 /// </summary>
-internal sealed class DiagnosticInfo
+public sealed class DiagnosticInfo
 {
     /// <summary>
     /// Constructs a <see cref="DiagnosticInfo"/> message.

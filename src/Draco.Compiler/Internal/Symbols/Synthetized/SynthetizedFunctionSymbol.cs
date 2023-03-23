@@ -47,7 +47,7 @@ internal sealed class SynthetizedFunctionSymbol : FunctionSymbol
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
 
     public override Type ReturnType { get; }
-    public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
+    public override Symbol? ContainingSymbol => null;
 
     public override string Name { get; }
 
@@ -61,5 +61,5 @@ internal sealed class SynthetizedFunctionSymbol : FunctionSymbol
         this.ReturnType = returnType;
     }
 
-    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
+    public override ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 }

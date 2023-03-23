@@ -88,6 +88,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         Debug.Assert(this.DeclaringCompilation is not null);
 
         var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Value!.Value);
-        return binder.BindGlobalValue(this.DeclarationSyntax.Value!.Value);
+        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
+        return binder.BindGlobalValue(this.DeclarationSyntax.Value!.Value, diagnostics);
     }
 }

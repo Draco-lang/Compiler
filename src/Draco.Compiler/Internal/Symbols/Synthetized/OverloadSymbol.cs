@@ -13,7 +13,7 @@ internal sealed class OverloadSymbol : Symbol
     /// </summary>
     public ImmutableArray<FunctionSymbol> Functions { get; }
 
-    public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
+    public override Symbol? ContainingSymbol => throw new System.NotSupportedException();
 
     public override string Name => this.Functions[0].Name;
 

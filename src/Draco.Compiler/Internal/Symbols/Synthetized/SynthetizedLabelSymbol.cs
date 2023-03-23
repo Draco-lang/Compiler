@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 internal sealed class SynthetizedLabelSymbol : LabelSymbol
 {
     public override string Name { get; }
-    public override Symbol? ContainingSymbol => throw new NotImplementedException();
+    public override Symbol? ContainingSymbol => null;
 
     public SynthetizedLabelSymbol(string name)
     {

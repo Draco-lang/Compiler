@@ -14,7 +14,7 @@ internal partial class Binder
     /// <param name="reference">The syntax referencing the symbol.</param>
     /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
     /// <returns>The looked up symbol, which might represent an error.</returns>
-    protected Symbol LookupValueSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
+    internal Symbol LookupValueSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
     {
         var result = this.LookupInternal(name, BinderFacts.IsValueSymbol, reference);
         return result.GetValue(name, reference, diagnostics);
@@ -27,7 +27,7 @@ internal partial class Binder
     /// <param name="reference">The syntax referencing the symbol.</param>
     /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
     /// <returns>The looked up symbol, which might represent an error.</returns>
-    protected TypeSymbol LookupTypeSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
+    internal TypeSymbol LookupTypeSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
     {
         var result = this.LookupInternal(name, BinderFacts.IsTypeSymbol, reference);
         return result.GetType(name, reference, diagnostics);
@@ -40,7 +40,7 @@ internal partial class Binder
     /// <param name="reference">The syntax referencing the symbol.</param>
     /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
     /// <returns>The looked up symbol, which might represent an error.</returns>
-    protected LabelSymbol LookupLabelSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
+    internal LabelSymbol LookupLabelSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
     {
         var result = this.LookupInternal(name, BinderFacts.IsLabelSymbol, reference);
         return result.GetLabel(name, reference, diagnostics);

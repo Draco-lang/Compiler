@@ -16,9 +16,9 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
     public override Types.Type ReturnType => Types.Intrinsics.Error;
 
-    public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
+    public override Symbol? ContainingSymbol => null;
 
-    public override Api.Semantics.ISymbol ToApiSymbol() => throw new System.NotImplementedException();
+    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 
     public NoOverloadFunctionSymbol(int parameterCount)
     {

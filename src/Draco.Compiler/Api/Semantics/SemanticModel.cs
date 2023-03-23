@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -83,175 +84,188 @@ public sealed partial class SemanticModel
     // Instead we could just always return a nullable or an error symbol when appropriate
 
     /// <summary>
-    /// Retrieves the <see cref="ISymbol"/> defined by <paramref name="subtree"/>.
+    /// Retrieves the <see cref="ISymbol"/> defined by <paramref name="syntax"/>.
     /// </summary>
-    /// <param name="subtree">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
-    /// <returns>The defined <see cref="ISymbol"/> by <paramref name="subtree"/>, or null if it does not
+    /// <param name="syntax">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
+    /// <returns>The defined <see cref="ISymbol"/> by <paramref name="syntax"/>, or null if it does not
     /// define any.</returns>
-    public ISymbol? GetDefinedSymbol(SyntaxNode subtree)
+    public ISymbol? GetDefinedSymbol(SyntaxNode syntax)
     {
-        if (!BinderFacts.DefinesSymbol(subtree)) return null;
-        // TODO: LOTS OF DUPLICATE CODE THIS IS BAD
-        // JUST LOOK AT THE FUNCTION BELOW
-        // ELIMINATE SOME OF THIS GARBAGE PLEASE
-        var binder = this.compilation.GetBinder(subtree);
-        if (binder.ContainingSymbol is SourceFunctionSymbol functionSymbol)
-        {
-            if (subtree is FunctionDeclarationSyntax)
-            {
-                // It's just the containing symbol
-                return functionSymbol.ToApiSymbol();
-            }
+        if (!BinderFacts.DefinesSymbol(syntax)) return null;
 
-            if (subtree is ParameterSyntax)
+        // We look up syntax based on the symbol in context
+        var binder = this.compilation.GetBinder(syntax);
+        switch (binder.ContainingSymbol)
+        {
+        case SourceFunctionSymbol function:
+        {
+            // Check if it's the function itself
+            if (function.DeclarationSyntax == syntax) return function.ToApiSymbol();
+
+            // If it's a parameter syntax, it's within the function
+            if (syntax is ParameterSyntax)
             {
                 // We can just search in the function symbol
-                var parameterSymbol = (Internal.Symbols.ParameterSymbol)functionSymbol.Parameters
+                var parameterSymbol = (Internal.Symbols.ParameterSymbol)function.Parameters
                     .Cast<ISourceSymbol>()
-                    .First(sym => subtree == sym.DeclarationSyntax);
+                    .First(sym => syntax == sym.DeclarationSyntax);
                 return parameterSymbol.ToApiSymbol();
             }
 
-            // TODO: We should somehow get the function to use the incremental binder in this context...
-            // Maybe don't expose the body at all?
-            // Or should the function symbol know about semantic context?
-            // Or define an accessor for body that takes an optional semantic model?
-            // var boundBody = functionSymbol.Body;
-
-            if (subtree is TypeSyntax or LabelSyntax)
+            // As a last resort, we look into the function body
+            // First, check if the syntax node is already cached
+            if (!this.syntaxMap.ContainsKey(syntax))
             {
-                // Labels and types bind to a symbol directly
-                if (!this.symbolMap.ContainsKey(subtree))
-                {
-                    var bodyBinder = this.GetBinder(functionSymbol);
-                    _ = bodyBinder.BindFunctionBody(functionSymbol.DeclarationSyntax.Body);
-                }
-
-                // Now the syntax node should be in the map
-                return this.symbolMap[subtree].ToApiSymbol();
+                // If not, bind it
+                var discardDiagnostics = new DiagnosticBag();
+                var bodyBinder = this.GetBinder(function);
+                _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
             }
-            else
-            {
-                // Expressions and statements are different, they become bound nodes
-                if (!this.syntaxMap.ContainsKey(subtree))
-                {
-                    var bodyBinder = this.GetBinder(functionSymbol);
-                    _ = bodyBinder.BindFunctionBody(functionSymbol.DeclarationSyntax.Body);
-                }
 
-                // Now the syntax node should be in the map
-                var boundNodes = this.syntaxMap[subtree];
-                // TODO: We need to deal with potential multiple returns here
-                if (boundNodes.Count != 1) throw new NotImplementedException();
-                return ExtractDefinedSymbol(boundNodes[0]).ToApiSymbol();
-            }
+            // Now the syntax node should be in the map
+            if (!this.syntaxMap.TryGetValue(syntax, out var boundNodes)) return null;
+
+            // TODO: We need to deal with potential multiple returns here
+            if (boundNodes.Count != 1) throw new NotImplementedException();
+
+            // Just return the singleton symbol
+            return ExtractDefinedSymbol(boundNodes[0]).ToApiSymbol();
         }
-        else if (binder.ContainingSymbol is SourceModuleSymbol module)
+        case SourceModuleSymbol module:
         {
-            var symbol = (Symbol)module.Members
+            // We try to look up the module-level declarations
+            var symbol = (Symbol?)module.Members
                 .OfType<ISourceSymbol>()
-                .First(sym => sym.DeclarationSyntax == subtree);
-            return symbol.ToApiSymbol();
+                .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
+            return symbol?.ToApiSymbol();
         }
-        else
-        {
-            // TODO
-            throw new NotImplementedException();
+        default:
+            return null;
         }
     }
 
     /// <summary>
-    /// Retrieves the <see cref="ISymbol"/> referenced by <paramref name="subtree"/>.
+    /// Retrieves the <see cref="ISymbol"/> referenced by <paramref name="syntax"/>.
     /// </summary>
-    /// <param name="subtree">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
-    /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="subtree"/>, or null
+    /// <param name="syntax">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
+    /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="syntax"/>, or null
     /// if it does not reference any.</returns>
-    public ISymbol? GetReferencedSymbol(SyntaxNode subtree)
+    public ISymbol? GetReferencedSymbol(SyntaxNode syntax)
     {
-        if (!BinderFacts.ReferencesSymbol(subtree)) return null;
-        var binder = this.compilation.GetBinder(subtree);
-        if (binder.ContainingSymbol is SourceFunctionSymbol functionSymbol)
+        if (!BinderFacts.ReferencesSymbol(syntax)) return null;
+
+        // We look up syntax based on the symbol in context
+        var binder = this.compilation.GetBinder(syntax);
+        switch (binder.ContainingSymbol)
         {
-            // TODO: We should somehow get the function to use the incremental binder in this context...
-            // Maybe don't expose the body at all?
-            // Or should the function symbol know about semantic context?
-            // Or define an accessor for body that takes an optional semantic model?
-            // var boundBody = functionSymbol.Body;
-
-            if (subtree is TypeSyntax or LabelSyntax)
+        case SourceFunctionSymbol function:
+        {
+            // If the syntax binds to a symbol directly, we check that map
+            if (BindsToSymbol(syntax))
             {
-                // Labels and types bind to a symbol directly
-                if (!this.symbolMap.ContainsKey(subtree))
+                // If not cached, bind the function body
+                if (!this.symbolMap.ContainsKey(syntax))
                 {
-                    var bodyBinder = this.GetBinder(functionSymbol);
-                    _ = bodyBinder.BindFunctionBody(functionSymbol.DeclarationSyntax.Body);
+                    var discardDiagnostics = new DiagnosticBag();
 
-                    // To make sure, we bind the return type too
-                    if (functionSymbol.DeclarationSyntax.ReturnType is not null)
+                    var bodyBinder = this.GetBinder(function);
+                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
+
+                    // Since the parameter types and the return type are in this scope too, bind them
+                    var functionSyntax = function.DeclarationSyntax;
+                    // Parameters
+                    foreach (var param in functionSyntax.ParameterList.Values)
                     {
-                        var diagnostics = this.compilation.GlobalDiagnosticBag;
-                        _ = bodyBinder.BindType(functionSymbol.DeclarationSyntax.ReturnType.Type, diagnostics);
+                        _ = bodyBinder.BindType(param.Type, discardDiagnostics);
+                    }
+                    // Return type
+                    if (functionSyntax.ReturnType is not null)
+                    {
+                        _ = bodyBinder.BindType(functionSyntax.ReturnType.Type, discardDiagnostics);
                     }
                 }
 
                 // Now the syntax node should be in the map
-                return this.symbolMap[subtree].ToApiSymbol();
+                return this.symbolMap.TryGetValue(syntax, out var symbol)
+                    ? symbol.ToApiSymbol()
+                    : null;
             }
             else
             {
-                // Expressions and statements are different, they become bound nodes
-                if (!this.syntaxMap.ContainsKey(subtree))
+                // Binds to a bound node
+                // If not cached, bind function body
+                if (!this.syntaxMap.ContainsKey(syntax))
                 {
-                    var bodyBinder = this.GetBinder(functionSymbol);
-                    _ = bodyBinder.BindFunctionBody(functionSymbol.DeclarationSyntax.Body);
+                    var discardDiagnostics = new DiagnosticBag();
+
+                    var bodyBinder = this.GetBinder(function);
+                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
                 }
 
                 // Now the syntax node should be in the map
-                var boundNodes = this.syntaxMap[subtree];
+                if (!this.syntaxMap.TryGetValue(syntax, out var boundNodes)) return null;
+
                 // TODO: We need to deal with potential multiple returns here
                 if (boundNodes.Count != 1) throw new NotImplementedException();
+
+                // Just return the singleton symbol
                 return ExtractReferencedSymbol(boundNodes[0]).ToApiSymbol();
             }
         }
-        else if (binder.ContainingSymbol is SourceModuleSymbol module)
+        case SourceModuleSymbol module:
         {
-            if (!this.syntaxMap.ContainsKey(subtree))
+            var isInMap = BindsToSymbol(syntax)
+                ? this.symbolMap.ContainsKey(syntax)
+                : this.syntaxMap.ContainsKey(syntax);
+            if (!isInMap)
             {
                 // We don't have a choice, we need to go through top-level module elements
                 // and bind everything incrementally
                 var moduleBinder = this.GetBinder(module);
-                var diagnostics = this.compilation.GlobalDiagnosticBag;
+                var discardDiagnostics = new DiagnosticBag();
                 foreach (var symbol in module.Members)
                 {
-                    if (symbol is SourceGlobalSymbol global)
+                    switch (symbol)
                     {
-                        if (global.DeclarationSyntax.Type is not null)
+                    case SourceGlobalSymbol global:
+                    {
+                        // Bind type and value
+                        var globalSyntax = global.DeclarationSyntax;
+                        if (globalSyntax.Type is not null)
                         {
-                            _ = moduleBinder.BindType(global.DeclarationSyntax.Type.Type, diagnostics);
+                            _ = moduleBinder.BindType(globalSyntax.Type.Type, discardDiagnostics);
                         }
-                        if (global.DeclarationSyntax.Value is not null)
+                        if (globalSyntax.Value is not null)
                         {
-                            _ = moduleBinder.BindGlobalValue(global.DeclarationSyntax.Value.Value);
+                            _ = moduleBinder.BindGlobalValue(globalSyntax.Value.Value, discardDiagnostics);
                         }
+                        break;
                     }
-                    else
-                    {
-                        // NOTE: Anything else to handle?
+                    // NOTE: Anything else to handle?
                     }
                 }
             }
 
-            // TODO: Copypasted from above, maybe just factor out a method to collect bound nodes?
-            // Now the syntax node should be in the map
-            var boundNodes = this.syntaxMap[subtree];
-            // TODO: We need to deal with potential multiple returns here
-            if (boundNodes.Count != 1) throw new NotImplementedException();
-            return ExtractReferencedSymbol(boundNodes[0]).ToApiSymbol();
+            // Now the syntax node should be in the appropriate map
+            if (BindsToSymbol(syntax))
+            {
+                return this.symbolMap.TryGetValue(syntax, out var symbol)
+                    ? symbol.ToApiSymbol()
+                    : null;
+            }
+            else
+            {
+                if (!this.syntaxMap.TryGetValue(syntax, out var boundNodes)) return null;
+
+                // TODO: We need to deal with potential multiple returns here
+                if (boundNodes.Count != 1) throw new NotImplementedException();
+
+                // Just return the singleton symbol
+                return ExtractReferencedSymbol(boundNodes[0]).ToApiSymbol();
+            }
         }
-        else
-        {
-            // TODO
-            throw new NotImplementedException();
+        default:
+            return null;
         }
     }
 
@@ -260,6 +274,8 @@ public sealed partial class SemanticModel
         var binder = this.compilation.GetBinder(symbol);
         return new IncrementalBinder(binder, this);
     }
+
+    private static bool BindsToSymbol(SyntaxNode syntax) => syntax is TypeSyntax or LabelSyntax;
 
     private static Symbol ExtractDefinedSymbol(BoundNode node) => node switch
     {

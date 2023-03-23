@@ -106,6 +106,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     {
         Debug.Assert(this.DeclaringCompilation is not null);
         var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Body);
-        return binder.BindFunctionBody(this.DeclarationSyntax.Body);
+        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
+        return binder.BindFunctionBody(this.DeclarationSyntax.Body, diagnostics);
     }
 }

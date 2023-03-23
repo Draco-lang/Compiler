@@ -3,6 +3,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 
@@ -57,22 +58,18 @@ internal abstract partial class Binder
     protected virtual Binder GetBinder(SyntaxNode node) =>
         this.Compilation.GetBinder(node);
 
-    public BoundStatement BindFunctionBody(FunctionBodySyntax syntax)
+    public BoundStatement BindFunctionBody(FunctionBodySyntax syntax, DiagnosticBag diagnostics)
     {
-        // NOTE: We are reusing the global bag, maybe not the best idea
         var constraints = new ConstraintSolver();
-        var diagnostics = this.Compilation.GlobalDiagnosticBag;
         var untypedStatement = this.BindStatement(syntax, constraints, diagnostics);
         constraints.Solve(diagnostics);
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
         return boundStatement;
     }
 
-    public BoundExpression BindGlobalValue(ExpressionSyntax syntax)
+    public BoundExpression BindGlobalValue(ExpressionSyntax syntax, DiagnosticBag diagnostics)
     {
-        // NOTE: We are reusing the global bag, maybe not the best idea
         var constraints = new ConstraintSolver();
-        var diagnostics = this.Compilation.GlobalDiagnosticBag;
         var untypedExpression = this.BindExpression(syntax, constraints, diagnostics);
         constraints.Solve(diagnostics);
         var boundExpression = this.TypeExpression(untypedExpression, constraints, diagnostics);

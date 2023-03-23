@@ -99,6 +99,11 @@ internal partial class BoundLocalExpression
     public override Type Type => this.Local.Type;
 }
 
+internal partial class BoundFunctionExpression
+{
+    public override Type Type => this.Function.Type;
+}
+
 internal partial class BoundReferenceErrorExpression
 {
     public override Type Type => Intrinsics.Error;

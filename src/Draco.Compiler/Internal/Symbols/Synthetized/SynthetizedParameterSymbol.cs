@@ -10,12 +10,12 @@ internal sealed class SynthetizedParameterSymbol : ParameterSymbol
 {
     public override Type Type { get; }
 
-    public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
+    public override Symbol? ContainingSymbol => null;
 
     public SynthetizedParameterSymbol(Type type)
     {
         this.Type = type;
     }
 
-    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
+    public override ISymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
 }

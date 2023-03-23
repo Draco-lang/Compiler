@@ -11,7 +11,7 @@ internal sealed class SynthetizedTypeSymbol : TypeSymbol
     public override string Name { get; }
     public override Type Type { get; }
 
-    public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
+    public override Symbol? ContainingSymbol => null;
 
     public SynthetizedTypeSymbol(string name, Type type)
     {
@@ -24,5 +24,5 @@ internal sealed class SynthetizedTypeSymbol : TypeSymbol
     {
     }
 
-    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
+    public override ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 }

@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
 
@@ -74,14 +75,28 @@ internal partial class Binder
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         if (symbol.IsError) return new UntypedReferenceErrorExpression(syntax, symbol);
-        return symbol switch
+        switch (symbol)
         {
-            ParameterSymbol param => new UntypedParameterExpression(syntax, param),
-            UntypedLocalSymbol local => new UntypedLocalExpression(syntax, local, constraints.GetLocal(local)),
-            GlobalSymbol global => new UntypedGlobalExpression(syntax, global),
-            FunctionSymbol func => new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type),
-            _ => throw new InvalidOperationException(),
-        };
+        case Symbol when symbol.IsError:
+            return new UntypedReferenceErrorExpression(syntax, symbol);
+        case ParameterSymbol param:
+            return new UntypedParameterExpression(syntax, param);
+        case UntypedLocalSymbol local:
+            return new UntypedLocalExpression(syntax, local, constraints.GetLocal(local));
+        case GlobalSymbol global:
+            return new UntypedGlobalExpression(syntax, global);
+        case FunctionSymbol func:
+            return new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type);
+        case OverloadSymbol overload:
+        {
+            var (promise, callSite) = constraints.Overload(overload);
+            promise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+            return new UntypedFunctionExpression(syntax, promise, callSite);
+        }
+        default:
+            throw new InvalidOperationException();
+        }
     }
 
     private UntypedExpression BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

@@ -77,7 +77,7 @@ internal partial class Binder
         return symbol switch
         {
             ParameterSymbol param => new UntypedParameterExpression(syntax, param),
-            UntypedLocalSymbol local => new UntypedLocalExpression(syntax, local, constraints.LocalReference(local, syntax)),
+            UntypedLocalSymbol local => new UntypedLocalExpression(syntax, local, constraints.GetLocal(local)),
             GlobalSymbol global => new UntypedGlobalExpression(syntax, global),
             FunctionSymbol func => new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type),
             _ => throw new InvalidOperationException(),

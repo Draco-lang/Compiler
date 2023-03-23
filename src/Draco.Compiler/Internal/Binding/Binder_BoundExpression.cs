@@ -67,7 +67,7 @@ internal partial class Binder
         new BoundParameterExpression(param.Syntax, param.Parameter);
 
     private BoundExpression TypeLocalExpression(UntypedLocalExpression local, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundLocalExpression(local.Syntax, constraints.GetTypedLocal(diagnostics, local.Local));
+        new BoundLocalExpression(local.Syntax, constraints.GetTypedLocal(local.Local, diagnostics));
 
     private BoundExpression TypeGlobalExpression(UntypedGlobalExpression global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalExpression(global.Syntax, global.Global);
@@ -87,7 +87,7 @@ internal partial class Binder
     private BoundExpression TypeBlockExpression(UntypedBlockExpression block, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var locals = block.Locals
-            .Select(l => constraints.GetTypedLocal(diagnostics, l))
+            .Select(l => constraints.GetTypedLocal(l, diagnostics))
             .ToImmutableArray();
         var typedStatements = block.Statements
             .Select(s => this.TypeStatement(s, constraints, diagnostics))
@@ -104,7 +104,7 @@ internal partial class Binder
         var typedCondition = this.TypeExpression(@if.Condition, constraints, diagnostics);
         var typedThen = this.TypeExpression(@if.Then, constraints, diagnostics);
         var typedElse = this.TypeExpression(@if.Else, constraints, diagnostics);
-        var resultType = constraints.Solver.Unwrap(@if.TypeRequired);
+        var resultType = constraints.Unwrap(@if.TypeRequired);
         return new BoundIfExpression(@if.Syntax, typedCondition, typedThen, typedElse, resultType);
     }
 
@@ -121,7 +121,7 @@ internal partial class Binder
         var typedArgs = call.Arguments
             .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
-        var resultType = constraints.Solver.Unwrap(call.TypeRequired);
+        var resultType = constraints.Unwrap(call.TypeRequired);
         return new BoundCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
     }
 
@@ -137,7 +137,7 @@ internal partial class Binder
     {
         var typedOperand = this.TypeExpression(ury.Operand, constraints, diagnostics);
         var unaryOperator = ury.Operator.Result;
-        var resultType = constraints.Solver.Unwrap(ury.TypeRequired);
+        var resultType = constraints.Unwrap(ury.TypeRequired);
         return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand, resultType);
     }
 
@@ -146,7 +146,7 @@ internal partial class Binder
         var typedLeft = this.TypeExpression(bin.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(bin.Right, constraints, diagnostics);
         var binaryOperator = bin.Operator.Result;
-        var resultType = constraints.Solver.Unwrap(bin.TypeRequired);
+        var resultType = constraints.Unwrap(bin.TypeRequired);
         return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight, resultType);
     }
 

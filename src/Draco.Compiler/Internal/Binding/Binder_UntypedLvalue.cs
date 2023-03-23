@@ -32,7 +32,7 @@ internal partial class Binder
         switch (symbol)
         {
         case UntypedLocalSymbol local:
-            return new UntypedLocalLvalue(syntax, local, constraints.LocalReference(local, syntax));
+            return new UntypedLocalLvalue(syntax, local, constraints.GetLocal(local));
         case GlobalSymbol global:
             return new UntypedGlobalLvalue(syntax, global);
         default:

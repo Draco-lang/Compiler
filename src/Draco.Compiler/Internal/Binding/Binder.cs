@@ -63,7 +63,7 @@ internal abstract partial class Binder
         var constraints = new ConstraintSolver();
         var diagnostics = this.Compilation.GlobalDiagnosticBag;
         var untypedStatement = this.BindStatement(syntax, constraints, diagnostics);
-        constraints.Solver.Solve(diagnostics);
+        constraints.Solve(diagnostics);
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
         return boundStatement;
     }
@@ -74,7 +74,7 @@ internal abstract partial class Binder
         var constraints = new ConstraintSolver();
         var diagnostics = this.Compilation.GlobalDiagnosticBag;
         var untypedExpression = this.BindExpression(syntax, constraints, diagnostics);
-        constraints.Solver.Solve(diagnostics);
+        constraints.Solve(diagnostics);
         var boundExpression = this.TypeExpression(untypedExpression, constraints, diagnostics);
         return boundExpression;
     }

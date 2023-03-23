@@ -25,7 +25,7 @@ internal partial class Binder
     };
 
     private BoundLvalue TypeLocalLvalue(UntypedLocalLvalue local, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundLocalLvalue(local.Syntax, constraints.GetTypedLocal(diagnostics, local.Local));
+        new BoundLocalLvalue(local.Syntax, constraints.GetTypedLocal(local.Local, diagnostics));
 
     private BoundLvalue TypeGlobalLvalue(UntypedGlobalLvalue global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalLvalue(global.Syntax, global.Global);

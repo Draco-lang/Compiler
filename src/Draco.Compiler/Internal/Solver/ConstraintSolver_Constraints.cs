@@ -2,6 +2,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Types;
+using static Draco.Compiler.Internal.Utilities.DotAttribs;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -67,6 +68,25 @@ internal sealed partial class ConstraintSolver
         }
         // Depends if we removed anything
         return advanced ? SolveState.Progressing : SolveState.Stale;
+    }
+
+    private void FailSilently(Constraint constraint)
+    {
+        switch (constraint)
+        {
+        case OverloadConstraint overload:
+            this.FailSilently(overload);
+            break;
+        }
+    }
+
+    private void FailSilently(OverloadConstraint constraint)
+    {
+        // Best-effort shape approximation
+        var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionType functionType
+            ? new NoOverloadFunctionSymbol(functionType.ParameterTypes.Length)
+            : new NoOverloadFunctionSymbol(1);
+        constraint.Promise.FailSilently(errorSymbol);
     }
 
     private bool Matches(Type left, Type right)

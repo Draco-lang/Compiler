@@ -72,6 +72,9 @@ internal sealed partial class ConstraintSolver
                 template: TypeCheckingErrors.InferenceIncomplete,
                 location: null,
                 formatArgs: this.ContextName));
+
+            // To avoid major trip-ups later, we resolve all constraints to some sentinel value
+            foreach (var constraint in this.constraints) this.FailSilently(constraint);
         }
     }
 

@@ -13,10 +13,10 @@ public sealed class DiagnosticRelatedInformation
     /// <param name="formatArgs">The format arguments.</param>
     /// <returns>The constructed <see cref="DiagnosticRelatedInformation"/>.</returns>
     public static DiagnosticRelatedInformation Create(
-        Location location,
+        Location? location,
         string format,
         params object?[] formatArgs) => new(
-            location: location,
+            location: location ?? Location.None,
             format: format,
             formatArgs: formatArgs);
 

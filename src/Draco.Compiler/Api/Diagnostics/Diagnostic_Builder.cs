@@ -81,8 +81,11 @@ public sealed partial class Diagnostic
             return this;
         }
 
-        public Builder WithRelatedInformation(Location location, string format, params object?[] formatArgs) => this
-            .WithRelatedInformation(new DiagnosticRelatedInformation(location, format, formatArgs));
+        public Builder WithRelatedInformation(Location? location, string format, params object?[] formatArgs) => this
+            .WithRelatedInformation(DiagnosticRelatedInformation.Create(
+                location: location,
+                format: format,
+                formatArgs: formatArgs));
 
         public Builder WithRelatedInformation(string format, params object?[] formatArgs) => this
             .WithRelatedInformation(Location.None, format, formatArgs);

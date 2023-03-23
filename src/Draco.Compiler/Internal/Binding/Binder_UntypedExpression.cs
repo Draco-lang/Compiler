@@ -5,6 +5,7 @@ using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -114,7 +115,14 @@ internal partial class Binder
         // Return type constraint
         var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
         Debug.Assert(containingFunction is not null);
-        constraints.Return(value, containingFunction, syntax);
+        constraints
+            .Assignable(containingFunction.ReturnType, value.TypeRequired)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location)
+                .WithRelatedInformation(
+                    format: "return type declared to be {0}",
+                    formatArgs: containingFunction.ReturnType,
+                    location: (containingFunction as SourceFunctionSymbol)?.DeclarationSyntax?.Location));
 
         return new UntypedReturnExpression(syntax, value);
     }
@@ -122,13 +130,34 @@ internal partial class Binder
     private UntypedExpression BindIfExpression(IfExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
+        // Condition must be bool
+        constraints
+            .SameType(Types.Intrinsics.Bool, condition.TypeRequired)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+
         var then = this.BindExpression(syntax.Then, constraints, diagnostics);
         var @else = syntax.Else is null
             ? UntypedTreeFactory.UnitExpression()
             : this.BindExpression(syntax.Else.Expression, constraints, diagnostics);
 
-        constraints.IsCondition(condition);
-        var resultType = constraints.CommonType(then, @else);
+        // Then and else must be compatible types
+        var resultType = constraints
+            .CommonType(then.TypeRequired, @else.TypeRequired)
+            .ConfigureDiagnostic(diag =>
+            {
+                // The location will point at the else value, assuming that the latter expression is
+                // the offending one
+                // If there is no else clause, we just point at the then clause
+                diag.WithLocation(syntax.Else is null
+                    ? ExtractValueSyntax(syntax.Then).Location
+                    : ExtractValueSyntax(syntax.Else.Expression).Location);
+                // If there is an else clause, we annotate the then clause as related info
+                diag.WithRelatedInformation(
+                    format: "the other branch is inferred to be {0}",
+                    formatArgs: then.TypeRequired,
+                    location: ExtractValueSyntax(syntax.Then).Location);
+            }).Result;
 
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
     }
@@ -138,11 +167,20 @@ internal partial class Binder
         var binder = this.GetBinder(syntax);
 
         var condition = binder.BindExpression(syntax.Condition, constraints, diagnostics);
+        // Condition must be bool
+        constraints
+            .SameType(Types.Intrinsics.Bool, condition.TypeRequired)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+
         var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
+        // Body must be unit
+        constraints
+            .SameType(Types.Intrinsics.Unit, then.TypeRequired)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(ExtractValueSyntax(syntax.Then).Location));
 
-        constraints.IsCondition(condition);
-        constraints.IsUnit(then);
-
+        // Resolve labels
         var continueLabel = binder.DeclaredSymbols
             .OfType<LabelSymbol>()
             .First(sym => sym.Name == "continue");
@@ -160,7 +198,11 @@ internal partial class Binder
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
 
-        var returnType = constraints.CallFunction(method, args, syntax);
+        var returnType = constraints
+            .Call(method.TypeRequired, args.Select(arg => arg.TypeRequired))
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location))
+            .Result;
 
         return new UntypedCallExpression(syntax, method, args, returnType);
     }
@@ -172,7 +214,16 @@ internal partial class Binder
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
 
-        var (symbolPromise, resultType) = constraints.CallUnaryOperator(operatorSymbol, operand, syntax);
+        // Resolve symbol overload
+        var (symbolPromise, callSite) = constraints.Overload(operatorSymbol);
+        symbolPromise.ConfigureDiagnostic(diag => diag
+            .WithLocation(syntax.Operator.Location));
+        // Call the operator
+        var resultType = constraints
+            .Call(callSite, new[] { operand.TypeRequired })
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location))
+            .Result;
 
         return new UntypedUnaryExpression(syntax, symbolPromise, operand, resultType);
     }
@@ -184,7 +235,11 @@ internal partial class Binder
             var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            constraints.IsAssignable(left, right, syntax);
+            // Right must be assignable to left
+            constraints
+                .Assignable(left.Type, right.TypeRequired)
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Location));
 
             return new UntypedAssignmentExpression(syntax, null, left, right);
         }
@@ -193,8 +248,15 @@ internal partial class Binder
             var left = this.BindExpression(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            constraints.IsBool(left);
-            constraints.IsBool(right);
+            // Both left and right must be bool
+            constraints
+                .SameType(Types.Intrinsics.Bool, left.TypeRequired)
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Left.Location));
+            constraints
+                .SameType(Types.Intrinsics.Bool, right.TypeRequired)
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Right.Location));
 
             return syntax.Operator.Kind == TokenKind.KeywordAnd
                 ? new UntypedAndExpression(syntax, left, right)
@@ -209,8 +271,23 @@ internal partial class Binder
             var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            var (symbolPromise, resultType) = constraints.CallBinaryOperator(operatorSymbol, left, right, syntax);
-            constraints.IsAssignable(left, resultType, syntax);
+            // Resolve symbol overload
+            var (symbolPromise, callSite) = constraints.Overload(operatorSymbol);
+            symbolPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Operator.Location));
+            // Call the operator
+            var resultType = constraints
+                .Call(callSite, new[] { left.Type, right.TypeRequired })
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Location))
+                .Result;
+            // The result of the binary operator must be assignable to the left-hand side
+            // For example, a + b in the form of a += b means that a + b has to result in a type
+            // that is assignable to a, hence the extra constraint
+            constraints
+                .Assignable(left.Type, resultType)
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Location));
 
             return new UntypedAssignmentExpression(syntax, symbolPromise, left, right);
         }
@@ -222,7 +299,16 @@ internal partial class Binder
             var left = this.BindExpression(syntax.Left, constraints, diagnostics);
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            var (symbolPromise, resultType) = constraints.CallBinaryOperator(operatorSymbol, left, right, syntax);
+            // Resolve symbol overload
+            var (symbolPromise, callSite) = constraints.Overload(operatorSymbol);
+            symbolPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Operator.Location));
+            // Call the operator
+            var resultType = constraints
+                .Call(callSite, new[] { left.TypeRequired, right.TypeRequired })
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Location))
+                .Result;
 
             return new UntypedBinaryExpression(syntax, symbolPromise, left, right, resultType);
         }
@@ -254,8 +340,30 @@ internal partial class Binder
         var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
         // NOTE: We know it must be bool, no need to pass it on to comparison
-        var symbolPromise = constraints.CallComparisonOperator(operatorSymbol, prev, right, syntax);
+        // Resolve symbol overload
+        var (symbolPromise, callSite) = constraints.Overload(operatorSymbol);
+        symbolPromise.ConfigureDiagnostic(diag => diag
+            .WithLocation(syntax.Operator.Location));
+        // Call the operator
+        var resultType = constraints
+            .Call(callSite, new[] { prev.TypeRequired, right.TypeRequired })
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location))
+            .Result;
+        // For safety, we assume it has to be bool
+        constraints
+            .SameType(Types.Intrinsics.Bool, resultType)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Operator.Location));
 
         return new UntypedComparison(syntax, symbolPromise, right);
     }
+
+    private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch
+    {
+        IfExpressionSyntax @if => ExtractValueSyntax(@if.Then),
+        WhileExpressionSyntax @while => ExtractValueSyntax(@while.Then),
+        BlockExpressionSyntax block => block.Value is null ? block : ExtractValueSyntax(block.Value),
+        _ => syntax,
+    };
 }

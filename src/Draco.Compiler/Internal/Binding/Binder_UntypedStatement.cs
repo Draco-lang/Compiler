@@ -74,7 +74,15 @@ internal partial class Binder
         // Constraint return type
         var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
         Debug.Assert(containingFunction is not null);
-        constraints.Return(value, containingFunction, syntax);
+        // TODO: Copy-pasta from return expression binding
+        constraints
+            .Assignable(containingFunction.ReturnType, value.TypeRequired)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location)
+                .WithRelatedInformation(
+                    format: "return type declared to be {0}",
+                    formatArgs: containingFunction.ReturnType,
+                    location: (containingFunction as SourceFunctionSymbol)?.DeclarationSyntax?.Location));
 
         return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
     }
@@ -103,7 +111,15 @@ internal partial class Binder
         var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);
 
-        constraints.LocalDeclaration(localSymbol, type, value, syntax);
+        var declaredType = constraints.AddLocal(localSymbol, (type as TypeSymbol)?.Type);
+        if (value is not null)
+        {
+            // It has to be assignable
+            constraints
+                .Assignable(declaredType, value.TypeRequired)
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Value!.Value.Location));
+        }
 
         return new UntypedLocalDeclaration(syntax, localSymbol, value);
     }

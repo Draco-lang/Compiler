@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -11,7 +12,6 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Diagnostic = Draco.Compiler.Api.Diagnostics.Diagnostic;
 
 namespace Draco.Compiler.Api;
 

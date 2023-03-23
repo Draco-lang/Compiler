@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.UntypedTree;
@@ -18,7 +19,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped statement for <paramref name="syntax"/>.</returns>
-    protected UntypedStatement BindStatement(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
+    protected UntypedStatement BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => new UntypedUnexpectedStatement(syntax),
@@ -34,13 +35,13 @@ internal partial class Binder
         _ => throw new System.ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private UntypedStatement BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedStatement BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var expr = this.BindExpression(syntax.Expression, constraints, diagnostics);
         return new UntypedExpressionStatement(syntax, expr);
     }
 
-    private UntypedStatement BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedStatement BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
         var locals = binder.DeclaredSymbols
@@ -65,7 +66,7 @@ internal partial class Binder
             new UntypedBlockExpression(syntax, locals, statements.ToImmutableArray(), UntypedUnitExpression.Default));
     }
 
-    private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
         var value = binder.BindExpression(syntax.Value, constraints, diagnostics);
@@ -78,7 +79,7 @@ internal partial class Binder
         return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
     }
 
-    private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
         var labelSymbol = (LabelSymbol?)this.DeclaredSymbols
@@ -90,7 +91,7 @@ internal partial class Binder
         return new UntypedLabelStatement(syntax, labelSymbol);
     }
 
-    private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
         var localSymbol = (UntypedLocalSymbol?)this.DeclaredSymbols

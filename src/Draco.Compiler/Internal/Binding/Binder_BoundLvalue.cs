@@ -1,6 +1,7 @@
 using System;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -14,7 +15,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The bound lvalue for <paramref name="lvalue"/>.</returns>
-    internal virtual BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintBag constraints, DiagnosticBag diagnostics) => lvalue switch
+    internal virtual BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintSolver constraints, DiagnosticBag diagnostics) => lvalue switch
     {
         UntypedUnexpectedLvalue unexpected => new BoundUnexpectedLvalue(unexpected.Syntax),
         UntypedIllegalLvalue illegal => new BoundIllegalLvalue(illegal.Syntax),
@@ -23,9 +24,9 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };
 
-    private BoundLvalue TypeLocalLvalue(UntypedLocalLvalue local, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+    private BoundLvalue TypeLocalLvalue(UntypedLocalLvalue local, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundLocalLvalue(local.Syntax, constraints.GetTypedLocal(diagnostics, local.Local));
 
-    private BoundLvalue TypeGlobalLvalue(UntypedGlobalLvalue global, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+    private BoundLvalue TypeGlobalLvalue(UntypedGlobalLvalue global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalLvalue(global.Syntax, global.Global);
 }

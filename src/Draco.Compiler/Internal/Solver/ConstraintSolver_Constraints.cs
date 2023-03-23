@@ -8,31 +8,6 @@ namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
-    private readonly Dictionary<TypeVariable, Type> substitutions = new(ReferenceEqualityComparer.Instance);
-
-    /// <summary>
-    /// Unwraps a potential type-variable into the inferred type.
-    /// </summary>
-    /// <param name="type">The type to unwrap.</param>
-    /// <returns>The inferred type.</returns>
-    public Type Unwrap(Type type)
-    {
-        // If not a type-variable, we consider it substituted
-        if (type is not TypeVariable typeVar) return type;
-        // If it is, but has no substitutions, just return it as-is
-        if (!this.substitutions.TryGetValue(typeVar, out var substitution)) return typeVar;
-        // If the substitution is also a type-variable, we prune
-        if (substitution is TypeVariable)
-        {
-            substitution = this.Unwrap(substitution);
-            this.substitutions[typeVar] = substitution;
-        }
-        return substitution;
-    }
-
-    private void Substitute(TypeVariable typeVar, Type type) =>
-        this.substitutions.Add(typeVar, type);
-
     private SolveState Solve(DiagnosticBag diagnostics, Constraint constraint) => constraint switch
     {
         SameTypeConstraint c => this.Solve(diagnostics, c),

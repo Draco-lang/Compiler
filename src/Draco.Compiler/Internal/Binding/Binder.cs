@@ -3,6 +3,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -59,7 +60,7 @@ internal abstract partial class Binder
     public BoundStatement BindFunctionBody(FunctionBodySyntax syntax)
     {
         // NOTE: We are reusing the global bag, maybe not the best idea
-        var constraints = new ConstraintBag();
+        var constraints = new ConstraintSolver();
         var diagnostics = this.Compilation.GlobalDiagnosticBag;
         var untypedStatement = this.BindStatement(syntax, constraints, diagnostics);
         constraints.Solver.Solve(diagnostics);
@@ -70,7 +71,7 @@ internal abstract partial class Binder
     public BoundExpression BindGlobalValue(ExpressionSyntax syntax)
     {
         // NOTE: We are reusing the global bag, maybe not the best idea
-        var constraints = new ConstraintBag();
+        var constraints = new ConstraintSolver();
         var diagnostics = this.Compilation.GlobalDiagnosticBag;
         var untypedExpression = this.BindExpression(syntax, constraints, diagnostics);
         constraints.Solver.Solve(diagnostics);

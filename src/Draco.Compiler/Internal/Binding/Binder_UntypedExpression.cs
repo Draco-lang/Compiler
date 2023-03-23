@@ -21,7 +21,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped expression for <paramref name="syntax"/>.</returns>
-    protected UntypedExpression BindExpression(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
+    protected UntypedExpression BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedExpressionSyntax => new UntypedUnexpectedExpression(syntax),
@@ -42,7 +42,7 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private UntypedExpression BindStatementExpression(StatementExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindStatementExpression(StatementExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // We just desugar stmt; into { stmt; }
         var stmt = this.BindStatement(syntax.Statement, constraints, diagnostics);
@@ -53,13 +53,13 @@ internal partial class Binder
             value: UntypedUnitExpression.Default);
     }
 
-    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new UntypedLiteralExpression(syntax, syntax.Literal.Value);
 
-    private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+    private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new UntypedStringExpression(syntax, syntax.Parts.Select(p => this.BindStringPart(p, constraints, diagnostics)).ToImmutableArray());
 
-    private UntypedStringPart BindStringPart(StringPartSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
+    private UntypedStringPart BindStringPart(StringPartSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedStringPartSyntax => new UntypedUnexpectedStringPart(syntax),
@@ -70,7 +70,7 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         if (symbol.IsError) return new UntypedReferenceErrorExpression(syntax, symbol);
@@ -84,7 +84,7 @@ internal partial class Binder
         };
     }
 
-    private UntypedExpression BindBlockExpression(BlockExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
         var locals = binder.DeclaredSymbols
@@ -99,13 +99,13 @@ internal partial class Binder
         return new UntypedBlockExpression(syntax, locals, statements, value);
     }
 
-    private UntypedExpression BindGotoExpression(GotoExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindGotoExpression(GotoExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var target = (LabelSymbol)this.BindLabel(syntax.Target, constraints, diagnostics);
         return new UntypedGotoExpression(syntax, target);
     }
 
-    private UntypedExpression BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var value = syntax.Value is null
             ? UntypedUnitExpression.Default
@@ -119,7 +119,7 @@ internal partial class Binder
         return new UntypedReturnExpression(syntax, value);
     }
 
-    private UntypedExpression BindIfExpression(IfExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindIfExpression(IfExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
         var then = this.BindExpression(syntax.Then, constraints, diagnostics);
@@ -133,7 +133,7 @@ internal partial class Binder
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
     }
 
-    private UntypedExpression BindWhileExpression(WhileExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindWhileExpression(WhileExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
 
@@ -153,7 +153,7 @@ internal partial class Binder
         return new UntypedWhileExpression(syntax, condition, then, continueLabel, breakLabel);
     }
 
-    private UntypedExpression BindCallExpression(CallExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var method = this.BindExpression(syntax.Function, constraints, diagnostics);
         var args = syntax.ArgumentList.Values
@@ -165,7 +165,7 @@ internal partial class Binder
         return new UntypedCallExpression(syntax, method, args, returnType);
     }
 
-    private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // Get the unary operator symbol
         var operatorName = FunctionSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
@@ -177,7 +177,7 @@ internal partial class Binder
         return new UntypedUnaryExpression(syntax, symbolPromise, operand, resultType);
     }
 
-    private UntypedExpression BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         if (syntax.Operator.Kind == TokenKind.Assign)
         {
@@ -228,7 +228,7 @@ internal partial class Binder
         }
     }
 
-    private UntypedExpression BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var first = this.BindExpression(syntax.Left, constraints, diagnostics);
         var comparisons = ImmutableArray.CreateBuilder<UntypedComparison>();
@@ -245,7 +245,7 @@ internal partial class Binder
     private UntypedComparison BindComparison(
         UntypedExpression prev,
         ComparisonElementSyntax syntax,
-        ConstraintBag constraints,
+        ConstraintSolver constraints,
         DiagnosticBag diagnostics)
     {
         // Get the comparison operator symbol

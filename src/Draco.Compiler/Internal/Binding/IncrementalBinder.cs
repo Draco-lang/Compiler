@@ -4,6 +4,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.UntypedTree;
 
@@ -50,16 +51,16 @@ public sealed partial class SemanticModel
         internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference) =>
             this.UnderlyingBinder.LookupLocal(result, name, ref flags, allowSymbol, currentReference);
 
-        internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));
 
-        internal override BoundExpression TypeExpression(UntypedExpression expression, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        internal override BoundExpression TypeExpression(UntypedExpression expression, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(expression, () => base.TypeExpression(expression, constraints, diagnostics));
 
-        internal override BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        internal override BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(lvalue, () => base.TypeLvalue(lvalue, constraints, diagnostics));
 
-        internal override Symbol BindLabel(LabelSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics) =>
+        internal override Symbol BindLabel(LabelSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.LookupNode(syntax, () => base.BindLabel(syntax, constraints, diagnostics));
 
         internal override Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) =>

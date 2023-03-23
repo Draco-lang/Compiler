@@ -1,5 +1,6 @@
 using System;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -44,26 +45,24 @@ internal abstract class ConstraintPromise<TResult>
     public abstract TResult Result { get; }
 
     /// <summary>
-    /// The builder for a <see cref="Api.Diagnostics.Diagnostic"/>.
-    /// </summary>
-    public abstract Diagnostic.Builder Diagnostic { get; }
-
-    /// <summary>
     /// Resolves this promise with the given result.
     /// </summary>
     /// <param name="result">The result value to resolve with.</param>
     public abstract void Resolve(TResult result);
 
     /// <summary>
+    /// Fails this constraint, reporting the error.
+    /// </summary>
+    /// <param name="result">The result for the failure.</param>
+    /// <param name="diagnostics">The diagnostics to report to.</param>
+    public abstract void Fail(TResult result, DiagnosticBag diagnostics);
+
+    /// <summary>
     /// Configures the diagnostic messages for the constraint of this promise in case it fails.
     /// </summary>
     /// <param name="configure">The configuration function.</param>
     /// <returns>The promise instance.</returns>
-    public ConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
-    {
-        configure(this.Diagnostic);
-        return this;
-    }
+    public abstract ConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure);
 }
 
 /// <summary>
@@ -74,14 +73,17 @@ internal sealed class ResolvedConstraintPromise<TResult> : ConstraintPromise<TRe
 {
     public override bool IsResolved => true;
     public override TResult Result { get; }
-    public override Diagnostic.Builder Diagnostic => throw new NotSupportedException();
 
     public ResolvedConstraintPromise(TResult result)
     {
         this.Result = result;
     }
 
-    public override void Resolve(TResult result) => throw new NotSupportedException();
+    public override void Resolve(TResult result) =>
+        throw new NotSupportedException("the promise is already resolved");
+    public override void Fail(TResult result, DiagnosticBag diagnostics) =>
+        throw new NotSupportedException("the promise is already resolved");
+    public override ConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => this;
 }
 
 /// <summary>
@@ -94,14 +96,15 @@ internal sealed class ResolvableConstraintPromise<TResult> : ConstraintPromise<T
     public override TResult Result => this.isResolved
         ? this.result!
         : throw new InvalidOperationException("tried to access unresolved constraint result");
-    public override Diagnostic.Builder Diagnostic { get; }
+
+    private readonly Diagnostic.Builder diagnostic;
 
     private bool isResolved;
     private TResult? result;
 
     public ResolvableConstraintPromise(Diagnostic.Builder diagnosticBuilder)
     {
-        this.Diagnostic = diagnosticBuilder;
+        this.diagnostic = diagnosticBuilder;
     }
 
     public override void Resolve(TResult result)
@@ -109,6 +112,24 @@ internal sealed class ResolvableConstraintPromise<TResult> : ConstraintPromise<T
         if (this.isResolved) throw new InvalidOperationException("tried to resolve already resolved promise");
         this.result = result;
         this.isResolved = true;
+    }
+
+    public override void Fail(TResult result, DiagnosticBag diagnostics)
+    {
+        this.result = result;
+        this.isResolved = true;
+
+        if (!this.diagnostic.TryBuild(out var diag))
+        {
+            throw new InvalidOperationException("the diagnostic was not sufficiently filled");
+        }
+        diagnostics.Add(diag);
+    }
+
+    public override ConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
+    {
+        configure(this.diagnostic);
+        return this;
     }
 }
 
@@ -121,7 +142,6 @@ internal sealed class MappedConstraintPromise<TOldResult, TNewResult> : Constrai
 {
     public override bool IsResolved => this.underlying.IsResolved;
     public override TNewResult Result => this.mapFunc(this.underlying.Result);
-    public override Diagnostic.Builder Diagnostic => this.underlying.Diagnostic;
 
     private readonly ConstraintPromise<TOldResult> underlying;
     private readonly Func<TOldResult, TNewResult> mapFunc;
@@ -132,5 +152,13 @@ internal sealed class MappedConstraintPromise<TOldResult, TNewResult> : Constrai
         this.mapFunc = mapFunc;
     }
 
-    public override void Resolve(TNewResult result) => throw new NotSupportedException();
+    public override void Resolve(TNewResult result) =>
+        throw new NotSupportedException("can not resolve a mapped constraint");
+    public override void Fail(TNewResult result, DiagnosticBag diagnostics) =>
+        throw new NotSupportedException("can not fail a mapped constraint");
+    public override ConstraintPromise<TNewResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
+    {
+        this.underlying.ConfigureDiagnostic(configure);
+        return this;
+    }
 }

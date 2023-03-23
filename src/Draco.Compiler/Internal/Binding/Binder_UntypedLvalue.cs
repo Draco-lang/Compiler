@@ -2,6 +2,7 @@ using System;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.UntypedTree;
@@ -17,7 +18,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped lvalue for <paramref name="syntax"/>.</returns>
-    protected UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics) => syntax switch
+    protected UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedExpressionSyntax => new UntypedUnexpectedLvalue(syntax),
@@ -25,7 +26,7 @@ internal partial class Binder
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
-    private UntypedLvalue BindNameLvalue(NameExpressionSyntax syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedLvalue BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         switch (symbol)
@@ -44,7 +45,7 @@ internal partial class Binder
         }
     }
 
-    private UntypedLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintBag constraints, DiagnosticBag diagnostics)
+    private UntypedLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // TODO: Should illegal lvalues contain an expression we still bind?
         // It could result in more errors within the expression, which might be useful

@@ -94,8 +94,6 @@ public sealed class Compilation
     /// <returns>The semantic model for <paramref name="tree"/>.</returns>
     public SemanticModel GetSemanticModel(SyntaxTree tree) => new(this, tree);
 
-    // TODO: Add more streams for the other outputs, like the commented out thing above?
-
     /// <summary>
     /// Emits compiled binary to a <see cref="Stream"/>.
     /// </summary>

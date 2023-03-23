@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -21,11 +22,6 @@ public interface ISymbol : IEquatable<ISymbol>
     /// True, if this symbol represents an error.
     /// </summary>
     public bool IsError { get; }
-
-    /// <summary>
-    /// The list of <see cref="Diagnostic"/> messages attached to this symbol.
-    /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics { get; }
 
     /// <summary>
     /// The location where this symbol was defined.
@@ -99,15 +95,7 @@ internal abstract class SymbolBase : ISymbol
 
     public string Name => this.Symbol.Name;
     public bool IsError => this.Symbol.IsError;
-    // TODO
-    public ImmutableArray<Diagnostic> Diagnostics => throw new NotImplementedException();
-    // public ImmutableArray<Diagnostic> Diagnostics => this.Symbol.Diagnostics
-    //     .Select(d => d.ToApiDiagnostic(null))
-    //     .ToImmutableArray();
-
-    // TODO
-    // public Location? Definition => this.Symbol.Definition?.Location;
-    public Location? Definition => throw new NotImplementedException();
+    public Location? Definition => (this.Symbol as ISourceSymbol)?.DeclarationSyntax?.Location;
     public string Documentation => this.Symbol.Documentation;
 
     public SymbolBase(Symbol symbol)

@@ -45,23 +45,23 @@ internal partial class UntypedExpression
 
 internal partial class UntypedUnexpectedExpression
 {
-    public override Type Type => Intrinsics.Error;
+    public override Type Type => IntrinsicTypes.Error;
 }
 
 internal partial class UntypedUnitExpression
 {
     public static UntypedUnitExpression Default { get; } = new(null);
-    public override Type Type => Intrinsics.Unit;
+    public override Type Type => IntrinsicTypes.Unit;
 }
 
 internal partial class UntypedGotoExpression
 {
-    public override Type Type => Intrinsics.Never;
+    public override Type Type => IntrinsicTypes.Never;
 }
 
 internal partial class UntypedReturnExpression
 {
-    public override Type Type => Intrinsics.Never;
+    public override Type Type => IntrinsicTypes.Never;
 }
 
 internal partial class UntypedBlockExpression
@@ -71,17 +71,17 @@ internal partial class UntypedBlockExpression
 
 internal partial class UntypedWhileExpression
 {
-    public override Type Type => Intrinsics.Unit;
+    public override Type Type => IntrinsicTypes.Unit;
 }
 
 internal partial class UntypedAndExpression
 {
-    public override Type Type => Intrinsics.Bool;
+    public override Type Type => IntrinsicTypes.Bool;
 }
 
 internal partial class UntypedOrExpression
 {
-    public override Type Type => Intrinsics.Bool;
+    public override Type Type => IntrinsicTypes.Bool;
 }
 
 internal partial class UntypedParameterExpression
@@ -96,28 +96,28 @@ internal partial class UntypedGlobalExpression
 
 internal partial class UntypedReferenceErrorExpression
 {
-    public override Type? Type => Types.Intrinsics.Error;
+    public override Type? Type => Types.IntrinsicTypes.Error;
 }
 
 internal partial class UntypedLiteralExpression
 {
     public override Type Type => this.Value switch
     {
-        int => Intrinsics.Int32,
-        bool => Intrinsics.Bool,
-        double => Intrinsics.Float64,
+        int => IntrinsicTypes.Int32,
+        bool => IntrinsicTypes.Bool,
+        double => IntrinsicTypes.Float64,
         _ => throw new System.InvalidOperationException(),
     };
 }
 
 internal partial class UntypedStringExpression
 {
-    public override Type? Type => Intrinsics.String;
+    public override Type? Type => IntrinsicTypes.String;
 }
 
 internal partial class UntypedRelationalExpression
 {
-    public override Type Type => Intrinsics.Bool;
+    public override Type Type => IntrinsicTypes.Bool;
 }
 
 internal partial class UntypedAssignmentExpression
@@ -129,12 +129,12 @@ internal partial class UntypedAssignmentExpression
 
 internal partial class UntypedUnexpectedLvalue
 {
-    public override Type Type => Intrinsics.Error;
+    public override Type Type => IntrinsicTypes.Error;
 }
 
 internal partial class UntypedIllegalLvalue
 {
-    public override Type Type => Intrinsics.Error;
+    public override Type Type => IntrinsicTypes.Error;
 }
 
 internal partial class UntypedLvalue

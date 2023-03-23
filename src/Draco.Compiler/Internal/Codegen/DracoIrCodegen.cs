@@ -7,9 +7,9 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Types;
 using IrType = Draco.Compiler.Internal.DracoIr.Type;
-using IntrinsicSymbols = Draco.Compiler.Internal.Symbols.Synthetized.Intrinsics;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Lowering;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -47,11 +47,11 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
 
     private IrType TranslateType(Types.Type type)
     {
-        if (ReferenceEquals(type, Types.Intrinsics.Unit)) return IrType.Unit;
-        if (ReferenceEquals(type, Types.Intrinsics.Bool)) return IrType.Bool;
-        if (ReferenceEquals(type, Types.Intrinsics.Int32)) return IrType.Int32;
-        if (type == Types.Intrinsics.Float64) return IrType.Float64;
-        if (type == Types.Intrinsics.String) return IrType.String;
+        if (ReferenceEquals(type, IntrinsicTypes.Unit)) return IrType.Unit;
+        if (ReferenceEquals(type, IntrinsicTypes.Bool)) return IrType.Bool;
+        if (ReferenceEquals(type, IntrinsicTypes.Int32)) return IrType.Int32;
+        if (type == IntrinsicTypes.Float64) return IrType.Float64;
+        if (type == IntrinsicTypes.String) return IrType.String;
 
         if (type is Types.FunctionType func)
         {

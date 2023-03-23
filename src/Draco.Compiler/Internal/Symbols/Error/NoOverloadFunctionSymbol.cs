@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
-    public override Types.Type ReturnType => Types.Intrinsics.Error;
+    public override Type ReturnType => IntrinsicTypes.Error;
 
     public override Symbol? ContainingSymbol => null;
 
@@ -22,7 +22,7 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
 
     public NoOverloadFunctionSymbol(int parameterCount)
     {
-        this.Parameters = Enumerable.Repeat(Types.Intrinsics.Error, parameterCount)
+        this.Parameters = Enumerable.Repeat(IntrinsicTypes.Error, parameterCount)
             .Select(t => new SynthetizedParameterSymbol(t))
             .Cast<ParameterSymbol>()
             .ToImmutableArray();

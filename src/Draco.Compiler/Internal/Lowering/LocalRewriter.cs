@@ -4,6 +4,7 @@ using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Types;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Lowering;
@@ -80,9 +81,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 LabelStatement(node.ContinueLabel),
                 ConditionalGotoStatement(
                     condition: UnaryExpression(
-                        @operator: Intrinsics.Bool_Not,
+                        @operator: IntrinsicSymbols.Bool_Not,
                         operand: condition,
-                        type: Types.Intrinsics.Bool),
+                        type: IntrinsicTypes.Bool),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
@@ -125,7 +126,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: op,
                 right: right,
-                type: Types.Intrinsics.Bool));
+                type: IntrinsicTypes.Bool));
         }
 
         // Fold them into conjunctions
@@ -158,7 +159,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: right,
             @else: LiteralExpression(false),
-            type: Types.Intrinsics.Bool);
+            type: IntrinsicTypes.Bool);
     }
 
     public override BoundNode VisitOrExpression(BoundOrExpression node)
@@ -176,7 +177,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: LiteralExpression(true),
             @else: right,
-            type: Types.Intrinsics.Bool);
+            type: IntrinsicTypes.Bool);
     }
 
     // Utility to store an expression to a temporary variable

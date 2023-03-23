@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class IntrinsicsBinder : Binder
 {
-    private static ImmutableArray<Symbol> IntrinsicSymbols { get; } = typeof(Intrinsics)
+    private static ImmutableArray<Symbol> IntrinsicSymbols { get; } = typeof(IntrinsicSymbols)
         .GetProperties(BindingFlags.Public | BindingFlags.Static)
         .Where(prop => prop.PropertyType.IsAssignableTo(typeof(Symbol)))
         .Select(prop => prop.GetValue(null))

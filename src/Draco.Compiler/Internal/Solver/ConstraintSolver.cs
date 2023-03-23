@@ -102,7 +102,7 @@ internal sealed partial class ConstraintSolver
                     location: local.DeclarationSyntax.Location,
                     formatArgs: local.Name));
                 // We use an error type
-                localType = Types.Intrinsics.Error;
+                localType = IntrinsicTypes.Error;
             }
             typedLocal = new SourceLocalSymbol(local, localType);
             this.typedLocals.Add(local, typedLocal);

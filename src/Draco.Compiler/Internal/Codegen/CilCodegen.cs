@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using Draco.Compiler.Internal.DracoIr;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Type = Draco.Compiler.Internal.DracoIr.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
@@ -410,7 +411,7 @@ internal sealed class CilCodegen
             }
             else if (called is Value.Intrinsic intrinsic)
             {
-                if (intrinsic.Symbol == Symbols.Synthetized.Intrinsics.Println) encoder.Call(this.consoleWriteLineHandle);
+                if (intrinsic.Symbol == IntrinsicSymbols.Println) encoder.Call(this.consoleWriteLineHandle);
                 // TODO
                 else throw new NotImplementedException();
             }

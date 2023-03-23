@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -52,7 +53,7 @@ internal partial class Binder
         // TODO: Do we want to handle this here, or during DFA?
         // If this function returns unit, we implicitly append a return expression
         var function = (FunctionSymbol)this.ContainingSymbol!;
-        if (ReferenceEquals(function.ReturnType, Types.Intrinsics.Unit))
+        if (ReferenceEquals(function.ReturnType, IntrinsicTypes.Unit))
         {
             statements = statements
                 .Append(new UntypedExpressionStatement(

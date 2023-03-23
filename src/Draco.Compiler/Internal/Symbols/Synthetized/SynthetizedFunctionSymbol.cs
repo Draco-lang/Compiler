@@ -42,7 +42,7 @@ internal sealed class SynthetizedFunctionSymbol : FunctionSymbol
     /// <param name="rightType">The right operand type.</param>
     /// <returns>The constructed function symbol.</returns>
     public static FunctionSymbol ComparisonOperator(TokenKind token, Type leftType, Type rightType) =>
-        new SynthetizedFunctionSymbol(GetComparisonOperatorName(token), new[] { leftType, rightType }, Types.Intrinsics.Bool);
+        new SynthetizedFunctionSymbol(GetComparisonOperatorName(token), new[] { leftType, rightType }, IntrinsicTypes.Bool);
 
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
 

@@ -1,4 +1,4 @@
-using System;
+using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Error;
 
@@ -8,8 +8,8 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class UndefinedTypeSymbol : TypeSymbol
 {
     public override bool IsError => true;
-    public override Types.Type Type => Types.Intrinsics.Error;
-    public override Symbol? ContainingSymbol => throw new NotImplementedException();
+    public override Type Type => IntrinsicTypes.Error;
+    public override Symbol? ContainingSymbol => null;
 
     public override string Name { get; }
 

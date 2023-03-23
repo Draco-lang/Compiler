@@ -45,23 +45,23 @@ internal partial class BoundExpression
 
 internal partial class BoundUnexpectedExpression
 {
-    public override Type Type => Intrinsics.Error;
+    public override Type Type => IntrinsicTypes.Error;
 }
 
 internal partial class BoundUnitExpression
 {
     public static BoundUnitExpression Default { get; } = new(null);
-    public override Type? Type => Intrinsics.Unit;
+    public override Type? Type => IntrinsicTypes.Unit;
 }
 
 internal partial class BoundGotoExpression
 {
-    public override Type Type => Intrinsics.Never;
+    public override Type Type => IntrinsicTypes.Never;
 }
 
 internal partial class BoundReturnExpression
 {
-    public override Type Type => Intrinsics.Never;
+    public override Type Type => IntrinsicTypes.Never;
 }
 
 internal partial class BoundBlockExpression
@@ -71,17 +71,17 @@ internal partial class BoundBlockExpression
 
 internal partial class BoundWhileExpression
 {
-    public override Type Type => Intrinsics.Unit;
+    public override Type Type => IntrinsicTypes.Unit;
 }
 
 internal partial class BoundAndExpression
 {
-    public override Type Type => Intrinsics.Bool;
+    public override Type Type => IntrinsicTypes.Bool;
 }
 
 internal partial class BoundOrExpression
 {
-    public override Type Type => Intrinsics.Bool;
+    public override Type Type => IntrinsicTypes.Bool;
 }
 
 internal partial class BoundParameterExpression
@@ -106,27 +106,27 @@ internal partial class BoundFunctionExpression
 
 internal partial class BoundReferenceErrorExpression
 {
-    public override Type Type => Intrinsics.Error;
+    public override Type Type => IntrinsicTypes.Error;
 }
 
 internal partial class BoundLiteralExpression
 {
     public override Type Type => this.Value switch
     {
-        int => Intrinsics.Int32,
-        bool => Intrinsics.Bool,
+        int => IntrinsicTypes.Int32,
+        bool => IntrinsicTypes.Bool,
         _ => throw new System.InvalidOperationException(),
     };
 }
 
 internal partial class BoundStringExpression
 {
-    public override Type Type => Intrinsics.String;
+    public override Type Type => IntrinsicTypes.String;
 }
 
 internal partial class BoundRelationalExpression
 {
-    public override Type Type => Intrinsics.Bool;
+    public override Type Type => IntrinsicTypes.Bool;
 }
 
 internal partial class BoundAssignmentExpression
@@ -143,12 +143,12 @@ internal partial class BoundLvalue
 
 internal partial class BoundUnexpectedLvalue
 {
-    public override Type Type => Intrinsics.Error;
+    public override Type Type => IntrinsicTypes.Error;
 }
 
 internal partial class BoundIllegalLvalue
 {
-    public override Type Type => Intrinsics.Error;
+    public override Type Type => IntrinsicTypes.Error;
 }
 
 internal partial class BoundLocalLvalue

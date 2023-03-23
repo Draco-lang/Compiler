@@ -90,7 +90,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private Type BuildReturnType()
     {
         // If the return type is unspecified, it's assumed to be unit
-        if (this.DeclarationSyntax.ReturnType is null) return Intrinsics.Unit;
+        if (this.DeclarationSyntax.ReturnType is null) return IntrinsicTypes.Unit;
 
         // Otherwise, we need to resolve
         Debug.Assert(this.DeclaringCompilation is not null);

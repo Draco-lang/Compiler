@@ -143,12 +143,7 @@ public sealed partial class SemanticModel
                 var boundNodes = this.syntaxMap[subtree];
                 // TODO: We need to deal with potential multiple returns here
                 if (boundNodes.Count != 1) throw new NotImplementedException();
-                return boundNodes[0] switch
-                {
-                    BoundLocalDeclaration l => l.Local.ToApiSymbol(),
-                    BoundLabelStatement l => l.Label.ToApiSymbol(),
-                    _ => throw new NotImplementedException(),
-                };
+                return ExtractDefinedSymbol(boundNodes[0]).ToApiSymbol();
             }
         }
         else if (binder.ContainingSymbol is SourceModuleSymbol module)
@@ -265,6 +260,13 @@ public sealed partial class SemanticModel
         var binder = this.compilation.GetBinder(symbol);
         return new IncrementalBinder(binder, this);
     }
+
+    private static Symbol ExtractDefinedSymbol(BoundNode node) => node switch
+    {
+        BoundLocalDeclaration l => l.Local,
+        BoundLabelStatement l => l.Label,
+        _ => throw new ArgumentOutOfRangeException(nameof(node)),
+    };
 
     private static Symbol ExtractReferencedSymbol(BoundNode node) => node switch
     {

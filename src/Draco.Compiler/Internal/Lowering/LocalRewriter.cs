@@ -185,7 +185,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
         // Optimization: if it's already a symbol reference, leave as-is
         // Optimization: if it's a literal, don't bother copying
         if (expr is BoundLocalExpression
+                 or BoundGlobalExpression
                  or BoundParameterExpression
+                 or BoundFunctionExpression
                  or BoundLiteralExpression)
         {
             return new(null, expr, BoundNoOpStatement.Default);

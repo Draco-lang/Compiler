@@ -81,6 +81,7 @@ internal sealed partial class ConstraintSolver
             var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionType functionType
                 ? new NoOverloadFunctionSymbol(functionType.ParameterTypes.Length)
                 : new NoOverloadFunctionSymbol(1);
+            this.Unify(errorSymbol.Type, constraint.CallSite);
             constraint.Promise.Resolve(errorSymbol);
             return SolveState.Finished;
         }
@@ -139,14 +140,8 @@ internal sealed partial class ConstraintSolver
 
         switch (left, right)
         {
-        // Never type is never reached, unifies with everything
-        case (NeverType, _):
-        case (_, NeverType):
-        // Error type unifies with everything to avoid cascading type errors
-        case (ErrorType, _):
-        case (_, ErrorType):
-            return true;
-
+        // Type variable substitution takes priority
+        // so it can unify with never type and error type to stop type errors from cascading
         case (TypeVariable v1, TypeVariable v2):
         {
             // Check for circularity
@@ -154,7 +149,6 @@ internal sealed partial class ConstraintSolver
             this.Substitute(v1, v2);
             return true;
         }
-
         case (TypeVariable v, Type other):
         {
             this.Substitute(v, other);
@@ -165,6 +159,14 @@ internal sealed partial class ConstraintSolver
             this.Substitute(v, other);
             return true;
         }
+
+        // Never type is never reached, unifies with everything
+        case (NeverType, _):
+        case (_, NeverType):
+        // Error type unifies with everything to avoid cascading type errors
+        case (ErrorType, _):
+        case (_, ErrorType):
+            return true;
 
         case (BuiltinType t1, BuiltinType t2):
             return t1.Name == t2.Name

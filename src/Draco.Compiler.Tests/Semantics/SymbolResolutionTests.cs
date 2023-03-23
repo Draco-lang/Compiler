@@ -350,7 +350,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(x1SymDecl.IsError);
         Assert.False(x2SymDecl.IsError);
         Assert.Single(diagnostics);
-        Assert.Equal(SymbolResolutionErrors.IllegalShadowing, diagnostics[0].Template);
+        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -417,7 +417,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(varSym.IsError);
         Assert.False(funcSym.IsError);
         Assert.Single(diagnostics);
-        Assert.Equal(SymbolResolutionErrors.IllegalShadowing, diagnostics[0].Template);
+        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]

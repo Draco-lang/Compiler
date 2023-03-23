@@ -215,15 +215,7 @@ public sealed partial class SemanticModel
                 var boundNodes = this.syntaxMap[subtree];
                 // TODO: We need to deal with potential multiple returns here
                 if (boundNodes.Count != 1) throw new NotImplementedException();
-                return boundNodes[0] switch
-                {
-                    BoundFunctionExpression f => f.Function.ToApiSymbol(),
-                    BoundParameterExpression p => p.Parameter.ToApiSymbol(),
-                    BoundLocalExpression l => l.Local.ToApiSymbol(),
-                    BoundGlobalExpression g => g.Global.ToApiSymbol(),
-                    BoundReferenceErrorExpression e => e.Symbol.ToApiSymbol(),
-                    _ => throw new NotImplementedException(),
-                };
+                return ExtractReferencedSymbol(boundNodes[0]).ToApiSymbol();
             }
         }
         else if (binder.ContainingSymbol is SourceModuleSymbol module)
@@ -259,15 +251,7 @@ public sealed partial class SemanticModel
             var boundNodes = this.syntaxMap[subtree];
             // TODO: We need to deal with potential multiple returns here
             if (boundNodes.Count != 1) throw new NotImplementedException();
-            return boundNodes[0] switch
-            {
-                BoundFunctionExpression f => f.Function.ToApiSymbol(),
-                BoundParameterExpression p => p.Parameter.ToApiSymbol(),
-                BoundLocalExpression l => l.Local.ToApiSymbol(),
-                BoundGlobalExpression g => g.Global.ToApiSymbol(),
-                BoundReferenceErrorExpression e => e.Symbol.ToApiSymbol(),
-                _ => throw new NotImplementedException(),
-            };
+            return ExtractReferencedSymbol(boundNodes[0]).ToApiSymbol();
         }
         else
         {
@@ -281,4 +265,14 @@ public sealed partial class SemanticModel
         var binder = this.compilation.GetBinder(symbol);
         return new IncrementalBinder(binder, this);
     }
+
+    private static Symbol ExtractReferencedSymbol(BoundNode node) => node switch
+    {
+        BoundFunctionExpression f => f.Function,
+        BoundParameterExpression p => p.Parameter,
+        BoundLocalExpression l => l.Local,
+        BoundGlobalExpression g => g.Global,
+        BoundReferenceErrorExpression e => e.Symbol,
+        _ => throw new ArgumentOutOfRangeException(nameof(node)),
+    };
 }

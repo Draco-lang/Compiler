@@ -190,6 +190,13 @@ public sealed partial class SemanticModel
                 {
                     var bodyBinder = this.GetBinder(functionSymbol);
                     _ = bodyBinder.BindFunctionBody(functionSymbol.DeclarationSyntax.Body);
+
+                    // To make sure, we bind the return type too
+                    if (functionSymbol.DeclarationSyntax.ReturnType is not null)
+                    {
+                        var diagnostics = this.compilation.GlobalDiagnosticBag;
+                        _ = bodyBinder.BindType(functionSymbol.DeclarationSyntax.ReturnType.Type, diagnostics);
+                    }
                 }
 
                 // Now the syntax node should be in the map

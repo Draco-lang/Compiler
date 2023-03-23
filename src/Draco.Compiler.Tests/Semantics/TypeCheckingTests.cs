@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Linq.Expressions;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;

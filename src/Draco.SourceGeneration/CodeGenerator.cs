@@ -1,9 +1,9 @@
-using Scriban.Runtime;
-using Scriban;
 using System.Reflection;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis;
 using System.Threading;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Scriban;
+using Scriban.Runtime;
 
 namespace Draco.SourceGeneration;
 

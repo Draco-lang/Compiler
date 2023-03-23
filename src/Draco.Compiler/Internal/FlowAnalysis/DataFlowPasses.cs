@@ -5,7 +5,6 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.FlowAnalysis.Lattices;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 

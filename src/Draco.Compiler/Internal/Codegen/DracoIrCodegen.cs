@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.DracoIr;
+using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using IrType = Draco.Compiler.Internal.DracoIr.Type;
-using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Lowering;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Codegen;
 

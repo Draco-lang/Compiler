@@ -1,11 +1,11 @@
+using System.Collections.Immutable;
+using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
-using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using System.Collections.Immutable;
-using Draco.Compiler.Internal.Symbols;
-using System.Reflection;
-using Binder = Draco.Compiler.Internal.Binding.Binder;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Symbols;
+using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using Binder = Draco.Compiler.Internal.Binding.Binder;
 
 namespace Draco.Compiler.Tests.Semantics;
 

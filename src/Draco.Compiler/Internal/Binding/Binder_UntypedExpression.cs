@@ -122,7 +122,7 @@ internal partial class Binder
                 .WithRelatedInformation(
                     format: "return type declared to be {0}",
                     formatArgs: containingFunction.ReturnType,
-                    location: (containingFunction as SourceFunctionSymbol)?.DeclarationSyntax?.Location));
+                    location: (containingFunction as SourceFunctionSymbol)?.DeclarationSyntax?.ReturnType?.Type.Location));
 
         return new UntypedReturnExpression(syntax, value);
     }

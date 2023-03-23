@@ -35,6 +35,8 @@ internal static class IntrinsicSymbols
 
     public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, IntrinsicTypes.Bool, IntrinsicTypes.Bool);
 
+    // Int32
+
     public static FunctionSymbol Int32_Equal { get; } = Comparison(TokenKind.Equal, IntrinsicTypes.Int32, IntrinsicTypes.Int32);
     public static FunctionSymbol Int32_NotEqual { get; } = Comparison(TokenKind.NotEqual, IntrinsicTypes.Int32, IntrinsicTypes.Int32);
     public static FunctionSymbol Int32_GreaterThan { get; } = Comparison(TokenKind.GreaterThan, IntrinsicTypes.Int32, IntrinsicTypes.Int32);
@@ -52,9 +54,28 @@ internal static class IntrinsicSymbols
     public static FunctionSymbol Int32_Mod { get; } = Binary(TokenKind.KeywordMod, IntrinsicTypes.Int32, IntrinsicTypes.Int32, IntrinsicTypes.Int32);
     public static FunctionSymbol Int32_Rem { get; } = Binary(TokenKind.KeywordRem, IntrinsicTypes.Int32, IntrinsicTypes.Int32, IntrinsicTypes.Int32);
 
-    // TODO: Rest of float operators
+    // Float64
+
+    public static FunctionSymbol Float64_Equal { get; } = Comparison(TokenKind.Equal, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_NotEqual { get; } = Comparison(TokenKind.NotEqual, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_GreaterThan { get; } = Comparison(TokenKind.GreaterThan, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_LessThan { get; } = Comparison(TokenKind.LessThan, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_GreaterEqual { get; } = Comparison(TokenKind.GreaterEqual, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_LessEqual { get; } = Comparison(TokenKind.LessEqual, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+
+    public static FunctionSymbol Float64_Plus { get; } = Unary(TokenKind.Plus, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_Minus { get; } = Unary(TokenKind.Minus, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+
+    public static FunctionSymbol Float64_Add { get; } = Binary(TokenKind.Plus, IntrinsicTypes.Float64, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_Sub { get; } = Binary(TokenKind.Minus, IntrinsicTypes.Float64, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
     public static FunctionSymbol Float64_Mul { get; } = Binary(TokenKind.Star, IntrinsicTypes.Float64, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_Div { get; } = Binary(TokenKind.Slash, IntrinsicTypes.Float64, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_Mod { get; } = Binary(TokenKind.KeywordMod, IntrinsicTypes.Float64, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
+    public static FunctionSymbol Float64_Rem { get; } = Binary(TokenKind.KeywordRem, IntrinsicTypes.Float64, IntrinsicTypes.Float64, IntrinsicTypes.Float64);
 
     // NOTE: Temporary until we access BCL
-    public static FunctionSymbol Println { get; } = Function("println", new[] { IntrinsicTypes.String }, IntrinsicTypes.Unit);
+    public static FunctionSymbol Print_String { get; } = Function("print", new[] { IntrinsicTypes.String }, IntrinsicTypes.Unit);
+    public static FunctionSymbol Print_Int32 { get; } = Function("print", new[] { IntrinsicTypes.Int32 }, IntrinsicTypes.Unit);
+    public static FunctionSymbol Println_String { get; } = Function("println", new[] { IntrinsicTypes.String }, IntrinsicTypes.Unit);
+    public static FunctionSymbol Println_Int32 { get; } = Function("println", new[] { IntrinsicTypes.Int32 }, IntrinsicTypes.Unit);
 }

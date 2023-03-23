@@ -36,5 +36,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "no matching overload found for {0}",
         code: Code(3));
+
+    /// <summary>
+    /// The inference was incomplete.
+    /// </summary>
+    public static readonly DiagnosticTemplate InferenceIncomplete = DiagnosticTemplate.Create(
+        title: "inference incomplete",
+        severity: DiagnosticSeverity.Error,
+        format: "type inference could not complete in {0}",
+        code: Code(4));
 }
 

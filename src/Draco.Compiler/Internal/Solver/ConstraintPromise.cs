@@ -116,6 +116,7 @@ internal sealed class ResolvableConstraintPromise<TResult> : ConstraintPromise<T
 
     public override void Fail(TResult result, DiagnosticBag diagnostics)
     {
+        if (this.isResolved) throw new InvalidOperationException("tried to fail already resolved promise");
         this.result = result;
         this.isResolved = true;
 

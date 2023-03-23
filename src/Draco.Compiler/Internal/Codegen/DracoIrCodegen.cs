@@ -246,23 +246,24 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
     {
         var sub = node.Operand.Accept(this);
         if (node.Operator == IntrinsicSymbols.Bool_Not) return this.writer.Equal(sub, new Value.Const(false));
-        if (node.Operator == IntrinsicSymbols.Int32_Plus) return sub;
-        if (node.Operator == IntrinsicSymbols.Int32_Minus) return this.writer.Neg(sub);
+        if (IsPlus(node.Operator)) return sub;
+        if (IsMinus(node.Operator)) return this.writer.Neg(sub);
         // TODO
         throw new NotImplementedException();
     }
 
     public override Value VisitBinaryExpression(BoundBinaryExpression node)
     {
+
+
         var left = node.Left.Accept(this);
         var right = node.Right.Accept(this);
-        if (node.Operator == IntrinsicSymbols.Int32_Add) return this.writer.Add(left, right);
-        if (node.Operator == IntrinsicSymbols.Int32_Sub) return this.writer.Sub(left, right);
-        if (node.Operator == IntrinsicSymbols.Int32_Mul) return this.writer.Mul(left, right);
-        if (node.Operator == IntrinsicSymbols.Float64_Mul) return this.writer.Mul(left, right);
-        if (node.Operator == IntrinsicSymbols.Int32_Div) return this.writer.Div(left, right);
-        if (node.Operator == IntrinsicSymbols.Int32_Rem) return this.writer.Rem(left, right);
-        if (node.Operator == IntrinsicSymbols.Int32_Mod)
+        if (IsAdd(node.Operator)) return this.writer.Add(left, right);
+        if (IsSub(node.Operator)) return this.writer.Sub(left, right);
+        if (IsMul(node.Operator)) return this.writer.Mul(left, right);
+        if (IsDiv(node.Operator)) return this.writer.Div(left, right);
+        if (IsRem(node.Operator)) return this.writer.Rem(left, right);
+        if (IsMod(node.Operator))
         {
             // a mod b
             // <=>
@@ -271,20 +272,20 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
             var tmp2 = this.writer.Add(tmp1, right);
             return this.writer.Rem(tmp2, right);
         }
-        if (node.Operator == IntrinsicSymbols.Int32_LessThan) return this.writer.Less(left, right);
-        if (node.Operator == IntrinsicSymbols.Int32_GreaterThan) return this.writer.Less(right, left);
-        if (node.Operator == IntrinsicSymbols.Int32_LessEqual)
+        if (IsLess(node.Operator)) return this.writer.Less(left, right);
+        if (IsGreater(node.Operator)) return this.writer.Less(right, left);
+        if (IsLessEqual(node.Operator))
         {
             var tmp = this.writer.Less(right, left);
             return this.writer.Equal(tmp, new Value.Const(false));
         }
-        if (node.Operator == IntrinsicSymbols.Int32_GreaterEqual)
+        if (IsGreaterEqual(node.Operator))
         {
             var tmp = this.writer.Less(left, right);
             return this.writer.Equal(tmp, new Value.Const(false));
         }
-        if (node.Operator == IntrinsicSymbols.Int32_Equal) return this.writer.Equal(left, right);
-        if (node.Operator == IntrinsicSymbols.Int32_NotEqual)
+        if (IsEqual(node.Operator)) return this.writer.Equal(left, right);
+        if (IsNotEqual(node.Operator))
         {
             // a != b
             // <=>
@@ -313,11 +314,10 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         if (node.CompoundOperator is not null)
         {
             var left = this.LoadLValue(target);
-            if (node.CompoundOperator == IntrinsicSymbols.Int32_Add) toStore = this.writer.Add(left, right);
-            else if (node.CompoundOperator == IntrinsicSymbols.Int32_Sub) toStore = this.writer.Sub(left, right);
-            else if (node.CompoundOperator == IntrinsicSymbols.Int32_Mul) toStore = this.writer.Mul(left, right);
-            else if (node.CompoundOperator == IntrinsicSymbols.Float64_Mul) toStore = this.writer.Mul(left, right);
-            else if (node.CompoundOperator == IntrinsicSymbols.Int32_Div) toStore = this.writer.Div(left, right);
+            if (IsAdd(node.CompoundOperator)) toStore = this.writer.Add(left, right);
+            else if (IsSub(node.CompoundOperator)) toStore = this.writer.Sub(left, right);
+            else if (IsMul(node.CompoundOperator)) toStore = this.writer.Mul(left, right);
+            else if (IsDiv(node.CompoundOperator)) toStore = this.writer.Div(left, right);
             else throw new NotImplementedException();
         }
         if (target.IsGlobal()) this.writer.Store(target.AsGlobal(), toStore);
@@ -330,8 +330,14 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
     public override Value VisitGlobalExpression(BoundGlobalExpression node) => this.writer.Load(this.GetGlobal(node.Global));
     public override Value VisitFunctionExpression(BoundFunctionExpression node)
     {
+        static bool IsIntrinsicFunction(Symbol symbol) =>
+               symbol == IntrinsicSymbols.Print_Int32
+            || symbol == IntrinsicSymbols.Print_String
+            || symbol == IntrinsicSymbols.Println_Int32
+            || symbol == IntrinsicSymbols.Println_String;
+
         // We temporarily handle intrinsics here
-        if (node.Function == IntrinsicSymbols.Println) return new Value.Intrinsic(node.Function, this.TranslateType(node.Function.Type));
+        if (IsIntrinsicFunction(node.Function)) return new Value.Intrinsic(node.Function, this.TranslateType(node.Function.Type));
 
         // Default to procedure
         return new Value.Proc(this.GetProcedure(node.Function));
@@ -368,4 +374,35 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         BoundGlobalLvalue g => this.GetGlobal(g.Global),
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
+
+    private static bool IsEqual(Symbol op) => op == IntrinsicSymbols.Int32_Equal
+                                           || op == IntrinsicSymbols.Float64_Equal;
+    private static bool IsNotEqual(Symbol op) => op == IntrinsicSymbols.Int32_NotEqual
+                                              || op == IntrinsicSymbols.Float64_NotEqual;
+    private static bool IsLess(Symbol op) => op == IntrinsicSymbols.Int32_LessThan
+                                          || op == IntrinsicSymbols.Float64_LessThan;
+    private static bool IsLessEqual(Symbol op) => op == IntrinsicSymbols.Int32_LessEqual
+                                               || op == IntrinsicSymbols.Float64_LessEqual;
+    private static bool IsGreater(Symbol op) => op == IntrinsicSymbols.Int32_GreaterThan
+                                             || op == IntrinsicSymbols.Float64_GreaterThan;
+    private static bool IsGreaterEqual(Symbol op) => op == IntrinsicSymbols.Int32_GreaterEqual
+                                                  || op == IntrinsicSymbols.Float64_GreaterEqual;
+
+    private static bool IsPlus(Symbol op) => op == IntrinsicSymbols.Int32_Plus
+                                          || op == IntrinsicSymbols.Float64_Plus;
+    private static bool IsMinus(Symbol op) => op == IntrinsicSymbols.Int32_Minus
+                                           || op == IntrinsicSymbols.Float64_Minus;
+
+    private static bool IsAdd(Symbol op) => op == IntrinsicSymbols.Int32_Add
+                                         || op == IntrinsicSymbols.Float64_Add;
+    private static bool IsSub(Symbol op) => op == IntrinsicSymbols.Int32_Sub
+                                         || op == IntrinsicSymbols.Float64_Sub;
+    private static bool IsMul(Symbol op) => op == IntrinsicSymbols.Int32_Mul
+                                         || op == IntrinsicSymbols.Float64_Mul;
+    private static bool IsDiv(Symbol op) => op == IntrinsicSymbols.Int32_Div
+                                         || op == IntrinsicSymbols.Float64_Div;
+    private static bool IsRem(Symbol op) => op == IntrinsicSymbols.Int32_Rem
+                                         || op == IntrinsicSymbols.Float64_Rem;
+    private static bool IsMod(Symbol op) => op == IntrinsicSymbols.Int32_Mod
+                                         || op == IntrinsicSymbols.Float64_Mod;
 }

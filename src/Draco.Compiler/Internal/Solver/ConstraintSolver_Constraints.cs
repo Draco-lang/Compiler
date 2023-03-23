@@ -46,17 +46,16 @@ internal sealed partial class ConstraintSolver
         // No overload matches
         if (constraint.Candidates.Count == 0)
         {
-            var diagnostic = constraint.Diagnostic
-                .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
-                .WithFormatArgs(constraint.FunctionName)
-                .Build();
-            diagnostics.Add(diagnostic);
             // Best-effort shape approximation
             var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionType functionType
                 ? new NoOverloadFunctionSymbol(functionType.ParameterTypes.Length)
                 : new NoOverloadFunctionSymbol(1);
             this.Unify(errorSymbol.Type, constraint.CallSite);
-            constraint.Promise.Resolve(errorSymbol);
+            // Diagnostic, promise
+            constraint.Promise.ConfigureDiagnostic(diag => diag
+                .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
+                .WithFormatArgs(constraint.FunctionName));
+            constraint.Promise.Fail(errorSymbol, diagnostics);
             return SolveState.Finished;
         }
         // Ok solve

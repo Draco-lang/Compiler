@@ -28,6 +28,11 @@ internal sealed partial class ConstraintSolver
     public TypeVariable NextTypeVariable => new(this.typeVariableCounter++);
     private int typeVariableCounter = 0;
 
+    /// <summary>
+    /// The user-friendly name of the context the solver is in.
+    /// </summary>
+    public string ContextName { get; }
+
     // The list of raw constraints
     private readonly List<Constraint> constraints = new();
     // Type variable substitutions
@@ -36,6 +41,11 @@ internal sealed partial class ConstraintSolver
     private readonly Dictionary<UntypedLocalSymbol, Type> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
     // All locals that have a typed variant constructed
     private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
+
+    public ConstraintSolver(string contextName)
+    {
+        this.ContextName = contextName;
+    }
 
     /// <summary>
     /// Solves all constraints within the solver.
@@ -57,8 +67,11 @@ internal sealed partial class ConstraintSolver
         }
         if (this.constraints.Count > 0)
         {
-            // TODO: Didn't solve all constraints
-            throw new System.InvalidOperationException();
+            // Couldn't solve all constraints
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.InferenceIncomplete,
+                location: null,
+                formatArgs: this.ContextName));
         }
     }
 

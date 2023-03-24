@@ -72,18 +72,7 @@ internal partial class Binder
         var binder = this.GetBinder(syntax);
         var value = binder.BindExpression(syntax.Value, constraints, diagnostics);
 
-        // Constraint return type
-        var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
-        Debug.Assert(containingFunction is not null);
-        // TODO: Copy-pasta from return expression binding
-        constraints
-            .Assignable(containingFunction.ReturnType, value.TypeRequired)
-            .ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location)
-                .WithRelatedInformation(
-                    format: "return type declared to be {0}",
-                    formatArgs: containingFunction.ReturnType,
-                    location: (containingFunction as SourceFunctionSymbol)?.DeclarationSyntax?.ReturnType?.Type.Location));
+        this.ConstraintReturnType(syntax.Value, value, constraints);
 
         return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
     }

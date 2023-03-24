@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -126,17 +125,7 @@ internal partial class Binder
             ? UntypedUnitExpression.Default
             : this.BindExpression(syntax.Value, constraints, diagnostics);
 
-        // Return type constraint
-        var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
-        Debug.Assert(containingFunction is not null);
-        constraints
-            .Assignable(containingFunction.ReturnType, value.TypeRequired)
-            .ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location)
-                .WithRelatedInformation(
-                    format: "return type declared to be {0}",
-                    formatArgs: containingFunction.ReturnType,
-                    location: (containingFunction as SourceFunctionSymbol)?.DeclarationSyntax?.ReturnType?.Type.Location));
+        this.ConstraintReturnType(syntax, value, constraints);
 
         return new UntypedReturnExpression(syntax, value);
     }

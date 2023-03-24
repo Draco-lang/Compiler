@@ -2,7 +2,6 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Types;
-using static Draco.Compiler.Internal.Utilities.DotAttribs;
 
 namespace Draco.Compiler.Internal.Solver;
 

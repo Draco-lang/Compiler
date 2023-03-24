@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// A function parameter defined in-source.
 /// </summary>
-internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
+internal sealed class SourceParameterSymbol : ParameterSymbol
 {
     public override Type Type => this.type ??= this.BuildType();
     private Type? type;
@@ -16,8 +16,7 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.DeclarationSyntax.Name.Text;
 
-    public ParameterSyntax DeclarationSyntax { get; }
-    SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
+    public override ParameterSyntax DeclarationSyntax { get; }
 
     // TODO: Extracting parameter docs involves looking into the function docs and searching in the MD
 

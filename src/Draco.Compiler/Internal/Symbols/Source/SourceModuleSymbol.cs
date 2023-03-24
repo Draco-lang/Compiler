@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// A module defined in-source.
 /// </summary>
-internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
+internal sealed class SourceModuleSymbol : ModuleSymbol
 {
     public override Compilation DeclaringCompilation { get; }
 
@@ -25,7 +25,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public SyntaxNode? DeclarationSyntax => null;
+    public override SyntaxNode? DeclarationSyntax => null;
 
     private readonly Declaration declaration;
 
@@ -75,7 +75,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
             if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
 
             // Illegal
-            var syntax = ((ISourceSymbol)member).DeclarationSyntax;
+            var syntax = member.DeclarationSyntax;
             Debug.Assert(syntax is not null);
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalShadowing,

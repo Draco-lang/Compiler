@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -39,6 +40,11 @@ internal abstract partial class Symbol
     /// Documentation attached to this symbol.
     /// </summary>
     public virtual string Documentation => string.Empty;
+
+    /// <summary>
+    /// The syntax declaring this symbol.
+    /// </summary>
+    public virtual SyntaxNode? DeclarationSyntax => null;
 
     /// <summary>
     /// Converts this symbol into an API symbol.

@@ -9,7 +9,7 @@ using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
-internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
+internal sealed class SourceGlobalSymbol : GlobalSymbol
 {
     public override Type Type => this.type ??= this.BuildType();
     private Type? type;
@@ -18,8 +18,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public VariableDeclarationSyntax DeclarationSyntax => this.declaration.Syntax;
-    SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
+    public override VariableDeclarationSyntax DeclarationSyntax => this.declaration.Syntax;
 
     public BoundExpression? Value => this.DeclarationSyntax.Value is null
         ? null

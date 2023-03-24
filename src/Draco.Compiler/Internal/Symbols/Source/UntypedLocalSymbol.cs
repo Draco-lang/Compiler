@@ -7,13 +7,12 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// Represents an in-source local that doesn't have its type inferred yet.
 /// </summary>
-internal sealed class UntypedLocalSymbol : Symbol, ISourceSymbol
+internal sealed class UntypedLocalSymbol : Symbol
 {
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.DeclarationSyntax.Name.Text;
 
-    public VariableDeclarationSyntax DeclarationSyntax { get; }
-    SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
+    public override VariableDeclarationSyntax DeclarationSyntax { get; }
 
     public bool IsMutable => this.DeclarationSyntax.Keyword.Kind == TokenKind.KeywordVar;
 

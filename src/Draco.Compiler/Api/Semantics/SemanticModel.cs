@@ -57,7 +57,7 @@ public sealed partial class SemanticModel
         {
             if (symbol is SourceFunctionSymbol func)
             {
-                _ = func.Parameters.Count();
+                _ = func.Parameters;
                 _ = func.ReturnType;
                 // Avoid double-evaluation of diagnostics
                 if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body)) _ = func.Body;
@@ -106,8 +106,7 @@ public sealed partial class SemanticModel
             if (syntax is ParameterSyntax)
             {
                 // We can just search in the function symbol
-                var parameterSymbol = (Internal.Symbols.ParameterSymbol)function.Parameters
-                    .Cast<ISourceSymbol>()
+                var parameterSymbol = function.Parameters
                     .First(sym => syntax == sym.DeclarationSyntax);
                 return parameterSymbol.ToApiSymbol();
             }
@@ -134,8 +133,7 @@ public sealed partial class SemanticModel
         case SourceModuleSymbol module:
         {
             // We try to look up the module-level declarations
-            var symbol = (Symbol?)module.Members
-                .OfType<ISourceSymbol>()
+            var symbol = module.Members
                 .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
             return symbol?.ToApiSymbol();
         }

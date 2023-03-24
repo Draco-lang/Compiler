@@ -94,7 +94,7 @@ internal abstract class SymbolBase : ISymbol
 
     public string Name => this.Symbol.Name;
     public bool IsError => this.Symbol.IsError;
-    public Location? Definition => (this.Symbol as ISourceSymbol)?.DeclarationSyntax?.Location;
+    public Location? Definition => this.Symbol.DeclarationSyntax?.Location;
     public string Documentation => this.Symbol.Documentation;
 
     public SymbolBase(Symbol symbol)

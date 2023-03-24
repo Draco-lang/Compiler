@@ -80,11 +80,9 @@ internal partial class Binder
     private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
-        var labelSymbol = (LabelSymbol?)this.DeclaredSymbols
+        var labelSymbol = this.DeclaredSymbols
             .OfType<LabelSymbol>()
-            .OfType<ISourceSymbol>()
-            .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
-        Debug.Assert(labelSymbol is not null);
+            .First(sym => sym.DeclarationSyntax == syntax);
 
         return new UntypedLabelStatement(syntax, labelSymbol);
     }
@@ -92,11 +90,9 @@ internal partial class Binder
     private UntypedStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
-        var localSymbol = (UntypedLocalSymbol?)this.DeclaredSymbols
+        var localSymbol = this.DeclaredSymbols
             .OfType<UntypedLocalSymbol>()
-            .OfType<ISourceSymbol>()
-            .FirstOrDefault(sym => sym.DeclarationSyntax == syntax);
-        Debug.Assert(localSymbol is not null);
+            .First(sym => sym.DeclarationSyntax == syntax);
 
         var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);

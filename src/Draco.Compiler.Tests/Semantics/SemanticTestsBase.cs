@@ -20,7 +20,7 @@ public abstract class SemanticTestsBase
     private protected static Binder GetDefiningScope(Compilation compilation, Symbol? symbol)
     {
         Assert.NotNull(symbol);
-        var syntax = ((ISourceSymbol?)symbol)!.DeclarationSyntax;
+        var syntax = symbol!.DeclarationSyntax;
         Assert.NotNull(syntax);
         var parent = syntax!.Parent;
         Assert.NotNull(parent);

@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// An in-source function-definition.
 /// </summary>
-internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
+internal sealed class SourceFunctionSymbol : FunctionSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
     private ImmutableArray<ParameterSymbol>? parameters;
@@ -25,11 +25,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.DeclarationSyntax.Name.Text;
 
-    /// <summary>
-    /// The syntax the symbol was constructed from.
-    /// </summary>
-    public FunctionDeclarationSyntax DeclarationSyntax { get; }
-    SyntaxNode ISourceSymbol.DeclarationSyntax => this.DeclarationSyntax;
+    public override FunctionDeclarationSyntax DeclarationSyntax { get; }
 
     public BoundStatement Body => this.body ??= this.BuildBody();
     private BoundStatement? body;

@@ -170,20 +170,16 @@ public sealed class Compilation
     /// <returns>The binder that corresponds to <paramref name="symbol"/>.</returns>
     internal Binder GetBinder(Symbol symbol)
     {
-        if (symbol is not ISourceSymbol sourceSymbol)
-        {
-            throw new ArgumentException("symbol must be an in-source defined symbol", nameof(symbol));
-        }
         if (symbol is SourceModuleSymbol)
         {
             return this.binderCache.ModuleBinder;
         }
-        if (sourceSymbol.DeclarationSyntax is null)
+        if (symbol.DeclarationSyntax is null)
         {
-            throw new ArgumentException("source symbol must have a declaration syntax", nameof(symbol));
+            throw new ArgumentException("symbol must have a declaration syntax", nameof(symbol));
         }
 
-        return this.GetBinder(sourceSymbol.DeclarationSyntax);
+        return this.GetBinder(symbol.DeclarationSyntax);
     }
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);

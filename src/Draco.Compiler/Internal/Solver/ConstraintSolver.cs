@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -29,6 +30,11 @@ internal sealed partial class ConstraintSolver
     private int typeVariableCounter = 0;
 
     /// <summary>
+    /// The context being inferred.
+    /// </summary>
+    public SyntaxNode Context { get; }
+
+    /// <summary>
     /// The user-friendly name of the context the solver is in.
     /// </summary>
     public string ContextName { get; }
@@ -42,8 +48,9 @@ internal sealed partial class ConstraintSolver
     // All locals that have a typed variant constructed
     private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
 
-    public ConstraintSolver(string contextName)
+    public ConstraintSolver(SyntaxNode context, string contextName)
     {
+        this.Context = context;
         this.ContextName = contextName;
     }
 
@@ -70,7 +77,7 @@ internal sealed partial class ConstraintSolver
             // Couldn't solve all constraints
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.InferenceIncomplete,
-                location: null,
+                location: this.Context.Location,
                 formatArgs: this.ContextName));
 
             // To avoid major trip-ups later, we resolve all constraints to some sentinel value

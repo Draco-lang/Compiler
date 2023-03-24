@@ -71,17 +71,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The <see cref="SyntaxRange"/> of this node within the source file, excluding the trivia surrounding the node.
     /// </summary>
-    public SyntaxRange Range
-    {
-        get
-        {
-            var startIndex = this.Position;
-            var endIndex = startIndex + this.Green.Width;
-            var startPos = this.Tree.SourceText.IndexToSyntaxPosition(startIndex);
-            var endPos = this.Tree.SourceText.IndexToSyntaxPosition(endIndex);
-            return new(startPos, endPos);
-        }
-    }
+    public SyntaxRange Range => this.Tree.SourceText.SourceSpanToSyntaxRange(this.Span);
 
     /// <summary>
     /// The immediate descendant nodes of this one.

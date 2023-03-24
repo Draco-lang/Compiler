@@ -61,7 +61,7 @@ internal abstract partial class Binder
     public BoundStatement BindFunctionBody(FunctionBodySyntax syntax, DiagnosticBag diagnostics)
     {
         var functionName = ((FunctionDeclarationSyntax)syntax.Parent!).Name.Text;
-        var constraints = new ConstraintSolver($"function {functionName}");
+        var constraints = new ConstraintSolver(syntax, $"function {functionName}");
         var untypedStatement = this.BindStatement(syntax, constraints, diagnostics);
         constraints.Solve(diagnostics);
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
@@ -71,7 +71,7 @@ internal abstract partial class Binder
     public BoundExpression BindGlobalValue(ExpressionSyntax syntax, DiagnosticBag diagnostics)
     {
         var globalName = ((VariableDeclarationSyntax)syntax.Parent!.Parent!).Name.Text;
-        var constraints = new ConstraintSolver($"global {globalName}");
+        var constraints = new ConstraintSolver(syntax, $"global {globalName}");
         var untypedExpression = this.BindExpression(syntax, constraints, diagnostics);
         constraints.Solve(diagnostics);
         var boundExpression = this.TypeExpression(untypedExpression, constraints, diagnostics);

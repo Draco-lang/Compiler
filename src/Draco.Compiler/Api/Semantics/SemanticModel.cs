@@ -209,7 +209,7 @@ public sealed partial class SemanticModel
                 if (boundNodes.Count != 1) throw new NotImplementedException();
 
                 // Just return the singleton symbol
-                return ExtractReferencedSymbol(boundNodes[0]).ToApiSymbol();
+                return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
             }
         }
         case SourceModuleSymbol module:
@@ -261,7 +261,7 @@ public sealed partial class SemanticModel
                 if (boundNodes.Count != 1) throw new NotImplementedException();
 
                 // Just return the singleton symbol
-                return ExtractReferencedSymbol(boundNodes[0]).ToApiSymbol();
+                return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
             }
         }
         default:
@@ -284,13 +284,16 @@ public sealed partial class SemanticModel
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 
-    private static Symbol ExtractReferencedSymbol(BoundNode node) => node switch
+    private static Symbol? ExtractReferencedSymbol(BoundNode node) => node switch
     {
         BoundFunctionExpression f => f.Function,
         BoundParameterExpression p => p.Parameter,
         BoundLocalExpression l => l.Local,
         BoundGlobalExpression g => g.Global,
         BoundReferenceErrorExpression e => e.Symbol,
+        BoundLocalLvalue l => l.Local,
+        BoundGlobalLvalue g => g.Global,
+        BoundIllegalLvalue => null,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 }

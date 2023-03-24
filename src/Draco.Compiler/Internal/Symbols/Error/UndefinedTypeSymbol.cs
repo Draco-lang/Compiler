@@ -17,6 +17,4 @@ internal sealed class UndefinedTypeSymbol : TypeSymbol
     {
         this.Name = name;
     }
-
-    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 }

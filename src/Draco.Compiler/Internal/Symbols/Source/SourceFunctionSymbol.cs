@@ -47,8 +47,6 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     {
     }
 
-    public override ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
-
     private ImmutableArray<ParameterSymbol> BuildParameters()
     {
         // TODO: We should totally get rid of this

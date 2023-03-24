@@ -15,8 +15,6 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
 
     public override Symbol? ContainingSymbol => null;
 
-    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
-
     public NoOverloadFunctionSymbol(int parameterCount)
     {
         this.Parameters = Enumerable.Repeat(IntrinsicTypes.Error, parameterCount)

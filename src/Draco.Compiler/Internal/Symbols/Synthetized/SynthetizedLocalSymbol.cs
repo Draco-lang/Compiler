@@ -17,6 +17,4 @@ internal sealed class SynthetizedLocalSymbol : LocalSymbol
         this.Type = type;
         this.IsMutable = isMutable;
     }
-
-    public override ISymbol ToApiSymbol() => new Api.Semantics.LocalSymbol(this);
 }

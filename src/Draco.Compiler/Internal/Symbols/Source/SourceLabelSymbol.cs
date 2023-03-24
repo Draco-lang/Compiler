@@ -19,6 +19,4 @@ internal sealed class SourceLabelSymbol : LabelSymbol, ISourceSymbol
         this.ContainingSymbol = containingSymbol;
         this.DeclarationSyntax = declarationSyntax;
     }
-
-    public override ISymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
 }

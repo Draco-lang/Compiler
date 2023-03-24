@@ -59,6 +59,4 @@ internal sealed class SynthetizedFunctionSymbol : FunctionSymbol
             .ToImmutableArray();
         this.ReturnType = returnType;
     }
-
-    public override ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 }

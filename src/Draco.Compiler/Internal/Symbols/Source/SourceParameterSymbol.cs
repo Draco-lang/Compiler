@@ -27,8 +27,6 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
         this.DeclarationSyntax = syntax;
     }
 
-    public override ISymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
-
     private Type BuildType()
     {
         Debug.Assert(this.DeclaringCompilation is not null);

@@ -14,6 +14,4 @@ internal sealed class UndefinedLabelSymbol : LabelSymbol
     {
         this.Name = name;
     }
-
-    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
 }

@@ -1,3 +1,5 @@
+using Draco.Compiler.Api.Semantics;
+
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
@@ -5,4 +7,5 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class LabelSymbol : Symbol
 {
+    public override ISymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
 }

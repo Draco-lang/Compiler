@@ -23,6 +23,4 @@ internal sealed class SynthetizedTypeSymbol : TypeSymbol
         : this(type.Name, type)
     {
     }
-
-    public override ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 }

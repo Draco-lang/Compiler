@@ -28,6 +28,4 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
         this.untypedSymbol = untypedSymbol;
         this.Type = type;
     }
-
-    public override ISymbol ToApiSymbol() => new Api.Semantics.LocalSymbol(this);
 }

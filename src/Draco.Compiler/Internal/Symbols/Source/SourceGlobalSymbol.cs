@@ -36,8 +36,6 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         this.declaration = declaration;
     }
 
-    public override ISymbol ToApiSymbol() => new Api.Semantics.GlobalSymbol(this);
-
     private Type BuildType()
     {
         Debug.Assert(this.DeclaringCompilation is not null);

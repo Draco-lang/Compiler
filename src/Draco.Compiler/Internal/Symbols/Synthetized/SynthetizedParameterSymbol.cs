@@ -16,6 +16,4 @@ internal sealed class SynthetizedParameterSymbol : ParameterSymbol
     {
         this.Type = type;
     }
-
-    public override ISymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
 }

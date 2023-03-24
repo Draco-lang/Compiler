@@ -38,6 +38,11 @@ internal abstract partial class SyntaxRewriter
                 }
                 elements.Add((TNode)rewritten);
             }
+            else if (elements is not null)
+            {
+                // We already have a list because of an update
+                elements.Add(node);
+            }
         }
         return elements?.ToImmutable();
     }

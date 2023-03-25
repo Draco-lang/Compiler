@@ -57,6 +57,7 @@ internal sealed class Translator
     private void TranslateField(Field field)
     {
         this.TranslateDocumentation(field.Documentation);
+        this.writer.Write("public ");
         this.TranslateType(field.Name, field.Type);
         if (field.Nullable) this.writer.Write('?');
         this.writer.Write(' ');

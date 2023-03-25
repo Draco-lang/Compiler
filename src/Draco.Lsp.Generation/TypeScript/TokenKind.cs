@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace Draco.Lsp.Generation.TypeScript;
 
-internal enum TokenType
+/// <summary>
+/// The different kinds of TypeScript token.
+/// </summary>
+internal enum TokenKind
 {
     EndOfInput,
-
-    Comment,
 
     Comma,
     Colon,
@@ -36,6 +37,7 @@ internal enum TokenType
     KeywordExtends,
     KeywordInterface,
     KeywordNamespace,
+    KeywordType,
 
     LiteralString,
     LiteralInt,

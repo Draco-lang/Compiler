@@ -6,8 +6,23 @@ using System.Threading.Tasks;
 
 namespace Draco.Lsp.Generation.TypeScript;
 
+/// <summary>
+/// Lexes TypeScript code.
+/// </summary>
 internal sealed class Lexer
 {
+    /// <summary>
+    /// Tokenizes the given TypeScript source.
+    /// </summary>
+    /// <param name="text">The source to tokenize.</param>
+    /// <returns>The sequence of typescript tokens.</returns>
+    public static IEnumerable<Token> Lex(string text) => Lex(new StringReader(text));
+
+    /// <summary>
+    /// Tokenizes the given TypeScript source.
+    /// </summary>
+    /// <param name="reader">The source to tokenize.</param>
+    /// <returns>The sequence of typescript tokens.</returns>
     public static IEnumerable<Token> Lex(TextReader reader)
     {
         var lexer = new Lexer(reader);
@@ -15,7 +30,7 @@ internal sealed class Lexer
         {
             var token = lexer.Next();
             yield return token;
-            if (token.Type == TokenType.EndOfInput) break;
+            if (token.Type == TokenKind.EndOfInput) break;
         }
     }
 
@@ -23,6 +38,7 @@ internal sealed class Lexer
 
     private readonly TextReader reader;
     private List<char> peekBuffer = new();
+    private string? lastComment;
 
     private Lexer(TextReader reader)
     {
@@ -32,7 +48,7 @@ internal sealed class Lexer
     private Token Next()
     {
     begin:
-        if (this.IsEnd) return new(TokenType.EndOfInput, string.Empty);
+        if (this.IsEnd) return this.MakeToken(TokenKind.EndOfInput, string.Empty);
         var ch = this.Peek();
 
         if (char.IsWhiteSpace(ch))
@@ -51,56 +67,81 @@ internal sealed class Lexer
                 var offset = 2;
                 while (this.Peek(offset, '*') != '*' || this.Peek(offset + 1, '/') != '/') ++offset;
                 offset += 2;
-                return this.Take(TokenType.Comment, offset);
+                this.lastComment = this.TakeString(offset);
+                goto begin;
             }
             if (this.Peek(1) == '/')
             {
                 // Single-line comment
                 var offset = 2;
                 while (!IsNewline(this.Peek(offset, '\n'))) ++offset;
-                return this.Take(TokenType.Comment, offset);
+                this.lastComment = this.TakeString(offset);
+                goto begin;
             }
             break;
         }
-        case ',': return this.Take(TokenType.Comma, 1);
-        case ':': return this.Take(TokenType.Colon, 1);
-        case ';': return this.Take(TokenType.Semicolon, 1);
-        case '?': return this.Take(TokenType.QuestionMark, 1);
+        case ',': return this.Take(TokenKind.Comma, 1);
+        case ':': return this.Take(TokenKind.Colon, 1);
+        case ';': return this.Take(TokenKind.Semicolon, 1);
+        case '?': return this.Take(TokenKind.QuestionMark, 1);
+        case '=': return this.Take(TokenKind.Assign, 1);
+        case '|': return this.Take(TokenKind.Pipe, 1);
 
-        case '(': return this.Take(TokenType.ParenOpen, 1);
-        case ')': return this.Take(TokenType.ParenClose, 1);
-        case '{': return this.Take(TokenType.CurlyOpen, 1);
-        case '}': return this.Take(TokenType.CurlyClose, 1);
-        case '[': return this.Take(TokenType.BracketOpen, 1);
-        case ']': return this.Take(TokenType.BracketClose, 1);
+        case '(': return this.Take(TokenKind.ParenOpen, 1);
+        case ')': return this.Take(TokenKind.ParenClose, 1);
+        case '{': return this.Take(TokenKind.CurlyOpen, 1);
+        case '}': return this.Take(TokenKind.CurlyClose, 1);
+        case '[': return this.Take(TokenKind.BracketOpen, 1);
+        case ']': return this.Take(TokenKind.BracketClose, 1);
         }
 
         if (IsIdent(ch))
         {
             var offset = 1;
             while (IsIdent(this.Peek(offset))) ++offset;
-            var text = this.Take(offset);
+            var text = this.TakeString(offset);
             var kind = text switch
             {
-                "interface" => TokenType.KeywordInterface,
-                _ => TokenType.Name,
+                "const" => TokenKind.KeywordConst,
+                "export" => TokenKind.KeywordExport,
+                "extends" => TokenKind.KeywordExtends,
+                "interface" => TokenKind.KeywordInterface,
+                "namespace" => TokenKind.KeywordNamespace,
+                "type" => TokenKind.KeywordType,
+                _ => TokenKind.Name,
             };
-            return new(kind, text);
+            return this.MakeToken(kind, text);
         }
 
         throw new InvalidOperationException($"unknown character {this.Peek()}");
     }
 
-    private Token Take(TokenType type, int length) =>
-        new(type, this.Take(length));
+    private Token MakeToken(TokenKind type, string text)
+    {
+        var comment = this.lastComment;
+        this.lastComment = null;
+        return new(type, text, comment);
+    }
 
-    private string Take(int length)
+    private Token Take(TokenKind type, int length)
+    {
+        var text = this.PeekString(length);
+        this.Advance(length);
+        return this.MakeToken(type, text);
+    }
+
+    private string TakeString(int length)
+    {
+        var result = this.PeekString(length);
+        this.Advance(length);
+        return result;
+    }
+
+    private string PeekString(int length)
     {
         if (length == 0) return string.Empty;
         this.Peek(length - 1);
-        var result = new string(this.peekBuffer.Take(length).ToArray());
-        this.peekBuffer.RemoveRange(0, length);
-        return result;
+        return new string(this.peekBuffer.Take(length).ToArray());
     }
 
     private void Advance(int length = 1)

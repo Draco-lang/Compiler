@@ -8,7 +8,8 @@ internal class Program
     {
         var tokens = Lexer.Lex(new StringReader(testInput));
         var model = Parser.Parse(tokens);
-        Console.WriteLine(model);
+        var csCode = Translator.Translate(model);
+        Console.WriteLine(csCode);
     }
 
     private static readonly string testInput = """

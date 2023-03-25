@@ -51,16 +51,14 @@ internal sealed class Lexer
                 var offset = 2;
                 while (this.Peek(offset, '*') != '*' || this.Peek(offset + 1, '/') != '/') ++offset;
                 offset += 2;
-                this.Advance(offset);
-                goto begin;
+                return this.Take(TokenType.Comment, offset);
             }
             if (this.Peek(1) == '/')
             {
                 // Single-line comment
                 var offset = 2;
                 while (!IsNewline(this.Peek(offset, '\n'))) ++offset;
-                this.Advance(offset);
-                goto begin;
+                return this.Take(TokenType.Comment, offset);
             }
             break;
         }

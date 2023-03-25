@@ -36,6 +36,8 @@ internal sealed class Parser
 
     private InterfaceModel ParseInterface()
     {
+        var doc = this.ParseOptionalDocumentation();
+
         this.Expect(TokenType.KeywordInterface);
 
         var name = this.Expect(TokenType.Name).Text;
@@ -48,11 +50,13 @@ internal sealed class Parser
             fields.Add(field);
         }
 
-        return new(name, fields.ToImmutable());
+        return new(doc, name, fields.ToImmutable());
     }
 
     private Field ParseField()
     {
+        var doc = this.ParseOptionalDocumentation();
+
         var name = this.Expect(TokenType.Name).Text;
         var nullable = this.Matches(TokenType.QuestionMark);
 
@@ -62,7 +66,7 @@ internal sealed class Parser
         // Optionally eat semicolon
         this.Matches(TokenType.Semicolon);
 
-        return new(name, nullable, type);
+        return new(doc, name, nullable, type);
     }
 
     private ModelType ParseType()
@@ -106,6 +110,12 @@ internal sealed class Parser
         {
             throw new InvalidOperationException($"unexpected token {peek}");
         }
+    }
+
+    private string? ParseOptionalDocumentation()
+    {
+        if (this.Matches(TokenType.Comment, out var comment)) return comment.Text;
+        return null;
     }
 
     private Token Expect(TokenType type)

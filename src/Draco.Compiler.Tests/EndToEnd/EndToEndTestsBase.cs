@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
@@ -9,7 +10,7 @@ public abstract class EndToEndTestsBase
     protected static Assembly Compile(string sourceCode)
     {
         var syntaxTree = SyntaxTree.Parse(sourceCode);
-        var compilation = Compilation.Create(syntaxTree);
+        var compilation = Compilation.Create(ImmutableArray.Create(syntaxTree));
 
         using var peStream = new MemoryStream();
         var emitResult = compilation.Emit(peStream);

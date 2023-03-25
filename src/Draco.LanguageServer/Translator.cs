@@ -11,7 +11,7 @@ namespace Draco.LanguageServer;
 /// </summary>
 internal static class Translator
 {
-    public static CompilerApi.Syntax.Position ToCompiler(LspModels.Position position) =>
+    public static CompilerApi.Syntax.SyntaxPosition ToCompiler(LspModels.Position position) =>
         new(Line: position.Line, Column: position.Character);
 
     public static LspModels.Diagnostic ToLsp(CompilerApi.Diagnostics.Diagnostic diag) => new()
@@ -46,14 +46,14 @@ internal static class Translator
             Uri = DocumentUri.From(location.SourceText.Path),
         };
 
-    public static LspModels.Range? ToLsp(CompilerApi.Syntax.Range? range) => range is null
+    public static LspModels.Range? ToLsp(CompilerApi.Syntax.SyntaxRange? range) => range is null
         ? null
         : ToLsp(range.Value);
 
-    public static LspModels.Range ToLsp(CompilerApi.Syntax.Range range) =>
+    public static LspModels.Range ToLsp(CompilerApi.Syntax.SyntaxRange range) =>
         new(ToLsp(range.Start), ToLsp(range.End));
 
-    public static LspModels.Position ToLsp(CompilerApi.Syntax.Position position) =>
+    public static LspModels.Position ToLsp(CompilerApi.Syntax.SyntaxPosition position) =>
         new(line: position.Line, character: position.Column);
 
     public static SemanticToken? ToLsp(CompilerApi.Syntax.SyntaxToken token) => token.Kind switch

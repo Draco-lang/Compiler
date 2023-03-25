@@ -1,0 +1,189 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Tree
+  xmlns="http://draco-lang.com/bound-tree/bound-nodes"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/bound-tree/bound-nodes ../../../Draco.SourceGeneration/BoundTree/BoundNodes.xsd"
+  Root="BoundNode">
+  <PredefinedNode Name="BoundNode" />
+
+  <AbstractNode Name="BoundStatement" Base="BoundNode" />
+  <AbstractNode Name="BoundExpression" Base="BoundNode" />
+  <AbstractNode Name="BoundLvalue" Base="BoundNode" />
+
+  <!-- Statements -->
+
+  <Node Name="BoundUnexpectedStatement" Base="BoundStatement">
+  </Node>
+
+  <Node Name="BoundNoOpStatement" Base="BoundStatement">
+  </Node>
+
+  <Node Name="BoundLabelStatement" Base="BoundStatement">
+    <Field Name="Label" Type="LabelSymbol" />
+  </Node>
+
+  <!-- Used for desugaring -->
+  <Node Name="BoundConditionalGotoStatement" Base="BoundStatement">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Target" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="BoundExpressionStatement" Base="BoundStatement">
+    <Field Name="Expression" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundSequencePoint" Base="BoundStatement">
+    <Field Name="Statement" Type="BoundStatement?" />
+  </Node>
+
+  <Node Name="BoundLocalDeclaration" Base="BoundStatement">
+    <Field Name="Local" Type="LocalSymbol" />
+    <Field Name="Value" Type="BoundExpression?" />
+  </Node>
+
+  <!-- Expressions -->
+
+  <Node Name="BoundUnexpectedExpression" Base="BoundExpression">
+  </Node>
+
+  <Node Name="BoundUnitExpression" Base="BoundExpression">
+  </Node>
+
+  <Node Name="BoundGotoExpression" Base="BoundExpression">
+    <Field Name="Target" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="BoundBlockExpression" Base="BoundExpression">
+    <Field Name="Locals" Type="ImmutableArray&lt;LocalSymbol&gt;" />
+    <Field Name="Statements" Type="ImmutableArray&lt;BoundStatement&gt;" />
+    <Field Name="Value" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundReturnExpression" Base="BoundExpression">
+    <Field Name="Value" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundIfExpression" Base="BoundExpression">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Then" Type="BoundExpression" />
+    <Field Name="Else" Type="BoundExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="BoundWhileExpression" Base="BoundExpression">
+    <Field Name="Condition" Type="BoundExpression" />
+    <Field Name="Then" Type="BoundExpression" />
+    <Field Name="ContinueLabel" Type="LabelSymbol" />
+    <Field Name="BreakLabel" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="BoundCallExpression" Base="BoundExpression">
+    <Field Name="Method" Type="BoundExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="BoundIndexExpression" Base="BoundExpression">
+    <Field Name="Collection" Type="BoundExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="BoundUnaryExpression" Base="BoundExpression">
+    <Field Name="Operator" Type="FunctionSymbol" />
+    <Field Name="Operand" Type="BoundExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="BoundBinaryExpression" Base="BoundExpression">
+    <Field Name="Operator" Type="FunctionSymbol" />
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="BoundAndExpression" Base="BoundExpression">
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundOrExpression" Base="BoundExpression">
+    <Field Name="Left" Type="BoundExpression" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundAssignmentExpression" Base="BoundExpression">
+    <Field Name="CompoundOperator" Type="FunctionSymbol?" />
+    <Field Name="Left" Type="BoundLvalue" />
+    <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundLocalExpression" Base="BoundExpression">
+    <Field Name="Local" Type="LocalSymbol" />
+  </Node>
+
+  <Node Name="BoundGlobalExpression" Base="BoundExpression">
+    <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="BoundParameterExpression" Base="BoundExpression">
+    <Field Name="Parameter" Type="ParameterSymbol" />
+  </Node>
+
+  <Node Name="BoundFunctionExpression" Base="BoundExpression">
+    <Field Name="Function" Type="FunctionSymbol" />
+  </Node>
+
+  <Node Name="BoundReferenceErrorExpression" Base="BoundExpression">
+    <Field Name="Symbol" Type="Symbol" />
+  </Node>
+
+  <Node Name="BoundLiteralExpression" Base="BoundExpression">
+    <Field Name="Value" Type="object?" />
+  </Node>
+
+  <Node Name="BoundStringExpression" Base="BoundExpression">
+    <Field Name="Parts" Type="ImmutableArray&lt;BoundStringPart&gt;" />
+  </Node>
+
+  <Node Name="BoundRelationalExpression" Base="BoundExpression">
+    <Field Name="First" Type="BoundExpression" />
+    <Field Name="Comparisons" Type="ImmutableArray&lt;BoundComparison&gt;" />
+  </Node>
+
+  <Node Name="BoundComparison" Base="BoundNode">
+    <Field Name="Operator" Type="FunctionSymbol" />
+    <Field Name="Next" Type="BoundExpression" />
+  </Node>
+
+  <AbstractNode Name="BoundStringPart" Base="BoundNode" />
+
+  <Node Name="BoundUnexpectedStringPart" Base="BoundStringPart">
+  </Node>
+
+  <Node Name="BoundStringText" Base="BoundStringPart">
+    <Field Name="Text" Type="string" />
+  </Node>
+
+  <Node Name="BoundStringInterpolation" Base="BoundStringPart">
+    <Field Name="Value" Type="BoundExpression" />
+  </Node>
+
+  <!-- LValues -->
+
+  <!-- Used for syntax errors -->
+  <Node Name="BoundUnexpectedLvalue" Base="BoundLvalue">
+  </Node>
+
+  <!-- Used when syntax is ok, but illegal as an LValue -->
+  <Node Name="BoundIllegalLvalue" Base="BoundLvalue">
+  </Node>
+
+  <Node Name="BoundLocalLvalue" Base="BoundLvalue">
+    <Field Name="Local" Type="LocalSymbol" />
+  </Node>
+
+  <Node Name="BoundGlobalLvalue" Base="BoundLvalue">
+    <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+</Tree>

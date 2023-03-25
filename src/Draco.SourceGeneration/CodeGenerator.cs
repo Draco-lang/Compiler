@@ -1,19 +1,22 @@
-using Draco.SourceGeneration.SyntaxTree;
-using Scriban.Runtime;
-using Scriban;
 using System.Reflection;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis;
 using System.Threading;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Scriban;
+using Scriban.Runtime;
 
 namespace Draco.SourceGeneration;
 
 internal static class CodeGenerator
 {
-    public static string GenerateGreenTree(Tree tree, CancellationToken cancellationToken) =>
-        Render("GreenTree.sbncs", tree, cancellationToken);
-    public static string GenerateRedTree(Tree tree, CancellationToken cancellationToken) =>
-        Render("RedTree.sbncs", tree, cancellationToken);
+    public static string GenerateGreenSyntaxTree(SyntaxTree.Tree tree, CancellationToken cancellationToken) =>
+        Render("GreenSyntaxTree.sbncs", tree, cancellationToken);
+    public static string GenerateRedSyntaxTree(SyntaxTree.Tree tree, CancellationToken cancellationToken) =>
+        Render("RedSyntaxTree.sbncs", tree, cancellationToken);
+    public static string GenerateUntypedTree(UntypedTree.Tree tree, CancellationToken cancellationToken) =>
+        Render("UntypedTree.sbncs", tree, cancellationToken);
+    public static string GenerateBoundTree(BoundTree.Tree tree, CancellationToken cancellationToken) =>
+        Render("BoundTree.sbncs", tree, cancellationToken);
 
     private static string Render(string templateName, object model, CancellationToken cancellationToken)
     {

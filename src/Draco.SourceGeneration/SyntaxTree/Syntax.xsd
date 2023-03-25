@@ -10,8 +10,8 @@
   <xs:complexType name="TreeType">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
       <xs:element name="PredefinedNode" type="PredefinedNodeType" />
-      <xs:element name="Node" type="NodeType" />
       <xs:element name="AbstractNode" type="AbstractNodeType" />
+      <xs:element name="Node" type="NodeType" />
     </xs:choice>
     <xs:attribute name="Root" type="xs:string" use="required" />
   </xs:complexType>

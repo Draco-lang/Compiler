@@ -1,6 +1,7 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Semantics;
+using Draco.Compiler.Internal.FlowAnalysis;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
@@ -21,8 +22,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
             BlockFunctionBody())));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -43,8 +44,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
             BlockFunctionBody())));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -68,8 +69,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 ExpressionStatement(ReturnExpression(LiteralExpression(0)))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -94,8 +95,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                     then: ReturnExpression(LiteralExpression(1))))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -123,8 +124,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                     @else: ReturnExpression(LiteralExpression(2))))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -151,8 +152,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                     body: ReturnExpression(LiteralExpression(0))))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -180,8 +181,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(LabelDeclaration("after"))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -213,8 +214,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 ExpressionStatement(GotoExpression("before"))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -239,8 +240,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 ExpressionStatement(ReturnExpression(LiteralExpression(0)))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -266,8 +267,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -293,8 +294,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -321,8 +322,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -353,8 +354,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -390,8 +391,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -418,12 +419,13 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
                 ExpressionStatement(WhileExpression(
                     condition: LiteralExpression(false),
-                    body: BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))),
+                    body: BlockExpression(
+                        ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))),
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -441,8 +443,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
             ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -465,8 +467,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -483,8 +485,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
             ImmutableVariableDeclaration("x", NameType("int32"))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -508,8 +510,8 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32")))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -518,7 +520,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
     }
 
     [Fact]
-    public void ValReassigned()
+    public void LocalValReassigned()
     {
         // func foo() {
         //     val x: int32 = 0;
@@ -535,8 +537,36 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))));
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, DataflowErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void GlobalValReassigned()
+    {
+        // val x: int32 = 0;
+        // func foo() {    
+        //     x = 1;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert

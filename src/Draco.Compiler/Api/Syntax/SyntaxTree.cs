@@ -58,8 +58,9 @@ public sealed class SyntaxTree
     /// <summary>
     /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.
     /// </summary>
-    public IEnumerable<Diagnostic> Diagnostics => this.PreOrderTraverse()
-        .SelectMany(n => this.syntaxDiagnostics.Get(n.Green).Select(d => d.ToApiDiagnostic(n)));
+    public IEnumerable<Diagnostic> Diagnostics => this
+        .PreOrderTraverse()
+        .SelectMany(n => n.Diagnostics);
 
     /// <summary>
     /// Preorder traverses the thee with this node being the root.
@@ -81,7 +82,7 @@ public sealed class SyntaxTree
     /// </summary>
     /// <param name="position">The position that has to be contained.</param>
     /// <returns>All subtree nodes containing <paramref name="position"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(Position position) => this.Root.TraverseSubtreesAtPosition(position);
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(SyntaxPosition position) => this.Root.TraverseSubtreesAtPosition(position);
 
     /// <summary>
     /// Syntactically formats this <see cref="SyntaxTree"/>.
@@ -94,7 +95,10 @@ public sealed class SyntaxTree
     /// </summary>
     internal Internal.Syntax.SyntaxNode GreenRoot { get; }
 
-    private readonly SyntaxDiagnosticTable syntaxDiagnostics;
+    /// <summary>
+    /// The table where internal diagnostics are written to.
+    /// </summary>
+    internal SyntaxDiagnosticTable SyntaxDiagnosticTable { get; }
 
     internal SyntaxTree(
         SourceText sourceText,
@@ -103,8 +107,24 @@ public sealed class SyntaxTree
     {
         this.SourceText = sourceText;
         this.GreenRoot = greenRoot;
-        this.syntaxDiagnostics = syntaxDiagnostics;
+        this.SyntaxDiagnosticTable = syntaxDiagnostics;
     }
 
+    /// <summary>
+    /// Constructs a DOT representation of this syntax tree.
+    /// </summary>
+    /// <returns>The DOT code of this syntax tree.</returns>
+    public string ToDot() => this.GreenRoot.ToDot();
+
     public override string ToString() => this.Root.ToString();
+
+    internal void ComputeFullPositions()
+    {
+        var position = 0;
+        foreach (var node in this.Root.PreOrderTraverse())
+        {
+            node.SetFullPosition(position);
+            if (node is SyntaxToken token) position += token.Green.FullWidth;
+        }
+    }
 }

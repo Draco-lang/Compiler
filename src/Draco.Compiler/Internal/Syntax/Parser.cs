@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -214,8 +215,8 @@ internal sealed class Parser
                 TokenKind.Identifier when this.Peek(1) == TokenKind.Colon => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(Range: new(Offset: 0, Width: input.Width));
-            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "declaration");
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedDeclarationSyntax(input);
             this.AddDiagnostic(node, diag);
             return node;
@@ -366,8 +367,8 @@ internal sealed class Parser
                 or TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
-            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "function body");
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "function body");
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedFunctionBodySyntax(input);
             this.AddDiagnostic(node, diag);
             return node;
@@ -406,8 +407,8 @@ internal sealed class Parser
                 var kind when expressionStarters.Contains(kind) => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
-            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "type");
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "type");
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedTypeSyntax(input);
             this.AddDiagnostic(node, diag);
             return node;
@@ -542,8 +543,8 @@ internal sealed class Parser
                         var tt when expressionStarters.Contains(tt) => false,
                         _ => true,
                     });
-                    var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
-                    var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "statement");
+                    var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "statement");
+                    var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
                     var errNode = new UnexpectedStatementSyntax(input);
                     this.AddDiagnostic(errNode, diag);
                     stmts.Add(errNode);
@@ -695,13 +696,13 @@ internal sealed class Parser
             }
             else if (peek == TokenKind.BracketOpen)
             {
-                var openParen = this.Expect(TokenKind.ParenOpen);
+                var openBracket = this.Expect(TokenKind.BracketOpen);
                 var args = this.ParseSeparatedSyntaxList(
                     elementParser: this.ParseExpression,
                     separatorKind: TokenKind.Comma,
                     stopKind: TokenKind.BracketClose);
-                var closeParen = this.Expect(TokenKind.ParenClose);
-                result = new IndexExpressionSyntax(result, openParen, args, closeParen);
+                var closeBracket = this.Expect(TokenKind.BracketClose);
+                result = new IndexExpressionSyntax(result, openBracket, args, closeBracket);
             }
             else if (this.Matches(TokenKind.Dot, out var dot))
             {
@@ -763,8 +764,8 @@ internal sealed class Parser
                 var kind when expressionStarters.Contains(kind) => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
-            var diag = Diagnostic.Create(SyntaxErrors.UnexpectedInput, location, formatArgs: "expression");
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "expression");
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedExpressionSyntax(input);
             this.AddDiagnostic(node, diag);
             return node;
@@ -822,10 +823,8 @@ internal sealed class Parser
                 TokenKind.MultiLineStringEnd or TokenKind.StringNewline => false,
                 _ => true,
             });
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: input.Width));
-            var diag = Diagnostic.Create(
-                SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString,
-                location);
+            var info = DiagnosticInfo.Create(SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString);
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var unexpected = new UnexpectedStringPartSyntax(input);
             this.AddDiagnostic(unexpected, diag);
             content.Add(unexpected);
@@ -886,10 +885,8 @@ internal sealed class Parser
                         {
                             // We are in a newline and the prefixes don't match, that's an error
                             var whitespaceLength = textPart.Content.Text.TakeWhile(char.IsWhiteSpace).Count();
-                            var location = new Location.RelativeToTree(new(Offset: 0, Width: whitespaceLength));
-                            var diag = Diagnostic.Create(
-                                SyntaxErrors.InsufficientIndentationInMultiLinString,
-                                location);
+                            var info = DiagnosticInfo.Create(SyntaxErrors.InsufficientIndentationInMultiLinString);
+                            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: whitespaceLength);
                             this.AddDiagnostic(textPart, diag);
                         }
                         else
@@ -909,10 +906,8 @@ internal sealed class Parser
         else
         {
             // Error, the closing quotes are not on a newline
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: closeQuote.Width));
-            var diag = Diagnostic.Create(
-                SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine,
-                location);
+            var info = DiagnosticInfo.Create(SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine);
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: closeQuote.FullWidth);
             this.AddDiagnostic(closeQuote, diag);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
@@ -984,9 +979,9 @@ internal sealed class Parser
         {
             // We construct an empty token that signals that this is missing from the tree
             // The attached diagnostic message describes what is missing
-            var location = new Location.RelativeToTree(new(Offset: 0, Width: 0));
             var friendlyName = SyntaxFacts.GetUserFriendlyName(kind);
-            var diag = Diagnostic.Create(SyntaxErrors.ExpectedToken, location, formatArgs: friendlyName);
+            var info = DiagnosticInfo.Create(SyntaxErrors.ExpectedToken, formatArgs: friendlyName);
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: 0);
             token = SyntaxToken.From(kind, string.Empty);
             this.AddDiagnostic(token, diag);
         }
@@ -1034,6 +1029,6 @@ internal sealed class Parser
         return token;
     }
 
-    private void AddDiagnostic(SyntaxNode node, Diagnostic diagnostic) =>
+    private void AddDiagnostic(SyntaxNode node, SyntaxDiagnosticInfo diagnostic) =>
         this.diagnostics.Add(node, diagnostic);
 }

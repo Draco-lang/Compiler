@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
-using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.DracoIr;
@@ -350,7 +350,7 @@ internal abstract partial record class Value
     /// </summary>
     /// <param name="Symbol">The symbol of the intrinsic.</param>
     /// <param name="Type">The intrinsic type.</param>
-    public sealed record class Intrinsic(ISymbol.ITyped Symbol, Type Type) : Value
+    public sealed record class Intrinsic(Symbol Symbol, Type Type) : Value
     {
         public override Type Type { get; } = Type;
 

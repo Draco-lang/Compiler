@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,12 +30,13 @@ internal sealed class DracoHoverHandler : HoverHandlerBase
         // TODO: Share compilation
         var souceText = this.documentRepository.GetDocument(request.TextDocument.Uri);
         var syntaxTree = SyntaxTree.Parse(souceText);
-        var compilation = Compilation.Create(syntaxTree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree));
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         var referencedSymbol = syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(symbol => semanticModel.GetReferencedSymbolOrNull(symbol) ?? semanticModel.GetDefinedSymbolOrNull(symbol))
+            .Select(symbol => semanticModel.GetReferencedSymbol(symbol) ?? semanticModel.GetDefinedSymbol(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
         var docs = referencedSymbol is null ? string.Empty : referencedSymbol.Documentation;

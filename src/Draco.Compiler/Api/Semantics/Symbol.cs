@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Immutable;
-using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
-using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -22,11 +21,6 @@ public interface ISymbol : IEquatable<ISymbol>
     /// True, if this symbol represents an error.
     /// </summary>
     public bool IsError { get; }
-
-    /// <summary>
-    /// The list of <see cref="Diagnostic"/> messages attached to this symbol.
-    /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics { get; }
 
     /// <summary>
     /// The location where this symbol was defined.
@@ -51,9 +45,16 @@ public interface IVariableSymbol : ISymbol
 }
 
 /// <summary>
-/// Represents a label symbol.
+/// Represents a local variable symbol.
 /// </summary>
-public interface ILabelSymbol : ISymbol
+public interface ILocalSymbol : IVariableSymbol
+{
+}
+
+/// <summary>
+/// Represents a global variable symbol.
+/// </summary>
+public interface IGlobalSymbol : IVariableSymbol
 {
 }
 
@@ -78,22 +79,25 @@ public interface ITypeSymbol : ISymbol
 {
 }
 
-// Proxy classes ///////////////////////////////////////////////////////////////
+/// <summary>
+/// Represents a label symbol.
+/// </summary>
+public interface ILabelSymbol : ISymbol
+{
+}
+
+// Base classes ////////////////////////////////////////////////////////////////
 
 internal abstract class SymbolBase : ISymbol
 {
-    public IInternalSymbol Symbol { get; }
+    public Symbol Symbol { get; }
 
     public string Name => this.Symbol.Name;
     public bool IsError => this.Symbol.IsError;
-    public ImmutableArray<Diagnostic> Diagnostics => this.Symbol.Diagnostics
-        .Select(d => d.ToApiDiagnostic(null))
-        .ToImmutableArray();
-
-    public Location? Definition => this.Symbol.Definition?.Location;
+    public Location? Definition => this.Symbol.DeclarationSyntax?.Location;
     public string Documentation => this.Symbol.Documentation;
 
-    public SymbolBase(IInternalSymbol symbol)
+    public SymbolBase(Symbol symbol)
     {
         this.Symbol = symbol;
     }
@@ -105,7 +109,7 @@ internal abstract class SymbolBase : ISymbol
 }
 
 internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
-    where TInternalSymbol : IInternalSymbol
+    where TInternalSymbol : Symbol
 {
     public new TInternalSymbol Symbol => (TInternalSymbol)base.Symbol;
 
@@ -115,54 +119,67 @@ internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
     }
 }
 
-internal sealed class ErrorSymbol : SymbolBase<IInternalSymbol>
-{
-    public ErrorSymbol(IInternalSymbol symbol)
-        : base(symbol)
-    {
-    }
-}
+// Proxy classes ///////////////////////////////////////////////////////////////
 
-internal sealed class VariableSymbol : SymbolBase<IInternalSymbol.IVariable>, IVariableSymbol
+internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, IGlobalSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
 
-    public VariableSymbol(IInternalSymbol.IVariable variable)
-        : base(variable)
+    public GlobalSymbol(Internal.Symbols.GlobalSymbol global)
+        : base(global)
     {
     }
 }
 
-internal sealed class LabelSymbol : SymbolBase<IInternalSymbol.ILabel>, ILabelSymbol
-{
-    public LabelSymbol(IInternalSymbol.ILabel label)
-        : base(label)
-    {
-    }
-}
-
-internal sealed class ParameterSymbol : SymbolBase<IInternalSymbol.IParameter>, IParameterSymbol
+internal sealed class LocalSymbol : SymbolBase<Internal.Symbols.LocalSymbol>, ILocalSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
 
-    public ParameterSymbol(IInternalSymbol.IParameter parameter)
+    public LocalSymbol(Internal.Symbols.LocalSymbol local)
+        : base(local)
+    {
+    }
+}
+
+internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSymbol>, IParameterSymbol
+{
+    public bool IsMutable => this.Symbol.IsMutable;
+
+    public ParameterSymbol(Internal.Symbols.ParameterSymbol parameter)
         : base(parameter)
     {
     }
 }
 
-internal sealed class FunctionSymbol : SymbolBase<IInternalSymbol.IFunction>, IFunctionSymbol
+internal sealed class FunctionSymbol : SymbolBase<Internal.Symbols.FunctionSymbol>, IFunctionSymbol
 {
-    public FunctionSymbol(IInternalSymbol.IFunction function)
+    public FunctionSymbol(Internal.Symbols.FunctionSymbol function)
         : base(function)
     {
     }
 }
 
-internal sealed class TypeSymbol : SymbolBase<IInternalSymbol.ITypeDefinition>, ITypeSymbol
+internal sealed class LabelSymbol : SymbolBase<Internal.Symbols.LabelSymbol>, ILabelSymbol
 {
-    public TypeSymbol(IInternalSymbol.ITypeDefinition typeDef)
-        : base(typeDef)
+    public LabelSymbol(Internal.Symbols.LabelSymbol label)
+        : base(label)
+    {
+    }
+}
+
+internal sealed class TypeSymbol : SymbolBase<Internal.Symbols.TypeSymbol>, ITypeSymbol
+{
+    public TypeSymbol(Internal.Symbols.TypeSymbol type)
+        : base(type)
+    {
+    }
+}
+
+// NOTE: Mostly for generic error sentinel values
+internal sealed class AnySymbol : SymbolBase<Internal.Symbols.Symbol>
+{
+    public AnySymbol(Internal.Symbols.Symbol type)
+        : base(type)
     {
     }
 }

@@ -8,14 +8,11 @@
 
   <ItemGroup>
     <AdditionalFiles Include="Internal\Syntax\Syntax.xml" />
+    <AdditionalFiles Include="Internal\BoundTree\BoundNodes.xml" />
+    <AdditionalFiles Include="Internal\UntypedTree\UntypedNodes.xml" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Draco.RedGreenTree.Attributes\Draco.RedGreenTree.Attributes.csproj">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </ProjectReference>
-    <ProjectReference Include="..\Draco.RedGreenTree.SourceGenerator\Draco.RedGreenTree.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
     <ProjectReference Include="..\Draco.SourceGeneration\Draco.SourceGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
   </ItemGroup>
 

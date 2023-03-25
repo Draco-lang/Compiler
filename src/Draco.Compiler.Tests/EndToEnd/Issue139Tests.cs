@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 
@@ -130,11 +131,47 @@ public sealed class Issue139Tests
         func main()
         }
         """")]
+    [InlineData(""""
+        func main(){
+            var x;
+            x = x();
+        }
+        """")]
+    [InlineData(""""
+        func main() {
+            func 
+        }
+        """")]
+    // TODO: Add back once we implement indexers
+    // [InlineData(""""
+    //     func main() {
+    //         println[]
+    //     }
+    //     """")]
+    [InlineData(""""
+        func main() {
+            println("'att't"'"t''ork;");
+        }
+        """")]
+    [InlineData(""""
+        func main() {
+            println("'att't"'"'ork;");
+        }
+        """")]
+    [InlineData(""""
+        8'\
+        """")]
+    [InlineData(""""
+        w08'\
+        """")]
+    [InlineData(""""
+        6w08'\
+        """")]
     [Theory]
     public void DoesNotCrash(string source)
     {
         var syntaxTree = SyntaxTree.Parse(source);
-        var compilation = Compilation.Create(syntaxTree);
+        var compilation = Compilation.Create(ImmutableArray.Create(syntaxTree));
         _ = compilation.Diagnostics.ToList();
         compilation.Emit(new MemoryStream());
     }

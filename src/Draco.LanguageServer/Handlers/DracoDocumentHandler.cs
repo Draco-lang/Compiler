@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,7 +79,8 @@ internal sealed class DracoDocumentHandler : TextDocumentSyncHandlerBase
         var sourceText = SourceText.FromText(uri.ToUri(), text.AsMemory());
         var syntaxTree = SyntaxTree.Parse(sourceText);
         // TODO: Compilation should be shared
-        var compilation = Compilation.Create(syntaxTree);
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree));
         var diags = compilation.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
         this.server.TextDocument.PublishDiagnostics(new()

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
@@ -61,7 +62,8 @@ internal class Program
     {
         var sourceText = SourceText.FromFile(input.FullName);
         var syntaxTree = SyntaxTree.Parse(sourceText);
-        var compilation = Compilation.Create(syntaxTree);
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree));
         var execResult = ScriptingEngine.Execute(compilation);
         if (!execResult.Success)
         {
@@ -75,7 +77,8 @@ internal class Program
     {
         var sourceText = SourceText.FromFile(input.FullName);
         var syntaxTree = SyntaxTree.Parse(sourceText);
-        var compilation = Compilation.Create(syntaxTree);
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree));
         using var irStream = new MemoryStream();
         var emitResult = compilation.Emit(
             peStream: new MemoryStream(),
@@ -95,7 +98,9 @@ internal class Program
     {
         var sourceText = SourceText.FromFile(input.FullName);
         var syntaxTree = SyntaxTree.Parse(sourceText);
-        var compilation = Compilation.Create(syntaxTree, output.Name);
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            assemblyName: output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(dllStream);
         if (!emitResult.Success)

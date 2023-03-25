@@ -24,6 +24,10 @@ public sealed class ScribanHelperFunctions : ScriptObject
         return EscapeKeyword(result);
     }
 
+    public static string RemovePrefix(string str, string suffix) => str.StartsWith(suffix)
+        ? str.Substring(suffix.Length)
+        : str;
+
     public static string RemoveSuffix(string str, string suffix) => str.EndsWith(suffix)
         ? str.Substring(0, str.Length - suffix.Length)
         : str;

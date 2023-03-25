@@ -1,7 +1,6 @@
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
-using Newtonsoft.Json.Linq;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -88,7 +87,7 @@ public sealed class LexerTests
     {
         var gotDiags = this.diagnostics.Get(this.Current);
         Assert.Equal(diags.Length, gotDiags!.Count);
-        Assert.True(diags.SequenceEqual(gotDiags.Select(d => d.Template)));
+        Assert.True(diags.SequenceEqual(gotDiags.Select(d => d.Info.Template)));
     }
 
     [Fact]
@@ -1087,6 +1086,7 @@ public sealed class LexerTests
     }
 
     [Fact]
+    [Trait("Feature", "Literals")]
     public void TestUnclosedCharLiteral()
     {
         var text = "'a";
@@ -1095,6 +1095,21 @@ public sealed class LexerTests
         this.AssertNextToken(TokenKind.LiteralCharacter, text, "a");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnclosedCharacterLiteral);
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Fact]
+    [Trait("Feature", "Literals")]
+    public void TestEndOfInputAfterSingleQuote()
+    {
+        var text = "'";
+        this.Lex(text);
+
+        this.AssertNextToken(TokenKind.LiteralCharacter, text, ' ');
+        this.AssertNoTrivia();
+        this.AssertDiagnostics(SyntaxErrors.UnexpectedCharacterLiteralEnd);
 
         this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();

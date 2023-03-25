@@ -1,4 +1,5 @@
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -107,4 +108,22 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "unexpected end of scientific notation floating-point literal, expected one or more digits after exponent",
         code: Code(11));
+
+    /// <summary>
+    /// The character literal ended unexpectedly.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedCharacterLiteralEnd = DiagnosticTemplate.Create(
+        title: "unexpected character literal end",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected end of character literal",
+        code: Code(12));
+
+    /// <summary>
+    /// The escape sequence ended unexpectedly.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedEscapeSequenceEnd = DiagnosticTemplate.Create(
+        title: "unexpected escape sequence end",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected end of escape sequence",
+        code: Code(13));
 }

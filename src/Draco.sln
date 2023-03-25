@@ -29,6 +29,8 @@ Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "Draco.ProjectTemplates", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.SourceGeneration", "Draco.SourceGeneration\Draco.SourceGeneration.csproj", "{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Lsp.Generation", "Draco.Lsp.Generation\Draco.Lsp.Generation.csproj", "{B3FEA0A7-3657-4F19-8C59-367A0AEBDFC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +98,12 @@ Global
 		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3FEA0A7-3657-4F19-8C59-367A0AEBDFC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3FEA0A7-3657-4F19-8C59-367A0AEBDFC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3FEA0A7-3657-4F19-8C59-367A0AEBDFC5}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3FEA0A7-3657-4F19-8C59-367A0AEBDFC5}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{B3FEA0A7-3657-4F19-8C59-367A0AEBDFC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3FEA0A7-3657-4F19-8C59-367A0AEBDFC5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

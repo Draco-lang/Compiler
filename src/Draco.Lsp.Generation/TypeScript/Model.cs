@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -24,10 +23,14 @@ internal abstract record class Declaration(string? Documentation);
 /// </summary>
 /// <param name="Documentation">The optional documentation for this declaration.</param>
 /// <param name="Name">The name of the declared interface.</param>
+/// <param name="GenericParams">The generic parameters of the declared interface.</param>
+/// <param name="Bases">The base types of the interface.</param>
 /// <param name="Fields">The fields this interface defines.</param>
 internal sealed record class Interface(
     string? Documentation,
     string Name,
+    ImmutableArray<string> GenericParams,
+    ImmutableArray<Expression> Bases,
     ImmutableArray<Field> Fields) : Declaration(Documentation);
 
 /// <summary>
@@ -39,40 +42,40 @@ internal sealed record class Interface(
 internal sealed record class TypeAlias(
     string? Documentation,
     string Name,
-    Type Type) : Declaration(Documentation);
+    Expression Type) : Declaration(Documentation);
 
 /// <summary>
-/// The base of a TypeScript type reference.
+/// A namespace declaration.
 /// </summary>
-internal abstract record class Type;
+/// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="Name">The name of the namespace.</param>
+/// <param name="Constants">The constants defined within this namespace.</param>
+internal sealed record class Namespace(
+    string? Documentation,
+    string Name,
+    ImmutableArray<Constant> Constants) : Declaration(Documentation);
 
 /// <summary>
-/// A simple named type reference, like 'Foo'.
+/// An enum declaration.
 /// </summary>
-/// <param name="Name">The type name.</param>
-internal sealed record class NameType(
-    string Name) : Type;
+/// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="Name">The name of the enum.</param>
+/// <param name="Members">The enum member names with their values assigned.</param>
+internal sealed record class Enum(
+    string? Documentation,
+    string Name,
+    ImmutableArray<KeyValuePair<string, Expression>> Members) : Declaration(Documentation);
 
 /// <summary>
-/// An array type reference, like 'ElementType[]'.
+/// A constant declaration.
 /// </summary>
-/// <param name="ElementType">The array element type.</param>
-internal sealed record class ArrayType(
-    Type ElementType) : Type;
-
-/// <summary>
-/// An union type reference, like 'Alt1 | Alt2 | ...'.
-/// </summary>
-/// <param name="Alternatives">The alternative types.</param>
-internal sealed record class UnionType(
-    ImmutableArray<Type> Alternatives) : Type;
-
-/// <summary>
-/// An inline, anonymous type, like '{ field1: Type1; field2: Type2; ... }'.
-/// </summary>
-/// <param name="Fields">The fields within the anonymous type.</param>
-internal sealed record class AnonymousType(
-    ImmutableArray<Field> Fields) : Type;
+/// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="Name">The name of the constant.</param>
+/// <param name="Value">The value of the constant.</param>
+internal sealed record class Constant(
+    string? Documentation,
+    string Name,
+    Expression Value) : Declaration(Documentation);
 
 /// <summary>
 /// Any kind of field.
@@ -92,7 +95,7 @@ internal sealed record class SimpleField(
     string? Documentation,
     string Name,
     bool Nullable,
-    Type Type) : Field(Documentation);
+    Expression Type) : Field(Documentation);
 
 /// <summary>
 /// An index signature, like '[key: Foo]: Bar'.
@@ -102,5 +105,38 @@ internal sealed record class SimpleField(
 /// <param name="ValueType">The dictionary value type.</param>
 internal sealed record class IndexSignature(
     string KeyName,
-    Type KeyType,
-    Type ValueType) : Field(null as string);
+    Expression KeyType,
+    Expression ValueType) : Field(null as string);
+
+/// <summary>
+/// The base of any expression.
+/// </summary>
+internal abstract record class Expression;
+
+internal sealed record class IntExpression(int Value) : Expression;
+internal sealed record class StringExpression(string Value) : Expression;
+internal sealed record class NameExpression(string Name) : Expression;
+internal sealed record class NegateExpression(Expression Operand) : Expression;
+internal sealed record class ArrayExpression(ImmutableArray<Expression> Elements) : Expression;
+internal sealed record class MemberExpression(Expression Object, string Member) : Expression;
+
+/// <summary>
+/// An union type reference, like 'Alt1 | Alt2 | ...'.
+/// </summary>
+/// <param name="Alternatives">The alternative types.</param>
+internal sealed record class UnionTypeExpression(
+    ImmutableArray<Expression> Alternatives) : Expression;
+
+/// <summary>
+/// An inline, anonymous type, like '{ field1: Type1; field2: Type2; ... }'.
+/// </summary>
+/// <param name="Fields">The fields within the anonymous type.</param>
+internal sealed record class AnonymousTypeExpression(
+    ImmutableArray<Field> Fields) : Expression;
+
+/// <summary>
+/// An array type reference, like 'ElementType[]'.
+/// </summary>
+/// <param name="ElementType">The array element type.</param>
+internal sealed record class ArrayTypeExpression(
+    Expression ElementType) : Expression;

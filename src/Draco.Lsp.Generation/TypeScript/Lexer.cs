@@ -30,7 +30,7 @@ internal sealed class Lexer
         {
             var token = lexer.Next();
             yield return token;
-            if (token.Type == TokenKind.EndOfInput) break;
+            if (token.Kind == TokenKind.EndOfInput) break;
         }
     }
 
@@ -80,12 +80,14 @@ internal sealed class Lexer
             }
             break;
         }
+        case '.': return this.Take(TokenKind.Dot, 1);
         case ',': return this.Take(TokenKind.Comma, 1);
         case ':': return this.Take(TokenKind.Colon, 1);
         case ';': return this.Take(TokenKind.Semicolon, 1);
         case '?': return this.Take(TokenKind.QuestionMark, 1);
         case '=': return this.Take(TokenKind.Assign, 1);
         case '|': return this.Take(TokenKind.Pipe, 1);
+        case '-': return this.Take(TokenKind.Minus, 1);
 
         case '(': return this.Take(TokenKind.ParenOpen, 1);
         case ')': return this.Take(TokenKind.ParenClose, 1);
@@ -93,6 +95,28 @@ internal sealed class Lexer
         case '}': return this.Take(TokenKind.CurlyClose, 1);
         case '[': return this.Take(TokenKind.BracketOpen, 1);
         case ']': return this.Take(TokenKind.BracketClose, 1);
+        case '<': return this.Take(TokenKind.LessThan, 1);
+        case '>': return this.Take(TokenKind.GreaterThan, 1);
+        }
+
+        if (ch is '\'' or '"')
+        {
+            var closeQuotes = ch;
+            var offset = 1;
+            while (this.Peek(offset, closeQuotes) != closeQuotes)
+            {
+                if (this.Peek(offset) == '\\') offset += 2;
+                else ++offset;
+            }
+            ++offset;
+            return this.Take(TokenKind.LiteralString, offset);
+        }
+
+        if (char.IsDigit(ch))
+        {
+            var offset = 1;
+            while (char.IsDigit(this.Peek(offset))) ++offset;
+            return this.Take(TokenKind.LiteralInt, offset);
         }
 
         if (IsIdent(ch))
@@ -103,10 +127,12 @@ internal sealed class Lexer
             var kind = text switch
             {
                 "const" => TokenKind.KeywordConst,
+                "enum" => TokenKind.KeywordEnum,
                 "export" => TokenKind.KeywordExport,
                 "extends" => TokenKind.KeywordExtends,
                 "interface" => TokenKind.KeywordInterface,
                 "namespace" => TokenKind.KeywordNamespace,
+                "readonly" => TokenKind.KeywordReadonly,
                 "type" => TokenKind.KeywordType,
                 _ => TokenKind.Name,
             };

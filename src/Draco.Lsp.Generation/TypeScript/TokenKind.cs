@@ -13,12 +13,14 @@ internal enum TokenKind
 {
     EndOfInput,
 
+    Dot,
     Comma,
     Colon,
     Semicolon,
     Pipe,
     QuestionMark,
     Assign,
+    Minus,
 
     LessThan,
     GreaterThan,
@@ -33,10 +35,12 @@ internal enum TokenKind
     Name,
 
     KeywordConst,
+    KeywordEnum,
     KeywordExport,
     KeywordExtends,
     KeywordInterface,
     KeywordNamespace,
+    KeywordReadonly,
     KeywordType,
 
     LiteralString,

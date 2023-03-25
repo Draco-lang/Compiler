@@ -13,6 +13,6 @@ namespace Draco.Lsp.Generation.TypeScript;
 /// <param name="Text">The token text.</param>
 /// <param name="LeadingComment">The comment before the token.</param>
 internal sealed record class Token(
-    TokenKind Type,
+    TokenKind Kind,
     string Text,
     string? LeadingComment);

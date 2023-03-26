@@ -8,6 +8,7 @@ using Cs = Draco.Lsp.Generation.CSharp;
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using Draco.Lsp.Generation.CSharp;
 
 namespace Draco.Lsp.Generation;
 
@@ -187,6 +188,8 @@ internal sealed class Translator
         var needsInterface = this.SourceModel.Declarations
             .OfType<Ts.Interface>()
             .Any(i => i.Bases.OfType<Ts.NameExpression>().Any(n => n.Name == tsInterface.Name));
+        // In case we don't make an interface, we do make a class
+        if (!needsInterface) needsClass = true;
 
         // Instantiate whichever we need
         if (needsClass)
@@ -343,6 +346,23 @@ internal sealed class Translator
     /// <returns>The translated C# type.</returns>
     private Cs.Type TranslateType(Ts.Expression type, string? nameHint, Cs.Class? containingClass)
     {
+        string GenerateName()
+        {
+            if (nameHint is null) throw new InvalidOperationException("a hint is required to generate type-name");
+            var typeName = Capitalize(nameHint);
+            if (containingClass is not null) typeName = $"{typeName}{ExtractNameSuffix(containingClass.Name)}";
+            return typeName;
+        }
+
+        Cs.Type AddLocalType(Cs.Declaration decl)
+        {
+            var typeRef = new Cs.DeclarationType(decl);
+            // Add as a translated type or as a nested type
+            if (containingClass is not null) containingClass.NestedDeclarations.Add(decl);
+            else this.translatedTypes.Add(decl.Name, typeRef);
+            return typeRef;
+        }
+
         switch (type)
         {
         case Ts.NameExpression nameExpr:
@@ -384,6 +404,28 @@ internal sealed class Translator
                 var newType = MergeAnonymousTypes(alts);
                 return this.TranslateType(newType, nameHint: nameHint, containingClass: containingClass);
             }
+            // If we union together string values, it is an enumeration
+            if (union.Alternatives.All(alt => alt is Ts.StringExpression))
+            {
+                var strAlts = union.Alternatives
+                    .Cast<Ts.StringExpression>()
+                    .Select(str => str.Value);
+                // Generate a name
+                var typeName = GenerateName();
+                // Generate members
+                var csEnum = new Cs.Enum()
+                {
+                    Name = typeName,
+                    Members = strAlts
+                        .Select(str => new Cs.EnumMember(
+                            Documentation: null,
+                            Name: Capitalize(str),
+                            Attributes: ImmutableArray.Create(Cs.Attributes.JsonValue(str))))
+                        .ToList(),
+                };
+                // Register it
+                return AddLocalType(csEnum);
+            }
             // Not a special case, just translate
             var elements = union.Alternatives
                 .Select(alt => this.TranslateType(alt, nameHint: nameHint, containingClass: containingClass))
@@ -402,10 +444,10 @@ internal sealed class Translator
             }
 
             // Not a special case
-            // Generate a name for it
             if (nameHint is null) throw new InvalidOperationException("a hint is required to generate anonymous types");
-            var typeName = Capitalize(nameHint);
-            if (containingClass is not null) typeName = $"{typeName}{ExtractNameSuffix(containingClass.Name)}";
+
+            // Generate a name for it
+            var typeName = GenerateName();
             // NOTE: Should we check if this already exists?
             // Probably not
             // Translate it
@@ -420,10 +462,8 @@ internal sealed class Translator
                 var prop = this.TranslateField(field, containingClass);
                 csClass.Properties.Add(prop);
             }
-            // Add as a translated type
-            var typeRef = new Cs.DeclarationType(csClass);
-            this.translatedTypes.Add(typeName, typeRef);
-            return typeRef;
+            // Register it
+            return AddLocalType(csClass);
         }
         default:
             throw new ArgumentOutOfRangeException(nameof(type));

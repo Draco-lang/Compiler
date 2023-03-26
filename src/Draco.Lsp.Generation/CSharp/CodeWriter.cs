@@ -37,6 +37,8 @@ internal static class CodeWriter
         {{WriteDocumentation(@class.Documentation)}}
         public sealed class {{@class.Name}} {{WriteInterfaces(@class.Interfaces)}}
         {
+            {{string.Join(doubleNewline, @class.NestedDeclarations.Select(WriteDeclaration))}}
+
             {{string.Join(doubleNewline, @class.Properties.Select(WriteProperty))}}
         }
         """;

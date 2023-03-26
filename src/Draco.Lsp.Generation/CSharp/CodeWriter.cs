@@ -12,6 +12,9 @@ namespace Draco.Lsp.Generation.CSharp;
 
 internal static class CodeWriter
 {
+    private static readonly string generatedAttribute = """
+        [GeneratedCodeAttribute("Draco.Lsp.Generation", "0.1.0")]
+        """;
     private static readonly string doubleNewline = string.Concat(Environment.NewLine, Environment.NewLine);
 
     public static string WriteModel(Model model)
@@ -35,6 +38,7 @@ internal static class CodeWriter
     private static string WriteClass(Class @class) =>
         $$"""
         {{WriteDocumentation(@class.Documentation)}}
+        {{generatedAttribute}}
         public sealed class {{@class.Name}} {{WriteInterfaces(@class.Interfaces)}}
         {
             {{string.Join(doubleNewline, @class.NestedDeclarations.Select(WriteDeclaration))}}
@@ -46,6 +50,7 @@ internal static class CodeWriter
     private static string WriteInterface(Interface @interface) =>
         $$"""
         {{WriteDocumentation(@interface.Documentation)}}
+        {{generatedAttribute}}
         public interface {{@interface.Name}} {{WriteInterfaces(@interface.Interfaces)}}
         {
             {{string.Join(doubleNewline, @interface.Properties.Select(WriteProperty))}}
@@ -55,6 +60,7 @@ internal static class CodeWriter
     private static string WriteEnum(Enum @enum) =>
         $$"""
         {{WriteDocumentation(@enum.Documentation)}}
+        {{generatedAttribute}}
         public enum {{@enum.Name}}
         {
             {{string.Join(doubleNewline, @enum.Members.Select(WriteEnumMember))}}

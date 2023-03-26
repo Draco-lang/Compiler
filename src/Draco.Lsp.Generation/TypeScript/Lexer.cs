@@ -132,6 +132,7 @@ internal sealed class Lexer
                 "extends" => TokenKind.KeywordExtends,
                 "interface" => TokenKind.KeywordInterface,
                 "namespace" => TokenKind.KeywordNamespace,
+                "null" => TokenKind.KeywordNull,
                 "readonly" => TokenKind.KeywordReadonly,
                 "type" => TokenKind.KeywordType,
                 _ => TokenKind.Name,

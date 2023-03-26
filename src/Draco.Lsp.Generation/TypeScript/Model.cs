@@ -117,6 +117,11 @@ internal sealed record class IndexSignature(
 internal abstract record class Expression;
 
 /// <summary>
+/// Null literal.
+/// </summary>
+internal sealed record class NullExpression : Expression;
+
+/// <summary>
 /// An integer constant.
 /// </summary>
 /// <param name="Value">The integral value.</param>

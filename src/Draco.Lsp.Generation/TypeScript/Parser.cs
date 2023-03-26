@@ -195,6 +195,7 @@ internal sealed class Parser
         if (this.Matches(TokenKind.LiteralInt, out var intLit)) return new IntExpression(int.Parse(intLit.Text));
         if (this.Matches(TokenKind.LiteralString, out var strLit)) return new StringExpression(ExtractStringLiteral(strLit.Text));
         if (this.Matches(TokenKind.Name, out var name)) return new NameExpression(name.Text);
+        if (this.Matches(TokenKind.KeywordNull)) return new NullExpression();
         if (this.Matches(TokenKind.BracketOpen))
         {
             var elements = ImmutableArray.CreateBuilder<Expression>();

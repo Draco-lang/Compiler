@@ -40,6 +40,7 @@ internal enum TokenKind
     KeywordExtends,
     KeywordInterface,
     KeywordNamespace,
+    KeywordNull,
     KeywordReadonly,
     KeywordType,
 

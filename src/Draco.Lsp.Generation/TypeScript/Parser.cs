@@ -193,7 +193,7 @@ internal sealed class Parser
     private Expression ParseAtomExpression()
     {
         if (this.Matches(TokenKind.LiteralInt, out var intLit)) return new IntExpression(int.Parse(intLit.Text));
-        if (this.Matches(TokenKind.LiteralString, out var strLit)) return new StringExpression(strLit.Text);
+        if (this.Matches(TokenKind.LiteralString, out var strLit)) return new StringExpression(ExtractStringLiteral(strLit.Text));
         if (this.Matches(TokenKind.Name, out var name)) return new NameExpression(name.Text);
         if (this.Matches(TokenKind.BracketOpen))
         {
@@ -399,6 +399,11 @@ internal sealed class Parser
         }
         return this.peekBuffer[offset];
     }
+
+    private static string ExtractStringLiteral(string str) => str[1..^1]
+        .Replace(@"\r", "\r")
+        .Replace(@"\n", "\n")
+        .Replace(@"\t", "\t");
 
     private static bool IsNameLike(TokenKind kind) => kind
         is TokenKind.Name

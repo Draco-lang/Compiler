@@ -10,13 +10,16 @@ namespace Draco.Lsp.Generation.TypeScript;
 /// Represents all TypeScript elements parsed up.
 /// </summary>
 /// <param name="Declaration">The declarations within this model.</param>
-internal sealed record class Model(ImmutableArray<Declaration> Declaration);
+internal sealed record class Model(ImmutableArray<Declaration> Declarations);
 
 /// <summary>
 /// The base of all declarations.
 /// </summary>
 /// <param name="Documentation">The optional documentation for this declaration.</param>
-internal abstract record class Declaration(string? Documentation);
+/// <param name="Name">The name of the declared element.</param>
+internal abstract record class Declaration(
+    string? Documentation,
+    string Name);
 
 /// <summary>
 /// An interface declaration.
@@ -31,7 +34,7 @@ internal sealed record class Interface(
     string Name,
     ImmutableArray<string> GenericParams,
     ImmutableArray<Expression> Bases,
-    ImmutableArray<Field> Fields) : Declaration(Documentation);
+    ImmutableArray<Field> Fields) : Declaration(Documentation, Name);
 
 /// <summary>
 /// A type-alias declaration.
@@ -42,7 +45,7 @@ internal sealed record class Interface(
 internal sealed record class TypeAlias(
     string? Documentation,
     string Name,
-    Expression Type) : Declaration(Documentation);
+    Expression Type) : Declaration(Documentation, Name);
 
 /// <summary>
 /// A namespace declaration.
@@ -53,7 +56,7 @@ internal sealed record class TypeAlias(
 internal sealed record class Namespace(
     string? Documentation,
     string Name,
-    ImmutableArray<Constant> Constants) : Declaration(Documentation);
+    ImmutableArray<Constant> Constants) : Declaration(Documentation, Name);
 
 /// <summary>
 /// An enum declaration.
@@ -64,7 +67,7 @@ internal sealed record class Namespace(
 internal sealed record class Enum(
     string? Documentation,
     string Name,
-    ImmutableArray<KeyValuePair<string, Expression>> Members) : Declaration(Documentation);
+    ImmutableArray<KeyValuePair<string, Expression>> Members) : Declaration(Documentation, Name);
 
 /// <summary>
 /// A constant declaration.
@@ -75,7 +78,7 @@ internal sealed record class Enum(
 internal sealed record class Constant(
     string? Documentation,
     string Name,
-    Expression Value) : Declaration(Documentation);
+    Expression Value) : Declaration(Documentation, Name);
 
 /// <summary>
 /// Any kind of field.

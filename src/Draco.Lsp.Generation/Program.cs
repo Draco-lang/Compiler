@@ -15,6 +15,8 @@ internal class Program
 
         var translator = new Translator(model);
         translator.AddBuiltinType("boolean", typeof(bool));
+        translator.AddBuiltinType("string", typeof(string));
+        translator.AddBuiltinType("LSPAny", typeof(object));
         translator.GenerateByName("ServerCapabilities");
     }
 }

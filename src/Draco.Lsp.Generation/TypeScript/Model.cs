@@ -120,52 +120,80 @@ internal abstract record class Expression;
 /// An integer constant.
 /// </summary>
 /// <param name="Value">The integral value.</param>
-internal sealed record class IntExpression(int Value) : Expression;
+internal sealed record class IntExpression(
+    int Value) : Expression;
 
 /// <summary>
 /// A string constant.
 /// </summary>
 /// <param name="Value">The string value.</param>
-internal sealed record class StringExpression(string Value) : Expression;
+internal sealed record class StringExpression(
+    string Value) : Expression;
 
 /// <summary>
 /// A name reference.
 /// </summary>
 /// <param name="Name">The name.</param>
-internal sealed record class NameExpression(string Name) : Expression;
+internal sealed record class NameExpression(
+    string Name) : Expression;
 
 /// <summary>
 /// A negation.
 /// </summary>
 /// <param name="Operand">The negated expression.</param>
-internal sealed record class NegateExpression(Expression Operand) : Expression;
+internal sealed record class NegateExpression(
+    Expression Operand) : Expression;
 
 /// <summary>
 /// An array literal.
 /// </summary>
 /// <param name="Elements">The array of values.</param>
-internal sealed record class ArrayExpression(ImmutableArray<Expression> Elements) : Expression;
+internal sealed record class ArrayExpression(
+    ImmutableArray<Expression> Elements) : Expression;
 
 /// <summary>
 /// A member access.
 /// </summary>
 /// <param name="Object">The object that has the accessed member.</param>
 /// <param name="Member">The access member name.</param>
-internal sealed record class MemberExpression(Expression Object, string Member) : Expression;
+internal sealed record class MemberExpression(
+    Expression Object,
+    string Member) : Expression;
 
 /// <summary>
 /// An union type reference, like 'Alt1 | Alt2 | ...'.
 /// </summary>
 /// <param name="Alternatives">The alternative types.</param>
 internal sealed record class UnionTypeExpression(
-    ImmutableArray<Expression> Alternatives) : Expression;
+    ImmutableArray<Expression> Alternatives) : Expression
+{
+    public bool Equals(UnionTypeExpression? other) =>
+           other is not null
+        && this.Alternatives.ToHashSet().SetEquals(other.Alternatives);
+
+    public override int GetHashCode() => throw new NotSupportedException();
+}
 
 /// <summary>
 /// An inline, anonymous type, like '{ field1: Type1; field2: Type2; ... }'.
 /// </summary>
 /// <param name="Fields">The fields within the anonymous type.</param>
 internal sealed record class AnonymousTypeExpression(
-    ImmutableArray<Field> Fields) : Expression;
+    ImmutableArray<Field> Fields) : Expression
+{
+    public bool Equals(AnonymousTypeExpression? other)
+    {
+        if (other is null) return false;
+        if (this.Fields.Length != other.Fields.Length) return false;
+        foreach (var field in this.Fields)
+        {
+            if (!other.Fields.Contains(field)) return false;
+        }
+        return true;
+    }
+
+    public override int GetHashCode() => throw new NotSupportedException();
+}
 
 /// <summary>
 /// An array type reference, like 'ElementType[]'.

@@ -7,6 +7,7 @@ using Ts = Draco.Lsp.Generation.TypeScript;
 using Cs = Draco.Lsp.Generation.CSharp;
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Draco.Lsp.Generation;
 
@@ -14,10 +15,10 @@ internal sealed class Translator
 {
     private sealed class TypeTranslation
     {
-        public Ts.Declaration Original { get; set; } = null!;
+        public object Original { get; set; } = null!;
         public Cs.Class? Class { get; set; }
         public Cs.Interface? Interface { get; set; }
-        public Cs.Declaration? Other { get; set; }
+        public Cs.Type? Other { get; set; }
     }
 
     private sealed class TypeReferenceFinder : Ts.ModelVisitor
@@ -64,6 +65,8 @@ internal sealed class Translator
     private readonly Dictionary<string, TypeTranslation> translatedTypes = new();
     // Builtins
     private readonly Dictionary<string, Cs.Type> builtinTypes = new();
+    // Additional types
+    private readonly List<Cs.Declaration> globalAdditionalDeclarations = new();
 
     public Translator(Ts.Model sourceModel)
     {
@@ -113,8 +116,23 @@ internal sealed class Translator
     private TypeTranslation Translate(Ts.Declaration tsDecl) => tsDecl switch
     {
         Ts.Interface i => this.Translate(i),
+        Ts.TypeAlias a => this.Translate(a),
         _ => throw new ArgumentOutOfRangeException(nameof(tsDecl)),
     };
+
+    private TypeTranslation Translate(Ts.TypeAlias tsAlias)
+    {
+        var translation = new TypeTranslation()
+        {
+            Original = tsAlias,
+        };
+        this.translatedTypes.Add(tsAlias.Name, translation);
+
+        var type = this.TranslateType(tsAlias.Type, this.globalAdditionalDeclarations, hintName: tsAlias.Name);
+        translation.Other = type;
+
+        return translation;
+    }
 
     private TypeTranslation Translate(Ts.Interface tsInterface)
     {
@@ -125,17 +143,22 @@ internal sealed class Translator
         this.translatedTypes.Add(tsInterface.Name, translation);
 
         // Check, if we need an interface
-        // We need an interface, if any of the TS interfaces use it in multi-inheritance
+        // We need an interface, if any of the TS interfaces use it in inheritance
         var needsInterface = this.SourceModel.Declarations
             .OfType<Ts.Interface>()
-            .Any(i => i.Bases.Length > 1
-                   && i.Bases.OfType<Ts.NameExpression>().Any(n => n.Name == tsInterface.Name));
+            .Any(i => i.Bases.OfType<Ts.NameExpression>().Any(n => n.Name == tsInterface.Name));
         // Check, if we need a class
         // We need a class, if any of the fields reference the type directly
         var needsClass = TypeReferenceFinder.Find(this.SourceModel, tsInterface.Name);
 
-        if (needsInterface) this.TranslateInterface(translation);
         if (needsClass) this.TranslateClass(translation);
+        if (needsInterface) this.TranslateInterface(translation, translation.Class!.NestedDeclarations);
+
+        if (needsClass && needsInterface)
+        {
+            // The class implements the interface
+            translation.Class!.Interfaces.Add(translation.Interface!);
+        }
 
         return translation;
     }
@@ -154,8 +177,12 @@ internal sealed class Translator
         // TODO: Generics
         if (tsInterface.GenericParams.Length > 0) throw new NotImplementedException();
 
-        // TODO: Bases
-        if (tsInterface.Bases.Length > 0) throw new NotImplementedException();
+        // Bases
+        foreach (var b in tsInterface.Bases)
+        {
+            var interf = this.TranslateType(b, csClass.NestedDeclarations, needsInterface: true);
+            csClass.Interfaces.Add((Cs.Interface)((Cs.DeclarationType)interf).Declaration);
+        }
 
         // Fields
         foreach (var field in tsInterface.Fields)
@@ -165,27 +192,31 @@ internal sealed class Translator
         }
     }
 
-    private void TranslateInterface(TypeTranslation translation)
+    private void TranslateInterface(TypeTranslation translation, IList<Cs.Declaration> additionalDecls)
     {
         var tsInterface = (Ts.Interface)translation.Original;
 
         var csInterface = new Cs.Interface()
         {
             Documentation = ExtractDocumentation(tsInterface.Documentation),
-            Name = tsInterface.Name,
+            Name = $"I{tsInterface.Name}",
         };
         translation.Interface = csInterface;
 
         // TODO: Generics
         if (tsInterface.GenericParams.Length > 0) throw new NotImplementedException();
 
-        // TODO: Bases
-        if (tsInterface.Bases.Length > 0) throw new NotImplementedException();
+        // Bases
+        foreach (var b in tsInterface.Bases)
+        {
+            var interf = this.TranslateType(b, this.globalAdditionalDeclarations, needsInterface: true);
+            csInterface.Interfaces.Add((Cs.Interface)((Cs.DeclarationType)interf).Declaration);
+        }
 
         // Fields
         foreach (var field in tsInterface.Fields)
         {
-            var prop = this.TranslateField(field, null);
+            var prop = this.TranslateField(field, additionalDecls);
             csInterface.Properties.Add(prop);
         }
     }
@@ -204,7 +235,7 @@ internal sealed class Translator
             Name = tsNamespace.Name,
             Members = tsNamespace.Constants.Select(this.TranslateEnumMember).ToList(),
         };
-        translation.Other = csEnum;
+        translation.Other = new Cs.DeclarationType(csEnum);
 
         return translation;
     }
@@ -236,14 +267,15 @@ internal sealed class Translator
         }
     }
 
-    private Cs.Property TranslateField(Ts.Field field, IList<Cs.Declaration>? additionalDecls)
+    private Cs.Property TranslateField(Ts.Field field, IList<Cs.Declaration> additionalDecls)
     {
         if (field is Ts.SimpleField simpleField)
         {
-            var propType = this.TranslateType(simpleField.Type, additionalDecls);
+            var propType = this.TranslateType(simpleField.Type, additionalDecls, hintName: simpleField.Name);
             return new Cs.Property(
                 Documentation: ExtractDocumentation(simpleField.Documentation),
                 Type: propType,
+                Nullable: simpleField.Nullable,
                 Name: Capitalize(simpleField.Name),
                 Attributes: ImmutableArray.Create(new Cs.Attribute(
                     Name: "JsonPropertyName",
@@ -258,8 +290,9 @@ internal sealed class Translator
 
     private Cs.Type TranslateType(
         Ts.Expression type,
-        IList<Cs.Declaration>? additionalDecls = null,
-        bool needsInterface = false)
+        IList<Cs.Declaration> additionalDecls,
+        bool needsInterface = false,
+        string? hintName = null)
     {
         if (type is Ts.NameExpression name)
         {
@@ -272,28 +305,88 @@ internal sealed class Translator
                 var iDecl = translation?.Interface ?? throw new InvalidOperationException();
                 return new Cs.DeclarationType(iDecl);
             }
-            var decl = translation?.Class
-                    ?? translation?.Other;
-            return decl is null
+            var typeRef = translation?.Class is null
+                    ? translation?.Other
+                    : new Cs.DeclarationType(translation.Class);
+            return typeRef is null
                 ? throw new InvalidOperationException()
-                : new Cs.DeclarationType(decl);
+                : typeRef;
         }
         else if (type is Ts.UnionTypeExpression union)
         {
+            // Union of anything and a null
+            if (union.Alternatives.Any(alt => alt is Ts.NameExpression { Name: "null" }))
+            {
+                // We take out the null
+                var remAlts = union.Alternatives
+                    .Where(alt => alt is not Ts.NameExpression { Name: "null" })
+                    .ToImmutableArray();
+                if (remAlts.Length == 1)
+                {
+                    // It's a single alternative from now
+                    var single = this.TranslateType(remAlts[0], additionalDecls, hintName: hintName);
+                    return new Cs.NullableType(single);
+                }
+                else
+                {
+                    // Still multiple
+                    var multi = this.TranslateType(new Ts.UnionTypeExpression(remAlts), additionalDecls);
+                    return new Cs.NullableType(multi);
+                }
+            }
+
+            // Union of anonymous expressions
+            if (union.Alternatives.All(alt => alt is Ts.AnonymousTypeExpression))
+            {
+                // We just find a common denominator by merging
+                var newType = MergeAnonymousAlternatives(union.Alternatives.Cast<Ts.AnonymousTypeExpression>());
+                return this.TranslateType(newType, additionalDecls, hintName: hintName);
+            }
+
             var elements = union.Alternatives
-                .Select(alt => this.TranslateType(alt, additionalDecls))
+                .Select(alt => this.TranslateType(alt, additionalDecls, hintName: hintName))
                 .ToImmutableArray();
             return new Cs.DiscriminatedUnionType(elements);
         }
         else if (type is Ts.ArrayTypeExpression array)
         {
-            var element = this.TranslateType(array.ElementType, additionalDecls);
+            var nextHint = hintName is null
+                ? null
+                : Singular(hintName);
+            var element = this.TranslateType(array.ElementType, additionalDecls, hintName: nextHint);
             return new Cs.ArrayType(element);
         }
         else if (type is Ts.AnonymousTypeExpression anon)
         {
-            // TODO
-            throw new NotImplementedException();
+            if (anon.Fields.Length == 1 && anon.Fields[0] is Ts.IndexSignature indexSignature)
+            {
+                // Shortcut, just translate it to a dictionary
+                var keyType = this.TranslateType(indexSignature.KeyType, additionalDecls, hintName: indexSignature.KeyName);
+                var valueType = this.TranslateType(indexSignature.ValueType, additionalDecls);
+                return new Cs.DictionaryType(keyType, valueType);
+            }
+
+            Debug.Assert(hintName is not null);
+            var typeName = Capitalize(hintName);
+            // Look for it in the additional decls
+            var existing = additionalDecls.FirstOrDefault(decl => decl.Name == typeName);
+            if (existing is not null) return new Cs.DeclarationType(existing);
+            // Not found, we need to translate
+            var csClass = new Cs.Class()
+            {
+                Documentation = null,
+                Name = typeName,
+            };
+            // Translate fields
+            foreach (var field in anon.Fields)
+            {
+                var prop = this.TranslateField(field, csClass.NestedDeclarations);
+                csClass.Properties.Add(prop);
+            }
+            // Add declaration
+            additionalDecls.Add(csClass);
+            // We can return it wrapped up as a type reference
+            return new Cs.DeclarationType(csClass);
         }
         else
         {
@@ -310,7 +403,37 @@ internal sealed class Translator
         return decls.Length != 0;
     }
 
+    private static Ts.Expression MergeAnonymousAlternatives(IEnumerable<Ts.AnonymousTypeExpression> alternatives)
+    {
+        var newFields = new Dictionary<string, Ts.SimpleField>();
+        foreach (var alt in alternatives)
+        {
+            foreach (var field in alt.Fields.Cast<Ts.SimpleField>())
+            {
+                if (!newFields.TryGetValue(field.Name, out var existing))
+                {
+                    // New, add it
+                    newFields.Add(field.Name, field);
+                }
+                else
+                {
+                    // We need to compare
+                    // Types must equal
+                    if (!Equals(field.Type, existing.Type)) throw new InvalidOperationException();
+                    // Check, if nullability is looser
+                    // If so, replace
+                    if (field.Nullable && !existing.Nullable) newFields[field.Name] = field;
+                }
+            }
+        }
+        return new Ts.AnonymousTypeExpression(newFields.Values.Cast<Ts.Field>().ToImmutableArray());
+    }
+
     private static string Capitalize(string s) => $"{char.ToUpper(s[0])}{s[1..]}";
+
+    private static string Singular(string s) => s.EndsWith('s')
+        ? s[..^1]
+        : s;
 
     private static string? ExtractDocumentation(string? docComment)
     {
@@ -324,6 +447,14 @@ internal sealed class Translator
         var lines = docComment.Split('\n');
         if (lines.Length < 3)
         {
+            if (lines.Length == 1)
+            {
+                // Could be /** ... */
+                var line = lines[0].Trim();
+                if (line.StartsWith("/**") && line.EndsWith("*/")) return line[3..^2].Trim();
+                // Unknown, discard
+                return null;
+            }
             // TODO
             throw new NotImplementedException();
         }

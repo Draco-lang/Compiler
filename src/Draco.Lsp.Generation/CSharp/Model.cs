@@ -42,6 +42,11 @@ internal abstract class Declaration
 internal sealed class Class : Declaration
 {
     /// <summary>
+    /// The interfaces this class implements.
+    /// </summary>
+    public IList<Interface> Interfaces { get; set; } = new List<Interface>();
+
+    /// <summary>
     /// The declarations nested within this class.
     /// </summary>
     public IList<Declaration> NestedDeclarations { get; set; } = new List<Declaration>();
@@ -57,6 +62,11 @@ internal sealed class Class : Declaration
 /// </summary>
 internal sealed class Interface : Declaration
 {
+    /// <summary>
+    /// The interfaces this interface implements.
+    /// </summary>
+    public IList<Interface> Interfaces { get; set; } = new List<Interface>();
+
     /// <summary>
     /// The properties within this interface.
     /// </summary>
@@ -90,11 +100,13 @@ internal sealed record class EnumMember(
 /// </summary>
 /// <param name="Documentation">The docs of the property.</param>
 /// <param name="Type">The property type.</param>
+/// <param name="Nullable">True, if this field is nullable.</param>
 /// <param name="Name">The property name.</param>
 /// <param name="Attributes">The attributes for this property.</param>
 internal sealed record class Property(
     string? Documentation,
     Type Type,
+    bool Nullable,
     string Name,
     ImmutableArray<Attribute> Attributes);
 
@@ -139,3 +151,19 @@ internal sealed record class DiscriminatedUnionType(
 /// <param name="ElementType">The array element type.</param>
 internal sealed record class ArrayType(
     Type ElementType) : Type;
+
+/// <summary>
+/// A nullable C# type.
+/// </summary>
+/// <param name="Type">The underlying type.</param>
+internal sealed record class NullableType(
+    Type Type) : Type;
+
+/// <summary>
+/// A C# dictionary type.
+/// </summary>
+/// <param name="KeyType">The key type.</param>
+/// <param name="ValueType">The value type.</param>
+internal sealed record class DictionaryType(
+    Type KeyType,
+    Type ValueType) : Type;

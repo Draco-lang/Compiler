@@ -8,7 +8,6 @@ using Cs = Draco.Lsp.Generation.CSharp;
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using Draco.Lsp.Generation.CSharp;
 
 namespace Draco.Lsp.Generation;
 
@@ -255,6 +254,8 @@ internal sealed class Translator
                 csClass.Properties.Add(prop);
             }
         }
+        // If we have a class, initialize parentship
+        if (csClass is not null) csClass.InitializeParents();
 
         // Done
         return typeReference;

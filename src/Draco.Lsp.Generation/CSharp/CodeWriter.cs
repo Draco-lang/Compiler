@@ -77,13 +77,19 @@ internal static class CodeWriter
 
     private static string WriteType(Type type) => type switch
     {
-        DeclarationType decl => decl.Declaration.Name,
+        DeclarationType decl => decl.Declaration is Class classDecl
+            ? WriteClassType(classDecl)
+            : decl.Declaration.Name,
         DiscriminatedUnionType du => $"OneOf<{string.Join(", ", du.Alternatives.Select(WriteType))}>",
         BuiltinType b => b.Type.Name,
         ArrayType a => $"IList<{WriteType(a.ElementType)}>",
         NullableType n => $"{WriteType(n.Type)}?",
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
+
+    private static string WriteClassType(Class @class) => @class.Parent is null
+        ? @class.Name
+        : $"{WriteClassType(@class.Parent)}.{@class.Name}";
 
     private static string WriteAttributeList(ImmutableArray<Attribute> attributes) =>
         string.Join(Environment.NewLine, attributes.Select(WriteAttribute));

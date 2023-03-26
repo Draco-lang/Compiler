@@ -42,7 +42,7 @@ internal abstract class Declaration
 internal sealed class Class : Declaration
 {
     /// <summary>
-    /// The parent of this class.
+    /// The parent of this class in terms of containment, not inheritance.
     /// </summary>
     public Class? Parent { get; set; }
 
@@ -60,6 +60,18 @@ internal sealed class Class : Declaration
     /// The properties within this class.
     /// </summary>
     public IList<Property> Properties { get; set; } = new List<Property>();
+
+    /// <summary>
+    /// Initializes the parent-child relationship between this class and the nested classes.
+    /// </summary>
+    public void InitializeParents()
+    {
+        foreach (var subclass in this.NestedDeclarations.OfType<Class>())
+        {
+            subclass.Parent = this;
+            subclass.InitializeParents();
+        }
+    }
 }
 
 /// <summary>

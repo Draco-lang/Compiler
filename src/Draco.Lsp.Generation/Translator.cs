@@ -184,7 +184,8 @@ internal sealed class Translator
         if (needsClass)
         {
             // Add all interface props to the class
-            foreach (var prop in translation.Class!.Interfaces.SelectMany(i => i.Properties))
+            var transitiveInterfaces = translation.Class!.Interfaces.SelectMany(CollectInterfacesTransitively);
+            foreach (var prop in transitiveInterfaces.SelectMany(i => i.Properties))
             {
                 if (translation.Class.Properties.Any(p => p.Name == prop.Name)) continue;
                 translation.Class.Properties.Add(prop);
@@ -403,9 +404,10 @@ internal sealed class Translator
             }
 
             Debug.Assert(hintName is not null);
-            var typeName = $"{Capitalize(hintName)}{this.nameSuffix}";
+            var typeNamePrefix = Capitalize(hintName);
+            var typeName = $"{typeNamePrefix}{this.nameSuffix}";
             // Look for it in the additional decls
-            var existing = additionalDecls.FirstOrDefault(decl => decl.Name == typeName);
+            var existing = additionalDecls.FirstOrDefault(decl => decl.Name.StartsWith(typeNamePrefix));
             if (existing is not null) return new Cs.DeclarationType(existing);
             // Not found, we need to translate
             var csClass = new Cs.Class()
@@ -437,6 +439,12 @@ internal sealed class Translator
             .Where(d => d.Name == name)
             .ToImmutableArray();
         return decls.Length != 0;
+    }
+
+    private static IEnumerable<Cs.Interface> CollectInterfacesTransitively(Cs.Interface @interface)
+    {
+        yield return @interface;
+        foreach (var b in @interface.Interfaces.SelectMany(CollectInterfacesTransitively)) yield return b;
     }
 
     private static Ts.Expression MergeAnonymousAlternatives(IEnumerable<Ts.AnonymousTypeExpression> alternatives)

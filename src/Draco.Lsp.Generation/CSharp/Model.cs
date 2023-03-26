@@ -47,11 +47,6 @@ internal sealed class Class : Declaration
     public IList<Interface> Interfaces { get; set; } = new List<Interface>();
 
     /// <summary>
-    /// The declarations nested within this class.
-    /// </summary>
-    public IList<Declaration> NestedDeclarations { get; set; } = new List<Declaration>();
-
-    /// <summary>
     /// The properties within this class.
     /// </summary>
     public IList<Property> Properties { get; set; } = new List<Property>();

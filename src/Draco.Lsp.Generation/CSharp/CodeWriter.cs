@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,8 +37,6 @@ internal static class CodeWriter
         {{WriteDocumentation(@class.Documentation)}}
         public sealed class {{@class.Name}} {{WriteInterfaces(@class.Interfaces)}}
         {
-            {{string.Join(doubleNewline, @class.NestedDeclarations.Select(WriteDeclaration))}}
-
             {{string.Join(doubleNewline, @class.Properties.Select(WriteProperty))}}
         }
         """;
@@ -63,12 +62,14 @@ internal static class CodeWriter
     private static object WriteEnumMember(EnumMember member) =>
         $"""
         {WriteDocumentation(member.Documentation)}
+        {WriteAttributeList(member.Attributes)}
         {member.Name},
         """;
 
     private static string WriteProperty(Property prop) =>
         $$"""
         {{WriteDocumentation(prop.Documentation)}}
+        {{WriteAttributeList(prop.Attributes)}}
         public {{WriteType(prop.Type)}} {{prop.Name}} { get; set; }
         """;
 
@@ -82,9 +83,24 @@ internal static class CodeWriter
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
+    private static string WriteAttributeList(ImmutableArray<Attribute> attributes) =>
+        string.Join(Environment.NewLine, attributes.Select(WriteAttribute));
+
+    private static string WriteAttribute(Attribute attribute) =>
+        $"""
+        [{attribute.Name}({string.Join(", ", attribute.Args.Select(WriteAttributeValue))})]
+        """;
+
     private static string WriteInterfaces(IEnumerable<Interface> interfaces) => interfaces.Any()
         ? $": {string.Join(", ", interfaces.Select(i => i.Name))}"
         : string.Empty;
+
+    private static string WriteAttributeValue(object? value) => value switch
+    {
+        string s => $"\"{EscapeString(s)}\"",
+        int i => i.ToString(),
+        _ => throw new ArgumentOutOfRangeException(nameof(value)),
+    };
 
     private static string WriteDocumentation(string? doc)
     {
@@ -99,4 +115,9 @@ internal static class CodeWriter
             /// </summary>
             """;
     }
+
+    private static string EscapeString(string str) => str
+        .Replace("\t", @"\t")
+        .Replace("\r", @"\r")
+        .Replace("\n", @"\n");
 }

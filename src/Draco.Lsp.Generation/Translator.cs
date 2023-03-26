@@ -122,6 +122,7 @@ internal sealed class Translator
             // Simple case, we only have one declaration
             return tsDecls[0] switch
             {
+                Ts.TypeAlias alias => this.TranslateTypeAlias(alias),
                 Ts.Interface @interface => this.TranslateInterface(@interface),
                 _ => throw new NotImplementedException(),
             };
@@ -144,6 +145,29 @@ internal sealed class Translator
         }
         // Unhandled
         throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Translated the given TS type-alias.
+    /// </summary>
+    /// <param name="tsAlias">The TS type-alias to translate.</param>
+    /// <returns>The translated, aliased type.</returns>
+    private Cs.Type TranslateTypeAlias(Ts.TypeAlias tsAlias)
+    {
+        var type = this.TranslateType(tsAlias.Type, nameHint: tsAlias.Name, containingClass: null);
+        if (this.translatedTypes.TryGetValue(tsAlias.Name, out var existingType))
+        {
+            // Happens on things like
+            // type Foo = { ... };
+            // because the anonymous type gets hinted the type-alias name
+            if (!ReferenceEquals(type, existingType)) throw new InvalidOperationException();
+        }
+        else
+        {
+            // Add it
+            this.translatedTypes.Add(tsAlias.Name, type);
+        }
+        return type;
     }
 
     /// <summary>
@@ -177,7 +201,7 @@ internal sealed class Translator
         {
             csInterface = new Cs.Interface()
             {
-                Name = tsInterface.Name,
+                Name = $"I{tsInterface.Name}",
                 Documentation = ExtractDocumentation(tsInterface.Documentation),
             };
         }
@@ -195,7 +219,7 @@ internal sealed class Translator
         // Add base types
         foreach (var baseExpr in tsInterface.Bases)
         {
-            var @base = this.TranslateType(baseExpr, parentType: csClass, parentField: null);
+            var @base = this.TranslateType(baseExpr, nameHint: null, containingClass: null);
             // We expect an interface alternative to be present
             var @interface = this.interfaces[@base];
 
@@ -207,7 +231,7 @@ internal sealed class Translator
         // Add fields
         foreach (var field in tsInterface.Fields)
         {
-            var prop = this.TranslateField(field, parent: csClass);
+            var prop = this.TranslateField(field, containingClass: csClass);
             // Add to whichever needs it
             if (csClass is not null) csClass.Properties.Add(prop);
             if (csInterface is not null) csInterface.Properties.Add(prop);
@@ -215,6 +239,19 @@ internal sealed class Translator
 
         // Map the output to the interface, in case there is one
         if (csInterface is not null) this.interfaces.Add(typeReference, csInterface);
+
+        // If we have a class, transitively implement all interfaces
+        if (csClass is not null)
+        {
+            var allInterfaces = csClass.Interfaces.SelectMany(CollectInterfacesTransitively);
+            foreach (var prop in allInterfaces.SelectMany(i => i.Properties))
+            {
+                // If the class happens to implement it, skip it
+                if (csClass.Properties.Any(p => p.Name == prop.Name)) continue;
+                // Add it
+                csClass.Properties.Add(prop);
+            }
+        }
 
         // Done
         return typeReference;
@@ -270,14 +307,14 @@ internal sealed class Translator
     /// Translated a TS field declaration.
     /// </summary>
     /// <param name="field">The field declaration to translate.</param>
-    /// <param name="parent">The containing type.</param>
+    /// <param name="containingClass">The containing type.</param>
     /// <returns>The translated property.</returns>
-    private Cs.Property TranslateField(Ts.Field field, Cs.Class? parent)
+    private Cs.Property TranslateField(Ts.Field field, Cs.Class? containingClass)
     {
         if (field is not Ts.SimpleField simpleField) throw new NotImplementedException();
 
         // Translate type
-        var propType = this.TranslateType(simpleField.Type, parentType: parent, parentField: field);
+        var propType = this.TranslateType(simpleField.Type, nameHint: simpleField.Name, containingClass: containingClass);
         // Build attribute list
         var attributes = ImmutableArray.CreateBuilder<Cs.Attribute>();
         if (simpleField.Nullable)
@@ -301,10 +338,10 @@ internal sealed class Translator
     /// Translates a TS type to C#.
     /// </summary>
     /// <param name="type">The TS type expression to translate.</param>
-    /// <param name="parentType">The containing type.</param>
-    /// <param name="parentField">The associated field.</param>
+    /// <param name="nameHint">A hint for name.</param>
+    /// <param name="containingClass">The containing class.</param>
     /// <returns>The translated C# type.</returns>
-    private Cs.Type TranslateType(Ts.Expression type, Cs.Declaration? parentType, Ts.Field? parentField)
+    private Cs.Type TranslateType(Ts.Expression type, string? nameHint, Cs.Class? containingClass)
     {
         switch (type)
         {
@@ -317,7 +354,7 @@ internal sealed class Translator
         }
         case Ts.ArrayTypeExpression array:
         {
-            var element = this.TranslateType(array.ElementType, parentType: parentType, parentField: parentField);
+            var element = this.TranslateType(array.ElementType, nameHint: Singular(nameHint), containingClass: containingClass);
             return new Cs.ArrayType(element);
         }
         case Ts.UnionTypeExpression union:
@@ -325,7 +362,7 @@ internal sealed class Translator
             // If the union consists of a single type, just propagate
             if (union.Alternatives.Length == 1)
             {
-                return this.TranslateType(union.Alternatives[0], parentType: parentType, parentField: parentField);
+                return this.TranslateType(union.Alternatives[0], nameHint: nameHint, containingClass: containingClass);
             }
             // If the union has a null-element, make it instead an optional type
             if (union.Alternatives.Any(alt => alt is Ts.NullExpression))
@@ -336,7 +373,7 @@ internal sealed class Translator
                     .ToImmutableArray();
                 var newUnion = new Ts.UnionTypeExpression(alts);
                 // Translate that
-                var subType = this.TranslateType(newUnion, parentType: parentType, parentField: parentField);
+                var subType = this.TranslateType(newUnion, nameHint: nameHint, containingClass: containingClass);
                 // Wrap it up in nullable
                 return new Cs.NullableType(subType);
             }
@@ -345,18 +382,48 @@ internal sealed class Translator
             {
                 var alts = union.Alternatives.Cast<Ts.AnonymousTypeExpression>();
                 var newType = MergeAnonymousTypes(alts);
-                return this.TranslateType(newType, parentType: parentType, parentField: parentField);
+                return this.TranslateType(newType, nameHint: nameHint, containingClass: containingClass);
             }
             // Not a special case, just translate
             var elements = union.Alternatives
-                .Select(alt => this.TranslateType(alt, parentType: parentType, parentField: parentField))
+                .Select(alt => this.TranslateType(alt, nameHint: nameHint, containingClass: containingClass))
                 .ToImmutableArray();
             return new Cs.DiscriminatedUnionType(elements);
         }
         case Ts.AnonymousTypeExpression anon:
         {
-            // TODO
-            throw new NotImplementedException();
+            // Special-case, if the anonymous type contains a single index signature
+            if (anon.Fields.Length == 1 && anon.Fields[0] is Ts.IndexSignature indexSignature)
+            {
+                // Shortcut, just translate it to a dictionary
+                var keyType = this.TranslateType(indexSignature.KeyType, nameHint: indexSignature.KeyName, containingClass: containingClass);
+                var valueType = this.TranslateType(indexSignature.ValueType, nameHint: null, containingClass: containingClass);
+                return new Cs.DictionaryType(keyType, valueType);
+            }
+
+            // Not a special case
+            // Generate a name for it
+            if (nameHint is null) throw new InvalidOperationException("a hint is required to generate anonymous types");
+            var typeName = Capitalize(nameHint);
+            if (containingClass is not null) typeName = $"{typeName}{ExtractNameSuffix(containingClass.Name)}";
+            // NOTE: Should we check if this already exists?
+            // Probably not
+            // Translate it
+            var csClass = new Cs.Class()
+            {
+                Name = typeName,
+            };
+            // No base type or generics
+            // Translate fields
+            foreach (var field in anon.Fields)
+            {
+                var prop = this.TranslateField(field, containingClass);
+                csClass.Properties.Add(prop);
+            }
+            // Add as a translated type
+            var typeRef = new Cs.DeclarationType(csClass);
+            this.translatedTypes.Add(typeName, typeRef);
+            return typeRef;
         }
         default:
             throw new ArgumentOutOfRangeException(nameof(type));
@@ -424,14 +491,20 @@ internal sealed class Translator
     /// </summary>
     /// <param name="word">The word to capitalize.</param>
     /// <returns>The capitalized <paramref name="word"/>.</returns>
-    private static string Capitalize(string word) => $"{char.ToUpper(word[0])}{word[1..]}";
+    [return: NotNullIfNotNull(nameof(word))]
+    private static string? Capitalize(string? word) => word is null
+        ? null
+        : $"{char.ToUpper(word[0])}{word[1..]}";
 
     /// <summary>
     /// Converts a word to singular.
     /// </summary>
     /// <param name="word">The word to convert.</param>
     /// <returns><paramref name="word"/> in singular form.</returns>
-    private static string Singular(string word) => word.EndsWith('s') ? word[..^1] : word;
+    [return: NotNullIfNotNull(nameof(word))]
+    private static string? Singular(string? word) => word is null
+        ? null
+        : word.EndsWith('s') ? word[..^1] : word;
 
     /// <summary>
     /// Extracts a suffix from a name, which is the last capitalized word in it.

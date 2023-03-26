@@ -65,8 +65,6 @@ internal sealed class Translator
     private readonly Dictionary<string, TypeTranslation> translatedTypes = new();
     // Builtins
     private readonly Dictionary<string, Cs.Type> builtinTypes = new();
-    // Additional types
-    private readonly List<Cs.Declaration> globalAdditionalDeclarations = new();
 
     private string? nameSuffix;
 
@@ -89,9 +87,6 @@ internal sealed class Translator
                 this.TargetModel.Declarations.Add(dt.Declaration);
             }
         }
-
-        // Additional
-        foreach (var additional in this.globalAdditionalDeclarations) this.TargetModel.Declarations.Add(additional);
     }
 
     public void AddBuiltinType(string name, System.Type type) => this.builtinTypes.Add(name, new Cs.BuiltinType(type));
@@ -149,7 +144,7 @@ internal sealed class Translator
         };
         this.translatedTypes.Add(tsAlias.Name, translation);
 
-        var type = this.TranslateType(tsAlias.Type, this.globalAdditionalDeclarations, hintName: tsAlias.Name);
+        var type = this.TranslateType(tsAlias.Type, null, hintName: tsAlias.Name);
         translation.Other = type;
 
         return translation;
@@ -246,7 +241,7 @@ internal sealed class Translator
         // Bases
         foreach (var b in tsInterface.Bases)
         {
-            var interf = this.TranslateType(b, this.globalAdditionalDeclarations, needsInterface: true);
+            var interf = this.TranslateType(b, null, needsInterface: true);
             csInterface.Interfaces.Add((Cs.Interface)((Cs.DeclarationType)interf).Declaration);
         }
 
@@ -327,7 +322,7 @@ internal sealed class Translator
 
     private Cs.Type TranslateType(
         Ts.Expression type,
-        IList<Cs.Declaration> additionalDecls,
+        IList<Cs.Declaration>? additionalDecls,
         bool needsInterface = false,
         string? hintName = null)
     {
@@ -407,7 +402,7 @@ internal sealed class Translator
             var typeNamePrefix = Capitalize(hintName);
             var typeName = $"{typeNamePrefix}{this.nameSuffix}";
             // Look for it in the additional decls
-            var existing = additionalDecls.FirstOrDefault(decl => decl.Name.StartsWith(typeNamePrefix));
+            var existing = additionalDecls?.FirstOrDefault(decl => decl.Name.StartsWith(typeNamePrefix));
             if (existing is not null) return new Cs.DeclarationType(existing);
             // Not found, we need to translate
             var csClass = new Cs.Class()
@@ -422,7 +417,19 @@ internal sealed class Translator
                 csClass.Properties.Add(prop);
             }
             // Add declaration
-            additionalDecls.Add(csClass);
+            if (additionalDecls is null)
+            {
+                var translation = new TypeTranslation()
+                {
+                    Original = anon,
+                    Class = csClass,
+                };
+                this.translatedTypes.Add(csClass.Name, translation);
+            }
+            else
+            {
+                additionalDecls.Add(csClass);
+            }
             // We can return it wrapped up as a type reference
             return new Cs.DeclarationType(csClass);
         }

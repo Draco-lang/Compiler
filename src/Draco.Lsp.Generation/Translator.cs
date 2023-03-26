@@ -73,6 +73,20 @@ internal sealed class Translator
         this.SourceModel = sourceModel;
     }
 
+    public void Commit()
+    {
+        // Declarations
+        foreach (var translation in this.translatedTypes.Values)
+        {
+            if (translation.Class is not null) this.TargetModel.Declarations.Add(translation.Class);
+            if (translation.Interface is not null) this.TargetModel.Declarations.Add(translation.Interface);
+            if (translation.Other is Cs.DeclarationType dt) this.TargetModel.Declarations.Add(dt.Declaration);
+        }
+
+        // Additional
+        foreach (var additional in this.globalAdditionalDeclarations) this.TargetModel.Declarations.Add(additional);
+    }
+
     public void AddBuiltinType(string name, System.Type type) => this.builtinTypes.Add(name, new Cs.BuiltinType(type));
 
     public void GenerateByName(string typeName)

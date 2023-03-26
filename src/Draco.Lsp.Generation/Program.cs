@@ -1,3 +1,4 @@
+using Draco.Lsp.Generation.CSharp;
 using Draco.Lsp.Generation.TypeScript;
 
 namespace Draco.Lsp.Generation;
@@ -18,5 +19,8 @@ internal class Program
         translator.AddBuiltinType("string", typeof(string));
         translator.AddBuiltinType("LSPAny", typeof(object));
         translator.GenerateByName("ServerCapabilities");
+        translator.Commit();
+
+        Console.WriteLine(CodeWriter.WriteModel(translator.TargetModel));
     }
 }

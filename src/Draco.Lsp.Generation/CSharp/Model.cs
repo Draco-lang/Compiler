@@ -106,7 +106,6 @@ internal sealed record class EnumMember(
 internal sealed record class Property(
     string? Documentation,
     Type Type,
-    bool Nullable,
     string Name,
     ImmutableArray<Attribute> Attributes);
 
@@ -167,3 +166,13 @@ internal sealed record class NullableType(
 internal sealed record class DictionaryType(
     Type KeyType,
     Type ValueType) : Type;
+
+/// <summary>
+/// Utilities for constructing attributes for the model.
+/// </summary>
+internal static class Attributes
+{
+    public static Attribute Optional() => new("Optional", ImmutableArray<object?>.Empty);
+    public static Attribute JsonProperty(string name) => new("JsonProperty", ImmutableArray.Create<object?>(name));
+    public static Attribute JsonValue(object? value) => new("JsonValue", ImmutableArray.Create<object?>(value));
+}

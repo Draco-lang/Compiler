@@ -37,6 +37,7 @@ internal abstract class ModelVisitor
         NameExpression name => this.VisitNameExpression(name),
         IntExpression i => this.VisitIntExpression(i),
         StringExpression s => this.VisitStringExpression(s),
+        NullExpression n => this.VisitNullExpression(n),
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 
@@ -101,6 +102,7 @@ internal abstract class ModelVisitor
 
     public virtual object? VisitStringExpression(StringExpression s) => null;
     public virtual object? VisitIntExpression(IntExpression i) => null;
+    public virtual object? VisitNullExpression(NullExpression n) => null;
 
     public virtual object? VisitIndexSignature(IndexSignature indexSign)
     {

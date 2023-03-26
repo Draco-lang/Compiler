@@ -12,15 +12,15 @@ internal class Program
         md = MarkdownReader.ResolveRelativeIncludes(md, rootPath);
         var tsMerged = string.Join(Environment.NewLine, MarkdownReader.ExtractCodeSnippets(md, "ts", "typescript"));
         var tokens = Lexer.Lex(tsMerged);
-        var model = Parser.Parse(tokens);
+        var tsModel = Parser.Parse(tokens);
 
-        var translator = new Translator(model);
+        var translator = new Translator(tsModel);
         translator.AddBuiltinType("boolean", typeof(bool));
         translator.AddBuiltinType("string", typeof(string));
         translator.AddBuiltinType("LSPAny", typeof(object));
         translator.GenerateByName("ServerCapabilities");
-        translator.Commit();
+        var csModel = translator.Generate();
 
-        Console.WriteLine(CodeWriter.WriteModel(translator.TargetModel));
+        Console.WriteLine(CodeWriter.WriteModel(csModel));
     }
 }

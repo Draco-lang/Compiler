@@ -68,6 +68,8 @@ internal sealed class Translator
     // Additional types
     private readonly List<Cs.Declaration> globalAdditionalDeclarations = new();
 
+    private string? nameSuffix;
+
     public Translator(Ts.Model sourceModel)
     {
         this.SourceModel = sourceModel;
@@ -80,7 +82,12 @@ internal sealed class Translator
         {
             if (translation.Class is not null) this.TargetModel.Declarations.Add(translation.Class);
             if (translation.Interface is not null) this.TargetModel.Declarations.Add(translation.Interface);
-            if (translation.Other is Cs.DeclarationType dt) this.TargetModel.Declarations.Add(dt.Declaration);
+            if (translation.Other is Cs.DeclarationType dt)
+            {
+                // Skip duplicates
+                // if (this.translatedTypes.ContainsKey(dt.Declaration.Name)) continue;
+                this.TargetModel.Declarations.Add(dt.Declaration);
+            }
         }
 
         // Additional
@@ -174,6 +181,16 @@ internal sealed class Translator
             translation.Class!.Interfaces.Add(translation.Interface!);
         }
 
+        if (needsClass)
+        {
+            // Add all interface props to the class
+            foreach (var prop in translation.Class!.Interfaces.SelectMany(i => i.Properties))
+            {
+                if (translation.Class.Properties.Any(p => p.Name == prop.Name)) continue;
+                translation.Class.Properties.Add(prop);
+            }
+        }
+
         return translation;
     }
 
@@ -198,12 +215,17 @@ internal sealed class Translator
             csClass.Interfaces.Add((Cs.Interface)((Cs.DeclarationType)interf).Declaration);
         }
 
+        var oldNameSuffix = this.nameSuffix;
+        this.nameSuffix = ExtractNameSuffix(tsInterface.Name);
+
         // Fields
         foreach (var field in tsInterface.Fields)
         {
             var prop = this.TranslateField(field, csClass.NestedDeclarations);
             csClass.Properties.Add(prop);
         }
+
+        this.nameSuffix = oldNameSuffix;
     }
 
     private void TranslateInterface(TypeTranslation translation, IList<Cs.Declaration> additionalDecls)
@@ -381,7 +403,7 @@ internal sealed class Translator
             }
 
             Debug.Assert(hintName is not null);
-            var typeName = Capitalize(hintName);
+            var typeName = $"{Capitalize(hintName)}{this.nameSuffix}";
             // Look for it in the additional decls
             var existing = additionalDecls.FirstOrDefault(decl => decl.Name == typeName);
             if (existing is not null) return new Cs.DeclarationType(existing);
@@ -448,6 +470,15 @@ internal sealed class Translator
     private static string Singular(string s) => s.EndsWith('s')
         ? s[..^1]
         : s;
+
+    private static string ExtractNameSuffix(string name)
+    {
+        var upcaseLen = name
+            .Reverse()
+            .TakeWhile(c => c != char.ToUpperInvariant(c))
+            .Count() + 1;
+        return name[^upcaseLen..];
+    }
 
     private static string? ExtractDocumentation(string? docComment)
     {

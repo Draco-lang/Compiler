@@ -66,13 +66,13 @@ internal static class CodeWriter
 
     private static object WriteEnumMember(EnumMember member) => $"""
         {WriteDocumentation(member.Documentation)}
-        {WriteAttributeList(member.Attributes)}
+        [EnumMember(Value = {WriteEnumMemberName(member.SerializedValue)})]
         {member.Name},
         """;
 
     private static string WriteProperty(Property prop) => $$"""
         {{WriteDocumentation(prop.Documentation)}}
-        {{WriteAttributeList(prop.Attributes)}}
+        [JsonProperty(PropertyName = "{{prop.SerializedName}}", NullValueHandling = NullValueHandling.{{(prop.OmitIfNull ? "Ignore" : "Include")}})]
         public {{WriteType(prop.Type)}} {{prop.Name}} { get; set; }
         """;
 
@@ -91,41 +91,6 @@ internal static class CodeWriter
     private static string WriteClassType(Class @class) => @class.Parent is null
         ? @class.Name
         : $"{WriteClassType(@class.Parent)}.{@class.Name}";
-
-    private static string WriteAttributeList(ImmutableArray<Attribute> attributes)
-    {
-        // Collect json-property related attributes
-        var jsonPropRelated = attributes
-            .Where(a => a.Kind is AttributeKind.Optional or AttributeKind.PropertyName)
-            .ToList();
-
-        // Collect member-value related attributes
-        var memberValueRelated = attributes
-            .FirstOrDefault(a => a.Kind is AttributeKind.MemberValue);
-
-        var result = new StringBuilder();
-        // Add whatever we have
-        if (jsonPropRelated.Count != 0)
-        {
-            result.Append("[JsonProperty(");
-
-            var propName = attributes.FirstOrDefault(a => a.Kind == AttributeKind.PropertyName);
-            if (propName is not null) result.Append($"PropertyName = \"{propName.Args[0]}\"");
-
-            if (jsonPropRelated.Count > 1) result.Append(", ");
-
-            var optional = attributes.FirstOrDefault(a => a.Kind == AttributeKind.Optional);
-            if (optional is not null) result.Append($"NullValueHandling = NullValueHandling.Ignore");
-
-            result.AppendLine(")]");
-        }
-        if (memberValueRelated is not null)
-        {
-            result.AppendLine($"[EnumMember(Value = {WriteEnumMemberName(memberValueRelated.Args[0])})]");
-        }
-
-        return result.ToString();
-    }
 
     private static string WriteInterfaces(IEnumerable<Interface> interfaces) => interfaces.Any()
         ? $": {string.Join(", ", interfaces.Select(i => i.Name))}"

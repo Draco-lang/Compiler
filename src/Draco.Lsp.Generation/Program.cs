@@ -33,9 +33,29 @@ internal class Program
         var csModel = translator.Generate();
         var csCode = CodeWriter.WriteModel(csModel);
 
-        // Console.WriteLine(csCode);
+        Console.WriteLine(csCode);
 
-        Console.WriteLine(RenderOneOf());
+        //Console.WriteLine(RenderOneOf());
+    }
+
+    private static string RenderModel(CSharp.Model model)
+    {
+        var template = LoadScribanTemplate("LspModel.sbncs");
+
+        var context = new Scriban.TemplateContext
+        {
+            MemberRenamer = MemberRenamer,
+        };
+        var scriptObject = new Scriban.Runtime.ScriptObject();
+        scriptObject.Import(model, renamer: MemberRenamer);
+        context.PushGlobal(scriptObject);
+
+        var output = template.Render(context);
+        return SyntaxFactory
+            .ParseCompilationUnit(output)
+            .NormalizeWhitespace()
+            .GetText()
+            .ToString();
     }
 
     private static string RenderOneOf()

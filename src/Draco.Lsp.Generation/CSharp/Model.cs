@@ -106,34 +106,26 @@ internal sealed class Enum : Declaration
 /// </summary>
 /// <param name="Documentation">The documentation of this member.</param>
 /// <param name="Name">The name of the enum member.</param>
-/// <param name="Attributes">The attributes for this property.</param>
+/// <param name="SerializedValue">The serialized enum member value.</param>
 internal sealed record class EnumMember(
     string? Documentation,
     string Name,
-    ImmutableArray<Attribute> Attributes);
+    object? SerializedValue);
 
 /// <summary>
 /// A property definition.
 /// </summary>
 /// <param name="Documentation">The docs of the property.</param>
 /// <param name="Type">The property type.</param>
-/// <param name="Nullable">True, if this field is nullable.</param>
 /// <param name="Name">The property name.</param>
-/// <param name="Attributes">The attributes for this property.</param>
+/// <param name="SerializedName">The property name when serialized.</param>
+/// <param name="OmitIfNull">True, if the property shold be omitted, if it's null.</param>
 internal sealed record class Property(
     string? Documentation,
     Type Type,
     string Name,
-    ImmutableArray<Attribute> Attributes);
-
-/// <summary>
-/// An attribute for some element.
-/// </summary>
-/// <param name="Kind">The attribute kind.</param>
-/// <param name="Args">The attribute arguments.</param>
-internal sealed record class Attribute(
-    AttributeKind Kind,
-    ImmutableArray<object?> Args);
+    string SerializedName,
+    bool OmitIfNull);
 
 /// <summary>
 /// A C# type.
@@ -183,34 +175,3 @@ internal sealed record class NullableType(
 internal sealed record class DictionaryType(
     Type KeyType,
     Type ValueType) : Type;
-
-/// <summary>
-/// The different kinds of attributes.
-/// </summary>
-internal enum AttributeKind
-{
-    /// <summary>
-    /// Omit, if the value is null.
-    /// </summary>
-    Optional,
-
-    /// <summary>
-    /// Specifies the name of the property.
-    /// </summary>
-    PropertyName,
-
-    /// <summary>
-    /// Specifies the member value to serialize to.
-    /// </summary>
-    MemberValue,
-}
-
-/// <summary>
-/// Utilities for constructing attributes for the model.
-/// </summary>
-internal static class Attributes
-{
-    public static Attribute Optional() => new(AttributeKind.Optional, ImmutableArray<object?>.Empty);
-    public static Attribute PropertyName(string name) => new(AttributeKind.PropertyName, ImmutableArray.Create<object?>(name));
-    public static Attribute MemberValue(object? value) => new(AttributeKind.MemberValue, ImmutableArray.Create(value));
-}

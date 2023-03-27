@@ -17,7 +17,7 @@ public sealed class InitializeParams : IWorkDoneProgressParams
         /// <summary>
         /// The name of the client as defined by the client.
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Include)]
         public String Name { get; set; }
 
         /// <summary>
@@ -33,7 +33,7 @@ public sealed class InitializeParams : IWorkDoneProgressParams
     /// process is not alive then the server should exit (see exit notification)
     /// its process.
     /// </summary>
-    [JsonProperty(PropertyName = "processId")]
+    [JsonProperty(PropertyName = "processId", NullValueHandling = NullValueHandling.Include)]
     public Int32? ProcessId { get; set; }
 
     /// <summary>
@@ -73,7 +73,7 @@ public sealed class InitializeParams : IWorkDoneProgressParams
     ///
     /// @deprecated in favour of `workspaceFolders`
     /// </summary>
-    [JsonProperty(PropertyName = "rootUri")]
+    [JsonProperty(PropertyName = "rootUri", NullValueHandling = NullValueHandling.Include)]
     public String? RootUri { get; set; }
 
     /// <summary>
@@ -85,7 +85,7 @@ public sealed class InitializeParams : IWorkDoneProgressParams
     /// <summary>
     /// The capabilities provided by the client (editor or tool)
     /// </summary>
-    [JsonProperty(PropertyName = "capabilities")]
+    [JsonProperty(PropertyName = "capabilities", NullValueHandling = NullValueHandling.Include)]
     public ClientCapabilities Capabilities { get; set; }
 
     /// <summary>
@@ -332,7 +332,7 @@ public sealed class ClientCapabilities
         /// <summary>
         /// The client will actively cancel the request.
         /// </summary>
-        [JsonProperty(PropertyName = "cancel")]
+        [JsonProperty(PropertyName = "cancel", NullValueHandling = NullValueHandling.Include)]
         public Boolean Cancel { get; set; }
 
         /// <summary>
@@ -340,7 +340,7 @@ public sealed class ClientCapabilities
         /// will retry the request if it receives a
         /// response with error code `ContentModified``
         /// </summary>
-        [JsonProperty(PropertyName = "retryOnContentModified")]
+        [JsonProperty(PropertyName = "retryOnContentModified", NullValueHandling = NullValueHandling.Include)]
         public IList<String> RetryOnContentModified { get; set; }
     }
 
@@ -607,7 +607,7 @@ public sealed class WorkspaceSymbolClientCapabilities
         /// <summary>
         /// The tags supported by the client.
         /// </summary>
-        [JsonProperty(PropertyName = "valueSet")]
+        [JsonProperty(PropertyName = "valueSet", NullValueHandling = NullValueHandling.Include)]
         public IList<SymbolTag> ValueSet { get; set; }
     }
 
@@ -618,7 +618,7 @@ public sealed class WorkspaceSymbolClientCapabilities
         /// The properties that a client can resolve lazily. Usually
         /// `location.range`
         /// </summary>
-        [JsonProperty(PropertyName = "properties")]
+        [JsonProperty(PropertyName = "properties", NullValueHandling = NullValueHandling.Include)]
         public IList<String> Properties { get; set; }
     }
 
@@ -1085,7 +1085,7 @@ public sealed class CompletionClientCapabilities
         /// <summary>
         /// The tags supported by the client.
         /// </summary>
-        [JsonProperty(PropertyName = "valueSet")]
+        [JsonProperty(PropertyName = "valueSet", NullValueHandling = NullValueHandling.Include)]
         public IList<CompletionItemTag> ValueSet { get; set; }
     }
 
@@ -1095,14 +1095,14 @@ public sealed class CompletionClientCapabilities
         /// <summary>
         /// The properties that a client can resolve lazily.
         /// </summary>
-        [JsonProperty(PropertyName = "properties")]
+        [JsonProperty(PropertyName = "properties", NullValueHandling = NullValueHandling.Include)]
         public IList<String> Properties { get; set; }
     }
 
     [GeneratedCodeAttribute("Draco.Lsp.Generation", "0.1.0")]
     public sealed class InsertTextModeSupportCapabilities
     {
-        [JsonProperty(PropertyName = "valueSet")]
+        [JsonProperty(PropertyName = "valueSet", NullValueHandling = NullValueHandling.Include)]
         public IList<InsertTextMode> ValueSet { get; set; }
     }
 
@@ -1605,7 +1605,7 @@ public sealed class DocumentSymbolClientCapabilities
         /// <summary>
         /// The tags supported by the client.
         /// </summary>
-        [JsonProperty(PropertyName = "valueSet")]
+        [JsonProperty(PropertyName = "valueSet", NullValueHandling = NullValueHandling.Include)]
         public IList<SymbolTag> ValueSet { get; set; }
     }
 
@@ -1660,7 +1660,7 @@ public sealed class CodeActionClientCapabilities
         /// handle values outside its set gracefully and falls back
         /// to a default value when unknown.
         /// </summary>
-        [JsonProperty(PropertyName = "valueSet")]
+        [JsonProperty(PropertyName = "valueSet", NullValueHandling = NullValueHandling.Include)]
         public IList<CodeActionKind> ValueSet { get; set; }
     }
 
@@ -1671,7 +1671,7 @@ public sealed class CodeActionClientCapabilities
         /// The code action kind is supported with the following value
         /// set.
         /// </summary>
-        [JsonProperty(PropertyName = "codeActionKind")]
+        [JsonProperty(PropertyName = "codeActionKind", NullValueHandling = NullValueHandling.Include)]
         public CodeActionClientCapabilities.CodeActionKindCapabilities CodeActionKind { get; set; }
     }
 
@@ -1681,7 +1681,7 @@ public sealed class CodeActionClientCapabilities
         /// <summary>
         /// The properties that a client can resolve lazily.
         /// </summary>
-        [JsonProperty(PropertyName = "properties")]
+        [JsonProperty(PropertyName = "properties", NullValueHandling = NullValueHandling.Include)]
         public IList<String> Properties { get; set; }
     }
 
@@ -1965,7 +1965,7 @@ public sealed class PublishDiagnosticsClientCapabilities
         /// <summary>
         /// The tags supported by the client.
         /// </summary>
-        [JsonProperty(PropertyName = "valueSet")]
+        [JsonProperty(PropertyName = "valueSet", NullValueHandling = NullValueHandling.Include)]
         public IList<DiagnosticTag> ValueSet { get; set; }
     }
 
@@ -2225,25 +2225,25 @@ public sealed class SemanticTokensClientCapabilities
     /// range provider the client might not render a minimap correctly or might
     /// even decide to not show any semantic tokens at all.
     /// </summary>
-    [JsonProperty(PropertyName = "requests")]
+    [JsonProperty(PropertyName = "requests", NullValueHandling = NullValueHandling.Include)]
     public SemanticTokensClientCapabilities.RequestsCapabilities Requests { get; set; }
 
     /// <summary>
     /// The token types that the client supports.
     /// </summary>
-    [JsonProperty(PropertyName = "tokenTypes")]
+    [JsonProperty(PropertyName = "tokenTypes", NullValueHandling = NullValueHandling.Include)]
     public IList<String> TokenTypes { get; set; }
 
     /// <summary>
     /// The token modifiers that the client supports.
     /// </summary>
-    [JsonProperty(PropertyName = "tokenModifiers")]
+    [JsonProperty(PropertyName = "tokenModifiers", NullValueHandling = NullValueHandling.Include)]
     public IList<String> TokenModifiers { get; set; }
 
     /// <summary>
     /// The formats the clients supports.
     /// </summary>
-    [JsonProperty(PropertyName = "formats")]
+    [JsonProperty(PropertyName = "formats", NullValueHandling = NullValueHandling.Include)]
     public IList<TokenFormat> Formats { get; set; }
 
     /// <summary>
@@ -2348,7 +2348,7 @@ public sealed class InlayHintClientCapabilities
         /// <summary>
         /// The properties that a client can resolve lazily.
         /// </summary>
-        [JsonProperty(PropertyName = "properties")]
+        [JsonProperty(PropertyName = "properties", NullValueHandling = NullValueHandling.Include)]
         public IList<String> Properties { get; set; }
     }
 
@@ -2404,7 +2404,7 @@ public sealed class NotebookDocumentClientCapabilities
     ///
     /// @since 3.17.0
     /// </summary>
-    [JsonProperty(PropertyName = "synchronization")]
+    [JsonProperty(PropertyName = "synchronization", NullValueHandling = NullValueHandling.Include)]
     public NotebookDocumentSyncClientCapabilities Synchronization { get; set; }
 }
 
@@ -2469,7 +2469,7 @@ public sealed class ShowDocumentClientCapabilities
     /// The client has support for the show document
     /// request.
     /// </summary>
-    [JsonProperty(PropertyName = "support")]
+    [JsonProperty(PropertyName = "support", NullValueHandling = NullValueHandling.Include)]
     public Boolean Support { get; set; }
 }
 
@@ -2482,7 +2482,7 @@ public sealed class RegularExpressionsClientCapabilities
     /// <summary>
     /// The engine's name.
     /// </summary>
-    [JsonProperty(PropertyName = "engine")]
+    [JsonProperty(PropertyName = "engine", NullValueHandling = NullValueHandling.Include)]
     public String Engine { get; set; }
 
     /// <summary>
@@ -2503,7 +2503,7 @@ public sealed class MarkdownClientCapabilities
     /// <summary>
     /// The name of the parser.
     /// </summary>
-    [JsonProperty(PropertyName = "parser")]
+    [JsonProperty(PropertyName = "parser", NullValueHandling = NullValueHandling.Include)]
     public String Parser { get; set; }
 
     /// <summary>
@@ -2571,14 +2571,14 @@ public sealed class WorkspaceFolder
     /// <summary>
     /// The associated URI for this workspace folder.
     /// </summary>
-    [JsonProperty(PropertyName = "uri")]
+    [JsonProperty(PropertyName = "uri", NullValueHandling = NullValueHandling.Include)]
     public String Uri { get; set; }
 
     /// <summary>
     /// The name of the workspace folder. Used to refer to this
     /// workspace folder in the user interface.
     /// </summary>
-    [JsonProperty(PropertyName = "name")]
+    [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Include)]
     public String Name { get; set; }
 }
 
@@ -2591,7 +2591,7 @@ public sealed class InitializeResult
         /// <summary>
         /// The name of the server as defined by the server.
         /// </summary>
-        [JsonProperty(PropertyName = "name")]
+        [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Include)]
         public String Name { get; set; }
 
         /// <summary>
@@ -2604,7 +2604,7 @@ public sealed class InitializeResult
     /// <summary>
     /// The capabilities the language server provides.
     /// </summary>
-    [JsonProperty(PropertyName = "capabilities")]
+    [JsonProperty(PropertyName = "capabilities", NullValueHandling = NullValueHandling.Include)]
     public ServerCapabilities Capabilities { get; set; }
 
     /// <summary>
@@ -3038,7 +3038,7 @@ public sealed class NotebookDocumentSyncOptions
     [GeneratedCodeAttribute("Draco.Lsp.Generation", "0.1.0")]
     public sealed class CellOptions
     {
-        [JsonProperty(PropertyName = "language")]
+        [JsonProperty(PropertyName = "language", NullValueHandling = NullValueHandling.Include)]
         public String Language { get; set; }
     }
 
@@ -3063,7 +3063,7 @@ public sealed class NotebookDocumentSyncOptions
     /// <summary>
     /// The notebooks to be synced
     /// </summary>
-    [JsonProperty(PropertyName = "notebookSelector")]
+    [JsonProperty(PropertyName = "notebookSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<NotebookDocumentSyncOptions.NotebookSelectorOptions> NotebookSelector { get; set; }
 
     /// <summary>
@@ -3095,7 +3095,7 @@ public interface INotebookDocumentSyncOptions
     /// <summary>
     /// The notebooks to be synced
     /// </summary>
-    [JsonProperty(PropertyName = "notebookSelector")]
+    [JsonProperty(PropertyName = "notebookSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<NotebookDocumentSyncOptions.NotebookSelectorOptions> NotebookSelector { get; set; }
 
     /// <summary>
@@ -3139,7 +3139,7 @@ public sealed class NotebookDocumentSyncRegistrationOptions : INotebookDocumentS
     /// <summary>
     /// The notebooks to be synced
     /// </summary>
-    [JsonProperty(PropertyName = "notebookSelector")]
+    [JsonProperty(PropertyName = "notebookSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<NotebookDocumentSyncOptions.NotebookSelectorOptions> NotebookSelector { get; set; }
 
     /// <summary>
@@ -3405,7 +3405,7 @@ public sealed class DeclarationRegistrationOptions : IDeclarationOptions, ITextD
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     /// <summary>
@@ -3426,7 +3426,7 @@ public sealed class TextDocumentRegistrationOptions
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 }
 
@@ -3440,7 +3440,7 @@ public interface ITextDocumentRegistrationOptions
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 }
 
@@ -3509,7 +3509,7 @@ public sealed class TypeDefinitionRegistrationOptions : ITextDocumentRegistratio
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -3542,7 +3542,7 @@ public sealed class ImplementationRegistrationOptions : ITextDocumentRegistratio
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -3721,7 +3721,7 @@ public sealed class DocumentColorRegistrationOptions : ITextDocumentRegistration
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     /// <summary>
@@ -3765,7 +3765,7 @@ public sealed class DocumentOnTypeFormattingOptions
     /// <summary>
     /// A character on which formatting should be triggered, like `{`.
     /// </summary>
-    [JsonProperty(PropertyName = "firstTriggerCharacter")]
+    [JsonProperty(PropertyName = "firstTriggerCharacter", NullValueHandling = NullValueHandling.Include)]
     public String FirstTriggerCharacter { get; set; }
 
     /// <summary>
@@ -3781,7 +3781,7 @@ public interface IDocumentOnTypeFormattingOptions
     /// <summary>
     /// A character on which formatting should be triggered, like `{`.
     /// </summary>
-    [JsonProperty(PropertyName = "firstTriggerCharacter")]
+    [JsonProperty(PropertyName = "firstTriggerCharacter", NullValueHandling = NullValueHandling.Include)]
     public String FirstTriggerCharacter { get; set; }
 
     /// <summary>
@@ -3833,7 +3833,7 @@ public sealed class FoldingRangeRegistrationOptions : ITextDocumentRegistrationO
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -3853,7 +3853,7 @@ public sealed class ExecuteCommandOptions : IWorkDoneProgressOptions
     /// <summary>
     /// The commands to be executed on the server
     /// </summary>
-    [JsonProperty(PropertyName = "commands")]
+    [JsonProperty(PropertyName = "commands", NullValueHandling = NullValueHandling.Include)]
     public IList<String> Commands { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -3866,7 +3866,7 @@ public interface IExecuteCommandOptions : IWorkDoneProgressOptions
     /// <summary>
     /// The commands to be executed on the server
     /// </summary>
-    [JsonProperty(PropertyName = "commands")]
+    [JsonProperty(PropertyName = "commands", NullValueHandling = NullValueHandling.Include)]
     public IList<String> Commands { get; set; }
 }
 
@@ -3892,7 +3892,7 @@ public sealed class SelectionRangeRegistrationOptions : ISelectionRangeOptions, 
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     /// <summary>
@@ -3922,7 +3922,7 @@ public sealed class LinkedEditingRangeRegistrationOptions : ITextDocumentRegistr
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -3955,7 +3955,7 @@ public sealed class CallHierarchyRegistrationOptions : ITextDocumentRegistration
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -3990,7 +3990,7 @@ public sealed class SemanticTokensOptions : IWorkDoneProgressOptions
     /// <summary>
     /// The legend used by the server
     /// </summary>
-    [JsonProperty(PropertyName = "legend")]
+    [JsonProperty(PropertyName = "legend", NullValueHandling = NullValueHandling.Include)]
     public SemanticTokensLegend Legend { get; set; }
 
     /// <summary>
@@ -4016,7 +4016,7 @@ public interface ISemanticTokensOptions : IWorkDoneProgressOptions
     /// <summary>
     /// The legend used by the server
     /// </summary>
-    [JsonProperty(PropertyName = "legend")]
+    [JsonProperty(PropertyName = "legend", NullValueHandling = NullValueHandling.Include)]
     public SemanticTokensLegend Legend { get; set; }
 
     /// <summary>
@@ -4039,13 +4039,13 @@ public sealed class SemanticTokensLegend
     /// <summary>
     /// The token types a server uses.
     /// </summary>
-    [JsonProperty(PropertyName = "tokenTypes")]
+    [JsonProperty(PropertyName = "tokenTypes", NullValueHandling = NullValueHandling.Include)]
     public IList<String> TokenTypes { get; set; }
 
     /// <summary>
     /// The token modifiers a server uses.
     /// </summary>
-    [JsonProperty(PropertyName = "tokenModifiers")]
+    [JsonProperty(PropertyName = "tokenModifiers", NullValueHandling = NullValueHandling.Include)]
     public IList<String> TokenModifiers { get; set; }
 }
 
@@ -4056,13 +4056,13 @@ public sealed class SemanticTokensRegistrationOptions : ITextDocumentRegistratio
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     /// <summary>
     /// The legend used by the server
     /// </summary>
-    [JsonProperty(PropertyName = "legend")]
+    [JsonProperty(PropertyName = "legend", NullValueHandling = NullValueHandling.Include)]
     public SemanticTokensLegend Legend { get; set; }
 
     /// <summary>
@@ -4108,7 +4108,7 @@ public sealed class MonikerRegistrationOptions : ITextDocumentRegistrationOption
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -4134,7 +4134,7 @@ public sealed class TypeHierarchyRegistrationOptions : ITextDocumentRegistration
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -4185,7 +4185,7 @@ public sealed class InlineValueRegistrationOptions : IInlineValueOptions, ITextD
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     /// <summary>
@@ -4253,7 +4253,7 @@ public sealed class InlayHintRegistrationOptions : IInlayHintOptions, ITextDocum
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     /// <summary>
@@ -4285,13 +4285,13 @@ public sealed class DiagnosticOptions : IWorkDoneProgressOptions
     /// set in another file. Inter file dependencies are common for
     /// most programming languages and typically uncommon for linters.
     /// </summary>
-    [JsonProperty(PropertyName = "interFileDependencies")]
+    [JsonProperty(PropertyName = "interFileDependencies", NullValueHandling = NullValueHandling.Include)]
     public Boolean InterFileDependencies { get; set; }
 
     /// <summary>
     /// The server provides support for workspace diagnostics as well.
     /// </summary>
-    [JsonProperty(PropertyName = "workspaceDiagnostics")]
+    [JsonProperty(PropertyName = "workspaceDiagnostics", NullValueHandling = NullValueHandling.Include)]
     public Boolean WorkspaceDiagnostics { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -4319,13 +4319,13 @@ public interface IDiagnosticOptions : IWorkDoneProgressOptions
     /// set in another file. Inter file dependencies are common for
     /// most programming languages and typically uncommon for linters.
     /// </summary>
-    [JsonProperty(PropertyName = "interFileDependencies")]
+    [JsonProperty(PropertyName = "interFileDependencies", NullValueHandling = NullValueHandling.Include)]
     public Boolean InterFileDependencies { get; set; }
 
     /// <summary>
     /// The server provides support for workspace diagnostics as well.
     /// </summary>
-    [JsonProperty(PropertyName = "workspaceDiagnostics")]
+    [JsonProperty(PropertyName = "workspaceDiagnostics", NullValueHandling = NullValueHandling.Include)]
     public Boolean WorkspaceDiagnostics { get; set; }
 }
 
@@ -4341,7 +4341,7 @@ public sealed class DiagnosticRegistrationOptions : ITextDocumentRegistrationOpt
     /// A document selector to identify the scope of the registration. If set to
     /// null the document selector provided on the client side will be used.
     /// </summary>
-    [JsonProperty(PropertyName = "documentSelector")]
+    [JsonProperty(PropertyName = "documentSelector", NullValueHandling = NullValueHandling.Include)]
     public IList<DocumentFilter>? DocumentSelector { get; set; }
 
     /// <summary>
@@ -4357,13 +4357,13 @@ public sealed class DiagnosticRegistrationOptions : ITextDocumentRegistrationOpt
     /// set in another file. Inter file dependencies are common for
     /// most programming languages and typically uncommon for linters.
     /// </summary>
-    [JsonProperty(PropertyName = "interFileDependencies")]
+    [JsonProperty(PropertyName = "interFileDependencies", NullValueHandling = NullValueHandling.Include)]
     public Boolean InterFileDependencies { get; set; }
 
     /// <summary>
     /// The server provides support for workspace diagnostics as well.
     /// </summary>
-    [JsonProperty(PropertyName = "workspaceDiagnostics")]
+    [JsonProperty(PropertyName = "workspaceDiagnostics", NullValueHandling = NullValueHandling.Include)]
     public Boolean WorkspaceDiagnostics { get; set; }
 
     [JsonProperty(PropertyName = "workDoneProgress", NullValueHandling = NullValueHandling.Ignore)]
@@ -4439,7 +4439,7 @@ public sealed class FileOperationRegistrationOptions
     /// <summary>
     /// The actual filters.
     /// </summary>
-    [JsonProperty(PropertyName = "filters")]
+    [JsonProperty(PropertyName = "filters", NullValueHandling = NullValueHandling.Include)]
     public IList<FileOperationFilter> Filters { get; set; }
 }
 
@@ -4461,7 +4461,7 @@ public sealed class FileOperationFilter
     /// <summary>
     /// The actual file operation pattern.
     /// </summary>
-    [JsonProperty(PropertyName = "pattern")]
+    [JsonProperty(PropertyName = "pattern", NullValueHandling = NullValueHandling.Include)]
     public FileOperationPattern Pattern { get; set; }
 }
 
@@ -4487,7 +4487,7 @@ public sealed class FileOperationPattern
     /// (e.g., `example.[!0-9]` to match on `example.a`, `example.b`, but
     /// not `example.0`)
     /// </summary>
-    [JsonProperty(PropertyName = "glob")]
+    [JsonProperty(PropertyName = "glob", NullValueHandling = NullValueHandling.Include)]
     public String Glob { get; set; }
 
     /// <summary>

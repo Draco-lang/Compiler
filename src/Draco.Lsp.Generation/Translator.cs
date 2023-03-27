@@ -292,7 +292,7 @@ internal sealed class Translator
         return new(
             Documentation: ExtractDocumentation(constant.Documentation),
             Name: Capitalize(constant.Name),
-            Attributes: ImmutableArray.Create(Cs.Attributes.MemberValue(value)));
+            SerializedValue: value);
     }
 
     /// <summary>
@@ -319,23 +319,18 @@ internal sealed class Translator
 
         // Translate type
         var propType = this.TranslateType(simpleField.Type, nameHint: simpleField.Name, containingClass: containingClass);
-        // Build attribute list
-        var attributes = ImmutableArray.CreateBuilder<Cs.Attribute>();
         if (simpleField.Nullable)
         {
-            // If the field itself is nullable, we mark it optional
-            attributes.Add(Cs.Attributes.Optional());
-            // In addition, if the type is not nullable, we make it one
+            // If the type is not nullable, we make it one
             if (propType is not Cs.NullableType) propType = new Cs.NullableType(propType);
         }
-        // We name the field properly
-        attributes.Add(Cs.Attributes.PropertyName(simpleField.Name));
         // Finally we can create the property
         return new(
             Documentation: ExtractDocumentation(simpleField.Documentation),
             Name: Capitalize(simpleField.Name),
             Type: propType,
-            Attributes: attributes.ToImmutable());
+            SerializedName: simpleField.Name,
+            OmitIfNull: simpleField.Nullable);
     }
 
     /// <summary>
@@ -421,7 +416,7 @@ internal sealed class Translator
                         .Select(str => new Cs.EnumMember(
                             Documentation: null,
                             Name: Capitalize(str),
-                            Attributes: ImmutableArray.Create(Cs.Attributes.MemberValue(str))))
+                            SerializedValue: str))
                         .ToList(),
                 };
                 // Register it

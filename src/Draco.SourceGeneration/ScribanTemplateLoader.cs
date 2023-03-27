@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Scriban;
@@ -21,8 +21,8 @@ public sealed class ScribanTemplateLoader : ITemplateLoader
     {
         name = $"Templates.{name}";
         var assembly = Assembly.GetExecutingAssembly();
-        var stream = assembly.GetManifestResourceStream(name);
-        if (stream is null) throw new FileNotFoundException($"resource {name} was not embedded in the assembly");
+        var stream = assembly.GetManifestResourceStream(name)
+                  ?? throw new FileNotFoundException($"resource {name} was not embedded in the assembly");
         var reader = new StreamReader(stream);
         return reader;
     }

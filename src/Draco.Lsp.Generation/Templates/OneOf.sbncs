@@ -1,0 +1,107 @@
+using System;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Draco.Lsp.Model;
+
+/// <summary>
+/// Interface for all one-of DUs.
+/// </summary>
+public interface IOneOf
+{
+    /// <summary>
+    /// The stored value.
+    /// </summary>
+    public object? Value { get; }
+}
+
+{{for $nCases in 1..MaxCases}}
+    /// <summary>
+    /// A discriminated union implementation for {{$nCases}} case(s).
+    /// </summary>
+    public readonly struct OneOf<
+        {{for $i in 1..$nCases}}
+            {{if $i > 1}},{{end}}
+            T{{$i}}
+        {{end}}
+    > : IOneOf
+    {
+        object? IOneOf.Value => this.index switch
+        {
+            {{for $i in 1..$nCases}}
+                {{$i}} => this.field{{$i}},
+            {{end}}
+            _ => throw new InvalidOperationException(),
+        };
+
+        private readonly byte index;
+        {{for $i in 1..$nCases}}
+            private readonly T{{$i}} field{{$i}};
+        {{end}}
+
+        private OneOf(
+            byte index
+            {{for $i in 1..$nCases}}
+                , T{{$i}} field{{$i}}
+            {{end}}
+        )
+        {
+            this.index = index;
+            {{for $i in 1..$nCases}}
+                this.field{{$i}} = field{{$i}};
+            {{end}}
+        }
+
+        {{for $i in 1..$nCases}}
+            public OneOf(T{{$i}} value)
+                : this(
+                    {{$i}}
+                    {{for $j in 1..$nCases}}
+                        ,
+                        {{if $i == $j}}
+                            value
+                        {{else}}
+                            default!
+                        {{end}}
+                    {{end}}
+                ) {}
+        {{end}}
+
+        {{for $i in 1..$nCases}}
+            public static implicit operator OneOf<
+                {{for $j in 1..$nCases}}
+                    {{if $j > 1}},{{end}}
+                    T{{$j}}
+                {{end}}
+            >(T{{$i}} value) => new(value);
+        {{end}}
+
+        public T As<T>() => this.Is<T>(out var value)
+            ? value
+            : throw new InvalidCastException();
+
+        public bool Is<T>() => this.Is<T>(out _);
+
+        public bool Is<T>([MaybeNullWhen(false)] out T value)
+        {
+            {{for $i in 1..$nCases}}
+                if (typeof(T) == typeof(T{{$i}}))
+                {
+                    if (this.index == {{$i}})
+                    {
+                        value = (T)(object)this.field{{$i}}!;
+                        return true;
+                    }
+                    else
+                    {
+                        value = default;
+                        return false;
+                    }
+                }
+            {{end}}
+            value = default;
+            return false;
+        }
+
+        public override string? ToString() => (this as IOneOf).Value?.ToString();
+    }
+{{end}}

@@ -1,5 +1,9 @@
+using System.Reflection;
 using Draco.Lsp.Generation.CSharp;
 using Draco.Lsp.Generation.TypeScript;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Scriban.Runtime;
 
 namespace Draco.Lsp.Generation;
 
@@ -29,6 +33,46 @@ internal class Program
         var csModel = translator.Generate();
         var csCode = CodeWriter.WriteModel(csModel);
 
-        Console.WriteLine(csCode);
+        // Console.WriteLine(csCode);
+
+        Console.WriteLine(RenderOneOf());
     }
+
+    private static string RenderOneOf()
+    {
+        var template = LoadScribanTemplate("OneOf.sbncs");
+
+        var context = new Scriban.TemplateContext
+        {
+            MemberRenamer = MemberRenamer,
+        };
+        var scriptObject = new Scriban.Runtime.ScriptObject();
+        scriptObject.Import(new { MaxCases = 8 }, renamer: MemberRenamer);
+        context.PushGlobal(scriptObject);
+
+        var output = template.Render(context);
+        return SyntaxFactory
+            .ParseCompilationUnit(output)
+            .NormalizeWhitespace()
+            .GetText()
+            .ToString();
+    }
+
+    private static Scriban.Template LoadScribanTemplate(string templateName)
+    {
+        var templateString = GetManifestResourceStreamReader(templateName).ReadToEnd();
+        return Scriban.Template.Parse(templateString);
+    }
+
+    private static StreamReader GetManifestResourceStreamReader(string name)
+    {
+        name = $"Templates.{name}";
+        var assembly = Assembly.GetExecutingAssembly();
+        var stream = assembly.GetManifestResourceStream(name)
+                  ?? throw new FileNotFoundException($"resource {name} was not embedded in the assembly");
+        var reader = new StreamReader(stream);
+        return reader;
+    }
+
+    private static string MemberRenamer(MemberInfo memberInfo) => memberInfo.Name;
 }

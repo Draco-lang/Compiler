@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,6 +51,44 @@ public readonly struct OneOf<T1, T2> : IOneOf
     public static implicit operator OneOf<T1, T2>(T1 value) => new(value);
     public static implicit operator OneOf<T1, T2>(T2 value) => new(value);
 
+    public T As<T>() => this.Is<T>(out var value)
+        ? value
+        : throw new InvalidCastException();
+
+    public bool Is<T>() => this.Is<T>(out _);
+
+    public bool Is<T>([MaybeNullWhen(false)] out T instance)
+    {
+        if (typeof(T) == typeof(T1))
+        {
+            if (this.index == 1)
+            {
+                instance = (T)(object)this.field1!;
+                return true;
+            }
+            else
+            {
+                instance = default;
+                return false;
+            }
+        }
+        if (typeof(T) == typeof(T2))
+        {
+            if (this.index == 2)
+            {
+                instance = (T)(object)this.field2!;
+                return true;
+            }
+            else
+            {
+                instance = default;
+                return false;
+            }
+        }
+        instance = default;
+        return false;
+    }
+
     public override string? ToString() => this.index switch
     {
         1 => this.field1!.ToString(),
@@ -99,6 +138,57 @@ public readonly struct OneOf<T1, T2, T3> : IOneOf
     public static implicit operator OneOf<T1, T2, T3>(T1 value) => new(value);
     public static implicit operator OneOf<T1, T2, T3>(T2 value) => new(value);
     public static implicit operator OneOf<T1, T2, T3>(T3 value) => new(value);
+
+    public T As<T>() => this.Is<T>(out var value)
+        ? value
+        : throw new InvalidCastException();
+
+    public bool Is<T>() => this.Is<T>(out _);
+
+    public bool Is<T>([MaybeNullWhen(false)] out T instance)
+    {
+        if (typeof(T) == typeof(T1))
+        {
+            if (this.index == 1)
+            {
+                instance = (T)(object)this.field1!;
+                return true;
+            }
+            else
+            {
+                instance = default;
+                return false;
+            }
+        }
+        if (typeof(T) == typeof(T2))
+        {
+            if (this.index == 2)
+            {
+                instance = (T)(object)this.field2!;
+                return true;
+            }
+            else
+            {
+                instance = default;
+                return false;
+            }
+        }
+        if (typeof(T) == typeof(T3))
+        {
+            if (this.index == 3)
+            {
+                instance = (T)(object)this.field3!;
+                return true;
+            }
+            else
+            {
+                instance = default;
+                return false;
+            }
+        }
+        instance = default;
+        return false;
+    }
 
     public override string? ToString() => this.index switch
     {

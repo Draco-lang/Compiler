@@ -19,6 +19,8 @@ internal static class CodeGenerator
         Render("BoundTree.sbncs", tree, cancellationToken);
     public static string GenerateOneOf(OneOf.Config config, CancellationToken cancellationToken) =>
         Render("OneOf.sbncs", config, cancellationToken);
+    public static string GenerateLspModel(Lsp.CSharp.Model model, CancellationToken cancellationToken) =>
+        Render("LspModel.sbncs", model, cancellationToken);
 
     private static string Render(string templateName, object model, CancellationToken cancellationToken)
     {

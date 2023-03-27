@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <AdditionalFiles Include="Model\OneOf.xml" />
+    <AdditionalFiles Include="Model\LspModel.xml" />
   </ItemGroup>
 
   <ItemGroup>

@@ -16,6 +16,15 @@ namespace Draco.Lsp.Serialization;
 /// </summary>
 public sealed class OneOfJsonConverter : JsonConverter
 {
+    /// <summary>
+    /// Represents a single discrimination.
+    /// </summary>
+    /// <param name="Type">The type being discriminated.</param>
+    /// <param name="Properties">The properties that exclude the use of <paramref name="Type"/>.</param>
+    private readonly record struct Discrimination(Type Type, ImmutableHashSet<string> Properties);
+
+    private static readonly Dictionary<Type, ImmutableArray<Discrimination>> discriminatorCache = new();
+
     private static Type? ExtractOneOfType(Type objectType)
     {
         // Unwrap, if nullable
@@ -25,10 +34,12 @@ public sealed class OneOfJsonConverter : JsonConverter
             : null;
     }
 
-    private static ImmutableArray<KeyValuePair<Type, ImmutableHashSet<string>>> GetDiscriminators(Type oneOfType)
+    private static ImmutableArray<Discrimination> GetDiscriminators(Type oneOfType)
     {
+        if (discriminatorCache.TryGetValue(oneOfType, out var existing)) return existing;
+
         var oneOfArgs = oneOfType.GetGenericArguments();
-        var builder = ImmutableArray.CreateBuilder<KeyValuePair<Type, ImmutableHashSet<string>>>();
+        var builder = ImmutableArray.CreateBuilder<Discrimination>();
 
         // First, we collect all of the names of all one of types
         var allPropertyNames = oneOfArgs
@@ -57,10 +68,14 @@ public sealed class OneOfJsonConverter : JsonConverter
         }
 
         // Sort by most discriminators first
-        builder.Sort((a, b) => b.Value.Count - a.Value.Count);
+        builder.Sort((a, b) => b.Properties.Count - a.Properties.Count);
+
+        // Build, save to cache
+        var result = builder.ToImmutable();
+        discriminatorCache.Add(oneOfType, result);
 
         // Done
-        return builder.ToImmutable();
+        return result;
     }
 
     public override bool CanConvert(Type objectType) => ExtractOneOfType(objectType) is not null;

@@ -24,6 +24,13 @@
       <LogicalName>Templates.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
+
+  <!-- Embed the language server protocol specification -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\external\lsp-specification\**\*.*" Visible="False">
+      <LogicalName>Lsp.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
   
   <PropertyGroup>
     <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>

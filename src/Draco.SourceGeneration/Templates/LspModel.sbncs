@@ -25,24 +25,79 @@ namespace Draco.Lsp.Model;
 {{end}}
 
 {{func class(decl)}}
-    public sealed class {{decl.Name}}
+    public sealed class {{decl.Name}} {{bases(decl.Interfaces)}}
     {
         {{for $nested in decl.NestedDeclarations}}
             {{declaration($nested)}}
+        {{end}}
+
+        {{for $prop in decl.Properties}}
+            {{property($prop)}}
         {{end}}
     }
 {{end}}
 
 {{func interface(decl)}}
-    public interface {{decl.Name}}
+    public interface {{decl.Name}} {{bases(decl.Interfaces)}}
     {
+        {{for $prop in decl.Properties}}
+            {{property($prop)}}
+        {{end}}
     }
 {{end}}
 
 {{func enum(decl)}}
     public enum {{decl.Name}}
     {
+        {{for $mem in decl.Members}}
+            {{enum_member($mem)}},
+        {{end}}
     }
+{{end}}
+
+{{func property(decl)}}
+    {{summary(decl.Documentation)}}
+    [JsonProperty(
+        PropertyName = {{string.literal(decl.SerializedName)}},
+        NullValueHandling = NullValueHandling.{{if decl.OmitIfNull}}Ignore{{else}}Include{{end}})]
+    public {{type(decl.Type)}} {{decl.Name}} { get; set; }
+{{end}}
+
+{{func enum_member(decl)}}
+    {{summary(decl.Documentation)}}
+    [EnumMember(Value = {{string.literal(decl.SerializedValue)}})]
+    {{decl.Name}}
+{{end}}
+
+{{func bases(b)}}
+    {{if array.size(b) == 0}}{{ret}}{{end}}
+    :
+    {{wrap separated(', ', b)}}
+        {{$element.Name}}
+    {{end}}
+{{end}}
+
+{{func type(t)}}
+    {{case t.Discriminator}}
+    {{when 'Builtin'}} {{t.Type.Name}}
+    {{when 'Nullable'}} {{type(t.Type)}}?
+    {{when 'Array'}} IList<{{type(t.ElementType)}}>
+    {{when 'Declaration'}}
+        {{if t.Declaration.Discriminator == 'Class'}}
+            {{class_type(t.Declaration)}}
+        {{else}}
+            {{t.Declaration.Name}}
+        {{end}}
+    {{when 'DiscriminatedUnion'}}
+        OneOf<{{wrap separated(', ', t.Alternatives)}}{{type($element)}}{{end}}>
+    {{end}}
+{{end}}
+
+{{func class_type(t)}}
+    {{if t.Parent}}
+        {{class_type(t.Parent)}}.
+    {{end}}
+    {{t.Name}}
 {{end}}
 
 #nullable enable

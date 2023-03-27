@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Draco.Lsp.Model;
 
+#nullable enable
+
 /// <summary>
 /// Interface for all one-of DUs.
 /// </summary>
@@ -105,3 +107,5 @@ public interface IOneOf
         public override string? ToString() => (this as IOneOf).Value?.ToString();
     }
 {{end}}
+
+#nullable restore

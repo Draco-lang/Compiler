@@ -17,6 +17,8 @@ internal static class CodeGenerator
         Render("UntypedTree.sbncs", tree, cancellationToken);
     public static string GenerateBoundTree(BoundTree.Tree tree, CancellationToken cancellationToken) =>
         Render("BoundTree.sbncs", tree, cancellationToken);
+    public static string GenerateOneOf(OneOf.Config config, CancellationToken cancellationToken) =>
+        Render("OneOf.sbncs", config, cancellationToken);
 
     private static string Render(string templateName, object model, CancellationToken cancellationToken)
     {

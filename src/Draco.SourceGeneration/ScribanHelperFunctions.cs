@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text;
 using Scriban.Runtime;
 
 namespace Draco.SourceGeneration;
@@ -16,6 +17,30 @@ public sealed class ScribanHelperFunctions : ScriptObject
     public static string EscapeKeyword(string name) => keywords.Contains(name)
         ? $"@{name}"
         : name;
+
+    public static string UnescapeString(string text)
+    {
+        var result = new StringBuilder();
+        foreach (var ch in text)
+        {
+            result.Append(ch switch
+            {
+                '\"' => @"\""",
+                '\'' => @"\'",
+                '\\' => @"\\",
+                '\a' => @"\a",
+                '\b' => @"\b",
+                '\f' => @"\f",
+                '\n' => @"\n",
+                '\r' => @"\r",
+                '\t' => @"\t",
+                '\v' => @"\v",
+                '\0' => @"\0",
+                _ => ch,
+            });
+        }
+        return result.ToString();
+    }
 
     public static string CamelCase(string str)
     {

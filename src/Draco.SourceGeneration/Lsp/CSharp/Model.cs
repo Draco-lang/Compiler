@@ -11,7 +11,7 @@ namespace Draco.SourceGeneration.Lsp.CSharp;
 /// <summary>
 /// The C# model of the LSP code.
 /// </summary>
-internal sealed class Model
+public sealed class Model
 {
     /// <summary>
     /// The declarations of the model.
@@ -22,8 +22,13 @@ internal sealed class Model
 /// <summary>
 /// The base of all declarations.
 /// </summary>
-internal abstract class Declaration
+public abstract class Declaration
 {
+    /// <summary>
+    /// A discriminator string for Scriban.
+    /// </summary>
+    public string Discriminator => this.GetType().Name;
+
     /// <summary>
     /// The docs of this declaration.
     /// </summary>
@@ -38,7 +43,7 @@ internal abstract class Declaration
 /// <summary>
 /// A class declaration.
 /// </summary>
-internal sealed class Class : Declaration
+public sealed class Class : Declaration
 {
     /// <summary>
     /// The parent of this class in terms of containment, not inheritance.
@@ -76,7 +81,7 @@ internal sealed class Class : Declaration
 /// <summary>
 /// An interface declaration.
 /// </summary>
-internal sealed class Interface : Declaration
+public sealed class Interface : Declaration
 {
     /// <summary>
     /// The interfaces this interface implements.
@@ -92,7 +97,7 @@ internal sealed class Interface : Declaration
 /// <summary>
 /// An enum declaration.
 /// </summary>
-internal sealed class Enum : Declaration
+public sealed class Enum : Declaration
 {
     /// <summary>
     /// The members within this enum.
@@ -106,7 +111,7 @@ internal sealed class Enum : Declaration
 /// <param name="Documentation">The documentation of this member.</param>
 /// <param name="Name">The name of the enum member.</param>
 /// <param name="SerializedValue">The serialized enum member value.</param>
-internal sealed record class EnumMember(
+public sealed record class EnumMember(
     string? Documentation,
     string Name,
     object? SerializedValue);
@@ -119,7 +124,7 @@ internal sealed record class EnumMember(
 /// <param name="Name">The property name.</param>
 /// <param name="SerializedName">The property name when serialized.</param>
 /// <param name="OmitIfNull">True, if the property shold be omitted, if it's null.</param>
-internal sealed record class Property(
+public sealed record class Property(
     string? Documentation,
     Type Type,
     string Name,
@@ -129,41 +134,55 @@ internal sealed record class Property(
 /// <summary>
 /// A C# type.
 /// </summary>
-internal abstract record class Type;
+public abstract record class Type
+{
+    /// <summary>
+    /// A discriminator string for Scriban.
+    /// </summary>
+    public string Discriminator
+    {
+        get
+        {
+            var name = this.GetType().Name;
+            if (name.EndsWith("Type")) name = name.Substring(0, name.Length - 4);
+            return name;
+        }
+    }
+}
 
 /// <summary>
 /// A type backed by a C# declaration.
 /// </summary>
 /// <param name="Declaration">The referenced C# declaration.</param>
-internal sealed record class DeclarationType(
+public sealed record class DeclarationType(
     Declaration Declaration) : Type;
 
 /// <summary>
 /// A builtin C# type.
 /// </summary>
 /// <param name="Type">The reflected type.</param>
-internal sealed record class BuiltinType(
+public sealed record class BuiltinType(
     System.Type Type) : Type;
 
 /// <summary>
 /// A type representing DUs.
 /// </summary>
 /// <param name="Alternatives">The alternative types.</param>
-internal sealed record class DiscriminatedUnionType(
+public sealed record class DiscriminatedUnionType(
     ImmutableArray<Type> Alternatives) : Type;
 
 /// <summary>
 /// An array type.
 /// </summary>
 /// <param name="ElementType">The array element type.</param>
-internal sealed record class ArrayType(
+public sealed record class ArrayType(
     Type ElementType) : Type;
 
 /// <summary>
 /// A nullable C# type.
 /// </summary>
 /// <param name="Type">The underlying type.</param>
-internal sealed record class NullableType(
+public sealed record class NullableType(
     Type Type) : Type;
 
 /// <summary>
@@ -171,7 +190,6 @@ internal sealed record class NullableType(
 /// </summary>
 /// <param name="KeyType">The key type.</param>
 /// <param name="ValueType">The value type.</param>
-internal sealed record class DictionaryType(
+public sealed record class DictionaryType(
     Type KeyType,
     Type ValueType) : Type;
-

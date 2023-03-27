@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Scriban.Runtime;
@@ -18,30 +20,6 @@ public sealed class ScribanHelperFunctions : ScriptObject
         ? $"@{name}"
         : name;
 
-    public static string UnescapeString(string text)
-    {
-        var result = new StringBuilder();
-        foreach (var ch in text)
-        {
-            result.Append(ch switch
-            {
-                '\"' => @"\""",
-                '\'' => @"\'",
-                '\\' => @"\\",
-                '\a' => @"\a",
-                '\b' => @"\b",
-                '\f' => @"\f",
-                '\n' => @"\n",
-                '\r' => @"\r",
-                '\t' => @"\t",
-                '\v' => @"\v",
-                '\0' => @"\0",
-                _ => ch,
-            });
-        }
-        return result.ToString();
-    }
-
     public static string CamelCase(string str)
     {
         if (str.Length == 0) return str;
@@ -56,6 +34,15 @@ public sealed class ScribanHelperFunctions : ScriptObject
     public static string RemoveSuffix(string str, string suffix) => str.EndsWith(suffix)
         ? str.Substring(0, str.Length - suffix.Length)
         : str;
+
+    public static IList<string> SplitLines(string str)
+    {
+        var result = new List<string>();
+        var reader = new StringReader(str);
+        var line = null as string;
+        while ((line = reader.ReadLine()) is not null) result.Add(line);
+        return result;
+    }
 
     public static ScribanHelperFunctions Instance { get; } = new();
 

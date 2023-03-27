@@ -1,0 +1,54 @@
+using System.CodeDom.Compiler;
+using System.Runtime.Serialization;
+using Newtonsoft.Json;
+
+namespace Draco.Lsp.Model;
+
+{{include 'Utils.sbncs'}}
+
+{{func summary(doc)}}
+    {{if !doc}}{{ret}}{{end}}
+    /// <summary>
+    {{~for $line in split_lines(doc)-}}
+        /// {{$line}}
+    {{~end-}}
+    /// </summary>
+{{end}}
+
+{{func declaration(decl)}}
+    {{summary(decl.Documentation)}}
+    {{case decl.Discriminator}}
+    {{when 'Class'}} {{class(decl)}}
+    {{when 'Interface'}} {{interface(decl)}}
+    {{when 'Enum'}} {{enum(decl)}}
+    {{end}}
+{{end}}
+
+{{func class(decl)}}
+    public sealed class {{decl.Name}}
+    {
+        {{for $nested in decl.NestedDeclarations}}
+            {{declaration($nested)}}
+        {{end}}
+    }
+{{end}}
+
+{{func interface(decl)}}
+    public interface {{decl.Name}}
+    {
+    }
+{{end}}
+
+{{func enum(decl)}}
+    public enum {{decl.Name}}
+    {
+    }
+{{end}}
+
+#nullable enable
+#pragma warning disable CS8618
+{{for $decl in Declarations}}
+    {{declaration($decl)}}
+{{end}}
+#pragma warning restore CS8618
+#nullable restore

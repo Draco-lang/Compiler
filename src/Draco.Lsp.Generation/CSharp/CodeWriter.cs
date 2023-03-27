@@ -35,8 +35,7 @@ internal static class CodeWriter
         _ => throw new ArgumentOutOfRangeException(nameof(declaration)),
     };
 
-    private static string WriteClass(Class @class) =>
-        $$"""
+    private static string WriteClass(Class @class) => $$"""
         {{WriteDocumentation(@class.Documentation)}}
         {{generatedAttribute}}
         public sealed class {{@class.Name}} {{WriteInterfaces(@class.Interfaces)}}
@@ -47,8 +46,7 @@ internal static class CodeWriter
         }
         """;
 
-    private static string WriteInterface(Interface @interface) =>
-        $$"""
+    private static string WriteInterface(Interface @interface) => $$"""
         {{WriteDocumentation(@interface.Documentation)}}
         {{generatedAttribute}}
         public interface {{@interface.Name}} {{WriteInterfaces(@interface.Interfaces)}}
@@ -57,8 +55,7 @@ internal static class CodeWriter
         }
         """;
 
-    private static string WriteEnum(Enum @enum) =>
-        $$"""
+    private static string WriteEnum(Enum @enum) => $$"""
         {{WriteDocumentation(@enum.Documentation)}}
         {{generatedAttribute}}
         public enum {{@enum.Name}}
@@ -67,15 +64,13 @@ internal static class CodeWriter
         }
         """;
 
-    private static object WriteEnumMember(EnumMember member) =>
-        $"""
+    private static object WriteEnumMember(EnumMember member) => $"""
         {WriteDocumentation(member.Documentation)}
         {WriteAttributeList(member.Attributes)}
         {member.Name},
         """;
 
-    private static string WriteProperty(Property prop) =>
-        $$"""
+    private static string WriteProperty(Property prop) => $$"""
         {{WriteDocumentation(prop.Documentation)}}
         {{WriteAttributeList(prop.Attributes)}}
         public {{WriteType(prop.Type)}} {{prop.Name}} { get; set; }
@@ -100,8 +95,7 @@ internal static class CodeWriter
     private static string WriteAttributeList(ImmutableArray<Attribute> attributes) =>
         string.Join(Environment.NewLine, attributes.Select(WriteAttribute));
 
-    private static string WriteAttribute(Attribute attribute) =>
-        $"""
+    private static string WriteAttribute(Attribute attribute) => $"""
         [{attribute.Name}({string.Join(", ", attribute.Args.Select(WriteAttributeValue))})]
         """;
 

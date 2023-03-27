@@ -1,7 +1,6 @@
 using System.CodeDom.Compiler;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
-using OneOf;
 
 namespace Draco.Lsp.Model;
 

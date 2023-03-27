@@ -52,13 +52,14 @@ internal static class Program
         {
             CallHierarchyProvider = new CallHierarchyOptions()
             {
-                WorkDoneProgress = false,
+                WorkDoneProgress = true,
             },
         };
         var json = JsonConvert.SerializeObject(capab, new OneOfJsonConverter());
         Console.WriteLine(json);
 
         var obj = JsonConvert.DeserializeObject<ServerCapabilities>(json, new OneOfJsonConverter());
+        Console.WriteLine(obj?.CallHierarchyProvider);
     }
 
     internal static async Task RunServerAsync(bool stdioFlag)

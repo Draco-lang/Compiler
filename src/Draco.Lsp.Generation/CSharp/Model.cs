@@ -129,10 +129,10 @@ internal sealed record class Property(
 /// <summary>
 /// An attribute for some element.
 /// </summary>
-/// <param name="Name">The attribute name.</param>
+/// <param name="Kind">The attribute kind.</param>
 /// <param name="Args">The attribute arguments.</param>
 internal sealed record class Attribute(
-    string Name,
+    AttributeKind Kind,
     ImmutableArray<object?> Args);
 
 /// <summary>
@@ -185,11 +185,32 @@ internal sealed record class DictionaryType(
     Type ValueType) : Type;
 
 /// <summary>
+/// The different kinds of attributes.
+/// </summary>
+internal enum AttributeKind
+{
+    /// <summary>
+    /// Omit, if the value is null.
+    /// </summary>
+    Optional,
+
+    /// <summary>
+    /// Specifies the name of the property.
+    /// </summary>
+    PropertyName,
+
+    /// <summary>
+    /// Specifies the member value to serialize to.
+    /// </summary>
+    MemberValue,
+}
+
+/// <summary>
 /// Utilities for constructing attributes for the model.
 /// </summary>
 internal static class Attributes
 {
-    public static Attribute Optional() => new("Optional", ImmutableArray<object?>.Empty);
-    public static Attribute JsonProperty(string name) => new("JsonProperty", ImmutableArray.Create<object?>(name));
-    public static Attribute JsonValue(object? value) => new("JsonValue", ImmutableArray.Create<object?>(value));
+    public static Attribute Optional() => new(AttributeKind.Optional, ImmutableArray<object?>.Empty);
+    public static Attribute PropertyName(string name) => new(AttributeKind.PropertyName, ImmutableArray.Create<object?>(name));
+    public static Attribute MemberValue(object? value) => new(AttributeKind.MemberValue, ImmutableArray.Create(value));
 }

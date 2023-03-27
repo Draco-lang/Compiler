@@ -292,7 +292,7 @@ internal sealed class Translator
         return new(
             Documentation: ExtractDocumentation(constant.Documentation),
             Name: Capitalize(constant.Name),
-            Attributes: ImmutableArray.Create(Cs.Attributes.JsonValue(value)));
+            Attributes: ImmutableArray.Create(Cs.Attributes.MemberValue(value)));
     }
 
     /// <summary>
@@ -329,7 +329,7 @@ internal sealed class Translator
             if (propType is not Cs.NullableType) propType = new Cs.NullableType(propType);
         }
         // We name the field properly
-        attributes.Add(Cs.Attributes.JsonProperty(simpleField.Name));
+        attributes.Add(Cs.Attributes.PropertyName(simpleField.Name));
         // Finally we can create the property
         return new(
             Documentation: ExtractDocumentation(simpleField.Documentation),
@@ -421,7 +421,7 @@ internal sealed class Translator
                         .Select(str => new Cs.EnumMember(
                             Documentation: null,
                             Name: Capitalize(str),
-                            Attributes: ImmutableArray.Create(Cs.Attributes.JsonValue(str))))
+                            Attributes: ImmutableArray.Create(Cs.Attributes.MemberValue(str))))
                         .ToList(),
                 };
                 // Register it

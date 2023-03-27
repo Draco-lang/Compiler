@@ -5,7 +5,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.LanguageServer.Handlers;
+using Draco.Lsp.Model;
+using Draco.Lsp.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using NuGet.Common;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
@@ -26,6 +29,7 @@ internal static class Program
 {
     internal static async Task Main(string[] args)
     {
+#if false
         var stdioFlag = new Option<bool>(name: "--stdio", description: "A flag to set the transportation option to stdio");
 
         var runCommand = new Command("run", "Runs the language server")
@@ -42,6 +46,19 @@ internal static class Program
         rootCommand.AddCommand(checkForUpdatesCommand);
 
         await rootCommand.InvokeAsync(args);
+#endif
+
+        var capab = new ServerCapabilities()
+        {
+            CallHierarchyProvider = new CallHierarchyOptions()
+            {
+                WorkDoneProgress = false,
+            },
+        };
+        var json = JsonConvert.SerializeObject(capab, new OneOfJsonConverter());
+        Console.WriteLine(json);
+
+        var obj = JsonConvert.DeserializeObject<ServerCapabilities>(json, new OneOfJsonConverter());
     }
 
     internal static async Task RunServerAsync(bool stdioFlag)

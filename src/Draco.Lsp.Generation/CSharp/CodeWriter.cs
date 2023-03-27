@@ -92,21 +92,49 @@ internal static class CodeWriter
         ? @class.Name
         : $"{WriteClassType(@class.Parent)}.{@class.Name}";
 
-    private static string WriteAttributeList(ImmutableArray<Attribute> attributes) =>
-        string.Join(Environment.NewLine, attributes.Select(WriteAttribute));
+    private static string WriteAttributeList(ImmutableArray<Attribute> attributes)
+    {
+        // Collect json-property related attributes
+        var jsonPropRelated = attributes
+            .Where(a => a.Kind is AttributeKind.Optional or AttributeKind.PropertyName)
+            .ToList();
 
-    private static string WriteAttribute(Attribute attribute) => $"""
-        [{attribute.Name}({string.Join(", ", attribute.Args.Select(WriteAttributeValue))})]
-        """;
+        // Collect member-value related attributes
+        var memberValueRelated = attributes
+            .FirstOrDefault(a => a.Kind is AttributeKind.MemberValue);
+
+        var result = new StringBuilder();
+        // Add whatever we have
+        if (jsonPropRelated.Count != 0)
+        {
+            result.Append("[JsonProperty(");
+
+            var propName = attributes.FirstOrDefault(a => a.Kind == AttributeKind.PropertyName);
+            if (propName is not null) result.Append($"PropertyName = \"{propName.Args[0]}\"");
+
+            if (jsonPropRelated.Count > 1) result.Append(", ");
+
+            var optional = attributes.FirstOrDefault(a => a.Kind == AttributeKind.Optional);
+            if (optional is not null) result.Append($"NullValueHandling = NullValueHandling.Ignore");
+
+            result.AppendLine(")]");
+        }
+        if (memberValueRelated is not null)
+        {
+            result.AppendLine($"[EnumMember(Value = {WriteEnumMemberName(memberValueRelated.Args[0])})]");
+        }
+
+        return result.ToString();
+    }
 
     private static string WriteInterfaces(IEnumerable<Interface> interfaces) => interfaces.Any()
         ? $": {string.Join(", ", interfaces.Select(i => i.Name))}"
         : string.Empty;
 
-    private static string WriteAttributeValue(object? value) => value switch
+    private static string WriteEnumMemberName(object? value) => value switch
     {
         string s => $"\"{EscapeString(s)}\"",
-        int i => i.ToString(),
+        int i => $"\"{i}\"",
         _ => throw new ArgumentOutOfRangeException(nameof(value)),
     };
 

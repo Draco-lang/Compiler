@@ -16,7 +16,9 @@
   <Generate Name="InitializedParams" />
 
   <!-- Text Document -->
-  <!-- TODO -->
+  <Generate Name="DidOpenTextDocumentParams" />
+  <Generate Name="DidChangeTextDocumentParams" />
+  <Generate Name="DidCloseTextDocumentParams" />
 
   <!-- Window -->
   <Generate Name="LogMessageParams" />

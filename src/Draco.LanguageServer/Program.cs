@@ -17,9 +17,14 @@ using StreamJsonRpc;
 
 namespace Draco.LanguageServer;
 
-internal sealed class DracoLanguageServer : ILanguageServer
+internal sealed class DracoLanguageServer : ILanguageServer, ITextDocumentSyncCapability
 {
     public InitializeResult.ServerInfoResult? Info => null;
+
+    public TextDocumentSyncOptions Capability => new()
+    {
+        Change = TextDocumentSyncKind.Full,
+    };
 
     private readonly ILanguageClient languageClient;
 
@@ -42,6 +47,21 @@ internal sealed class DracoLanguageServer : ILanguageServer
     }
 
     public Task ShutdownAsync()
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param)
     {
         return Task.CompletedTask;
     }

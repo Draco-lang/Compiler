@@ -89,7 +89,7 @@ public sealed class SyntaxTree
     /// </summary>
     /// <param name="range">The range to check the descendants in.</param>
     /// <returns>All subtrees in <paramref name="range"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesInRange(SyntaxRange range) => this.Root.TraverseSubtreesIntersectingRange(range);
+    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range) => this.Root.TraverseSubtreesIntersectingRange(range);
 
     /// <summary>
     /// Syntactically formats this <see cref="SyntaxTree"/>.

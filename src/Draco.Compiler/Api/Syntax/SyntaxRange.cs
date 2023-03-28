@@ -23,4 +23,10 @@ public readonly record struct SyntaxRange(SyntaxPosition Start, SyntaxPosition E
     /// <param name="position">The position to check for containment.</param>
     /// <returns>True, if <paramref name="position"/> is contained, false otherwise.</returns>
     public bool Contains(SyntaxPosition position) => this.Start <= position && position < this.End;
+
+    public bool Contains(SyntaxRange range) => this.Start <= range.Start && this.End >= range.End;
+
+    public bool IsDisjunctWith(SyntaxRange range) => this.End <= range.Start || range.End <= this.Start;
+
+    public bool Intersects(SyntaxRange range) => !this.IsDisjunctWith(range);
 }

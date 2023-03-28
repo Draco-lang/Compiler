@@ -156,6 +156,29 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
         }
     }
 
+    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range)
+    {
+        if (range.Contains(this.Range))
+        {
+            yield return this;
+            foreach (var child in this.PreOrderTraverse())
+            {
+                yield return child;
+            }
+        }
+        else if (range.Intersects(this.Range))
+        {
+            yield return this;
+            foreach (var child in this.Children)
+            {
+                foreach (var node in child.TraverseSubtreesIntersectingRange(range))
+                {
+                    yield return node;
+                }
+            }
+        }
+    }
+
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
 }

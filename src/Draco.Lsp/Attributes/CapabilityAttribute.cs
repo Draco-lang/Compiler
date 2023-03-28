@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 namespace Draco.Lsp.Attributes;
 
 /// <summary>
-/// Annotates a capability interface.
+/// Annotates a capability property.
 /// </summary>
-[AttributeUsage(AttributeTargets.Interface)]
+[AttributeUsage(AttributeTargets.Property)]
 public sealed class CapabilityAttribute : Attribute
 {
     /// <summary>

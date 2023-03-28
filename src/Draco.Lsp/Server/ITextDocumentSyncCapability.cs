@@ -8,9 +8,9 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server;
 
-[Capability(nameof(ServerCapabilities.TextDocumentSync))]
 public interface ITextDocumentSyncCapability
 {
+    [Capability(nameof(ServerCapabilities.TextDocumentSync))]
     public TextDocumentSyncOptions? Capability { get; }
 
     [RegistrationOptions("textDocument/didOpen")]

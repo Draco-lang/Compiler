@@ -60,26 +60,22 @@ internal sealed class LanguageServerLifecycle
     {
         var capabilities = new ServerCapabilities();
 
-        // We collect all interfaces of the server that has the capability property on it
-        var capabilityInterfaces = this.server
+        // We collect all properties on the server that have the capability annotation
+        var capabilityProperties = this.server
             .GetType()
             .GetInterfaces()
-            .Select(i => (Attribute: i.GetCustomAttribute<CapabilityAttribute>(), Interface: i))
+            .SelectMany(i => i.GetProperties())
+            .Select(p => (Attribute: p.GetCustomAttribute<CapabilityAttribute>(), Property: p))
             .Where(pair => pair.Attribute is not null);
 
         // Go through these pairs
-        foreach (var (attr, @interface) in capabilityInterfaces)
+        foreach (var (attr, interfaceCapabilityProp) in capabilityProperties)
         {
             Debug.Assert(attr is not null);
 
             // Retrieve the capability property from the server capabilities
             var serverCapabilityProp = typeof(ServerCapabilities).GetProperty(attr.Property)
                                     ?? throw new InvalidOperationException($"no capability {attr.Property} found in server capabilities");
-
-            // Each capability interface needs to define a property called 'Capability'
-            // that describes the registration options
-            var interfaceCapabilityProp = @interface.GetProperty("Capability")
-                                       ?? throw new InvalidOperationException($"capability interface {@interface.Name} does not define its capabilities");
 
             // Retrieve the capability value defined by the interface
             var capability = interfaceCapabilityProp.GetValue(this.server);
@@ -94,12 +90,10 @@ internal sealed class LanguageServerLifecycle
     {
         var registrations = new List<Registration>();
 
-        // We collect all interfaces of the server that has the capability property on it
-        // And within those, all properties with the registration options attribute
+        // We collect all properties with the registration options attribute
         var registrationOptionsProps = this.server
             .GetType()
             .GetInterfaces()
-            .Where(i => i.GetCustomAttribute<CapabilityAttribute>() is not null)
             .SelectMany(i => i.GetProperties())
             .Select(p => (Attribute: p.GetCustomAttribute<RegistrationOptionsAttribute>(), Property: p))
             .Where(pair => pair.Attribute is not null);

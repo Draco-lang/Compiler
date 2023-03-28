@@ -114,7 +114,18 @@ public sealed class Enum : Declaration
 public sealed record class EnumMember(
     string? Documentation,
     string Name,
-    object? SerializedValue);
+    object? SerializedValue)
+{
+    /// <summary>
+    /// A discriminator string for the value.
+    /// </summary>
+    public string ValueDiscriminator => this.SerializedValue switch
+    {
+        int => "Int",
+        string => "String",
+        _ => throw new NotImplementedException(),
+    };
+}
 
 /// <summary>
 /// A property definition.

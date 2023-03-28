@@ -65,8 +65,13 @@ namespace Draco.Lsp.Model;
 
 {{func enum_member(decl)}}
     {{summary(decl.Documentation)}}
-    [EnumMember(Value = {{string.literal(decl.SerializedValue)}})]
-    {{decl.Name}}
+    {{case decl.ValueDiscriminator}}
+    {{when 'Int'}}
+        {{decl.Name}} = {{decl.SerializedValue}}
+    {{when 'String'}}
+        [EnumMember(Value = {{string.literal(decl.SerializedValue)}})]
+        {{decl.Name}}
+    {{end}}
 {{end}}
 
 {{func bases(b)}}

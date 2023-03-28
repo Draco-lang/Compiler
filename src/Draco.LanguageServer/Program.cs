@@ -50,19 +50,12 @@ internal static class Program
 {
     internal static async Task Main(string[] args)
     {
-        try
-        {
-            var server = new LanguageServer();
-            var stream = FullDuplexStream.Splice(Console.OpenStandardInput(), Console.OpenStandardOutput());
-            var (rpc, client) = server.Create(stream);
-            server.languageClient = client;
-            server.rpc = rpc;
-            rpc.StartListening();
-            await rpc.Completion;
-        }
-        catch (Exception ex)
-        {
-            await File.WriteAllTextAsync(@"C:\TMP\lsp_err_log.txt", $"{ex.Message}\n{ex.StackTrace}");
-        }
+        var server = new LanguageServer();
+        var stream = FullDuplexStream.Splice(Console.OpenStandardInput(), Console.OpenStandardOutput());
+        var (rpc, client) = server.Create(stream);
+        server.languageClient = client;
+        server.rpc = rpc;
+        rpc.StartListening();
+        await rpc.Completion;
     }
 }

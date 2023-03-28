@@ -25,19 +25,12 @@ public sealed class OneOfJsonConverter : JsonConverter
 
     private static readonly Dictionary<Type, ImmutableArray<Discrimination>> discriminatorCache = new();
 
-    private static Type? ExtractOneOfType(Type objectType)
-    {
-        // Unwrap, if nullable
-        objectType = Nullable.GetUnderlyingType(objectType) ?? objectType;
-        return objectType.IsAssignableTo(typeof(IOneOf))
-            ? objectType
-            : null;
-    }
-
     private static ImmutableArray<Discrimination> GetDiscriminators(Type oneOfType)
     {
+        // Check if it's cached
         if (discriminatorCache.TryGetValue(oneOfType, out var existing)) return existing;
 
+        // No, we need to build the discriminators
         var oneOfArgs = oneOfType.GetGenericArguments();
         var builder = ImmutableArray.CreateBuilder<Discrimination>();
 
@@ -78,12 +71,21 @@ public sealed class OneOfJsonConverter : JsonConverter
         return result;
     }
 
+    private static Type? ExtractOneOfType(Type objectType)
+    {
+        // Unwrap, if nullable
+        objectType = Nullable.GetUnderlyingType(objectType) ?? objectType;
+        return objectType.IsAssignableTo(typeof(IOneOf))
+            ? objectType
+            : null;
+    }
+
     public override bool CanConvert(Type objectType) => ExtractOneOfType(objectType) is not null;
 
     public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
     {
-        var oneOfType = ExtractOneOfType(objectType);
-        if (oneOfType is null) throw new InvalidOperationException();
+        var oneOfType = ExtractOneOfType(objectType)
+                     ?? throw new InvalidOperationException();
 
         // Primitive type
         if (reader.ValueType?.IsPrimitive ?? false) return Activator.CreateInstance(oneOfType, reader.Value);

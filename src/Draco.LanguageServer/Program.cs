@@ -17,10 +17,14 @@ using StreamJsonRpc;
 
 namespace Draco.LanguageServer;
 
-internal sealed class LanguageServer : ILanguageServer
+internal sealed class DracoLanguageServer : ILanguageServer
 {
-    public ILanguageClient languageClient;
-    public JsonRpc rpc;
+    private readonly ILanguageClient languageClient;
+
+    public DracoLanguageServer(ILanguageClient languageClient)
+    {
+        this.languageClient = languageClient;
+    }
 
     public void Dispose()
     {
@@ -50,12 +54,9 @@ internal static class Program
 {
     internal static async Task Main(string[] args)
     {
-        var server = new LanguageServer();
         var stream = FullDuplexStream.Splice(Console.OpenStandardInput(), Console.OpenStandardOutput());
-        var (rpc, client) = server.Create(stream);
-        server.languageClient = client;
-        server.rpc = rpc;
-        rpc.StartListening();
-        await rpc.Completion;
+        var client = Lsp.Server.LanguageServer.Connect(stream);
+        var server = new DracoLanguageServer(client);
+        await client.RunAsync(server);
     }
 }

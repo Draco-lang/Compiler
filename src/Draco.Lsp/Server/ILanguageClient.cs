@@ -14,6 +14,11 @@ namespace Draco.Lsp.Server;
 /// </summary>
 public interface ILanguageClient
 {
+    /// <summary>
+    /// The RPC connection between the client and the server.
+    /// </summary>
+    public JsonRpc Connection { get; }
+
     [Notification("window/logMessage")]
     public Task LogMessageAsync(LogMessageParams param);
 

@@ -12,19 +12,50 @@ using StreamJsonRpc;
 namespace Draco.Lsp.Server;
 
 /// <summary>
-/// Extension functions for language servers.
+/// Language server creation functionality.
 /// </summary>
-public static class LanguageServerExtensions
+public static class LanguageServer
 {
-    // TODO
-    public static (JsonRpc, ILanguageClient) Create(this ILanguageServer languageServer, Stream stream)
+    /// <summary>
+    /// Builds up a connection to a language server.
+    /// </summary>
+    /// <param name="stream">The duplex communication stream.</param>
+    /// <returns>The constructed language client.</returns>
+    public static ILanguageClient Connect(Stream stream)
     {
         // Create the connection
         var jsonRpc = new JsonRpc(stream);
 
+        // Generate client proxy
+        var languageClient = GenerateClientProxy(jsonRpc);
+
+        // Done
+        return languageClient;
+    }
+
+    /// <summary>
+    /// Starts the message passing between the language server and client.
+    /// </summary>
+    /// <param name="client">The language client.</param>
+    /// <param name="server">The language server.</param>
+    /// <returns>The task that completes when the communication is over.</returns>
+    public static async Task RunAsync(this ILanguageClient client, ILanguageServer server)
+    {
+        var jsonRpc = client.Connection;
+
+        // Register server methods
+        RegisterServerRpcMethods(server, jsonRpc);
+
+        // Done, now we can actually start
+        jsonRpc.StartListening();
+        await jsonRpc.Completion;
+    }
+
+    private static void RegisterServerRpcMethods(ILanguageServer server, JsonRpc jsonRpc)
+    {
         // Go through all methods of the server and register it
         // NOTE: We go through the interfaces, because interface attributes are not inherited
-        var langserverMethods = languageServer
+        var langserverMethods = server
             .GetType()
             .GetInterfaces()
             .SelectMany(i => i.GetMethods(BindingFlags.Public | BindingFlags.Instance));
@@ -40,7 +71,7 @@ public static class LanguageServerExtensions
             if (requestAttr is not null)
             {
                 // It's a request, register it
-                jsonRpc.AddLocalRpcMethod(method, languageServer, new(requestAttr.Method)
+                jsonRpc.AddLocalRpcMethod(method, server, new(requestAttr.Method)
                 {
                     UseSingleObjectParameterDeserialization = true,
                 });
@@ -48,18 +79,12 @@ public static class LanguageServerExtensions
             if (notificationAttr is not null)
             {
                 // It's a notification, register it
-                jsonRpc.AddLocalRpcMethod(method, languageServer, new(notificationAttr.Method)
+                jsonRpc.AddLocalRpcMethod(method, server, new(notificationAttr.Method)
                 {
                     UseSingleObjectParameterDeserialization = true,
                 });
             }
         }
-
-        // Generate client proxy
-        var languageClient = GenerateClientProxy(jsonRpc);
-
-        // TODO
-        return (jsonRpc, languageClient);
     }
 
     private static ILanguageClient GenerateClientProxy(JsonRpc rpc)
@@ -78,6 +103,19 @@ public static class LanguageServerExtensions
         }
 
         public void Intercept(IInvocation invocation)
+        {
+            var method = invocation.Method;
+            if (method.Name == "get_Connection")
+            {
+                invocation.ReturnValue = this.rpc;
+            }
+            else
+            {
+                invocation.ReturnValue = this.InterceptRpcCall(invocation);
+            }
+        }
+
+        private object? InterceptRpcCall(IInvocation invocation)
         {
             var method = invocation.Method;
             // Check for attributes
@@ -102,32 +140,28 @@ public static class LanguageServerExtensions
                 {
                     if (invocation.Arguments.Length > 0)
                     {
-                        var task = this.rpc.InvokeAsync(requestAttr.Method, invocation.Arguments[0]);
-                        invocation.ReturnValue = task;
+                        return this.rpc.InvokeAsync(requestAttr.Method, invocation.Arguments[0]);
                     }
                     else
                     {
-                        var task = this.rpc.InvokeAsync(requestAttr.Method);
-                        invocation.ReturnValue = task;
+                        return this.rpc.InvokeAsync(requestAttr.Method);
                     }
                 }
                 else
                 {
                     if (invocation.Arguments.Length > 1)
                     {
-                        var task = this.rpc.InvokeWithCancellationAsync(
+                        return this.rpc.InvokeWithCancellationAsync(
                             requestAttr.Method,
                             new[] { invocation.Arguments[0] },
                             cancellationToken.Value);
-                        invocation.ReturnValue = task;
                     }
                     else
                     {
-                        var task = this.rpc.InvokeWithCancellationAsync(
+                        return this.rpc.InvokeWithCancellationAsync(
                             requestAttr.Method,
                             Array.Empty<object>(),
                             cancellationToken.Value);
-                        invocation.ReturnValue = task;
                     }
                 }
             }
@@ -136,15 +170,14 @@ public static class LanguageServerExtensions
                 // It's a notification
                 if (invocation.Arguments.Length > 0)
                 {
-                    var task = this.rpc.NotifyAsync(notificationAttr.Method, invocation.Arguments[0]);
-                    invocation.ReturnValue = task;
+                    return this.rpc.NotifyAsync(notificationAttr.Method, invocation.Arguments[0]);
                 }
                 else
                 {
-                    var task = this.rpc.NotifyAsync(notificationAttr.Method);
-                    invocation.ReturnValue = task;
+                    return this.rpc.NotifyAsync(notificationAttr.Method);
                 }
             }
+            return null;
         }
     }
 }

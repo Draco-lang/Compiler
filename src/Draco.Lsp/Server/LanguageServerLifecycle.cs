@@ -33,6 +33,24 @@ internal sealed class LanguageServerLifecycle
             Capabilities = this.BuildServerCapabilities(),
         });
 
+    [JsonRpcMethod("initialized", UseSingleObjectParameterDeserialization = true)]
+    public async Task InizializedAsync(InitializedParams param)
+    {
+        await Task.Delay(5000);
+
+        // First, we collect dynamic registration options
+        var registrations = this.BuildDynamicRegistrations();
+
+        // Then we register the collected capabilities
+        await this.jsonRpc.InvokeWithParameterObjectAsync("client/registerCapability", new RegistrationParams()
+        {
+            Registrations = registrations,
+        });
+
+        // Finally, we let the user implementation know
+        await this.server.InitializedAsync(param);
+    }
+
     [JsonRpcMethod("exit", UseSingleObjectParameterDeserialization = true)]
     public Task ExitAsync()
     {
@@ -72,6 +90,40 @@ internal sealed class LanguageServerLifecycle
         }
 
         return capabilities;
+    }
+
+    private IList<Registration> BuildDynamicRegistrations()
+    {
+        var registrations = new List<Registration>();
+
+        // We collect all interfaces of the server that has the capability property on it
+        // And within those, all properties with the registration options attribute
+        var registrationOptionsProps = this.server
+            .GetType()
+            .GetInterfaces()
+            .Where(i => i.GetCustomAttribute<CapabilityAttribute>() is not null)
+            .SelectMany(i => i.GetProperties())
+            .Select(p => (Attribute: p.GetCustomAttribute<RegistrationOptionsAttribute>(), Property: p))
+            .Where(pair => pair.Attribute is not null);
+
+        // Go through these properties
+        foreach (var (attr, prop) in registrationOptionsProps)
+        {
+            Debug.Assert(attr is not null);
+
+            // Get the property value
+            var propValue = prop.GetValue(this.server);
+
+            // Add it as a registration
+            registrations.Add(new()
+            {
+                Id = $"reg_{attr.Method}",
+                Method = attr.Method,
+                RegisterOptions = propValue,
+            });
+        }
+
+        return registrations;
     }
 
     private static void SetCapability(ServerCapabilities capabilities, PropertyInfo prop, object? capability)

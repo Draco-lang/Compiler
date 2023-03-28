@@ -14,11 +14,15 @@
   <Generate Name="InitializeParams" />
   <Generate Name="InitializeResult" />
   <Generate Name="InitializedParams" />
+  <Generate Name="RegistrationParams" />
 
   <!-- Text Document -->
   <Generate Name="DidOpenTextDocumentParams" />
   <Generate Name="DidChangeTextDocumentParams" />
   <Generate Name="DidCloseTextDocumentParams" />
+  
+  <Generate Name="TextDocumentRegistrationOptions" />
+  <Generate Name="TextDocumentChangeRegistrationOptions" />
 
   <!-- Window -->
   <Generate Name="LogMessageParams" />

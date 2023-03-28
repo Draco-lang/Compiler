@@ -50,7 +50,7 @@ internal sealed class LanguageClientInterceptor : IInterceptor
         {
             // It's a request
             // Check for cancellation token
-            var cancellationToken = null as CancellationToken?;
+            var cancellationToken = (null as CancellationToken?);
             if (invocation.Arguments[^1] is CancellationToken)
             {
                 cancellationToken = (CancellationToken)invocation.Arguments[1];
@@ -60,27 +60,27 @@ internal sealed class LanguageClientInterceptor : IInterceptor
             {
                 if (invocation.Arguments.Length > 0)
                 {
-                    return this.rpc.InvokeAsync(requestAttr.Method, invocation.Arguments[0]);
+                    return this.rpc.InvokeWithParameterObjectAsync(requestAttr.Method, invocation.Arguments[0]);
                 }
                 else
                 {
-                    return this.rpc.InvokeAsync(requestAttr.Method);
+                    return this.rpc.InvokeWithParameterObjectAsync(requestAttr.Method);
                 }
             }
             else
             {
                 if (invocation.Arguments.Length > 1)
                 {
-                    return this.rpc.InvokeWithCancellationAsync(
+                    return this.rpc.InvokeWithParameterObjectAsync(
                         requestAttr.Method,
-                        new[] { invocation.Arguments[0] },
+                        invocation.Arguments[0],
                         cancellationToken.Value);
                 }
                 else
                 {
-                    return this.rpc.InvokeWithCancellationAsync(
+                    return this.rpc.InvokeWithParameterObjectAsync(
                         requestAttr.Method,
-                        Array.Empty<object>(),
+                        null,
                         cancellationToken.Value);
                 }
             }

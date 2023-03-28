@@ -18,7 +18,9 @@ public interface ILanguageServer : IDisposable
     /// </summary>
     public InitializeResult.ServerInfoResult? Info { get; }
 
-    [Notification("initialized")]
+    // NOTE: This is handled by the lifecycle manager, so it's not annotated
+    // The lifecycle manager will dynamically register capabilities here,
+    // then invokes this method
     public Task InitializedAsync(InitializedParams param);
 
     [Request("shutdown")]

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
 using System.Linq;
@@ -21,10 +22,47 @@ internal sealed class DracoLanguageServer : ILanguageServer, ITextDocumentSyncCa
 {
     public InitializeResult.ServerInfoResult? Info => null;
 
-    public TextDocumentSyncOptions Capability => new()
+    public TextDocumentSyncOptions? Capability => new()
     {
-        Change = TextDocumentSyncKind.Incremental,
+        Change = TextDocumentSyncKind.Full,
         OpenClose = true,
+    };
+
+    public TextDocumentRegistrationOptions DidOpenRegistrationOptions => new()
+    {
+        DocumentSelector = new List<DocumentFilter>()
+        {
+            new()
+            {
+                Language = "draco",
+                Pattern = "**/*.draco",
+            }
+        }
+    };
+
+    public TextDocumentChangeRegistrationOptions DidChangeRegistrationOptions => new()
+    {
+        DocumentSelector = new List<DocumentFilter>()
+        {
+            new()
+            {
+                Language = "draco",
+                Pattern = "**/*.draco",
+            }
+        },
+        SyncKind = TextDocumentSyncKind.Full,
+    };
+
+    public TextDocumentRegistrationOptions DidCloseRegistrationOptions => new()
+    {
+        DocumentSelector = new List<DocumentFilter>()
+        {
+            new()
+            {
+                Language = "draco",
+                Pattern = "**/*.draco",
+            }
+        }
     };
 
     private readonly ILanguageClient languageClient;

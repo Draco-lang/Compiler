@@ -13,9 +13,14 @@ namespace Draco.Lsp.Server;
 /// </summary>
 public interface ILanguageServer : IDisposable
 {
-    [Request("initialize")]
-    public Task<InitializeResult> InitializeAsync(InitializeParams param);
+    /// <summary>
+    /// General server information.
+    /// </summary>
+    public InitializeResult.ServerInfoResult? Info { get; }
 
     [Notification("initialized")]
     public Task InitializedAsync(InitializedParams param);
+
+    [Request("shutdown")]
+    public Task ShutdownAsync();
 }

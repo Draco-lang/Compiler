@@ -19,6 +19,8 @@ namespace Draco.LanguageServer;
 
 internal sealed class DracoLanguageServer : ILanguageServer
 {
+    public InitializeResult.ServerInfoResult? Info => null;
+
     private readonly ILanguageClient languageClient;
 
     public DracoLanguageServer(ILanguageClient languageClient)
@@ -30,23 +32,18 @@ internal sealed class DracoLanguageServer : ILanguageServer
     {
     }
 
-    public async Task<InitializeResult> InitializeAsync(InitializeParams param)
-    {
-        return new InitializeResult()
-        {
-            Capabilities = new ServerCapabilities()
-            {
-            },
-        };
-    }
-
     public async Task InitializedAsync(InitializedParams param)
     {
-        await this.languageClient.LogMessageAsync(new LogMessageParams()
+        await this.languageClient.LogMessageAsync(new()
         {
-            Type = MessageType.Error,
-            Message = "SEND HELP",
+            Message = "Hello new LSP impl",
+            Type = MessageType.Info,
         });
+    }
+
+    public Task ShutdownAsync()
+    {
+        return Task.CompletedTask;
     }
 }
 

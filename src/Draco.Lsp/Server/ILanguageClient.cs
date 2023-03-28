@@ -21,7 +21,4 @@ public interface ILanguageClient
 
     [Notification("window/logMessage")]
     public Task LogMessageAsync(LogMessageParams param);
-
-    [Request("window/showMessageRequest")]
-    public Task<MessageActionItem?> ShowMessageAsync(ShowMessageRequestParams param);
 }

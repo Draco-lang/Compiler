@@ -10,10 +10,15 @@
   <BuiltinType Name="uinteger" FullName="System.UInt32" />
   <BuiltinType Name="LSPAny" FullName="System.Object" />
 
+  <!-- Lifecycle -->
   <Generate Name="InitializeParams" />
   <Generate Name="InitializeResult" />
   <Generate Name="InitializedParams" />
+
+  <!-- Text Document -->
+  <!-- TODO -->
+
+  <!-- Window -->
   <Generate Name="LogMessageParams" />
-  <Generate Name="ShowMessageRequestParams" />
 
 </LspModel>

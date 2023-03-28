@@ -7,6 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
 using Draco.Lsp.Attributes;
+using Draco.Lsp.Model;
+using Draco.Lsp.Serialization;
+using Newtonsoft.Json.Converters;
 using StreamJsonRpc;
 
 namespace Draco.Lsp.Server;
@@ -23,8 +26,14 @@ public static class LanguageServer
     /// <returns>The constructed language client.</returns>
     public static ILanguageClient Connect(Stream stream)
     {
+        // Create an RPC message handler with the custom JSON converters
+        var messageFormatter = new JsonMessageFormatter();
+        messageFormatter.JsonSerializer.Converters.Add(new StringEnumConverter());
+        messageFormatter.JsonSerializer.Converters.Add(new OneOfJsonConverter());
+        var messageHandler = new HeaderDelimitedMessageHandler(stream, messageFormatter);
+
         // Create the connection
-        var jsonRpc = new JsonRpc(stream);
+        var jsonRpc = new JsonRpc(messageHandler);
 
         // Generate client proxy
         var languageClient = GenerateClientProxy(jsonRpc);
@@ -43,12 +52,20 @@ public static class LanguageServer
     {
         var jsonRpc = client.Connection;
 
+        // Register builtin server methods
+        RegisterBuiltinRpcMethods(server, jsonRpc);
         // Register server methods
         RegisterServerRpcMethods(server, jsonRpc);
 
         // Done, now we can actually start
         jsonRpc.StartListening();
         await jsonRpc.Completion;
+    }
+
+    private static void RegisterBuiltinRpcMethods(ILanguageServer server, JsonRpc jsonRpc)
+    {
+        var lifecycle = new LanguageServerLifecycle(server, jsonRpc);
+        jsonRpc.AddLocalRpcTarget(lifecycle);
     }
 
     private static void RegisterServerRpcMethods(ILanguageServer server, JsonRpc jsonRpc)
@@ -91,93 +108,5 @@ public static class LanguageServer
     {
         var generator = new ProxyGenerator();
         return generator.CreateInterfaceProxyWithoutTarget<ILanguageClient>(new LanguageClientInterceptor(rpc));
-    }
-
-    private sealed class LanguageClientInterceptor : IInterceptor
-    {
-        private readonly JsonRpc rpc;
-
-        public LanguageClientInterceptor(JsonRpc rpc)
-        {
-            this.rpc = rpc;
-        }
-
-        public void Intercept(IInvocation invocation)
-        {
-            var method = invocation.Method;
-            if (method.Name == "get_Connection")
-            {
-                invocation.ReturnValue = this.rpc;
-            }
-            else
-            {
-                invocation.ReturnValue = this.InterceptRpcCall(invocation);
-            }
-        }
-
-        private object? InterceptRpcCall(IInvocation invocation)
-        {
-            var method = invocation.Method;
-            // Check for attributes
-            var requestAttr = method.GetCustomAttribute<RequestAttribute>();
-            var notificationAttr = method.GetCustomAttribute<NotificationAttribute>();
-            if (requestAttr is not null && notificationAttr is not null)
-            {
-                throw new InvalidOperationException($"method {method.Name} can not be both a request and notification handler");
-            }
-            // Call appropriate handler
-            if (requestAttr is not null)
-            {
-                // It's a request
-                // Check for cancellation token
-                var cancellationToken = null as CancellationToken?;
-                if (invocation.Arguments[^1] is CancellationToken)
-                {
-                    cancellationToken = (CancellationToken)invocation.Arguments[1];
-                }
-                // Call appropriate variant
-                if (cancellationToken is null)
-                {
-                    if (invocation.Arguments.Length > 0)
-                    {
-                        return this.rpc.InvokeAsync(requestAttr.Method, invocation.Arguments[0]);
-                    }
-                    else
-                    {
-                        return this.rpc.InvokeAsync(requestAttr.Method);
-                    }
-                }
-                else
-                {
-                    if (invocation.Arguments.Length > 1)
-                    {
-                        return this.rpc.InvokeWithCancellationAsync(
-                            requestAttr.Method,
-                            new[] { invocation.Arguments[0] },
-                            cancellationToken.Value);
-                    }
-                    else
-                    {
-                        return this.rpc.InvokeWithCancellationAsync(
-                            requestAttr.Method,
-                            Array.Empty<object>(),
-                            cancellationToken.Value);
-                    }
-                }
-            }
-            if (notificationAttr is not null)
-            {
-                // It's a notification
-                if (invocation.Arguments.Length > 0)
-                {
-                    return this.rpc.NotifyAsync(notificationAttr.Method, invocation.Arguments[0]);
-                }
-                else
-                {
-                    return this.rpc.NotifyAsync(notificationAttr.Method);
-                }
-            }
-            return null;
-        }
     }
 }

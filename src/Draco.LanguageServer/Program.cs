@@ -23,7 +23,8 @@ internal sealed class DracoLanguageServer : ILanguageServer, ITextDocumentSyncCa
 
     public TextDocumentSyncOptions Capability => new()
     {
-        Change = TextDocumentSyncKind.Full,
+        Change = TextDocumentSyncKind.Incremental,
+        OpenClose = true,
     };
 
     private readonly ILanguageClient languageClient;

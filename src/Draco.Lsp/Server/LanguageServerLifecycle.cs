@@ -44,8 +44,6 @@ internal sealed class LanguageServerLifecycle
     {
         var capabilities = new ServerCapabilities();
 
-        Thread.Sleep(5000);
-
         // We collect all interfaces of the server that has the capability property on it
         var capabilityInterfaces = this.server
             .GetType()

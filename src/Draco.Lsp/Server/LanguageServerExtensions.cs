@@ -93,30 +93,57 @@ public static class LanguageServerExtensions
                 // It's a request
                 // Check for cancellation token
                 var cancellationToken = null as CancellationToken?;
-                if (invocation.Arguments.Length > 1 && invocation.Arguments[1] is CancellationToken)
+                if (invocation.Arguments[^1] is CancellationToken)
                 {
                     cancellationToken = (CancellationToken)invocation.Arguments[1];
                 }
                 // Call appropriate variant
                 if (cancellationToken is null)
                 {
-                    var task = this.rpc.InvokeAsync(requestAttr.Method, invocation.Arguments[0]);
-                    invocation.ReturnValue = task;
+                    if (invocation.Arguments.Length > 0)
+                    {
+                        var task = this.rpc.InvokeAsync(requestAttr.Method, invocation.Arguments[0]);
+                        invocation.ReturnValue = task;
+                    }
+                    else
+                    {
+                        var task = this.rpc.InvokeAsync(requestAttr.Method);
+                        invocation.ReturnValue = task;
+                    }
                 }
                 else
                 {
-                    var task = this.rpc.InvokeWithCancellationAsync(
-                        requestAttr.Method,
-                        new[] { invocation.Arguments[0] },
-                        cancellationToken.Value);
-                    invocation.ReturnValue = task;
+                    if (invocation.Arguments.Length > 1)
+                    {
+                        var task = this.rpc.InvokeWithCancellationAsync(
+                            requestAttr.Method,
+                            new[] { invocation.Arguments[0] },
+                            cancellationToken.Value);
+                        invocation.ReturnValue = task;
+                    }
+                    else
+                    {
+                        var task = this.rpc.InvokeWithCancellationAsync(
+                            requestAttr.Method,
+                            Array.Empty<object>(),
+                            cancellationToken.Value);
+                        invocation.ReturnValue = task;
+                    }
                 }
             }
             if (notificationAttr is not null)
             {
                 // It's a notification
-                var task = this.rpc.NotifyAsync(notificationAttr.Method, invocation.Arguments[0]);
-                invocation.ReturnValue = task;
+                if (invocation.Arguments.Length > 0)
+                {
+                    var task = this.rpc.NotifyAsync(notificationAttr.Method, invocation.Arguments[0]);
+                    invocation.ReturnValue = task;
+                }
+                else
+                {
+                    var task = this.rpc.NotifyAsync(notificationAttr.Method);
+                    invocation.ReturnValue = task;
+                }
             }
         }
     }

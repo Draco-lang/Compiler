@@ -112,6 +112,9 @@ internal sealed class LanguageServerLifecycle
             // Get the property value
             var propValue = prop.GetValue(this.server);
 
+            // If the property value is null, we don't register
+            if (propValue is null) continue;
+
             // Add it as a registration
             registrations.Add(new()
             {
@@ -126,12 +129,8 @@ internal sealed class LanguageServerLifecycle
 
     private static void SetCapability(ServerCapabilities capabilities, PropertyInfo prop, object? capability)
     {
-        // If it's null, we can't do anything else
-        if (capability is null)
-        {
-            prop.SetValue(capabilities, null);
-            return;
-        }
+        // If it's null, we can't do anything, and it's already null
+        if (capability is null) return;
 
         var propType = prop.PropertyType;
         var capabilityType = capability.GetType();

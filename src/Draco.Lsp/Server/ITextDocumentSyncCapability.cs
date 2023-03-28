@@ -14,13 +14,13 @@ public interface ITextDocumentSyncCapability
     public TextDocumentSyncOptions? Capability { get; }
 
     [RegistrationOptions("textDocument/didOpen")]
-    public TextDocumentRegistrationOptions DidOpenRegistrationOptions { get; }
+    public TextDocumentRegistrationOptions? DidOpenRegistrationOptions { get; }
 
     [RegistrationOptions("textDocument/didChange")]
-    public TextDocumentChangeRegistrationOptions DidChangeRegistrationOptions { get; }
+    public TextDocumentChangeRegistrationOptions? DidChangeRegistrationOptions { get; }
 
     [RegistrationOptions("textDocument/didClose")]
-    public TextDocumentRegistrationOptions DidCloseRegistrationOptions { get; }
+    public TextDocumentRegistrationOptions? DidCloseRegistrationOptions { get; }
 
     [Notification("textDocument/didOpen")]
     public Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param);

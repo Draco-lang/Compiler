@@ -36,8 +36,6 @@ internal sealed class LanguageServerLifecycle
     [JsonRpcMethod("initialized", UseSingleObjectParameterDeserialization = true)]
     public async Task InizializedAsync(InitializedParams param)
     {
-        await Task.Delay(5000);
-
         // First, we collect dynamic registration options
         var registrations = this.BuildDynamicRegistrations();
 

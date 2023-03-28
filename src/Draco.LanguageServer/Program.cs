@@ -22,11 +22,7 @@ internal sealed class DracoLanguageServer : ILanguageServer, ITextDocumentSyncCa
 {
     public InitializeResult.ServerInfoResult? Info => null;
 
-    public TextDocumentSyncOptions? Capability => new()
-    {
-        Change = TextDocumentSyncKind.Full,
-        OpenClose = true,
-    };
+    public TextDocumentSyncOptions? Capability => null;
 
     public TextDocumentRegistrationOptions DidOpenRegistrationOptions => new()
     {

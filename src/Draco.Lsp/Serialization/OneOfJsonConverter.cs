@@ -14,7 +14,7 @@ namespace Draco.Lsp.Serialization;
 /// <summary>
 /// Provides JSON serialization for the <see cref="IOneOf"/> types.
 /// </summary>
-public sealed class OneOfJsonConverter : JsonConverter
+internal sealed class OneOfJsonConverter : JsonConverter
 {
     /// <summary>
     /// Represents a single discrimination.

@@ -28,7 +28,7 @@ public static class LanguageServer
     {
         // Create an RPC message handler with the custom JSON converters
         var messageFormatter = new JsonMessageFormatter();
-        messageFormatter.JsonSerializer.Converters.Add(new StringEnumConverter());
+        messageFormatter.JsonSerializer.Converters.Add(new EnumValueConverter());
         messageFormatter.JsonSerializer.Converters.Add(new OneOfJsonConverter());
         var messageHandler = new HeaderDelimitedMessageHandler(stream, messageFormatter);
 

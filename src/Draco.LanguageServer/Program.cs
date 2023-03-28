@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Draco.Lsp.Model;
 using Draco.Lsp.Serialization;
 using Draco.Lsp.Server;
+using Draco.Lsp.Server.TextDocument;
 using Nerdbank.Streams;
 using Newtonsoft.Json;
 using NuGet.Common;
@@ -18,88 +19,39 @@ using StreamJsonRpc;
 
 namespace Draco.LanguageServer;
 
-internal sealed class DracoLanguageServer : ILanguageServer, ITextDocumentSyncCapability
+internal sealed class DracoLanguageServer : ILanguageServer, ITextDocument
 {
-    public InitializeResult.ServerInfoResult? Info => null;
-
-    public TextDocumentSyncOptions? Capability => null;
-
-    public TextDocumentRegistrationOptions DidOpenRegistrationOptions => new()
+    public InitializeResult.ServerInfoResult Info => new()
     {
-        DocumentSelector = new List<DocumentFilter>()
+        Name = "Draco Language Server",
+        Version = "0.1.0",
+    };
+
+    public IList<DocumentFilter> DocumentSelector => new[]
+    {
+        new DocumentFilter()
         {
-            new()
-            {
-                Language = "draco",
-                Pattern = "**/*.draco",
-            }
+            Language = "draco",
+            Pattern = "**/*.draco",
         }
     };
+    public TextDocumentSyncKind SyncKind => TextDocumentSyncKind.Full;
 
-    public TextDocumentChangeRegistrationOptions DidChangeRegistrationOptions => new()
+    private readonly ILanguageClient client;
+
+    public DracoLanguageServer(ILanguageClient client)
     {
-        DocumentSelector = new List<DocumentFilter>()
-        {
-            new()
-            {
-                Language = "draco",
-                Pattern = "**/*.draco",
-            }
-        },
-        SyncKind = TextDocumentSyncKind.Full,
-    };
-
-    public TextDocumentRegistrationOptions DidCloseRegistrationOptions => new()
-    {
-        DocumentSelector = new List<DocumentFilter>()
-        {
-            new()
-            {
-                Language = "draco",
-                Pattern = "**/*.draco",
-            }
-        }
-    };
-
-    private readonly ILanguageClient languageClient;
-
-    public DracoLanguageServer(ILanguageClient languageClient)
-    {
-        this.languageClient = languageClient;
+        this.client = client;
     }
 
-    public void Dispose()
-    {
-    }
+    public void Dispose() { }
 
-    public async Task InitializedAsync(InitializedParams param)
-    {
-        await this.languageClient.LogMessageAsync(new()
-        {
-            Message = "Hello new LSP impl",
-            Type = MessageType.Info,
-        });
-    }
+    public Task InitializedAsync(InitializedParams param) => Task.CompletedTask;
+    public Task ShutdownAsync() => Task.CompletedTask;
 
-    public Task ShutdownAsync()
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param)
-    {
-        return Task.CompletedTask;
-    }
+    public Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param) => Task.CompletedTask;
+    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param) => Task.CompletedTask;
+    public Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param) => Task.CompletedTask;
 }
 
 internal static class Program

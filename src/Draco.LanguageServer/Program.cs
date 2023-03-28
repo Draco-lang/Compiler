@@ -13,17 +13,22 @@ using Newtonsoft.Json;
 using NuGet.Common;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
+using StreamJsonRpc;
 
 namespace Draco.LanguageServer;
 
 internal sealed class LanguageServer : ILanguageServer
 {
+    public ILanguageClient languageClient;
+    public JsonRpc rpc;
+
     public void Dispose()
     {
     }
 
     public async Task<InitializeResult> InitializeAsync(InitializeParams param)
     {
+        File.WriteAllText(@"C:\TMP\AAAA.txt", JsonConvert.SerializeObject(param));
         return new InitializeResult()
         {
             Capabilities = new ServerCapabilities()
@@ -34,6 +39,11 @@ internal sealed class LanguageServer : ILanguageServer
 
     public async Task InitializedAsync(InitializedParams param)
     {
+        await this.languageClient.LogMessageAsync(new LogMessageParams()
+        {
+            Type = MessageType.Error,
+            Message = "SEND HELP",
+        });
     }
 }
 
@@ -45,7 +55,11 @@ internal static class Program
         {
             var server = new LanguageServer();
             var stream = FullDuplexStream.Splice(Console.OpenStandardInput(), Console.OpenStandardOutput());
-            await server.RunAsync(stream);
+            var (rpc, client) = server.Create(stream);
+            server.languageClient = client;
+            server.rpc = rpc;
+            rpc.StartListening();
+            await rpc.Completion;
         }
         catch (Exception ex)
         {

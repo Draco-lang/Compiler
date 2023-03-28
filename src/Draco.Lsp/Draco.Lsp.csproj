@@ -17,6 +17,7 @@
   
   <ItemGroup>
     <PackageReference Include="StreamJsonRpc" Version="2.14.24" />
+    <PackageReference Include="Castle.Core" Version="5.1.1" />
   </ItemGroup>
 
 </Project>

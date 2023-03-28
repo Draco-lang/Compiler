@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Castle.DynamicProxy;
 using Draco.Lsp.Attributes;
 using StreamJsonRpc;
 
@@ -15,13 +16,8 @@ namespace Draco.Lsp.Server;
 /// </summary>
 public static class LanguageServerExtensions
 {
-    /// <summary>
-    /// Runs the language server.
-    /// </summary>
-    /// <param name="languageServer">The language server to run.</param>
-    /// <param name="stream">The duplex communication stream.</param>
-    /// <returns>The task that ends when the server is shut down.</returns>
-    public static async Task RunAsync(this ILanguageServer languageServer, Stream stream)
+    // TODO
+    public static (JsonRpc, ILanguageClient) Create(this ILanguageServer languageServer, Stream stream)
     {
         // Create the connection
         var jsonRpc = new JsonRpc(stream);
@@ -59,8 +55,69 @@ public static class LanguageServerExtensions
             }
         }
 
-        // Start the session
-        jsonRpc.StartListening();
-        await jsonRpc.Completion;
+        // Generate client proxy
+        var languageClient = GenerateClientProxy(jsonRpc);
+
+        // TODO
+        return (jsonRpc, languageClient);
+    }
+
+    private static ILanguageClient GenerateClientProxy(JsonRpc rpc)
+    {
+        var generator = new ProxyGenerator();
+        return generator.CreateInterfaceProxyWithoutTarget<ILanguageClient>(new LanguageClientInterceptor(rpc));
+    }
+
+    private sealed class LanguageClientInterceptor : IInterceptor
+    {
+        private readonly JsonRpc rpc;
+
+        public LanguageClientInterceptor(JsonRpc rpc)
+        {
+            this.rpc = rpc;
+        }
+
+        public void Intercept(IInvocation invocation)
+        {
+            var method = invocation.Method;
+            // Check for attributes
+            var requestAttr = method.GetCustomAttribute<RequestAttribute>();
+            var notificationAttr = method.GetCustomAttribute<NotificationAttribute>();
+            if (requestAttr is not null && notificationAttr is not null)
+            {
+                throw new InvalidOperationException($"method {method.Name} can not be both a request and notification handler");
+            }
+            // Call appropriate handler
+            if (requestAttr is not null)
+            {
+                // It's a request
+                // Check for cancellation token
+                var cancellationToken = null as CancellationToken?;
+                if (invocation.Arguments.Length > 1 && invocation.Arguments[1] is CancellationToken)
+                {
+                    cancellationToken = (CancellationToken)invocation.Arguments[1];
+                }
+                // Call appropriate variant
+                if (cancellationToken is null)
+                {
+                    var task = this.rpc.InvokeAsync(requestAttr.Method, invocation.Arguments[0]);
+                    invocation.ReturnValue = task;
+                }
+                else
+                {
+                    var task = this.rpc.InvokeWithCancellationAsync(
+                        requestAttr.Method,
+                        new[] { invocation.Arguments[0] },
+                        cancellationToken.Value);
+                    invocation.ReturnValue = task;
+                }
+            }
+            if (notificationAttr is not null)
+            {
+                // It's a notification
+                var task = this.rpc.NotifyAsync(notificationAttr.Method, invocation.Arguments[0]);
+                invocation.ReturnValue = task;
+            }
+        }
     }
 }

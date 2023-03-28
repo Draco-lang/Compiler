@@ -157,10 +157,10 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     }
 
     /// <summary>
-    /// Enumerates this subtree, yielding all descendant nodes in the given range.
+    /// Enumerates this subtree, yielding all descendant nodes intersecting the given range.
     /// </summary>
-    /// <param name="range">The range to check the descendants in.</param>
-    /// <returns>All subtrees in <paramref name="range"/> in parent-child order.</returns>
+    /// <param name="range">The range to check for intersection with the nodes.</param>
+    /// <returns>All subtrees in intersecting <paramref name="range"/> in parent-child order.</returns>
     public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range)
     {
         if (range.Contains(this.Range))

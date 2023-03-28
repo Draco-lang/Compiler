@@ -11,7 +11,7 @@ namespace Draco.Lsp.Server;
 /// <summary>
 /// The interface that language servers need to implement.
 /// </summary>
-public interface ILanguageServer
+public interface ILanguageServer : IDisposable
 {
     [Request("initialize")]
     public Task<InitializeResult> InitializeAsync(InitializeParams param);

@@ -13,5 +13,6 @@
   <Generate Name="InitializeParams" />
   <Generate Name="InitializeResult" />
   <Generate Name="InitializedParams" />
+  <Generate Name="LogMessageParams" />
 
 </LspModel>

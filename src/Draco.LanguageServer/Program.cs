@@ -28,7 +28,6 @@ internal sealed class LanguageServer : ILanguageServer
 
     public async Task<InitializeResult> InitializeAsync(InitializeParams param)
     {
-        File.WriteAllText(@"C:\TMP\AAAA.txt", JsonConvert.SerializeObject(param));
         return new InitializeResult()
         {
             Capabilities = new ServerCapabilities()

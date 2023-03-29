@@ -12,6 +12,9 @@
   <BuiltinType Name="unknown" FullName="System.Object" />
   <BuiltinType Name="DocumentUri" FullName="Draco.Lsp.Model.DocumentUri" />
 
+  <!-- Basic -->
+  <Generate Name="TextEdit" />
+
   <!-- Lifecycle -->
   <Generate Name="InitializeParams" />
   <Generate Name="InitializeResult" />
@@ -29,6 +32,8 @@
   <!-- Language -->
   <Generate Name="PublishDiagnosticsParams" />
   <Generate Name="DocumentFormattingParams" />
+  
+  <Generate Name="DocumentFormattingRegistrationOptions" />
 
   <!-- Window -->
   <Generate Name="LogMessageParams" />

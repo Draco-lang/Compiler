@@ -12,10 +12,17 @@ using Draco.Lsp.Server.TextDocument;
 
 namespace Draco.LanguageServer;
 
-internal sealed partial class DracoLanguageServer : ITextDocument
+internal sealed partial class DracoLanguageServer : ITextDocumentSync
 {
-    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken) => Task.CompletedTask;
-    public Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken) => Task.CompletedTask;
+    public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken)
+    {
+        this.documentRepository.AddOrUpdateDocument(param.TextDocument.Uri, param.TextDocument.Text);
+        await this.PublishDiagnosticsAsync(param.TextDocument.Uri, param.TextDocument.Text);
+    }
+
+    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
     public async Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param, CancellationToken cancellationToken)
     {
         var uri = param.TextDocument.Uri;

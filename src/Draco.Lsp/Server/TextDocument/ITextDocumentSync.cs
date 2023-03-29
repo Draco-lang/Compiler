@@ -8,7 +8,7 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.TextDocument;
 
-public interface ITextDocument : ITextDocumentDidOpen, ITextDocumentDidClose, ITextDocumentDidChange
+public interface ITextDocumentSync : ITextDocumentDidOpen, ITextDocumentDidClose, ITextDocumentDidChange
 {
     [Capability(nameof(ServerCapabilities.TextDocumentSync))]
     public TextDocumentSyncOptions? Capability => null;

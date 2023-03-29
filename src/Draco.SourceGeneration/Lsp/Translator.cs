@@ -240,8 +240,8 @@ internal sealed class Translator
             var @interface = this.interfaces[@base];
 
             // Add to whichever needs it
-            if (csClass is not null) csClass.Interfaces.Add(@interface);
-            if (csInterface is not null) csInterface.Interfaces.Add(@interface);
+            csClass?.Interfaces.Add(@interface);
+            csInterface?.Interfaces.Add(@interface);
         }
 
         // Add fields
@@ -249,8 +249,8 @@ internal sealed class Translator
         {
             var prop = this.TranslateField(field, containingClass: csClass);
             // Add to whichever needs it
-            if (csClass is not null) csClass.Properties.Add(prop);
-            if (csInterface is not null) csInterface.Properties.Add(prop);
+            csClass?.Properties.Add(prop);
+            csInterface?.Properties.Add(prop);
         }
 
         // Map the output to the interface, in case there is one
@@ -269,7 +269,7 @@ internal sealed class Translator
             }
         }
         // If we have a class, initialize parentship
-        if (csClass is not null) csClass.InitializeParents();
+        csClass?.InitializeParents();
 
         // Done
         return typeReference;
@@ -343,10 +343,13 @@ internal sealed class Translator
                 // If the type is not nullable, we make it one
                 if (propType is not Cs.NullableType) propType = new Cs.NullableType(propType);
             }
+            // We infer a name, sometimes there are collisions
+            var name = Capitalize(simpleField.Name);
+            if (name == containingClass?.Name) name = $"{name}_";
             // Finally we can create the property
             return new(
                 Documentation: ExtractDocumentation(simpleField.Documentation),
-                Name: Capitalize(simpleField.Name),
+                Name: name,
                 Type: propType,
                 SerializedName: simpleField.Name,
                 OmitIfNull: simpleField.Nullable,

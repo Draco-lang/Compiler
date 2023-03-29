@@ -35,14 +35,17 @@
   <Generate Name="DefinitionParams" />
   <Generate Name="ReferenceParams" />
   <Generate Name="HoverParams" />
+  <Generate Name="InlayHintParams" />
   <Generate Name="PublishDiagnosticsParams" />
   <Generate Name="DocumentFormattingParams" />
   
   <Generate Name="Hover" />
+  <Generate Name="InlayHint" />
 
   <Generate Name="DefinitionRegistrationOptions" />
   <Generate Name="ReferenceRegistrationOptions" />
   <Generate Name="HoverRegistrationOptions" />
+  <Generate Name="InlayHintRegistrationOptions" />
   <Generate Name="DocumentFormattingRegistrationOptions" />
 
   <!-- Window -->

@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using System.Threading;
-using System.IO;
 
 namespace Draco.SourceGeneration.Lsp;
 

@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
-using Draco.SourceGeneration.Lsp.TypeScript;
 using System.Xml.Serialization;
 
 namespace Draco.SourceGeneration.Lsp;

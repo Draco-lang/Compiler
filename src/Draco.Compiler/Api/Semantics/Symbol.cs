@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api.Semantics;
 

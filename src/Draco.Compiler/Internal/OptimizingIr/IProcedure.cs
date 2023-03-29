@@ -11,4 +11,13 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal interface IProcedure
 {
+    /// <summary>
+    /// The assembly this procedure is defined in.
+    /// </summary>
+    public IAssembly Assembly { get; }
+
+    /// <summary>
+    /// The entry basic block of this procedure.
+    /// </summary>
+    public IBasicBlock Entry { get; }
 }

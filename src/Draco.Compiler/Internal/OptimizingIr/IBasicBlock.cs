@@ -11,4 +11,18 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal interface IBasicBlock
 {
+    /// <summary>
+    /// The first instruction within this block.
+    /// </summary>
+    public IInstruction FirstInstruction { get; }
+
+    /// <summary>
+    /// The last instruction within this block.
+    /// </summary>
+    public IInstruction LastInstruction { get; }
+
+    /// <summary>
+    /// All instructions within this basic block.
+    /// </summary>
+    public IEnumerable<IInstruction> Instructions { get; }
 }

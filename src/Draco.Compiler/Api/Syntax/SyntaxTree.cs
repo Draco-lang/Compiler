@@ -85,6 +85,13 @@ public sealed class SyntaxTree
     public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(SyntaxPosition position) => this.Root.TraverseSubtreesAtPosition(position);
 
     /// <summary>
+    /// Enumerates this subtree, yielding all descendant nodes intersecting the given range.
+    /// </summary>
+    /// <param name="range">The range to check for intersection with the nodes.</param>
+    /// <returns>All subtrees in intersecting <paramref name="range"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range) => this.Root.TraverseSubtreesIntersectingRange(range);
+
+    /// <summary>
     /// Syntactically formats this <see cref="SyntaxTree"/>.
     /// </summary>
     /// <returns>The formatted tree.</returns>

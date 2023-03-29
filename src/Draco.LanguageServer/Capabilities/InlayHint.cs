@@ -57,7 +57,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                 var symbol = semanticModel.GetReferencedSymbol(call.Function);
                 if (symbol is not IFunctionSymbol funcSymbol) continue;
 
-                foreach (var (argSyntax, paramSymbol) in call.ArgumentList.Zip(funcSymbol.Parameters))
+                foreach (var (argSyntax, paramSymbol) in call.ArgumentList.Values.Zip(funcSymbol.Parameters))
                 {
                     var position = argSyntax.Range.Start;
                     var name = paramSymbol.Name;

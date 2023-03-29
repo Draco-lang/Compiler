@@ -1,3 +1,4 @@
+using System;
 using Draco.Lsp.Serialization;
 using Newtonsoft.Json;
 

@@ -171,9 +171,9 @@ public sealed record class DeclarationType(
 /// <summary>
 /// A builtin C# type.
 /// </summary>
-/// <param name="Type">The reflected type.</param>
+/// <param name="FullName">The full name of the reflected type.</param>
 public sealed record class BuiltinType(
-    System.Type Type) : Type;
+    string FullName) : Type;
 
 /// <summary>
 /// A type representing DUs.

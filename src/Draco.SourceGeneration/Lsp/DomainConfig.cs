@@ -13,7 +13,7 @@ public sealed class Config
     {
         var basicAssembly = typeof(object).Assembly;
         var builtins = config.BuiltinTypes
-            .Select(b => new BuiltinType(b.Name, basicAssembly.GetType(b.FullName)))
+            .Select(b => new BuiltinType(b.Name, b.FullName))
             .ToList();
         var generated = config.GeneratedTypes
             .Select(b => new GeneratedType(b.Name))
@@ -31,6 +31,6 @@ public sealed class Config
     }
 }
 
-public readonly record struct BuiltinType(string Name, Type Type);
+public readonly record struct BuiltinType(string Name, string FullName);
 
 public readonly record struct GeneratedType(string DeclaredName);

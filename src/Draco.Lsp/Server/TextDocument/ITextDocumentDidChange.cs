@@ -14,5 +14,5 @@ public interface ITextDocumentDidChange
     public TextDocumentChangeRegistrationOptions? DidChangeRegistrationOptions { get; }
 
     [Notification("textDocument/didChange")]
-    public Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param);
+    public Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param, CancellationToken cancellationToken);
 }

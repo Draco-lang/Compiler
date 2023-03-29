@@ -9,6 +9,8 @@
   <BuiltinType Name="integer" FullName="System.Int32" />
   <BuiltinType Name="uinteger" FullName="System.UInt32" />
   <BuiltinType Name="LSPAny" FullName="System.Object" />
+  <BuiltinType Name="unknown" FullName="System.Object" />
+  <BuiltinType Name="DocumentUri" FullName="Draco.Lsp.Model.DocumentUri" />
 
   <!-- Lifecycle -->
   <Generate Name="InitializeParams" />
@@ -23,6 +25,9 @@
   
   <Generate Name="TextDocumentRegistrationOptions" />
   <Generate Name="TextDocumentChangeRegistrationOptions" />
+
+  <!-- Language -->
+  <Generate Name="PublishDiagnosticsParams" />
 
   <!-- Window -->
   <Generate Name="LogMessageParams" />

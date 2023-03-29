@@ -31,7 +31,7 @@ public sealed class XmlLspModelSourceGenerator : XmlSourceGenerator
         var translator = new Translator(tsModel);
 
         // Configure translator
-        foreach (var (name, builtin) in domainConfig.BuiltinTypes) translator.AddBuiltinType(name, builtin);
+        foreach (var (name, fullName) in domainConfig.BuiltinTypes) translator.AddBuiltinType(name, fullName);
         foreach (var gen in domainConfig.GeneratedTypes) translator.GenerateByName(gen.DeclaredName);
 
         // Translate

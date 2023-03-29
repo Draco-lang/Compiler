@@ -90,7 +90,15 @@ internal sealed class Translator
     /// <param name="name">The name of the type.</param>
     /// <param name="type">The reflected type.</param>
     public void AddBuiltinType(string name, System.Type type) =>
-        this.translatedTypes.Add(name, new Cs.BuiltinType(type));
+        this.AddBuiltinType(name, type.FullName);
+
+    /// <summary>
+    /// Adds a builtin type that does not need translation anymore.
+    /// </summary>
+    /// <param name="name">The name of the type.</param>
+    /// <param name="fullName">The full name of the type.</param>
+    public void AddBuiltinType(string name, string fullName) =>
+        this.translatedTypes.Add(name, new Cs.BuiltinType(fullName));
 
     /// <summary>
     /// Generates a type by its name.

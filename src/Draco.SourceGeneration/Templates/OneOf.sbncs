@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json;
+using Draco.Lsp.Serialization;
 
 namespace Draco.Lsp.Model;
 
@@ -20,6 +22,7 @@ public interface IOneOf
     /// <summary>
     /// A discriminated union implementation for {{$nCases}} case(s).
     /// </summary>
+    [JsonConverter(typeof(OneOfConverter))]
     public readonly struct OneOf<
         {{for $i in 1..$nCases}}
             {{if $i > 1}},{{end}}

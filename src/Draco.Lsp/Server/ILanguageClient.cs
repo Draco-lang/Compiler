@@ -19,6 +19,9 @@ public interface ILanguageClient
     /// </summary>
     public JsonRpc Connection { get; }
 
+    [Notification("textDocument/publishDiagnostics")]
+    public Task PublishDiagnosticsAsync(PublishDiagnosticsParams param);
+
     [Notification("window/logMessage")]
     public Task LogMessageAsync(LogMessageParams param);
 }

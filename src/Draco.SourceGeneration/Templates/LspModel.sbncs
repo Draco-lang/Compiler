@@ -84,7 +84,7 @@ namespace Draco.Lsp.Model;
 
 {{func type(t)}}
     {{case t.Discriminator}}
-    {{when 'Builtin'}} {{t.Type.Name}}
+    {{when 'Builtin'}} {{t.FullName}}
     {{when 'Nullable'}} {{type(t.Type)}}?
     {{when 'Array'}} IList<{{type(t.ElementType)}}>
     {{when 'Declaration'}}

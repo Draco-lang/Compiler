@@ -14,5 +14,5 @@ public interface ITextDocumentDidOpen
     public TextDocumentRegistrationOptions? DidOpenRegistrationOptions { get; }
 
     [Notification("textDocument/didOpen")]
-    public Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param);
+    public Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken);
 }

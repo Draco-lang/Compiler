@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -75,6 +77,10 @@ public interface IParameterSymbol : IVariableSymbol
 /// </summary>
 public interface IFunctionSymbol : ISymbol
 {
+    /// <summary>
+    /// The parameters this function defines.
+    /// </summary>
+    public ImmutableArray<IParameterSymbol> Parameters { get; }
 }
 
 /// <summary>
@@ -161,6 +167,10 @@ internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSym
 
 internal sealed class FunctionSymbol : SymbolBase<Internal.Symbols.FunctionSymbol>, IFunctionSymbol
 {
+    public ImmutableArray<IParameterSymbol> Parameters => this.Symbol.Parameters
+        .Select(s => s.ToApiSymbol())
+        .ToImmutableArray();
+
     public FunctionSymbol(Internal.Symbols.FunctionSymbol function)
         : base(function)
     {

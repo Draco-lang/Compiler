@@ -32,7 +32,6 @@ internal sealed partial class DracoLanguageServer : IInlayHint
 
         var inlayHints = new List<InlayHint>();
 
-        // TODO: Add inlay hints
         foreach (var node in syntaxTree.TraverseSubtreesIntersectingRange(range))
         {
             if (node is VariableDeclarationSyntax varDecl)
@@ -41,7 +40,6 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                 if (varDecl.Type is not null) continue;
 
                 var symbol = semanticModel.GetDefinedSymbol(varDecl);
-
                 if (symbol is not IVariableSymbol varSymbol) continue;
 
                 var varType = varSymbol.Type;
@@ -56,7 +54,21 @@ internal sealed partial class DracoLanguageServer : IInlayHint
             }
             else if (node is CallExpressionSyntax call)
             {
-                //this.CollectInlayHintsForCallExpression(inlayHints, call);
+                var symbol = semanticModel.GetReferencedSymbol(call.Function);
+                if (symbol is not IFunctionSymbol funcSymbol) continue;
+
+                foreach (var (argSyntax, paramSymbol) in call.ArgumentList.Zip(funcSymbol.Parameters))
+                {
+                    var position = argSyntax.Range.Start;
+                    var name = paramSymbol.Name;
+
+                    inlayHints.Add(new InlayHint()
+                    {
+                        Position = Translator.ToLsp(position),
+                        Kind = InlayHintKind.Parameter,
+                        Label = $"{name} = ",
+                    });
+                }
             }
         }
 

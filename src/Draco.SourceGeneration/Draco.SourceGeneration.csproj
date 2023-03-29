@@ -28,6 +28,14 @@
   <ItemGroup>
     <EmbeddedResource Include="..\..\external\lsp-specification\**\*.*" Visible="False">
       <LogicalName>Lsp.%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+      <TransformPath>$(TargetDir)\%(EmbeddedResource.RelativeDir)%(EmbeddedResource.Filename)%(EmbeddedResource.Extension)</TransformPath>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Erase '\' vs '/' differences -->
+  <ItemGroup>
+    <EmbeddedResource Update="@(EmbeddedResource)">
+      <LogicalName>$([System.String]::Copy('%(EmbeddedResource.LogicalName)').Replace('/', '.').Replace('\', '.'))</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
   

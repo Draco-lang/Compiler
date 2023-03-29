@@ -56,9 +56,11 @@ internal sealed class MarkdownProcessor
         includeRegex.Replace(markdown, match =>
         {
             var fileToRead = Path.Combine(rootPath, match.Groups[1].Value);
-            // For safety, we replace '/' with '\', as that's how it's embedded
-            fileToRead = fileToRead.Replace('/', '\\');
             var nextRoot = Path.GetDirectoryName(fileToRead);
+            // Replace '/' and '\' in the path to avoid Linux vs Window differences
+            fileToRead = fileToRead
+                .Replace('/', '.')
+                .Replace('\\', '.');
             var includedMd = EmbeddedResourceLoader.GetManifestResourceStreamReader("Lsp", fileToRead).ReadToEnd();
             return ResolveRelativeIncludes(includedMd, nextRoot ?? string.Empty);
         });

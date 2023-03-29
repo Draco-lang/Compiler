@@ -13,6 +13,9 @@ internal static class Translator
     public static CompilerApi.Syntax.SyntaxPosition ToCompiler(LspModels.Position position) =>
         new(Line: (int)position.Line, Column: (int)position.Character);
 
+    public static CompilerApi.Syntax.SyntaxRange ToCompiler(LspModels.Range range) =>
+        new(Start: ToCompiler(range.Start), End: ToCompiler(range.End));
+
     public static LspModels.Diagnostic ToLsp(CompilerApi.Diagnostics.Diagnostic diag) => new()
     {
         Message = diag.Message,

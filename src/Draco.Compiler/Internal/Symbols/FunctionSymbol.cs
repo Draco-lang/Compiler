@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
 
@@ -72,7 +71,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     public Type Type => this.type ??= this.BuildType();
     private Type? type;
 
-    public override ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
+    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 
     private Type BuildType() => new FunctionType(
         this.Parameters.Select(p => p.Type).ToImmutableArray(),

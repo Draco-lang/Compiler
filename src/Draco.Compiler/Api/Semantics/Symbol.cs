@@ -77,6 +77,10 @@ public interface IFunctionSymbol : ISymbol
 /// </summary>
 public interface ITypeSymbol : ISymbol
 {
+    /// <summary>
+    /// The type this symbol represents.
+    /// </summary>
+    public IType Type { get; }
 }
 
 /// <summary>
@@ -169,6 +173,8 @@ internal sealed class LabelSymbol : SymbolBase<Internal.Symbols.LabelSymbol>, IL
 
 internal sealed class TypeSymbol : SymbolBase<Internal.Symbols.TypeSymbol>, ITypeSymbol
 {
+    public IType Type => this.Symbol.Type.ToApiType();
+
     public TypeSymbol(Internal.Symbols.TypeSymbol type)
         : base(type)
     {

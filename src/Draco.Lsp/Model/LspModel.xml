@@ -30,9 +30,11 @@
   <Generate Name="TextDocumentChangeRegistrationOptions" />
 
   <!-- Language -->
+  <Generate Name="DefinitionParams" />
   <Generate Name="PublishDiagnosticsParams" />
   <Generate Name="DocumentFormattingParams" />
-  
+
+  <Generate Name="DefinitionRegistrationOptions" />
   <Generate Name="DocumentFormattingRegistrationOptions" />
 
   <!-- Window -->

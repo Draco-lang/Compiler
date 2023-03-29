@@ -31,10 +31,12 @@
 
   <!-- Language -->
   <Generate Name="DefinitionParams" />
+  <Generate Name="ReferenceParams" />
   <Generate Name="PublishDiagnosticsParams" />
   <Generate Name="DocumentFormattingParams" />
 
   <Generate Name="DefinitionRegistrationOptions" />
+  <Generate Name="ReferenceRegistrationOptions" />
   <Generate Name="DocumentFormattingRegistrationOptions" />
 
   <!-- Window -->

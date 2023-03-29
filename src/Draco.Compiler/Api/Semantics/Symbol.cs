@@ -42,6 +42,11 @@ public interface IVariableSymbol : ISymbol
     /// True, if this is a mutable variable.
     /// </summary>
     public bool IsMutable { get; }
+
+    /// <summary>
+    /// The type of this variable.
+    /// </summary>
+    public IType Type { get; }
 }
 
 /// <summary>
@@ -77,10 +82,6 @@ public interface IFunctionSymbol : ISymbol
 /// </summary>
 public interface ITypeSymbol : ISymbol
 {
-    /// <summary>
-    /// The type this symbol represents.
-    /// </summary>
-    public IType Type { get; }
 }
 
 /// <summary>
@@ -128,6 +129,7 @@ internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
 internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, IGlobalSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
+    public IType Type => this.Symbol.Type.ToApiType();
 
     public GlobalSymbol(Internal.Symbols.GlobalSymbol global)
         : base(global)
@@ -138,6 +140,7 @@ internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, 
 internal sealed class LocalSymbol : SymbolBase<Internal.Symbols.LocalSymbol>, ILocalSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
+    public IType Type => this.Symbol.Type.ToApiType();
 
     public LocalSymbol(Internal.Symbols.LocalSymbol local)
         : base(local)
@@ -148,6 +151,7 @@ internal sealed class LocalSymbol : SymbolBase<Internal.Symbols.LocalSymbol>, IL
 internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSymbol>, IParameterSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
+    public IType Type => this.Symbol.Type.ToApiType();
 
     public ParameterSymbol(Internal.Symbols.ParameterSymbol parameter)
         : base(parameter)
@@ -173,8 +177,6 @@ internal sealed class LabelSymbol : SymbolBase<Internal.Symbols.LabelSymbol>, IL
 
 internal sealed class TypeSymbol : SymbolBase<Internal.Symbols.TypeSymbol>, ITypeSymbol
 {
-    public IType Type => this.Symbol.Type.ToApiType();
-
     public TypeSymbol(Internal.Symbols.TypeSymbol type)
         : base(type)
     {

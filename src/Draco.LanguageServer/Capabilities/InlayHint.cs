@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
+using Draco.Compiler.Api.Semantics;
 
 namespace Draco.LanguageServer;
 
@@ -32,6 +33,32 @@ internal sealed partial class DracoLanguageServer : IInlayHint
         var inlayHints = new List<InlayHint>();
 
         // TODO: Add inlay hints
+        foreach (var node in syntaxTree.TraverseSubtreesIntersectingRange(range))
+        {
+            if (node is VariableDeclarationSyntax varDecl)
+            {
+                // Type is already specified by user
+                if (varDecl.Type is not null) continue;
+
+                var symbol = semanticModel.GetDefinedSymbol(varDecl);
+
+                if (symbol is not IVariableSymbol varSymbol) continue;
+
+                var varType = varSymbol.Type;
+                var position = varDecl.Name.Range.End;
+
+                inlayHints.Add(new InlayHint()
+                {
+                    Position = Translator.ToLsp(position),
+                    Kind = InlayHintKind.Type,
+                    Label = $": {varType}",
+                });
+            }
+            else if (node is CallExpressionSyntax call)
+            {
+                //this.CollectInlayHintsForCallExpression(inlayHints, call);
+            }
+        }
 
         return Task.FromResult<IList<InlayHint>>(inlayHints);
     }

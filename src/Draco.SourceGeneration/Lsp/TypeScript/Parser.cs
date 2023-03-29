@@ -93,7 +93,7 @@ internal sealed class Parser
 
     private Enum ParseEnum()
     {
-        var doc = this.ParseDocumentedPreamble(TokenKind.KeywordEnum, TokenKind.KeywordExport);
+        var (doc, qualifiers) = this.ParseDocumentedPreamble(TokenKind.KeywordEnum, TokenKind.KeywordExport);
 
         var name = this.Expect(TokenKind.Name).Text;
         var members = ImmutableArray.CreateBuilder<KeyValuePair<string, Expression>>();
@@ -110,12 +110,13 @@ internal sealed class Parser
             this.Matches(TokenKind.Comma);
         }
 
-        return new(doc, name, members.ToImmutable());
+        var exported = qualifiers.Contains(TokenKind.KeywordExport);
+        return new(doc, exported, name, members.ToImmutable());
     }
 
     private Namespace ParseNamespace()
     {
-        var doc = this.ParseDocumentedPreamble(TokenKind.KeywordNamespace, TokenKind.KeywordExport);
+        var (doc, qualifiers) = this.ParseDocumentedPreamble(TokenKind.KeywordNamespace, TokenKind.KeywordExport);
 
         var name = this.Expect(TokenKind.Name).Text;
         var constants = ImmutableArray.CreateBuilder<Constant>();
@@ -123,12 +124,13 @@ internal sealed class Parser
         this.Expect(TokenKind.CurlyOpen);
         while (!this.Matches(TokenKind.CurlyClose)) constants.Add(this.ParseConstant());
 
-        return new(doc, name, constants.ToImmutable());
+        var exported = qualifiers.Contains(TokenKind.KeywordExport);
+        return new(doc, exported, name, constants.ToImmutable());
     }
 
     private Constant ParseConstant()
     {
-        var doc = this.ParseDocumentedPreamble(TokenKind.KeywordConst, TokenKind.KeywordExport);
+        var (doc, qualifiers) = this.ParseDocumentedPreamble(TokenKind.KeywordConst, TokenKind.KeywordExport);
 
         var name = this.Expect(TokenKind.Name).Text;
         if (this.Matches(TokenKind.Colon))
@@ -142,7 +144,8 @@ internal sealed class Parser
         var value = this.ParseExpression();
         this.Matches(TokenKind.Semicolon);
 
-        return new(doc, name, value);
+        var exported = qualifiers.Contains(TokenKind.KeywordExport);
+        return new(doc, exported, name, value);
     }
 
     private Expression ParseExpression() => this.ParseBinaryExpression();
@@ -225,17 +228,18 @@ internal sealed class Parser
 
     private TypeAlias ParseTypeAlias()
     {
-        var doc = this.ParseDocumentedPreamble(TokenKind.KeywordType, TokenKind.KeywordExport);
+        var (doc, qualifiers) = this.ParseDocumentedPreamble(TokenKind.KeywordType, TokenKind.KeywordExport);
         var name = this.Expect(TokenKind.Name).Text;
         this.Expect(TokenKind.Assign);
         var type = this.ParseExpression();
         this.Expect(TokenKind.Semicolon);
-        return new(doc, name, type);
+        var exported = qualifiers.Contains(TokenKind.KeywordExport);
+        return new(doc, exported, name, type);
     }
 
     private Interface ParseInterface()
     {
-        var doc = this.ParseDocumentedPreamble(TokenKind.KeywordInterface, TokenKind.KeywordExport);
+        var (doc, qualifiers) = this.ParseDocumentedPreamble(TokenKind.KeywordInterface, TokenKind.KeywordExport);
 
         var name = this.Expect(TokenKind.Name).Text;
 
@@ -262,7 +266,8 @@ internal sealed class Parser
             fields.Add(field);
         }
 
-        return new(doc, name, genericParams.ToImmutable(), bases.ToImmutable(), fields.ToImmutable());
+        var exported = qualifiers.Contains(TokenKind.KeywordExport);
+        return new(doc, exported, name, genericParams.ToImmutable(), bases.ToImmutable(), fields.ToImmutable());
     }
 
     private Field ParseField()
@@ -315,8 +320,10 @@ internal sealed class Parser
         return new(keyName, keyType, valueType);
     }
 
-    private string? ParseDocumentedPreamble(TokenKind keyword, params TokenKind[] qualifiers)
+    private (string? Documentation, IList<TokenKind> Qualifiers)
+        ParseDocumentedPreamble(TokenKind keyword, params TokenKind[] qualifiers)
     {
+        var qualifierList = new List<TokenKind>();
         var doc = null as string;
         var first = true;
         while (true)
@@ -335,13 +342,14 @@ internal sealed class Parser
             // Just skip
             if (qualifiers.Contains(token.Kind))
             {
+                qualifierList.Add(token.Kind);
                 this.Advance();
                 continue;
             }
             // Error
             throw new InvalidOperationException($"illegal token {token.Text}, expected {keyword} or one of its qualifiers");
         }
-        return doc;
+        return (doc, qualifierList);
     }
 
     private string ParseName() => this.ParseNameToken().Text;

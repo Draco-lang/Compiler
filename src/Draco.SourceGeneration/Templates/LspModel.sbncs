@@ -2,6 +2,8 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Draco.Lsp.Attributes;
 
 namespace Draco.Lsp.Model;
 
@@ -48,6 +50,9 @@ namespace Draco.Lsp.Model;
 {{end}}
 
 {{func enum(decl)}}
+    {{if decl.IsStringEnum}}
+        [JsonConverter(typeof(StringEnumConverter))]
+    {{end}}
     public enum {{decl.Name}}
     {
         {{for $mem in decl.Members}}

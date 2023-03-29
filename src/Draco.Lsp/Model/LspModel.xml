@@ -11,6 +11,8 @@
   <BuiltinType Name="LSPAny" FullName="System.Object" />
   <BuiltinType Name="unknown" FullName="System.Object" />
   <BuiltinType Name="DocumentUri" FullName="Draco.Lsp.Model.DocumentUri" />
+  <!-- NOTE: Deprecated type, we default it to string -->
+  <BuiltinType Name="MarkedString" FullName="System.String" />
 
   <!-- Basic -->
   <Generate Name="TextEdit" />
@@ -32,11 +34,15 @@
   <!-- Language -->
   <Generate Name="DefinitionParams" />
   <Generate Name="ReferenceParams" />
+  <Generate Name="HoverParams" />
   <Generate Name="PublishDiagnosticsParams" />
   <Generate Name="DocumentFormattingParams" />
+  
+  <Generate Name="Hover" />
 
   <Generate Name="DefinitionRegistrationOptions" />
   <Generate Name="ReferenceRegistrationOptions" />
+  <Generate Name="HoverRegistrationOptions" />
   <Generate Name="DocumentFormattingRegistrationOptions" />
 
   <!-- Window -->

@@ -100,6 +100,11 @@ public sealed class Interface : Declaration
 public sealed class Enum : Declaration
 {
     /// <summary>
+    /// True, if this is a string enum.
+    /// </summary>
+    public bool IsStringEnum => this.Members.Any(m => m.SerializedValue is string);
+
+    /// <summary>
     /// The members within this enum.
     /// </summary>
     public IList<EnumMember> Members { get; set; } = new List<EnumMember>();

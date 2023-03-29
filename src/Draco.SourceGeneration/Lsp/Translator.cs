@@ -143,7 +143,15 @@ internal sealed class Translator
         }
         if (tsDecls.All(d => d is Ts.Interface))
         {
-            // Multiple definitions of the same interface, find the largest subset
+            // Multiple definitions of the same interface
+            // First, see if there's only one exported
+            // If so, translate that
+            var exportedInterfaces = tsDecls
+                .Cast<Ts.Interface>()
+                .Where(i => i.IsExported)
+                .ToList();
+            if (exportedInterfaces.Count == 1) return this.TranslateInterface(exportedInterfaces[0]);
+            // Just find the largest interface and try that
             var largestInterface = tsDecls
                 .Cast<Ts.Interface>()
                 .MaxBy(i => i.Fields.Length);

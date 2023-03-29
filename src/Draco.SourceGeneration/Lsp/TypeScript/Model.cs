@@ -15,69 +15,81 @@ internal sealed record class Model(ImmutableArray<Declaration> Declarations);
 /// The base of all declarations.
 /// </summary>
 /// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="IsExported">True, if the declaration is exported.</param>
 /// <param name="Name">The name of the declared element.</param>
 internal abstract record class Declaration(
     string? Documentation,
+    bool IsExported,
     string Name);
 
 /// <summary>
 /// An interface declaration.
 /// </summary>
 /// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="IsExported">True, if the declaration is exported.</param>
 /// <param name="Name">The name of the declared interface.</param>
 /// <param name="GenericParams">The generic parameters of the declared interface.</param>
 /// <param name="Bases">The base types of the interface.</param>
 /// <param name="Fields">The fields this interface defines.</param>
 internal sealed record class Interface(
     string? Documentation,
+    bool IsExported,
     string Name,
     ImmutableArray<string> GenericParams,
     ImmutableArray<Expression> Bases,
-    ImmutableArray<Field> Fields) : Declaration(Documentation, Name);
+    ImmutableArray<Field> Fields) : Declaration(Documentation, IsExported, Name);
 
 /// <summary>
 /// A type-alias declaration.
 /// </summary>
 /// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="IsExported">True, if the declaration is exported.</param>
 /// <param name="Name">The name of the type alias.</param>
 /// <param name="Type">The aliased type.</param>
 internal sealed record class TypeAlias(
     string? Documentation,
+    bool IsExported,
     string Name,
-    Expression Type) : Declaration(Documentation, Name);
+    Expression Type) : Declaration(Documentation, IsExported, Name);
 
 /// <summary>
 /// A namespace declaration.
 /// </summary>
 /// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="IsExported">True, if the declaration is exported.</param>
 /// <param name="Name">The name of the namespace.</param>
 /// <param name="Constants">The constants defined within this namespace.</param>
 internal sealed record class Namespace(
     string? Documentation,
+    bool IsExported,
     string Name,
-    ImmutableArray<Constant> Constants) : Declaration(Documentation, Name);
+    ImmutableArray<Constant> Constants) : Declaration(Documentation, IsExported, Name);
 
 /// <summary>
 /// An enum declaration.
 /// </summary>
 /// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="IsExported">True, if the declaration is exported.</param>
 /// <param name="Name">The name of the enum.</param>
 /// <param name="Members">The enum member names with their values assigned.</param>
 internal sealed record class Enum(
     string? Documentation,
+    bool IsExported,
     string Name,
-    ImmutableArray<KeyValuePair<string, Expression>> Members) : Declaration(Documentation, Name);
+    ImmutableArray<KeyValuePair<string, Expression>> Members) : Declaration(Documentation, IsExported, Name);
 
 /// <summary>
 /// A constant declaration.
 /// </summary>
 /// <param name="Documentation">The optional documentation for this declaration.</param>
+/// <param name="IsExported">True, if the declaration is exported.</param>
 /// <param name="Name">The name of the constant.</param>
 /// <param name="Value">The value of the constant.</param>
 internal sealed record class Constant(
     string? Documentation,
+    bool IsExported,
     string Name,
-    Expression Value) : Declaration(Documentation, Name);
+    Expression Value) : Declaration(Documentation, IsExported, Name);
 
 /// <summary>
 /// Any kind of field.

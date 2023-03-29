@@ -135,12 +135,14 @@ public sealed record class EnumMember(
 /// <param name="Name">The property name.</param>
 /// <param name="SerializedName">The property name when serialized.</param>
 /// <param name="OmitIfNull">True, if the property shold be omitted, if it's null.</param>
+/// <param name="IsExtensionData">True, if the property represents extension data.</param>
 public sealed record class Property(
     string? Documentation,
     Type Type,
     string Name,
     string SerializedName,
-    bool OmitIfNull);
+    bool OmitIfNull,
+    bool IsExtensionData);
 
 /// <summary>
 /// A C# type.

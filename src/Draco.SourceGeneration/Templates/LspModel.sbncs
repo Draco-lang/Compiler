@@ -1,4 +1,5 @@
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
@@ -57,9 +58,13 @@ namespace Draco.Lsp.Model;
 
 {{func property(decl)}}
     {{summary(decl.Documentation)}}
-    [JsonProperty(
-        PropertyName = {{string.literal(decl.SerializedName)}},
-        NullValueHandling = NullValueHandling.{{if decl.OmitIfNull}}Ignore{{else}}Include{{end}})]
+    {{if decl.IsExtensionData}}
+        [JsonExtensionData]
+    {{else}}
+        [JsonProperty(
+            PropertyName = {{string.literal(decl.SerializedName)}},
+            NullValueHandling = NullValueHandling.{{if decl.OmitIfNull}}Ignore{{else}}Include{{end}})]
+    {{end}}
     public {{type(decl.Type)}} {{decl.Name}} { get; set; }
 {{end}}
 
@@ -95,6 +100,8 @@ namespace Draco.Lsp.Model;
         {{end}}
     {{when 'DiscriminatedUnion'}}
         OneOf<{{wrap separated(', ', t.Alternatives)}}{{type($element)}}{{end}}>
+    {{when 'Dictionary'}}
+        IDictionary<{{type(t.KeyType)}}, {{type(t.ValueType)}}>
     {{end}}
 {{end}}
 

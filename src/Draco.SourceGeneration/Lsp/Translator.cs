@@ -321,22 +321,48 @@ internal sealed class Translator
     /// <returns>The translated property.</returns>
     private Cs.Property TranslateField(Ts.Field field, Cs.Class? containingClass)
     {
-        if (field is not Ts.SimpleField simpleField) throw new NotImplementedException();
-
-        // Translate type
-        var propType = this.TranslateType(simpleField.Type, nameHint: simpleField.Name, containingClass: containingClass);
-        if (simpleField.Nullable)
+        switch (field)
         {
-            // If the type is not nullable, we make it one
-            if (propType is not Cs.NullableType) propType = new Cs.NullableType(propType);
+        case Ts.SimpleField simpleField:
+        {
+            // Translate type
+            var propType = this.TranslateType(
+                simpleField.Type,
+                nameHint: simpleField.Name,
+                containingClass: containingClass);
+            if (simpleField.Nullable)
+            {
+                // If the type is not nullable, we make it one
+                if (propType is not Cs.NullableType) propType = new Cs.NullableType(propType);
+            }
+            // Finally we can create the property
+            return new(
+                Documentation: ExtractDocumentation(simpleField.Documentation),
+                Name: Capitalize(simpleField.Name),
+                Type: propType,
+                SerializedName: simpleField.Name,
+                OmitIfNull: simpleField.Nullable,
+                IsExtensionData: false);
         }
-        // Finally we can create the property
-        return new(
-            Documentation: ExtractDocumentation(simpleField.Documentation),
-            Name: Capitalize(simpleField.Name),
-            Type: propType,
-            SerializedName: simpleField.Name,
-            OmitIfNull: simpleField.Nullable);
+        case Ts.IndexSignature indexSignature:
+        {
+            // We just translate to a catch-all
+            return new(
+                Documentation: ExtractDocumentation(indexSignature.Documentation),
+                Name: "Extra",
+                // NOTE: While the index signature has an exact type, this is simpler
+                // Because Newtonsoft has direct support for this with JsonExtensionData
+                Type: new Cs.DictionaryType(
+                    new Cs.BuiltinType(typeof(string).FullName),
+                    new Cs.BuiltinType(typeof(object).FullName)),
+                // Serialized name does not matter
+                SerializedName: string.Empty,
+                OmitIfNull: true,
+                IsExtensionData: true);
+        }
+        default:
+            throw new ArgumentOutOfRangeException(nameof(field));
+        }
     }
 
     /// <summary>

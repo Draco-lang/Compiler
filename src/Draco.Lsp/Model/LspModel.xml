@@ -28,6 +28,7 @@
 
   <!-- Language -->
   <Generate Name="PublishDiagnosticsParams" />
+  <Generate Name="DocumentFormattingParams" />
 
   <!-- Window -->
   <Generate Name="LogMessageParams" />

@@ -25,6 +25,10 @@ internal sealed class BasicBlock : IBasicBlock
             for (var instr = this.FirstInstruction; instr is not null; instr = instr.Next) yield return instr;
         }
     }
+    public IEnumerable<BasicBlock> Successors => (this.lastInstruction?.IsBranch ?? false)
+        ? this.lastInstruction.JumpTargets.Cast<BasicBlock>()
+        : throw new InvalidOperationException("the last instruction of the block was not a jump");
+    IEnumerable<IBasicBlock> IBasicBlock.Successors => this.Successors;
 
     private IInstruction? firstInstruction;
     private IInstruction? lastInstruction;

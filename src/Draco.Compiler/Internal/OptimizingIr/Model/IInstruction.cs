@@ -30,4 +30,9 @@ internal interface IInstruction
     /// True, if this is some kind of branching instruction, modifying control-flow.
     /// </summary>
     public bool IsBranch { get; }
+
+    /// <summary>
+    /// The jump targets for this instruction.
+    /// </summary>
+    public IEnumerable<IBasicBlock> JumpTargets { get; }
 }

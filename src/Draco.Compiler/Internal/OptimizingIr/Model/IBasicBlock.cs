@@ -30,4 +30,9 @@ internal interface IBasicBlock
     /// All instructions within this basic block.
     /// </summary>
     public IEnumerable<IInstruction> Instructions { get; }
+
+    /// <summary>
+    /// All basic blocks that can come after this one.
+    /// </summary>
+    public IEnumerable<IBasicBlock> Successors { get; }
 }

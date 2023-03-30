@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -17,7 +18,9 @@ internal sealed class Procedure : IProcedure
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
-    public IEnumerable<BasicBlock> BasicBlocks => throw new NotImplementedException();
+    public IEnumerable<BasicBlock> BasicBlocks => GraphTraversal.DepthFirst(
+        start: this.Entry,
+        getNeighbors: bb => bb.Successors);
     IEnumerable<IBasicBlock> IProcedure.BasicBlocks => this.BasicBlocks;
 
     public Procedure(Assembly assembly, FunctionSymbol symbol)

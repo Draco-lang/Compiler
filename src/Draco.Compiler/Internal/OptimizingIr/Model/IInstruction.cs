@@ -35,4 +35,9 @@ internal interface IInstruction
     /// The jump targets for this instruction.
     /// </summary>
     public IEnumerable<IBasicBlock> JumpTargets { get; }
+
+    /// <summary>
+    /// The operands of this instruction.
+    /// </summary>
+    public IEnumerable<IOperand> Operands { get; }
 }

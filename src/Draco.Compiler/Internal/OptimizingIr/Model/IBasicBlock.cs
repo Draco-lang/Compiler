@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Read-only interface of a basic-block.
 /// </summary>
-internal interface IBasicBlock
+internal interface IBasicBlock : IOperand
 {
     /// <summary>
     /// The procedure the block was defined in.

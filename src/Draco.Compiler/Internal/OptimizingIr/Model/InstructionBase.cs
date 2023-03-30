@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -20,4 +21,28 @@ internal abstract class InstructionBase : IInstruction
     public virtual bool IsBranch => false;
     public virtual IEnumerable<BasicBlock> JumpTargets => Enumerable.Empty<BasicBlock>();
     IEnumerable<IBasicBlock> IInstruction.JumpTargets => this.JumpTargets;
+    public virtual IEnumerable<IOperand> Operands => Enumerable.Empty<IOperand>();
+
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+
+        // Infer a good operand name
+        var name = this.GetType().Name;
+        if (name.EndsWith("Instruction")) name = name[..^11];
+        name = StringUtils.ToSnakeCase(name);
+
+        // Append it
+        result.Append(name);
+
+        // If we have operands, add a space, then write them comma-separated
+        if (this.Operands.Any())
+        {
+            result.Append(' ');
+            result.AppendJoin(", ", this.Operands);
+        }
+
+        // Done
+        return result.ToString();
+    }
 }

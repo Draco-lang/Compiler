@@ -13,4 +13,5 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal readonly record struct Register(int Index) : IOperand
 {
     public override string ToString() => $"r{this.Index}";
+    public string ToOperandString() => this.ToString();
 }

@@ -39,7 +39,7 @@ internal abstract class InstructionBase : IInstruction
         if (this.Operands.Any())
         {
             result.Append(' ');
-            result.AppendJoin(", ", this.Operands);
+            result.AppendJoin(", ", this.Operands.Select(o => o.ToOperandString()));
         }
 
         // Done

@@ -23,12 +23,20 @@ internal sealed class Procedure : IProcedure
         getNeighbors: bb => bb.Successors);
     IEnumerable<IBasicBlock> IProcedure.BasicBlocks => this.BasicBlocks;
 
+    private int basicBlockIndex = 0;
+
     public Procedure(Assembly assembly, FunctionSymbol symbol)
     {
         this.Assembly = assembly;
         this.Symbol = symbol;
-        this.Entry = new(this);
+        this.Entry = this.DefineBasicBlock();
     }
 
-    public BasicBlock DefineBasicBlock() => new(this);
+    public BasicBlock DefineBasicBlock() => new(this, this.basicBlockIndex++);
+
+    public override string ToString() => $"""
+        proc {this.ToOperandString()}():
+        {string.Join(Environment.NewLine, this.BasicBlocks)}
+        """;
+    public string ToOperandString() => this.Symbol.Name;
 }

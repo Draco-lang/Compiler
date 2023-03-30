@@ -37,5 +37,5 @@ internal sealed class CallInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"{this.Target} := call {this.Procedure}({string.Join(", ", this.Arguments)})";
+        $"{this.Target.ToOperandString()} := call {this.Procedure.ToOperandString()}({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
 }

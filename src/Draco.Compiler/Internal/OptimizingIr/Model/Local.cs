@@ -15,4 +15,5 @@ internal readonly record struct Local(LocalSymbol Symbol) : IOperand
 {
     // TODO: Shadowing does not show...
     public override string ToString() => this.Symbol.Name;
+    public string ToOperandString() => this.ToString();
 }

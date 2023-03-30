@@ -29,5 +29,6 @@ internal sealed class LoadInstruction : InstructionBase
         this.Source = source;
     }
 
-    public override string ToString() => $"{this.Target} := load {this.Source}";
+    public override string ToString() =>
+        $"{this.Target.ToOperandString()} := load {this.Source.ToOperandString()}";
 }

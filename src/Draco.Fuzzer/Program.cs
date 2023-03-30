@@ -72,9 +72,9 @@ internal static class Program
             Console.Error.WriteLine("==========");
             Console.Error.WriteLine(ex.Input);
             Console.Error.WriteLine("==========");
-            Console.Error.WriteLine($"Original exception: {ex.Message}");
+            Console.Error.WriteLine($"Original exception: {ex.OriginalException.Message}");
             Console.Error.WriteLine("Trace:");
-            Console.Error.WriteLine(ex.StackTrace);
+            Console.Error.WriteLine(ex.OriginalException.StackTrace);
             Environment.Exit(1);
         }
         catch (MutationException ex)
@@ -88,9 +88,9 @@ internal static class Program
             Console.Error.WriteLine("==========");
             Console.Error.WriteLine(ex.NewInput);
             Console.Error.WriteLine("==========");
-            Console.Error.WriteLine($"Original exception: {ex.Message}");
+            Console.Error.WriteLine($"Original exception: {ex.OriginalException.Message}");
             Console.Error.WriteLine("Trace:");
-            Console.Error.WriteLine(ex.StackTrace);
+            Console.Error.WriteLine(ex.OriginalException.StackTrace);
             Environment.Exit(2);
         }
     }

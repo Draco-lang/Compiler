@@ -68,11 +68,11 @@ internal static class Program
         catch (CrashException ex)
         {
             Console.Error.WriteLine("Fuzzer crashed!");
-            Console.Error.WriteLine("  Input:");
+            Console.Error.WriteLine("Input:");
             Console.Error.WriteLine("==========");
             Console.Error.WriteLine(ex.Input);
             Console.Error.WriteLine("==========");
-            Console.Error.WriteLine($"  Original exception: {ex.Message}");
+            Console.Error.WriteLine($"Original exception: {ex.Message}");
             Console.Error.WriteLine("Trace:");
             Console.Error.WriteLine(ex.StackTrace);
             Environment.Exit(1);

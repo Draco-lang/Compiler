@@ -1,4 +1,4 @@
-namespace Draco.Fuzzer.Testing.Generators;
+namespace Draco.Fuzzer.Generators;
 
 internal sealed class RandomTextGenerator : IInputGenerator<string>
 {

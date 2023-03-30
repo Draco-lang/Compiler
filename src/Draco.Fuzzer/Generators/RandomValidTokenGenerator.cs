@@ -5,7 +5,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
-namespace Draco.Fuzzer.Testing.Generators;
+namespace Draco.Fuzzer.Generators;
 
 internal sealed class RandomValidTokenGenerator : IInputGenerator<TokenArray>
 {

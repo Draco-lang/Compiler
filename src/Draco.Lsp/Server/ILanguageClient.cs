@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
@@ -15,8 +16,17 @@ public interface ILanguageClient
     /// </summary>
     public JsonRpc Connection { get; }
 
+    // Language features
+
     [Notification("textDocument/publishDiagnostics")]
     public Task PublishDiagnosticsAsync(PublishDiagnosticsParams param);
+
+    // Workspace features
+
+    [Request("workspace/configuration")]
+    public Task<IList<object?>> GetConfigurationAsync(ConfigurationParams param);
+
+    // Window features
 
     [Notification("window/logMessage")]
     public Task LogMessageAsync(LogMessageParams param);

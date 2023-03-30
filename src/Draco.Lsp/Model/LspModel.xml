@@ -48,6 +48,10 @@
   <Generate Name="InlayHintRegistrationOptions" />
   <Generate Name="DocumentFormattingRegistrationOptions" />
 
+  <!-- Workspace -->
+  <Generate Name="ConfigurationParams" />
+  <Generate Name="DidChangeConfigurationParams" />
+
   <!-- Window -->
   <Generate Name="LogMessageParams" />
 

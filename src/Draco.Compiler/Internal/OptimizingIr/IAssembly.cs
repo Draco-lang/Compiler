@@ -13,6 +13,11 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 internal interface IAssembly
 {
     /// <summary>
+    /// The symbol that corresponds to this compilation unit.
+    /// </summary>
+    public ModuleSymbol Symbol { get; }
+
+    /// <summary>
     /// The name of this assembly.
     /// </summary>
     public string Name { get; }

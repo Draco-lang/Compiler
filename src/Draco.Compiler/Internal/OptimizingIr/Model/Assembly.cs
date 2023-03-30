@@ -12,6 +12,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class Assembly : IAssembly
 {
+    private static readonly string doubleNewline = $"{Environment.NewLine}{Environment.NewLine}";
+
     public ModuleSymbol Symbol { get; }
     public string Name { get; set; } = "output";
     public IDictionary<FunctionSymbol, IProcedure> Procedures => throw new NotImplementedException();
@@ -23,4 +25,13 @@ internal sealed class Assembly : IAssembly
     {
         this.Symbol = symbol;
     }
+
+    public Procedure DefineProcedure(FunctionSymbol functionSymbol)
+    {
+        var procedure = new Procedure(this, functionSymbol);
+        this.procedures.Add(functionSymbol, procedure);
+        return procedure;
+    }
+
+    public override string ToString() => string.Join(doubleNewline, this.procedures.Values);
 }

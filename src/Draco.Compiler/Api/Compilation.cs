@@ -9,7 +9,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.DracoIr;
+using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 
@@ -132,9 +132,15 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        // Generate Draco IR
+        // Generate IR
+        var assembly = ModuleCodegen.Generate(this.GlobalModule);
+        Console.WriteLine(assembly);
+        Environment.Exit(0);
+
+        // TODO
+#if false
         var asm = new Assembly(this.AssemblyName ?? "output");
-        DracoIrCodegen.Generate(asm, (SourceModuleSymbol)this.GlobalModule);
+        IrCodegen.Generate(asm, (SourceModuleSymbol)this.GlobalModule);
 
         // Optimize the IR
         // TODO: Options for optimization
@@ -150,6 +156,7 @@ public sealed class Compilation
 
         // Generate CIL
         CilCodegen.Generate(asm, peStream);
+#endif
 
         return new(
             Success: true,

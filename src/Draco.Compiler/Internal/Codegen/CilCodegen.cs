@@ -6,12 +6,13 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
-using Draco.Compiler.Internal.DracoIr;
+// using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Type = Draco.Compiler.Internal.DracoIr.Type;
+// using Type = Draco.Compiler.Internal.DracoIr.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
 
+#if false
 /// <summary>
 /// Generates CIL from DracoIR.
 /// </summary>
@@ -580,3 +581,4 @@ internal sealed class CilCodegen
         peBlob.WriteContentTo(peStream);
     }
 }
+#endif

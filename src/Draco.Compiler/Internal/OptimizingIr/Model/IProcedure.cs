@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Read-only interface of a procedure.
 /// </summary>
-internal interface IProcedure
+internal interface IProcedure : IOperand
 {
     /// <summary>
     /// The symbol that corresponds to this procedure.

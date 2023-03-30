@@ -12,6 +12,11 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal interface IBasicBlock
 {
     /// <summary>
+    /// The procedure the block was defined in.
+    /// </summary>
+    public IProcedure Procedure { get; }
+
+    /// <summary>
     /// The first instruction within this block.
     /// </summary>
     public IInstruction FirstInstruction { get; }

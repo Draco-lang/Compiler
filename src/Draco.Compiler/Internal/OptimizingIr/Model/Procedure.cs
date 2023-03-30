@@ -24,6 +24,8 @@ internal sealed class Procedure : IProcedure
     {
         this.Assembly = assembly;
         this.Symbol = symbol;
-        this.Entry = new();
+        this.Entry = new(this);
     }
+
+    public BasicBlock DefineBasicBlock() => new(this);
 }

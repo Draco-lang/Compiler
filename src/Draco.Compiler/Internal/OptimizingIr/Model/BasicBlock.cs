@@ -11,6 +11,9 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class BasicBlock : IBasicBlock
 {
+    public Procedure Procedure { get; }
+    IProcedure IBasicBlock.Procedure => this.Procedure;
+
     public IInstruction FirstInstruction => this.firstInstruction
                                          ?? throw new InvalidOperationException("there is no first instruction");
     public IInstruction LastInstruction => this.lastInstruction
@@ -25,6 +28,11 @@ internal sealed class BasicBlock : IBasicBlock
 
     private IInstruction? firstInstruction;
     private IInstruction? lastInstruction;
+
+    public BasicBlock(Procedure procedure)
+    {
+        this.Procedure = procedure;
+    }
 
     private void AssertOwnInstruction(InstructionBase instruction)
     {

@@ -48,7 +48,7 @@ internal static class Program
     private static void FuzzParser(int numEpochs, int numMutations) =>
         Fuzz(numEpochs, numMutations, new ParserFuzzer(new TokenGenerator().Sequence()));
 
-    private static void FuzzCompiler(int numEpochs, int numMutations) =>
+    private static void FuzzE2e(int numEpochs, int numMutations) =>
         Fuzz(numEpochs, numMutations, new E2eFuzzer(InputGenerator.String()));
 
     private static void Fuzz(int numEpochs, int numMutations, IComponentFuzzer componentFuzzer)
@@ -63,20 +63,22 @@ internal static class Program
         }
         catch (CrashException ex)
         {
-            Console.WriteLine("Fuzzer crashed!");
-            Console.WriteLine($"  Input: {ex.Input}");
-            Console.WriteLine($"  Original exception: {ex.Message}");
-            Console.WriteLine("Trace:");
-            Console.WriteLine(ex.StackTrace);
+            Console.Error.WriteLine("Fuzzer crashed!");
+            Console.Error.WriteLine($"  Input: {ex.Input}");
+            Console.Error.WriteLine($"  Original exception: {ex.Message}");
+            Console.Error.WriteLine("Trace:");
+            Console.Error.WriteLine(ex.StackTrace);
+            Environment.Exit(1);
         }
         catch (MutationException ex)
         {
-            Console.WriteLine("Fuzzer crashed on incremental change!");
-            Console.WriteLine($"  Previous Input: {ex.OldInput}");
-            Console.WriteLine($"  New Input: {ex.NewInput}");
-            Console.WriteLine($"  Original exception: {ex.Message}");
-            Console.WriteLine("Trace:");
-            Console.WriteLine(ex.StackTrace);
+            Console.Error.WriteLine("Fuzzer crashed on incremental change!");
+            Console.Error.WriteLine($"  Previous Input: {ex.OldInput}");
+            Console.Error.WriteLine($"  New Input: {ex.NewInput}");
+            Console.Error.WriteLine($"  Original exception: {ex.Message}");
+            Console.Error.WriteLine("Trace:");
+            Console.Error.WriteLine(ex.StackTrace);
+            Environment.Exit(2);
         }
     }
 }

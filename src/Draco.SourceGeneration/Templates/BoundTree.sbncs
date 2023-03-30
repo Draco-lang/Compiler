@@ -1,0 +1,198 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Text;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Types;
+
+namespace Draco.Compiler.Internal.BoundTree;
+
+{{include 'Utils.sbncs'}}
+{{include 'Tree.sbncs'}}
+
+{{func accept_functions(node)}}
+    {{if node.IsAbstract && !node.Base}}
+        public abstract void Accept(BoundTreeVisitor visitor);
+        public abstract TResult Accept<TResult>(BoundTreeVisitor<TResult> visitor);
+    {{else}}
+        public override void Accept(BoundTreeVisitor visitor) =>
+            visitor.Visit{{remove_prefix(node.Name, 'Bound')}}(this);
+        public override TResult Accept<TResult>(BoundTreeVisitor<TResult> visitor) =>
+            visitor.Visit{{remove_prefix(node.Name, 'Bound')}}(this);
+    {{end}}
+{{end}}
+
+{{func is_node_name(name)}}
+    {{for $n in Nodes}}
+        {{if $n.Name == name}}
+            {{ret true}}
+        {{end}}
+    {{end}}
+    {{ret false}}
+{{end}}
+
+{{func visitor_functions(nodes, return_type, return_value)}}
+    {{for $node in nodes}}
+        {{if $node.IsAbstract}}
+            public {{return_type}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            {
+                {{if return_value}}
+                    return node.Accept(this);
+                {{else}}
+                    node.Accept(this);
+                {{end}}
+            }
+        {{else}}
+            public virtual {{return_type}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            {
+                {{for $field in $node.Fields}}
+                    {{if is_node_name($field.NonNullableType)}}
+                        node.{{$field.Name}}{{nullable($field)}}.Accept(this);
+                    {{else if $field.IsArray && is_node_name($field.ElementType)}}
+                        foreach (var element in node.{{$field.Name}}) element.Accept(this);
+                    {{end}}
+                {{end}}
+                {{if return_value}}
+                    return {{return_value}};
+                {{end}}
+            }
+        {{end}}
+    {{end}}
+{{end}}
+
+#pragma warning disable CS0162
+#nullable enable
+{{for $node in Nodes}}
+    internal {{class_header($node)}}
+    {
+        {{for $field in $node.Fields}}
+            {{field_prefix($field)}} { get; }
+        {{end}}
+
+        {{protected_public($node)}} {{$node.Name}}(
+            Api.Syntax.SyntaxNode? syntax
+            {{for $element in $node.Fields}}
+                , {{$element.Type}} {{camel_case($element.Name)}}
+            {{end}}
+        ) : base(syntax)
+        {
+            {{for $field in $node.Fields}}
+                this.{{$field.Name}} = {{camel_case($field.Name)}};
+            {{end}}
+        }
+
+        {{if !$node.IsAbstract}}
+            public override string ToString()
+            {
+                var result = new StringBuilder();
+                result.Append("{{$node.Name}}");
+                result.Append('(');
+
+                {{has_more_fields = array.size($node.Fields) > 1}}
+                {{wrap separated('result.Append(", ");', $node.Fields)}}
+                    {{if has_more_fields}}
+                        result.Append("{{$element.Name}}: ");
+                    {{end}}
+                    {{if $element.IsArray}}
+                        result.Append('[');
+                        result.AppendJoin(", ", this.{{$element.Name}});
+                        result.Append(']');
+                    {{else}}
+                        result.Append(this.{{$element.Name}});
+                    {{end}}
+                {{end}}
+
+                result.Append(')');
+                return result.ToString();
+            }
+        {{end}}
+
+        {{if !$node.IsAbstract}}
+            public {{$node.Name}} Update(
+                {{wrap separated(', ', $node.Fields)}}
+                    {{$element.Type}} {{camel_case($element.Name)}}
+                {{end}}
+            )
+            {
+                if (true
+                    {{for $element in $node.Fields}}
+                        && Equals(this.{{$element.Name}}, {{camel_case($element.Name)}})
+                    {{end}}
+                ) return this;
+                else return new {{$node.Name}}(
+                    this.Syntax
+                    {{for $element in $node.Fields}}
+                        , {{camel_case($element.Name)}}
+                    {{end}}
+                );
+            }
+        {{end}}
+
+        {{accept_functions($node)}}
+    }
+
+    {{if !$node.IsAbstract}}
+        internal static partial class BoundTreeFactory
+        {
+            public static {{$node.Name}} {{remove_prefix($node.Name, 'Bound')}}(
+                {{wrap separated(', ', $node.Fields)}}
+                    {{$element.Type}} {{camel_case($element.Name)}}
+                {{end}}
+            ) => new {{$node.Name}}(
+                null
+                {{for $element in $node.Fields}}
+                    , {{camel_case($element.Name)}}
+                {{end}}
+            );
+        }
+    {{end}}
+{{end}}
+
+/// <summary>
+/// Visitor base class for <see cref="{{Root.Name}}"/>.
+/// </summary>
+internal abstract partial class BoundTreeVisitor
+{
+    {{visitor_functions(Nodes, 'void', null)}}
+}
+
+/// <summary>
+/// Visitor base class for <see cref="{{Root.Name}}"/>.
+/// </summary>
+/// <typeparam name="TResult">
+/// The return type of the visitor methods.
+/// </typeparam>
+internal abstract partial class BoundTreeVisitor<TResult>
+{
+    {{visitor_functions(Nodes, 'TResult', 'default!')}}
+}
+
+/// <summary>
+/// A base class for rewriting <see cref="{{Root.Name}}"/>.
+/// </summary>
+internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{Root.Name}}>
+{
+    {{for $node in Nodes}}
+        {{if !$node.IsAbstract}}
+            public override {{Root.Name}} Visit{{remove_prefix($node.Name, 'Bound')}}({{$node.Name}} node)
+            {
+                {{for $element in $node.Fields}}
+                    {{if is_node_name($element.NonNullableType)}}
+                        var {{camel_case($element.Name)}} =
+                            ({{$element.Type}})node.{{$element.Name}}{{nullable($element)}}.Accept(this);
+                    {{else if $element.IsArray && is_node_name($element.ElementType)}}
+                        var {{camel_case($element.Name)}} = this.VisitArray(node.{{$element.Name}});
+                    {{else}}
+                        var {{camel_case($element.Name)}} = node.{{$element.Name}};
+                    {{end}}
+                {{end}}
+                return node.Update(
+                    {{wrap separated(', ', $node.Fields)}}
+                        {{camel_case($element.Name)}}
+                    {{end}}
+                );
+            }
+        {{end}}
+    {{end}}
+}
+#nullable restore
+#pragma warning restore CS0162

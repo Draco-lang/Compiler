@@ -73,19 +73,33 @@ public static class SyntaxFacts
     };
 
     /// <summary>
-    /// Retrieves the operator that a given <see cref="TokenKind"/> has for compound assignment.
+    /// Checks, if the given operator <see cref="TokenKind"/> is a compound assignment.
     /// </summary>
     /// <param name="tokenKind">The <see cref="TokenKind"/> to check.</param>
-    /// <returns>The corresponding <see cref="TokenKind"/> of the operator, if <paramref name="tokenKind"/> is
-    /// a compound assignment, null otherwise..</returns>
-    public static TokenKind? GetOperatorOfCompoundAssignment(TokenKind tokenKind) => tokenKind switch
+    /// <param name="nonCompoundKind">The non-compound operator equivalent is written here, in case it is a compound
+    /// operator.</param>
+    /// <returns>True, if <paramref name="tokenKind"/> is a compound assignment, false otherwise.</returns>
+    public static bool TryGetOperatorOfCompoundAssignment(TokenKind tokenKind, out TokenKind nonCompoundKind)
     {
-        TokenKind.PlusAssign => TokenKind.Plus,
-        TokenKind.MinusAssign => TokenKind.Minus,
-        TokenKind.StarAssign => TokenKind.Star,
-        TokenKind.SlashAssign => TokenKind.Slash,
-        _ => null,
-    };
+        switch (tokenKind)
+        {
+        case TokenKind.PlusAssign:
+            nonCompoundKind = TokenKind.Plus;
+            return true;
+        case TokenKind.MinusAssign:
+            nonCompoundKind = TokenKind.Minus;
+            return true;
+        case TokenKind.StarAssign:
+            nonCompoundKind = TokenKind.Star;
+            return true;
+        case TokenKind.SlashAssign:
+            nonCompoundKind = TokenKind.Slash;
+            return true;
+        default:
+            nonCompoundKind = default;
+            return false;
+        }
+    }
 
     /// <summary>
     /// Checks, if a given <see cref="TokenKind"/> corresponds to a compound assignment operator.
@@ -93,7 +107,7 @@ public static class SyntaxFacts
     /// <param name="tokenKind">The <see cref="TokenKind"/> to check.</param>
     /// <returns>True, if <paramref name="tokenKind"/> represents a compound assignment operator, false otherwise.</returns>
     public static bool IsCompoundAssignmentOperator(TokenKind tokenKind) =>
-        GetOperatorOfCompoundAssignment(tokenKind) is not null;
+        TryGetOperatorOfCompoundAssignment(tokenKind, out _);
 
     /// <summary>
     /// Checks, if a given <see cref="TokenKind"/> corresponds to a relational operator.

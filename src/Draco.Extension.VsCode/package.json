@@ -49,6 +49,12 @@
     "configuration": {
       "title": "Draco",
       "properties": {
+        "dracoLanguageServer.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off"
+        },
         "draco.dotnetCommand": {
           "type": "string",
           "default": "dotnet",

@@ -7,7 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using Draco.Compiler.Internal.DracoIr;
-using Draco.Compiler.Internal.Semantics.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Type = Draco.Compiler.Internal.DracoIr.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
@@ -104,7 +104,10 @@ internal sealed class CilCodegen
 
     private MethodDefinitionHandle entryPointHandle = default;
 
-    private MemberReferenceHandle consoleWriteLineHandle = default;
+    private MemberReferenceHandle consoleWriteStringHandle = default;
+    private MemberReferenceHandle consoleWriteInt32Handle = default;
+    private MemberReferenceHandle consoleWriteLineStringHandle = default;
+    private MemberReferenceHandle consoleWriteLineInt32Handle = default;
 
     private CilCodegen(IReadOnlyAssembly assembly)
     {
@@ -411,7 +414,10 @@ internal sealed class CilCodegen
             }
             else if (called is Value.Intrinsic intrinsic)
             {
-                if (intrinsic.Symbol == Intrinsics.Functions.Println) encoder.Call(this.consoleWriteLineHandle);
+                if (intrinsic.Symbol == IntrinsicSymbols.Print_String) encoder.Call(this.consoleWriteStringHandle);
+                else if (intrinsic.Symbol == IntrinsicSymbols.Print_Int32) encoder.Call(this.consoleWriteInt32Handle);
+                else if (intrinsic.Symbol == IntrinsicSymbols.Println_String) encoder.Call(this.consoleWriteLineStringHandle);
+                else if (intrinsic.Symbol == IntrinsicSymbols.Println_Int32) encoder.Call(this.consoleWriteLineInt32Handle);
                 // TODO
                 else throw new NotImplementedException();
             }
@@ -536,19 +542,24 @@ internal sealed class CilCodegen
            @namespace: this.metadataBuilder.GetOrAddString("System"),
            name: this.metadataBuilder.GetOrAddString("Console"));
 
-        // System.Console.WriteLine(String): Void
+        MemberReferenceHandle LoadPrintFunction(string name, Action<SignatureTypeEncoder> paramTypeEncoder)
         {
             var signature = new BlobBuilder();
             new BlobEncoder(signature)
                 .MethodSignature()
                 .Parameters(1, out var retEncoder, out var paramsEncoder);
             retEncoder.Void();
-            paramsEncoder.AddParameter().Type().String();
-            this.consoleWriteLineHandle = this.metadataBuilder.AddMemberReference(
+            paramTypeEncoder(paramsEncoder.AddParameter().Type());
+            return this.metadataBuilder.AddMemberReference(
                 parent: systemConsoleTypeRef,
-                name: this.metadataBuilder.GetOrAddString("WriteLine"),
+                name: this.metadataBuilder.GetOrAddString(name),
                 signature: this.metadataBuilder.GetOrAddBlob(signature));
         }
+
+        this.consoleWriteStringHandle = LoadPrintFunction("Write", p => p.String());
+        this.consoleWriteInt32Handle = LoadPrintFunction("Write", p => p.Int32());
+        this.consoleWriteLineStringHandle = LoadPrintFunction("WriteLine", p => p.String());
+        this.consoleWriteLineInt32Handle = LoadPrintFunction("WriteLine", p => p.Int32());
     }
 
     private void WritePe(Stream peStream)

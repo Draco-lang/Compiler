@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
@@ -98,7 +99,7 @@ internal sealed class Lexer
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
     private readonly SyntaxToken.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly List<Diagnostic> diagnosticBuilder = new();
+    private readonly List<SyntaxDiagnosticInfo> diagnosticBuilder = new();
 
     private readonly SyntaxDiagnosticTable diagnostics;
 
@@ -146,7 +147,7 @@ internal sealed class Lexer
 
         var token = this.tokenBuilder.Build();
         // Associate diagnostics, if needed
-        if (this.diagnosticBuilder.Count > 0) this.diagnostics.Add(token, this.diagnosticBuilder);
+        if (this.diagnosticBuilder.Count > 0) this.diagnostics.AddRange(token, this.diagnosticBuilder);
         return token;
     }
 
@@ -358,7 +359,20 @@ internal sealed class Lexer
         if (ch == '\'')
         {
             var offset = 1;
-            var ch2 = this.Peek(offset);
+            if (!this.TryPeek(offset, out var ch2))
+            {
+                // Unexpected end of input
+                this.AddError(
+                    template: SyntaxErrors.UnexpectedCharacterLiteralEnd,
+                    offset: offset,
+                    width: 1);
+                var errText = this.AdvanceWithText(offset);
+                this.tokenBuilder
+                    .SetKind(TokenKind.LiteralCharacter)
+                    .SetText(errText)
+                    .SetValue(' ');
+                return default;
+            }
             var resultChar = string.Empty;
             if (ch2 == '\\')
             {
@@ -446,14 +460,11 @@ internal sealed class Lexer
             return default;
         }
 
-        var ch = this.Peek(offset);
-
         // NOTE: We are checking end of input differently here, because SourceReader.IsEnd is based on its
         // current position, but we are peeking in this input way ahead
-        // End of input
-        if (ch == '\0' && offset > 0)
+        // End of input with nonzero offset
+        if (!this.TryPeek(offset, out var ch))
         {
-            // NOTE: Not a nice assumption to rely on '\0', but let's assume the input could end here,
             // return the section we have consumed so far
             this.tokenBuilder
                 .SetKind(TokenKind.StringContent)
@@ -706,7 +717,15 @@ internal sealed class Lexer
     /// <returns>True, if an escape was successfully parsed.</returns>
     private string ParseEscapeSequence(int escapeStart, ref int offset)
     {
-        var esc = this.Peek(offset);
+        if (!this.TryPeek(offset, out var esc))
+        {
+            // Unexpected end of input
+            this.AddError(
+                template: SyntaxErrors.UnexpectedEscapeSequenceEnd,
+                offset: offset,
+                width: 1);
+            return string.Empty;
+        }
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')
         {
@@ -893,12 +912,8 @@ internal sealed class Lexer
     // Errors
     private void AddError(DiagnosticTemplate template, int offset, int width, params object?[] args)
     {
-        var range = new RelativeRange(Offset: offset, Width: width);
-        var location = new Location.RelativeToTree(Range: range);
-        var diag = Diagnostic.Create(
-            template: template,
-            location: location,
-            formatArgs: args);
+        var info = DiagnosticInfo.Create(template, args);
+        var diag = new SyntaxDiagnosticInfo(info, Offset: offset, Width: width);
         this.diagnosticBuilder.Add(diag);
     }
 
@@ -915,6 +930,8 @@ internal sealed class Lexer
     // later for performance reasons
     private char Peek(int offset = 0, char @default = '\0') =>
         this.SourceReader.Peek(offset: offset, @default: @default);
+    private bool TryPeek(int offset, out char result) =>
+        this.SourceReader.TryPeek(offset, out result);
     private ReadOnlyMemory<char> Advance(int amount) => this.SourceReader.Advance(amount);
     private string AdvanceWithText(int amount) => this.Advance(amount).ToString();
 

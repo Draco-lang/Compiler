@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Scriban.Runtime;
 
@@ -24,9 +26,22 @@ public sealed class ScribanHelperFunctions : ScriptObject
         return EscapeKeyword(result);
     }
 
+    public static string RemovePrefix(string str, string suffix) => str.StartsWith(suffix)
+        ? str.Substring(suffix.Length)
+        : str;
+
     public static string RemoveSuffix(string str, string suffix) => str.EndsWith(suffix)
         ? str.Substring(0, str.Length - suffix.Length)
         : str;
+
+    public static IList<string> SplitLines(string str)
+    {
+        var result = new List<string>();
+        var reader = new StringReader(str);
+        var line = null as string;
+        while ((line = reader.ReadLine()) is not null) result.Add(line);
+        return result;
+    }
 
     public static ScribanHelperFunctions Instance { get; } = new();
 

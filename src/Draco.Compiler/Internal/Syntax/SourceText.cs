@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -11,10 +13,49 @@ internal sealed class MemorySourceText : Api.Syntax.SourceText
     internal override ISourceReader SourceReader => Syntax.SourceReader.From(this.content);
 
     private readonly ReadOnlyMemory<char> content;
+    private List<int>? lineStarts;
 
     public MemorySourceText(Uri? path, ReadOnlyMemory<char> content)
     {
         this.Path = path;
         this.content = content;
+    }
+
+    internal override Api.Syntax.SyntaxPosition IndexToSyntaxPosition(int index)
+    {
+        this.lineStarts ??= this.BuildLineStarts();
+        var lineIndex = this.lineStarts.BinarySearch(index);
+        // No exact match, we need the previous line
+        if (lineIndex < 0) lineIndex = ~lineIndex - 1;
+        // From this, the position is simply the line index for the line
+        // and the index - the line start index for the column
+        return new(Line: lineIndex, Column: index - this.lineStarts[lineIndex]);
+    }
+
+    private List<int> BuildLineStarts()
+    {
+        var result = new List<int>
+        {
+            // First line
+            0
+        };
+
+        for (var i = 0; i < this.content.Length;)
+        {
+            var newlineLength = StringUtils.NewlineLength(this.content.Span, i);
+            if (newlineLength > 0)
+            {
+                // This is a newline, add the next line start
+                i += newlineLength;
+                result.Add(i);
+            }
+            else
+            {
+                // Regular character
+                ++i;
+            }
+        }
+
+        return result;
     }
 }

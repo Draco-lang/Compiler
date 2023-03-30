@@ -1,19 +1,26 @@
+using System.Collections.Immutable;
+using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
-using IInternalScope = Draco.Compiler.Internal.Semantics.Symbols.IScope;
-using System.Collections.Immutable;
+using Binder = Draco.Compiler.Internal.Binding.Binder;
 
 namespace Draco.Compiler.Tests.Semantics;
 
 public sealed class SymbolResolutionTests : SemanticTestsBase
 {
-    private static void AssertParentOf(IInternalScope? parent, IInternalScope? child)
+    private static PropertyInfo BinderParentProperty { get; } = typeof(Binder)
+        .GetProperty("Parent", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private static void AssertParentOf(Binder? parent, Binder? child)
     {
         Assert.NotNull(child);
         Assert.False(ReferenceEquals(parent, child));
-        Assert.True(ReferenceEquals(child!.Parent, parent));
+        // Since the Parent property is protected, we need to access it via reflection
+        var childParent = (Binder?)BinderParentProperty.GetValue(child);
+        Assert.True(ReferenceEquals(childParent, parent));
     }
 
     [Fact]
@@ -58,29 +65,33 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x6 = tree.FindInChildren<VariableDeclarationSyntax>(5);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
 
-        var symFoo = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(foo));
-        var symn = GetInternalSymbol<IInternalSymbol.IParameter>(semanticModel.GetDefinedSymbolOrNull(n));
-        var sym1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x1));
-        var sym2 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x2));
-        var sym3 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x3));
-        var sym4 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x4));
-        var sym5 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x5));
-        var sym6 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x6));
+        var symFoo = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(foo));
+        var symn = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(n));
+        var sym1 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x1));
+        var sym2 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x2));
+        var sym3 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x3));
+        var sym4 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x4));
+        var sym5 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x5));
+        var sym6 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x6));
 
         // Assert
-        AssertParentOf(sym2.DefiningScope, sym3.DefiningScope);
-        AssertParentOf(sym1.DefiningScope, sym2.DefiningScope);
-        AssertParentOf(sym4.DefiningScope, sym5.DefiningScope);
-        AssertParentOf(sym4.DefiningScope, sym6.DefiningScope);
-        AssertParentOf(sym1.DefiningScope, sym4.DefiningScope);
+        AssertParentOf(GetDefiningScope(compilation, sym2), GetDefiningScope(compilation, sym3));
+        AssertParentOf(GetDefiningScope(compilation, sym1), GetDefiningScope(compilation, sym2));
+        AssertParentOf(GetDefiningScope(compilation, sym4), GetDefiningScope(compilation, sym5));
+        AssertParentOf(GetDefiningScope(compilation, sym4), GetDefiningScope(compilation, sym6));
+        AssertParentOf(GetDefiningScope(compilation, sym1), GetDefiningScope(compilation, sym4));
 
-        AssertParentOf(symn.DefiningScope, sym1.DefiningScope);
+        AssertParentOf(GetDefiningScope(compilation, symn), GetDefiningScope(compilation, sym1));
 
-        AssertParentOf(symFoo.DefiningScope, symn.DefiningScope);
-        Assert.True(ReferenceEquals(symFoo.DefinedScope, symn.DefiningScope));
+        AssertParentOf(GetDefiningScope(compilation, symFoo), GetDefiningScope(compilation, symn));
+        Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), GetDefiningScope(compilation, symn)));
+
+        Assert.True(diagnostics.Length == 6);
+        Assert.All(diagnostics, diag => Assert.Equal(TypeCheckingErrors.CouldNotInferType, diag.Template));
     }
 
     [Fact]
@@ -114,17 +125,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x2ref = tree.FindInChildren<NameExpressionSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var symx0 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x0));
-        var symx1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x1));
-        var symx2 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x2));
-        var symx3 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x3));
+        var symx0 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x0));
+        var symx1 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x1));
+        var symx2 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x2));
+        var symx3 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x3));
 
-        var symRefx0 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(x0ref));
-        var symRefx1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(x1ref));
-        var symRefx2 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(x2ref));
+        var symRefx0 = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(x0ref));
+        var symRefx1 = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(x1ref));
+        var symRefx2 = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(x2ref));
 
         // Assert
         Assert.False(ReferenceEquals(symx0, symx1));
@@ -170,16 +181,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var call3 = tree.FindInChildren<CallExpressionSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var symBar = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(barDecl));
-        var symFoo = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
-        var symBaz = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(bazDecl));
+        var symBar = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(barDecl));
+        var symFoo = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(fooDecl));
+        var symBaz = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(bazDecl));
 
-        var refFoo1 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call1.Function));
-        var refFoo2 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call2.Function));
-        var refFoo3 = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(call3.Function));
+        var refFoo1 = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call1.Function));
+        var refFoo2 = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call2.Function));
+        var refFoo3 = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call3.Function));
 
         // Assert
         Assert.False(ReferenceEquals(symBar, symFoo));
@@ -217,15 +228,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var zRef = tree.FindInChildren<NameExpressionSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var symx = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
-        var symy = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(yDecl));
-        var symz = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(zDecl));
+        var symx = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var symy = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(yDecl));
+        var symz = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(zDecl));
 
-        var symRefx = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbol(xRef));
-        var symRefz = GetInternalSymbol<IInternalSymbol>(semanticModel.GetReferencedSymbol(zRef));
+        var symRefx = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xRef));
+        var symRefz = GetInternalSymbol<Symbol>(semanticModel.GetReferencedSymbol(zRef));
 
         // Assert
         Assert.True(ReferenceEquals(symx, symRefx));
@@ -281,20 +292,20 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var wRefErr2 = tree.FindInChildren<NameExpressionSyntax>(4);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var x1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x1Decl));
-        var y1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(y1Decl));
-        var z1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(z1Decl));
-        var x2SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(x2Decl));
-        var k1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(k1Decl));
-        var w1SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(w1Decl));
-        var k2SymDecl = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(k2Decl));
+        var x1SymDecl = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x1Decl));
+        var y1SymDecl = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(y1Decl));
+        var z1SymDecl = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(z1Decl));
+        var x2SymDecl = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(x2Decl));
+        var k1SymDecl = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(k1Decl));
+        var w1SymDecl = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(w1Decl));
+        var k2SymDecl = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(k2Decl));
 
-        var x1SymRef1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbol(x1Ref1));
-        var y1SymRef1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbol(y1Ref1));
-        var x2SymRef1 = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbol(x2Ref1));
+        var x1SymRef1 = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(x1Ref1));
+        var y1SymRef1 = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(y1Ref1));
+        var x2SymRef1 = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(x2Ref1));
         var wSymRef1 = semanticModel.GetReferencedSymbol(wRefErr1);
         var wSymRef2 = semanticModel.GetReferencedSymbol(wRefErr2);
 
@@ -305,8 +316,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // TODO: Maybe we should still resolve the reference, but mark it that it's something that comes later?
         // (so it is still an error)
         // It would definitely help reduce error cascading
-        Assert.True(wSymRef1.IsError);
-        Assert.True(wSymRef2.IsError);
+        Assert.True(wSymRef1!.IsError);
+        Assert.True(wSymRef2!.IsError);
     }
 
     [Fact]
@@ -328,16 +339,52 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
 
-        var x1SymDecl = GetInternalSymbol<IInternalSymbol.IParameter>(semanticModel.GetDefinedSymbolOrNull(x1Decl));
-        var x2SymDecl = semanticModel.GetDefinedSymbolOrNull(x2Decl);
+        var x1SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x1Decl));
+        var x2SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x2Decl));
 
         // Assert
         Assert.False(x1SymDecl.IsError);
-        Assert.NotNull(x2SymDecl);
-        Assert.True(x2SymDecl!.IsError);
+        Assert.False(x2SymDecl.IsError);
+        Assert.Single(diagnostics);
+        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+    }
+
+    [Fact]
+    public void RedefinedParameterReference()
+    {
+        // func foo(x: int32, x: int32) {
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(
+                Parameter("x", NameType("int32")),
+                Parameter("x", NameType("int32"))),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+
+        var x1Decl = tree.FindInChildren<ParameterSyntax>(0);
+        var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
+        var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        var x1SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x1Decl));
+        var x2SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x2Decl));
+        var x2SymRef = GetInternalSymbol<ParameterSymbol>(semanticModel.GetReferencedSymbol(xRef));
+
+        // Assert
+        Assert.Equal(x2SymDecl, x2SymRef);
     }
 
     [Fact]
@@ -359,16 +406,18 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
 
-        var varSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(varDecl));
-        var funcSym = semanticModel.GetDefinedSymbolOrNull(funcDecl);
+        var varSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(varDecl));
+        var funcSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(funcDecl));
 
         // Assert
         Assert.False(varSym.IsError);
-        Assert.NotNull(funcSym);
-        Assert.True(funcSym!.IsError);
+        Assert.False(funcSym.IsError);
+        Assert.Single(diagnostics);
+        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -393,11 +442,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var globalVarDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var varRefSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetReferencedSymbolOrNull(localVarDecl.Value!.Value));
-        var varDeclSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(globalVarDecl));
+        var varRefSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetReferencedSymbol(localVarDecl.Value!.Value));
+        var varDeclSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(globalVarDecl));
 
         // Assert
         Assert.True(ReferenceEquals(varDeclSym, varRefSym));
@@ -429,16 +478,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var labelDeclSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
+        var labelDeclSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetDefinedSymbol(labelDecl));
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
         // Assert
         Assert.False(ReferenceEquals(labelDeclSym, labelRefSym));
         Assert.False(labelDeclSym.IsError);
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     [Fact]
@@ -471,16 +520,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var labelDeclSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
+        var labelDeclSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetDefinedSymbol(labelDecl));
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
         // Assert
         Assert.False(ReferenceEquals(labelDeclSym, labelRefSym));
         Assert.False(labelDeclSym.IsError);
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     [Fact]
@@ -498,16 +547,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xDeclSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xDeclSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
         var xRefSym = semanticModel.GetReferencedSymbol(xRef);
 
+        // TODO: Should see it, but should report illegal reference error
         // Assert
         Assert.False(ReferenceEquals(xDeclSym, xRefSym));
         Assert.False(xDeclSym.IsError);
-        Assert.True(xRefSym.IsError);
+        Assert.True(xRefSym!.IsError);
     }
 
     [Fact]
@@ -529,11 +579,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var fooDeclSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(fooDecl));
-        var fooRefSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetReferencedSymbol(fooRef));
+        var fooDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(fooDecl));
+        var fooRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooRef));
 
         // Assert
         Assert.True(ReferenceEquals(fooDeclSym, fooRefSym));
@@ -558,13 +608,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
         // Assert
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     [Fact]
@@ -588,13 +638,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
+        var labelRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(labelRef));
 
         // Assert
-        Assert.True(labelRefSym.IsError);
+        Assert.False(labelRefSym.IsError);
     }
 
     [Fact]
@@ -618,10 +668,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var labelRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(labelRef));
+        var labelRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(labelRef));
 
         // Assert
         Assert.False(labelRefSym.IsError);
@@ -648,10 +698,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var labelRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(labelRef));
+        var labelRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(labelRef));
 
         // Assert
         Assert.False(labelRefSym.IsError);
@@ -680,13 +730,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
 
         // Assert
-        Assert.True(labelRefSym.IsError);
+        Assert.True(labelRefSym!.IsError);
     }
 
     [Fact]
@@ -727,13 +777,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var outerBreakRef = tree.FindInChildren<GotoExpressionSyntax>(3).Target;
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var outerContinueRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(outerContinueRef));
-        var innerBreakRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(innerBreakRef));
-        var innerContinueRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(innerContinueRef));
-        var outerBreakRefSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetReferencedSymbol(outerBreakRef));
+        var outerContinueRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(outerContinueRef));
+        var innerBreakRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(innerBreakRef));
+        var innerContinueRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(innerContinueRef));
+        var outerBreakRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(outerBreakRef));
 
         // Assert
         Assert.False(outerContinueRefSym.IsError);

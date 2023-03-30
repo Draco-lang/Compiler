@@ -48,7 +48,7 @@ internal sealed partial class SeparatedSyntaxList<TNode> : SyntaxNode, IReadOnly
     {
         get
         {
-            for (var i = 0; i < this.nodes.Length; i += 2) yield return (TNode)this.nodes[i];
+            for (var i = 0; i < this.Nodes.Length; i += 2) yield return (TNode)this.Nodes[i];
         }
     }
 
@@ -59,20 +59,23 @@ internal sealed partial class SeparatedSyntaxList<TNode> : SyntaxNode, IReadOnly
     {
         get
         {
-            for (var i = 1; i < this.nodes.Length; i += 2) yield return (SyntaxToken)this.nodes[i];
+            for (var i = 1; i < this.Nodes.Length; i += 2) yield return (SyntaxToken)this.Nodes[i];
         }
     }
 
-    int IReadOnlyCollection<SyntaxNode>.Count => this.nodes.Length;
-    SyntaxNode IReadOnlyList<SyntaxNode>.this[int index] => this.nodes[index];
+    /// <summary>
+    /// The raw nodes of this syntax list.
+    /// </summary>
+    public ImmutableArray<SyntaxNode> Nodes { get; }
 
-    public override IEnumerable<SyntaxNode> Children => this.nodes;
+    int IReadOnlyCollection<SyntaxNode>.Count => this.Nodes.Length;
+    SyntaxNode IReadOnlyList<SyntaxNode>.this[int index] => this.Nodes[index];
 
-    private readonly ImmutableArray<SyntaxNode> nodes;
+    public override IEnumerable<SyntaxNode> Children => this.Nodes;
 
     public SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodes)
     {
-        this.nodes = nodes;
+        this.Nodes = nodes;
     }
 
     public SeparatedSyntaxList(IEnumerable<SyntaxNode> nodes)
@@ -80,13 +83,13 @@ internal sealed partial class SeparatedSyntaxList<TNode> : SyntaxNode, IReadOnly
     {
     }
 
-    public Builder ToBuilder() => new(this.nodes.ToBuilder());
+    public Builder ToBuilder() => new(this.Nodes.ToBuilder());
 
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitSeparatedSyntaxList(this);
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSeparatedSyntaxList(this);
     public override Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent) =>
         (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke(new object?[] { tree, parent, this })!;
 
-    public IEnumerator<SyntaxNode> GetEnumerator() => this.nodes.AsEnumerable().GetEnumerator();
+    public IEnumerator<SyntaxNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

@@ -52,16 +52,19 @@ internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNod
             typeof(IReadOnlyList<SyntaxNode>),
         })!;
 
-    public int Count => this.nodes.Length;
-    public override IEnumerable<SyntaxNode> Children => this.nodes;
+    /// <summary>
+    /// The raw nodes of this syntax list.
+    /// </summary>
+    public ImmutableArray<TNode> Nodes { get; }
 
-    public TNode this[int index] => this.nodes[index];
+    public int Count => this.Nodes.Length;
+    public override IEnumerable<SyntaxNode> Children => this.Nodes;
 
-    private readonly ImmutableArray<TNode> nodes;
+    public TNode this[int index] => this.Nodes[index];
 
     public SyntaxList(ImmutableArray<TNode> nodes)
     {
-        this.nodes = nodes;
+        this.Nodes = nodes;
     }
 
     public SyntaxList(IEnumerable<SyntaxNode> nodes)
@@ -69,13 +72,13 @@ internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNod
     {
     }
 
-    public Builder ToBuilder() => new(this.nodes.ToBuilder());
+    public Builder ToBuilder() => new(this.Nodes.ToBuilder());
 
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxList(this);
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxList(this);
     public override Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent) =>
         (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke(new object?[] { tree, parent, this })!;
 
-    public IEnumerator<TNode> GetEnumerator() => this.nodes.AsEnumerable().GetEnumerator();
+    public IEnumerator<TNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

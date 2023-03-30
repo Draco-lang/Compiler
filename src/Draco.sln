@@ -7,13 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler", "Draco.Com
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Tests", "Draco.Compiler.Tests\Draco.Compiler.Tests.csproj", "{3732FD91-27D9-478F-B5B3-38D3C10B40C8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree", "Draco.RedGreenTree\Draco.RedGreenTree.csproj", "{4C08CDD1-8B9B-49C3-9372-3919020E6B64}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.SourceGenerator", "Draco.RedGreenTree.SourceGenerator\Draco.RedGreenTree.SourceGenerator.csproj", "{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Cli", "Draco.Compiler.Cli\Draco.Compiler.Cli.csproj", "{9E8937E0-9A0D-4E8F-90F6-AB1FE1D7E464}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.RedGreenTree.Attributes", "Draco.RedGreenTree.Attributes\Draco.RedGreenTree.Attributes.csproj", "{42E11AC1-C418-4438-B873-D9CBC104F798}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Editor.Web", "Draco.Editor.Web\Draco.Editor.Web.csproj", "{3AE74A5A-8201-4DF7-867B-AE929B8387B4}"
 EndProject
@@ -33,9 +27,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Toolset", "D
 EndProject
 Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "Draco.ProjectTemplates", "Draco.ProjectTemplates\Draco.ProjectTemplates.msbuildproj", "{61ED6EF8-D66C-42F4-AD8C-0AFFDA54D2C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Fuzzer", "Draco.Fuzzer\Draco.Fuzzer.csproj", "{4B1D20EB-F2DF-4724-87E6-9839C67049FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.SourceGeneration", "Draco.SourceGeneration\Draco.SourceGeneration.csproj", "{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.SourceGeneration", "Draco.SourceGeneration\Draco.SourceGeneration.csproj", "{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Lsp", "Draco.Lsp\Draco.Lsp.csproj", "{D8F2B284-5687-4E06-90C2-793C313E0FCE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Fuzzer", "Draco.Fuzzer\Draco.Fuzzer.csproj", "{4B1D20EB-F2DF-4724-87E6-9839C67049FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -56,30 +52,12 @@ Global
 		{3732FD91-27D9-478F-B5B3-38D3C10B40C8}.Nuget|Any CPU.Build.0 = Release|Any CPU
 		{3732FD91-27D9-478F-B5B3-38D3C10B40C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3732FD91-27D9-478F-B5B3-38D3C10B40C8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
-		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Nuget|Any CPU.Build.0 = Release|Any CPU
-		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4C08CDD1-8B9B-49C3-9372-3919020E6B64}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
-		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Nuget|Any CPU.Build.0 = Release|Any CPU
-		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4AA8F63A-DCD0-45F7-AC01-C33A39FF2263}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9E8937E0-9A0D-4E8F-90F6-AB1FE1D7E464}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9E8937E0-9A0D-4E8F-90F6-AB1FE1D7E464}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E8937E0-9A0D-4E8F-90F6-AB1FE1D7E464}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
 		{9E8937E0-9A0D-4E8F-90F6-AB1FE1D7E464}.Nuget|Any CPU.Build.0 = Release|Any CPU
 		{9E8937E0-9A0D-4E8F-90F6-AB1FE1D7E464}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E8937E0-9A0D-4E8F-90F6-AB1FE1D7E464}.Release|Any CPU.Build.0 = Release|Any CPU
-		{42E11AC1-C418-4438-B873-D9CBC104F798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42E11AC1-C418-4438-B873-D9CBC104F798}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42E11AC1-C418-4438-B873-D9CBC104F798}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
-		{42E11AC1-C418-4438-B873-D9CBC104F798}.Nuget|Any CPU.Build.0 = Release|Any CPU
-		{42E11AC1-C418-4438-B873-D9CBC104F798}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42E11AC1-C418-4438-B873-D9CBC104F798}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3AE74A5A-8201-4DF7-867B-AE929B8387B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3AE74A5A-8201-4DF7-867B-AE929B8387B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AE74A5A-8201-4DF7-867B-AE929B8387B4}.Nuget|Any CPU.ActiveCfg = Release|Any CPU
@@ -128,6 +106,12 @@ Global
 		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB22FC13-2A92-4E5F-8C37-F2EE7D30B33A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

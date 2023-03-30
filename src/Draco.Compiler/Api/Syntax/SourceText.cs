@@ -60,4 +60,20 @@ public abstract class SourceText
     /// Retrieves an <see cref="ISourceReader"/> for this text.
     /// </summary>
     internal abstract ISourceReader SourceReader { get; }
+
+    /// <summary>
+    /// Translates an index position into a syntax position.
+    /// </summary>
+    /// <param name="index">The index to translate.</param>
+    /// <returns>The syntax position equivalent to <paramref name="index"/>.</returns>
+    internal abstract SyntaxPosition IndexToSyntaxPosition(int index);
+
+    /// <summary>
+    /// Translatesd a source span into a syntax range.
+    /// </summary>
+    /// <param name="span">The source span to translate.</param>
+    /// <returns>The syntax range equivalent to <paramref name="span"/>.</returns>
+    internal SyntaxRange SourceSpanToSyntaxRange(SourceSpan span) => new(
+        Start: this.IndexToSyntaxPosition(span.Start),
+        End: this.IndexToSyntaxPosition(span.End));
 }

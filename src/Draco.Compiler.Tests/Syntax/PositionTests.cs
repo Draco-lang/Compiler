@@ -1,5 +1,5 @@
 using Draco.Compiler.Api.Syntax;
-using Range = Draco.Compiler.Api.Syntax.Range;
+using Range = Draco.Compiler.Api.Syntax.SyntaxRange;
 
 namespace Draco.Compiler.Tests.Syntax;
 

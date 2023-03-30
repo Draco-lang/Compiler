@@ -1,13 +1,17 @@
+using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Codegen;
+using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.DracoIr;
-using Draco.Compiler.Internal.Query;
-using Draco.Compiler.Internal.Semantics.AbstractSyntax;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api;
 
@@ -31,19 +35,26 @@ public sealed class Compilation
     /// <summary>
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
-    /// <param name="syntaxTree">The <see cref="Syntax.SyntaxTree"/> to compile.</param>
+    /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
-    public static Compilation Create(SyntaxTree syntaxTree, string? assemblyName = null) => new(
-        syntaxTree: syntaxTree,
+    public static Compilation Create(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName = null) => new(
+        syntaxTrees: syntaxTrees,
         assemblyName: assemblyName);
 
-    private readonly QueryDatabase db = new();
+    // TODO: Probably not the smartest idea, will only work for single files (likely)
+    /// <summary>
+    /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
+    /// </summary>
+    public ImmutableArray<Diagnostic> Diagnostics => this.SyntaxTrees
+        .Select(this.GetSemanticModel)
+        .SelectMany(model => model.Diagnostics)
+        .ToImmutableArray();
 
     /// <summary>
-    /// The tree that is being compiled.
+    /// The trees that are being compiled.
     /// </summary>
-    public SyntaxTree SyntaxTree { get; }
+    public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
 
     /// <summary>
     /// The name of the output assembly.
@@ -51,54 +62,69 @@ public sealed class Compilation
     public string? AssemblyName { get; }
 
     /// <summary>
-    /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
+    /// The global module symbol of the compilation.
     /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics => this.GetDiagnostics();
+    internal ModuleSymbol GlobalModule => this.globalModule ??= this.BuildGlobalModule();
+    private ModuleSymbol? globalModule;
 
-    private Compilation(SyntaxTree syntaxTree, string? assemblyName)
+    /// <summary>
+    /// The declaration table managing the top-level declarations of the compilation.
+    /// </summary>
+    internal DeclarationTable DeclarationTable => this.declarationTable ??= this.BuildDeclarationTable();
+    private DeclarationTable? declarationTable;
+
+    /// <summary>
+    /// A global diagnostic bag to hold non-local diagnostic messages.
+    /// </summary>
+    internal DiagnosticBag GlobalDiagnosticBag { get; } = new();
+
+    private readonly BinderCache binderCache;
+
+    private Compilation(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName)
     {
-        this.SyntaxTree = syntaxTree;
+        this.SyntaxTrees = syntaxTrees;
         this.AssemblyName = assemblyName;
+        this.binderCache = new(this);
     }
 
     /// <summary>
-    /// Retrieves all <see cref="Diagnostic"/>s that were produced before emission.
+    ///  Retrieves the <see cref="SemanticModel"/> for for a <see cref="SyntaxTree"/> within this compilation.
     /// </summary>
-    /// <returns>The <see cref="Diagnostic"/>s produced before emission.</returns>
-    internal ImmutableArray<Diagnostic> GetDiagnostics() => this.GetSyntaxDiagnostics()
-        .Concat(this.GetSemanticDiagnostics())
-        .ToImmutableArray();
-
-    /// <summary>
-    /// Retrieves all <see cref="Diagnostic"/>s that were produced during syntax analysis.
-    /// </summary>
-    /// <returns>The <see cref="Diagnostic"/>s produced during syntax analysis.</returns>
-    public ImmutableArray<Diagnostic> GetSyntaxDiagnostics() =>
-        this.SyntaxTree.Diagnostics.ToImmutableArray();
-
-    /// <summary>
-    /// Retrieves all <see cref="Diagnostic"/>s that were produced during semantic analysis.
-    /// </summary>
-    /// <returns>The <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
-    public ImmutableArray<Diagnostic> GetSemanticDiagnostics() =>
-        this.GetSemanticModel().Diagnostics.ToImmutableArray();
-
-    /// <summary>
-    /// Retrieves the <see cref="SemanticModel"/> for this compilation.
-    /// </summary>
-    /// <returns>The <see cref="SemanticModel"/> for this compilation.</returns>
-    public SemanticModel GetSemanticModel() =>
-        new(this.db, this.SyntaxTree);
+    /// <param name="tree">The syntax tree to get the semantic model for.</param>
+    /// <returns>The semantic model for <paramref name="tree"/>.</returns>
+    public SemanticModel GetSemanticModel(SyntaxTree tree) => new(this, tree);
 
     /// <summary>
     /// Emits compiled binary to a <see cref="Stream"/>.
     /// </summary>
     /// <param name="peStream">The stream to write the PE to.</param>
+    /// <param name="declarationTreeStream">The stream to write the DOT graph of the declaration tree to.</param>
+    /// <param name="symbolTreeStream">The stream to write the DOT graph of the symbol tree to.</param>
     /// <param name="dracoIrStream">The stream to write a textual representation of the Draco IR to.</param>
     /// <returns>The result of the emission.</returns>
-    public EmitResult Emit(Stream peStream, Stream? dracoIrStream = null)
+    public EmitResult Emit(
+        Stream peStream,
+        Stream? declarationTreeStream = null,
+        Stream? symbolTreeStream = null,
+        Stream? dracoIrStream = null)
     {
-        var existingDiags = this.GetDiagnostics();
+        // Write the declaration tree, if needed
+        if (declarationTreeStream is not null)
+        {
+            var declarationWriter = new StreamWriter(declarationTreeStream);
+            declarationWriter.Write(this.DeclarationTable.ToDot());
+            declarationWriter.Flush();
+        }
+
+        // Write the symbol tree, if needed
+        if (symbolTreeStream is not null)
+        {
+            var symbolWriter = new StreamWriter(symbolTreeStream);
+            symbolWriter.Write(this.GlobalModule.ToDot());
+            symbolWriter.Flush();
+        }
+
+        var existingDiags = this.Diagnostics;
         if (existingDiags.Length > 0)
         {
             return new(
@@ -106,16 +132,14 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        // Get AST
-        var ast = SyntaxTreeToAst.ToAst(this.db, this.SyntaxTree.Root);
-        // Lower it
-        ast = AstLowering.Lower(this.db, ast);
         // Generate Draco IR
         var asm = new Assembly(this.AssemblyName ?? "output");
-        DracoIrCodegen.Generate(asm, ast);
+        DracoIrCodegen.Generate(asm, (SourceModuleSymbol)this.GlobalModule);
+
         // Optimize the IR
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(asm);
+
         // Write the IR, if needed
         if (dracoIrStream is not null)
         {
@@ -123,6 +147,7 @@ public sealed class Compilation
             irWriter.Write(asm.ToString());
             irWriter.Flush();
         }
+
         // Generate CIL
         CilCodegen.Generate(asm, peStream);
 
@@ -130,4 +155,33 @@ public sealed class Compilation
             Success: true,
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
+
+    /// <summary>
+    /// Retrieves the <see cref="Binder"/> for a given syntax node.
+    /// </summary>
+    /// <param name="syntax">The syntax node to retrieve the binder for.</param>
+    /// <returns>The binder that corresponds to <paramref name="syntax"/>.</returns>
+    internal Binder GetBinder(SyntaxNode syntax) => this.binderCache.GetBinder(syntax);
+
+    /// <summary>
+    /// Retrieves the <see cref="Binder"/> for a given symbol definition.
+    /// </summary>
+    /// <param name="symbol">The symbol to retrieve the binder for.</param>
+    /// <returns>The binder that corresponds to <paramref name="symbol"/>.</returns>
+    internal Binder GetBinder(Symbol symbol)
+    {
+        if (symbol is SourceModuleSymbol)
+        {
+            return this.binderCache.ModuleBinder;
+        }
+        if (symbol.DeclarationSyntax is null)
+        {
+            throw new ArgumentException("symbol must have a declaration syntax", nameof(symbol));
+        }
+
+        return this.GetBinder(symbol.DeclarationSyntax);
+    }
+
+    private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
+    private ModuleSymbol BuildGlobalModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
 }

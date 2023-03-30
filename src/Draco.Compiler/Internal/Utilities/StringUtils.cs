@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Draco.Compiler.Internal.Utilities;
@@ -77,5 +79,54 @@ internal static class StringUtils
             first = false;
         }
         return result.ToString();
+    }
+
+    /// <summary>
+    /// Retrieves the length of the newline sequence at the given offset.
+    /// </summary>
+    /// <param name="str">The string to check the newline for.</param>
+    /// <param name="offset">The offset to check the newline at.</param>
+    /// <returns>The length of the newline sequence, which is 0, if there is no newline.</returns>
+    public static int NewlineLength(ReadOnlySpan<char> str, int offset)
+    {
+        if (offset < 0 || offset >= str.Length) return 0;
+        if (str[offset] == '\r')
+        {
+            // Windows or OS-X 9
+            if (offset + 1 < str.Length && str[offset + 1] == '\n') return 2;
+            else return 1;
+        }
+        if (str[offset] == '\n') return 1;
+        return 0;
+    }
+
+    /// <summary>
+    /// Splits a string into lines and newline sequences.
+    /// </summary>
+    /// <param name="str">The string to split.</param>
+    /// <returns>The pairs of string content and optional newline sequence after.</returns>
+    public static IEnumerable<(string Line, string? Newline)> SplitIntoLines(string str)
+    {
+        var prevStart = 0;
+        for (var i = 0; i < str.Length;)
+        {
+            var newlineLength = NewlineLength(str, i);
+            if (newlineLength == 0)
+            {
+                // Not a newline
+                ++i;
+                continue;
+            }
+
+            // It is a newline
+            var line = str[prevStart..i];
+            var newline = str[i..(i + newlineLength)];
+            yield return (line, newline);
+
+            i += newlineLength;
+            prevStart = i;
+        }
+        // Possible trailing line
+        if (prevStart != str.Length) yield return (str[prevStart..], null);
     }
 }

@@ -1,7 +1,8 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using IInternalSymbol = Draco.Compiler.Internal.Semantics.Symbols.ISymbol;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -30,14 +31,14 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var funcSym = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbolOrNull(funcDecl));
+        var funcSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(funcDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, funcSym.Documentation, ignoreLineEndingDifferences: true);
+        Assert.Equal(docComment, funcSym.Documentation);
     }
 
     [Theory]
@@ -62,14 +63,14 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<IInternalSymbol.IVariable>(semanticModel.GetDefinedSymbolOrNull(xDecl));
+        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, xSym.Documentation, ignoreLineEndingDifferences: true);
+        Assert.Equal(docComment, xSym.Documentation);
     }
 
     [Theory]
@@ -82,7 +83,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
     {
         // func main() {
         //     /// This is doc comment
-        //     myLabel:        
+        //     myLabel:
         // }
 
         // Arrange
@@ -98,13 +99,13 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(tree);
-        var semanticModel = compilation.GetSemanticModel();
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
 
-        var labelSym = GetInternalSymbol<IInternalSymbol.ILabel>(semanticModel.GetDefinedSymbolOrNull(labelDecl));
+        var labelSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetDefinedSymbol(labelDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(string.Empty, labelSym.Documentation, ignoreLineEndingDifferences: true);
+        Assert.Equal(string.Empty, labelSym.Documentation);
     }
 }

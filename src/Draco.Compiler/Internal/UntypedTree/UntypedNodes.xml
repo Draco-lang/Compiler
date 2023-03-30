@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Tree
+  xmlns="http://draco-lang.com/untyped-tree/untyped-nodes"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/untyped-tree/untyped-nodes ../../../Draco.SourceGeneration/UntypedTree/UntypedNodes.xsd"
+  Root="UntypedNode">
+  <PredefinedNode Name="UntypedNode" />
+
+  <AbstractNode Name="UntypedStatement" Base="UntypedNode" />
+  <AbstractNode Name="UntypedExpression" Base="UntypedNode" />
+  <AbstractNode Name="UntypedLvalue" Base="UntypedNode" />
+
+  <!-- Statements -->
+
+  <Node Name="UntypedUnexpectedStatement" Base="UntypedStatement">
+  </Node>
+
+  <Node Name="UntypedNoOpStatement" Base="UntypedStatement">
+  </Node>
+
+  <Node Name="UntypedLabelStatement" Base="UntypedStatement">
+    <Field Name="Label" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="UntypedExpressionStatement" Base="UntypedStatement">
+    <Field Name="Expression" Type="UntypedExpression" />
+  </Node>
+
+  <Node Name="UntypedLocalDeclaration" Base="UntypedStatement">
+    <Field Name="Local" Type="UntypedLocalSymbol" />
+    <Field Name="Value" Type="UntypedExpression?" />
+  </Node>
+
+  <!-- Expressions -->
+
+  <Node Name="UntypedUnexpectedExpression" Base="UntypedExpression">
+  </Node>
+
+  <Node Name="UntypedUnitExpression" Base="UntypedExpression">
+  </Node>
+
+  <Node Name="UntypedGotoExpression" Base="UntypedExpression">
+    <Field Name="Target" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="UntypedBlockExpression" Base="UntypedExpression">
+    <Field Name="Locals" Type="ImmutableArray&lt;UntypedLocalSymbol&gt;" />
+    <Field Name="Statements" Type="ImmutableArray&lt;UntypedStatement&gt;" />
+    <Field Name="Value" Type="UntypedExpression" />
+  </Node>
+
+  <Node Name="UntypedReturnExpression" Base="UntypedExpression">
+    <Field Name="Value" Type="UntypedExpression" />
+  </Node>
+
+  <Node Name="UntypedIfExpression" Base="UntypedExpression">
+    <Field Name="Condition" Type="UntypedExpression" />
+    <Field Name="Then" Type="UntypedExpression" />
+    <Field Name="Else" Type="UntypedExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="UntypedWhileExpression" Base="UntypedExpression">
+    <Field Name="Condition" Type="UntypedExpression" />
+    <Field Name="Then" Type="UntypedExpression" />
+    <Field Name="ContinueLabel" Type="LabelSymbol" />
+    <Field Name="BreakLabel" Type="LabelSymbol" />
+  </Node>
+
+  <Node Name="UntypedCallExpression" Base="UntypedExpression">
+    <Field Name="Method" Type="UntypedExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="UntypedIndexExpression" Base="UntypedExpression">
+    <Field Name="Collection" Type="UntypedExpression" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
+    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Operand" Type="UntypedExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="UntypedBinaryExpression" Base="UntypedExpression">
+    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Left" Type="UntypedExpression" />
+    <Field Name="Right" Type="UntypedExpression" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="UntypedAndExpression" Base="UntypedExpression">
+    <Field Name="Left" Type="UntypedExpression" />
+    <Field Name="Right" Type="UntypedExpression" />
+  </Node>
+
+  <Node Name="UntypedOrExpression" Base="UntypedExpression">
+    <Field Name="Left" Type="UntypedExpression" />
+    <Field Name="Right" Type="UntypedExpression" />
+  </Node>
+
+  <Node Name="UntypedAssignmentExpression" Base="UntypedExpression">
+    <Field Name="CompoundOperator" Type="ConstraintPromise&lt;FunctionSymbol&gt;?" />
+    <Field Name="Left" Type="UntypedLvalue" />
+    <Field Name="Right" Type="UntypedExpression" />
+  </Node>
+
+  <Node Name="UntypedLocalExpression" Base="UntypedExpression">
+    <!-- Locals are special, they are remapped after binding to a typed variant -->
+    <Field Name="Local" Type="UntypedLocalSymbol" />
+    <!-- Locals are uninferred, can't rely on symbol type -->
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="UntypedGlobalExpression" Base="UntypedExpression">
+    <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="UntypedParameterExpression" Base="UntypedExpression">
+    <Field Name="Parameter" Type="ParameterSymbol" />
+  </Node>
+
+  <Node Name="UntypedFunctionExpression" Base="UntypedExpression">
+    <Field Name="Function" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="UntypedReferenceErrorExpression" Base="UntypedExpression">
+    <Field Name="Symbol" Type="Symbol" />
+  </Node>
+
+  <Node Name="UntypedLiteralExpression" Base="UntypedExpression">
+    <Field Name="Value" Type="object?" />
+  </Node>
+
+  <Node Name="UntypedStringExpression" Base="UntypedExpression">
+    <Field Name="Parts" Type="ImmutableArray&lt;UntypedStringPart&gt;" />
+  </Node>
+
+  <Node Name="UntypedRelationalExpression" Base="UntypedExpression">
+    <Field Name="First" Type="UntypedExpression" />
+    <Field Name="Comparisons" Type="ImmutableArray&lt;UntypedComparison&gt;" />
+  </Node>
+
+  <Node Name="UntypedComparison" Base="UntypedNode">
+    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Next" Type="UntypedExpression" />
+  </Node>
+
+  <AbstractNode Name="UntypedStringPart" Base="UntypedNode" />
+
+  <Node Name="UntypedUnexpectedStringPart" Base="UntypedStringPart">
+  </Node>
+
+  <Node Name="UntypedStringText" Base="UntypedStringPart">
+    <Field Name="Text" Type="string" />
+  </Node>
+
+  <Node Name="UntypedStringInterpolation" Base="UntypedStringPart">
+    <Field Name="Value" Type="UntypedExpression" />
+  </Node>
+
+  <!-- LValues -->
+
+  <!-- Used for syntax errors -->
+  <Node Name="UntypedUnexpectedLvalue" Base="UntypedLvalue">
+  </Node>
+
+  <!-- Used when syntax is ok, but illegal as an LValue -->
+  <Node Name="UntypedIllegalLvalue" Base="UntypedLvalue">
+  </Node>
+
+  <Node Name="UntypedLocalLvalue" Base="UntypedLvalue">
+    <!-- Locals are special, they are remapped after binding to a typed variant -->
+    <Field Name="Local" Type="UntypedLocalSymbol" />
+    <!-- Locals are uninferred, can't rely on symbol type -->
+    <Field Name="Type" Type="Type" Override="true" />
+  </Node>
+
+  <Node Name="UntypedGlobalLvalue" Base="UntypedLvalue">
+    <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+</Tree>

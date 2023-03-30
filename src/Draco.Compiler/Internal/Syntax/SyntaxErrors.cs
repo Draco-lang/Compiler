@@ -1,4 +1,5 @@
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -109,11 +110,20 @@ internal static class SyntaxErrors
         code: Code(11));
 
     /// <summary>
-    /// There was end of input after start of escape sequence.
+    /// The character literal ended unexpectedly.
     /// </summary>
-    public static readonly DiagnosticTemplate EmptyEscapeSequence = DiagnosticTemplate.Create(
-        title: "escape sequence was empty",
+    public static readonly DiagnosticTemplate UnexpectedCharacterLiteralEnd = DiagnosticTemplate.Create(
+        title: "unexpected character literal end",
         severity: DiagnosticSeverity.Error,
-        format: "end of input encountered after the start of an escape sequence",
+        format: "unexpected end of character literal",
         code: Code(12));
+
+    /// <summary>
+    /// The escape sequence ended unexpectedly.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedEscapeSequenceEnd = DiagnosticTemplate.Create(
+        title: "unexpected escape sequence end",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected end of escape sequence",
+        code: Code(13));
 }

@@ -33,9 +33,11 @@
 {{end}}
 
 {{func field_prefix(field)}}
-    /// <summary>
-    /// {{field.Documentation}}
-    /// </summary>
+    {{if field.Documentation}}
+        /// <summary>
+        /// {{field.Documentation}}
+        /// </summary>
+    {{end}}
     public
     {{if field.Override}}
         override
@@ -58,42 +60,5 @@
                 yield break;
             }
         }
-    {{end}}
-{{end}}
-
-{{func accept_functions(node)}}
-    {{if node.IsAbstract && !node.Base}}
-        public abstract void Accept(SyntaxVisitor visitor);
-        public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
-    {{else}}
-        public override void Accept(SyntaxVisitor visitor) =>
-            visitor.Visit{{remove_suffix(node.Name, 'Syntax')}}(this);
-        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
-            visitor.Visit{{remove_suffix(node.Name, 'Syntax')}}(this);
-    {{end}}
-{{end}}
-
-{{func visitor_functions(nodes, return_type, return_value)}}
-    {{for $node in nodes}}
-        {{if $node.IsAbstract}}
-            public {{return_type}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
-            {
-                {{if return_value}}
-                    return node.Accept(this);
-                {{else}}
-                    node.Accept(this);
-                {{end}}
-            }
-        {{else}}
-            public virtual {{return_type}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
-            {
-                {{for $field in $node.Fields}}
-                    node.{{$field.Name}}{{nullable($field)}}.Accept(this);
-                {{end}}
-                {{if return_value}}
-                    return {{return_value}};
-                {{end}}
-            }
-        {{end}}
     {{end}}
 {{end}}

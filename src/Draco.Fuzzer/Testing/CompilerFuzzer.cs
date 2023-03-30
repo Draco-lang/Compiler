@@ -2,6 +2,7 @@ using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api;
 using Draco.Fuzzer.Testing.Generators;
+using System.Collections.Immutable;
 
 namespace Draco.Fuzzer.Testing;
 
@@ -13,7 +14,8 @@ internal sealed class CompilerFuzzer : ComponentFuzzer<string>
     {
         var sourceText = SourceText.FromText(input);
         var parseTree = SyntaxTree.Parse(sourceText);
-        var compilation = Compilation.Create(parseTree);
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(parseTree));
         var execResult = ScriptingEngine.Execute(compilation);
     }
 

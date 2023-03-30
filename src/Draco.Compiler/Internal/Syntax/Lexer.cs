@@ -604,24 +604,6 @@ internal sealed class Lexer
                 }
             }
 
-            // End of file after the escape
-            if (this.Peek(offset + mode.ExtendedDelims + 1) == '\0')
-            {
-                this.valueBuilder.Append($"\\{new string('#', mode.ExtendedDelims)}");
-                this.AddError(
-                    template: SyntaxErrors.EmptyEscapeSequence,
-                    offset: offset,
-                    width: mode.ExtendedDelims);
-
-                offset += mode.ExtendedDelims + 1;
-
-                this.tokenBuilder
-                    .SetKind(TokenKind.StringContent)
-                    .SetText(this.AdvanceWithText(offset))
-                    .SetValue(this.valueBuilder.ToString());
-                return default;
-            }
-
             offset += mode.ExtendedDelims + 1;
             // Try to parse an escape
             var escaped = this.ParseEscapeSequence(escapeStart, ref offset);
@@ -724,7 +706,8 @@ internal sealed class Lexer
                 template: SyntaxErrors.UnexpectedEscapeSequenceEnd,
                 offset: offset,
                 width: 1);
-            return string.Empty;
+            // We return the \####... literally
+            return $"\\{new string('#', offset - escapeStart - 1)}";
         }
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')

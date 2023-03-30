@@ -938,7 +938,7 @@ public sealed class LexerTests
 
         this.AssertNextToken(TokenKind.StringContent, $"\\{ext}", $"\\{ext}");
         this.AssertNoTrivia();
-        this.AssertDiagnostics(SyntaxErrors.EmptyEscapeSequence);
+        this.AssertDiagnostics(SyntaxErrors.UnexpectedEscapeSequenceEnd);
 
         this.AssertNextToken(TokenKind.EndOfInput);
         this.AssertNoTriviaOrDiagnostics();

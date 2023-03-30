@@ -56,9 +56,8 @@ internal sealed class Procedure : IProcedure
         result.AppendLine($"proc {this.ToOperandString()}():");
         if (this.Locals.Count > 0)
         {
-            result.AppendLine("locals (");
+            result.AppendLine("locals:");
             foreach (var local in this.locals) result.AppendLine($"  {local}");
-            result.AppendLine(")");
         }
         var blocksInOrder = this.BasicBlocks
             .OrderBy(bb => bb.Index);

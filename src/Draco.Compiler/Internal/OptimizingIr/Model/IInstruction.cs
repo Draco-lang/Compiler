@@ -25,4 +25,9 @@ internal interface IInstruction
     /// The next instruction in the same basic-block.
     /// </summary>
     public IInstruction? Next { get; }
+
+    /// <summary>
+    /// True, if this is some kind of branching instruction, modifying control-flow.
+    /// </summary>
+    public bool IsBranch { get; }
 }

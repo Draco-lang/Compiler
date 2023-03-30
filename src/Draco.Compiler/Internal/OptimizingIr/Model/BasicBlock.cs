@@ -116,4 +116,19 @@ internal sealed class BasicBlock : IBasicBlock
             this.InsertAfter(this.lastInstruction, added);
         }
     }
+
+    public void Remove(IInstruction removed)
+    {
+        var removedBase = (InstructionBase)removed;
+
+        this.AssertOwnInstruction(removedBase);
+        // Detach
+        removedBase.BasicBlock = null!;
+
+        if (removedBase.Prev is null) this.firstInstruction = removedBase.Next;
+        else removedBase.Prev.Next = removedBase.Next;
+
+        if (removedBase.Next is null) this.lastInstruction = removedBase.Prev;
+        else removedBase.Next.Prev = removedBase.Prev;
+    }
 }

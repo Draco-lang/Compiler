@@ -17,4 +17,5 @@ internal abstract class InstructionBase : IInstruction
     IInstruction? IInstruction.Prev => this.Prev;
     public InstructionBase? Next { get; set; }
     IInstruction? IInstruction.Next => this.Next;
+    public virtual bool IsBranch => false;
 }

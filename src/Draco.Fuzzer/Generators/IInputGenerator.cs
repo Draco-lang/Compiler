@@ -4,7 +4,7 @@ namespace Draco.Fuzzer.Generators;
 /// Generates input for the fuzzer components.
 /// </summary>
 /// <typeparam name="T">The type of input the generator generates.</typeparam>
-internal interface IInputGenerator<T>
+internal interface IInputGenerator<in T>
 {
     /// <summary>
     /// Generates input for the next epoch of fuzzing.

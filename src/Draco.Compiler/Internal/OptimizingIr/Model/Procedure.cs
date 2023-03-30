@@ -12,11 +12,18 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class Procedure : IProcedure
 {
-    public FunctionSymbol Symbol => throw new NotImplementedException();
-    public Assembly Assembly => throw new NotImplementedException();
+    public FunctionSymbol Symbol { get; }
+    public Assembly Assembly { get; }
     IAssembly IProcedure.Assembly => this.Assembly;
-    public BasicBlock Entry => throw new NotImplementedException();
+    public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
     public IEnumerable<BasicBlock> BasicBlocks => throw new NotImplementedException();
     IEnumerable<IBasicBlock> IProcedure.BasicBlocks => this.BasicBlocks;
+
+    public Procedure(Assembly assembly, FunctionSymbol symbol)
+    {
+        this.Assembly = assembly;
+        this.Symbol = symbol;
+        this.Entry = new();
+    }
 }

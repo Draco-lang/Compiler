@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Compiler.Internal.OptimizingIr;
+namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
 /// A mutable base class for <see cref="IInstruction"/> implementations.

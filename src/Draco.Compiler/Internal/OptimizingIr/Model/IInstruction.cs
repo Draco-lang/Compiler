@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draco.Compiler.Internal.OptimizingIr;
+namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
 /// Read-only interface of an instruction.

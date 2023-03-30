@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
+using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
@@ -22,10 +18,14 @@ internal sealed class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock = procedure.Entry;
     }
 
+    private void Write(IInstruction instr) => this.currentBasicBlock.InsertLast(instr);
+
     public override IOperand VisitReturnExpression(BoundReturnExpression node)
     {
         var operand = node.Value.Accept(this);
-        this.currentBasicBlock.InsertLast(new RetInstruction(operand));
+        this.Write(Ret(operand));
         return default!;
     }
+
+    public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 }

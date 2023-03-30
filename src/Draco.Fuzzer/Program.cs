@@ -1,6 +1,7 @@
 using System.CommandLine;
-using Draco.Fuzzer.Testing;
-using Draco.Fuzzer.Testing.Generators;
+using System.Runtime.CompilerServices;
+using Draco.Fuzzer.Components;
+using Draco.Fuzzer.Generators;
 
 namespace Draco.Fuzzer;
 
@@ -27,23 +28,55 @@ internal static class Program
         };
         parserCommand.SetHandler(FuzzParser, numEpochsOption, numMutationsOption);
 
-        var compilerCommand = new Command("compiler", "Fuzzes the compiler")
+        var e2eCommand = new Command("e2e", "Fuzzes the compiler end-to-end")
         {
             numEpochsOption,
             numMutationsOption,
         };
-        compilerCommand.SetHandler(FuzzCompiler, numEpochsOption, numMutationsOption);
+        e2eCommand.SetHandler(FuzzE2e, numEpochsOption, numMutationsOption);
 
         var rootCommand = new RootCommand("CLI for the Draco fuzzer");
         rootCommand.AddCommand(lexerCommand);
         rootCommand.AddCommand(parserCommand);
-        rootCommand.AddCommand(compilerCommand);
+        rootCommand.AddCommand(e2eCommand);
         return rootCommand;
     }
 
-    private static void FuzzLexer(int numEpochs, int numMutations) => new LexerFuzzer(new RandomTextGenerator()).StartTesting(numEpochs, numMutations);
+    private static void FuzzLexer(int numEpochs, int numMutations) =>
+        Fuzz(numEpochs, numMutations, new LexerFuzzer(InputGenerator.String()));
 
-    private static void FuzzParser(int numEpochs, int numMutations) => new ParserFuzzer(new RandomValidTokenGenerator()).StartTesting(numEpochs, numMutations);
+    private static void FuzzParser(int numEpochs, int numMutations) =>
+        Fuzz(numEpochs, numMutations, new ParserFuzzer(new TokenGenerator().Sequence()));
 
-    private static void FuzzCompiler(int numEpochs, int numMutations) => new CompilerFuzzer(new RandomTextGenerator()).StartTesting(numEpochs, numMutations);
+    private static void FuzzCompiler(int numEpochs, int numMutations) =>
+        Fuzz(numEpochs, numMutations, new E2eFuzzer(InputGenerator.String()));
+
+    private static void Fuzz(int numEpochs, int numMutations, IComponentFuzzer componentFuzzer)
+    {
+        try
+        {
+            for (var i = 0; (i < numEpochs || numEpochs == -1); i++)
+            {
+                componentFuzzer.NextEpoct();
+                for (var j = 0; j < numMutations; j++) componentFuzzer.NextMutation();
+            }
+        }
+        catch (CrashException ex)
+        {
+            Console.WriteLine("Fuzzer crashed!");
+            Console.WriteLine($"  Input: {ex.Input}");
+            Console.WriteLine($"  Original exception: {ex.Message}");
+            Console.WriteLine("Trace:");
+            Console.WriteLine(ex.StackTrace);
+        }
+        catch (MutationException ex)
+        {
+            Console.WriteLine("Fuzzer crashed on incremental change!");
+            Console.WriteLine($"  Previous Input: {ex.OldInput}");
+            Console.WriteLine($"  New Input: {ex.NewInput}");
+            Console.WriteLine($"  Original exception: {ex.Message}");
+            Console.WriteLine("Trace:");
+            Console.WriteLine(ex.StackTrace);
+        }
+    }
 }

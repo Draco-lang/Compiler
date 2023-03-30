@@ -13,12 +13,6 @@ namespace Draco.Fuzzer.Generators;
 internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
 {
     private readonly Random random = new();
-    private readonly IInputGenerator<string> textGenerator;
-
-    public TokenGenerator(IInputGenerator<string> textGenerator)
-    {
-        this.textGenerator = textGenerator;
-    }
 
     public SyntaxToken NextExpoch()
     {

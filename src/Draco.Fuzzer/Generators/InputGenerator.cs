@@ -31,7 +31,7 @@ internal static class InputGenerator
     }
 
     public static IInputGenerator<string> String(
-        string? charset,
+        string? charset = null,
         Action<SequenceGenerator<char>>? configure = null)
     {
         var charGenerator = new CharGenerator()

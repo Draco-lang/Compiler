@@ -3,7 +3,6 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Tests.Semantics;
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<OneOf
+  xmlns="http://draco-lang.com/one-of"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/one-of ../../Draco.SourceGeneration/OneOf/OneOf.xsd"
+  MaxCases="8"/>

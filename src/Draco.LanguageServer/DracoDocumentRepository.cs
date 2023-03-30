@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
-using OmniSharp.Extensions.LanguageServer.Protocol;
+using Draco.Lsp.Model;
 
 namespace Draco.LanguageServer;
 

@@ -1,8 +1,6 @@
-using System.Collections.Immutable;
 using System.Linq;
-using OmniSharp.Extensions.LanguageServer.Protocol;
 using CompilerApi = Draco.Compiler.Api;
-using LspModels = OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using LspModels = Draco.Lsp.Model;
 
 namespace Draco.LanguageServer;
 
@@ -12,7 +10,10 @@ namespace Draco.LanguageServer;
 internal static class Translator
 {
     public static CompilerApi.Syntax.SyntaxPosition ToCompiler(LspModels.Position position) =>
-        new(Line: position.Line, Column: position.Character);
+        new(Line: (int)position.Line, Column: (int)position.Character);
+
+    public static CompilerApi.Syntax.SyntaxRange ToCompiler(LspModels.Range range) =>
+        new(Start: ToCompiler(range.Start), End: ToCompiler(range.End));
 
     public static LspModels.Diagnostic ToLsp(CompilerApi.Diagnostics.Diagnostic diag) => new()
     {
@@ -21,7 +22,7 @@ internal static class Translator
         Severity = LspModels.DiagnosticSeverity.Error,
         // TODO: Is there a no-range option?
         Range = ToLsp(diag.Location.Range) ?? new(),
-        Code = new LspModels.DiagnosticCode(diag.Template.Code),
+        Code = diag.Template.Code,
         RelatedInformation = diag.RelatedInformation
             .Select(ToLsp)
             .OfType<LspModels.DiagnosticRelatedInformation>()
@@ -43,29 +44,22 @@ internal static class Translator
         {
             // TODO: Is there a no-range option?
             Range = ToLsp(location.Range) ?? new(),
-            Uri = DocumentUri.From(location.SourceText.Path),
+            Uri = LspModels.DocumentUri.From(location.SourceText.Path),
         };
 
     public static LspModels.Range? ToLsp(CompilerApi.Syntax.SyntaxRange? range) => range is null
         ? null
         : ToLsp(range.Value);
 
-    public static LspModels.Range ToLsp(CompilerApi.Syntax.SyntaxRange range) =>
-        new(ToLsp(range.Start), ToLsp(range.End));
-
-    public static LspModels.Position ToLsp(CompilerApi.Syntax.SyntaxPosition position) =>
-        new(line: position.Line, character: position.Column);
-
-    public static SemanticToken? ToLsp(CompilerApi.Syntax.SyntaxToken token) => token.Kind switch
+    public static LspModels.Range ToLsp(CompilerApi.Syntax.SyntaxRange range) => new()
     {
-        CompilerApi.Syntax.TokenKind.LineStringStart
-     or CompilerApi.Syntax.TokenKind.LineStringEnd
-     or CompilerApi.Syntax.TokenKind.MultiLineStringStart
-     or CompilerApi.Syntax.TokenKind.MultiLineStringEnd
-     or CompilerApi.Syntax.TokenKind.LiteralCharacter => new SemanticToken(
-         Type: LspModels.SemanticTokenType.String,
-         Modifiers: LspModels.SemanticTokenModifier.Defaults.ToImmutableList(),
-         Range: token.Range),
-        _ => null,
+        Start = ToLsp(range.Start),
+        End = ToLsp(range.End),
+    };
+
+    public static LspModels.Position ToLsp(CompilerApi.Syntax.SyntaxPosition position) => new()
+    {
+        Line = (uint)position.Line,
+        Character = (uint)position.Column,
     };
 }

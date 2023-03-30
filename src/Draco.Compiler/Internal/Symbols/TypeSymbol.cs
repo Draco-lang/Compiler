@@ -1,4 +1,3 @@
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -13,5 +12,5 @@ internal abstract partial class TypeSymbol : Symbol
     /// </summary>
     public abstract Type Type { get; }
 
-    public override ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
+    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 }

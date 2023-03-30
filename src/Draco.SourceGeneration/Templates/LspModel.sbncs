@@ -1,0 +1,126 @@
+using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Draco.Lsp.Attributes;
+
+namespace Draco.Lsp.Model;
+
+{{include 'Utils.sbncs'}}
+
+{{func summary(doc)}}
+    {{if !doc}}{{ret}}{{end}}
+    /// <summary>
+    {{~for $line in split_lines(doc)-}}
+        /// {{$line}}
+    {{~end-}}
+    /// </summary>
+{{end}}
+
+{{func declaration(decl)}}
+    {{summary(decl.Documentation)}}
+    {{case decl.Discriminator}}
+    {{when 'Class'}} {{class(decl)}}
+    {{when 'Interface'}} {{interface(decl)}}
+    {{when 'Enum'}} {{enum(decl)}}
+    {{end}}
+{{end}}
+
+{{func class(decl)}}
+    public sealed class {{decl.Name}} {{bases(decl.Interfaces)}}
+    {
+        {{for $nested in decl.NestedDeclarations}}
+            {{declaration($nested)}}
+        {{end}}
+
+        {{for $prop in decl.Properties}}
+            {{property($prop)}}
+        {{end}}
+    }
+{{end}}
+
+{{func interface(decl)}}
+    public interface {{decl.Name}} {{bases(decl.Interfaces)}}
+    {
+        {{for $prop in decl.Properties}}
+            {{property($prop)}}
+        {{end}}
+    }
+{{end}}
+
+{{func enum(decl)}}
+    {{if decl.IsStringEnum}}
+        [JsonConverter(typeof(StringEnumConverter))]
+    {{end}}
+    public enum {{decl.Name}}
+    {
+        {{for $mem in decl.Members}}
+            {{enum_member($mem)}},
+        {{end}}
+    }
+{{end}}
+
+{{func property(decl)}}
+    {{summary(decl.Documentation)}}
+    {{if decl.IsExtensionData}}
+        [JsonExtensionData]
+    {{else}}
+        [JsonProperty(
+            PropertyName = {{string.literal(decl.SerializedName)}},
+            NullValueHandling = NullValueHandling.{{if decl.OmitIfNull}}Ignore{{else}}Include{{end}})]
+    {{end}}
+    public {{type(decl.Type)}} {{decl.Name}} { get; set; }
+{{end}}
+
+{{func enum_member(decl)}}
+    {{summary(decl.Documentation)}}
+    {{case decl.ValueDiscriminator}}
+    {{when 'Int'}}
+        {{decl.Name}} = {{decl.SerializedValue}}
+    {{when 'String'}}
+        [EnumMember(Value = {{string.literal(decl.SerializedValue)}})]
+        {{decl.Name}}
+    {{end}}
+{{end}}
+
+{{func bases(b)}}
+    {{if array.size(b) == 0}}{{ret}}{{end}}
+    :
+    {{wrap separated(', ', b)}}
+        {{$element.Name}}
+    {{end}}
+{{end}}
+
+{{func type(t)}}
+    {{case t.Discriminator}}
+    {{when 'Builtin'}} {{t.FullName}}
+    {{when 'Nullable'}} {{type(t.Type)}}?
+    {{when 'Array'}} IList<{{type(t.ElementType)}}>
+    {{when 'Declaration'}}
+        {{if t.Declaration.Discriminator == 'Class'}}
+            {{class_type(t.Declaration)}}
+        {{else}}
+            {{t.Declaration.Name}}
+        {{end}}
+    {{when 'DiscriminatedUnion'}}
+        OneOf<{{wrap separated(', ', t.Alternatives)}}{{type($element)}}{{end}}>
+    {{when 'Dictionary'}}
+        IDictionary<{{type(t.KeyType)}}, {{type(t.ValueType)}}>
+    {{end}}
+{{end}}
+
+{{func class_type(t)}}
+    {{if t.Parent}}
+        {{class_type(t.Parent)}}.
+    {{end}}
+    {{t.Name}}
+{{end}}
+
+#nullable enable
+#pragma warning disable CS8618
+{{for $decl in Declarations}}
+    {{declaration($decl)}}
+{{end}}
+#pragma warning restore CS8618
+#nullable restore

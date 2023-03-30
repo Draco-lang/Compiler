@@ -1,7 +1,8 @@
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -42,6 +43,11 @@ public interface IVariableSymbol : ISymbol
     /// True, if this is a mutable variable.
     /// </summary>
     public bool IsMutable { get; }
+
+    /// <summary>
+    /// The type of this variable.
+    /// </summary>
+    public IType Type { get; }
 }
 
 /// <summary>
@@ -70,6 +76,10 @@ public interface IParameterSymbol : IVariableSymbol
 /// </summary>
 public interface IFunctionSymbol : ISymbol
 {
+    /// <summary>
+    /// The parameters this function defines.
+    /// </summary>
+    public ImmutableArray<IParameterSymbol> Parameters { get; }
 }
 
 /// <summary>
@@ -124,6 +134,7 @@ internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
 internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, IGlobalSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
+    public IType Type => this.Symbol.Type.ToApiType();
 
     public GlobalSymbol(Internal.Symbols.GlobalSymbol global)
         : base(global)
@@ -134,6 +145,7 @@ internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, 
 internal sealed class LocalSymbol : SymbolBase<Internal.Symbols.LocalSymbol>, ILocalSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
+    public IType Type => this.Symbol.Type.ToApiType();
 
     public LocalSymbol(Internal.Symbols.LocalSymbol local)
         : base(local)
@@ -144,6 +156,7 @@ internal sealed class LocalSymbol : SymbolBase<Internal.Symbols.LocalSymbol>, IL
 internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSymbol>, IParameterSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
+    public IType Type => this.Symbol.Type.ToApiType();
 
     public ParameterSymbol(Internal.Symbols.ParameterSymbol parameter)
         : base(parameter)
@@ -153,6 +166,10 @@ internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSym
 
 internal sealed class FunctionSymbol : SymbolBase<Internal.Symbols.FunctionSymbol>, IFunctionSymbol
 {
+    public ImmutableArray<IParameterSymbol> Parameters => this.Symbol.Parameters
+        .Select(s => s.ToApiSymbol())
+        .ToImmutableArray();
+
     public FunctionSymbol(Internal.Symbols.FunctionSymbol function)
         : base(function)
     {

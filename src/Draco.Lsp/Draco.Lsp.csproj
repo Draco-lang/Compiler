@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Model\OneOf.xml" />
+    <AdditionalFiles Include="Model\LspModel.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Draco.SourceGeneration\Draco.SourceGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="StreamJsonRpc" Version="2.14.24" />
+    <PackageReference Include="Castle.Core" Version="5.1.1" />
+  </ItemGroup>
+
+</Project>

@@ -21,4 +21,10 @@ internal abstract partial class Type
     public override int GetHashCode() => throw new InvalidOperationException("do not use equality for types");
 
     public abstract override string ToString();
+
+    /// <summary>
+    /// Converts this type into an API type.
+    /// </summary>
+    /// <returns>The equivalent API type.</returns>
+    public Api.Semantics.IType ToApiType() => new Api.Semantics.Type(this);
 }

@@ -1,15 +1,15 @@
 using System;
 using System.CommandLine;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.LanguageServer.Handlers;
-using Microsoft.Extensions.DependencyInjection;
+using Draco.Lsp.Server;
+using Nerdbank.Streams;
 using NuGet.Common;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
-using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Draco.LanguageServer;
 
@@ -47,19 +47,11 @@ internal static class Program
     internal static async Task RunServerAsync(bool stdioFlag)
     {
         var transportKind = GetTransportKind(stdioFlag);
+        var transportStream = BuildTransportStream(transportKind);
 
-        var server = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options => options
-            .ConfigureTransportKind(transportKind)
-            .WithHandler<DracoDocumentHandler>()
-            .WithHandler<DracoSemanticTokensHandler>()
-            .WithHandler<DracoDocumentFormattingHandler>()
-            .WithHandler<DracoGoToDefinitionHandler>()
-            .WithHandler<DracoFindAllReferencesHandler>()
-            .WithHandler<DracoHoverHandler>()
-            .WithServices(services => services
-                .AddSingleton<DracoDocumentRepository>()));
-
-        await server.WaitForExit;
+        var client = Lsp.Server.LanguageServer.Connect(transportStream);
+        var server = new DracoLanguageServer(client);
+        await client.RunAsync(server);
     }
 
     internal static async Task CheckForUpdatesAsync()
@@ -100,18 +92,15 @@ internal static class Program
         ? TransportKind.Stdio
         : TransportKind.Unknown;
 
-    private static LanguageServerOptions ConfigureTransportKind(this LanguageServerOptions options, TransportKind transportKind)
+    private static Stream BuildTransportStream(TransportKind transportKind)
     {
         if (transportKind == TransportKind.Stdio)
         {
-            options
-                .WithInput(Console.OpenStandardInput())
-                .WithOutput(Console.OpenStandardOutput());
-            return options;
+            return FullDuplexStream.Splice(Console.OpenStandardInput(), Console.OpenStandardOutput());
         }
 
         Console.Error.WriteLine($"The transport kind {transportKind} is not yet supported");
         Environment.Exit(1);
-        return options;
+        return Stream.Null;
     }
 }

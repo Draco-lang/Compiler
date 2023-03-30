@@ -1,0 +1,26 @@
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://draco-lang.com/language-server-protocol/model"
+  xmlns="http://draco-lang.com/language-server-protocol/model"
+  attributeFormDefault="unqualified"
+  elementFormDefault="qualified">
+
+  <xs:element name="LspModel" type="LspModel" />
+
+  <xs:complexType name="LspModel">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="BuiltinType" type="BuiltinTypeType" />
+      <xs:element name="Generate" type="GenerateType" />
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="BuiltinTypeType">
+    <xs:attribute name="Name" type="xs:string" use="required" />
+    <xs:attribute name="FullName" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="GenerateType">
+    <xs:attribute name="Name" type="xs:string" use="required" />
+  </xs:complexType>
+
+</xs:schema>

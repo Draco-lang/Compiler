@@ -1,0 +1,14 @@
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://draco-lang.com/one-of"
+  xmlns="http://draco-lang.com/one-of"
+  attributeFormDefault="unqualified"
+  elementFormDefault="qualified">
+
+  <xs:element name="OneOf" type="OneOfType" />
+
+  <xs:complexType name="OneOfType">
+    <xs:attribute name="MaxCases" type="xs:integer" use="required" />
+  </xs:complexType>
+
+</xs:schema>

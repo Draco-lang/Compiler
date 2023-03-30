@@ -1,4 +1,3 @@
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;

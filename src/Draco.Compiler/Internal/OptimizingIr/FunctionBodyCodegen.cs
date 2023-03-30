@@ -80,12 +80,74 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
             this.Write(Add(target, left, right));
         }
+        else if (IsSub(node.Operator))
+        {
+            this.Write(Sub(target, left, right));
+        }
+        else if (IsMul(node.Operator))
+        {
+            this.Write(Mul(target, left, right));
+        }
+        else if (IsDiv(node.Operator))
+        {
+            this.Write(Div(target, left, right));
+        }
+        else if (IsRem(node.Operator))
+        {
+            this.Write(Rem(target, left, right));
+        }
+        else if (IsMod(node.Operator))
+        {
+            // a mod b
+            //  <=>
+            // (a rem b + b) rem b
+            var tmp1 = this.DefineRegister();
+            var tmp2 = this.DefineRegister();
+            this.Write(Rem(tmp1, left, right));
+            this.Write(Add(tmp2, tmp1, right));
+            this.Write(Add(target, tmp1, right));
+        }
+        else if (IsLess(node.Operator))
+        {
+            this.Write(Less(target, left, right));
+        }
         else if (IsGreater(node.Operator))
         {
             // a > b
             //  <=>
             // b < a
             this.Write(Less(target, right, left));
+        }
+        else if (IsLessEqual(node.Operator))
+        {
+            // a <= b
+            //  <=>
+            // (b < a) == false
+            var tmp = this.DefineRegister();
+            this.Write(Less(tmp, right, left));
+            this.Write(Equal(target, tmp, new Constant(false)));
+        }
+        else if (IsGreaterEqual(node.Operator))
+        {
+            // a >= b
+            //  <=>
+            // (a < b) == false
+            var tmp = this.DefineRegister();
+            this.Write(Less(tmp, left, right));
+            this.Write(Equal(target, tmp, new Constant(false)));
+        }
+        else if (IsEqual(node.Operator))
+        {
+            this.Write(Equal(target, left, right));
+        }
+        else if (IsNotEqual(node.Operator))
+        {
+            // a != b
+            //  <=>
+            // (a == b) == false
+            var tmp = this.DefineRegister();
+            this.Write(Equal(tmp, left, right));
+            this.Write(Equal(target, tmp, new Constant(false)));
         }
         else
         {

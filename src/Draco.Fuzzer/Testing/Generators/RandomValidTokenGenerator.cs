@@ -98,7 +98,7 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<TokenArray>
 
     private string GenerateChar() => $"'{this.charset[this.random.Next(this.charset.Length)]}'";
 
-    private string GenerateDelimiters() => new string('#', this.random.Next(4));
+    private string GenerateDelimiters() => new('#', this.random.Next(4));
 
     private string GenerateLineStringStart() => $"{this.GenerateDelimiters()}\"";
 
@@ -108,7 +108,7 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<TokenArray>
 
     private string GenerateMultiLineStringEnd() => $"\"\"\"{this.GenerateDelimiters()}";
 
-    private string GenerateStringContent() => new string(Enumerable.Range(0, this.random.Next(128)).Select(x => this.charset[this.random.Next(this.charset.Length)]).ToArray());
+    private string GenerateStringContent() => new(Enumerable.Range(0, this.random.Next(128)).Select(x => this.charset[this.random.Next(this.charset.Length)]).ToArray());
 
     private string GenerateInterpolationStart() => $"\\{this.GenerateDelimiters()}{{";
 }

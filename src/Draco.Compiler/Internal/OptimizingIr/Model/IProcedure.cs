@@ -31,4 +31,9 @@ internal interface IProcedure : IOperand
     /// All basic blocks within this procedure.
     /// </summary>
     public IEnumerable<IBasicBlock> BasicBlocks { get; }
+
+    /// <summary>
+    /// The locals defined within this procedure.
+    /// </summary>
+    public IReadOnlyCollection<Local> Locals { get; }
 }

@@ -30,14 +30,15 @@ internal sealed class BasicBlock : IBasicBlock
         : throw new InvalidOperationException("the last instruction of the block was not a jump");
     IEnumerable<IBasicBlock> IBasicBlock.Successors => this.Successors;
 
-    private readonly int index;
+    public int Index { get; }
+
     private IInstruction? firstInstruction;
     private IInstruction? lastInstruction;
 
     public BasicBlock(Procedure procedure, int index)
     {
         this.Procedure = procedure;
-        this.index = index;
+        this.Index = index;
     }
 
     public override string ToString() => $"""
@@ -45,7 +46,7 @@ internal sealed class BasicBlock : IBasicBlock
         {string.Join(Environment.NewLine, this.Instructions.Select(i => $"  {i}"))}
         """;
 
-    public string ToOperandString() => $"label_{this.index}";
+    public string ToOperandString() => $"label_{this.Index}";
 
     private void AssertOwnInstruction(InstructionBase instruction)
     {

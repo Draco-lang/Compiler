@@ -95,6 +95,18 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
     public override BoundNode VisitRelationalExpression(BoundRelationalExpression node)
     {
+        // In case there are only two operands, don't do any of the optimizations below
+        if (node.Comparisons.Length == 1)
+        {
+            var left = (BoundExpression)node.First.Accept(this);
+            var right = (BoundExpression)node.Comparisons[0].Next.Accept(this);
+            return BinaryExpression(
+                left: left,
+                @operator: node.Comparisons[0].Operator,
+                right: right,
+                type: IntrinsicTypes.Bool);
+        }
+
         // expr1 < expr2 == expr3 > expr4 != ...
         //
         // =>

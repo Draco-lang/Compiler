@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -37,6 +38,8 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
         // Generate function body
         var bodyCodegen = new FunctionBodyCodegen(procedure);
-        sourceFunction.Body.Accept(bodyCodegen);
+        // Desugar it
+        var body = sourceFunction.Body.Accept(LocalRewriter.Instance);
+        body.Accept(bodyCodegen);
     }
 }

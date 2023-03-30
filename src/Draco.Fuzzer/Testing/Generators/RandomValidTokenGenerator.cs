@@ -30,7 +30,7 @@ internal sealed class RandomValidTokenGenerator : IInputGenerator<TokenArray>
     {
         var max = this.random.Next(this.maxLength);
         var builder = new StringBuilder();
-        for (int i = 0; i < max; i++)
+        for (var i = 0; i < max; i++)
         {
             builder.Append(this.GetRandomToken());
         }

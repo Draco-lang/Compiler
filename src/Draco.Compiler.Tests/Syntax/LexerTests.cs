@@ -952,7 +952,7 @@ public sealed class LexerTests
     [Trait("Feature", "Strings")]
     public void TestEndOfInputAfterEscapeSequenceStartAndWhitespace(string ext)
     {
-        string space = " ";
+        var space = " ";
         var text = $"""
             {ext}"\{ext}{space}
             """;

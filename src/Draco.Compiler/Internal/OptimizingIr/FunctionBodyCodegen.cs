@@ -171,7 +171,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     // TODO: Do something with this block
 
     private static bool IsEqual(Symbol op) => op == IntrinsicSymbols.Int32_Equal
-                                       || op == IntrinsicSymbols.Float64_Equal;
+                                           || op == IntrinsicSymbols.Float64_Equal;
     private static bool IsNotEqual(Symbol op) => op == IntrinsicSymbols.Int32_NotEqual
                                               || op == IntrinsicSymbols.Float64_NotEqual;
     private static bool IsLess(Symbol op) => op == IntrinsicSymbols.Int32_LessThan

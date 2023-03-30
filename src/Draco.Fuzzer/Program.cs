@@ -53,18 +53,25 @@ internal static class Program
 
     private static void Fuzz(int numEpochs, int numMutations, IComponentFuzzer componentFuzzer)
     {
+        const int nEpochFeedback = 10;
+
         try
         {
             for (var i = 0; (i < numEpochs || numEpochs == -1); i++)
             {
-                componentFuzzer.NextEpoct();
+                if (i % nEpochFeedback == 0) Console.Error.WriteLine($"Epoch {i}...");
+
+                componentFuzzer.NextEpoch();
                 for (var j = 0; j < numMutations; j++) componentFuzzer.NextMutation();
             }
         }
         catch (CrashException ex)
         {
             Console.Error.WriteLine("Fuzzer crashed!");
-            Console.Error.WriteLine($"  Input: {ex.Input}");
+            Console.Error.WriteLine("  Input:");
+            Console.Error.WriteLine("==========");
+            Console.Error.WriteLine(ex.Input);
+            Console.Error.WriteLine("==========");
             Console.Error.WriteLine($"  Original exception: {ex.Message}");
             Console.Error.WriteLine("Trace:");
             Console.Error.WriteLine(ex.StackTrace);
@@ -73,9 +80,15 @@ internal static class Program
         catch (MutationException ex)
         {
             Console.Error.WriteLine("Fuzzer crashed on incremental change!");
-            Console.Error.WriteLine($"  Previous Input: {ex.OldInput}");
-            Console.Error.WriteLine($"  New Input: {ex.NewInput}");
-            Console.Error.WriteLine($"  Original exception: {ex.Message}");
+            Console.Error.WriteLine("Previous Input:");
+            Console.Error.WriteLine("==========");
+            Console.Error.WriteLine(ex.OldInput);
+            Console.Error.WriteLine("==========");
+            Console.Error.WriteLine("New Input:");
+            Console.Error.WriteLine("==========");
+            Console.Error.WriteLine(ex.NewInput);
+            Console.Error.WriteLine("==========");
+            Console.Error.WriteLine($"Original exception: {ex.Message}");
             Console.Error.WriteLine("Trace:");
             Console.Error.WriteLine(ex.StackTrace);
             Environment.Exit(2);

@@ -21,7 +21,7 @@ internal abstract class ComponentFuzzerBase<TInput> : IComponentFuzzer
         this.inputGenerator = inputGenerator;
     }
 
-    public void NextEpoct()
+    public void NextEpoch()
     {
         this.oldInput = this.inputGenerator.NextExpoch();
         try

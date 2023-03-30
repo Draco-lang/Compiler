@@ -14,7 +14,7 @@ internal interface IComponentFuzzer
     /// <summary>
     /// Starts a new epoch for the component.
     /// </summary>
-    public void NextEpoct();
+    public void NextEpoch();
 
     /// <summary>
     /// Mutates the input and feeds it into the component.

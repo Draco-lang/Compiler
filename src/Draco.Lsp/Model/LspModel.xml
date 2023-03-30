@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LspModel
+  xmlns="http://draco-lang.com/language-server-protocol/model"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/language-server-protocol/model ../../Draco.SourceGeneration/Lsp/LspModel.xsd">
+
+  <BuiltinType Name="boolean" FullName="System.Boolean" />
+  <BuiltinType Name="string" FullName="System.String" />
+  <BuiltinType Name="integer" FullName="System.Int32" />
+  <BuiltinType Name="uinteger" FullName="System.UInt32" />
+  <BuiltinType Name="LSPAny" FullName="System.Object" />
+  <BuiltinType Name="unknown" FullName="System.Object" />
+  <BuiltinType Name="DocumentUri" FullName="Draco.Lsp.Model.DocumentUri" />
+  <!-- NOTE: Deprecated type, we default it to string -->
+  <BuiltinType Name="MarkedString" FullName="System.String" />
+
+  <!-- Basic -->
+  <Generate Name="TextEdit" />
+
+  <!-- Lifecycle -->
+  <Generate Name="InitializeParams" />
+  <Generate Name="InitializeResult" />
+  <Generate Name="InitializedParams" />
+  <Generate Name="RegistrationParams" />
+
+  <!-- Text Document -->
+  <Generate Name="DidOpenTextDocumentParams" />
+  <Generate Name="DidChangeTextDocumentParams" />
+  <Generate Name="DidCloseTextDocumentParams" />
+  
+  <Generate Name="TextDocumentRegistrationOptions" />
+  <Generate Name="TextDocumentChangeRegistrationOptions" />
+
+  <!-- Language -->
+  <Generate Name="DefinitionParams" />
+  <Generate Name="ReferenceParams" />
+  <Generate Name="HoverParams" />
+  <Generate Name="InlayHintParams" />
+  <Generate Name="PublishDiagnosticsParams" />
+  <Generate Name="DocumentFormattingParams" />
+  
+  <Generate Name="Hover" />
+  <Generate Name="InlayHint" />
+
+  <Generate Name="DefinitionRegistrationOptions" />
+  <Generate Name="ReferenceRegistrationOptions" />
+  <Generate Name="HoverRegistrationOptions" />
+  <Generate Name="InlayHintRegistrationOptions" />
+  <Generate Name="DocumentFormattingRegistrationOptions" />
+
+  <!-- Window -->
+  <Generate Name="LogMessageParams" />
+
+</LspModel>

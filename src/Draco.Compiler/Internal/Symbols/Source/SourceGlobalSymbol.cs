@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;

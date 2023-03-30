@@ -13,4 +13,7 @@ internal abstract partial class TypeSymbol : Symbol
     public abstract Type Type { get; }
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
+
+    public override void Accept(SymbolVisitor visitor) => visitor.VisitType(this);
+    public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitType(this);
 }

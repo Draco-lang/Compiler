@@ -74,4 +74,7 @@ internal sealed class SequenceGenerator<TElement> : IInputGenerator<ImmutableArr
         // Done
         return this.sequence.ToImmutableArray();
     }
+
+    public string ToString(ImmutableArray<TElement> value) =>
+        $"[{string.Join(", ", value.Select(this.elementGenerator.ToString))}]";
 }

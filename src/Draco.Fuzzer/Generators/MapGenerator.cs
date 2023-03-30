@@ -15,13 +15,16 @@ internal sealed class MapGenerator<TOld, TNew> : IInputGenerator<TNew>
 {
     private readonly IInputGenerator<TOld> underlying;
     private readonly Func<TOld, TNew> map;
+    private readonly Func<TNew, string> toString;
 
-    public MapGenerator(IInputGenerator<TOld> underlying, Func<TOld, TNew> map)
+    public MapGenerator(IInputGenerator<TOld> underlying, Func<TOld, TNew> map, Func<TNew, string> toString)
     {
         this.underlying = underlying;
         this.map = map;
+        this.toString = toString;
     }
 
     public TNew NextExpoch() => this.map(this.underlying.NextExpoch());
     public TNew NextMutation() => this.map(this.underlying.NextMutation());
+    public string ToString(TNew value) => this.toString(value);
 }

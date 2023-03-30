@@ -14,4 +14,5 @@ internal sealed class CharGenerator : IInputGenerator<char>
 
     public char NextExpoch() => this.Charset[this.random.Next(this.Charset.Length)];
     public char NextMutation() => this.NextExpoch();
+    public string ToString(char value) => value.ToString();
 }

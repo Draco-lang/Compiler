@@ -29,6 +29,9 @@ internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
 
     public SyntaxToken NextMutation() => this.NextExpoch();
 
+    // TODO
+    public string ToString(SyntaxToken value) => throw new NotImplementedException();
+
     private SyntaxToken GenerateToken(TokenKind kind)
     {
         var (text, value) = this.GenerateTokenContent(kind);

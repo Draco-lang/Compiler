@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
@@ -12,6 +13,11 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 internal interface IProcedure
 {
     /// <summary>
+    /// The symbol that corresponds to this procedure.
+    /// </summary>
+    public FunctionSymbol Symbol { get; }
+
+    /// <summary>
     /// The assembly this procedure is defined in.
     /// </summary>
     public IAssembly Assembly { get; }
@@ -20,4 +26,9 @@ internal interface IProcedure
     /// The entry basic block of this procedure.
     /// </summary>
     public IBasicBlock Entry { get; }
+
+    /// <summary>
+    /// All basic blocks within this procedure.
+    /// </summary>
+    public IEnumerable<IBasicBlock> BasicBlocks { get; }
 }

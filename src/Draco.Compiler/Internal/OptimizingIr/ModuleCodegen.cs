@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
@@ -22,8 +23,20 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     private readonly Assembly assembly;
 
-    public ModuleCodegen(ModuleSymbol module)
+    private ModuleCodegen(ModuleSymbol module)
     {
         this.assembly = new(module);
+    }
+
+    public override void VisitFunction(FunctionSymbol functionSymbol)
+    {
+        if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
+
+        var procedure = this.assembly.DefineProcedure(functionSymbol);
+        // TODO: Parameters, return type, ...
+
+        // Generate function body
+        var bodyCodegen = new FunctionBodyCodegen(procedure);
+        sourceFunction.Body.Accept(bodyCodegen);
     }
 }

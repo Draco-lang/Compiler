@@ -105,15 +105,23 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         var right = this.Compile(node.Right);
         var left = this.Compile(node.Left);
+        var toStore = right;
 
         if (node.CompoundOperator is not null)
         {
-            // TODO
-            throw new System.NotImplementedException();
+            var leftValue = this.DefineRegister();
+            var tmp = this.DefineRegister();
+            toStore = tmp;
+            this.Write(Load(leftValue, left));
+            if (IsAdd(node.CompoundOperator)) this.Write(Add(tmp, leftValue, right));
+            else if (IsSub(node.CompoundOperator)) this.Write(Sub(tmp, leftValue, right));
+            else if (IsMul(node.CompoundOperator)) this.Write(Mul(tmp, leftValue, right));
+            else if (IsDiv(node.CompoundOperator)) this.Write(Div(tmp, leftValue, right));
+            else throw new System.NotImplementedException();
         }
 
-        this.Write(Store(left, right));
-        return right;
+        this.Write(Store(left, toStore));
+        return toStore;
     }
 
     public override IOperand VisitBinaryExpression(BoundBinaryExpression node)

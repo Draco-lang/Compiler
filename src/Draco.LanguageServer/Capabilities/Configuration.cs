@@ -10,8 +10,8 @@ namespace Draco.LanguageServer;
 
 internal sealed partial class DracoLanguageServer : IConfiguration
 {
-    public Task DidChangeConfigurationAsync(DidChangeConfigurationParams param)
+    public async Task DidChangeConfigurationAsync(DidChangeConfigurationParams param)
     {
-        return Task.CompletedTask;
+        await this.configurationRepository.UpdateConfigurationAsync();
     }
 }

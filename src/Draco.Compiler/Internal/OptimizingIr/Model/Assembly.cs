@@ -16,10 +16,9 @@ internal sealed class Assembly : IAssembly
 
     public ModuleSymbol Symbol { get; }
     public string Name { get; set; } = "output";
-    public IDictionary<FunctionSymbol, IProcedure> Procedures => throw new NotImplementedException();
-    IReadOnlyDictionary<FunctionSymbol, IProcedure> IAssembly.Procedures => throw new NotImplementedException();
+    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
 
-    private readonly Dictionary<FunctionSymbol, Procedure> procedures = new();
+    private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
 
     public Assembly(ModuleSymbol symbol)
     {
@@ -28,9 +27,12 @@ internal sealed class Assembly : IAssembly
 
     public Procedure DefineProcedure(FunctionSymbol functionSymbol)
     {
-        var procedure = new Procedure(this, functionSymbol);
-        this.procedures.Add(functionSymbol, procedure);
-        return procedure;
+        if (!this.procedures.TryGetValue(functionSymbol, out var result))
+        {
+            result = new Procedure(this, functionSymbol);
+            this.procedures.Add(functionSymbol, result);
+        }
+        return (Procedure)result;
     }
 
     public override string ToString() => string.Join(doubleNewline, this.procedures.Values);

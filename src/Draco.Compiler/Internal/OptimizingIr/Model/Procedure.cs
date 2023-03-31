@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.Utilities;
 
@@ -18,36 +19,40 @@ internal sealed class Procedure : IProcedure
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
-    public IEnumerable<BasicBlock> BasicBlocks => GraphTraversal.DepthFirst(
-        start: this.Entry,
-        getNeighbors: bb => bb.Successors);
-    IEnumerable<IBasicBlock> IProcedure.BasicBlocks => this.BasicBlocks;
-    public IReadOnlyCollection<Local> Locals => this.locals;
+    public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks => this.basicBlocks;
+    public IReadOnlyDictionary<LocalSymbol, Local> Locals => this.locals;
 
-    private readonly List<Local> locals = new();
-    private int basicBlockIndex = 0;
+    private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = new();
+    private readonly Dictionary<LocalSymbol, Local> locals = new();
     private int registerIndex = 0;
 
     public Procedure(Assembly assembly, FunctionSymbol symbol)
     {
         this.Assembly = assembly;
         this.Symbol = symbol;
-        this.Entry = this.DefineBasicBlock();
+        this.Entry = this.DefineBasicBlock(new SynthetizedLabelSymbol("begin"));
     }
 
-    public BasicBlock DefineBasicBlock() => new(this, this.basicBlockIndex++);
+    public BasicBlock DefineBasicBlock(LabelSymbol symbol)
+    {
+        if (!this.basicBlocks.TryGetValue(symbol, out var block))
+        {
+            block = new BasicBlock(this, symbol);
+            this.basicBlocks.Add(symbol, block);
+        }
+        return (BasicBlock)block;
+    }
+
     public Local DefineLocal(LocalSymbol symbol)
     {
-        var result = new Local(symbol, this.locals.Count);
-        this.locals.Add(result);
+        if (!this.locals.TryGetValue(symbol, out var result))
+        {
+            result = new Local(symbol);
+            this.locals.Add(symbol, result);
+        }
         return result;
     }
-    public Local DefineLocal(Type type)
-    {
-        var result = new Local(type, this.locals.Count);
-        this.locals.Add(result);
-        return result;
-    }
+
     public Register DefineRegister() => new(this.registerIndex++);
 
     public override string ToString()
@@ -57,10 +62,10 @@ internal sealed class Procedure : IProcedure
         if (this.Locals.Count > 0)
         {
             result.AppendLine("locals:");
-            foreach (var local in this.locals) result.AppendLine($"  {local}");
+            foreach (var local in this.locals.Values) result.AppendLine($"  {local}");
         }
-        var blocksInOrder = this.BasicBlocks
-            .OrderBy(bb => bb.Index);
+        // TODO: We need topological sorting to print this nicely...
+        var blocksInOrder = this.BasicBlocks.Values;
         result.AppendJoin(System.Environment.NewLine, blocksInOrder);
         return result.ToString();
     }

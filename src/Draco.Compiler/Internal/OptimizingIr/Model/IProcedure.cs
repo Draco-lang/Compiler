@@ -30,10 +30,10 @@ internal interface IProcedure : IOperand
     /// <summary>
     /// All basic blocks within this procedure.
     /// </summary>
-    public IEnumerable<IBasicBlock> BasicBlocks { get; }
+    public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks { get; }
 
     /// <summary>
     /// The locals defined within this procedure.
     /// </summary>
-    public IReadOnlyCollection<Local> Locals { get; }
+    public IReadOnlyDictionary<LocalSymbol, Local> Locals { get; }
 }

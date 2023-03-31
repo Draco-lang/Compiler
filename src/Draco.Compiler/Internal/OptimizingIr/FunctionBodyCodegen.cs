@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 {
     private readonly Procedure procedure;
-    private BasicBlock currentBasicBlock;
+    private BasicBlock? currentBasicBlock;
 
     public FunctionBodyCodegen(Procedure procedure)
     {
@@ -22,44 +22,75 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     }
 
     private void Compile(BoundStatement stmt) => stmt.Accept(this);
+    private IOperand Compile(BoundLvalue lvalue) => lvalue.Accept(this);
     private IOperand Compile(BoundExpression expr) => expr.Accept(this);
-    private void Write(IInstruction instr) => this.currentBasicBlock.InsertLast(instr);
-    private BasicBlock DefineBasicBlock() => this.procedure.DefineBasicBlock();
+
+    private void Write(IInstruction instr)
+    {
+        // Happens, when the basic block got detached and there's code left over to compile
+        // Example:
+        //     goto foo;
+        //     y = x;    // This is inaccessible, current BB is null here!
+        //     foo:
+        if (this.currentBasicBlock is null) return;
+        this.currentBasicBlock.InsertLast(instr);
+    }
+
+    private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
-    private Local DefineLocal(Type type) => this.procedure.DefineLocal(type);
     private Register DefineRegister() => this.procedure.DefineRegister();
 
-    public override IOperand VisitIfExpression(BoundIfExpression node)
+    // Statements //////////////////////////////////////////////////////////////
+
+    public override IOperand VisitLocalDeclaration(BoundLocalDeclaration node)
     {
-        // To support a return value, we allocate local storage
-        // The two branches write their own results respectively
-        // And finally we load the value into a register
+        if (node.Value is null) return default!;
 
+        var right = this.Compile(node.Value);
+        var left = this.DefineLocal(node.Local);
+        this.Write(Store(left, right));
+
+        return default!;
+    }
+
+    public override IOperand VisitLabelStatement(BoundLabelStatement node)
+    {
+        // Define a new basic block
+        var newBasicBlock = this.DefineBasicBlock(node.Label);
+
+        // Here we thread the previous basic block to this one
+        // Basically an implicit goto
+        this.Write(Jump(newBasicBlock));
+        this.currentBasicBlock = newBasicBlock;
+
+        return default!;
+    }
+
+    public override IOperand VisitConditionalGotoStatement(BoundConditionalGotoStatement node)
+    {
         var condition = this.Compile(node.Condition);
-
-        var thenBlock = this.DefineBasicBlock();
-        var elseBlock = this.DefineBasicBlock();
-        var finallyBlock = this.DefineBasicBlock();
-
+        var thenBlock = this.DefineBasicBlock(node.Target);
+        var elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol("else"));
         this.Write(Branch(condition, thenBlock, elseBlock));
-        var storage = this.DefineLocal(node.TypeRequired);
-
-        this.currentBasicBlock = thenBlock;
-        var thenValue = this.Compile(node.Then);
-        this.Write(Store(storage, thenValue));
-        this.Write(Jump(finallyBlock));
-
+        // We fall-through to the else block implicitly
         this.currentBasicBlock = elseBlock;
-        var elseValue = this.Compile(node.Else);
-        this.Write(Store(storage, elseValue));
-        this.Write(Jump(finallyBlock));
 
-        this.currentBasicBlock = finallyBlock;
+        return default!;
+    }
 
-        var result = this.DefineRegister();
-        this.Write(Load(result, storage));
+    // Lvalues /////////////////////////////////////////////////////////////////
 
-        return result;
+    public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
+
+    // Expressions /////////////////////////////////////////////////////////////
+
+    public override IOperand VisitGotoExpression(BoundGotoExpression node)
+    {
+        var target = this.DefineBasicBlock(node.Target);
+        this.Write(Jump(target));
+        // Detach current block
+        this.currentBasicBlock = null;
+        return default(Void);
     }
 
     public override IOperand VisitBlockExpression(BoundBlockExpression node)
@@ -68,6 +99,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         foreach (var stmt in node.Statements) this.Compile(stmt);
         // Compile value
         return this.Compile(node.Value);
+    }
+
+    public override IOperand VisitAssignmentExpression(BoundAssignmentExpression node)
+    {
+        var right = this.Compile(node.Right);
+        var left = this.Compile(node.Left);
+
+        if (node.CompoundOperator is not null)
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
+
+        this.Write(Store(left, right));
+        return right;
     }
 
     public override IOperand VisitBinaryExpression(BoundBinaryExpression node)
@@ -163,6 +209,14 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var operand = this.Compile(node.Value);
         this.Write(Ret(operand));
         return default!;
+    }
+
+    public override IOperand VisitLocalExpression(BoundLocalExpression node)
+    {
+        var result = this.DefineRegister();
+        var local = this.DefineLocal(node.Local);
+        this.Write(Load(result, local));
+        return result;
     }
 
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -11,6 +12,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class BasicBlock : IBasicBlock
 {
+    public LabelSymbol Symbol { get; }
     public Procedure Procedure { get; }
     IProcedure IBasicBlock.Procedure => this.Procedure;
 
@@ -30,23 +32,20 @@ internal sealed class BasicBlock : IBasicBlock
         : throw new InvalidOperationException("the last instruction of the block was not a jump");
     IEnumerable<IBasicBlock> IBasicBlock.Successors => this.Successors;
 
-    public int Index { get; }
-
     private IInstruction? firstInstruction;
     private IInstruction? lastInstruction;
 
-    public BasicBlock(Procedure procedure, int index)
+    public BasicBlock(Procedure procedure, LabelSymbol symbol)
     {
         this.Procedure = procedure;
-        this.Index = index;
+        this.Symbol = symbol;
     }
 
     public override string ToString() => $"""
         {this.ToOperandString()}:
         {string.Join(Environment.NewLine, this.Instructions.Select(i => $"  {i}"))}
         """;
-
-    public string ToOperandString() => $"label_{this.Index}";
+    public string ToOperandString() => this.Symbol.Name;
 
     private void AssertOwnInstruction(InstructionBase instruction)
     {

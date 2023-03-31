@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -11,6 +12,11 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal interface IBasicBlock : IOperand
 {
+    /// <summary>
+    /// The corresponding label.
+    /// </summary>
+    public LabelSymbol Symbol { get; }
+
     /// <summary>
     /// The procedure the block was defined in.
     /// </summary>

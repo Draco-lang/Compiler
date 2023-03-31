@@ -219,6 +219,14 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
+    public override IOperand VisitParameterExpression(BoundParameterExpression node)
+    {
+        var result = this.DefineRegister();
+        var local = this.DefineLocal(node.Parameter);
+        this.Write(Load(result, local));
+        return result;
+    }
+
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 

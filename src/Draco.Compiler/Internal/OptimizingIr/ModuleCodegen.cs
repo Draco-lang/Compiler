@@ -34,7 +34,11 @@ internal sealed class ModuleCodegen : SymbolVisitor
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
         var procedure = this.assembly.DefineProcedure(functionSymbol);
-        // TODO: Parameters, return type, ...
+
+        // Define parameters
+        foreach (var param in functionSymbol.Parameters) procedure.DefineParameter(param);
+
+        // TODO: Return type
 
         // Generate function body
         var bodyCodegen = new FunctionBodyCodegen(procedure);

@@ -19,9 +19,11 @@ internal sealed class Procedure : IProcedure
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
+    public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters => this.parameters;
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks => this.basicBlocks;
     public IReadOnlyDictionary<LocalSymbol, Local> Locals => this.locals;
 
+    private readonly Dictionary<ParameterSymbol, Parameter> parameters = new();
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = new();
     private readonly Dictionary<LocalSymbol, Local> locals = new();
     private int basicBlockIndex = 0;
@@ -33,6 +35,16 @@ internal sealed class Procedure : IProcedure
         this.Assembly = assembly;
         this.Symbol = symbol;
         this.Entry = this.DefineBasicBlock(new SynthetizedLabelSymbol("begin"));
+    }
+
+    public Parameter DefineParameter(ParameterSymbol symbol)
+    {
+        if (!this.parameters.TryGetValue(symbol, out var param))
+        {
+            param = new Parameter(symbol);
+            this.parameters.Add(symbol, param);
+        }
+        return param;
     }
 
     public BasicBlock DefineBasicBlock(LabelSymbol symbol)
@@ -60,7 +72,9 @@ internal sealed class Procedure : IProcedure
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.AppendLine($"proc {this.ToOperandString()}():");
+        result.Append($"proc {this.ToOperandString()}(");
+        result.AppendJoin(", ", this.Parameters.Values);
+        result.AppendLine("):");
         if (this.Locals.Count > 0)
         {
             result.AppendLine("locals:");

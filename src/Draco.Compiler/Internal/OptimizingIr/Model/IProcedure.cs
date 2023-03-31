@@ -28,6 +28,11 @@ internal interface IProcedure : IOperand
     public IBasicBlock Entry { get; }
 
     /// <summary>
+    /// All parameters for this procedure.
+    /// </summary>
+    public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters { get; }
+
+    /// <summary>
     /// All basic blocks within this procedure.
     /// </summary>
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks { get; }

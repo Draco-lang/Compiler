@@ -2,12 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Castle.DynamicProxy;
 using Draco.Lsp.Attributes;
-using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
 namespace Draco.Lsp.Server;

@@ -70,7 +70,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         var condition = this.Compile(node.Condition);
         var thenBlock = this.DefineBasicBlock(node.Target);
-        var elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol("else"));
+        var elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol());
         this.Write(Branch(condition, thenBlock, elseBlock));
         // We fall-through to the else block implicitly
         this.currentBasicBlock = elseBlock;

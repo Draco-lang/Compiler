@@ -43,10 +43,15 @@ internal sealed class BasicBlock : IBasicBlock
         this.Index = index;
     }
 
-    public override string ToString() => $"""
-        {this.ToOperandString()}:
-        {string.Join(Environment.NewLine, this.Instructions.Select(i => $"  {i}"))}
-        """;
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        result.Append(this.ToOperandString()).Append(':');
+        if (!string.IsNullOrWhiteSpace(this.Symbol.Name)) result.Append($" ; {this.Symbol.Name}");
+        result.AppendLine();
+        result.AppendJoin(Environment.NewLine, this.Instructions.Select(i => $"  {i}"));
+        return result.ToString();
+    }
     public string ToOperandString() => $"lbl{this.Index}";
 
     private void AssertOwnInstruction(InstructionBase instruction)

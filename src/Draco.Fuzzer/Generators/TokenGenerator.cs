@@ -12,7 +12,13 @@ namespace Draco.Fuzzer.Generators;
 /// </summary>
 internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
 {
+    private readonly IInputGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator;
     private readonly Random random = new();
+
+    public TokenGenerator(IInputGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator)
+    {
+        this.triviaGenerator = triviaGenerator;
+    }
 
     public SyntaxToken NextExpoch()
     {
@@ -29,8 +35,8 @@ internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
     private SyntaxToken GenerateToken(TokenKind kind)
     {
         var (text, value) = this.GenerateTokenContent(kind);
-        var leadingTrivia = this.GenerateLeadingTrivia();
-        var trailingTrivia = this.GenerateTrailingTrivia();
+        var leadingTrivia = this.triviaGenerator.NextExpoch();
+        var trailingTrivia = this.triviaGenerator.NextExpoch();
         var builder = new SyntaxToken.Builder();
         builder
             .SetKind(kind)
@@ -41,21 +47,9 @@ internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
         return builder.Build();
     }
 
-    private (string Text, object? Value) GenerateTokenContent(TokenKind kind)
+    private (string Text, object? Value) GenerateTokenContent(TokenKind kind) => kind switch
     {
-        // TODO
-        throw new NotImplementedException();
-    }
-
-    private ImmutableArray<SyntaxTrivia> GenerateLeadingTrivia()
-    {
-        // TODO
-        throw new NotImplementedException();
-    }
-
-    private ImmutableArray<SyntaxTrivia> GenerateTrailingTrivia()
-    {
-        // TODO
-        throw new NotImplementedException();
-    }
+        _ when SyntaxFacts.GetTokenText(kind) is string str => (str, null),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+    };
 }

@@ -8,8 +8,8 @@
   <BuiltinType Name="string" FullName="System.String" />
   <BuiltinType Name="integer" FullName="System.Int32" />
   <BuiltinType Name="uinteger" FullName="System.UInt32" />
-  <BuiltinType Name="LSPAny" FullName="System.Object" />
-  <BuiltinType Name="unknown" FullName="System.Object" />
+  <BuiltinType Name="LSPAny" FullName="Newtonsoft.Json.Linq.JToken" />
+  <BuiltinType Name="unknown" FullName="Newtonsoft.Json.Linq.JToken" />
   <BuiltinType Name="DocumentUri" FullName="Draco.Lsp.Model.DocumentUri" />
   <!-- NOTE: Deprecated type, we default it to string -->
   <BuiltinType Name="MarkedString" FullName="System.String" />

@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using Castle.DynamicProxy;
 using Draco.Lsp.Attributes;
+using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
 namespace Draco.Lsp.Server;
@@ -46,53 +50,25 @@ internal sealed class LanguageClientInterceptor : IInterceptor
         if (requestAttr is not null)
         {
             // It's a request
-            // Check for cancellation token
-            var cancellationToken = (null as CancellationToken?);
-            if (invocation.Arguments[^1] is CancellationToken)
-            {
-                cancellationToken = (CancellationToken)invocation.Arguments[1];
-            }
-            // Call appropriate variant
-            if (cancellationToken is null)
-            {
-                if (invocation.Arguments.Length > 0)
-                {
-                    return this.rpc.InvokeWithParameterObjectAsync(requestAttr.Method, invocation.Arguments[0]);
-                }
-                else
-                {
-                    return this.rpc.InvokeWithParameterObjectAsync(requestAttr.Method);
-                }
-            }
-            else
-            {
-                if (invocation.Arguments.Length > 1)
-                {
-                    return this.rpc.InvokeWithParameterObjectAsync(
-                        requestAttr.Method,
-                        invocation.Arguments[0],
-                        cancellationToken.Value);
-                }
-                else
-                {
-                    return this.rpc.InvokeWithParameterObjectAsync(
-                        requestAttr.Method,
-                        null,
-                        cancellationToken.Value);
-                }
-            }
+            // Extract return type
+            var taskReturnType = method.ReturnType;
+            var returnType = taskReturnType.GetGenericArguments()[0];
+            // Check for cancellation token and args
+            var (args, cancellationToken) = invocation.Arguments[^1] is CancellationToken ct
+                ? (invocation.Arguments.Length > 1 ? (invocation.Arguments[0], ct) : (null, ct))
+                : (invocation.Arguments.Length > 0 ? (invocation.Arguments[0], default) : (null, default));
+            // Build the generic method
+            var methodInfo = typeof(JsonRpc)
+                .GetMethod(nameof(JsonRpc.InvokeWithParameterObjectAsync), 1, new[] { typeof(string), typeof(object), typeof(CancellationToken) });
+            var methodInstance = methodInfo!.MakeGenericMethod(returnType);
+            // Call it
+            return methodInstance.Invoke(this.rpc, new[] { requestAttr.Method, args, cancellationToken });
         }
         if (notificationAttr is not null)
         {
             // It's a notification
-            if (invocation.Arguments.Length > 0)
-            {
-                return this.rpc.NotifyAsync(notificationAttr.Method, invocation.Arguments[0]);
-            }
-            else
-            {
-                return this.rpc.NotifyAsync(notificationAttr.Method);
-            }
+            var args = invocation.Arguments.FirstOrDefault();
+            return this.rpc.NotifyWithParameterObjectAsync(notificationAttr.Method, args);
         }
         return null;
     }

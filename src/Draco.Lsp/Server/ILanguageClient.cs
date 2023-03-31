@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
+using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
 namespace Draco.Lsp.Server;
@@ -24,7 +25,7 @@ public interface ILanguageClient
     // Workspace features
 
     [Request("workspace/configuration")]
-    public Task<IList<object?>> GetConfigurationAsync(ConfigurationParams param);
+    public Task<IList<JToken>> GetConfigurationAsync(ConfigurationParams param);
 
     // Window features
 

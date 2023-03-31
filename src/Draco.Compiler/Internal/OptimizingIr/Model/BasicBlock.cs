@@ -12,6 +12,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class BasicBlock : IBasicBlock
 {
+    public int Index { get; }
     public LabelSymbol Symbol { get; }
     public Procedure Procedure { get; }
     IProcedure IBasicBlock.Procedure => this.Procedure;
@@ -35,17 +36,18 @@ internal sealed class BasicBlock : IBasicBlock
     private IInstruction? firstInstruction;
     private IInstruction? lastInstruction;
 
-    public BasicBlock(Procedure procedure, LabelSymbol symbol)
+    public BasicBlock(Procedure procedure, LabelSymbol symbol, int index)
     {
         this.Procedure = procedure;
         this.Symbol = symbol;
+        this.Index = index;
     }
 
     public override string ToString() => $"""
         {this.ToOperandString()}:
         {string.Join(Environment.NewLine, this.Instructions.Select(i => $"  {i}"))}
         """;
-    public string ToOperandString() => this.Symbol.Name;
+    public string ToOperandString() => $"lbl{this.Index}";
 
     private void AssertOwnInstruction(InstructionBase instruction)
     {

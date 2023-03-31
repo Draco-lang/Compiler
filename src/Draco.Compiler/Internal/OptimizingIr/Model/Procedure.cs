@@ -24,6 +24,8 @@ internal sealed class Procedure : IProcedure
 
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = new();
     private readonly Dictionary<LocalSymbol, Local> locals = new();
+    private int basicBlockIndex = 0;
+    private int localIndex = 0;
     private int registerIndex = 0;
 
     public Procedure(Assembly assembly, FunctionSymbol symbol)
@@ -37,7 +39,7 @@ internal sealed class Procedure : IProcedure
     {
         if (!this.basicBlocks.TryGetValue(symbol, out var block))
         {
-            block = new BasicBlock(this, symbol);
+            block = new BasicBlock(this, symbol, this.basicBlockIndex++);
             this.basicBlocks.Add(symbol, block);
         }
         return (BasicBlock)block;
@@ -47,7 +49,7 @@ internal sealed class Procedure : IProcedure
     {
         if (!this.locals.TryGetValue(symbol, out var result))
         {
-            result = new Local(symbol);
+            result = new Local(symbol, this.localIndex++);
             this.locals.Add(symbol, result);
         }
         return result;
@@ -64,8 +66,9 @@ internal sealed class Procedure : IProcedure
             result.AppendLine("locals:");
             foreach (var local in this.locals.Values) result.AppendLine($"  {local}");
         }
-        // TODO: We need topological sorting to print this nicely...
-        var blocksInOrder = this.BasicBlocks.Values;
+        var blocksInOrder = this.BasicBlocks.Values
+            .Cast<BasicBlock>()
+            .OrderBy(bb => bb.Index);
         result.AppendJoin(System.Environment.NewLine, blocksInOrder);
         return result.ToString();
     }

@@ -11,8 +11,15 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// A local value that can be read from and written to.
 /// </summary>
 /// <param name="Symbol">The corresponding local symbol.</param>
-internal readonly record struct Local(LocalSymbol Symbol) : IOperand
+/// <param name="Index">The index of this local to help naming.</param>
+internal readonly record struct Local(LocalSymbol Symbol, int Index) : IOperand
 {
-    public override string ToString() => $"{this.ToOperandString()}: {this.Symbol.Type}";
-    public string ToOperandString() => this.Symbol.Name;
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        result.Append($"{this.ToOperandString()}: {this.Symbol.Type}");
+        if (!string.IsNullOrWhiteSpace(this.Symbol.Name)) result.Append($" ; {this.Symbol.Name}");
+        return result.ToString();
+    }
+    public string ToOperandString() => $"loc{this.Index}";
 }

@@ -24,18 +24,19 @@ internal sealed class ModuleCodegen : SymbolVisitor
     }
 
     private readonly Assembly assembly;
+    private readonly FunctionBodyCodegen globalInitializer;
 
     private ModuleCodegen(ModuleSymbol module)
     {
         this.assembly = new(module);
+        this.globalInitializer = new(this.assembly.GlobalInitializer);
     }
 
     private void Complete()
     {
         // Complete anything that needs completion
         // The global initializer for example is missing a return
-        var globalInitCodegen = new FunctionBodyCodegen(this.assembly.GlobalInitializer);
-        globalInitCodegen.Write(Ret(default(Void)));
+        this.globalInitializer.Write(Ret(default(Void)));
     }
 
     public override void VisitGlobal(GlobalSymbol globalSymbol)
@@ -47,14 +48,12 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)
         {
-            // Generate value in function body
-            var bodyCodegen = new FunctionBodyCodegen(this.assembly.GlobalInitializer);
-            // Desugar it
+            // Desugar value
             var body = sourceGlobal.Value.Accept(LocalRewriter.Instance);
             // Compile it
-            var value = body.Accept(bodyCodegen);
+            var value = body.Accept(this.globalInitializer);
             // Store it
-            bodyCodegen.Write(Store(global, value));
+            this.globalInitializer.Write(Store(global, value));
         }
     }
 

@@ -19,10 +19,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public FunctionBodyCodegen(Procedure procedure)
     {
         this.procedure = procedure;
-        // Choose the last block that was touched
-        this.currentBasicBlock = procedure.BasicBlocks.Values
-            .Cast<BasicBlock>()
-            .MinBy(bb => bb.Index);
+        this.currentBasicBlock = procedure.Entry;
     }
 
     private void Compile(BoundStatement stmt) => stmt.Accept(this);

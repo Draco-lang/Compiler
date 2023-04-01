@@ -23,12 +23,15 @@ internal sealed class MetadataCodegen
         throw new System.NotImplementedException();
 
     private readonly MetadataBuilder metadataBuilder = new();
-    private readonly Dictionary<Global, FieldDefinitionHandle> globalHandles = new();
-    private readonly Dictionary<IProcedure, StandaloneSignatureHandle> procedureHandles = new();
+    private readonly BlobBuilder ilBuilder = new();
+    private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
+    private readonly Dictionary<IProcedure, StandaloneSignatureHandle> procedureSignatureHandles = new();
+    private readonly Dictionary<IProcedure, int> parameterIndex = new();
+    private int parameterIndexCounter = 1;
 
-    public FieldDefinitionHandle GetGlobalHandle(Global global)
+    public FieldDefinitionHandle GetGlobalDefinitionHandle(Global global)
     {
-        if (!this.globalHandles.TryGetValue(global, out var handle))
+        if (!this.globalDefinitionHandles.TryGetValue(global, out var handle))
         {
             var signature = new BlobBuilder();
             var typeEncoder = new BlobEncoder(signature)
@@ -39,14 +42,14 @@ internal sealed class MetadataCodegen
                 attributes: FieldAttributes.Public | FieldAttributes.Static,
                 name: this.metadataBuilder.GetOrAddString(global.Name),
                 signature: this.metadataBuilder.GetOrAddBlob(signature));
-            this.globalHandles.Add(global, handle);
+            this.globalDefinitionHandles.Add(global, handle);
         }
         return handle;
     }
 
-    public StandaloneSignatureHandle GetProcedureHandle(IProcedure procedure)
+    public StandaloneSignatureHandle GetProcedureSignatureHandle(IProcedure procedure)
     {
-        if (!this.procedureHandles.TryGetValue(procedure, out var handle))
+        if (!this.procedureSignatureHandles.TryGetValue(procedure, out var handle))
         {
             var signature = new BlobBuilder();
             var signatureEncoder = new BlobEncoder(signature).MethodSignature();
@@ -54,15 +57,50 @@ internal sealed class MetadataCodegen
             var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
             // NOTE: Old code saved something here
             var methodSignature = this.metadataBuilder.AddStandaloneSignature(signatureHandle);
-            this.procedureHandles.Add(procedure, methodSignature);
+            this.procedureSignatureHandles.Add(procedure, methodSignature);
         }
         return handle;
     }
 
     public UserStringHandle GetStringLiteralHandle(string text) => this.metadataBuilder.GetOrAddUserString(text);
 
+    public int GetParameterIndex(IProcedure procedure)
+    {
+        // If not present, enforce signature creation
+        if (!this.parameterIndex.ContainsKey(procedure)) this.GetProcedureSignatureHandle(procedure);
+        // Must be present
+        return this.parameterIndex[procedure];
+    }
+
+    private void EncodeProcedure(IProcedure procedure, string? specialName = null)
+    {
+        // Encode body
+        this.ilBuilder.Align(4);
+        var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
+        var methodBodyOffset = this.EncodeProcedureBody(methodBodyStream, procedure);
+
+        // Determine attributes
+        var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
+        attributes |= specialName is null
+            ? MethodAttributes.Public
+            : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+
+        // Actually add definition
+        var definitionHandle = this.metadataBuilder.AddMethodDefinition(
+            attributes: attributes,
+            implAttributes: MethodImplAttributes.IL,
+            name: this.metadataBuilder.GetOrAddString(specialName ?? procedure.Name),
+            signature: this.GetProcedureSignatureHandle(procedure),
+            bodyOffset: methodBodyOffset,
+            parameterList: MetadataTokens.ParameterHandle(this.GetParameterIndex(procedure)));
+    }
+
     private void EncodeProcedureSignature(MethodSignatureEncoder encoder, IProcedure procedure)
     {
+        // Save index offset
+        this.parameterIndex.Add(procedure, this.parameterIndexCounter);
+        this.parameterIndexCounter += procedure.Parameters.Count;
+        // Actually encode
         encoder.Parameters(procedure.Parameters.Count, out var returnTypeEncoder, out var parametersEncoder);
         EncodeReturnType(returnTypeEncoder, procedure.ReturnType);
         var paramIndex = 0;
@@ -84,7 +122,7 @@ internal sealed class MetadataCodegen
             sequenceNumber: index + 1);
     }
 
-    private void EncodeProcedureBody(MethodBodyStreamEncoder encoder, IProcedure procedure)
+    private int EncodeProcedureBody(MethodBodyStreamEncoder encoder, IProcedure procedure)
     {
         // TODO: This is where the stackification optimization step could help to reduce local allocation
 
@@ -128,6 +166,8 @@ internal sealed class MetadataCodegen
             localVariablesSignature: localsHandle,
             attributes: MethodBodyAttributes.None,
             hasDynamicStackAllocation: false);
+
+        return methodBodyOffset;
     }
 
     private static void EncodeReturnType(ReturnTypeEncoder encoder, Type type)

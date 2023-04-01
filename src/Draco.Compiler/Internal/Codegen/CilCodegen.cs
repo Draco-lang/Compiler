@@ -39,8 +39,8 @@ internal sealed class CilCodegen
         this.encoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
     }
 
-    private FieldDefinitionHandle GetGlobalHandle(Global global) => this.metadataCodegen.GetGlobalHandle(global);
-    private StandaloneSignatureHandle GetProcedureHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureHandle(procedure);
+    private FieldDefinitionHandle GetGlobalDefinitionHandle(Global global) => this.metadataCodegen.GetGlobalDefinitionHandle(global);
+    private StandaloneSignatureHandle GetProcedureSignatureHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureSignatureHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
 
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
@@ -128,7 +128,7 @@ internal sealed class CilCodegen
                 break;
             case Global global:
                 this.encoder.OpCode(ILOpCode.Ldsfld);
-                this.encoder.Token(this.GetGlobalHandle(global));
+                this.encoder.Token(this.GetGlobalDefinitionHandle(global));
                 break;
             default:
                 throw new InvalidOperationException();
@@ -149,7 +149,7 @@ internal sealed class CilCodegen
                 break;
             case Global global:
                 this.encoder.OpCode(ILOpCode.Stsfld);
-                this.encoder.Token(this.GetGlobalHandle(global));
+                this.encoder.Token(this.GetGlobalDefinitionHandle(global));
                 break;
             default:
                 throw new InvalidOperationException();
@@ -164,7 +164,7 @@ internal sealed class CilCodegen
                 // Arguments
                 foreach (var arg in call.Arguments) this.EncodePush(arg);
                 // Called procedure
-                var handle = this.GetProcedureHandle(proc);
+                var handle = this.GetProcedureSignatureHandle(proc);
                 this.encoder.Call(handle);
             }
             else

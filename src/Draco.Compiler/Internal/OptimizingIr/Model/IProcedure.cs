@@ -18,6 +18,11 @@ internal interface IProcedure : IOperand
     public FunctionSymbol Symbol { get; }
 
     /// <summary>
+    /// The name of this procedure.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
     /// The assembly this procedure is defined in.
     /// </summary>
     public IAssembly Assembly { get; }

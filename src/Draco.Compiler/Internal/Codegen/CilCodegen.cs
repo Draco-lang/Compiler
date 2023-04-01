@@ -40,7 +40,7 @@ internal sealed class CilCodegen
     }
 
     private FieldDefinitionHandle GetGlobalDefinitionHandle(Global global) => this.metadataCodegen.GetGlobalDefinitionHandle(global);
-    private MethodDefinitionHandle GetProcedureDefinitionHandle(IProcedure procedure) => throw new NotImplementedException();
+    private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
 
     private int GetParameterIndex(Parameter parameter) => parameter.Index;

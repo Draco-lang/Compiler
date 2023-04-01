@@ -20,13 +20,14 @@ internal sealed class MetadataCodegen
 {
     private readonly record struct CompiledMethod(
         BlobHandle SignatureBlobHandle,
-        StandaloneSignatureHandle StandaloneSignatureHandle,
+        MemberReferenceHandle MemberReferenceHandle,
         int ParameterIndex);
 
     // TODO: Doc
     public static void Generate(Assembly assembly, Stream peStream) =>
         throw new System.NotImplementedException();
 
+    private readonly IAssembly assembly;
     private readonly MetadataBuilder metadataBuilder = new();
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
@@ -52,8 +53,8 @@ internal sealed class MetadataCodegen
         return handle;
     }
 
-    public StandaloneSignatureHandle GetProcedureSignatureHandle(IProcedure procedure) =>
-        this.GetProcedureInfo(procedure).StandaloneSignatureHandle;
+    public MemberReferenceHandle GetProcedureReferenceHandle(IProcedure procedure) =>
+        this.GetProcedureInfo(procedure).MemberReferenceHandle;
 
     public UserStringHandle GetStringLiteralHandle(string text) => this.metadataBuilder.GetOrAddUserString(text);
 
@@ -65,10 +66,13 @@ internal sealed class MetadataCodegen
             var signatureEncoder = new BlobEncoder(signature).MethodSignature();
             var parameterIndex = this.EncodeProcedureSignature(signatureEncoder, procedure);
             var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
-            var methodSignature = this.metadataBuilder.AddStandaloneSignature(signatureHandle);
+            var memberReference = this.metadataBuilder.AddMemberReference(
+                parent: TODO,
+                name: this.metadataBuilder.GetOrAddString(procedure.Name),
+                signatureHandle: signatureHandle);
             info = new(
                 SignatureBlobHandle: signatureHandle,
-                StandaloneSignatureHandle: methodSignature,
+                MemberReferenceHandle: memberReference,
                 ParameterIndex: parameterIndex);
             this.procedureInfo.Add(procedure, info);
         }

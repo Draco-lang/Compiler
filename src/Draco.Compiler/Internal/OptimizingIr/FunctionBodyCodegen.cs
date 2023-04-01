@@ -19,14 +19,17 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public FunctionBodyCodegen(Procedure procedure)
     {
         this.procedure = procedure;
-        this.currentBasicBlock = procedure.Entry;
+        // Choose the last block that was touched
+        this.currentBasicBlock = procedure.BasicBlocks.Values
+            .Cast<BasicBlock>()
+            .MinBy(bb => bb.Index);
     }
 
     private void Compile(BoundStatement stmt) => stmt.Accept(this);
     private IOperand Compile(BoundLvalue lvalue) => lvalue.Accept(this);
     private IOperand Compile(BoundExpression expr) => expr.Accept(this);
 
-    private void Write(IInstruction instr)
+    public void Write(IInstruction instr)
     {
         // Happens, when the basic block got detached and there's code left over to compile
         // Example:

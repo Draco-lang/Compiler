@@ -1,9 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -12,11 +13,13 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class Assembly : IAssembly
 {
-    private static readonly string doubleNewline = $"{Environment.NewLine}{Environment.NewLine}";
+    private static readonly string doubleNewline = $"{System.Environment.NewLine}{System.Environment.NewLine}";
 
     public ModuleSymbol Symbol { get; }
     public string Name { get; set; } = "output";
     public IReadOnlyDictionary<GlobalSymbol, Global> Globals => this.globals;
+    public Procedure GlobalInitializer { get; }
+    IProcedure IAssembly.GlobalInitializer => this.GlobalInitializer;
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
 
     private readonly Dictionary<GlobalSymbol, Global> globals = new();
@@ -25,6 +28,10 @@ internal sealed class Assembly : IAssembly
     public Assembly(ModuleSymbol symbol)
     {
         this.Symbol = symbol;
+        this.GlobalInitializer = this.DefineProcedure(new SynthetizedFunctionSymbol(
+            name: "<global initializer>",
+            paramTypes: Enumerable.Empty<Type>(),
+            returnType: IntrinsicTypes.Unit));
     }
 
     public Global DefineGlobal(GlobalSymbol globalSymbol)
@@ -50,7 +57,7 @@ internal sealed class Assembly : IAssembly
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.AppendJoin(Environment.NewLine, this.globals.Values);
+        result.AppendJoin(System.Environment.NewLine, this.globals.Values);
         if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.procedures.Values);
         return result.ToString();

@@ -28,6 +28,11 @@ internal interface IAssembly
     public IReadOnlyDictionary<GlobalSymbol, Global> Globals { get; }
 
     /// <summary>
+    /// The procedure performing global initialization.
+    /// </summary>
+    public IProcedure GlobalInitializer { get; }
+
+    /// <summary>
     /// The compiled procedures within this assembly.
     /// </summary>
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }

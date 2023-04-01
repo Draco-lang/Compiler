@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +6,7 @@ using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
@@ -19,6 +19,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         var codegen = new ModuleCodegen(symbol);
         symbol.Accept(codegen);
+        codegen.Complete();
         return codegen.assembly;
     }
 
@@ -29,13 +30,32 @@ internal sealed class ModuleCodegen : SymbolVisitor
         this.assembly = new(module);
     }
 
+    private void Complete()
+    {
+        // Complete anything that needs completion
+        // The global initializer for example is missing a return
+        var globalInitCodegen = new FunctionBodyCodegen(this.assembly.GlobalInitializer);
+        globalInitCodegen.Write(Ret(default(Void)));
+    }
+
     public override void VisitGlobal(GlobalSymbol globalSymbol)
     {
         if (globalSymbol is not SourceGlobalSymbol sourceGlobal) return;
 
-        this.assembly.DefineGlobal(sourceGlobal);
+        var global = this.assembly.DefineGlobal(sourceGlobal);
 
-        // TODO: Assign value
+        // If there's a value, compile it
+        if (sourceGlobal.Value is not null)
+        {
+            // Generate value in function body
+            var bodyCodegen = new FunctionBodyCodegen(this.assembly.GlobalInitializer);
+            // Desugar it
+            var body = sourceGlobal.Value.Accept(LocalRewriter.Instance);
+            // Compile it
+            var value = body.Accept(bodyCodegen);
+            // Store it
+            bodyCodegen.Write(Store(global, value));
+        }
     }
 
     public override void VisitFunction(FunctionSymbol functionSymbol)

@@ -29,6 +29,15 @@ internal sealed class ModuleCodegen : SymbolVisitor
         this.assembly = new(module);
     }
 
+    public override void VisitGlobal(GlobalSymbol globalSymbol)
+    {
+        if (globalSymbol is not SourceGlobalSymbol sourceGlobal) return;
+
+        this.assembly.DefineGlobal(sourceGlobal);
+
+        // TODO: Assign value
+    }
+
     public override void VisitFunction(FunctionSymbol functionSymbol)
     {
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;

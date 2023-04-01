@@ -16,13 +16,25 @@ internal sealed class Assembly : IAssembly
 
     public ModuleSymbol Symbol { get; }
     public string Name { get; set; } = "output";
+    public IReadOnlyDictionary<GlobalSymbol, Global> Globals => this.globals;
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
 
+    private readonly Dictionary<GlobalSymbol, Global> globals = new();
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
 
     public Assembly(ModuleSymbol symbol)
     {
         this.Symbol = symbol;
+    }
+
+    public Global DefineGlobal(GlobalSymbol globalSymbol)
+    {
+        if (!this.globals.TryGetValue(globalSymbol, out var result))
+        {
+            result = new Global(globalSymbol);
+            this.globals.Add(globalSymbol, result);
+        }
+        return result;
     }
 
     public Procedure DefineProcedure(FunctionSymbol functionSymbol)
@@ -35,5 +47,12 @@ internal sealed class Assembly : IAssembly
         return (Procedure)result;
     }
 
-    public override string ToString() => string.Join(doubleNewline, this.procedures.Values);
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        result.AppendJoin(Environment.NewLine, this.globals.Values);
+        if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
+        result.AppendJoin(doubleNewline, this.procedures.Values);
+        return result.ToString();
+    }
 }

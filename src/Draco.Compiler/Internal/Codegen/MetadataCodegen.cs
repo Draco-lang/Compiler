@@ -81,7 +81,7 @@ internal sealed class MetadataCodegen
         return info;
     }
 
-    private void EncodeAssembly(IAssembly assembly)
+    private void EncodeAssembly()
     {
         // Create the module and assembly
         var moduleName = Path.ChangeExtension(this.assembly.Name, ".dll");
@@ -138,20 +138,23 @@ internal sealed class MetadataCodegen
             methodList: MetadataTokens.MethodDefinitionHandle(1));
 
         // Go through globals
-        foreach (var global in assembly.Globals.Values) this.GetGlobalDefinitionHandle(global);
+        foreach (var global in this.assembly.Globals.Values) this.GetGlobalDefinitionHandle(global);
 
         // Go through procedures
-        foreach (var procedure in assembly.Procedures.Values)
+        foreach (var procedure in this.assembly.Procedures.Values)
         {
             // Global initializer will get special treatment
-            if (ReferenceEquals(assembly.GlobalInitializer, procedure)) continue;
+            if (ReferenceEquals(this.assembly.GlobalInitializer, procedure)) continue;
 
             // Encode the procedure
             this.EncodeProcedure(procedure, procedure.Name);
+
+            // If this is the entry point, save it
+            // TODO
         }
 
         // Compile global initializer too
-        this.EncodeProcedure(assembly.GlobalInitializer, specialName: ".cctor");
+        this.EncodeProcedure(this.assembly.GlobalInitializer, specialName: ".cctor");
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)

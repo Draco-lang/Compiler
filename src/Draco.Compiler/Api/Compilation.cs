@@ -98,12 +98,14 @@ public sealed class Compilation
     /// Emits compiled binary to a <see cref="Stream"/>.
     /// </summary>
     /// <param name="peStream">The stream to write the PE to.</param>
+    /// <param name="pdbStream">The stream to write the PDB to.</param>
     /// <param name="declarationTreeStream">The stream to write the DOT graph of the declaration tree to.</param>
     /// <param name="symbolTreeStream">The stream to write the DOT graph of the symbol tree to.</param>
     /// <param name="dracoIrStream">The stream to write a textual representation of the Draco IR to.</param>
     /// <returns>The result of the emission.</returns>
     public EmitResult Emit(
         Stream peStream,
+        Stream? pdbStream = null,
         Stream? declarationTreeStream = null,
         Stream? symbolTreeStream = null,
         Stream? dracoIrStream = null)
@@ -134,30 +136,26 @@ public sealed class Compilation
 
         // Generate IR
         var assembly = ModuleCodegen.Generate(this.GlobalModule);
-        OptimizationPipeline.Instance.Apply(assembly);
-        Console.WriteLine(assembly);
-        Environment.Exit(0);
-
-        // TODO
-#if false
-        var asm = new Assembly(this.AssemblyName ?? "output");
-        IrCodegen.Generate(asm, (SourceModuleSymbol)this.GlobalModule);
-
         // Optimize the IR
         // TODO: Options for optimization
-        OptimizationPipeline.Instance.Apply(asm);
+        OptimizationPipeline.Instance.Apply(assembly);
 
         // Write the IR, if needed
         if (dracoIrStream is not null)
         {
             var irWriter = new StreamWriter(dracoIrStream);
-            irWriter.Write(asm.ToString());
+            irWriter.Write(assembly.ToString());
             irWriter.Flush();
         }
 
         // Generate CIL
-        CilCodegen.Generate(asm, peStream);
-#endif
+        CilCodegen.Generate(assembly, peStream);
+
+        // Generate PDB, if needed
+        if (pdbStream is not null)
+        {
+            PdbCodegen.Generate(assembly, pdbStream);
+        }
 
         return new(
             Success: true,

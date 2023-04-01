@@ -152,10 +152,7 @@ public sealed class Compilation
         MetadataCodegen.Generate(assembly, peStream);
 
         // Generate PDB, if needed
-        if (pdbStream is not null)
-        {
-            PdbCodegen.Generate(assembly, pdbStream);
-        }
+        if (pdbStream is not null) PdbCodegen.Generate(assembly, pdbStream);
 
         return new(
             Success: true,

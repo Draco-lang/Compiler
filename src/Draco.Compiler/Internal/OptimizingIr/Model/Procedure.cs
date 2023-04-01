@@ -58,6 +58,8 @@ internal sealed class Procedure : IProcedure
         return (BasicBlock)block;
     }
 
+    public bool RemoveBasicBlock(IBasicBlock bb) => this.basicBlocks.Remove(bb.Symbol);
+
     public Local DefineLocal(LocalSymbol symbol)
     {
         if (!this.locals.TryGetValue(symbol, out var result))

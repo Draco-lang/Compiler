@@ -38,6 +38,11 @@ internal interface IBasicBlock : IOperand
     public IEnumerable<IInstruction> Instructions { get; }
 
     /// <summary>
+    /// The number of instructions in this block.
+    /// </summary>
+    public int InstructionCount { get; }
+
+    /// <summary>
     /// All basic blocks that can come after this one.
     /// </summary>
     public IEnumerable<IBasicBlock> Successors { get; }

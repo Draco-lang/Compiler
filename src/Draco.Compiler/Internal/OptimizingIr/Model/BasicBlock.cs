@@ -28,6 +28,7 @@ internal sealed class BasicBlock : IBasicBlock
             for (var instr = this.FirstInstruction; instr is not null; instr = instr.Next) yield return instr;
         }
     }
+    public int InstructionCount { get; private set; }
     public IEnumerable<BasicBlock> Successors => (this.lastInstruction?.IsBranch ?? false)
         ? this.lastInstruction.JumpTargets.Cast<BasicBlock>()
         : throw new InvalidOperationException("the last instruction of the block was not a jump");
@@ -91,6 +92,7 @@ internal sealed class BasicBlock : IBasicBlock
             existingBase.Prev.Next = addedBase;
         }
         existingBase.Prev = addedBase;
+        ++this.InstructionCount;
     }
 
     public void InsertAfter(IInstruction existing, IInstruction added)
@@ -113,6 +115,7 @@ internal sealed class BasicBlock : IBasicBlock
             existingBase.Next.Prev = addedBase;
         }
         existingBase.Next = addedBase;
+        ++this.InstructionCount;
     }
 
     public void InsertFirst(IInstruction added)
@@ -126,6 +129,7 @@ internal sealed class BasicBlock : IBasicBlock
             this.lastInstruction = added;
             addedBase.Prev = null;
             addedBase.Next = null;
+            ++this.InstructionCount;
         }
         else
         {
@@ -158,5 +162,7 @@ internal sealed class BasicBlock : IBasicBlock
 
         if (removedBase.Next is null) this.lastInstruction = removedBase.Prev;
         else removedBase.Next.Prev = removedBase.Prev;
+
+        --this.InstructionCount;
     }
 }

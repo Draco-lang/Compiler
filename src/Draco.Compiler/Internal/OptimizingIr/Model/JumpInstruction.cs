@@ -24,4 +24,6 @@ internal sealed class JumpInstruction : InstructionBase
     {
         this.Target = target;
     }
+
+    public override JumpInstruction Clone() => new(this.Target);
 }

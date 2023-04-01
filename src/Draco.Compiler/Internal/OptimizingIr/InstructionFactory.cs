@@ -20,7 +20,7 @@ internal static class InstructionFactory
     public static BranchInstruction Branch(IOperand condition, BasicBlock then, BasicBlock @else) =>
         new(condition, then, @else);
     public static CallInstruction Call(Register target, IOperand proc, IEnumerable<IOperand> args) =>
-        new(target, proc, args.ToList());
+        new(target, proc, args);
     public static ArithmeticInstruction Arithmetic(Register target, ArithmeticOp op, IOperand left, IOperand right) =>
         new(target, op, left, right);
     public static ArithmeticInstruction Add(Register target, IOperand left, IOperand right) =>

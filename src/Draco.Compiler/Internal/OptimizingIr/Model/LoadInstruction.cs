@@ -31,4 +31,6 @@ internal sealed class LoadInstruction : InstructionBase
 
     public override string ToString() =>
         $"{this.Target.ToOperandString()} := load {this.Source.ToOperandString()}";
+
+    public override LoadInstruction Clone() => new(this.Target, this.Source);
 }

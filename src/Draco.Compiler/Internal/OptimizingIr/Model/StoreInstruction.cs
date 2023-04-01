@@ -28,4 +28,6 @@ internal sealed class StoreInstruction : InstructionBase
         this.Target = target;
         this.Source = source;
     }
+
+    public override StoreInstruction Clone() => new(this.Target, this.Source);
 }

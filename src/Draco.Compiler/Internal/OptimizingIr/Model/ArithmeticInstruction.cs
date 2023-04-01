@@ -55,4 +55,6 @@ internal sealed class ArithmeticInstruction : InstructionBase
         ArithmeticOp.Equal => "=",
         _ => throw new InvalidOperationException(),
     };
+
+    public override ArithmeticInstruction Clone() => new(this.Target, this.Op, this.Left, this.Right);
 }

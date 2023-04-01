@@ -36,4 +36,6 @@ internal sealed class BranchInstruction : InstructionBase
         this.Then = then;
         this.Else = @else;
     }
+
+    public override BranchInstruction Clone() => new(this.Condition, this.Then, this.Else);
 }

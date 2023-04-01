@@ -134,6 +134,7 @@ public sealed class Compilation
 
         // Generate IR
         var assembly = ModuleCodegen.Generate(this.GlobalModule);
+        OptimizationPipeline.Instance.Apply(assembly);
         Console.WriteLine(assembly);
         Environment.Exit(0);
 

@@ -23,4 +23,6 @@ internal sealed class RetInstruction : InstructionBase
     {
         this.Value = value;
     }
+
+    public override RetInstruction Clone() => new(this.Value);
 }

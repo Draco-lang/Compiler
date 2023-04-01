@@ -45,4 +45,6 @@ internal abstract class InstructionBase : IInstruction
         // Done
         return result.ToString();
     }
+
+    public abstract IInstruction Clone();
 }

@@ -29,13 +29,15 @@ internal sealed class CallInstruction : InstructionBase
     /// </summary>
     public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
 
-    public CallInstruction(Register target, IOperand procedure, IList<IOperand> arguments)
+    public CallInstruction(Register target, IOperand procedure, IEnumerable<IOperand> arguments)
     {
         this.Target = target;
         this.Procedure = procedure;
-        this.Arguments = arguments;
+        this.Arguments = arguments.ToList();
     }
 
     public override string ToString() =>
         $"{this.Target.ToOperandString()} := call {this.Procedure.ToOperandString()}({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
+
+    public override CallInstruction Clone() => new(this.Target, this.Procedure, this.Arguments);
 }

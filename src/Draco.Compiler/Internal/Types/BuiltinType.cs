@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Draco.Compiler.Internal.Types;
 
 /// <summary>
@@ -15,10 +17,16 @@ internal sealed class BuiltinType : Type
     /// </summary>
     public string Name { get; }
 
-    public BuiltinType(System.Type underylingType, string name)
+    /// <summary>
+    /// Base types of this builtin type.
+    /// </summary>
+    public IEnumerable<BuiltinType> Bases { get; }
+
+    public BuiltinType(System.Type underylingType, string name, params BuiltinType[] bases)
     {
         this.UnderylingType = underylingType;
         this.Name = name;
+        this.Bases = bases;
     }
 
     public BuiltinType(System.Type underylingType)

@@ -103,9 +103,9 @@ internal partial class UntypedLiteralExpression
 {
     public override Type Type => this.Value switch
     {
-        int => IntrinsicTypes.Int32,
+        int => IntrinsicTypes.IntegralType,
         bool => IntrinsicTypes.Bool,
-        double => IntrinsicTypes.Float64,
+        double => IntrinsicTypes.FloatingPointType,
         _ => throw new System.InvalidOperationException(),
     };
 }

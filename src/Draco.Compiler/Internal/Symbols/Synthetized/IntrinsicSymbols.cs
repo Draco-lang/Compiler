@@ -17,7 +17,17 @@ internal static class IntrinsicSymbols
         _ => throw new System.ArgumentOutOfRangeException(nameof(type)),
     };
 
+    public static Symbol Int8 { get; } = Type(IntrinsicTypes.Int8);
+    public static Symbol Int16 { get; } = Type(IntrinsicTypes.Int16);
     public static Symbol Int32 { get; } = Type(IntrinsicTypes.Int32);
+    public static Symbol Int64 { get; } = Type(IntrinsicTypes.Int64);
+
+    public static Symbol Uint8 { get; } = Type(IntrinsicTypes.Uint8);
+    public static Symbol Uint16 { get; } = Type(IntrinsicTypes.Uint16);
+    public static Symbol Uint32 { get; } = Type(IntrinsicTypes.Uint32);
+    public static Symbol Uint64 { get; } = Type(IntrinsicTypes.Uint64);
+
+    public static Symbol Float32 { get; } = Type(IntrinsicTypes.Float32);
     public static Symbol Float64 { get; } = Type(IntrinsicTypes.Float64);
     public static Symbol String { get; } = Type(IntrinsicTypes.String);
     public static Symbol Bool { get; } = Type(IntrinsicTypes.Bool);

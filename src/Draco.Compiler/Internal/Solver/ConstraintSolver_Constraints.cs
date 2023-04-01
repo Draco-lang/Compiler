@@ -1,3 +1,4 @@
+using System.Linq;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Error;
@@ -11,6 +12,7 @@ internal sealed partial class ConstraintSolver
     {
         SameTypeConstraint c => this.Solve(diagnostics, c),
         OverloadConstraint c => this.Solve(diagnostics, c),
+        CommonBaseConstraint c => this.Solve(diagnostics, c),
         _ => throw new System.ArgumentOutOfRangeException(nameof(constraint)),
     };
 
@@ -67,6 +69,25 @@ internal sealed partial class ConstraintSolver
         }
         // Depends if we removed anything
         return advanced ? SolveState.Progressing : SolveState.Stale;
+    }
+
+    private SolveState Solve(DiagnosticBag diagnostics, CommonBaseConstraint constraint)
+    {
+        // No base type or multiple base types in the constraint
+        var types = constraint.Types.Select(x => (BuiltinType)x);
+        var baseType = types.FirstOrDefault(x => x.Name == "integral" || x.Name == "floatingpoint") ?? throw new System.NotImplementedException();
+        foreach (var type in types)
+        {
+            if (type.Name != baseType.Name && !type.Bases.Select(x => x.Name).Contains(baseType.Name))
+            {
+                var diagnostic = constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(this.Unwrap(baseType), this.Unwrap(type))
+                .Build();
+                diagnostics.Add(diagnostic);
+            }
+        }
+        return SolveState.Finished;
     }
 
     private void FailSilently(Constraint constraint)

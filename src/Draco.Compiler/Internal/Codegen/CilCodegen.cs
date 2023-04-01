@@ -40,7 +40,7 @@ internal sealed class CilCodegen
     }
 
     private FieldDefinitionHandle GetGlobalDefinitionHandle(Global global) => this.metadataCodegen.GetGlobalDefinitionHandle(global);
-    private StandaloneSignatureHandle GetProcedureSignatureHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureSignatureHandle(procedure);
+    private MethodDefinitionHandle GetProcedureDefinitionHandle(IProcedure procedure) => throw new NotImplementedException();
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
 
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
@@ -164,7 +164,7 @@ internal sealed class CilCodegen
                 // Arguments
                 foreach (var arg in call.Arguments) this.EncodePush(arg);
                 // Called procedure
-                var handle = this.GetProcedureSignatureHandle(proc);
+                var handle = this.GetProcedureDefinitionHandle(proc);
                 this.encoder.Call(handle);
             }
             else

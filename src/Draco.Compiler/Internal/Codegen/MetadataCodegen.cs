@@ -32,6 +32,7 @@ internal sealed class MetadataCodegen
     private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
     private readonly Dictionary<IProcedure, CompiledMethod> procedureInfo = new();
     private int parameterIndexCounter = 1;
+    private MethodDefinitionHandle entryPointHandle;
 
     public FieldDefinitionHandle GetGlobalDefinitionHandle(Global global)
     {
@@ -74,7 +75,26 @@ internal sealed class MetadataCodegen
         return info;
     }
 
-    private void EncodeProcedure(IProcedure procedure, string? specialName = null)
+    private void EncodeAssembly(IAssembly assembly)
+    {
+        // Go through globals
+        foreach (var global in assembly.Globals.Values) this.GetGlobalDefinitionHandle(global);
+
+        // Go through procedures
+        foreach (var procedure in assembly.Procedures.Values)
+        {
+            // Global initializer will get special treatment
+            if (ReferenceEquals(assembly.GlobalInitializer, procedure)) continue;
+
+            // Encode the procedure
+            this.EncodeProcedure(procedure, procedure.Name);
+        }
+
+        // Compile global initializer too
+        this.EncodeProcedure(assembly.GlobalInitializer, specialName: ".cctor");
+    }
+
+    private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
         // Encode body
         this.ilBuilder.Align(4);
@@ -97,6 +117,8 @@ internal sealed class MetadataCodegen
             signature: info.SignatureBlobHandle,
             bodyOffset: methodBodyOffset,
             parameterList: MetadataTokens.ParameterHandle(info.ParameterIndex));
+
+        return definitionHandle;
     }
 
     private int EncodeProcedureSignature(MethodSignatureEncoder encoder, IProcedure procedure)

@@ -20,6 +20,7 @@ internal sealed class Procedure : IProcedure
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
     public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters => this.parameters;
+    public Type ReturnType => this.Symbol.ReturnType;
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks => this.basicBlocks;
     public IReadOnlyDictionary<LocalSymbol, Local> Locals => this.locals;
 
@@ -74,7 +75,7 @@ internal sealed class Procedure : IProcedure
         var result = new StringBuilder();
         result.Append($"proc {this.ToOperandString()}(");
         result.AppendJoin(", ", this.Parameters.Values);
-        result.AppendLine("):");
+        result.AppendLine($") {this.ReturnType}:");
         if (this.Locals.Count > 0)
         {
             result.AppendLine("locals:");

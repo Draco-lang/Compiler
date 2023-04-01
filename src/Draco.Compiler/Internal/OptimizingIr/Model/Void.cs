@@ -11,6 +11,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal readonly record struct Void : IOperand
 {
-    public override string ToString() => "void";
-    public string ToOperandString() => this.ToString();
+    public override string ToString() => this.ToOperandString();
+    public string ToOperandString() => "unit";
 }

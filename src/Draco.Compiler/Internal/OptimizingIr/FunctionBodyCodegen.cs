@@ -4,6 +4,7 @@ using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 using Draco.Compiler.Internal.Types;
+using System.Linq;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
@@ -36,6 +37,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
+    private Procedure DefineProcedure(FunctionSymbol function) => this.procedure.Assembly.DefineProcedure(function);
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     private Global DefineGlobal(GlobalSymbol global) => this.procedure.Assembly.DefineGlobal(global);
@@ -86,6 +88,16 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
 
     // Expressions /////////////////////////////////////////////////////////////
+
+    public override IOperand VisitCallExpression(BoundCallExpression node)
+    {
+        var func = this.Compile(node.Method);
+        var args = node.Arguments.Select(this.Compile).ToList();
+
+        var result = this.DefineRegister();
+        this.Write(Call(result, func, args));
+        return result;
+    }
 
     public override IOperand VisitGotoExpression(BoundGotoExpression node)
     {
@@ -251,6 +263,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.Write(Load(result, local));
         return result;
     }
+
+    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) =>
+        this.DefineProcedure(node.Function);
 
     // NOTE: Parameters don't need loading, they are read-only values by default
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>

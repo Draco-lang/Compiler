@@ -17,13 +17,31 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class CilCodegen
 {
+    public static InstructionEncoder GenerateProcedureBody(MetadataCodegen metadataCodegen, IProcedure procedure)
+    {
+        var cilCodegen = new CilCodegen(metadataCodegen, procedure);
+        cilCodegen.EncodeProcedure();
+        return cilCodegen.encoder;
+    }
+
+    private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
     private readonly InstructionEncoder encoder;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
 
-    private EntityHandle GetGlobalHandle(Global global) => throw new NotImplementedException();
-    private EntityHandle GetProcedureHandle(IProcedure procedure) => throw new NotImplementedException();
-    private UserStringHandle GetStringLiteralHandle(string text) => throw new NotImplementedException();
+    private CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
+    {
+        this.metadataCodegen = metadataCodegen;
+        this.procedure = procedure;
+
+        var codeBuilder = new BlobBuilder();
+        var controlFlowBuilder = new ControlFlowBuilder();
+        this.encoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
+    }
+
+    private EntityHandle GetGlobalHandle(Global global) => this.metadataCodegen.GetGlobalHandle(global);
+    private EntityHandle GetProcedureHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureHandle(procedure);
+    private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
 
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
     private int GetLocalIndex(Local local) => local.Index;

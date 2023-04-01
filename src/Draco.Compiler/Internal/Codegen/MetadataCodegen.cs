@@ -32,7 +32,9 @@ internal sealed class MetadataCodegen
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
     private readonly Dictionary<IProcedure, CompiledMethod> procedureInfo = new();
+    private BlobHandle microsoftPublicKeyToken;
     private int parameterIndexCounter = 1;
+    private TypeDefinitionHandle freeFunctionsTypeHandle;
     private MethodDefinitionHandle entryPointHandle;
 
     public FieldDefinitionHandle GetGlobalDefinitionHandle(Global global)
@@ -67,9 +69,9 @@ internal sealed class MetadataCodegen
             var parameterIndex = this.EncodeProcedureSignature(signatureEncoder, procedure);
             var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
             var memberReference = this.metadataBuilder.AddMemberReference(
-                parent: TODO,
+                parent: this.freeFunctionsTypeHandle,
                 name: this.metadataBuilder.GetOrAddString(procedure.Name),
-                signatureHandle: signatureHandle);
+                signature: signatureHandle);
             info = new(
                 SignatureBlobHandle: signatureHandle,
                 MemberReferenceHandle: memberReference,
@@ -81,6 +83,60 @@ internal sealed class MetadataCodegen
 
     private void EncodeAssembly(IAssembly assembly)
     {
+        // Create the module and assembly
+        var moduleName = Path.ChangeExtension(this.assembly.Name, ".dll");
+        this.metadataBuilder.AddModule(
+            generation: 0,
+            moduleName: this.metadataBuilder.GetOrAddString(moduleName),
+            // TODO: Proper module-version ID
+            mvid: this.metadataBuilder.GetOrAddGuid(System.Guid.NewGuid()),
+            // TODO: What are these? Encryption?
+            encId: default,
+            encBaseId: default);
+        this.metadataBuilder.AddAssembly(
+            name: this.metadataBuilder.GetOrAddString(this.assembly.Name),
+            // TODO: Proper versioning
+            version: new System.Version(1, 0, 0, 0),
+            culture: default,
+            publicKey: default,
+            flags: default,
+            hashAlgorithm: AssemblyHashAlgorithm.None);
+
+        // Create type definition for the special <Module> type that holds global functions
+        // Note, that we don't use that for our free-functions
+        this.metadataBuilder.AddTypeDefinition(
+            attributes: default,
+            @namespace: default,
+            name: this.metadataBuilder.GetOrAddString("<Module>"),
+            baseType: default,
+            fieldList: MetadataTokens.FieldDefinitionHandle(1),
+            methodList: MetadataTokens.MethodDefinitionHandle(1));
+
+        // Reference System.Object from System.Runtime
+        var systemRuntimeRef = this.metadataBuilder.AddAssemblyReference(
+            name: this.metadataBuilder.GetOrAddString("System.Runtime"),
+            version: new System.Version(7, 0, 0, 0),
+            culture: default,
+            publicKeyOrToken: this.microsoftPublicKeyToken,
+            flags: default,
+            hashValue: default);
+        var systemObjectTypeRef = this.metadataBuilder.AddTypeReference(
+           resolutionScope: systemRuntimeRef,
+           @namespace: this.metadataBuilder.GetOrAddString("System"),
+           name: this.metadataBuilder.GetOrAddString("Object"));
+
+        // Create the free-functions type
+        this.freeFunctionsTypeHandle = this.metadataBuilder.AddTypeDefinition(
+            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
+            @namespace: default,
+            name: this.metadataBuilder.GetOrAddString("FreeFunctions"),
+            baseType: systemObjectTypeRef,
+            // TODO: Again, this should be read up from an index
+            fieldList: MetadataTokens.FieldDefinitionHandle(1),
+            // TODO: This depends on the order of types
+            // we likely want to read this up from an index
+            methodList: MetadataTokens.MethodDefinitionHandle(1));
+
         // Go through globals
         foreach (var global in assembly.Globals.Values) this.GetGlobalDefinitionHandle(global);
 

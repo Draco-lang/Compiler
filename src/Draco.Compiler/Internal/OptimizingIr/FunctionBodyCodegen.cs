@@ -39,6 +39,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     private Global DefineGlobal(GlobalSymbol global) => this.procedure.Assembly.DefineGlobal(global);
+    private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
     private Register DefineRegister() => this.procedure.DefineRegister();
 
     // Statements //////////////////////////////////////////////////////////////
@@ -251,13 +252,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitParameterExpression(BoundParameterExpression node)
-    {
-        var result = this.DefineRegister();
-        var param = this.DefineLocal(node.Parameter);
-        this.Write(Load(result, param));
-        return result;
-    }
+    // NOTE: Parameters don't need loading, they are read-only values by default
+    public override IOperand VisitParameterExpression(BoundParameterExpression node) =>
+        this.DefineParameter(node.Parameter);
 
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);

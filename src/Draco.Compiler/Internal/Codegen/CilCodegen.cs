@@ -39,8 +39,8 @@ internal sealed class CilCodegen
         this.encoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
     }
 
-    private EntityHandle GetGlobalHandle(Global global) => this.metadataCodegen.GetGlobalHandle(global);
-    private EntityHandle GetProcedureHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureHandle(procedure);
+    private FieldDefinitionHandle GetGlobalHandle(Global global) => this.metadataCodegen.GetGlobalHandle(global);
+    private StandaloneSignatureHandle GetProcedureHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
 
     private int GetParameterIndex(Parameter parameter) => parameter.Index;

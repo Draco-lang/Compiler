@@ -22,11 +22,44 @@ internal sealed class MetadataCodegen
     public static void Generate(Assembly assembly, Stream peStream) =>
         throw new System.NotImplementedException();
 
-    private readonly MetadataBuilder metadataBuilder;
+    private readonly MetadataBuilder metadataBuilder = new();
+    private readonly Dictionary<Global, FieldDefinitionHandle> globalHandles = new();
+    private readonly Dictionary<IProcedure, StandaloneSignatureHandle> procedureHandles = new();
 
-    public EntityHandle GetGlobalHandle(Global global) => throw new System.NotImplementedException();
-    public EntityHandle GetProcedureHandle(IProcedure procedure) => throw new System.NotImplementedException();
-    public UserStringHandle GetStringLiteralHandle(string text) => throw new System.NotImplementedException();
+    public FieldDefinitionHandle GetGlobalHandle(Global global)
+    {
+        if (!this.globalHandles.TryGetValue(global, out var handle))
+        {
+            var signature = new BlobBuilder();
+            var typeEncoder = new BlobEncoder(signature)
+                .Field()
+                .Type();
+            EncodeSignatureType(typeEncoder, global.Type);
+            handle = this.metadataBuilder.AddFieldDefinition(
+                attributes: FieldAttributes.Public | FieldAttributes.Static,
+                name: this.metadataBuilder.GetOrAddString(global.Name),
+                signature: this.metadataBuilder.GetOrAddBlob(signature));
+            this.globalHandles.Add(global, handle);
+        }
+        return handle;
+    }
+
+    public StandaloneSignatureHandle GetProcedureHandle(IProcedure procedure)
+    {
+        if (!this.procedureHandles.TryGetValue(procedure, out var handle))
+        {
+            var signature = new BlobBuilder();
+            var signatureEncoder = new BlobEncoder(signature).MethodSignature();
+            this.EncodeProcedureSignature(signatureEncoder, procedure);
+            var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
+            // NOTE: Old code saved something here
+            var methodSignature = this.metadataBuilder.AddStandaloneSignature(signatureHandle);
+            this.procedureHandles.Add(procedure, methodSignature);
+        }
+        return handle;
+    }
+
+    public UserStringHandle GetStringLiteralHandle(string text) => this.metadataBuilder.GetOrAddUserString(text);
 
     private void EncodeProcedureSignature(MethodSignatureEncoder encoder, IProcedure procedure)
     {

@@ -36,4 +36,9 @@ internal interface IAssembly
     /// The compiled procedures within this assembly.
     /// </summary>
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }
+
+    /// <summary>
+    /// The entry point of this assembly.
+    /// </summary>
+    public IProcedure? EntryPoint { get; }
 }

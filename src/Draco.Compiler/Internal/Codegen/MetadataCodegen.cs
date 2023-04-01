@@ -147,10 +147,10 @@ internal sealed class MetadataCodegen
             if (ReferenceEquals(this.assembly.GlobalInitializer, procedure)) continue;
 
             // Encode the procedure
-            this.EncodeProcedure(procedure, procedure.Name);
+            var handle = this.EncodeProcedure(procedure, procedure.Name);
 
             // If this is the entry point, save it
-            // TODO
+            if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.entryPointHandle = handle;
         }
 
         // Compile global initializer too

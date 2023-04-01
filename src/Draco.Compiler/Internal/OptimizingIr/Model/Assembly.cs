@@ -21,9 +21,28 @@ internal sealed class Assembly : IAssembly
     public Procedure GlobalInitializer { get; }
     IProcedure IAssembly.GlobalInitializer => this.GlobalInitializer;
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
+    public Procedure? EntryPoint
+    {
+        get => this.entryPoint;
+        set
+        {
+            if (value is null)
+            {
+                this.entryPoint = null;
+                return;
+            }
+            if (!ReferenceEquals(this, value.Assembly))
+            {
+                throw new System.InvalidOperationException("entry point must be part of the assembly");
+            }
+            this.entryPoint = value;
+        }
+    }
+    IProcedure? IAssembly.EntryPoint => this.EntryPoint;
 
     private readonly Dictionary<GlobalSymbol, Global> globals = new();
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
+    private Procedure? entryPoint;
 
     public Assembly(ModuleSymbol symbol)
     {

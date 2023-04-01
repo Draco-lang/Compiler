@@ -37,6 +37,11 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // Complete anything that needs completion
         // The global initializer for example is missing a return
         this.globalInitializer.Write(Ret(default(Void)));
+
+        // We can also set the entry point, in case we have one
+        var mainProcedure = (Procedure?)this.assembly.Procedures.Values
+            .FirstOrDefault(p => p.Name == "main");
+        this.assembly.EntryPoint = mainProcedure;
     }
 
     public override void VisitGlobal(GlobalSymbol globalSymbol)

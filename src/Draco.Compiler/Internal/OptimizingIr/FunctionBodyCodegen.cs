@@ -264,6 +264,14 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
+    public override IOperand VisitStringExpression(BoundStringExpression node)
+    {
+        if (node.Parts.Length == 0) return new Constant(string.Empty);
+        else if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText text) return new Constant(text.Text);
+        // TODO: Should have been desugared
+        else throw new System.NotImplementedException();
+    }
+
     // TODO: Intrinsics
     public override IOperand VisitFunctionExpression(BoundFunctionExpression node) =>
         this.DefineProcedure(node.Function);

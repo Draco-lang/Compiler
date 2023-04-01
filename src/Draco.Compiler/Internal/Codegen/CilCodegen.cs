@@ -186,6 +186,8 @@ internal sealed class CilCodegen
                 var stringHandle = this.GetStringLiteralHandle(s);
                 this.encoder.LoadString(stringHandle);
                 break;
+            default:
+                throw new NotImplementedException();
             }
             break;
         default:

@@ -124,6 +124,20 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return toStore;
     }
 
+    public override IOperand VisitUnaryExpression(BoundUnaryExpression node)
+    {
+        var sub = node.Operand.Accept(this);
+        var target = this.DefineRegister();
+
+        if (IsNot(node.Operator)) this.Write(Equal(target, sub, new Constant(false)));
+        else if (IsPlus(node.Operator)) { /* no-op */ }
+        else if (IsMinus(node.Operator)) this.Write(Mul(target, sub, new Constant(-1)));
+        // TODO
+        else throw new System.NotImplementedException();
+
+        return target;
+    }
+
     public override IOperand VisitBinaryExpression(BoundBinaryExpression node)
     {
         var left = this.Compile(node.Left);
@@ -253,6 +267,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private static bool IsGreaterEqual(Symbol op) => op == IntrinsicSymbols.Int32_GreaterEqual
                                                   || op == IntrinsicSymbols.Float64_GreaterEqual;
 
+    private static bool IsNot(Symbol op) => op == IntrinsicSymbols.Bool_Not;
     private static bool IsPlus(Symbol op) => op == IntrinsicSymbols.Int32_Plus
                                           || op == IntrinsicSymbols.Float64_Plus;
     private static bool IsMinus(Symbol op) => op == IntrinsicSymbols.Int32_Minus

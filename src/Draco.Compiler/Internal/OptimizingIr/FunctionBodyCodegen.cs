@@ -264,6 +264,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
+    // TODO: Intrinsics
     public override IOperand VisitFunctionExpression(BoundFunctionExpression node) =>
         this.DefineProcedure(node.Function);
 

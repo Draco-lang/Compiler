@@ -63,7 +63,7 @@ internal interface IProcedure : IOperand
     public IEnumerable<Local> LocalsInDefinitionOrder { get; }
 
     /// <summary>
-    /// The number of registers this procedure uses.
+    /// The registers in this procedure.
     /// </summary>
-    public int RegisterCount { get; }
+    public IReadOnlyList<Register> Registers { get; }
 }

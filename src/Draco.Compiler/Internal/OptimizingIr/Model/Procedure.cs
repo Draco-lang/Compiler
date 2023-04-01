@@ -23,16 +23,17 @@ internal sealed class Procedure : IProcedure
     public IEnumerable<Parameter> ParametersInDefinitionOrder => this.parameters.Values.OrderBy(p => p.Index);
     public Type ReturnType => this.Symbol.ReturnType;
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks => this.basicBlocks;
-    public IEnumerable<BasicBlock> BasicBlocksInDefinitionOrder => this.basicBlocks.Values
+    public IEnumerable<IBasicBlock> BasicBlocksInDefinitionOrder => this.basicBlocks.Values
         .Cast<BasicBlock>()
         .OrderBy(bb => bb.Index);
     public IReadOnlyDictionary<LocalSymbol, Local> Locals => this.locals;
     public IEnumerable<Local> LocalsInDefinitionOrder => this.locals.Values.OrderBy(l => l.Index);
-    public int RegisterCount => this.registerIndex;
+    public IReadOnlyList<Register> Registers => this.registers;
 
     private readonly Dictionary<ParameterSymbol, Parameter> parameters = new();
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = new();
     private readonly Dictionary<LocalSymbol, Local> locals = new();
+    private readonly List<Register> registers = new();
     private int basicBlockIndex = 0;
     private int localIndex = 0;
     private int registerIndex = 0;
@@ -76,7 +77,12 @@ internal sealed class Procedure : IProcedure
         return result;
     }
 
-    public Register DefineRegister() => new(this.registerIndex++);
+    public Register DefineRegister(Type type)
+    {
+        var result = new Register(type, this.registerIndex++);
+        this.registers.Add(result);
+        return result;
+    }
 
     public override string ToString()
     {

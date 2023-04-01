@@ -42,7 +42,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     private Global DefineGlobal(GlobalSymbol global) => this.procedure.Assembly.DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
-    private Register DefineRegister() => this.procedure.DefineRegister();
+    private Register DefineRegister(Type type) => this.procedure.DefineRegister(type);
 
     // Statements //////////////////////////////////////////////////////////////
 
@@ -94,7 +94,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var func = this.Compile(node.Method);
         var args = node.Arguments.Select(this.Compile).ToList();
 
-        var result = this.DefineRegister();
+        var result = this.DefineRegister(node.TypeRequired);
         this.Write(Call(result, func, args));
         return result;
     }
@@ -124,8 +124,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
         if (node.CompoundOperator is not null)
         {
-            var leftValue = this.DefineRegister();
-            var tmp = this.DefineRegister();
+            var leftValue = this.DefineRegister(node.Left.Type);
+            var tmp = this.DefineRegister(node.TypeRequired);
             toStore = tmp;
             this.Write(Load(leftValue, left));
             if (IsAdd(node.CompoundOperator)) this.Write(Add(tmp, leftValue, right));
@@ -142,7 +142,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitUnaryExpression(BoundUnaryExpression node)
     {
         var sub = node.Operand.Accept(this);
-        var target = this.DefineRegister();
+        var target = this.DefineRegister(node.TypeRequired);
 
         if (IsNot(node.Operator)) this.Write(Equal(target, sub, new Constant(false)));
         else if (IsPlus(node.Operator)) { /* no-op */ }
@@ -157,7 +157,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         var left = this.Compile(node.Left);
         var right = this.Compile(node.Right);
-        var target = this.DefineRegister();
+        var target = this.DefineRegister(node.TypeRequired);
 
         if (IsAdd(node.Operator))
         {
@@ -184,8 +184,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // a mod b
             //  <=>
             // (a rem b + b) rem b
-            var tmp1 = this.DefineRegister();
-            var tmp2 = this.DefineRegister();
+            var tmp1 = this.DefineRegister(node.TypeRequired);
+            var tmp2 = this.DefineRegister(node.TypeRequired);
             this.Write(Rem(tmp1, left, right));
             this.Write(Add(tmp2, tmp1, right));
             this.Write(Add(target, tmp1, right));
@@ -206,7 +206,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // a <= b
             //  <=>
             // (b < a) == false
-            var tmp = this.DefineRegister();
+            var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Less(tmp, right, left));
             this.Write(Equal(target, tmp, new Constant(false)));
         }
@@ -215,7 +215,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // a >= b
             //  <=>
             // (a < b) == false
-            var tmp = this.DefineRegister();
+            var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Less(tmp, left, right));
             this.Write(Equal(target, tmp, new Constant(false)));
         }
@@ -228,7 +228,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // a != b
             //  <=>
             // (a == b) == false
-            var tmp = this.DefineRegister();
+            var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Equal(tmp, left, right));
             this.Write(Equal(target, tmp, new Constant(false)));
         }
@@ -250,7 +250,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitGlobalExpression(BoundGlobalExpression node)
     {
-        var result = this.DefineRegister();
+        var result = this.DefineRegister(node.TypeRequired);
         var global = this.DefineGlobal(node.Global);
         this.Write(Load(result, global));
         return result;
@@ -258,7 +258,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitLocalExpression(BoundLocalExpression node)
     {
-        var result = this.DefineRegister();
+        var result = this.DefineRegister(node.TypeRequired);
         var local = this.DefineLocal(node.Local);
         this.Write(Load(result, local));
         return result;

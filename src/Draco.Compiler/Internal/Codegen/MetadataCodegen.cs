@@ -56,9 +56,10 @@ internal sealed class MetadataCodegen
         // TODO: This is where the stackification optimization step could help to reduce local allocation
 
         // Encode locals, which includes non-stackified registers
+        var localsCount = procedure.Locals.Count + procedure.Registers.Count;
         var localsBuilder = new BlobBuilder();
         var localsEncoder = new BlobEncoder(localsBuilder)
-            .LocalVariableSignature(procedure.Locals.Count + procedure.Registers.Count);
+            .LocalVariableSignature(localsCount);
         // Actual locals first
         foreach (var local in procedure.LocalsInDefinitionOrder)
         {
@@ -76,8 +77,24 @@ internal sealed class MetadataCodegen
             EncodeSignatureType(typeEncoder, register.Type);
         }
 
-        // TODO
-        throw new System.NotImplementedException();
+        // Only add the locals if there are more than 0
+        var localsHandle = default(StandaloneSignatureHandle);
+        if (localsCount > 0)
+        {
+            localsHandle = this.metadataBuilder.AddStandaloneSignature(this.metadataBuilder.GetOrAddBlob(localsBuilder));
+        }
+
+        // We actually need to encode the procedure body now
+        var cilEncoder = CilCodegen.GenerateProcedureBody(this, procedure);
+
+        // Actually encode the entire method body
+        var methodBodyOffset = encoder.AddMethodBody(
+            instructionEncoder: cilEncoder,
+            // Since we don't do stackification yet, 8 is fine
+            maxStack: 8,
+            localVariablesSignature: localsHandle,
+            attributes: MethodBodyAttributes.None,
+            hasDynamicStackAllocation: false);
     }
 
     private static void EncodeReturnType(ReturnTypeEncoder encoder, Type type)

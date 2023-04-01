@@ -22,13 +22,11 @@ internal sealed class CilCodegen
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
 
     private EntityHandle GetGlobalHandle(Global global) => throw new NotImplementedException();
-
     private EntityHandle GetProcedureHandle(IProcedure procedure) => throw new NotImplementedException();
+    private UserStringHandle GetStringLiteralHandle(string text) => throw new NotImplementedException();
 
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
-
     private int GetLocalIndex(Local local) => local.Index;
-
     private int GetRegisterIndex(Register register) =>
         this.procedure.Locals.Count + register.Index;
 
@@ -185,10 +183,8 @@ internal sealed class CilCodegen
                 this.encoder.LoadConstantI4(b ? 1 : 0);
                 break;
             case string s:
-                // TODO: We need metadata builder...
-                throw new NotImplementedException();
-                // var stringHandle = this.metadataBuilder.GetOrAddUserString(s);
-                // this.encoder.LoadString(stringHandle);
+                var stringHandle = this.GetStringLiteralHandle(s);
+                this.encoder.LoadString(stringHandle);
                 break;
             }
             break;

@@ -13,6 +13,11 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class PdbCodegen
 {
+    /// <summary>
+    /// GUID for identifying a Draco document.
+    /// </summary>
+    public static readonly Guid DracoLanguageGuid = new("7ef7b804-0709-43bc-b1b5-998bb801477b");
+
     // TODO: Doc
     public static void Generate(Assembly assembly, Stream pdbStream) =>
         throw new NotImplementedException();

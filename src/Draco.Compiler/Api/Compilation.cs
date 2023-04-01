@@ -149,7 +149,7 @@ public sealed class Compilation
         }
 
         // Generate CIL
-        CilCodegen.Generate(assembly, peStream);
+        MetadataCodegen.Generate(assembly, peStream);
 
         // Generate PDB, if needed
         if (pdbStream is not null)

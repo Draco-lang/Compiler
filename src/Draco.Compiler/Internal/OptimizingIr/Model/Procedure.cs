@@ -20,9 +20,15 @@ internal sealed class Procedure : IProcedure
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
     public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters => this.parameters;
+    public IEnumerable<Parameter> ParametersInDefinitionOrder => this.parameters.Values.OrderBy(p => p.Index);
     public Type ReturnType => this.Symbol.ReturnType;
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks => this.basicBlocks;
+    public IEnumerable<BasicBlock> BasicBlocksInDefinitionOrder => this.basicBlocks.Values
+        .Cast<BasicBlock>()
+        .OrderBy(bb => bb.Index);
     public IReadOnlyDictionary<LocalSymbol, Local> Locals => this.locals;
+    public IEnumerable<Local> LocalsInDefinitionOrder => this.locals.Values.OrderBy(l => l.Index);
+    public int RegisterCount => this.registerIndex;
 
     private readonly Dictionary<ParameterSymbol, Parameter> parameters = new();
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = new();
@@ -42,7 +48,7 @@ internal sealed class Procedure : IProcedure
     {
         if (!this.parameters.TryGetValue(symbol, out var param))
         {
-            param = new Parameter(symbol);
+            param = new Parameter(symbol, this.parameters.Count);
             this.parameters.Add(symbol, param);
         }
         return param;
@@ -76,17 +82,14 @@ internal sealed class Procedure : IProcedure
     {
         var result = new StringBuilder();
         result.Append($"proc {this.ToOperandString()}(");
-        result.AppendJoin(", ", this.Parameters.Values);
+        result.AppendJoin(", ", this.ParametersInDefinitionOrder);
         result.AppendLine($") {this.ReturnType}:");
         if (this.Locals.Count > 0)
         {
             result.AppendLine("locals:");
-            foreach (var local in this.locals.Values) result.AppendLine($"  {local}");
+            foreach (var local in this.LocalsInDefinitionOrder) result.AppendLine($"  {local}");
         }
-        var blocksInOrder = this.BasicBlocks.Values
-            .Cast<BasicBlock>()
-            .OrderBy(bb => bb.Index);
-        result.AppendJoin(System.Environment.NewLine, blocksInOrder);
+        result.AppendJoin(System.Environment.NewLine, this.BasicBlocksInDefinitionOrder);
         return result.ToString();
     }
 

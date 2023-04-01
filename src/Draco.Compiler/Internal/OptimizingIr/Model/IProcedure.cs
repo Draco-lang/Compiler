@@ -33,6 +33,11 @@ internal interface IProcedure : IOperand
     public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters { get; }
 
     /// <summary>
+    /// The parameters in the order they were defined.
+    /// </summary>
+    public IEnumerable<Parameter> ParametersInDefinitionOrder { get; }
+
+    /// <summary>
     /// The return type of this procedure.
     /// </summary>
     public Type ReturnType { get; }
@@ -43,7 +48,22 @@ internal interface IProcedure : IOperand
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks { get; }
 
     /// <summary>
+    /// The basic blocks in the order they were defined.
+    /// </summary>
+    public IEnumerable<IBasicBlock> BasicBlocksInDefinitionOrder { get; }
+
+    /// <summary>
     /// The locals defined within this procedure.
     /// </summary>
     public IReadOnlyDictionary<LocalSymbol, Local> Locals { get; }
+
+    /// <summary>
+    /// The locals in the order they were defined.
+    /// </summary>
+    public IEnumerable<Local> LocalsInDefinitionOrder { get; }
+
+    /// <summary>
+    /// The number of registers this procedure uses.
+    /// </summary>
+    public int RegisterCount { get; }
 }

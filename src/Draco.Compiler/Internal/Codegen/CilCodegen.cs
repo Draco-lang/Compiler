@@ -17,6 +17,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class CilCodegen
 {
+    // TODO: Doc
     public static void Generate(Assembly assembly, Stream peStream) =>
         throw new NotImplementedException();
 }

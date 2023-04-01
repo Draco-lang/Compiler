@@ -13,6 +13,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class PdbCodegen
 {
+    // TODO: Doc
     public static void Generate(Assembly assembly, Stream pdbStream) =>
         throw new NotImplementedException();
 }

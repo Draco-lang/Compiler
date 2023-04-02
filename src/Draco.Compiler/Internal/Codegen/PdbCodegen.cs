@@ -35,6 +35,20 @@ internal sealed class PdbCodegen
         this.assembly = assembly;
     }
 
+    private SequencePoint MakeSequencePoint(InstructionEncoder encoder, SyntaxNode? syntax)
+    {
+        if (syntax is null) return SequencePoint.Hidden(default, encoder.Offset);
+        var document = this.GetOrAddDocument(syntax);
+        var range = syntax.Range;
+        return new(
+            Document: document,
+            IlOffset: encoder.Offset,
+            StartLine: range.Start.Line,
+            StartColumn: range.Start.Column,
+            EndLine: range.End.Line,
+            EndColumn: range.End.Column);
+    }
+
     private DocumentHandle GetOrAddDocument(SyntaxNode? syntax) => this.GetOrAddDocument(syntax?.Tree.SourceText);
 
     private DocumentHandle GetOrAddDocument(SourceText? sourceText)

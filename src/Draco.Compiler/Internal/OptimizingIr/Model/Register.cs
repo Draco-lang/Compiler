@@ -15,4 +15,7 @@ internal readonly record struct Register(Type Type, int Index) : IOperand
 {
     public override string ToString() => this.ToOperandString();
     public string ToOperandString() => $"r{this.Index}";
+
+    public bool Equals(Register other) => this.Index == other.Index;
+    public override int GetHashCode() => this.Index.GetHashCode();
 }

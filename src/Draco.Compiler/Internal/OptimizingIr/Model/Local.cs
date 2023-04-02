@@ -32,4 +32,7 @@ internal readonly record struct Local(LocalSymbol Symbol, int Index) : IOperand
         return result.ToString();
     }
     public string ToOperandString() => $"loc{this.Index}";
+
+    public bool Equals(Local other) => this.Symbol == other.Symbol;
+    public override int GetHashCode() => this.Symbol.GetHashCode();
 }

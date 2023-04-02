@@ -143,9 +143,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
         // Encode body
-        this.ilBuilder.Align(4);
-        var methodBodyStream = new MethodBodyStreamEncoder(this.ilBuilder);
-        var methodBodyOffset = this.EncodeProcedureBody(methodBodyStream, procedure);
+        var methodBodyOffset = this.EncodeProcedureBody(procedure);
 
         // Determine attributes
         var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
@@ -195,43 +193,37 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             sequenceNumber: index + 1);
     }
 
-    private int EncodeProcedureBody(MethodBodyStreamEncoder encoder, IProcedure procedure)
+    private int EncodeProcedureBody(IProcedure procedure)
     {
-        // TODO: This is where the stackification optimization step could help to reduce local allocation
+        this.ilBuilder.Align(4);
+        var encoder = new MethodBodyStreamEncoder(this.ilBuilder);
 
-        // Encode locals, which includes non-stackified registers
-        var localsCount = procedure.Locals.Count + procedure.Registers.Count;
+        // TODO: This is where the stackification optimization step could help to reduce local allocation
+        // Encode procedure body
+        var cilCodegen = new CilCodegen(this, procedure);
+        cilCodegen.EncodeProcedure();
+
+        // Encode local types
+        var localTypes = cilCodegen.LocalTypes.ToList();
         var localsBuilder = new BlobBuilder();
         var localsEncoder = new BlobEncoder(localsBuilder)
-            .LocalVariableSignature(localsCount);
-        // Actual locals first
-        foreach (var local in procedure.LocalsInDefinitionOrder)
+            .LocalVariableSignature(localTypes.Count);
+        foreach (var localType in localTypes)
         {
             var typeEncoder = localsEncoder
                 .AddVariable()
                 .Type();
-            EncodeSignatureType(typeEncoder, local.Type);
-        }
-        // Non-stackified registers next
-        foreach (var register in procedure.Registers)
-        {
-            var typeEncoder = localsEncoder
-                .AddVariable()
-                .Type();
-            EncodeSignatureType(typeEncoder, register.Type);
+            EncodeSignatureType(typeEncoder, localType);
         }
 
         // Only add the locals if there are more than 0
-        var localsHandle = localsCount > 0
+        var localsHandle = localTypes.Count > 0
             ? this.MetadataBuilder.AddStandaloneSignature(this.GetOrAddBlob(localsBuilder))
             : default;
 
-        // We actually need to encode the procedure body now
-        var cilEncoder = CilCodegen.GenerateProcedureBody(this, procedure);
-
         // Actually encode the entire method body
         var methodBodyOffset = encoder.AddMethodBody(
-            instructionEncoder: cilEncoder,
+            instructionEncoder: cilCodegen.InstructionEncoder,
             // Since we don't do stackification yet, 8 is fine
             maxStack: 8,
             localVariablesSignature: localsHandle,

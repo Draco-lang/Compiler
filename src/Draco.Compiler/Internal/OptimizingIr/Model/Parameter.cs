@@ -26,4 +26,7 @@ internal readonly record struct Parameter(ParameterSymbol Symbol, int Index) : I
 
     public override string ToString() => $"{this.ToOperandString()}: {this.Type}";
     public string ToOperandString() => this.Name;
+
+    public bool Equals(Parameter other) => this.Symbol == other.Symbol;
+    public override int GetHashCode() => this.Symbol.GetHashCode();
 }

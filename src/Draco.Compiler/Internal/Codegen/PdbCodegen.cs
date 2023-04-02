@@ -19,6 +19,6 @@ internal sealed class PdbCodegen
     public static readonly Guid DracoLanguageGuid = new("7ef7b804-0709-43bc-b1b5-998bb801477b");
 
     // TODO: Doc
-    public static void Generate(Assembly assembly, Stream pdbStream) =>
+    public static void Generate(IAssembly assembly, Stream pdbStream) =>
         throw new NotImplementedException();
 }

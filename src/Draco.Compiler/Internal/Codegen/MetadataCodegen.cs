@@ -24,8 +24,12 @@ internal sealed class MetadataCodegen
         int ParameterIndex);
 
     // TODO: Doc
-    public static void Generate(Assembly assembly, Stream peStream) =>
-        throw new System.NotImplementedException();
+    public static void Generate(IAssembly assembly, Stream peStream)
+    {
+        var codegen = new MetadataCodegen(assembly);
+        codegen.EncodeAssembly();
+        codegen.WritePe(peStream);
+    }
 
     private readonly IAssembly assembly;
     private readonly MetadataBuilder metadataBuilder = new();
@@ -36,6 +40,12 @@ internal sealed class MetadataCodegen
     private int parameterIndexCounter = 1;
     private TypeDefinitionHandle freeFunctionsTypeHandle;
     private MethodDefinitionHandle entryPointHandle;
+
+    public MetadataCodegen(IAssembly assembly)
+    {
+        this.assembly = assembly;
+        this.microsoftPublicKeyToken = this.metadataBuilder.GetOrAddBlob(new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a });
+    }
 
     public FieldDefinitionHandle GetGlobalDefinitionHandle(Global global)
     {
@@ -125,18 +135,6 @@ internal sealed class MetadataCodegen
            @namespace: this.metadataBuilder.GetOrAddString("System"),
            name: this.metadataBuilder.GetOrAddString("Object"));
 
-        // Create the free-functions type
-        this.freeFunctionsTypeHandle = this.metadataBuilder.AddTypeDefinition(
-            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
-            @namespace: default,
-            name: this.metadataBuilder.GetOrAddString("FreeFunctions"),
-            baseType: systemObjectTypeRef,
-            // TODO: Again, this should be read up from an index
-            fieldList: MetadataTokens.FieldDefinitionHandle(1),
-            // TODO: This depends on the order of types
-            // we likely want to read this up from an index
-            methodList: MetadataTokens.MethodDefinitionHandle(1));
-
         // Go through globals
         foreach (var global in this.assembly.Globals.Values) this.GetGlobalDefinitionHandle(global);
 
@@ -155,6 +153,18 @@ internal sealed class MetadataCodegen
 
         // Compile global initializer too
         this.EncodeProcedure(this.assembly.GlobalInitializer, specialName: ".cctor");
+
+        // Create the free-functions type
+        this.freeFunctionsTypeHandle = this.metadataBuilder.AddTypeDefinition(
+            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
+            @namespace: default,
+            name: this.metadataBuilder.GetOrAddString("FreeFunctions"),
+            baseType: systemObjectTypeRef,
+            // TODO: Again, this should be read up from an index
+            fieldList: MetadataTokens.FieldDefinitionHandle(1),
+            // TODO: This depends on the order of types
+            // we likely want to read this up from an index
+            methodList: MetadataTokens.MethodDefinitionHandle(1));
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
@@ -275,5 +285,24 @@ internal sealed class MetadataCodegen
 
         // TODO
         throw new System.NotImplementedException();
+    }
+
+    private void WritePe(Stream peStream)
+    {
+        var peHeaderBuilder = new PEHeaderBuilder(
+            imageCharacteristics: Characteristics.Dll | Characteristics.ExecutableImage);
+        var peBuilder = new ManagedPEBuilder(
+            header: peHeaderBuilder,
+            metadataRootBuilder: new(this.metadataBuilder),
+            ilStream: this.ilBuilder,
+            entryPoint: this.entryPointHandle,
+            flags: CorFlags.ILOnly,
+            // TODO: For deterministic builds
+            deterministicIdProvider: null,
+            debugDirectoryBuilder: null);
+
+        var peBlob = new BlobBuilder();
+        var contentId = peBuilder.Serialize(peBlob);
+        peBlob.WriteContentTo(peStream);
     }
 }

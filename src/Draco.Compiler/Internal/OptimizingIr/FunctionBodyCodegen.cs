@@ -50,6 +50,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         if (node.Value is null) return default!;
 
+        // Debug info
+        this.Write(SequencePoint(node.Syntax));
+
         var right = this.Compile(node.Value);
         var left = this.DefineLocal(node.Local);
         this.Write(Store(left, right));
@@ -94,6 +97,20 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
 
     // Expressions /////////////////////////////////////////////////////////////
+
+    public override IOperand VisitExpressionStatement(BoundExpressionStatement node)
+    {
+        // Debug info
+        if (IsSimpleExpression(node.Expression)) this.Write(SequencePoint(node.Syntax));
+
+        return base.VisitExpressionStatement(node);
+    }
+
+    private static bool IsSimpleExpression(BoundExpression expr) => expr switch
+    {
+        BoundBlockExpression => false,
+        _ => true,
+    };
 
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {

@@ -33,7 +33,7 @@ internal sealed class SequencePoint : InstructionBase
         {
             var start = range.Value.Start;
             var end = range.Value.End;
-            result.Append($" [{start.Line}:{start.Column}-{end.Line}:{end.Column}");
+            result.Append($" [{start.Line}:{start.Column}-{end.Line}:{end.Column}]");
         }
         return result.ToString();
     }

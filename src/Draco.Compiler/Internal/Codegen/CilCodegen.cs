@@ -99,6 +99,11 @@ internal sealed class CilCodegen
     {
         switch (instruction)
         {
+        case OptimizingIr.Model.SequencePoint:
+        {
+            // TODO: Handle
+            break;
+        }
         case NopInstruction:
         {
             this.InstructionEncoder.OpCode(ILOpCode.Nop);

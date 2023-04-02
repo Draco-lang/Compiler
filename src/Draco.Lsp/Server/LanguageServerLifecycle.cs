@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
 using System;
+using Newtonsoft.Json.Linq;
 
 namespace Draco.Lsp.Server;
 
@@ -113,7 +114,7 @@ internal sealed class LanguageServerLifecycle
             {
                 Id = $"reg_{attr.Method}",
                 Method = attr.Method,
-                RegisterOptions = propValue,
+                RegisterOptions = JToken.FromObject(propValue),
             });
         }
 

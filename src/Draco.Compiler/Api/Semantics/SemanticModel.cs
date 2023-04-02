@@ -116,9 +116,9 @@ public sealed partial class SemanticModel
             if (!this.syntaxMap.ContainsKey(syntax))
             {
                 // If not, bind it
-                var discardDiagnostics = new DiagnosticBag();
+                var diagnostics = this.compilation.GlobalDiagnosticBag;
                 var bodyBinder = this.GetBinder(function);
-                _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
+                _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, diagnostics);
             }
 
             // Now the syntax node should be in the map
@@ -164,22 +164,22 @@ public sealed partial class SemanticModel
                 // If not cached, bind the function body
                 if (!this.symbolMap.ContainsKey(syntax))
                 {
-                    var discardDiagnostics = new DiagnosticBag();
+                    var diagnostics = this.compilation.GlobalDiagnosticBag;
 
                     var bodyBinder = this.GetBinder(function);
-                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
+                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, diagnostics);
 
                     // Since the parameter types and the return type are in this scope too, bind them
                     var functionSyntax = function.DeclarationSyntax;
                     // Parameters
                     foreach (var param in functionSyntax.ParameterList.Values)
                     {
-                        _ = bodyBinder.BindType(param.Type, discardDiagnostics);
+                        _ = bodyBinder.BindType(param.Type, diagnostics);
                     }
                     // Return type
                     if (functionSyntax.ReturnType is not null)
                     {
-                        _ = bodyBinder.BindType(functionSyntax.ReturnType.Type, discardDiagnostics);
+                        _ = bodyBinder.BindType(functionSyntax.ReturnType.Type, diagnostics);
                     }
                 }
 
@@ -194,10 +194,9 @@ public sealed partial class SemanticModel
                 // If not cached, bind function body
                 if (!this.syntaxMap.ContainsKey(syntax))
                 {
-                    var discardDiagnostics = new DiagnosticBag();
-
+                    var diagnostics = this.compilation.GlobalDiagnosticBag;
                     var bodyBinder = this.GetBinder(function);
-                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
+                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, diagnostics);
                 }
 
                 // Now the syntax node should be in the map
@@ -220,7 +219,7 @@ public sealed partial class SemanticModel
                 // We don't have a choice, we need to go through top-level module elements
                 // and bind everything incrementally
                 var moduleBinder = this.GetBinder(module);
-                var discardDiagnostics = new DiagnosticBag();
+                var diagnostics = this.compilation.GlobalDiagnosticBag;
                 foreach (var symbol in module.Members)
                 {
                     switch (symbol)
@@ -231,11 +230,11 @@ public sealed partial class SemanticModel
                         var globalSyntax = global.DeclarationSyntax;
                         if (globalSyntax.Type is not null)
                         {
-                            _ = moduleBinder.BindType(globalSyntax.Type.Type, discardDiagnostics);
+                            _ = moduleBinder.BindType(globalSyntax.Type.Type, diagnostics);
                         }
                         if (globalSyntax.Value is not null)
                         {
-                            _ = moduleBinder.BindGlobalValue(globalSyntax.Value.Value, discardDiagnostics);
+                            _ = moduleBinder.BindGlobalValue(globalSyntax.Value.Value, diagnostics);
                         }
                         break;
                     }

@@ -166,6 +166,9 @@ internal sealed class CilCodegen
                 // Called procedure
                 var handle = this.GetProcedureDefinitionHandle(proc);
                 this.encoder.Call(handle);
+                // Store result
+                var result = this.GetRegisterIndex(call.Target);
+                this.encoder.StoreLocal(result);
             }
             else
             {

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Fuzzer.Generators;
 
@@ -49,6 +50,9 @@ internal static class Generator
         return Delegate(() => rnd.Next(min, max));
     }
 
+    public static IGenerator<TEnum> EnumMember<TEnum>() where TEnum : Enum =>
+        Integer(0, Enum.GetValues(typeof(TEnum)).Length).Map(x => (TEnum)(object)x);
+
     public static IGenerator<string> String(
         string? charset = null,
         SequenceGenerationSettings? settings = null)
@@ -72,9 +76,26 @@ internal static class Generator
 
     public static IGenerator<ImmutableArray<T>> Sequence<T>(
         this IGenerator<T> element,
-        SequenceGenerationSettings? settings = null)
+        SequenceGenerationSettings settings)
     {
         var generator = new SequenceGenerator<T>(element, settings);
         return generator;
     }
+
+    public static IGenerator<ImmutableArray<T>> Sequence<T>(
+        this IGenerator<T> element,
+        int minLength = 0,
+        int maxLength = 100,
+        int minRemove = 0,
+        int maxRemove = 10,
+        int minInsert = 0,
+        int maxInsert = 10) => element.Sequence(new SequenceGenerationSettings()
+        {
+            MinLength = minLength,
+            MaxLength = maxLength,
+            MinRemove = minRemove,
+            MaxRemove = maxRemove,
+            MinInsert = minInsert,
+            MaxInsert = maxInsert,
+        });
 }

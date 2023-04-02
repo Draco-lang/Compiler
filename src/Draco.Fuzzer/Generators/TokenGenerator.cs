@@ -12,22 +12,14 @@ namespace Draco.Fuzzer.Generators;
 /// </summary>
 internal sealed class TokenGenerator : IGenerator<SyntaxToken>
 {
-    private readonly IGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator;
-    private readonly IGenerator<int> intLiteralGenerator;
-    private readonly Random random = new();
-
-    public TokenGenerator(
-        IGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator,
-        IGenerator<int> intLiteralGenerator)
-    {
-        this.triviaGenerator = triviaGenerator;
-        this.intLiteralGenerator = intLiteralGenerator;
-    }
+    private readonly IGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator = new TriviaGenerator()
+        .Sequence(minLength: 0, maxLength: 10);
+    private readonly IGenerator<TokenKind> tokenKindGenerator = Generator.EnumMember<TokenKind>();
+    private readonly IGenerator<int> intLiteralGenerator = Generator.Integer(0, 1000);
 
     public SyntaxToken NextEpoch()
     {
-        var tokenKindCount = Enum.GetValues(typeof(TokenKind)).Length;
-        var tokenKindToGenerate = (TokenKind)this.random.Next(tokenKindCount);
+        var tokenKindToGenerate = this.tokenKindGenerator.NextEpoch();
         return this.GenerateToken(tokenKindToGenerate);
     }
 

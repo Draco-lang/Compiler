@@ -272,9 +272,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         else throw new System.NotImplementedException();
     }
 
-    // TODO: Intrinsics
-    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) =>
-        this.DefineProcedure(node.Function);
+    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => IsIntrinsicFunction(node.Function)
+        ? new Intrinsic(node.Function)
+        : this.DefineProcedure(node.Function);
 
     // NOTE: Parameters don't need loading, they are read-only values by default
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>
@@ -316,4 +316,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
                                          || op == IntrinsicSymbols.Float64_Rem;
     private static bool IsMod(Symbol op) => op == IntrinsicSymbols.Int32_Mod
                                          || op == IntrinsicSymbols.Float64_Mod;
+
+    private static bool IsIntrinsicFunction(Symbol f) => f == IntrinsicSymbols.Print_String
+                                                      || f == IntrinsicSymbols.Print_Int32
+                                                      || f == IntrinsicSymbols.Println_String
+                                                      || f == IntrinsicSymbols.Println_Int32;
 }

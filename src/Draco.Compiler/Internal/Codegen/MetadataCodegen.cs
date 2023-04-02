@@ -37,8 +37,8 @@ internal sealed class MetadataCodegen
     private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
     private readonly Dictionary<IProcedure, CompiledMethod> procedureInfo = new();
     private BlobHandle microsoftPublicKeyToken;
+    private ModuleDefinitionHandle moduleHandle;
     private int parameterIndexCounter = 1;
-    private TypeDefinitionHandle freeFunctionsTypeHandle;
     private MethodDefinitionHandle entryPointHandle;
 
     public MetadataCodegen(IAssembly assembly)
@@ -74,12 +74,18 @@ internal sealed class MetadataCodegen
     {
         if (!this.procedureInfo.TryGetValue(procedure, out var info))
         {
+            // TODO: Let's not re-create this for every procedure
+            var freeFunctionsReference = this.metadataBuilder.AddTypeReference(
+                resolutionScope: this.moduleHandle,
+                @namespace: default,
+                name: this.metadataBuilder.GetOrAddString("FreeFunctions"));
+
             var signature = new BlobBuilder();
             var signatureEncoder = new BlobEncoder(signature).MethodSignature();
             var parameterIndex = this.EncodeProcedureSignature(signatureEncoder, procedure);
             var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
             var memberReference = this.metadataBuilder.AddMemberReference(
-                parent: this.freeFunctionsTypeHandle,
+                parent: freeFunctionsReference,
                 name: this.metadataBuilder.GetOrAddString(procedure.Name),
                 signature: signatureHandle);
             info = new(
@@ -95,7 +101,7 @@ internal sealed class MetadataCodegen
     {
         // Create the module and assembly
         var moduleName = Path.ChangeExtension(this.assembly.Name, ".dll");
-        this.metadataBuilder.AddModule(
+        this.moduleHandle = this.metadataBuilder.AddModule(
             generation: 0,
             moduleName: this.metadataBuilder.GetOrAddString(moduleName),
             // TODO: Proper module-version ID
@@ -155,7 +161,7 @@ internal sealed class MetadataCodegen
         this.EncodeProcedure(this.assembly.GlobalInitializer, specialName: ".cctor");
 
         // Create the free-functions type
-        this.freeFunctionsTypeHandle = this.metadataBuilder.AddTypeDefinition(
+        this.metadataBuilder.AddTypeDefinition(
             attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
             @namespace: default,
             name: this.metadataBuilder.GetOrAddString("FreeFunctions"),

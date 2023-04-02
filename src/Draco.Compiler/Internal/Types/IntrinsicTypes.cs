@@ -22,8 +22,8 @@ internal static class IntrinsicTypes
     public static Type Uint32 { get; } = new BuiltinType(typeof(uint), "uint32", IntegralType);
     public static Type Uint64 { get; } = new BuiltinType(typeof(ulong), "uint64", IntegralType);
 
-    public static Type Float32 { get; } = new BuiltinType(typeof(float), "float32", FloatingPointType);
-    public static Type Float64 { get; } = new BuiltinType(typeof(double), "float64", FloatingPointType);
+    public static Type Float32 { get; } = new BuiltinType(typeof(float), "float32", FloatingPointType, IntegralType);
+    public static Type Float64 { get; } = new BuiltinType(typeof(double), "float64", FloatingPointType, IntegralType);
 
     public static Type Bool { get; } = new BuiltinType(typeof(bool), "bool");
     public static Type String { get; } = new BuiltinType(typeof(string), "string");

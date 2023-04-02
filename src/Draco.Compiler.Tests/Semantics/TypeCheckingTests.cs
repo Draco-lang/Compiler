@@ -55,7 +55,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             null,
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x", NameType("int16"), LiteralExpression(0))),
-                DeclarationStatement(VariableDeclaration("y", NameType("float32"), LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration("y", NameType("float32"), LiteralExpression(0.1))),
                 DeclarationStatement(VariableDeclaration("z", NameType("float64"), LiteralExpression(0)))))));
 
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
@@ -198,7 +198,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void GetheringDiagnostics()
+    public void GatheringDiagnostics()
     {
         // func main() {
         //     var x;

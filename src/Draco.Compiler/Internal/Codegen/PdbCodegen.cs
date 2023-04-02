@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
@@ -23,6 +24,9 @@ internal sealed class PdbCodegen
     /// </summary>
     public static readonly Guid DracoLanguageGuid = new("7ef7b804-0709-43bc-b1b5-998bb801477b");
 
+    public Guid PdbId { get; } = Guid.NewGuid();
+    public uint PdbStamp => 123456;
+
     private readonly MetadataCodegen metadataCodegen;
     private readonly MetadataBuilder metadataBuilder = new();
     private readonly Dictionary<SourceText, DocumentHandle> documentHandles = new();
@@ -31,6 +35,17 @@ internal sealed class PdbCodegen
     public PdbCodegen(MetadataCodegen metadataCodegen)
     {
         this.metadataCodegen = metadataCodegen;
+    }
+
+    public DebugDirectoryBuilder EncodeDebugDirectory(IAssembly assembly)
+    {
+        var debugDirectoryBuilder = new DebugDirectoryBuilder();
+        debugDirectoryBuilder.AddCodeViewEntry(
+            // TODO: This path definitely needs to be absolute
+            pdbPath: Path.ChangeExtension(assembly.Name, ".pdb"),
+            pdbContentId: new(this.PdbId, this.PdbStamp),
+            portablePdbVersion: 0x01000);
+        return debugDirectoryBuilder;
     }
 
     public void EncodeProcedure(IProcedure procedure)
@@ -170,7 +185,7 @@ internal sealed class PdbCodegen
             typeSystemRowCounts: new int[MetadataTokens.TableCount].ToImmutableArray(),
             entryPoint: this.metadataCodegen.EntryPointHandle,
             // TODO: For deterministic builds
-            idProvider: null);
+            idProvider: _ => new(this.PdbId, this.PdbStamp));
 
         var pdbBlob = new BlobBuilder();
         pdbBuilder.Serialize(pdbBlob);

@@ -300,6 +300,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
     private void WritePe(Stream peStream)
     {
+        var debugDirectoryBuilder = this.pdbCodegen?.EncodeDebugDirectory(this.assembly);
         var peHeaderBuilder = new PEHeaderBuilder(
             imageCharacteristics: Characteristics.Dll | Characteristics.ExecutableImage);
         var peBuilder = new ManagedPEBuilder(
@@ -310,7 +311,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             flags: CorFlags.ILOnly,
             // TODO: For deterministic builds
             deterministicIdProvider: null,
-            debugDirectoryBuilder: null);
+            debugDirectoryBuilder: debugDirectoryBuilder);
 
         var peBlob = new BlobBuilder();
         var contentId = peBuilder.Serialize(peBlob);

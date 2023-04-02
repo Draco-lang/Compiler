@@ -16,7 +16,7 @@ internal sealed class TriviaGenerator : IInputGenerator<SyntaxTrivia>
     public string ToString(SyntaxTrivia value) => throw new NotImplementedException();
 
     // TODO
-    public SyntaxTrivia NextExpoch() => throw new NotImplementedException();
+    public SyntaxTrivia NextEpoch() => throw new NotImplementedException();
 
     // TODO
     public SyntaxTrivia NextMutation() => throw new NotImplementedException();

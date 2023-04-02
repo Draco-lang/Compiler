@@ -10,7 +10,7 @@ internal interface IInputGenerator<T>
     /// Generates input for the next epoch of fuzzing.
     /// </summary>
     /// <returns>The new input for the components.</returns>
-    public T NextExpoch();
+    public T NextEpoch();
 
     /// <summary>
     /// Generates input for the next iteration of fuzzing, which is a slight mutation from the last one.

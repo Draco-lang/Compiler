@@ -12,7 +12,7 @@ internal sealed class CharGenerator : IInputGenerator<char>
 
     private readonly Random random = new();
 
-    public char NextExpoch() => this.Charset[this.random.Next(this.Charset.Length)];
-    public char NextMutation() => this.NextExpoch();
+    public char NextEpoch() => this.Charset[this.random.Next(this.Charset.Length)];
+    public char NextMutation() => this.NextEpoch();
     public string ToString(char value) => value.ToString();
 }

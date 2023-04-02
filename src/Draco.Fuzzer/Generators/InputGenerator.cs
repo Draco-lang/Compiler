@@ -12,6 +12,43 @@ namespace Draco.Fuzzer.Generators;
 /// </summary>
 internal static class InputGenerator
 {
+    private sealed class DelegateGenerator<T> : IInputGenerator<T>
+    {
+        private readonly Func<T> nextEpoch;
+        private readonly Func<T> nextMutation;
+        private readonly Func<T, string> toString;
+
+        public DelegateGenerator(
+            Func<T> nextEpoch,
+            Func<T> nextMutation,
+            Func<T, string> toString)
+        {
+            this.nextEpoch = nextEpoch;
+            this.nextMutation = nextMutation;
+            this.toString = toString;
+        }
+
+        public T NextEpoch() => this.nextEpoch();
+        public T NextMutation() => this.nextMutation();
+        public string ToString(T value) => this.toString(value);
+    }
+
+    public static IInputGenerator<T> Delegate<T>(
+        Func<T> nextEpoch,
+        Func<T>? nextMutation = null,
+        Func<T, string>? toString = null)
+    {
+        nextMutation ??= nextEpoch;
+        toString ??= x => x?.ToString() ?? "null";
+        return new DelegateGenerator<T>(nextEpoch, nextMutation, toString);
+    }
+
+    public static IInputGenerator<int> Integer(int min, int max)
+    {
+        var rnd = new Random();
+        return Delegate(() => rnd.Next(min, max));
+    }
+
     public static IInputGenerator<TNew> Map<TOld, TNew>(
         this IInputGenerator<TOld> generator,
         Func<TOld, TNew> map,

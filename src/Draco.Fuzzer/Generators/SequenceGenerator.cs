@@ -52,11 +52,11 @@ internal sealed class SequenceGenerator<TElement> : IInputGenerator<ImmutableArr
         this.elementGenerator = elementGenerator;
     }
 
-    public ImmutableArray<TElement> NextExpoch()
+    public ImmutableArray<TElement> NextEpoch()
     {
         this.sequence.Clear();
         var length = this.random.Next(this.MinLength, this.MaxLength);
-        for (var i = 0; i < length; ++i) this.sequence.Add(this.elementGenerator.NextExpoch());
+        for (var i = 0; i < length; ++i) this.sequence.Add(this.elementGenerator.NextEpoch());
         return this.sequence.ToImmutableArray();
     }
 
@@ -69,7 +69,7 @@ internal sealed class SequenceGenerator<TElement> : IInputGenerator<ImmutableArr
 
         // Do the splice
         this.sequence.RemoveRange(spliceStart, Math.Min(removeLength, this.sequence.Count - spliceStart));
-        for (var i = 0; i < insertLength; ++i) this.sequence.Insert(spliceStart + i, this.elementGenerator.NextExpoch());
+        for (var i = 0; i < insertLength; ++i) this.sequence.Insert(spliceStart + i, this.elementGenerator.NextEpoch());
 
         // Done
         return this.sequence.ToImmutableArray();

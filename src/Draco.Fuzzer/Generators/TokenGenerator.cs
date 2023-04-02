@@ -13,21 +13,25 @@ namespace Draco.Fuzzer.Generators;
 internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
 {
     private readonly IInputGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator;
+    private readonly IInputGenerator<int> intLiteralGenerator;
     private readonly Random random = new();
 
-    public TokenGenerator(IInputGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator)
+    public TokenGenerator(
+        IInputGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator,
+        IInputGenerator<int> intLiteralGenerator)
     {
         this.triviaGenerator = triviaGenerator;
+        this.intLiteralGenerator = intLiteralGenerator;
     }
 
-    public SyntaxToken NextExpoch()
+    public SyntaxToken NextEpoch()
     {
         var tokenKindCount = Enum.GetValues(typeof(TokenKind)).Length;
         var tokenKindToGenerate = (TokenKind)this.random.Next(tokenKindCount);
         return this.GenerateToken(tokenKindToGenerate);
     }
 
-    public SyntaxToken NextMutation() => this.NextExpoch();
+    public SyntaxToken NextMutation() => this.NextEpoch();
 
     // TODO
     public string ToString(SyntaxToken value) => throw new NotImplementedException();
@@ -35,8 +39,8 @@ internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
     private SyntaxToken GenerateToken(TokenKind kind)
     {
         var (text, value) = this.GenerateTokenContent(kind);
-        var leadingTrivia = this.triviaGenerator.NextExpoch();
-        var trailingTrivia = this.triviaGenerator.NextExpoch();
+        var leadingTrivia = this.triviaGenerator.NextEpoch();
+        var trailingTrivia = this.triviaGenerator.NextEpoch();
         var builder = new SyntaxToken.Builder();
         builder
             .SetKind(kind)
@@ -50,6 +54,13 @@ internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
     private (string Text, object? Value) GenerateTokenContent(TokenKind kind) => kind switch
     {
         _ when SyntaxFacts.GetTokenText(kind) is string str => (str, null),
+        TokenKind.LiteralInteger => this.GenerateLiteralInteger(),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
+
+    private (string Text, object? Value) GenerateLiteralInteger()
+    {
+        var value = this.intLiteralGenerator.NextEpoch();
+        return (value.ToString(), value);
+    }
 }

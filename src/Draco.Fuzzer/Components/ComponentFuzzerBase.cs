@@ -23,7 +23,7 @@ internal abstract class ComponentFuzzerBase<TInput> : IComponentFuzzer
 
     public void NextEpoch()
     {
-        this.oldInput = this.inputGenerator.NextExpoch();
+        this.oldInput = this.inputGenerator.NextEpoch();
         try
         {
             this.NextEpochInternal(this.oldInput);

@@ -30,8 +30,10 @@ internal sealed class TriviaGenerator : IGenerator<SyntaxTrivia>
 
     private string GenerateTriviaText(TriviaKind kind) => kind switch
     {
+        TriviaKind.LineComment => throw new NotImplementedException(),
         TriviaKind.DocumentationComment => throw new NotImplementedException(),
         TriviaKind.Whitespace => throw new NotImplementedException(),
+        TriviaKind.Newline => throw new NotImplementedException(),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 }

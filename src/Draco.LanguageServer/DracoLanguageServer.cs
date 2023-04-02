@@ -24,15 +24,21 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     public TextDocumentSyncKind SyncKind => TextDocumentSyncKind.Full;
 
     private readonly ILanguageClient client;
+    private readonly DracoConfigurationRepository configurationRepository;
     private readonly DracoDocumentRepository documentRepository = new();
 
     public DracoLanguageServer(ILanguageClient client)
     {
         this.client = client;
+        this.configurationRepository = new(client);
     }
 
     public void Dispose() { }
 
-    public Task InitializedAsync(InitializedParams param) => Task.CompletedTask;
+    public async Task InitializedAsync(InitializedParams param)
+    {
+        await this.configurationRepository.UpdateConfigurationAsync();
+    }
+
     public Task ShutdownAsync() => Task.CompletedTask;
 }

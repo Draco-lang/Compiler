@@ -79,6 +79,16 @@
           "type": "boolean",
           "default": true,
           "description": "Check for Draco language server updates."
+        },
+        "draco.inlayHints.parameterNames": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show parameter name hints."
+        },
+        "draco.inlayHints.variableTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show variable type hints."
         }
       }
     }

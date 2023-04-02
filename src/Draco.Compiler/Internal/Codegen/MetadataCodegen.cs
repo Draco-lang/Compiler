@@ -16,7 +16,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// <summary>
 /// Generates metadata.
 /// </summary>
-internal sealed class MetadataCodegen
+internal sealed class MetadataCodegen : MetadataWriterBase
 {
     private readonly record struct CompiledMethod(
         BlobHandle SignatureBlobHandle,
@@ -32,34 +32,39 @@ internal sealed class MetadataCodegen
     }
 
     private readonly IAssembly assembly;
-    private readonly MetadataBuilder metadataBuilder = new();
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
     private readonly Dictionary<IProcedure, CompiledMethod> procedureInfo = new();
-    private BlobHandle microsoftPublicKeyToken;
-    private ModuleDefinitionHandle moduleHandle;
+    private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
     private int parameterIndexCounter = 1;
     private MethodDefinitionHandle entryPointHandle;
 
     public MetadataCodegen(IAssembly assembly)
+        : base(assembly.Name)
     {
         this.assembly = assembly;
-        this.microsoftPublicKeyToken = this.metadataBuilder.GetOrAddBlob(new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a });
+        this.freeFunctionsTypeReferenceHandle = this.AddTypeReference(
+            module: this.ModuleDefinitionHandle,
+            @namespace: null,
+            name: "FreeFunctions");
     }
 
     public FieldDefinitionHandle GetGlobalDefinitionHandle(Global global)
     {
         if (!this.globalDefinitionHandles.TryGetValue(global, out var handle))
         {
+            // Encode signature
             var signature = new BlobBuilder();
             var typeEncoder = new BlobEncoder(signature)
                 .Field()
                 .Type();
             EncodeSignatureType(typeEncoder, global.Type);
-            handle = this.metadataBuilder.AddFieldDefinition(
+            // Add the field definition
+            handle = this.MetadataBuilder.AddFieldDefinition(
                 attributes: FieldAttributes.Public | FieldAttributes.Static,
-                name: this.metadataBuilder.GetOrAddString(global.Name),
-                signature: this.metadataBuilder.GetOrAddBlob(signature));
+                name: this.GetOrAddString(global.Name),
+                signature: this.GetOrAddBlob(signature));
+            // Cache
             this.globalDefinitionHandles.Add(global, handle);
         }
         return handle;
@@ -68,25 +73,19 @@ internal sealed class MetadataCodegen
     public MemberReferenceHandle GetProcedureReferenceHandle(IProcedure procedure) =>
         this.GetProcedureInfo(procedure).MemberReferenceHandle;
 
-    public UserStringHandle GetStringLiteralHandle(string text) => this.metadataBuilder.GetOrAddUserString(text);
+    public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
 
     private CompiledMethod GetProcedureInfo(IProcedure procedure)
     {
         if (!this.procedureInfo.TryGetValue(procedure, out var info))
         {
-            // TODO: Let's not re-create this for every procedure
-            var freeFunctionsReference = this.metadataBuilder.AddTypeReference(
-                resolutionScope: this.moduleHandle,
-                @namespace: default,
-                name: this.metadataBuilder.GetOrAddString("FreeFunctions"));
-
             var signature = new BlobBuilder();
             var signatureEncoder = new BlobEncoder(signature).MethodSignature();
             var parameterIndex = this.EncodeProcedureSignature(signatureEncoder, procedure);
-            var signatureHandle = this.metadataBuilder.GetOrAddBlob(signature);
-            var memberReference = this.metadataBuilder.AddMemberReference(
-                parent: freeFunctionsReference,
-                name: this.metadataBuilder.GetOrAddString(procedure.Name),
+            var signatureHandle = this.GetOrAddBlob(signature);
+            var memberReference = this.AddMethodReference(
+                type: this.freeFunctionsTypeReferenceHandle,
+                name: procedure.Name,
                 signature: signatureHandle);
             info = new(
                 SignatureBlobHandle: signatureHandle,
@@ -99,48 +98,6 @@ internal sealed class MetadataCodegen
 
     private void EncodeAssembly()
     {
-        // Create the module and assembly
-        var moduleName = Path.ChangeExtension(this.assembly.Name, ".dll");
-        this.moduleHandle = this.metadataBuilder.AddModule(
-            generation: 0,
-            moduleName: this.metadataBuilder.GetOrAddString(moduleName),
-            // TODO: Proper module-version ID
-            mvid: this.metadataBuilder.GetOrAddGuid(System.Guid.NewGuid()),
-            // TODO: What are these? Encryption?
-            encId: default,
-            encBaseId: default);
-        this.metadataBuilder.AddAssembly(
-            name: this.metadataBuilder.GetOrAddString(this.assembly.Name),
-            // TODO: Proper versioning
-            version: new System.Version(1, 0, 0, 0),
-            culture: default,
-            publicKey: default,
-            flags: default,
-            hashAlgorithm: AssemblyHashAlgorithm.None);
-
-        // Create type definition for the special <Module> type that holds global functions
-        // Note, that we don't use that for our free-functions
-        this.metadataBuilder.AddTypeDefinition(
-            attributes: default,
-            @namespace: default,
-            name: this.metadataBuilder.GetOrAddString("<Module>"),
-            baseType: default,
-            fieldList: MetadataTokens.FieldDefinitionHandle(1),
-            methodList: MetadataTokens.MethodDefinitionHandle(1));
-
-        // Reference System.Object from System.Runtime
-        var systemRuntimeRef = this.metadataBuilder.AddAssemblyReference(
-            name: this.metadataBuilder.GetOrAddString("System.Runtime"),
-            version: new System.Version(7, 0, 0, 0),
-            culture: default,
-            publicKeyOrToken: this.microsoftPublicKeyToken,
-            flags: default,
-            hashValue: default);
-        var systemObjectTypeRef = this.metadataBuilder.AddTypeReference(
-           resolutionScope: systemRuntimeRef,
-           @namespace: this.metadataBuilder.GetOrAddString("System"),
-           name: this.metadataBuilder.GetOrAddString("Object"));
-
         // Go through globals
         foreach (var global in this.assembly.Globals.Values) this.GetGlobalDefinitionHandle(global);
 
@@ -160,12 +117,22 @@ internal sealed class MetadataCodegen
         // Compile global initializer too
         this.EncodeProcedure(this.assembly.GlobalInitializer, specialName: ".cctor");
 
+        // Reference System.Object from System.Runtime
+        var systemRuntime = this.AddAssemblyReference(
+            name: "System.Runtime",
+            version: new System.Version(7, 0, 0, 0),
+            publicKeyOrToken: this.MicrosoftPublicKeyToken);
+        var systemObject = this.AddTypeReference(
+           assembly: systemRuntime,
+           @namespace: "System",
+           name: "Object");
+
         // Create the free-functions type
-        this.metadataBuilder.AddTypeDefinition(
+        this.MetadataBuilder.AddTypeDefinition(
             attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
             @namespace: default,
-            name: this.metadataBuilder.GetOrAddString("FreeFunctions"),
-            baseType: systemObjectTypeRef,
+            name: this.GetOrAddString("FreeFunctions"),
+            baseType: systemObject,
             // TODO: Again, this should be read up from an index
             fieldList: MetadataTokens.FieldDefinitionHandle(1),
             // TODO: This depends on the order of types
@@ -189,10 +156,10 @@ internal sealed class MetadataCodegen
         // Retrieve info
         var info = this.GetProcedureInfo(procedure);
         // Actually add definition
-        var definitionHandle = this.metadataBuilder.AddMethodDefinition(
+        var definitionHandle = this.MetadataBuilder.AddMethodDefinition(
             attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
-            name: this.metadataBuilder.GetOrAddString(specialName ?? procedure.Name),
+            name: this.GetOrAddString(specialName ?? procedure.Name),
             signature: info.SignatureBlobHandle,
             bodyOffset: methodBodyOffset,
             parameterList: MetadataTokens.ParameterHandle(info.ParameterIndex));
@@ -222,9 +189,9 @@ internal sealed class MetadataCodegen
         var parameterTypeEncoder = encoder.AddParameter();
         EncodeSignatureType(parameterTypeEncoder.Type(), param.Type);
 
-        this.metadataBuilder.AddParameter(
+        this.MetadataBuilder.AddParameter(
             attributes: ParameterAttributes.None,
-            name: this.metadataBuilder.GetOrAddString(param.Name),
+            name: this.GetOrAddString(param.Name),
             sequenceNumber: index + 1);
     }
 
@@ -255,11 +222,9 @@ internal sealed class MetadataCodegen
         }
 
         // Only add the locals if there are more than 0
-        var localsHandle = default(StandaloneSignatureHandle);
-        if (localsCount > 0)
-        {
-            localsHandle = this.metadataBuilder.AddStandaloneSignature(this.metadataBuilder.GetOrAddBlob(localsBuilder));
-        }
+        var localsHandle = localsCount > 0
+            ? this.MetadataBuilder.AddStandaloneSignature(this.GetOrAddBlob(localsBuilder))
+            : default;
 
         // We actually need to encode the procedure body now
         var cilEncoder = CilCodegen.GenerateProcedureBody(this, procedure);
@@ -299,7 +264,7 @@ internal sealed class MetadataCodegen
             imageCharacteristics: Characteristics.Dll | Characteristics.ExecutableImage);
         var peBuilder = new ManagedPEBuilder(
             header: peHeaderBuilder,
-            metadataRootBuilder: new(this.metadataBuilder),
+            metadataRootBuilder: new(this.MetadataBuilder),
             ilStream: this.ilBuilder,
             entryPoint: this.entryPointHandle,
             flags: CorFlags.ILOnly,

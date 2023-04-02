@@ -180,7 +180,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="targetType">The type being assigned to.</param>
     /// <param name="assignedType">The type assigned.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<Type> Assignable(Type targetType, Type assignedType)
+    public ConstraintPromise<Type> Assignable(Type targetType, Type assignedType) //=> this.SameType(targetType, assignedType);
     {
         var constraint = new CommonBaseConstraint(targetType, assignedType);
         this.constraints.Add(constraint);
@@ -192,9 +192,9 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="types">The types to check for common base.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<Type> CommonType(params Type[] types)
+    public ConstraintPromise<Type> CommonType(Type first, Type second)// => this.SameType(types[0], types[1]);
     {
-        var constraint = new CommonBaseConstraint(types);
+        var constraint = new CommonBaseConstraint(first, second);
         this.constraints.Add(constraint);
         return constraint.Promise;
     }

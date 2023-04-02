@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Error;
@@ -67,27 +69,55 @@ internal sealed partial class ConstraintSolver
             constraint.Promise.Resolve(constraint.Candidates[0]);
             return SolveState.Finished;
         }
-        // Depends if we removed anything
+        // Depends if we removed anything 
         return advanced ? SolveState.Progressing : SolveState.Stale;
     }
 
     private SolveState Solve(DiagnosticBag diagnostics, CommonBaseConstraint constraint)
     {
-        // No base type or multiple base types in the constraint
-        var types = constraint.Types.Select(x => (BuiltinType)x);
-        var baseType = types.FirstOrDefault(x => x.Name == "integral" || x.Name == "floatingpoint") ?? throw new System.NotImplementedException();
-        foreach (var type in types)
+        if (!this.UnifyBase(constraint.First, constraint.Second))
         {
-            if (type.Name != baseType.Name && !type.Bases.Select(x => x.Name).Contains(baseType.Name))
-            {
-                var diagnostic = constraint.Diagnostic
+            var diagnostic = constraint.Diagnostic
                 .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                .WithFormatArgs(this.Unwrap(baseType), this.Unwrap(type))
+                .WithFormatArgs(this.Unwrap(constraint.First), this.Unwrap(constraint.Second))
                 .Build();
-                diagnostics.Add(diagnostic);
-            }
+            diagnostics.Add(diagnostic);
         }
         return SolveState.Finished;
+        // No base type or multiple base types in the constraint
+        //var bas = constraint.Types.FirstOrDefault(x => this.Unwrap(x) is BuiltinType b && (b.Name == "integral" || b.Name == "floatingpoint"));
+        //if (bas is null)
+        //{
+        //    var diagnostic = constraint.Diagnostic
+        //    .WithTemplate(TypeCheckingErrors.TypeMismatch)
+        //    .WithFormatArgs(constraint.Types.ToArray())
+        //    .Build();
+        //    diagnostics.Add(diagnostic);
+        //    return SolveState.Finished;
+        //}
+        //var baseType = (BuiltinType)this.Unwrap(bas);
+        //var state = SolveState.Finished;
+        //for (int i = 0; i < constraint.Types.Count; i++)
+        //{
+        //    var type = this.Unwrap(constraint.Types[i]);
+        //    if (type is BuiltinType b)
+        //    {
+        //        if (b.Name != baseType.Name && !b.Bases.Select(x => x.Name).Contains(baseType.Name))
+        //        {
+        //            var diagnostic = constraint.Diagnostic
+        //            .WithTemplate(TypeCheckingErrors.TypeMismatch)
+        //            .WithFormatArgs(this.Unwrap(baseType), this.Unwrap(type))
+        //            .Build();
+        //            diagnostics.Add(diagnostic);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        //this.CommonType(type, baseType);
+        //        state = SolveState.Stale;
+        //    }
+        //}
+        //return state;
     }
 
     private void FailSilently(Constraint constraint)
@@ -129,7 +159,8 @@ internal sealed partial class ConstraintSolver
 
         case (BuiltinType t1, BuiltinType t2):
             return t1.Name == t2.Name
-                && t1.UnderylingType == t2.UnderylingType;
+                && t1.UnderylingType == t2.UnderylingType
+                && t1.Bases.Any(x => t2.Bases.Select(x => x.Name).Contains(x.Name));
 
         case (FunctionType f1, FunctionType f2):
         {
@@ -184,6 +215,64 @@ internal sealed partial class ConstraintSolver
         case (BuiltinType t1, BuiltinType t2):
             return t1.Name == t2.Name
                 && t1.UnderylingType == t2.UnderylingType;
+
+        case (FunctionType f1, FunctionType f2):
+        {
+            if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
+            for (var i = 0; i < f1.ParameterTypes.Length; ++i)
+            {
+                if (!this.Unify(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+            }
+            return this.Unify(f1.ReturnType, f2.ReturnType);
+        }
+
+        default:
+            throw new System.NotImplementedException();
+        }
+    }
+
+    private bool UnifyBase(Type left, Type right)
+    {
+        left = this.Unwrap(left);
+        right = this.Unwrap(right);
+
+        switch (left, right)
+        {
+        // Type variable substitution takes priority
+        // so it can unify with never type and error type to stop type errors from cascading
+        case (TypeVariable v1, TypeVariable v2):
+        {
+            // Check for circularity
+            if (ReferenceEquals(v1, v2)) return true;
+            this.Substitute(v1, v2);
+            return true;
+        }
+        case (TypeVariable v, Type other):
+        {
+            this.Substitute(v, other);
+            return true;
+        }
+        case (Type other, TypeVariable v):
+        {
+            this.Substitute(v, other);
+            return true;
+        }
+
+        // Never type is never reached, unifies with everything
+        case (NeverType, _):
+        case (_, NeverType):
+        // Error type unifies with everything to avoid cascading type errors
+        case (ErrorType, _):
+        case (_, ErrorType):
+            return true;
+
+        case (BuiltinType t1, BuiltinType t2):
+        {
+            if (t1.IsBaseType) return t2.Bases.Select(x => x.Name).Contains(t1.Name);
+            else if (t2.IsBaseType) return t1.Bases.Select(x => x.Name).Contains(t2.Name);
+            else return t1.Name == t2.Name
+                && t1.UnderylingType == t2.UnderylingType;
+        }
 
         case (FunctionType f1, FunctionType f2):
         {

@@ -22,15 +22,23 @@ internal sealed class BuiltinType : Type
     /// </summary>
     public IEnumerable<BuiltinType> Bases { get; }
 
-    public BuiltinType(System.Type underylingType, string name, params BuiltinType[] bases)
+    public bool IsBaseType { get; }
+
+    public BuiltinType(System.Type underylingType, string name, bool isBaseType = false, params BuiltinType[] bases)
     {
         this.UnderylingType = underylingType;
         this.Name = name;
+        this.IsBaseType = isBaseType;
         this.Bases = bases;
     }
 
     public BuiltinType(System.Type underylingType)
         : this(underylingType, underylingType.ToString())
+    {
+    }
+
+    public BuiltinType(System.Type underylingType, string name, params BuiltinType[] bases)
+        : this(underylingType, underylingType.ToString(), false, bases)
     {
     }
 

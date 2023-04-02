@@ -5,8 +5,8 @@ namespace Draco.Compiler.Internal.Types;
 /// </summary>
 internal static class IntrinsicTypes
 {
-    public static BuiltinType IntegralType { get; } = new BuiltinType(typeof(UnderlyingBaseType), "integral");
-    public static BuiltinType FloatingPointType { get; } = new BuiltinType(typeof(UnderlyingBaseType), "floatingpoint");
+    public static BuiltinType IntegralType { get; } = new BuiltinType(typeof(UnderlyingBaseType), "integral", true);
+    public static BuiltinType FloatingPointType { get; } = new BuiltinType(typeof(UnderlyingBaseType), "floatingpoint", true);
 
     public static Type Never { get; } = NeverType.Instance;
     public static Type Error { get; } = ErrorType.Instance;

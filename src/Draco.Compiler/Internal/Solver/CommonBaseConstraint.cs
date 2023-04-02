@@ -6,6 +6,7 @@ namespace Draco.Compiler.Internal.Solver;
 
 internal class CommonBaseConstraint : Constraint
 {
+    // TODO: Docs
     public Type First { get; }
     public Type Second { get; }
 
@@ -15,7 +16,6 @@ internal class CommonBaseConstraint : Constraint
     {
         this.First = first;
         this.Second = second;
-        this.Promise = ConstraintPromise.Create<Type>(this);
-
+        this.Promise = ConstraintPromise.FromResult(this, first);
     }
 }

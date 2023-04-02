@@ -38,7 +38,7 @@ internal sealed class BuiltinType : Type
     }
 
     public BuiltinType(System.Type underylingType, string name, params BuiltinType[] bases)
-        : this(underylingType, underylingType.ToString(), false, bases)
+        : this(underylingType, name, false, bases)
     {
     }
 

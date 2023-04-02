@@ -30,12 +30,52 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+    }
+
+    [Fact]
+    public void LocalVariablesExplicitlyTypedNotInt32()
+    {
+        // func main() {
+        //     var x: int16 = 0;
+        //     var y: float32 = 0.1;
+        //     var z: float64 = 0;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int16"), LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration("y", NameType("float32"), LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration("z", NameType("float64"), LiteralExpression(0)))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var zDecl = tree.FindInChildren<VariableDeclarationSyntax>(2);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var ySym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(yDecl));
+        var zSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(zDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
+        Assert.Equal(ySym.Type, IntrinsicTypes.Float32);
+        Assert.Equal(zSym.Type, IntrinsicTypes.Float64);
     }
 
     [Fact]
@@ -58,11 +98,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.IntegralType);
     }
 
@@ -86,11 +127,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
     }
 
@@ -116,11 +158,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.IntegralType);
     }
 
@@ -147,6 +190,36 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        Assert.True(xSym.Type.IsError);
+    }
+
+    [Fact]
+    public void GetheringDiagnostics()
+    {
+        // func main() {
+        //     var x;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x"))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Single(diags);
@@ -258,11 +331,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
     }
 
@@ -280,11 +354,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
     }
 

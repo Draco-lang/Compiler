@@ -102,7 +102,8 @@ internal class Program
             syntaxTrees: ImmutableArray.Create(syntaxTree),
             assemblyName: output.Name);
         using var dllStream = new FileStream(output.FullName, FileMode.OpenOrCreate);
-        var emitResult = compilation.Emit(dllStream);
+        using var pdbStream = new FileStream(Path.ChangeExtension(output.FullName, ".pdb"), FileMode.OpenOrCreate);
+        var emitResult = compilation.Emit(peStream: dllStream, pdbStream: pdbStream);
         if (!emitResult.Success)
         {
             foreach (var diag in emitResult.Diagnostics.Select(x => msbuildDiags ? MakeMsbuildDiag(x) : x.ToString())) Console.WriteLine(diag);

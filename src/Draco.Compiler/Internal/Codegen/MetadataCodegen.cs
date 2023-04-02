@@ -25,13 +25,25 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         int ParameterIndex);
 
     // TODO: Doc
-    public static void Generate(IAssembly assembly, Stream peStream)
+    public static void Generate(IAssembly assembly, Stream peStream, Stream? pdbStream)
     {
-        var codegen = new MetadataCodegen(assembly);
+        var codegen = new MetadataCodegen(
+            assembly: assembly,
+            writePdb: pdbStream is not null);
         codegen.EncodeAssembly();
         codegen.WritePe(peStream);
+        if (pdbStream is not null)
+        {
+            codegen.pdbCodegen!.WritePdb(pdbStream);
+        }
     }
 
+    /// <summary>
+    /// Handle for the entry point.
+    /// </summary>
+    public MethodDefinitionHandle EntryPointHandle { get; private set; }
+
+    private readonly PdbCodegen? pdbCodegen;
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
@@ -39,11 +51,11 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsics = new();
     private int parameterIndexCounter = 1;
-    private MethodDefinitionHandle entryPointHandle;
 
-    public MetadataCodegen(IAssembly assembly)
+    private MetadataCodegen(IAssembly assembly, bool writePdb)
         : base(assembly.Name)
     {
+        if (writePdb) this.pdbCodegen = new(this);
         this.assembly = assembly;
         this.freeFunctionsTypeReferenceHandle = this.AddTypeReference(
             module: this.ModuleDefinitionHandle,
@@ -146,7 +158,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             var handle = this.EncodeProcedure(procedure);
 
             // If this is the entry point, save it
-            if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.entryPointHandle = handle;
+            if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
         }
 
         // Compile global initializer too
@@ -235,7 +247,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
         // TODO: This is where the stackification optimization step could help to reduce local allocation
         // Encode procedure body
-        var cilCodegen = new CilCodegen(this, procedure);
+        var cilCodegen = new CilCodegen(this, this.pdbCodegen, procedure);
         cilCodegen.EncodeProcedure();
 
         // Encode local types
@@ -294,7 +306,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             header: peHeaderBuilder,
             metadataRootBuilder: new(this.MetadataBuilder),
             ilStream: this.ilBuilder,
-            entryPoint: this.entryPointHandle,
+            entryPoint: this.EntryPointHandle,
             flags: CorFlags.ILOnly,
             // TODO: For deterministic builds
             deterministicIdProvider: null,

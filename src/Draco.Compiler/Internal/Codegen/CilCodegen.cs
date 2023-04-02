@@ -31,14 +31,16 @@ internal sealed class CilCodegen
     private int NextLocalIndex => this.locals.Count + this.registers.Count;
 
     private readonly MetadataCodegen metadataCodegen;
+    private readonly PdbCodegen? pdbCodegen;
     private readonly IProcedure procedure;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
     private readonly Dictionary<Local, int> locals = new();
     private readonly Dictionary<Register, int> registers = new();
 
-    public CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
+    public CilCodegen(MetadataCodegen metadataCodegen, PdbCodegen? pdbCodegen, IProcedure procedure)
     {
         this.metadataCodegen = metadataCodegen;
+        this.pdbCodegen = pdbCodegen;
         this.procedure = procedure;
 
         var codeBuilder = new BlobBuilder();
@@ -87,6 +89,8 @@ internal sealed class CilCodegen
     public void EncodeProcedure()
     {
         foreach (var bb in this.procedure.BasicBlocksInDefinitionOrder) this.EncodeBasicBlock(bb);
+
+        this.pdbCodegen?.EncodeProcedure(this.procedure);
     }
 
     private void EncodeBasicBlock(IBasicBlock basicBlock)
@@ -99,9 +103,9 @@ internal sealed class CilCodegen
     {
         switch (instruction)
         {
-        case OptimizingIr.Model.SequencePoint:
+        case OptimizingIr.Model.SequencePoint sp:
         {
-            // TODO: Handle
+            this.pdbCodegen?.AddSequencePoint(this.InstructionEncoder, sp);
             break;
         }
         case NopInstruction:

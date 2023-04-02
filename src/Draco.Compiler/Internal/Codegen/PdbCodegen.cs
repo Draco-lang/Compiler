@@ -23,16 +23,30 @@ internal sealed class PdbCodegen
     /// </summary>
     public static readonly Guid DracoLanguageGuid = new("7ef7b804-0709-43bc-b1b5-998bb801477b");
 
-    public static void Generate(IAssembly assembly, Stream pdbStream) =>
-        throw new NotImplementedException();
-
-    private readonly IAssembly assembly;
+    private readonly MetadataCodegen metadataCodegen;
     private readonly MetadataBuilder metadataBuilder = new();
     private readonly Dictionary<SourceText, DocumentHandle> documentHandles = new();
+    private readonly ImmutableArray<SequencePoint>.Builder sequencePoints = ImmutableArray.CreateBuilder<SequencePoint>();
 
-    private PdbCodegen(IAssembly assembly)
+    public PdbCodegen(MetadataCodegen metadataCodegen)
     {
-        this.assembly = assembly;
+        this.metadataCodegen = metadataCodegen;
+    }
+
+    public void EncodeProcedure(IProcedure procedure)
+    {
+        var sequencePointsForMethod = this.sequencePoints.ToImmutable();
+
+        this.EncodeSequencePoints(default, sequencePointsForMethod);
+
+        // Clear for next
+        this.sequencePoints.Clear();
+    }
+
+    public void AddSequencePoint(InstructionEncoder encoder, OptimizingIr.Model.SequencePoint sequencePoint)
+    {
+        var sp = this.MakeSequencePoint(encoder, sequencePoint.Syntax);
+        this.sequencePoints.Add(sp);
     }
 
     private SequencePoint MakeSequencePoint(InstructionEncoder encoder, SyntaxNode? syntax)
@@ -146,5 +160,20 @@ internal sealed class PdbCodegen
         {
             writer.WriteCompressedSignedInteger(deltaColumns);
         }
+    }
+
+    public void WritePdb(Stream pdbStream)
+    {
+        var pdbBuilder = new PortablePdbBuilder(
+            tablesAndHeaps: this.metadataBuilder,
+            // TODO: Type-system stuff, likely for local scope and such
+            typeSystemRowCounts: new int[MetadataTokens.TableCount].ToImmutableArray(),
+            entryPoint: this.metadataCodegen.EntryPointHandle,
+            // TODO: For deterministic builds
+            idProvider: null);
+
+        var pdbBlob = new BlobBuilder();
+        pdbBuilder.Serialize(pdbBlob);
+        pdbBlob.WriteContentTo(pdbStream);
     }
 }

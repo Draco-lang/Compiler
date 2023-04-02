@@ -148,11 +148,8 @@ public sealed class Compilation
             irWriter.Flush();
         }
 
-        // Generate CIL
-        MetadataCodegen.Generate(assembly, peStream);
-
-        // Generate PDB, if needed
-        if (pdbStream is not null) PdbCodegen.Generate(assembly, pdbStream);
+        // Generate CIL and PDB
+        MetadataCodegen.Generate(assembly, peStream, pdbStream);
 
         return new(
             Success: true,

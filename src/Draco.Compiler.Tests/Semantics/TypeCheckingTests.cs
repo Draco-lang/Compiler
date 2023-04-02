@@ -155,7 +155,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void GetheringDiagnostics()
+    public void GatheringDiagnostics()
     {
         // func main() {
         //     var x;

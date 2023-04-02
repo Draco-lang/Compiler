@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
@@ -37,4 +38,5 @@ internal static class InstructionFactory
         Arithmetic(target, ArithmeticOp.Less, left, right);
     public static ArithmeticInstruction Equal(Register target, IOperand left, IOperand right) =>
         Arithmetic(target, ArithmeticOp.Equal, left, right);
+    public static SequencePoint SequencePoint(SyntaxNode? syntax) => new(syntax);
 }

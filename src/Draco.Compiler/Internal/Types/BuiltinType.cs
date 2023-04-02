@@ -21,10 +21,5 @@ internal sealed class BuiltinType : Type
         this.Name = name;
     }
 
-    public BuiltinType(System.Type underylingType)
-        : this(underylingType, underylingType.ToString())
-    {
-    }
-
     public override string ToString() => this.Name;
 }

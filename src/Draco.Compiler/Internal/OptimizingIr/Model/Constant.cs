@@ -17,6 +17,7 @@ internal readonly record struct Constant(object? Value) : IOperand
     public string ToOperandString() => this.Value switch
     {
         string s => $"\"{StringUtils.Unescape(s)}\"",
+        bool b => b ? "true" : "false",
         _ => this.Value?.ToString() ?? "null",
     };
 }

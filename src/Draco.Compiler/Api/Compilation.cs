@@ -147,6 +147,7 @@ public sealed class Compilation
             irWriter.Write(assembly.ToString());
             irWriter.Flush();
         }
+        Console.WriteLine(assembly);
 
         // Generate CIL
         MetadataCodegen.Generate(assembly, peStream);

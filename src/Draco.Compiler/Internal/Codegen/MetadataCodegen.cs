@@ -6,6 +6,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using Draco.Compiler.Internal.OptimizingIr.Model;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using Assembly = Draco.Compiler.Internal.OptimizingIr.Model.Assembly;
@@ -36,6 +37,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
     private readonly Dictionary<IProcedure, CompiledMethod> procedureInfo = new();
     private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
+    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsics = new();
     private int parameterIndexCounter = 1;
     private MethodDefinitionHandle entryPointHandle;
 
@@ -47,6 +49,37 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             module: this.ModuleDefinitionHandle,
             @namespace: null,
             name: "FreeFunctions");
+        this.LoadIntrinsics();
+    }
+
+    private void LoadIntrinsics()
+    {
+        var systemConsoleAssembly = this.AddAssemblyReference(
+            name: "System.Console",
+            version: new(1, 0));
+        var systemConsole = this.AddTypeReference(
+            assembly: systemConsoleAssembly,
+            @namespace: "System",
+            name: "Console");
+
+        MemberReferenceHandle LoadPrintFunction(string name, System.Action<SignatureTypeEncoder> paramTypeEncoder)
+        {
+            var signature = new BlobBuilder();
+            new BlobEncoder(signature)
+                .MethodSignature()
+                .Parameters(1, out var retEncoder, out var paramsEncoder);
+            retEncoder.Void();
+            paramTypeEncoder(paramsEncoder.AddParameter().Type());
+            return this.AddMethodReference(
+                type: systemConsole,
+                name: name,
+                signature: this.GetOrAddBlob(signature));
+        }
+
+        this.intrinsics.Add(IntrinsicSymbols.Print_String, LoadPrintFunction("Write", p => p.String()));
+        this.intrinsics.Add(IntrinsicSymbols.Print_Int32, LoadPrintFunction("Write", p => p.Int32()));
+        this.intrinsics.Add(IntrinsicSymbols.Println_String, LoadPrintFunction("WriteLine", p => p.String()));
+        this.intrinsics.Add(IntrinsicSymbols.Println_Int32, LoadPrintFunction("WriteLine", p => p.Int32()));
     }
 
     public FieldDefinitionHandle GetGlobalDefinitionHandle(Global global)
@@ -74,6 +107,8 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         this.GetProcedureInfo(procedure).MemberReferenceHandle;
 
     public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
+
+    public MemberReferenceHandle GetIntrinsicHandle(Symbol symbol) => this.intrinsics[symbol];
 
     private CompiledMethod GetProcedureInfo(IProcedure procedure)
     {
@@ -244,6 +279,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     {
         if (ReferenceEquals(type, IntrinsicTypes.Bool)) { encoder.Boolean(); return; }
         if (ReferenceEquals(type, IntrinsicTypes.Int32)) { encoder.Int32(); return; }
+        if (ReferenceEquals(type, IntrinsicTypes.Float64)) { encoder.Double(); return; }
         if (ReferenceEquals(type, IntrinsicTypes.String)) { encoder.String(); return; }
 
         // TODO

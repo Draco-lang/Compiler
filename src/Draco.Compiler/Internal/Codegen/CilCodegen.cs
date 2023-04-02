@@ -49,6 +49,7 @@ internal sealed class CilCodegen
     private FieldDefinitionHandle GetGlobalDefinitionHandle(Global global) => this.metadataCodegen.GetGlobalDefinitionHandle(global);
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
+    private MemberReferenceHandle GetIntrinsicHandle(Intrinsic intrinsic) => this.metadataCodegen.GetIntrinsicHandle(intrinsic.Symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
@@ -181,27 +182,27 @@ internal sealed class CilCodegen
         }
         case CallInstruction call:
         {
+            // Arguments
+            foreach (var arg in call.Arguments) this.EncodePush(arg);
+            // Determine what we are calling
             if (call.Procedure is IProcedure proc)
             {
                 // Regular procedure call
-                // Arguments
-                foreach (var arg in call.Arguments) this.EncodePush(arg);
-                // Called procedure
                 var handle = this.GetProcedureDefinitionHandle(proc);
                 this.InstructionEncoder.Call(handle);
-                // Store result
-                this.StoreLocal(call.Target);
             }
             else if (call.Procedure is Intrinsic intrinsic)
             {
-                // TODO
-                throw new System.NotImplementedException();
+                var handle = this.GetIntrinsicHandle(intrinsic);
+                this.InstructionEncoder.Call(handle);
             }
             else
             {
                 // TODO
                 throw new System.NotImplementedException();
             }
+            // Store result
+            this.StoreLocal(call.Target);
             break;
         }
         default:

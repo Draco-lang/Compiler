@@ -73,6 +73,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitConditionalGotoStatement(BoundConditionalGotoStatement node)
     {
         var condition = this.Compile(node.Condition);
+
+        // In case the condition is a never type, we don't bother writing out the then and else bodies,
+        // as they can not be evaluated
+        // Note, that for side-effects we still emit the condition code
+        if (ReferenceEquals(node.Condition.TypeRequired, IntrinsicTypes.Never)) return default(Void);
+
         var thenBlock = this.DefineBasicBlock(node.Target);
         var elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol());
         this.Write(Branch(condition, thenBlock, elseBlock));
@@ -188,7 +194,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var tmp2 = this.DefineRegister(node.TypeRequired);
             this.Write(Rem(tmp1, left, right));
             this.Write(Add(tmp2, tmp1, right));
-            this.Write(Add(target, tmp1, right));
+            this.Write(Rem(target, tmp1, right));
         }
         else if (IsLess(node.Operator))
         {

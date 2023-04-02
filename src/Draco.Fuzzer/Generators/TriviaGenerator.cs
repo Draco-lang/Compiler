@@ -10,7 +10,7 @@ namespace Draco.Fuzzer.Generators;
 /// <summary>
 /// Generates a random valid syntax trivia.
 /// </summary>
-internal sealed class TriviaGenerator : IInputGenerator<SyntaxTrivia>
+internal sealed class TriviaGenerator : IGenerator<SyntaxTrivia>
 {
     // TODO
     public string ToString(SyntaxTrivia value) => throw new NotImplementedException();

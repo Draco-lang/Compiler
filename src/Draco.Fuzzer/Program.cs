@@ -43,20 +43,21 @@ internal static class Program
     }
 
     private static void FuzzLexer(int numEpochs, int numMutations) =>
-        Fuzz(numEpochs, numMutations, new LexerFuzzer(InputGenerator.String()));
+        Fuzz(numEpochs, numMutations, new LexerFuzzer(Generator.String()));
 
     private static void FuzzParser(int numEpochs, int numMutations) => Fuzz(
         numEpochs,
         numMutations,
         new ParserFuzzer(
-            new TokenGenerator(new TriviaGenerator().Sequence(t =>
+            triviaGenerator: new TokenGenerator(new TriviaGenerator().Sequence(t =>
             {
                 t.MinLength = 0;
                 t.MaxLength = 10;
-            })).Sequence()));
+            }),
+            intLiteralGenerator: ).Sequence()));
 
     private static void FuzzE2e(int numEpochs, int numMutations) =>
-        Fuzz(numEpochs, numMutations, new E2eFuzzer(InputGenerator.String()));
+        Fuzz(numEpochs, numMutations, new E2eFuzzer(Generator.String()));
 
     private static void Fuzz(int numEpochs, int numMutations, IComponentFuzzer componentFuzzer)
     {

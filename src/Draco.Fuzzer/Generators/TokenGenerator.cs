@@ -10,15 +10,15 @@ namespace Draco.Fuzzer.Generators;
 /// <summary>
 /// Generates a random valid token.
 /// </summary>
-internal sealed class TokenGenerator : IInputGenerator<SyntaxToken>
+internal sealed class TokenGenerator : IGenerator<SyntaxToken>
 {
-    private readonly IInputGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator;
-    private readonly IInputGenerator<int> intLiteralGenerator;
+    private readonly IGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator;
+    private readonly IGenerator<int> intLiteralGenerator;
     private readonly Random random = new();
 
     public TokenGenerator(
-        IInputGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator,
-        IInputGenerator<int> intLiteralGenerator)
+        IGenerator<ImmutableArray<SyntaxTrivia>> triviaGenerator,
+        IGenerator<int> intLiteralGenerator)
     {
         this.triviaGenerator = triviaGenerator;
         this.intLiteralGenerator = intLiteralGenerator;

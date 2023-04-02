@@ -14,7 +14,7 @@ namespace Draco.Fuzzer.Components;
 /// </summary>
 internal sealed class ParserFuzzer : ComponentFuzzerBase<ImmutableArray<SyntaxToken>>
 {
-    public ParserFuzzer(IInputGenerator<ImmutableArray<SyntaxToken>> inputGenerator)
+    public ParserFuzzer(IGenerator<ImmutableArray<SyntaxToken>> inputGenerator)
         : base(inputGenerator)
     {
     }

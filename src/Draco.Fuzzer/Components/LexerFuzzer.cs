@@ -14,7 +14,7 @@ namespace Draco.Fuzzer.Components;
 /// </summary>
 internal sealed class LexerFuzzer : ComponentFuzzerBase<string>
 {
-    public LexerFuzzer(IInputGenerator<string> inputGenerator)
+    public LexerFuzzer(IGenerator<string> inputGenerator)
         : base(inputGenerator)
     {
     }

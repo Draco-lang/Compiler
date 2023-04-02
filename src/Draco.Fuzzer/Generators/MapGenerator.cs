@@ -11,13 +11,13 @@ namespace Draco.Fuzzer.Generators;
 /// </summary>
 /// <typeparam name="TOld">The type to map from.</typeparam>
 /// <typeparam name="TNew">The type to map to.</typeparam>
-internal sealed class MapGenerator<TOld, TNew> : IInputGenerator<TNew>
+internal sealed class MapGenerator<TOld, TNew> : IGenerator<TNew>
 {
-    private readonly IInputGenerator<TOld> underlying;
+    private readonly IGenerator<TOld> underlying;
     private readonly Func<TOld, TNew> map;
     private readonly Func<TNew, string> toString;
 
-    public MapGenerator(IInputGenerator<TOld> underlying, Func<TOld, TNew> map, Func<TNew, string> toString)
+    public MapGenerator(IGenerator<TOld> underlying, Func<TOld, TNew> map, Func<TNew, string> toString)
     {
         this.underlying = underlying;
         this.map = map;

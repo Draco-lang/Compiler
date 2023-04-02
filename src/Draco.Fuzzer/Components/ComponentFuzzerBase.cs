@@ -13,10 +13,10 @@ namespace Draco.Fuzzer.Components;
 /// <typeparam name="TInput">The input type.</typeparam>
 internal abstract class ComponentFuzzerBase<TInput> : IComponentFuzzer
 {
-    private readonly IInputGenerator<TInput> inputGenerator;
+    private readonly IGenerator<TInput> inputGenerator;
     private TInput oldInput = default!;
 
-    public ComponentFuzzerBase(IInputGenerator<TInput> inputGenerator)
+    public ComponentFuzzerBase(IGenerator<TInput> inputGenerator)
     {
         this.inputGenerator = inputGenerator;
     }

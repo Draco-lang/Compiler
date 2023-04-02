@@ -3,7 +3,7 @@ namespace Draco.Fuzzer.Generators;
 /// <summary>
 /// Generates a random character.
 /// </summary>
-internal sealed class CharGenerator : IInputGenerator<char>
+internal sealed class CharGenerator : IGenerator<char>
 {
     /// <summary>
     /// The charset to use.

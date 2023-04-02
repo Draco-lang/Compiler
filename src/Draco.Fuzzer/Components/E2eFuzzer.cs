@@ -16,7 +16,7 @@ namespace Draco.Fuzzer.Components;
 /// </summary>
 internal sealed class E2eFuzzer : ComponentFuzzerBase<string>
 {
-    public E2eFuzzer(IInputGenerator<string> inputGenerator)
+    public E2eFuzzer(IGenerator<string> inputGenerator)
         : base(inputGenerator)
     {
     }

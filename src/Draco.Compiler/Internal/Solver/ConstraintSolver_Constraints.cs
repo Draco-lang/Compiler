@@ -1,6 +1,4 @@
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Error;
@@ -84,40 +82,6 @@ internal sealed partial class ConstraintSolver
             diagnostics.Add(diagnostic);
         }
         return SolveState.Finished;
-        // No base type or multiple base types in the constraint
-        //var bas = constraint.Types.FirstOrDefault(x => this.Unwrap(x) is BuiltinType b && (b.Name == "integral" || b.Name == "floatingpoint"));
-        //if (bas is null)
-        //{
-        //    var diagnostic = constraint.Diagnostic
-        //    .WithTemplate(TypeCheckingErrors.TypeMismatch)
-        //    .WithFormatArgs(constraint.Types.ToArray())
-        //    .Build();
-        //    diagnostics.Add(diagnostic);
-        //    return SolveState.Finished;
-        //}
-        //var baseType = (BuiltinType)this.Unwrap(bas);
-        //var state = SolveState.Finished;
-        //for (int i = 0; i < constraint.Types.Count; i++)
-        //{
-        //    var type = this.Unwrap(constraint.Types[i]);
-        //    if (type is BuiltinType b)
-        //    {
-        //        if (b.Name != baseType.Name && !b.Bases.Select(x => x.Name).Contains(baseType.Name))
-        //        {
-        //            var diagnostic = constraint.Diagnostic
-        //            .WithTemplate(TypeCheckingErrors.TypeMismatch)
-        //            .WithFormatArgs(this.Unwrap(baseType), this.Unwrap(type))
-        //            .Build();
-        //            diagnostics.Add(diagnostic);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        //this.CommonType(type, baseType);
-        //        state = SolveState.Stale;
-        //    }
-        //}
-        //return state;
     }
 
     private void FailSilently(Constraint constraint)

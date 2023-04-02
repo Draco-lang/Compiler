@@ -22,6 +22,9 @@ internal sealed class BuiltinType : Type
     /// </summary>
     public IEnumerable<BuiltinType> Bases { get; }
 
+    /// <summary>
+    /// True of this builtin type is base type.
+    /// </summary>
     public bool IsBaseType { get; }
 
     public BuiltinType(System.Type underylingType, string name, bool isBaseType = false, params BuiltinType[] bases)

@@ -18,8 +18,9 @@ internal sealed class TriviaGenerator : IGenerator<SyntaxTrivia>
 
     public SyntaxTrivia NextEpoch()
     {
-        var triviaKindToGenerate = this.triviaKindGenerator.NextEpoch();
-        return this.GenerateTrivia(triviaKindToGenerate);
+        var kind = this.triviaKindGenerator.NextEpoch();
+        var text = this.GenerateTriviaText(kind);
+        return SyntaxTrivia.From(kind, text);
     }
 
     public SyntaxTrivia NextMutation() => this.NextEpoch();
@@ -27,8 +28,10 @@ internal sealed class TriviaGenerator : IGenerator<SyntaxTrivia>
     // TODO
     public string ToString(SyntaxTrivia value) => throw new NotImplementedException();
 
-    private SyntaxTrivia GenerateTrivia(TriviaKind kind) => kind switch
+    private string GenerateTriviaText(TriviaKind kind) => kind switch
     {
+        TriviaKind.DocumentationComment => throw new NotImplementedException(),
+        TriviaKind.Whitespace => throw new NotImplementedException(),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 }

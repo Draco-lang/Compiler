@@ -16,11 +16,12 @@ internal sealed class TokenGenerator : IGenerator<SyntaxToken>
         .Sequence(minLength: 0, maxLength: 10);
     private readonly IGenerator<TokenKind> tokenKindGenerator = Generator.EnumMember<TokenKind>();
     private readonly IGenerator<int> intLiteralGenerator = Generator.Integer(0, 1000);
+    private readonly IGenerator<char> charLiteralGenerator = Generator.Character(Charsets.Ascii);
 
     public SyntaxToken NextEpoch()
     {
-        var tokenKindToGenerate = this.tokenKindGenerator.NextEpoch();
-        return this.GenerateToken(tokenKindToGenerate);
+        var kind = this.tokenKindGenerator.NextEpoch();
+        return this.GenerateToken(kind);
     }
 
     public SyntaxToken NextMutation() => this.NextEpoch();
@@ -47,6 +48,8 @@ internal sealed class TokenGenerator : IGenerator<SyntaxToken>
     {
         _ when SyntaxFacts.GetTokenText(kind) is string str => (str, null),
         TokenKind.LiteralInteger => this.GenerateLiteralInteger(),
+        TokenKind.LiteralCharacter => this.GenerateLiteralCharacter(),
+        TokenKind.StringNewline => this.GenerateStringNewline(),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
@@ -55,4 +58,14 @@ internal sealed class TokenGenerator : IGenerator<SyntaxToken>
         var value = this.intLiteralGenerator.NextEpoch();
         return (value.ToString(), value);
     }
+
+    private (string Text, object? Value) GenerateLiteralCharacter()
+    {
+        // TODO: Not entirely correct
+        var value = this.charLiteralGenerator.NextEpoch();
+        return ($"'{value}'", value);
+    }
+
+    // TODO
+    private (string Text, object? Value) GenerateStringNewline() => throw new NotImplementedException();
 }

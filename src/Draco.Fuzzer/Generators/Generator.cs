@@ -50,6 +50,11 @@ internal static class Generator
         return Delegate(() => rnd.Next(min, max));
     }
 
+    public static IGenerator<char> Character(string? charset) => new CharGenerator()
+    {
+        Charset = charset ?? Charsets.Ascii,
+    };
+
     public static IGenerator<TEnum> EnumMember<TEnum>() where TEnum : Enum =>
         Integer(0, Enum.GetValues(typeof(TEnum)).Length).Map(x => (TEnum)(object)x);
 
@@ -57,11 +62,8 @@ internal static class Generator
         string? charset = null,
         SequenceGenerationSettings? settings = null)
     {
-        var charGenerator = new CharGenerator()
-        {
-            Charset = charset ?? Charsets.Ascii,
-        };
-        var sequence = charGenerator.Sequence(settings);
+        var charGenerator = Character(charset);
+        var sequence = charGenerator.Sequence(settings ?? SequenceGenerationSettings.Default);
         return sequence.Map(seq => new string(seq.ToArray()));
     }
 

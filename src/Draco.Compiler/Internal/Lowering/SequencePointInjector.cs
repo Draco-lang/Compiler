@@ -102,7 +102,8 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         var condition = (BoundExpression)node.Condition.Accept(this);
         condition = SequencePointExpression(
             expression: condition,
-            range: node.Condition.Syntax?.Range);
+            range: node.Condition.Syntax?.Range,
+            emitNop: true);
         // Leave branches as-is
         var then = (BoundExpression)node.Then.Accept(this);
         var @else = (BoundExpression)node.Else.Accept(this);
@@ -120,7 +121,8 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         var condition = (BoundExpression)node.Condition.Accept(this);
         condition = SequencePointExpression(
             expression: condition,
-            range: node.Condition.Syntax?.Range);
+            range: node.Condition.Syntax?.Range,
+            emitNop: true);
         // Leave body as-is
         var then = (BoundExpression)node.Then.Accept(this);
 

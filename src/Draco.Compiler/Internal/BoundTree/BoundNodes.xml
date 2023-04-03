@@ -34,11 +34,11 @@
 
   <!-- Debug info -->
   <Node Name="BoundSequencePointStatement" Base="BoundStatement">
-    <!-- If null, emit NOP -->
+    <!-- The wrapped statement, if any -->
     <Field Name="Statement" Type="BoundStatement?" />
-    <!-- If the range is specified, obey this -->
+    <!-- The location, if null, this is a hidden sequence point -->
     <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
-    <!-- Emit NOP for safety -->
+    <!-- Emit NOP if true -->
     <Field Name="EmitNop" Type="bool" />
   </Node>
 
@@ -57,9 +57,12 @@
 
   <!-- Debug info -->
   <Node Name="BoundSequencePointExpression" Base="BoundExpression">
+    <!-- The wrapped expression -->
     <Field Name="Expression" Type="BoundExpression" />
-    <!-- If the range is specified, obey this -->
+    <!-- The location, if null, this is a hidden sequence point -->
     <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
+    <!-- Emit NOP if true -->
+    <Field Name="EmitNop" Type="bool" />
   </Node>
 
   <Node Name="BoundGotoExpression" Base="BoundExpression">

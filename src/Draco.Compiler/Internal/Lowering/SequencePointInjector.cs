@@ -31,7 +31,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         var injected = (BoundStatement)base.VisitLocalDeclaration(node);
         return SequencePointStatement(
             statement: injected,
-            range: null,
+            range: node.Syntax?.Range,
             // If the value is null, there is nothing to compile
             // So we enforce a NOP to be emitted
             emitNop: node.Value is null);

@@ -113,7 +113,7 @@ internal sealed class CilCodegen
         {
             var localIndices = start.Locals
                 .Select(sym => this.procedure.Locals[sym])
-                .Select(loc => this.locals[loc])
+                .Select(loc => this.GetLocalIndex(loc)!.Value)
                 .ToImmutableArray();
             this.pdbCodegen?.StartScope(localIndices);
             break;

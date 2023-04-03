@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -25,9 +26,10 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         int ParameterIndex);
 
     // TODO: Doc
-    public static void Generate(IAssembly assembly, Stream peStream, Stream? pdbStream)
+    public static void Generate(Compilation compilation, IAssembly assembly, Stream peStream, Stream? pdbStream)
     {
         var codegen = new MetadataCodegen(
+            compilation: compilation,
             assembly: assembly,
             writePdb: pdbStream is not null);
         codegen.EncodeAssembly();
@@ -37,6 +39,11 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             codegen.pdbCodegen!.WritePdb(pdbStream);
         }
     }
+
+    /// <summary>
+    /// The compilation that started codegen.
+    /// </summary>
+    public Compilation Compilation { get; }
 
     /// <summary>
     /// Handle for the entry point.
@@ -52,9 +59,10 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsics = new();
     private int parameterIndexCounter = 1;
 
-    private MetadataCodegen(IAssembly assembly, bool writePdb)
+    private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
         : base(assembly.Name)
     {
+        this.Compilation = compilation;
         if (writePdb) this.pdbCodegen = new(this);
         this.assembly = assembly;
         this.freeFunctionsTypeReferenceHandle = this.AddTypeReference(

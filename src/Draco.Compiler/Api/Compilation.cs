@@ -163,7 +163,7 @@ public sealed class Compilation
         }
 
         // Generate CIL and PDB
-        MetadataCodegen.Generate(assembly, peStream, pdbStream);
+        MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
 
         return new(
             Success: true,

@@ -9,6 +9,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -24,6 +25,7 @@ internal sealed class PdbCodegen
     /// </summary>
     public static readonly Guid DracoLanguageGuid = new("7ef7b804-0709-43bc-b1b5-998bb801477b");
 
+    public Compilation Compilation => this.metadataCodegen.Compilation;
     public Guid PdbId { get; } = Guid.NewGuid();
     public uint PdbStamp => 123456;
 
@@ -40,9 +42,11 @@ internal sealed class PdbCodegen
     public DebugDirectoryBuilder EncodeDebugDirectory(IAssembly assembly)
     {
         var debugDirectoryBuilder = new DebugDirectoryBuilder();
+        var pdbPath = Path.Join(this.Compilation.OutputPath, this.Compilation.AssemblyName);
+        pdbPath = Path.ChangeExtension(pdbPath, ".pdb");
+        pdbPath = Path.GetFullPath(pdbPath);
         debugDirectoryBuilder.AddCodeViewEntry(
-            // TODO: This path definitely needs to be absolute
-            pdbPath: Path.ChangeExtension(assembly.Name, ".pdb"),
+            pdbPath: pdbPath,
             pdbContentId: new(this.PdbId, this.PdbStamp),
             portablePdbVersion: 0x01000);
         return debugDirectoryBuilder;

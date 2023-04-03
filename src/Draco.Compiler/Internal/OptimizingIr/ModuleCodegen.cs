@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -15,9 +16,9 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed class ModuleCodegen : SymbolVisitor
 {
-    public static Assembly Generate(ModuleSymbol symbol)
+    public static Assembly Generate(Compilation compilation, ModuleSymbol symbol)
     {
-        var codegen = new ModuleCodegen(symbol);
+        var codegen = new ModuleCodegen(compilation, symbol);
         symbol.Accept(codegen);
         codegen.Complete();
         return codegen.assembly;
@@ -26,9 +27,12 @@ internal sealed class ModuleCodegen : SymbolVisitor
     private readonly Assembly assembly;
     private readonly FunctionBodyCodegen globalInitializer;
 
-    private ModuleCodegen(ModuleSymbol module)
+    private ModuleCodegen(Compilation compilation, ModuleSymbol module)
     {
-        this.assembly = new(module);
+        this.assembly = new(module)
+        {
+            Name = compilation.AssemblyName,
+        };
         this.globalInitializer = new(this.assembly.GlobalInitializer);
     }
 

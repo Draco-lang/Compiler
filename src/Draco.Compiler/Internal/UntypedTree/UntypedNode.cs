@@ -16,15 +16,6 @@ internal abstract partial class UntypedNode
     {
         this.Syntax = syntax;
     }
-
-    public abstract void Accept(UntypedTreeVisitor visitor);
-    public abstract TResult Accept<TResult>(UntypedTreeVisitor<TResult> visitor);
-
-    protected static bool Equals<T>(ImmutableArray<T> left, ImmutableArray<T> right)
-    {
-        if (left.Length != right.Length) return false;
-        return left.SequenceEqual(right);
-    }
 }
 
 // Statements

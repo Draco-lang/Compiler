@@ -105,9 +105,19 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         if (ReferenceEquals(node.Condition.TypeRequired, IntrinsicTypes.Never)) return default(Void);
 
         // NOTE: The order of block definitions is extremely important here
-        // Keep it this way to have code laid out in topological order
-        var elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol());
-        var thenBlock = this.DefineBasicBlock(node.Target);
+        // The property tells us in what order to define the two blocks to maintain topological ordering
+        var thenBlock = null as BasicBlock;
+        var elseBlock = null as BasicBlock;
+        if (node.ContinuesWithTarget)
+        {
+            thenBlock = this.DefineBasicBlock(node.Target);
+            elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol());
+        }
+        else
+        {
+            elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol());
+            thenBlock = this.DefineBasicBlock(node.Target);
+        }
         this.Write(Branch(condition, thenBlock, elseBlock));
         // We fall-through to the else block implicitly
         this.AttachBlock(elseBlock);

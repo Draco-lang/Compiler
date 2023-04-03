@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr.Model;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -20,6 +21,15 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class PdbCodegen
 {
+    private readonly record struct LocalScopeStart(
+        LocalVariableHandle FirstVariable,
+        int StartOffset);
+
+    private readonly record struct LocalScope(
+        LocalVariableHandle FirstVariable,
+        int StartOffset,
+        int Length);
+
     /// <summary>
     /// GUID for identifying a Draco document.
     /// </summary>
@@ -33,6 +43,8 @@ internal sealed class PdbCodegen
     private readonly MetadataBuilder metadataBuilder = new();
     private readonly Dictionary<SourceText, DocumentHandle> documentHandles = new();
     private readonly ImmutableArray<SequencePoint>.Builder sequencePoints = ImmutableArray.CreateBuilder<SequencePoint>();
+    private readonly Stack<LocalScopeStart> scopeStartStack = new();
+    private readonly ImmutableArray<LocalScope>.Builder localScopes = ImmutableArray.CreateBuilder<LocalScope>();
 
     public PdbCodegen(MetadataCodegen metadataCodegen)
     {
@@ -52,29 +64,62 @@ internal sealed class PdbCodegen
         return debugDirectoryBuilder;
     }
 
-    public void EncodeProcedure(IProcedure procedure)
+    public void FinalizeProcedure(IProcedure procedure, MethodDefinitionHandle handle)
     {
+        // Sequence points
         var sequencePointsForMethod = this.sequencePoints.ToImmutable();
-
         var sequencePoints = this.EncodeSequencePoints(default, sequencePointsForMethod);
         this.metadataBuilder.AddMethodDebugInformation(
             document: this.GetOrAddDocument(procedure.Symbol.DeclarationSyntax),
             sequencePoints: sequencePoints);
 
+        // Local scopes
+        Debug.Assert(this.scopeStartStack.Count == 0);
+        var localScopesForMethod = this.localScopes.ToImmutable();
+        foreach (var scope in localScopesForMethod)
+        {
+            this.metadataBuilder.AddLocalScope(
+                method: handle,
+                importScope: default,
+                variableList: scope.FirstVariable,
+                constantList: default,
+                startOffset: scope.StartOffset,
+                length: scope.Length);
+        }
+
         // Clear for next
         this.sequencePoints.Clear();
+        this.localScopes.Clear();
     }
 
-    public void StartScope(ImmutableArray<int> localIndices)
+    public void StartScope(int ilOffset, IEnumerable<(LocalSymbol Symbol, int Index)> locals)
     {
-        // TODO
-        throw new NotImplementedException();
+        var firstHandle = default(LocalVariableHandle);
+        var first = true;
+        foreach (var (symbol, index) in locals)
+        {
+            var handle = this.metadataBuilder.AddLocalVariable(
+                attributes: LocalVariableAttributes.None,
+                index: index,
+                name: this.metadataBuilder.GetOrAddString(symbol.Name));
+            if (first)
+            {
+                firstHandle = handle;
+                first = false;
+            }
+        }
+        this.scopeStartStack.Push(new(
+            FirstVariable: firstHandle,
+            StartOffset: ilOffset));
     }
 
-    public void EndScope()
+    public void EndScope(int ilOffset)
     {
-        // TODO
-        throw new NotImplementedException();
+        var start = this.scopeStartStack.Pop();
+        this.localScopes.Add(new(
+            FirstVariable: start.FirstVariable,
+            StartOffset: start.StartOffset,
+            Length: ilOffset - start.StartOffset));
     }
 
     public void AddSequencePoint(InstructionEncoder encoder, OptimizingIr.Model.SequencePoint sequencePoint)

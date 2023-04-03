@@ -90,8 +90,11 @@ internal sealed class CilCodegen
     public void EncodeProcedure()
     {
         foreach (var bb in this.procedure.BasicBlocksInDefinitionOrder) this.EncodeBasicBlock(bb);
+    }
 
-        this.pdbCodegen?.EncodeProcedure(this.procedure);
+    public void FinalizeProcedure(MethodDefinitionHandle handle)
+    {
+        this.pdbCodegen?.FinalizeProcedure(this.procedure, handle);
     }
 
     private void EncodeBasicBlock(IBasicBlock basicBlock)
@@ -113,14 +116,13 @@ internal sealed class CilCodegen
         {
             var localIndices = start.Locals
                 .Select(sym => this.procedure.Locals[sym])
-                .Select(loc => this.GetLocalIndex(loc)!.Value)
-                .ToImmutableArray();
-            this.pdbCodegen?.StartScope(localIndices);
+                .Select(loc => (Symbol: loc.Symbol, Index: this.GetLocalIndex(loc)!.Value));
+            this.pdbCodegen?.StartScope(this.InstructionEncoder.Offset, localIndices);
             break;
         }
         case EndScope:
         {
-            this.pdbCodegen?.EndScope();
+            this.pdbCodegen?.EndScope(this.InstructionEncoder.Offset);
             break;
         }
         case NopInstruction:

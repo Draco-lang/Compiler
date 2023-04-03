@@ -224,7 +224,41 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
         // Encode body
-        var methodBodyOffset = this.EncodeProcedureBody(procedure);
+        this.ilBuilder.Align(4);
+        var encoder = new MethodBodyStreamEncoder(this.ilBuilder);
+
+        var cilCodegen = new CilCodegen(this, this.pdbCodegen, procedure);
+
+        // TODO: This is where the stackification optimization step could help to reduce local allocation
+        // Encode procedure body
+        cilCodegen.EncodeProcedure();
+
+        // Encode local types
+        var localTypes = cilCodegen.LocalTypes.ToList();
+        var localsBuilder = new BlobBuilder();
+        var localsEncoder = new BlobEncoder(localsBuilder)
+            .LocalVariableSignature(localTypes.Count);
+        foreach (var localType in localTypes)
+        {
+            var typeEncoder = localsEncoder
+                .AddVariable()
+                .Type();
+            EncodeSignatureType(typeEncoder, localType);
+        }
+
+        // Only add the locals if there are more than 0
+        var localsHandle = localTypes.Count > 0
+            ? this.MetadataBuilder.AddStandaloneSignature(this.GetOrAddBlob(localsBuilder))
+            : default;
+
+        // Actually encode the entire method body
+        var methodBodyOffset = encoder.AddMethodBody(
+            instructionEncoder: cilCodegen.InstructionEncoder,
+            // Since we don't do stackification yet, 8 is fine
+            maxStack: 8,
+            localVariablesSignature: localsHandle,
+            attributes: MethodBodyAttributes.None,
+            hasDynamicStackAllocation: false);
 
         // Determine attributes
         var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
@@ -234,7 +268,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
         // Retrieve info
         var info = this.GetProcedureInfo(procedure);
-        // Actually add definition
+        // Add definition
         var definitionHandle = this.MetadataBuilder.AddMethodDefinition(
             attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
@@ -242,6 +276,9 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             signature: info.SignatureBlobHandle,
             bodyOffset: methodBodyOffset,
             parameterList: MetadataTokens.ParameterHandle(info.ParameterIndex));
+
+        // Finalize
+        cilCodegen.FinalizeProcedure(definitionHandle);
 
         return definitionHandle;
     }
@@ -272,46 +309,6 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             attributes: ParameterAttributes.None,
             name: this.GetOrAddString(param.Name),
             sequenceNumber: index + 1);
-    }
-
-    private int EncodeProcedureBody(IProcedure procedure)
-    {
-        this.ilBuilder.Align(4);
-        var encoder = new MethodBodyStreamEncoder(this.ilBuilder);
-
-        // TODO: This is where the stackification optimization step could help to reduce local allocation
-        // Encode procedure body
-        var cilCodegen = new CilCodegen(this, this.pdbCodegen, procedure);
-        cilCodegen.EncodeProcedure();
-
-        // Encode local types
-        var localTypes = cilCodegen.LocalTypes.ToList();
-        var localsBuilder = new BlobBuilder();
-        var localsEncoder = new BlobEncoder(localsBuilder)
-            .LocalVariableSignature(localTypes.Count);
-        foreach (var localType in localTypes)
-        {
-            var typeEncoder = localsEncoder
-                .AddVariable()
-                .Type();
-            EncodeSignatureType(typeEncoder, localType);
-        }
-
-        // Only add the locals if there are more than 0
-        var localsHandle = localTypes.Count > 0
-            ? this.MetadataBuilder.AddStandaloneSignature(this.GetOrAddBlob(localsBuilder))
-            : default;
-
-        // Actually encode the entire method body
-        var methodBodyOffset = encoder.AddMethodBody(
-            instructionEncoder: cilCodegen.InstructionEncoder,
-            // Since we don't do stackification yet, 8 is fine
-            maxStack: 8,
-            localVariablesSignature: localsHandle,
-            attributes: MethodBodyAttributes.None,
-            hasDynamicStackAllocation: false);
-
-        return methodBodyOffset;
     }
 
     private static void EncodeReturnType(ReturnTypeEncoder encoder, Type type)

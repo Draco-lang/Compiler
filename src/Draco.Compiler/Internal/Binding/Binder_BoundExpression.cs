@@ -20,7 +20,6 @@ internal partial class Binder
     internal virtual BoundExpression TypeExpression(UntypedExpression expression, ConstraintSolver constraints, DiagnosticBag diagnostics) => expression switch
     {
         UntypedUnexpectedExpression unexpected => new BoundUnexpectedExpression(unexpected.Syntax),
-        UntypedSequencePointExpression sequence => this.TypeSequencePointExpression(sequence, constraints, diagnostics),
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedStringExpression str => this.TypeStringExpression(str, constraints, diagnostics),
@@ -43,12 +42,6 @@ internal partial class Binder
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
-
-    private BoundExpression TypeSequencePointExpression(UntypedSequencePointExpression sequence, ConstraintSolver constraints, DiagnosticBag diagnostics)
-    {
-        var subexpr = this.TypeExpression(sequence.Expression, constraints, diagnostics);
-        return new BoundSequencePointExpression(sequence.Syntax, subexpr, sequence.Range);
-    }
 
     private BoundExpression TypeUnitExpression(UntypedUnitExpression unit, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);

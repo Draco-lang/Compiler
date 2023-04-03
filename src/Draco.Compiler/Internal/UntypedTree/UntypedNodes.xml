@@ -18,14 +18,6 @@
   <Node Name="UntypedNoOpStatement" Base="UntypedStatement">
   </Node>
 
-  <!-- Debug info -->
-  <Node Name="UntypedSequencePointStatement" Base="UntypedStatement">
-    <!-- If null, emit NOP -->
-    <Field Name="Statement" Type="UntypedStatement?" />
-    <!-- If the range is specified, obey this -->
-    <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
-  </Node>
-
   <Node Name="UntypedLabelStatement" Base="UntypedStatement">
     <Field Name="Label" Type="LabelSymbol" />
   </Node>
@@ -45,13 +37,6 @@
   </Node>
 
   <Node Name="UntypedUnitExpression" Base="UntypedExpression">
-  </Node>
-
-  <!-- Debug info -->
-  <Node Name="UntypedSequencePointExpression" Base="UntypedExpression">
-    <Field Name="Expression" Type="UntypedExpression" />
-    <!-- If the range is specified, obey this -->
-    <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
   </Node>
 
   <Node Name="UntypedGotoExpression" Base="UntypedExpression">

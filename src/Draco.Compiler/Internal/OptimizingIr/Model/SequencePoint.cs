@@ -17,18 +17,24 @@ internal sealed class SequencePoint : InstructionBase
     /// </summary>
     public SyntaxNode? Syntax { get; }
 
-    public SequencePoint(SyntaxNode? syntax)
+    /// <summary>
+    /// The range this sequence point corresponds to, if any.
+    /// </summary>
+    public SyntaxRange? Range { get; }
+
+    public SequencePoint(SyntaxNode? syntax, SyntaxRange? range)
     {
         this.Syntax = syntax;
+        this.Range = range;
     }
 
-    public override SequencePoint Clone() => new(this.Syntax);
+    public override SequencePoint Clone() => new(this.Syntax, this.Range);
 
     public override string ToString()
     {
         var result = new StringBuilder();
         result.Append("@sequence point");
-        var range = this.Syntax?.Range;
+        var range = this.Range ?? this.Syntax?.Range;
         if (range is not null)
         {
             var start = range.Value.Start;

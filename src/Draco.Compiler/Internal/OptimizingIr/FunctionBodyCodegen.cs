@@ -46,12 +46,23 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     // Statements //////////////////////////////////////////////////////////////
 
+    public override IOperand VisitSequencePointStatement(BoundSequencePointStatement node)
+    {
+        // Emit the sequence point
+        this.Write(SequencePoint(node.Syntax, node.Range));
+
+        // If we need to emit a NOP, emit it
+        if (node.Statement is null || node.EmitNop) this.Write(Nop());
+
+        // Compile the statement, if there is one
+        if (node.Statement is not null) this.Compile(node.Statement);
+
+        return default!;
+    }
+
     public override IOperand VisitLocalDeclaration(BoundLocalDeclaration node)
     {
         if (node.Value is null) return default!;
-
-        // Debug info
-        this.Write(SequencePoint(node.Syntax));
 
         var right = this.Compile(node.Value);
         var left = this.DefineLocal(node.Local);
@@ -98,19 +109,14 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     // Expressions /////////////////////////////////////////////////////////////
 
-    public override IOperand VisitExpressionStatement(BoundExpressionStatement node)
+    public override IOperand VisitSequencePointExpression(BoundSequencePointExpression node)
     {
-        // Debug info
-        if (IsSimpleExpression(node.Expression)) this.Write(SequencePoint(node.Syntax));
+        // Emit the sequence point
+        this.Write(SequencePoint(node.Syntax, node.Range));
 
-        return base.VisitExpressionStatement(node);
+        // Emit the expression
+        return this.Compile(node.Expression);
     }
-
-    private static bool IsSimpleExpression(BoundExpression expr) => expr switch
-    {
-        BoundBlockExpression => false,
-        _ => true,
-    };
 
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {

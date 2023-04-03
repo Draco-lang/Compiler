@@ -38,6 +38,8 @@
     <Field Name="Statement" Type="BoundStatement?" />
     <!-- If the range is specified, obey this -->
     <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
+    <!-- Emit NOP for safety -->
+    <Field Name="EmitNop" Type="bool" />
   </Node>
 
   <Node Name="BoundLocalDeclaration" Base="BoundStatement">

@@ -38,5 +38,5 @@ internal static class InstructionFactory
         Arithmetic(target, ArithmeticOp.Less, left, right);
     public static ArithmeticInstruction Equal(Register target, IOperand left, IOperand right) =>
         Arithmetic(target, ArithmeticOp.Equal, left, right);
-    public static SequencePoint SequencePoint(SyntaxNode? syntax) => new(syntax);
+    public static SequencePoint SequencePoint(SyntaxNode? syntax, SyntaxRange? range) => new(syntax, range);
 }

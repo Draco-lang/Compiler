@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -92,6 +93,43 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
                     emitNop: true)*/
                 ),
             value: LocalExpression(blockValue));
+    }
+
+    public override BoundNode VisitWhileExpression(BoundWhileExpression node)
+    {
+        // We wrap the condition
+        var condition = (BoundExpression)node.Condition.Accept(this);
+        condition = SequencePointExpression(
+            expression: condition,
+            range: node.Condition.Syntax?.Range);
+        // Leave body as-is
+        var then = (BoundExpression)node.Then.Accept(this);
+
+        return WhileExpression(
+            condition: condition,
+            then: then,
+            continueLabel: node.ContinueLabel,
+            breakLabel: node.BreakLabel);
+    }
+
+    // TODO: We'll need this for more sophisticated return expr
+    private static SyntaxNode? GetBlockFunctionBodyAncestor(SyntaxNode? syntax)
+    {
+        while (true)
+        {
+            if (syntax is null) return null;
+            switch (syntax)
+            {
+            case BlockFunctionBodySyntax block:
+                return block;
+            case InlineFunctionBodySyntax:
+            case UnexpectedFunctionBodySyntax:
+                return null;
+            default:
+                syntax = syntax.Parent;
+                break;
+            }
+        }
     }
 
     private static bool IsCompoundExpression(BoundExpression expr) => expr switch

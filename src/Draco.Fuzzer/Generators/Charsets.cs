@@ -12,7 +12,17 @@ namespace Draco.Fuzzer.Generators;
 internal static class Charsets
 {
     /// <summary>
-    /// Visible ASCII subset.
+    /// The graphical (visible) subset of ASCII.
     /// </summary>
-    public const string Ascii = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\r\n\t";
+    public const string GraphicalAscii = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
+    /// <summary>
+    /// The printable subset of ASCII.
+    /// </summary>
+    public const string PrintableAscii = $" {GraphicalAscii}";
+
+    /// <summary>
+    /// The printable subset of ASCII plus newlines and tabs.
+    /// </summary>
+    public const string PrintableAsciiWithWhitespaces = $"\r\n\t{PrintableAscii}";
 }

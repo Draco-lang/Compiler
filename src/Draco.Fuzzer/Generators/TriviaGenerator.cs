@@ -16,7 +16,9 @@ internal sealed class TriviaGenerator : IGenerator<SyntaxTrivia>
 {
     private readonly IGenerator<TriviaKind> triviaKindGenerator = Generator.EnumMember<TriviaKind>();
     private readonly IGenerator<string> whitespaceGenerator = Generator.String(" \t", minLength: 1, maxLength: 10);
-    private readonly IGenerator<string> newlineGenerator = Generator.Pick("\n", "\r", "\r\n");
+    private readonly IGenerator<string> newlineGenerator = Generator.Newline();
+    private readonly IGenerator<string> lineCommentGenerator = Generator.String().Map(x => $"//{x}");
+    private readonly IGenerator<string> documentationCommentGenerator = Generator.String().Map(x => $"///{x}");
 
     public SyntaxTrivia NextEpoch()
     {
@@ -32,8 +34,8 @@ internal sealed class TriviaGenerator : IGenerator<SyntaxTrivia>
 
     private string GenerateTriviaText(TriviaKind kind) => kind switch
     {
-        TriviaKind.LineComment => throw new NotImplementedException(),
-        TriviaKind.DocumentationComment => throw new NotImplementedException(),
+        TriviaKind.LineComment => this.lineCommentGenerator.NextEpoch(),
+        TriviaKind.DocumentationComment => this.documentationCommentGenerator.NextEpoch(),
         TriviaKind.Whitespace => this.whitespaceGenerator.NextEpoch(),
         TriviaKind.Newline => this.newlineGenerator.NextEpoch(),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),

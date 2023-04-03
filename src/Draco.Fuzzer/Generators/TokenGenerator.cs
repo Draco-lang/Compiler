@@ -16,7 +16,8 @@ internal sealed class TokenGenerator : IGenerator<SyntaxToken>
         .Sequence(minLength: 0, maxLength: 10);
     private readonly IGenerator<TokenKind> tokenKindGenerator = Generator.EnumMember<TokenKind>();
     private readonly IGenerator<int> intLiteralGenerator = Generator.Integer(0, 1000);
-    private readonly IGenerator<char> charLiteralGenerator = Generator.Character(Charsets.Ascii);
+    private readonly IGenerator<char> charLiteralGenerator = Generator.Character();
+    private readonly IGenerator<string> newlineGenerator = Generator.Newline();
 
     public SyntaxToken NextEpoch()
     {
@@ -61,11 +62,12 @@ internal sealed class TokenGenerator : IGenerator<SyntaxToken>
 
     private (string Text, object? Value) GenerateLiteralCharacter()
     {
-        // TODO: Not entirely correct
+        // TODO: We are missing escapes, sequences, ...
         var value = this.charLiteralGenerator.NextEpoch();
         return ($"'{value}'", value);
     }
 
-    // TODO
-    private (string Text, object? Value) GenerateStringNewline() => throw new NotImplementedException();
+    // TODO: Missing regular newline, continuation, ...
+    private (string Text, object? Value) GenerateStringNewline() =>
+        (this.newlineGenerator.NextEpoch(), string.Empty);
 }

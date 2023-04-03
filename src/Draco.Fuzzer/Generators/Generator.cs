@@ -59,8 +59,8 @@ internal static class Generator
         return Delegate(() => rnd.Next(min, max));
     }
 
-    public static IGenerator<char> Character(string? charset) =>
-        Pick((charset ?? Charsets.Ascii).AsEnumerable());
+    public static IGenerator<char> Character(string? charset = null) =>
+        Pick((charset ?? Charsets.PrintableAscii).AsEnumerable());
 
     public static IGenerator<TEnum> EnumMember<TEnum>() where TEnum : Enum =>
         Integer(0, Enum.GetValues(typeof(TEnum)).Length).Map(x => (TEnum)(object)x);
@@ -124,4 +124,6 @@ internal static class Generator
             MinInsert = minInsert,
             MaxInsert = maxInsert,
         });
+
+    public static IGenerator<string> Newline() => Pick("\r", "\n", "\r\n");
 }

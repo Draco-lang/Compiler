@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -41,6 +42,7 @@ internal sealed class SequencePoint : InstructionBase
             var end = range.Value.End;
             result.Append($" [{start.Line}:{start.Column}-{end.Line}:{end.Column}]");
         }
+        if (this.Syntax is not null) result.Append($" ({this.Syntax})");
         return result.ToString();
     }
 }

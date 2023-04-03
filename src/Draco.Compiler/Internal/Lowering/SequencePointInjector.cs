@@ -81,10 +81,11 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         return BlockExpression(
             locals: ImmutableArray.Create<LocalSymbol>(blockValue),
             statements: ImmutableArray.Create<BoundStatement>(
-                SequencePointStatement(
+                // TODO: Fix and readd this
+                /*SequencePointStatement(
                     statement: null,
                     range: openBrace.Range,
-                    emitNop: true),
+                    emitNop: true),*/
                 LocalDeclaration(blockValue, injectedBlock)
                 // TODO: Fix and readd this
                 /*SequencePointStatement(

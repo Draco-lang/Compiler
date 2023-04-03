@@ -136,8 +136,46 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             breakLabel: node.BreakLabel);
     }
 
+    public override BoundNode VisitReturnExpression(BoundReturnExpression node)
+    {
+        var ancestorBlock = GetBlockFunctionBodyAncestor(node.Syntax);
+        if (ancestorBlock is null) return base.VisitReturnExpression(node);
+
+        // We are in a block function, step onto the close brace before exiting
+        //
+        // func foo() {
+        //     ...
+        //     return value;
+        //     ...
+        // }
+        //
+        // =>
+        //
+        // func foo() {
+        //     ...
+        //     val storage = value; // Original return range
+        //     return storage; // Sequence point pointing at close brace
+        //     ...                |
+        //                        |
+        // } <--------------------+
+
+        var storage = new SynthetizedLocalSymbol(node.Value.TypeRequired, false);
+        var value = (BoundExpression)node.Value.Accept(this);
+
+        return BlockExpression(
+            locals: ImmutableArray.Create<LocalSymbol>(storage),
+            statements: ImmutableArray.Create<BoundStatement>(
+                LocalDeclaration(storage, value),
+                SequencePointStatement(
+                    statement: ExpressionStatement(ReturnExpression(LocalExpression(storage))),
+                    range: ancestorBlock.CloseBrace.Range,
+                    // We'll have a ret instruction
+                    emitNop: false)),
+            value: BoundUnitExpression.Default);
+    }
+
     // TODO: We'll need this for more sophisticated return expr
-    private static SyntaxNode? GetBlockFunctionBodyAncestor(SyntaxNode? syntax)
+    private static BlockFunctionBodySyntax? GetBlockFunctionBodyAncestor(SyntaxNode? syntax)
     {
         while (true)
         {

@@ -201,10 +201,10 @@ internal sealed class MetadataCodegen : MetadataWriterBase
                 assembly: systemRuntime,
                 @namespace: "System.Diagnostics",
                 name: "DebuggableAttribute");
-            var debuggingModes = this.MetadataBuilder.AddTypeReference(
-                resolutionScope: debuggableAttribute,
-                @namespace: this.GetOrAddString("System.Diagnostics"),
-                name: this.GetOrAddString("DebuggingModes"));
+            var debuggingModes = this.AddTypeReference(
+                containingType: debuggableAttribute,
+                @namespace: "System.Diagnostics",
+                name: "DebuggingModes");
             var debuggableAttributeCtor = this.AddMethodReference(
                 type: debuggableAttribute,
                 name: ".ctor",

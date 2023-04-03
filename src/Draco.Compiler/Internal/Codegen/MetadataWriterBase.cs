@@ -123,6 +123,14 @@ internal abstract class MetadataWriterBase
             @namespace: this.GetOrAddString(@namespace),
             name: this.GetOrAddString(name));
 
+    protected TypeReferenceHandle AddTypeReference(
+        TypeReferenceHandle containingType,
+        string? @namespace,
+        string name) => this.MetadataBuilder.AddTypeReference(
+            resolutionScope: containingType,
+            @namespace: this.GetOrAddString(@namespace),
+            name: this.GetOrAddString(name));
+
     protected MemberReferenceHandle AddMethodReference(
         TypeReferenceHandle type,
         string name,

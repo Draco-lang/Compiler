@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr.Model;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
@@ -39,4 +40,6 @@ internal static class InstructionFactory
     public static ArithmeticInstruction Equal(Register target, IOperand left, IOperand right) =>
         Arithmetic(target, ArithmeticOp.Equal, left, right);
     public static SequencePoint SequencePoint(SyntaxRange? range) => new(range);
+    public static StartScope StartScope(IEnumerable<LocalSymbol> locals) => new(locals);
+    public static EndScope EndScope() => new();
 }

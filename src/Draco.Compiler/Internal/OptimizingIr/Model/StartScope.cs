@@ -20,9 +20,9 @@ internal sealed class StartScope : InstructionBase
 
     public override bool IsValidInUnreachableContext => true;
 
-    public StartScope(ImmutableArray<LocalSymbol> locals)
+    public StartScope(IEnumerable<LocalSymbol> locals)
     {
-        this.Locals = locals;
+        this.Locals = locals.ToImmutableArray();
     }
 
     public override StartScope Clone() => new(this.Locals);

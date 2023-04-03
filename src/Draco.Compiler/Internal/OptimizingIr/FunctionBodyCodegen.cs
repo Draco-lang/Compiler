@@ -5,6 +5,7 @@ using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 using Draco.Compiler.Internal.Types;
 using System.Linq;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
@@ -151,10 +152,23 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitBlockExpression(BoundBlockExpression node)
     {
+        // Find locals that we care about
+        var locals = node.Locals
+            .OfType<SourceLocalSymbol>()
+            .ToList();
+
+        // Start scope
+        if (locals.Count > 0) this.Write(StartScope(locals));
+
         // Compile all of the statements within
         foreach (var stmt in node.Statements) this.Compile(stmt);
         // Compile value
-        return this.Compile(node.Value);
+        var result = this.Compile(node.Value);
+
+        // End scope
+        if (locals.Count > 0) this.Write(EndScope());
+
+        return result;
     }
 
     public override IOperand VisitAssignmentExpression(BoundAssignmentExpression node)

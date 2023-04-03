@@ -193,6 +193,32 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             // TODO: This depends on the order of types
             // we likely want to read this up from an index
             methodList: MetadataTokens.MethodDefinitionHandle(1));
+
+        // If we write a PDB, we add the debuggable attribute to the assembly
+        if (this.pdbCodegen is not null)
+        {
+            var debuggableAttribute = this.AddTypeReference(
+                assembly: systemRuntime,
+                @namespace: "System.Diagnostics",
+                name: "DebuggableAttribute");
+            var debuggingModes = this.MetadataBuilder.AddTypeReference(
+                resolutionScope: debuggableAttribute,
+                @namespace: this.GetOrAddString("System.Diagnostics"),
+                name: this.GetOrAddString("DebuggingModes"));
+            var debuggableAttributeCtor = this.AddMethodReference(
+                type: debuggableAttribute,
+                name: ".ctor",
+                signature: encoder =>
+                {
+                    encoder.Parameters(1, out var returnType, out var parameters);
+                    returnType.Void();
+                    parameters.AddParameter().Type().Type(debuggingModes, true);
+                });
+            this.MetadataBuilder.AddCustomAttribute(
+                parent: this.AssemblyDefinitionHandle,
+                constructor: debuggableAttributeCtor,
+                value: this.MetadataBuilder.GetOrAddBlob(new byte[] { 01, 00, 07, 01, 00, 00, 00, 00 }));
+        }
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)

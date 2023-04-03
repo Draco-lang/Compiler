@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -59,6 +60,14 @@ internal static class Generator
         return Delegate(() => rnd.Next(min, max));
     }
 
+    public static IGenerator<double> Float(double min, double max)
+    {
+        var rnd = new Random();
+        return Delegate(
+            () => rnd.NextDouble() * (max - min) + min,
+            toString: x => x.ToString(CultureInfo.InvariantCulture));
+    }
+
     public static IGenerator<char> Character(string? charset = null) =>
         Pick((charset ?? Charsets.PrintableAscii).AsEnumerable());
 
@@ -68,11 +77,18 @@ internal static class Generator
     public static IGenerator<TNew> Map<TOld, TNew>(
         this IGenerator<TOld> generator,
         Func<TOld, TNew> map,
-        Func<TNew, string>? toString = null)
-    {
-        toString ??= x => x?.ToString() ?? "null";
-        return new MapGenerator<TOld, TNew>(generator, map, toString);
-    }
+        Func<TNew, string>? toString = null) => Delegate(
+            nextEpoch: () => map(generator.NextEpoch()),
+            nextMutation: () => map(generator.NextMutation()),
+            toString: toString);
+
+    public static IGenerator<(T1 First, T2 Second)> Zip<T1, T2>(
+        this IGenerator<T1> first,
+        IGenerator<T2> second,
+        Func<(T1 First, T2 Second), string>? toString = null) => Delegate(
+            nextEpoch: () => (first.NextEpoch(), second.NextEpoch()),
+            nextMutation: () => (first.NextMutation(), second.NextMutation()),
+            toString: toString);
 
     public static IGenerator<ImmutableArray<T>> Sequence<T>(
         this IGenerator<T> element,

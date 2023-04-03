@@ -49,7 +49,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitSequencePointStatement(BoundSequencePointStatement node)
     {
         // Emit the sequence point
-        this.Write(SequencePoint(node.Syntax, node.Range));
+        this.Write(SequencePoint(node.Statement?.Syntax, node.Range));
 
         // If we need to emit a NOP, emit it
         if (node.Statement is null || node.EmitNop) this.Write(Nop());
@@ -112,7 +112,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitSequencePointExpression(BoundSequencePointExpression node)
     {
         // Emit the sequence point
-        this.Write(SequencePoint(node.Syntax, node.Range));
+        this.Write(SequencePoint(node.Expression.Syntax, node.Range));
 
         // Emit the expression
         return this.Compile(node.Expression);

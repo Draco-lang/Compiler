@@ -68,11 +68,13 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
                     statement: null,
                     range: openBrace.Range,
                     emitNop: true),
-                LocalDeclaration(blockValue, injectedBlock),
-                SequencePointStatement(
+                LocalDeclaration(blockValue, injectedBlock)
+                // TODO: Fix and readd this
+                /*SequencePointStatement(
                     statement: null,
                     range: closeBrace.Range,
-                    emitNop: true)),
+                    emitNop: true)*/
+                ),
             value: LocalExpression(blockValue));
     }
 }

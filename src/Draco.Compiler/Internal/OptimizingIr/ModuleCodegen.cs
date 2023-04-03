@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -16,9 +17,12 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed class ModuleCodegen : SymbolVisitor
 {
-    public static Assembly Generate(Compilation compilation, ModuleSymbol symbol)
+    public static Assembly Generate(
+        Compilation compilation,
+        ModuleSymbol symbol,
+        bool emitSequencePoints)
     {
-        var codegen = new ModuleCodegen(compilation, symbol);
+        var codegen = new ModuleCodegen(compilation, symbol, emitSequencePoints);
         symbol.Accept(codegen);
         codegen.Complete();
         return codegen.assembly;
@@ -26,14 +30,16 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     private readonly Assembly assembly;
     private readonly FunctionBodyCodegen globalInitializer;
+    private readonly bool emitSequencePoints;
 
-    private ModuleCodegen(Compilation compilation, ModuleSymbol module)
+    private ModuleCodegen(Compilation compilation, ModuleSymbol module, bool emitSequencePoints)
     {
         this.assembly = new(module)
         {
             Name = compilation.AssemblyName,
         };
         this.globalInitializer = new(this.assembly.GlobalInitializer);
+        this.emitSequencePoints = emitSequencePoints;
     }
 
     private void Complete()
@@ -57,8 +63,11 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)
         {
+            var body = sourceGlobal.Value;
+            // If needed, inject sequence points
+            if (this.emitSequencePoints) body = (BoundExpression)body.Accept(SequencePointInjector.Instance);
             // Desugar value
-            var body = sourceGlobal.Value.Accept(LocalRewriter.Instance);
+            body = (BoundExpression)body.Accept(LocalRewriter.Instance);
             // Compile it
             var value = body.Accept(this.globalInitializer);
             // Store it
@@ -77,8 +86,12 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
         // Generate function body
         var bodyCodegen = new FunctionBodyCodegen(procedure);
+        var body = sourceFunction.Body;
+        // If needed, inject sequence points
+        if (this.emitSequencePoints) body = (BoundStatement)body.Accept(SequencePointInjector.Instance);
         // Desugar it
-        var body = sourceFunction.Body.Accept(LocalRewriter.Instance);
+        body = (BoundStatement)body.Accept(LocalRewriter.Instance);
+        // Compile it
         body.Accept(bodyCodegen);
     }
 }

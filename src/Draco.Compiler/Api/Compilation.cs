@@ -149,7 +149,10 @@ public sealed class Compilation
         }
 
         // Generate IR
-        var assembly = ModuleCodegen.Generate(this, this.GlobalModule);
+        var assembly = ModuleCodegen.Generate(
+            compilation: this,
+            symbol: this.GlobalModule,
+            emitSequencePoints: pdbStream is not null);
         // Optimize the IR
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(assembly);

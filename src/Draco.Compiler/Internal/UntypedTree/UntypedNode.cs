@@ -48,6 +48,11 @@ internal partial class UntypedUnexpectedExpression
     public override Type Type => IntrinsicTypes.Error;
 }
 
+internal partial class UntypedSequencePointExpression
+{
+    public override Type? Type => this.Expression.Type;
+}
+
 internal partial class UntypedUnitExpression
 {
     public static UntypedUnitExpression Default { get; } = new(null);

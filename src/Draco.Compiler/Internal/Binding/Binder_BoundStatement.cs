@@ -18,12 +18,21 @@ internal partial class Binder
     internal virtual BoundStatement TypeStatement(UntypedStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) => statement switch
     {
         UntypedUnexpectedStatement unexpected => new BoundUnexpectedStatement(unexpected.Syntax),
+        UntypedSequencePointStatement sequence => this.TypeSequencePointStatement(sequence, constraints, diagnostics),
         UntypedNoOpStatement noOp => this.TypeNoOpStatement(noOp, constraints, diagnostics),
         UntypedLabelStatement label => this.TypeLabelStatement(label, constraints, diagnostics),
         UntypedLocalDeclaration local => this.TypeLocalDeclaration(local, constraints, diagnostics),
         UntypedExpressionStatement expr => this.TypeExpressionStatement(expr, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(statement)),
     };
+
+    private BoundStatement TypeSequencePointStatement(UntypedSequencePointStatement sequence, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var stmt = sequence.Statement is null
+            ? null
+            : this.TypeStatement(sequence.Statement, constraints, diagnostics);
+        return new BoundSequencePointStatement(sequence.Syntax, stmt, sequence.Range);
+    }
 
     private BoundStatement TypeNoOpStatement(UntypedNoOpStatement noOp, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

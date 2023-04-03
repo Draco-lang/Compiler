@@ -32,8 +32,12 @@
     <Field Name="Expression" Type="BoundExpression" />
   </Node>
 
-  <Node Name="BoundSequencePoint" Base="BoundStatement">
+  <!-- Debug info -->
+  <Node Name="BoundSequencePointStatement" Base="BoundStatement">
+    <!-- If null, emit NOP -->
     <Field Name="Statement" Type="BoundStatement?" />
+    <!-- If the range is specified, obey this -->
+    <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
   </Node>
 
   <Node Name="BoundLocalDeclaration" Base="BoundStatement">
@@ -47,6 +51,13 @@
   </Node>
 
   <Node Name="BoundUnitExpression" Base="BoundExpression">
+  </Node>
+
+  <!-- Debug info -->
+  <Node Name="BoundSequencePointExpression" Base="BoundExpression">
+    <Field Name="Expression" Type="BoundExpression" />
+    <!-- If the range is specified, obey this -->
+    <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
   </Node>
 
   <Node Name="BoundGotoExpression" Base="BoundExpression">

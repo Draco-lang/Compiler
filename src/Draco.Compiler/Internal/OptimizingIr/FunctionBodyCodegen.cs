@@ -43,7 +43,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         //     foo:
         //
         // Another simple example would be code after return
-        if (this.isDetached) return;
+        if (this.isDetached && !instr.IsValidInUnreachableContext) return;
         this.currentBasicBlock.InsertLast(instr);
     }
 

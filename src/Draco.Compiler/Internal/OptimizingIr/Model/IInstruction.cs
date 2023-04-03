@@ -32,6 +32,11 @@ internal interface IInstruction
     public bool IsBranch { get; }
 
     /// <summary>
+    /// True, if this instruction is valid in a detached block state, which is true for certain debugger metadata.
+    /// </summary>
+    public bool IsValidInUnreachableContext { get; }
+
+    /// <summary>
     /// The jump targets for this instruction.
     /// </summary>
     public IEnumerable<IBasicBlock> JumpTargets { get; }

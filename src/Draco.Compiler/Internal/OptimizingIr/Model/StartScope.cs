@@ -18,6 +18,8 @@ internal sealed class StartScope : InstructionBase
     /// </summary>
     public ImmutableArray<LocalSymbol> Locals { get; }
 
+    public override bool IsValidInUnreachableContext => true;
+
     public StartScope(ImmutableArray<LocalSymbol> locals)
     {
         this.Locals = locals;

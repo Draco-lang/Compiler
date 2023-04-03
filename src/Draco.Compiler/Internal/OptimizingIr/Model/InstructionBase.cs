@@ -19,6 +19,7 @@ internal abstract class InstructionBase : IInstruction
     public InstructionBase? Next { get; set; }
     IInstruction? IInstruction.Next => this.Next;
     public virtual bool IsBranch => false;
+    public virtual bool IsValidInUnreachableContext => false;
     public virtual IEnumerable<BasicBlock> JumpTargets => Enumerable.Empty<BasicBlock>();
     IEnumerable<IBasicBlock> IInstruction.JumpTargets => this.JumpTargets;
     public virtual IEnumerable<IOperand> Operands => Enumerable.Empty<IOperand>();

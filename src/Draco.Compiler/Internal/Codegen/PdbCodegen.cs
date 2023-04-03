@@ -67,22 +67,22 @@ internal sealed class PdbCodegen
 
     public void AddSequencePoint(InstructionEncoder encoder, OptimizingIr.Model.SequencePoint sequencePoint)
     {
-        var sp = this.MakeSequencePoint(encoder, sequencePoint.Syntax);
+        var sp = this.MakeSequencePoint(encoder, sequencePoint.Syntax, sequencePoint.Range);
         this.sequencePoints.Add(sp);
     }
 
-    private SequencePoint MakeSequencePoint(InstructionEncoder encoder, SyntaxNode? syntax)
+    private SequencePoint MakeSequencePoint(InstructionEncoder encoder, SyntaxNode? syntax, SyntaxRange? range)
     {
         if (syntax is null) return SequencePoint.Hidden(default, encoder.Offset);
         var document = this.GetOrAddDocument(syntax);
-        var range = syntax.Range;
+        var finalRange = range ?? syntax.Range;
         return new(
             Document: document,
             IlOffset: encoder.Offset,
-            StartLine: range.Start.Line + 1,
-            StartColumn: range.Start.Column + 1,
-            EndLine: range.End.Line + 1,
-            EndColumn: range.End.Column + 1);
+            StartLine: finalRange.Start.Line + 1,
+            StartColumn: finalRange.Start.Column + 1,
+            EndLine: finalRange.End.Line + 1,
+            EndColumn: finalRange.End.Column + 1);
     }
 
     private DocumentHandle GetOrAddDocument(SyntaxNode? syntax) => this.GetOrAddDocument(syntax?.Tree.SourceText);

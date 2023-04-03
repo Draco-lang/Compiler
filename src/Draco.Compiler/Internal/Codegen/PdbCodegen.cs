@@ -75,10 +75,10 @@ internal sealed class PdbCodegen
         return new(
             Document: document,
             IlOffset: encoder.Offset,
-            StartLine: range.Start.Line,
-            StartColumn: range.Start.Column,
-            EndLine: range.End.Line,
-            EndColumn: range.End.Column);
+            StartLine: range.Start.Line + 1,
+            StartColumn: range.Start.Column + 1,
+            EndLine: range.End.Line + 1,
+            EndColumn: range.End.Column + 1);
     }
 
     private DocumentHandle GetOrAddDocument(SyntaxNode? syntax) => this.GetOrAddDocument(syntax?.Tree.SourceText);

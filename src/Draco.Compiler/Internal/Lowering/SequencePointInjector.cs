@@ -95,6 +95,24 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             value: LocalExpression(blockValue));
     }
 
+    public override BoundNode VisitIfExpression(BoundIfExpression node)
+    {
+        // We wrap the condition
+        var condition = (BoundExpression)node.Condition.Accept(this);
+        condition = SequencePointExpression(
+            expression: condition,
+            range: node.Condition.Syntax?.Range);
+        // Leave branches as-is
+        var then = (BoundExpression)node.Then.Accept(this);
+        var @else = (BoundExpression)node.Else.Accept(this);
+
+        return IfExpression(
+            condition: condition,
+            then: then,
+            @else: @else,
+            type: node.Type);
+    }
+
     public override BoundNode VisitWhileExpression(BoundWhileExpression node)
     {
         // We wrap the condition

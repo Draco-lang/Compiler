@@ -26,6 +26,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private IOperand Compile(BoundLvalue lvalue) => lvalue.Accept(this);
     private IOperand Compile(BoundExpression expr) => expr.Accept(this);
 
+    private void DetachBlock() => this.currentBasicBlock = null;
+
     public void Write(IInstruction instr)
     {
         // Happens, when the basic block got detached and there's code left over to compile
@@ -33,6 +35,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         //     goto foo;
         //     y = x;    // This is inaccessible, current BB is null here!
         //     foo:
+        //
+        // Another simple example would be code after return
         if (this.currentBasicBlock is null) return;
         this.currentBasicBlock.InsertLast(instr);
     }
@@ -132,8 +136,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         var target = this.DefineBasicBlock(node.Target);
         this.Write(Jump(target));
-        // Detach current block
-        this.currentBasicBlock = null;
+        this.DetachBlock();
         return default(Void);
     }
 
@@ -274,6 +277,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         var operand = this.Compile(node.Value);
         this.Write(Ret(operand));
+        this.DetachBlock();
         return default!;
     }
 

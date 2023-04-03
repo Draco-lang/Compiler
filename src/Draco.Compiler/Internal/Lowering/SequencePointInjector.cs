@@ -57,6 +57,12 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
     {
         if (node.Syntax is null) return base.VisitBlockExpression(node);
 
+        // Check braces too, as we desugar many things to blocks
+        var openBrace = node.Syntax.Children.First();
+        var closeBrace = node.Syntax.Children.Last();
+        if (openBrace is not SyntaxToken { Kind: TokenKind.CurlyOpen }) return base.VisitBlockExpression(node);
+        if (closeBrace is not SyntaxToken { Kind: TokenKind.CurlyClose }) return base.VisitBlockExpression(node);
+
         // We add sequence points to the braces
         // {
         // ^ here
@@ -71,9 +77,6 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         //     <sequence point for }>
         //     blockValue
         // }
-
-        var openBrace = node.Syntax.Children.First();
-        var closeBrace = node.Syntax.Children.Last();
 
         var injectedBlock = (BoundExpression)base.VisitBlockExpression(node);
         var blockValue = new SynthetizedLocalSymbol(node.Type, false);

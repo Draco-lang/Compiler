@@ -28,7 +28,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private IOperand Compile(BoundLvalue lvalue) => lvalue.Accept(this);
     private IOperand Compile(BoundExpression expr) => expr.Accept(this);
 
-    private void AttackBlock(BasicBlock basicBlock)
+    private void AttachBlock(BasicBlock basicBlock)
     {
         this.currentBasicBlock = basicBlock;
         this.isDetached = false;
@@ -90,7 +90,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // Here we thread the previous basic block to this one
         // Basically an implicit goto
         this.Write(Jump(newBasicBlock));
-        this.AttackBlock(newBasicBlock);
+        this.AttachBlock(newBasicBlock);
 
         return default!;
     }
@@ -108,7 +108,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol());
         this.Write(Branch(condition, thenBlock, elseBlock));
         // We fall-through to the else block implicitly
-        this.AttackBlock(elseBlock);
+        this.AttachBlock(elseBlock);
 
         return default!;
     }

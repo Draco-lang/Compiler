@@ -82,16 +82,16 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             locals: ImmutableArray.Create<LocalSymbol>(blockValue),
             statements: ImmutableArray.Create<BoundStatement>(
                 // TODO: Fix and readd this
-                /*SequencePointStatement(
+                SequencePointStatement(
                     statement: null,
                     range: openBrace.Range,
-                    emitNop: true),*/
-                LocalDeclaration(blockValue, injectedBlock)
+                    emitNop: true),
+                LocalDeclaration(blockValue, injectedBlock),
                 // TODO: Fix and readd this
-                /*SequencePointStatement(
+                SequencePointStatement(
                     statement: null,
                     range: closeBrace.Range,
-                    emitNop: true)*/
+                    emitNop: true)
                 ),
             value: LocalExpression(blockValue));
     }
@@ -102,7 +102,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         var condition = (BoundExpression)node.Condition.Accept(this);
         condition = SequencePointExpression(
             expression: condition,
-            range: node.Condition.Syntax?.Range,
+            range: GetParenthesizedRange(node.Condition.Syntax),
             emitNop: true);
         // Leave branches as-is
         var then = (BoundExpression)node.Then.Accept(this);
@@ -121,7 +121,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         var condition = (BoundExpression)node.Condition.Accept(this);
         condition = SequencePointExpression(
             expression: condition,
-            range: node.Condition.Syntax?.Range,
+            range: GetParenthesizedRange(node.Condition.Syntax),
             emitNop: true);
         // Leave body as-is
         var then = (BoundExpression)node.Then.Accept(this);
@@ -151,6 +151,27 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
                 break;
             }
         }
+    }
+
+    /// <summary>
+    /// Searches for a parenthesized range for a given syntax element. This is used for
+    /// if-else and loop conditions.
+    /// </summary>
+    /// <param name="syntax">The syntax to retrieve the parenthesized range of (probably a condition).</param>
+    /// <returns>The range of the parenthesized range.</returns>
+    private static SyntaxRange? GetParenthesizedRange(SyntaxNode? syntax)
+    {
+        if (syntax is null) return null;
+        if (syntax.Parent is null) return syntax.Range;
+
+        return syntax.Parent switch
+        {
+            IfExpressionSyntax @if when ReferenceEquals(syntax, @if.Condition) =>
+                new(@if.OpenParen.Range.Start, @if.CloseParen.Range.End),
+            WhileExpressionSyntax @while when ReferenceEquals(syntax, @while.Condition) =>
+                new(@while.OpenParen.Range.Start, @while.CloseParen.Range.End),
+            _ => syntax.Range,
+        };
     }
 
     private static bool IsCompoundExpression(BoundExpression expr) => expr switch

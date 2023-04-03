@@ -173,6 +173,6 @@ public sealed class Issue139Tests
         var syntaxTree = SyntaxTree.Parse(source);
         var compilation = Compilation.Create(ImmutableArray.Create(syntaxTree));
         _ = compilation.Diagnostics.ToList();
-        compilation.Emit(new MemoryStream());
+        compilation.Emit(peStream: new MemoryStream());
     }
 }

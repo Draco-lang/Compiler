@@ -115,14 +115,14 @@ public sealed class Compilation
     /// <param name="pdbStream">The stream to write the PDB to.</param>
     /// <param name="declarationTreeStream">The stream to write the DOT graph of the declaration tree to.</param>
     /// <param name="symbolTreeStream">The stream to write the DOT graph of the symbol tree to.</param>
-    /// <param name="dracoIrStream">The stream to write a textual representation of the Draco IR to.</param>
+    /// <param name="irStream">The stream to write a textual representation of the IR to.</param>
     /// <returns>The result of the emission.</returns>
     public EmitResult Emit(
-        Stream peStream,
+        Stream? peStream = null,
         Stream? pdbStream = null,
         Stream? declarationTreeStream = null,
         Stream? symbolTreeStream = null,
-        Stream? dracoIrStream = null)
+        Stream? irStream = null)
     {
         // Write the declaration tree, if needed
         if (declarationTreeStream is not null)
@@ -155,15 +155,15 @@ public sealed class Compilation
         OptimizationPipeline.Instance.Apply(assembly);
 
         // Write the IR, if needed
-        if (dracoIrStream is not null)
+        if (irStream is not null)
         {
-            var irWriter = new StreamWriter(dracoIrStream);
+            var irWriter = new StreamWriter(irStream);
             irWriter.Write(assembly.ToString());
             irWriter.Flush();
         }
 
         // Generate CIL and PDB
-        MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
+        if (peStream is not null) MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
 
         return new(
             Success: true,

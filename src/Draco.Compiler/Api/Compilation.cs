@@ -36,10 +36,15 @@ public sealed class Compilation
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
+    /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
-    public static Compilation Create(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName = null) => new(
+    public static Compilation Create(
+        ImmutableArray<SyntaxTree> syntaxTrees,
+        string? outputPath = null,
+        string? assemblyName = null) => new(
         syntaxTrees: syntaxTrees,
+        outputPath: outputPath,
         assemblyName: assemblyName);
 
     // TODO: Probably not the smartest idea, will only work for single files (likely)
@@ -57,9 +62,14 @@ public sealed class Compilation
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
 
     /// <summary>
+    /// The output path.
+    /// </summary>
+    public string OutputPath { get; }
+
+    /// <summary>
     /// The name of the output assembly.
     /// </summary>
-    public string? AssemblyName { get; }
+    public string AssemblyName { get; }
 
     /// <summary>
     /// The global module symbol of the compilation.
@@ -80,10 +90,14 @@ public sealed class Compilation
 
     private readonly BinderCache binderCache;
 
-    private Compilation(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName)
+    private Compilation(
+        ImmutableArray<SyntaxTree> syntaxTrees,
+        string? outputPath,
+        string? assemblyName)
     {
         this.SyntaxTrees = syntaxTrees;
-        this.AssemblyName = assemblyName;
+        this.OutputPath = outputPath ?? ".";
+        this.AssemblyName = assemblyName ?? "output";
         this.binderCache = new(this);
     }
 
@@ -135,7 +149,7 @@ public sealed class Compilation
         }
 
         // Generate IR
-        var assembly = ModuleCodegen.Generate(this.GlobalModule);
+        var assembly = ModuleCodegen.Generate(this, this.GlobalModule);
         // Optimize the IR
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(assembly);

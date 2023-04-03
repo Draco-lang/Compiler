@@ -36,6 +36,22 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             emitNop: node.Value is null);
     }
 
+    public override BoundNode VisitExpressionStatement(BoundExpressionStatement node)
+    {
+        var injected = (BoundStatement)base.VisitExpressionStatement(node);
+
+        if (!IsCompoundExpression(node.Expression))
+        {
+            // Wrap in a sequence point
+            injected = SequencePointStatement(
+                statement: injected,
+                range: node.Syntax?.Range,
+                emitNop: false);
+        }
+
+        return injected;
+    }
+
     public override BoundNode VisitBlockExpression(BoundBlockExpression node)
     {
         if (node.Syntax is null) return base.VisitBlockExpression(node);
@@ -77,4 +93,10 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
                 ),
             value: LocalExpression(blockValue));
     }
+
+    private static bool IsCompoundExpression(BoundExpression expr) => expr switch
+    {
+        BoundBlockExpression or BoundWhileExpression or BoundIfExpression => true,
+        _ => false,
+    };
 }

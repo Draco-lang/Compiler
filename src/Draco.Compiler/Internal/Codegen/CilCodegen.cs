@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -106,6 +107,20 @@ internal sealed class CilCodegen
         case OptimizingIr.Model.SequencePoint sp:
         {
             this.pdbCodegen?.AddSequencePoint(this.InstructionEncoder, sp);
+            break;
+        }
+        case StartScope start:
+        {
+            var localIndices = start.Locals
+                .Select(sym => this.procedure.Locals[sym])
+                .Select(loc => this.locals[loc])
+                .ToImmutableArray();
+            this.pdbCodegen?.StartScope(localIndices);
+            break;
+        }
+        case EndScope:
+        {
+            this.pdbCodegen?.EndScope();
             break;
         }
         case NopInstruction:

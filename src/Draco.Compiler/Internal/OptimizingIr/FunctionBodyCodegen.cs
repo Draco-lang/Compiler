@@ -14,7 +14,8 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 {
     private readonly Procedure procedure;
-    private BasicBlock? currentBasicBlock;
+    private BasicBlock currentBasicBlock;
+    private bool isDetached;
 
     public FunctionBodyCodegen(Procedure procedure)
     {
@@ -26,7 +27,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private IOperand Compile(BoundLvalue lvalue) => lvalue.Accept(this);
     private IOperand Compile(BoundExpression expr) => expr.Accept(this);
 
-    private void DetachBlock() => this.currentBasicBlock = null;
+    private void AttackBlock(BasicBlock basicBlock)
+    {
+        this.currentBasicBlock = basicBlock;
+        this.isDetached = false;
+    }
+    private void DetachBlock() => this.isDetached = true;
 
     public void Write(IInstruction instr)
     {
@@ -37,7 +43,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         //     foo:
         //
         // Another simple example would be code after return
-        if (this.currentBasicBlock is null) return;
+        if (this.isDetached) return;
         this.currentBasicBlock.InsertLast(instr);
     }
 
@@ -83,7 +89,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // Here we thread the previous basic block to this one
         // Basically an implicit goto
         this.Write(Jump(newBasicBlock));
-        this.currentBasicBlock = newBasicBlock;
+        this.AttackBlock(newBasicBlock);
 
         return default!;
     }
@@ -101,7 +107,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol());
         this.Write(Branch(condition, thenBlock, elseBlock));
         // We fall-through to the else block implicitly
-        this.currentBasicBlock = elseBlock;
+        this.AttackBlock(elseBlock);
 
         return default!;
     }

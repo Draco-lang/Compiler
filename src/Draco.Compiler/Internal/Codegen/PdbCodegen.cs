@@ -65,6 +65,18 @@ internal sealed class PdbCodegen
         this.sequencePoints.Clear();
     }
 
+    public void StartScope(ImmutableArray<int> localIndices)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public void EndScope()
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
     public void AddSequencePoint(InstructionEncoder encoder, OptimizingIr.Model.SequencePoint sequencePoint)
     {
         var sp = this.MakeSequencePoint(encoder, sequencePoint.Range);

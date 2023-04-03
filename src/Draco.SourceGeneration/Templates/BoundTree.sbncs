@@ -133,11 +133,25 @@ namespace Draco.Compiler.Internal.BoundTree;
     {{if !$node.IsAbstract}}
         internal static partial class BoundTreeFactory
         {
-            public static {{$node.Name}} {{remove_prefix($node.Name, 'Bound')}}(
+            {{$factory_method = remove_prefix($node.Name, 'Bound')}}
+
+            public static {{$node.Name}} {{$factory_method}}(
+                Api.Syntax.SyntaxNode? syntax
+                {{for $element in $node.Fields}}
+                    , {{$element.Type}} {{camel_case($element.Name)}}
+                {{end}}
+            ) => new {{$node.Name}}(
+                syntax
+                {{for $element in $node.Fields}}
+                    , {{camel_case($element.Name)}}
+                {{end}}
+            );
+
+            public static {{$node.Name}} {{$factory_method}}(
                 {{wrap separated(', ', $node.Fields)}}
                     {{$element.Type}} {{camel_case($element.Name)}}
                 {{end}}
-            ) => new {{$node.Name}}(
+            ) => {{$factory_method}}(
                 null
                 {{for $element in $node.Fields}}
                     , {{camel_case($element.Name)}}

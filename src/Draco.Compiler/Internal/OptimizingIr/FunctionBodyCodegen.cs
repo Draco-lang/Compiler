@@ -104,8 +104,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // Note, that for side-effects we still emit the condition code
         if (ReferenceEquals(node.Condition.TypeRequired, IntrinsicTypes.Never)) return default(Void);
 
-        var thenBlock = this.DefineBasicBlock(node.Target);
+        // NOTE: The order of block definitions is extremely important here
+        // Keep it this way to have code laid out in topological order
         var elseBlock = this.DefineBasicBlock(new SynthetizedLabelSymbol());
+        var thenBlock = this.DefineBasicBlock(node.Target);
         this.Write(Branch(condition, thenBlock, elseBlock));
         // We fall-through to the else block implicitly
         this.AttachBlock(elseBlock);

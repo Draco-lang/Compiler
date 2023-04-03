@@ -59,10 +59,8 @@ internal static class Generator
         return Delegate(() => rnd.Next(min, max));
     }
 
-    public static IGenerator<char> Character(string? charset) => new CharGenerator()
-    {
-        Charset = charset ?? Charsets.Ascii,
-    };
+    public static IGenerator<char> Character(string? charset) =>
+        Pick((charset ?? Charsets.Ascii).AsEnumerable());
 
     public static IGenerator<TEnum> EnumMember<TEnum>() where TEnum : Enum =>
         Integer(0, Enum.GetValues(typeof(TEnum)).Length).Map(x => (TEnum)(object)x);

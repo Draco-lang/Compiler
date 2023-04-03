@@ -15,6 +15,8 @@ namespace Draco.Fuzzer.Generators;
 internal sealed class TriviaGenerator : IGenerator<SyntaxTrivia>
 {
     private readonly IGenerator<TriviaKind> triviaKindGenerator = Generator.EnumMember<TriviaKind>();
+    private readonly IGenerator<string> whitespaceGenerator = Generator.String(" \t", minLength: 1, maxLength: 10);
+    private readonly IGenerator<string> newlineGenerator = Generator.Pick("\n", "\r", "\r\n");
 
     public SyntaxTrivia NextEpoch()
     {
@@ -32,8 +34,8 @@ internal sealed class TriviaGenerator : IGenerator<SyntaxTrivia>
     {
         TriviaKind.LineComment => throw new NotImplementedException(),
         TriviaKind.DocumentationComment => throw new NotImplementedException(),
-        TriviaKind.Whitespace => throw new NotImplementedException(),
-        TriviaKind.Newline => throw new NotImplementedException(),
+        TriviaKind.Whitespace => this.whitespaceGenerator.NextEpoch(),
+        TriviaKind.Newline => this.newlineGenerator.NextEpoch(),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 }

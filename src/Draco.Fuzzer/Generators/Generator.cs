@@ -44,6 +44,15 @@ internal static class Generator
         return new DelegateGenerator<T>(nextEpoch, nextMutation, toString);
     }
 
+    public static IGenerator<T> Pick<T>(params T[] elements) => Pick(elements.AsEnumerable());
+
+    public static IGenerator<T> Pick<T>(IEnumerable<T> elements)
+    {
+        var rnd = new Random();
+        var elementsArray = elements.ToArray();
+        return Delegate(() => elementsArray[rnd.Next(0, elementsArray.Length)]);
+    }
+
     public static IGenerator<int> Integer(int min, int max)
     {
         var rnd = new Random();
@@ -57,15 +66,6 @@ internal static class Generator
 
     public static IGenerator<TEnum> EnumMember<TEnum>() where TEnum : Enum =>
         Integer(0, Enum.GetValues(typeof(TEnum)).Length).Map(x => (TEnum)(object)x);
-
-    public static IGenerator<string> String(
-        string? charset = null,
-        SequenceGenerationSettings? settings = null)
-    {
-        var charGenerator = Character(charset);
-        var sequence = charGenerator.Sequence(settings ?? SequenceGenerationSettings.Default);
-        return sequence.Map(seq => new string(seq.ToArray()));
-    }
 
     public static IGenerator<TNew> Map<TOld, TNew>(
         this IGenerator<TOld> generator,
@@ -92,6 +92,32 @@ internal static class Generator
         int maxRemove = 10,
         int minInsert = 0,
         int maxInsert = 10) => element.Sequence(new SequenceGenerationSettings()
+        {
+            MinLength = minLength,
+            MaxLength = maxLength,
+            MinRemove = minRemove,
+            MaxRemove = maxRemove,
+            MinInsert = minInsert,
+            MaxInsert = maxInsert,
+        });
+
+    public static IGenerator<string> String(
+        string? charset,
+        SequenceGenerationSettings settings)
+    {
+        var charGenerator = Character(charset);
+        var sequence = charGenerator.Sequence(settings ?? SequenceGenerationSettings.Default);
+        return sequence.Map(seq => new string(seq.ToArray()));
+    }
+
+    public static IGenerator<string> String(
+        string? charset = null,
+        int minLength = 0,
+        int maxLength = 100,
+        int minRemove = 0,
+        int maxRemove = 10,
+        int minInsert = 0,
+        int maxInsert = 10) => String(charset, new SequenceGenerationSettings()
         {
             MinLength = minLength,
             MaxLength = maxLength,

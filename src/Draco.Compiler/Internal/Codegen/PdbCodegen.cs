@@ -52,7 +52,10 @@ internal sealed class PdbCodegen
     {
         var sequencePointsForMethod = this.sequencePoints.ToImmutable();
 
-        this.EncodeSequencePoints(default, sequencePointsForMethod);
+        var sequencePoints = this.EncodeSequencePoints(default, sequencePointsForMethod);
+        this.metadataBuilder.AddMethodDebugInformation(
+            document: this.GetOrAddDocument(procedure.Symbol.DeclarationSyntax),
+            sequencePoints: sequencePoints);
 
         // Clear for next
         this.sequencePoints.Clear();

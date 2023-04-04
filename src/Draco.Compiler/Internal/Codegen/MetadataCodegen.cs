@@ -311,7 +311,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             parameterList: parameterList);
 
         // Finalize
-        cilCodegen.FinalizeProcedure(definitionHandle);
+        this.PdbCodegen?.EncodeProcedureDebugInfo(procedure, definitionHandle);
 
         return definitionHandle;
     }

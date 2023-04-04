@@ -133,10 +133,19 @@ internal abstract class MetadataWriterBase
     private TypeReferenceHandle GetOrAddTypeReference(
         EntityHandle parent,
         string? @namespace,
-        string name) => this.MetadataBuilder.AddTypeReference(
-            resolutionScope: parent,
-            @namespace: this.GetOrAddString(@namespace),
-            name: this.GetOrAddString(name));
+        string name)
+    {
+        @namespace ??= string.Empty;
+        if (!this.typeReferences.TryGetValue((parent, @namespace, name), out var handle))
+        {
+            handle = this.MetadataBuilder.AddTypeReference(
+                resolutionScope: parent,
+                @namespace: this.GetOrAddString(@namespace),
+                name: this.GetOrAddString(name));
+            this.typeReferences.Add((parent, @namespace, name), handle);
+        }
+        return handle;
+    }
 
     protected TypeReferenceHandle GetOrAddTypeReference(
         AssemblyReferenceHandle assembly,

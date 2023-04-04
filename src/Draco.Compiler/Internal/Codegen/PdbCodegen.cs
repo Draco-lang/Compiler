@@ -59,7 +59,7 @@ internal sealed class PdbCodegen : MetadataWriterBase
         return debugDirectoryBuilder;
     }
 
-    public void FinalizeProcedure(IProcedure procedure, MethodDefinitionHandle handle)
+    public void EncodeProcedureDebugInfo(IProcedure procedure, MethodDefinitionHandle handle)
     {
         // Sequence points
         var sequencePointsForMethod = this.sequencePoints.ToImmutable();

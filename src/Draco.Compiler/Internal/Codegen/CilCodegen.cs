@@ -88,11 +88,6 @@ internal sealed class CilCodegen
         foreach (var bb in this.procedure.BasicBlocksInDefinitionOrder) this.EncodeBasicBlock(bb);
     }
 
-    public void FinalizeProcedure(MethodDefinitionHandle handle)
-    {
-        this.PdbCodegen?.FinalizeProcedure(this.procedure, handle);
-    }
-
     private void EncodeBasicBlock(IBasicBlock basicBlock)
     {
         this.InstructionEncoder.MarkLabel(this.GetLabel(basicBlock));

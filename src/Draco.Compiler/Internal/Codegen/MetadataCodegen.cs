@@ -273,14 +273,12 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         var signature = this.EncodeProcedureSignature(procedure);
         var parameterIndex = this.parameterIndexCounter;
         this.parameterIndexCounter += procedure.Parameters.Count;
-        var paramIndex = 0;
         foreach (var param in procedure.ParametersInDefinitionOrder)
         {
             this.MetadataBuilder.AddParameter(
                 attributes: ParameterAttributes.None,
                 name: this.GetOrAddString(param.Name),
-                sequenceNumber: paramIndex + 1);
-            ++paramIndex;
+                sequenceNumber: param.Index + 1);
         }
 
         // Add definition

@@ -35,7 +35,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         codegen.WritePe(peStream);
         if (pdbStream is not null)
         {
-            codegen.pdbCodegen!.WritePdb(pdbStream);
+            codegen.PdbCodegen!.WritePdb(pdbStream);
         }
     }
 
@@ -45,11 +45,15 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     public Compilation Compilation { get; }
 
     /// <summary>
+    /// The PDB code-generator, in case we generate PDBs.
+    /// </summary>
+    public PdbCodegen? PdbCodegen { get; }
+
+    /// <summary>
     /// Handle for the entry point.
     /// </summary>
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
 
-    private readonly PdbCodegen? pdbCodegen;
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
@@ -62,7 +66,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         : base(assembly.Name)
     {
         this.Compilation = compilation;
-        if (writePdb) this.pdbCodegen = new(this);
+        if (writePdb) this.PdbCodegen = new(this);
         this.assembly = assembly;
         this.freeFunctionsTypeReferenceHandle = this.AddTypeReference(
             module: this.ModuleDefinitionHandle,
@@ -194,7 +198,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             methodList: MetadataTokens.MethodDefinitionHandle(1));
 
         // If we write a PDB, we add the debuggable attribute to the assembly
-        if (this.pdbCodegen is not null)
+        if (this.PdbCodegen is not null)
         {
             var debuggableAttribute = this.AddTypeReference(
                 assembly: systemRuntime,
@@ -226,7 +230,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         this.ilBuilder.Align(4);
         var encoder = new MethodBodyStreamEncoder(this.ilBuilder);
 
-        var cilCodegen = new CilCodegen(this, this.pdbCodegen, procedure);
+        var cilCodegen = new CilCodegen(this, procedure);
 
         // TODO: This is where the stackification optimization step could help to reduce local allocation
         // Encode procedure body
@@ -330,7 +334,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
     private void WritePe(Stream peStream)
     {
-        var debugDirectoryBuilder = this.pdbCodegen?.EncodeDebugDirectory(this.assembly);
+        var debugDirectoryBuilder = this.PdbCodegen?.EncodeDebugDirectory(this.assembly);
         var peHeaderBuilder = new PEHeaderBuilder(
             imageCharacteristics: Characteristics.Dll | Characteristics.ExecutableImage);
         var peBuilder = new ManagedPEBuilder(

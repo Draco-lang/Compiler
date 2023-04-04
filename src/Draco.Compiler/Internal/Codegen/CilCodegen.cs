@@ -26,19 +26,18 @@ internal sealed class CilCodegen
         .OrderBy(p => p.Index)
         .Select(p => p.Type);
 
+    private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
     private int NextLocalIndex => this.locals.Count + this.registers.Count;
 
     private readonly MetadataCodegen metadataCodegen;
-    private readonly PdbCodegen? pdbCodegen;
     private readonly IProcedure procedure;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
     private readonly Dictionary<Local, int> locals = new();
     private readonly Dictionary<Register, int> registers = new();
 
-    public CilCodegen(MetadataCodegen metadataCodegen, PdbCodegen? pdbCodegen, IProcedure procedure)
+    public CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
     {
         this.metadataCodegen = metadataCodegen;
-        this.pdbCodegen = pdbCodegen;
         this.procedure = procedure;
 
         var codeBuilder = new BlobBuilder();
@@ -91,7 +90,7 @@ internal sealed class CilCodegen
 
     public void FinalizeProcedure(MethodDefinitionHandle handle)
     {
-        this.pdbCodegen?.FinalizeProcedure(this.procedure, handle);
+        this.PdbCodegen?.FinalizeProcedure(this.procedure, handle);
     }
 
     private void EncodeBasicBlock(IBasicBlock basicBlock)
@@ -106,7 +105,7 @@ internal sealed class CilCodegen
         {
         case OptimizingIr.Model.SequencePoint sp:
         {
-            this.pdbCodegen?.AddSequencePoint(this.InstructionEncoder, sp);
+            this.PdbCodegen?.AddSequencePoint(this.InstructionEncoder, sp);
             break;
         }
         case StartScope start:
@@ -114,12 +113,12 @@ internal sealed class CilCodegen
             var localIndices = start.Locals
                 .Select(sym => this.procedure.Locals[sym])
                 .Select(loc => (Symbol: loc.Symbol, Index: this.GetLocalIndex(loc)!.Value));
-            this.pdbCodegen?.StartScope(this.InstructionEncoder.Offset, localIndices);
+            this.PdbCodegen?.StartScope(this.InstructionEncoder.Offset, localIndices);
             break;
         }
         case EndScope:
         {
-            this.pdbCodegen?.EndScope(this.InstructionEncoder.Offset);
+            this.PdbCodegen?.EndScope(this.InstructionEncoder.Offset);
             break;
         }
         case NopInstruction:

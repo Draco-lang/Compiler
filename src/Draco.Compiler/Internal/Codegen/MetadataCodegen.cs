@@ -153,13 +153,11 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     {
         if (!this.globalReferenceHandles.TryGetValue(global, out var handle))
         {
-            // Encode signature
-            var signature = this.EncodeBlob(e => EncodeSignatureType(e.Field().Type(), global.Type));
             // Add the field reference
             handle = this.MetadataBuilder.AddMemberReference(
                 parent: this.freeFunctionsTypeReferenceHandle,
                 name: this.GetOrAddString(global.Name),
-                signature: signature);
+                signature: this.EncodeGlobalSignature(global));
             // Cache
             this.globalReferenceHandles.Add(global, handle);
         }
@@ -256,13 +254,11 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
     private FieldDefinitionHandle EncodeGlobal(Global global)
     {
-        // Signature
-        var signature = this.EncodeBlob(e => EncodeSignatureType(e.Field().Type(), global.Type));
         // Definition
         return this.MetadataBuilder.AddFieldDefinition(
             attributes: FieldAttributes.Public | FieldAttributes.Static,
             name: this.GetOrAddString(global.Name),
-            signature: signature);
+            signature: this.EncodeGlobalSignature(global));
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
@@ -282,9 +278,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
                 var localsEncoder = e.LocalVariableSignature(localTypes.Count);
                 foreach (var localType in localTypes)
                 {
-                    var typeEncoder = localsEncoder
-                        .AddVariable()
-                        .Type();
+                    var typeEncoder = localsEncoder.AddVariable().Type();
                     EncodeSignatureType(typeEncoder, localType);
                 }
             }))
@@ -335,6 +329,9 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
         return definitionHandle;
     }
+
+    private BlobHandle EncodeGlobalSignature(Global global) =>
+        this.EncodeBlob(e => EncodeSignatureType(e.Field().Type(), global.Type));
 
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {

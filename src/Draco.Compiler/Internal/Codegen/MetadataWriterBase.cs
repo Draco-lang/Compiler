@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -16,6 +17,10 @@ internal abstract class MetadataWriterBase
     /// </summary>
     public MetadataBuilder MetadataBuilder { get; } = new();
 
+    // Cache
+    private readonly Dictionary<(string Name, Version Version), AssemblyReferenceHandle> assemblyReferences = new();
+    private readonly Dictionary<(EntityHandle Parent, string Namespace, string Name), TypeReferenceHandle> typeReferences = new();
+
     protected StringHandle GetOrAddString(string? text) => text is null
         ? default
         : this.MetadataBuilder.GetOrAddString(text);
@@ -29,63 +34,65 @@ internal abstract class MetadataWriterBase
         return this.GetOrAddBlob(blob);
     }
 
-    protected AssemblyReferenceHandle AddAssemblyReference(
+    // Abstraction for references
+
+    protected AssemblyReferenceHandle GetOrAddAssemblyReference(
         string name,
         Version version,
-        BlobHandle publicKeyOrToken = default) => this.MetadataBuilder.AddAssemblyReference(
-        name: this.GetOrAddString(name),
-        // TODO: What version?
-        version: version,
-        culture: default,
-        // TODO: We only need to think about it when we decide to support strong naming
-        // Apparently it's not really present in Core
-        publicKeyOrToken: publicKeyOrToken,
-        flags: default,
-        hashValue: default);
+        byte[]? publicKeyOrToken = null)
+    {
+        if (!this.assemblyReferences.TryGetValue((name, version), out var handle))
+        {
+            handle = this.MetadataBuilder.AddAssemblyReference(
+                name: this.GetOrAddString(name),
+                version: version,
+                culture: default,
+                publicKeyOrToken: publicKeyOrToken is null ? default : this.GetOrAddBlob(publicKeyOrToken),
+                flags: default,
+                hashValue: default);
+            this.assemblyReferences.Add((name, version), handle);
+        }
+        return handle;
+    }
 
-    protected TypeReferenceHandle AddTypeReference(
-        ModuleDefinitionHandle module,
+    private TypeReferenceHandle GetOrAddTypeReference(
+        EntityHandle parent,
         string? @namespace,
         string name) => this.MetadataBuilder.AddTypeReference(
-            resolutionScope: module,
+            resolutionScope: parent,
             @namespace: this.GetOrAddString(@namespace),
             name: this.GetOrAddString(name));
 
-    protected TypeReferenceHandle AddTypeReference(
+    protected TypeReferenceHandle GetOrAddTypeReference(
         AssemblyReferenceHandle assembly,
         string? @namespace,
-        string name) => this.MetadataBuilder.AddTypeReference(
-            resolutionScope: assembly,
-            @namespace: this.GetOrAddString(@namespace),
-            name: this.GetOrAddString(name));
+        string name) => this.GetOrAddTypeReference(
+            parent: assembly,
+            @namespace: @namespace,
+            name: name);
 
-    protected TypeReferenceHandle AddTypeReference(
+    protected TypeReferenceHandle GetOrAddTypeReference(
+        ModuleDefinitionHandle module,
+        string? @namespace,
+        string name) => this.GetOrAddTypeReference(
+            parent: module,
+            @namespace: @namespace,
+            name: name);
+
+    protected TypeReferenceHandle GetOrAddTypeReference(
         TypeReferenceHandle containingType,
         string? @namespace,
-        string name) => this.MetadataBuilder.AddTypeReference(
-            resolutionScope: containingType,
-            @namespace: this.GetOrAddString(@namespace),
-            name: this.GetOrAddString(name));
+        string name) => this.GetOrAddTypeReference(
+            parent: containingType,
+            @namespace: @namespace,
+            name: name);
 
-    protected MemberReferenceHandle AddMethodReference(
+    // NOTE: non-caching, we don't deal with memoizing signatures
+    protected MemberReferenceHandle AddMemberReference(
         TypeReferenceHandle type,
         string name,
         BlobHandle signature) => this.MetadataBuilder.AddMemberReference(
             parent: type,
             name: this.GetOrAddString(name),
             signature: signature);
-
-    protected MemberReferenceHandle AddMethodReference(
-        TypeReferenceHandle type,
-        string name,
-        Action<MethodSignatureEncoder> signature)
-    {
-        var signatureBuilder = new BlobBuilder();
-        var signatureEncoder = new BlobEncoder(signatureBuilder).MethodSignature();
-        signature(signatureEncoder);
-        return this.AddMethodReference(
-            type: type,
-            name: name,
-            signature: this.GetOrAddBlob(signatureBuilder));
-    }
 }

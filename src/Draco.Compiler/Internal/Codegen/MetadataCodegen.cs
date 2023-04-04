@@ -21,6 +21,8 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class MetadataCodegen : MetadataWriterBase
 {
+    public static byte[] MicrosoftPublicKeyToken { get; } = new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a };
+
     public static void Generate(Compilation compilation, IAssembly assembly, Stream peStream, Stream? pdbStream)
     {
         var codegen = new MetadataCodegen(
@@ -60,11 +62,6 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     /// </summary>
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
 
-    /// <summary>
-    /// Utility for the MS public key token handle.
-    /// </summary>
-    public BlobHandle MicrosoftPublicKeyToken { get; }
-
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
@@ -78,21 +75,20 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         this.Compilation = compilation;
         if (writePdb) this.PdbCodegen = new(this);
         this.assembly = assembly;
-        this.freeFunctionsTypeReferenceHandle = this.AddTypeReference(
+        this.freeFunctionsTypeReferenceHandle = this.GetOrAddTypeReference(
             module: this.ModuleDefinitionHandle,
             @namespace: null,
             name: "FreeFunctions");
-        this.MicrosoftPublicKeyToken = this.GetOrAddBlob(new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a });
         this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
     }
 
     private void LoadIntrinsics()
     {
-        var systemConsoleAssembly = this.AddAssemblyReference(
+        var systemConsoleAssembly = this.GetOrAddAssemblyReference(
             name: "System.Console",
             version: new(1, 0));
-        var systemConsole = this.AddTypeReference(
+        var systemConsole = this.GetOrAddTypeReference(
             assembly: systemConsoleAssembly,
             @namespace: "System",
             name: "Console");
@@ -105,7 +101,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
                 retEncoder.Void();
                 paramTypeEncoder(paramsEncoder.AddParameter().Type());
             });
-            return this.AddMethodReference(
+            return this.AddMemberReference(
                 type: systemConsole,
                 name: name,
                 signature: signature);
@@ -123,7 +119,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         var moduleName = Path.ChangeExtension(assemblyName, ".dll");
         this.ModuleDefinitionHandle = this.MetadataBuilder.AddModule(
             generation: 0,
-            moduleName: this.MetadataBuilder.GetOrAddString(moduleName),
+            moduleName: this.GetOrAddString(moduleName),
             // TODO: Proper module-version ID
             mvid: this.GetOrAddGuid(Guid.NewGuid()),
             // TODO: What are these? Encryption?
@@ -154,9 +150,9 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         if (!this.globalReferenceHandles.TryGetValue(global, out var handle))
         {
             // Add the field reference
-            handle = this.MetadataBuilder.AddMemberReference(
-                parent: this.freeFunctionsTypeReferenceHandle,
-                name: this.GetOrAddString(global.Name),
+            handle = this.AddMemberReference(
+                type: this.freeFunctionsTypeReferenceHandle,
+                name: global.Name,
                 signature: this.EncodeGlobalSignature(global));
             // Cache
             this.globalReferenceHandles.Add(global, handle);
@@ -169,7 +165,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         if (!this.procedureReferenceHandles.TryGetValue(procedure, out var handle))
         {
             var signature = this.EncodeProcedureSignature(procedure);
-            handle = this.AddMethodReference(
+            handle = this.AddMemberReference(
                 type: this.freeFunctionsTypeReferenceHandle,
                 name: procedure.Name,
                 signature: signature);
@@ -204,11 +200,11 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         this.EncodeProcedure(this.assembly.GlobalInitializer, specialName: ".cctor");
 
         // Reference System.Object from System.Runtime
-        var systemRuntime = this.AddAssemblyReference(
+        var systemRuntime = this.GetOrAddAssemblyReference(
             name: "System.Runtime",
             version: new System.Version(7, 0, 0, 0),
-            publicKeyOrToken: this.MicrosoftPublicKeyToken);
-        var systemObject = this.AddTypeReference(
+            publicKeyOrToken: MicrosoftPublicKeyToken);
+        var systemObject = this.GetOrAddTypeReference(
            assembly: systemRuntime,
            @namespace: "System",
            name: "Object");
@@ -228,23 +224,23 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         // If we write a PDB, we add the debuggable attribute to the assembly
         if (this.PdbCodegen is not null)
         {
-            var debuggableAttribute = this.AddTypeReference(
+            var debuggableAttribute = this.GetOrAddTypeReference(
                 assembly: systemRuntime,
                 @namespace: "System.Diagnostics",
                 name: "DebuggableAttribute");
-            var debuggingModes = this.AddTypeReference(
+            var debuggingModes = this.GetOrAddTypeReference(
                 containingType: debuggableAttribute,
                 @namespace: "System.Diagnostics",
                 name: "DebuggingModes");
-            var debuggableAttributeCtor = this.AddMethodReference(
+            var debuggableAttributeCtor = this.AddMemberReference(
                 type: debuggableAttribute,
                 name: ".ctor",
-                signature: encoder =>
+                signature: this.EncodeBlob(e =>
                 {
-                    encoder.Parameters(1, out var returnType, out var parameters);
+                    e.MethodSignature().Parameters(1, out var returnType, out var parameters);
                     returnType.Void();
                     parameters.AddParameter().Type().Type(debuggingModes, true);
-                });
+                }));
             this.MetadataBuilder.AddCustomAttribute(
                 parent: this.AssemblyDefinitionHandle,
                 constructor: debuggableAttributeCtor,

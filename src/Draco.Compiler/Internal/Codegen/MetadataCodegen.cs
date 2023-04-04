@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -254,21 +255,9 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Encode procedure body
         cilCodegen.EncodeProcedure();
 
-        // Encode local types
-        // Only add the locals if there are more than 0
-        var localTypes = cilCodegen.AllocatedLocals.ToList();
-        var localsHandle = localTypes.Count > 0
-            ? this.MetadataBuilder.AddStandaloneSignature(this.EncodeBlob(e =>
-            {
-                var localsEncoder = e.LocalVariableSignature(localTypes.Count);
-                foreach (var local in localTypes)
-                {
-                    var typeEncoder = localsEncoder.AddVariable().Type();
-                    Debug.Assert(local.Operand.Type is not null);
-                    EncodeSignatureType(typeEncoder, local.Operand.Type);
-                }
-            }))
-            : default;
+        // Encode locals
+        var allocatedLocals = cilCodegen.AllocatedLocals.ToImmutableArray();
+        var localsHandle = this.EncodeLocals(allocatedLocals);
 
         // Encode body
         this.ilBuilder.Align(4);
@@ -326,6 +315,22 @@ internal sealed class MetadataCodegen : MetadataWriter
             EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
         }
     });
+
+    private StandaloneSignatureHandle EncodeLocals(ImmutableArray<AllocatedLocal> locals)
+    {
+        // We must not encode 0 locals
+        if (locals.Length == 0) return default;
+        return this.MetadataBuilder.AddStandaloneSignature(this.EncodeBlob(e =>
+        {
+            var localsEncoder = e.LocalVariableSignature(locals.Length);
+            foreach (var local in locals)
+            {
+                var typeEncoder = localsEncoder.AddVariable().Type();
+                Debug.Assert(local.Operand.Type is not null);
+                EncodeSignatureType(typeEncoder, local.Operand.Type);
+            }
+        }));
+    }
 
     private static void EncodeReturnType(ReturnTypeEncoder encoder, Type type)
     {

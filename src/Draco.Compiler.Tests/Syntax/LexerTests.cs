@@ -1039,6 +1039,29 @@ public sealed class LexerTests
         this.AssertNoTriviaOrDiagnostics();
     }
 
+    [Theory]
+    [InlineData("9223372036854775808", true)] // int64 smallest value
+    [InlineData("9223372036854775807")] // int64 biggest value
+    [InlineData("18446744073709551615")] // uint64 biggest value
+    [Trait("Feature", "Literals")]
+    public void TestBigIntegralLiterals(string text, bool negate = false)
+    {
+        var negated = negate ? $"-{text}" : text;
+        this.Lex(negated);
+
+        if (negate)
+        {
+            this.AssertNextToken(TokenKind.Minus, "-");
+            this.AssertNoTriviaOrDiagnostics();
+        }
+
+        this.AssertNextToken(TokenKind.LiteralInteger, text, ulong.Parse(text));
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
     [Fact]
     [Trait("Feature", "Literals")]
     public void TestIntLiteralWithMethodCall()

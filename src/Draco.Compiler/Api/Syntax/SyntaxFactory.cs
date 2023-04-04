@@ -63,7 +63,7 @@ public static partial class SyntaxFactory
         WithLeadingTrivia(node, CreateCommentBlockTrivia("///", docs));
 
     public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
-    public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
+    public static SyntaxToken Integer(long value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
     public static SyntaxToken Float(double value) => MakeToken(TokenKind.LiteralFloat, value.ToString(), value);
 
     public static SyntaxList<TNode> SyntaxList<TNode>(IEnumerable<TNode> elements)
@@ -184,7 +184,7 @@ public static partial class SyntaxFactory
 
     public static NameTypeSyntax NameType(string name) => NameType(Name(name));
     public static NameExpressionSyntax NameExpression(string name) => NameExpression(Name(name));
-    public static LiteralExpressionSyntax LiteralExpression(int value) => LiteralExpression(Integer(value));
+    public static LiteralExpressionSyntax LiteralExpression(long value) => LiteralExpression(Integer(value));
     public static LiteralExpressionSyntax LiteralExpression(double value) => LiteralExpression(Float(value));
     public static LiteralExpressionSyntax LiteralExpression(bool value) => LiteralExpression(value ? True : False);
     public static StringExpressionSyntax StringExpression(string value) =>

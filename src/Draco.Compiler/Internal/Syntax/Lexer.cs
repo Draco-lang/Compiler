@@ -244,7 +244,7 @@ internal sealed class Lexer
             if (ch == '0' && (radix == 'x' || radix == 'b'))
             {
                 this.Advance(2);
-                var view = this.ParseIntLiteral(radix == 'x' ? 16 : 2, out var value);
+                var view = this.ParseIntLiteral(radix == 'x' ? 16U : 2U, out var value);
                 this.tokenBuilder
                     .SetKind(TokenKind.LiteralInteger)
                     .SetText($"0{radix}{view}")
@@ -295,7 +295,7 @@ internal sealed class Lexer
             }
 
             // Regular integer
-            var decimalView = this.ParseIntLiteral(10, out var decimalValue);
+            var decimalView = this.ParseIntLiteral(10U, out var decimalValue);
             this.tokenBuilder
                 .SetKind(TokenKind.LiteralInteger)
                 .SetText(decimalView)
@@ -942,13 +942,15 @@ internal sealed class Lexer
         return false;
     }
 
-    private string ParseIntLiteral(int radix, out int value)
+    private string ParseIntLiteral(uint radix, out ulong value)
     {
         var offset = 0;
         value = 0;
         while (TryParseHexDigit(this.Peek(offset), out var digit))
         {
-            value = value * radix + digit;
+            var temp = value * radix + (uint)digit;
+            if (temp < value) throw new NotImplementedException(); // Value too big
+            value = temp;
             offset++;
         }
         return this.AdvanceWithText(offset);

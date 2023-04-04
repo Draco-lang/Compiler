@@ -54,8 +54,8 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
-    private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsics = new();
+    private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
     private int parameterIndexCounter = 1;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)

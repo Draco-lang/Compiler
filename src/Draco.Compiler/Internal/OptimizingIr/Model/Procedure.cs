@@ -14,6 +14,7 @@ internal sealed class Procedure : IProcedure
 {
     public FunctionSymbol Symbol { get; }
     public string Name => this.Symbol.Name;
+    public Type? Type => this.Symbol.Type;
     public Assembly Assembly { get; }
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }

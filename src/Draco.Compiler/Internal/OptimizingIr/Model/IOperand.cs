@@ -1,3 +1,5 @@
+using Draco.Compiler.Internal.Types;
+
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal interface IOperand
 {
+    /// <summary>
+    /// The type of this operand, in case it's a value.
+    /// </summary>
+    public Type? Type { get; }
+
     /// <summary>
     /// Returns a string representation of the operand.
     ///

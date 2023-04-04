@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
+using Type = Draco.Compiler.Internal.Types.Type;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -12,6 +13,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal sealed class BasicBlock : IBasicBlock
 {
     public LabelSymbol Symbol { get; }
+    public Type? Type => null;
     public Procedure Procedure { get; }
     IProcedure IBasicBlock.Procedure => this.Procedure;
 

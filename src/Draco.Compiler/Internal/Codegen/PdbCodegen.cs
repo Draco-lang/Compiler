@@ -46,7 +46,7 @@ internal sealed class PdbCodegen : MetadataWriterBase
         this.metadataCodegen = metadataCodegen;
     }
 
-    public DebugDirectoryBuilder EncodeDebugDirectory(IAssembly assembly)
+    public DebugDirectoryBuilder EncodeDebugDirectory()
     {
         var debugDirectoryBuilder = new DebugDirectoryBuilder();
         var pdbPath = Path.Join(this.Compilation.OutputPath, this.Compilation.AssemblyName);

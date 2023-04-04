@@ -349,7 +349,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
     private void WritePe(Stream peStream)
     {
-        var debugDirectoryBuilder = this.PdbCodegen?.EncodeDebugDirectory(this.assembly);
+        var debugDirectoryBuilder = this.PdbCodegen?.EncodeDebugDirectory();
         var peHeaderBuilder = new PEHeaderBuilder(
             imageCharacteristics: Characteristics.Dll | Characteristics.ExecutableImage);
         var peBuilder = new ManagedPEBuilder(

@@ -12,7 +12,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class BasicBlock : IBasicBlock
 {
-    public int Index { get; }
     public LabelSymbol Symbol { get; }
     public Procedure Procedure { get; }
     IProcedure IBasicBlock.Procedure => this.Procedure;
@@ -33,14 +32,27 @@ internal sealed class BasicBlock : IBasicBlock
                                               ?? Enumerable.Empty<BasicBlock>();
     IEnumerable<IBasicBlock> IBasicBlock.Successors => this.Successors;
 
+    /// <summary>
+    /// The topologicar ordering for this block.
+    /// </summary>
+    public int Index
+    {
+        get => this.index ?? throw new InvalidOperationException("index is not set for this block");
+        set
+        {
+            if (this.index is not null) throw new InvalidOperationException("index already set for this block");
+            this.index = value;
+        }
+    }
+
     private IInstruction? firstInstruction;
     private IInstruction? lastInstruction;
+    private int? index;
 
-    public BasicBlock(Procedure procedure, LabelSymbol symbol, int index)
+    public BasicBlock(Procedure procedure, LabelSymbol symbol)
     {
         this.Procedure = procedure;
         this.Symbol = symbol;
-        this.Index = index;
     }
 
     public override string ToString()

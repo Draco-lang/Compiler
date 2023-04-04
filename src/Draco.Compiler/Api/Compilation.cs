@@ -156,6 +156,7 @@ public sealed class Compilation
         // Optimize the IR
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(assembly);
+        Console.WriteLine(assembly);
 
         // Write the IR, if needed
         if (irStream is not null)

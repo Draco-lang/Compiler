@@ -35,9 +35,6 @@ internal sealed class Procedure : IProcedure
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = new();
     private readonly Dictionary<LocalSymbol, Local> locals = new();
     private readonly List<Register> registers = new();
-    private int basicBlockIndex = 0;
-    private int localIndex = 0;
-    private int registerIndex = 0;
 
     public Procedure(Assembly assembly, FunctionSymbol symbol)
     {
@@ -60,7 +57,7 @@ internal sealed class Procedure : IProcedure
     {
         if (!this.basicBlocks.TryGetValue(symbol, out var block))
         {
-            block = new BasicBlock(this, symbol, this.basicBlockIndex++);
+            block = new BasicBlock(this, symbol);
             this.basicBlocks.Add(symbol, block);
         }
         return (BasicBlock)block;
@@ -72,7 +69,7 @@ internal sealed class Procedure : IProcedure
     {
         if (!this.locals.TryGetValue(symbol, out var result))
         {
-            result = new Local(symbol, this.localIndex++);
+            result = new Local(symbol, this.locals.Count);
             this.locals.Add(symbol, result);
         }
         return result;
@@ -80,7 +77,7 @@ internal sealed class Procedure : IProcedure
 
     public Register DefineRegister(Type type)
     {
-        var result = new Register(type, this.registerIndex++);
+        var result = new Register(type, this.registers.Count);
         this.registers.Add(result);
         return result;
     }

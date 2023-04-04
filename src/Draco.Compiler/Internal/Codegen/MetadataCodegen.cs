@@ -139,6 +139,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
 
     public MemberReferenceHandle GetIntrinsicHandle(Symbol symbol) => this.intrinsics[symbol];
+
     private void EncodeAssembly()
     {
         // Go through globals

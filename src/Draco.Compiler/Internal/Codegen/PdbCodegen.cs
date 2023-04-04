@@ -16,7 +16,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// <summary>
 /// Generates PDB from IR.
 /// </summary>
-internal sealed class PdbCodegen
+internal sealed class PdbCodegen : MetadataWriterBase
 {
     private readonly record struct LocalScopeStart(
         LocalVariableHandle FirstVariable,
@@ -37,7 +37,6 @@ internal sealed class PdbCodegen
     public uint PdbStamp => 123456;
 
     private readonly MetadataCodegen metadataCodegen;
-    private readonly MetadataBuilder metadataBuilder = new();
     private readonly Dictionary<SourceText, DocumentHandle> documentHandles = new();
     private readonly ImmutableArray<SequencePoint>.Builder sequencePoints = ImmutableArray.CreateBuilder<SequencePoint>();
     private readonly Stack<LocalScopeStart> scopeStartStack = new();
@@ -66,7 +65,7 @@ internal sealed class PdbCodegen
         // Sequence points
         var sequencePointsForMethod = this.sequencePoints.ToImmutable();
         var sequencePoints = this.EncodeSequencePoints(default, sequencePointsForMethod);
-        this.metadataBuilder.AddMethodDebugInformation(
+        this.MetadataBuilder.AddMethodDebugInformation(
             document: this.GetOrAddDocument(procedure.Symbol.DeclarationSyntax),
             sequencePoints: sequencePoints);
 
@@ -75,7 +74,7 @@ internal sealed class PdbCodegen
         var localScopesForMethod = this.localScopes.ToImmutable();
         foreach (var scope in localScopesForMethod)
         {
-            this.metadataBuilder.AddLocalScope(
+            this.MetadataBuilder.AddLocalScope(
                 method: handle,
                 importScope: default,
                 variableList: scope.FirstVariable,
@@ -95,10 +94,10 @@ internal sealed class PdbCodegen
         var first = true;
         foreach (var (symbol, index) in locals)
         {
-            var handle = this.metadataBuilder.AddLocalVariable(
+            var handle = this.MetadataBuilder.AddLocalVariable(
                 attributes: LocalVariableAttributes.None,
                 index: index,
-                name: this.metadataBuilder.GetOrAddString(symbol.Name));
+                name: this.GetOrAddString(symbol.Name));
             if (first)
             {
                 firstHandle = handle;
@@ -147,12 +146,12 @@ internal sealed class PdbCodegen
         if (sourceText.Path is null) return default;
         if (!this.documentHandles.TryGetValue(sourceText, out var handle))
         {
-            var documentName = this.metadataBuilder.GetOrAddDocumentName(sourceText.Path.AbsolutePath);
-            handle = this.metadataBuilder.AddDocument(
+            var documentName = this.MetadataBuilder.GetOrAddDocumentName(sourceText.Path.AbsolutePath);
+            handle = this.MetadataBuilder.AddDocument(
                 name: documentName,
                 hashAlgorithm: default,
                 hash: default,
-                language: this.metadataBuilder.GetOrAddGuid(DracoLanguageGuid));
+                language: this.GetOrAddGuid(DracoLanguageGuid));
             this.documentHandles.Add(sourceText, handle);
         }
         return handle;
@@ -213,7 +212,7 @@ internal sealed class PdbCodegen
             previousNonHiddenStartColumn = sequencePoints[i].StartColumn;
         }
 
-        return this.metadataBuilder.GetOrAddBlob(writer);
+        return this.GetOrAddBlob(writer);
     }
 
     private static void EncodeDeltaLinesAndColumns(BlobBuilder writer, SequencePoint sequencePoint)
@@ -239,7 +238,7 @@ internal sealed class PdbCodegen
     public void WritePdb(Stream pdbStream)
     {
         var pdbBuilder = new PortablePdbBuilder(
-            tablesAndHeaps: this.metadataBuilder,
+            tablesAndHeaps: this.MetadataBuilder,
             // TODO: Type-system stuff, likely for local scope and such
             typeSystemRowCounts: new int[MetadataTokens.TableCount].ToImmutableArray(),
             entryPoint: this.metadataCodegen.EntryPointHandle,

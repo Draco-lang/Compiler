@@ -11,6 +11,9 @@ internal readonly record struct Constant(object? Value) : IOperand
 {
     public Type? Type => this.Value switch
     {
+        int => IntrinsicTypes.Int32,
+        bool => IntrinsicTypes.Bool,
+        string => IntrinsicTypes.String,
         _ => throw new System.InvalidOperationException(),
     };
 

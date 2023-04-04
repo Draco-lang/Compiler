@@ -73,8 +73,14 @@ internal partial class LocalRewriter : BoundTreeRewriter
         //     else_label:
         //         result = else_expr;
         //     finally_label:
+        //     @sequence point
         //     result
         // }
+        //
+        // NOTE: We are putting a sequence point after the finally label to erase
+        // the previous one, so after evaluating the 'then' block and jumping to
+        // 'finally', the debugger won't highlight the 'else' block by accident,
+        // because the last sequence point was there
 
         var condition = (BoundExpression)node.Condition.Accept(this);
         var then = (BoundExpression)node.Then.Accept(this);
@@ -96,7 +102,11 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 ExpressionStatement(GotoExpression(finallyLabel)),
                 LabelStatement(elseLabel),
                 ExpressionStatement(AssignmentExpression(null, LocalLvalue(result), @else)),
-                LabelStatement(finallyLabel)),
+                LabelStatement(finallyLabel),
+                SequencePointStatement(
+                    statement: null,
+                    range: null,
+                    emitNop: true)),
             value: LocalExpression(result));
     }
 

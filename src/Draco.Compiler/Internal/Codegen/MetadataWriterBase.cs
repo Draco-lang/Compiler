@@ -12,27 +12,9 @@ namespace Draco.Compiler.Internal.Codegen;
 internal abstract class MetadataWriterBase
 {
     /// <summary>
-    /// The bytes for the MS public key token.
-    /// </summary>
-    public static byte[] MicrosoftPublicKeyTokenBytes { get; } = new byte[]
-    {
-        0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a
-    };
-
-    /// <summary>
     /// The underlying metadata builder.
     /// </summary>
     public MetadataBuilder MetadataBuilder { get; } = new();
-
-    /// <summary>
-    /// Utility for the MS public key token handle.
-    /// </summary>
-    public BlobHandle MicrosoftPublicKeyToken { get; }
-
-    public MetadataWriterBase(string assemblyName)
-    {
-        this.MicrosoftPublicKeyToken = this.MetadataBuilder.GetOrAddBlob(MicrosoftPublicKeyTokenBytes);
-    }
 
     protected StringHandle GetOrAddString(string? text) => text is null
         ? default

@@ -60,6 +60,11 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     /// </summary>
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
 
+    /// <summary>
+    /// Utility for the MS public key token handle.
+    /// </summary>
+    public BlobHandle MicrosoftPublicKeyToken { get; }
+
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
@@ -69,7 +74,6 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private int parameterIndexCounter = 1;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
-        : base(assembly.Name)
     {
         this.Compilation = compilation;
         if (writePdb) this.PdbCodegen = new(this);
@@ -78,6 +82,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             module: this.ModuleDefinitionHandle,
             @namespace: null,
             name: "FreeFunctions");
+        this.MicrosoftPublicKeyToken = this.MetadataBuilder.GetOrAddBlob(new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a });
         this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
     }

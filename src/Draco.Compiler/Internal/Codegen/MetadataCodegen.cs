@@ -99,16 +99,16 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
         MemberReferenceHandle LoadPrintFunction(string name, System.Action<SignatureTypeEncoder> paramTypeEncoder)
         {
-            var signature = new BlobBuilder();
-            new BlobEncoder(signature)
-                .MethodSignature()
-                .Parameters(1, out var retEncoder, out var paramsEncoder);
-            retEncoder.Void();
-            paramTypeEncoder(paramsEncoder.AddParameter().Type());
+            var signature = this.EncodeBlob(e =>
+            {
+                e.MethodSignature().Parameters(1, out var retEncoder, out var paramsEncoder);
+                retEncoder.Void();
+                paramTypeEncoder(paramsEncoder.AddParameter().Type());
+            });
             return this.AddMethodReference(
                 type: systemConsole,
                 name: name,
-                signature: this.GetOrAddBlob(signature));
+                signature: signature);
         }
 
         this.intrinsics.Add(IntrinsicSymbols.Print_String, LoadPrintFunction("Write", p => p.String()));
@@ -154,16 +154,12 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         if (!this.globalReferenceHandles.TryGetValue(global, out var handle))
         {
             // Encode signature
-            var signature = new BlobBuilder();
-            var typeEncoder = new BlobEncoder(signature)
-                .Field()
-                .Type();
-            EncodeSignatureType(typeEncoder, global.Type);
+            var signature = this.EncodeBlob(e => EncodeSignatureType(e.Field().Type(), global.Type));
             // Add the field reference
             handle = this.MetadataBuilder.AddMemberReference(
                 parent: this.freeFunctionsTypeReferenceHandle,
                 name: this.GetOrAddString(global.Name),
-                signature: this.GetOrAddBlob(signature));
+                signature: signature);
             // Cache
             this.globalReferenceHandles.Add(global, handle);
         }
@@ -261,24 +257,16 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private FieldDefinitionHandle EncodeGlobal(Global global)
     {
         // Signature
-        var signature = new BlobBuilder();
-        var typeEncoder = new BlobEncoder(signature)
-            .Field()
-            .Type();
-        EncodeSignatureType(typeEncoder, global.Type);
+        var signature = this.EncodeBlob(e => EncodeSignatureType(e.Field().Type(), global.Type));
         // Definition
         return this.MetadataBuilder.AddFieldDefinition(
             attributes: FieldAttributes.Public | FieldAttributes.Static,
             name: this.GetOrAddString(global.Name),
-            signature: this.GetOrAddBlob(signature));
+            signature: signature);
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
-        // Encode body
-        this.ilBuilder.Align(4);
-        var encoder = new MethodBodyStreamEncoder(this.ilBuilder);
-
         var cilCodegen = new CilCodegen(this, procedure);
 
         // TODO: This is where the stackification optimization step could help to reduce local allocation
@@ -286,22 +274,25 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         cilCodegen.EncodeProcedure();
 
         // Encode local types
-        var localTypes = cilCodegen.LocalTypes.ToList();
-        var localsBuilder = new BlobBuilder();
-        var localsEncoder = new BlobEncoder(localsBuilder)
-            .LocalVariableSignature(localTypes.Count);
-        foreach (var localType in localTypes)
-        {
-            var typeEncoder = localsEncoder
-                .AddVariable()
-                .Type();
-            EncodeSignatureType(typeEncoder, localType);
-        }
-
         // Only add the locals if there are more than 0
+        var localTypes = cilCodegen.LocalTypes.ToList();
         var localsHandle = localTypes.Count > 0
-            ? this.MetadataBuilder.AddStandaloneSignature(this.GetOrAddBlob(localsBuilder))
+            ? this.MetadataBuilder.AddStandaloneSignature(this.EncodeBlob(e =>
+            {
+                var localsEncoder = e.LocalVariableSignature(localTypes.Count);
+                foreach (var localType in localTypes)
+                {
+                    var typeEncoder = localsEncoder
+                        .AddVariable()
+                        .Type();
+                    EncodeSignatureType(typeEncoder, localType);
+                }
+            }))
             : default;
+
+        // Encode body
+        this.ilBuilder.Align(4);
+        var encoder = new MethodBodyStreamEncoder(this.ilBuilder);
 
         // Actually encode the entire method body
         var methodBodyOffset = encoder.AddMethodBody(
@@ -345,20 +336,15 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         return definitionHandle;
     }
 
-    private BlobHandle EncodeProcedureSignature(IProcedure procedure)
+    private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {
-        var blob = new BlobBuilder();
-        var encoder = new BlobEncoder(blob);
-
-        encoder.MethodSignature().Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
+        e.MethodSignature().Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
         EncodeReturnType(retEncoder, procedure.ReturnType);
         foreach (var param in procedure.ParametersInDefinitionOrder)
         {
             EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
         }
-
-        return this.GetOrAddBlob(blob);
-    }
+    });
 
     private static void EncodeReturnType(ReturnTypeEncoder encoder, Type type)
     {

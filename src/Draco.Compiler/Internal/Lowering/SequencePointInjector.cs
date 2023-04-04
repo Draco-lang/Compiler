@@ -209,7 +209,6 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             value: BoundUnitExpression.Default);
     }
 
-    // TODO: We'll need this for more sophisticated return expr
     private static BlockFunctionBodySyntax? GetBlockFunctionBodyAncestor(SyntaxNode? syntax)
     {
         while (true)

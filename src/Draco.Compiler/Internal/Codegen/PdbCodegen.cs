@@ -19,11 +19,11 @@ namespace Draco.Compiler.Internal.Codegen;
 internal sealed class PdbCodegen : MetadataWriter
 {
     private readonly record struct LocalScopeStart(
-        LocalVariableHandle FirstVariable,
+        LocalVariableHandle VariableList,
         int StartOffset);
 
     private readonly record struct LocalScope(
-        LocalVariableHandle FirstVariable,
+        LocalVariableHandle VariableList,
         int StartOffset,
         int Length);
 
@@ -76,7 +76,7 @@ internal sealed class PdbCodegen : MetadataWriter
             this.MetadataBuilder.AddLocalScope(
                 method: handle,
                 importScope: default,
-                variableList: scope.FirstVariable,
+                variableList: scope.VariableList,
                 constantList: default,
                 startOffset: scope.StartOffset,
                 length: scope.Length);
@@ -89,22 +89,16 @@ internal sealed class PdbCodegen : MetadataWriter
 
     public void StartScope(int ilOffset, IEnumerable<(LocalSymbol Symbol, int Index)> locals)
     {
-        var firstHandle = default(LocalVariableHandle);
-        var first = true;
+        var variableList = this.NextLocalVariableHandle;
         foreach (var (symbol, index) in locals)
         {
-            var handle = this.MetadataBuilder.AddLocalVariable(
+            this.AddLocalVariable(
                 attributes: LocalVariableAttributes.None,
                 index: index,
-                name: this.GetOrAddString(symbol.Name));
-            if (first)
-            {
-                firstHandle = handle;
-                first = false;
-            }
+                name: symbol.Name);
         }
         this.scopeStartStack.Push(new(
-            FirstVariable: firstHandle,
+            VariableList: variableList,
             StartOffset: ilOffset));
     }
 
@@ -112,7 +106,7 @@ internal sealed class PdbCodegen : MetadataWriter
     {
         var start = this.scopeStartStack.Pop();
         this.localScopes.Add(new(
-            FirstVariable: start.FirstVariable,
+            VariableList: start.VariableList,
             StartOffset: start.StartOffset,
             Length: ilOffset - start.StartOffset));
     }

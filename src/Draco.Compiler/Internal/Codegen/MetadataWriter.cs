@@ -26,8 +26,10 @@ internal abstract class MetadataWriter
 
     // Local state
     private int parameterIndex = 1;
+    private int localVariableIndex = 1;
 
     protected ParameterHandle NextParameterHandle => MetadataTokens.ParameterHandle(this.parameterIndex);
+    protected LocalVariableHandle NextLocalVariableHandle => MetadataTokens.LocalVariableHandle(this.localVariableIndex);
 
     // Basic get-or-add
 
@@ -197,6 +199,19 @@ internal abstract class MetadataWriter
         return handle;
     }
 
+    protected LocalVariableHandle AddLocalVariable(
+        LocalVariableAttributes attributes,
+        int index,
+        string name)
+    {
+        var handle = this.MetadataBuilder.AddLocalVariable(
+            attributes: attributes,
+            index: index,
+            name: this.GetOrAddString(name));
+        ++this.localVariableIndex;
+        return handle;
+    }
+
     // From: https://github.com/dotnet/roslyn/blob/723b5ef7fc8146c65993814f1dba94f55f1c59a6/src/Compilers/Core/Portable/PEWriter/MetadataWriter.PortablePdb.cs#L618
     protected BlobHandle AddSequencePoints(
         StandaloneSignatureHandle localSignatureHandleOpt,
@@ -217,7 +232,7 @@ internal abstract class MetadataWriter
         var previousDocument = sequencePoints[0].Document;
 
         // Go through sequence points
-        for (var i = 0; i < sequencePoints.Length; i++)
+        for (var i = 0; i < sequencePoints.Length; ++i)
         {
             var currentDocument = sequencePoints[i].Document;
             if (currentDocument != previousDocument)

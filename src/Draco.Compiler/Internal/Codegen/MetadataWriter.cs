@@ -10,9 +10,9 @@ using System.Reflection.Metadata.Ecma335;
 namespace Draco.Compiler.Internal.Codegen;
 
 /// <summary>
-/// Utility for writing metadata.
+/// Utility base class for writing metadata.
 /// </summary>
-internal abstract class MetadataWriterBase
+internal abstract class MetadataWriter
 {
     /// <summary>
     /// The underlying metadata builder.

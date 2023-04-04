@@ -19,7 +19,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// <summary>
 /// Generates metadata.
 /// </summary>
-internal sealed class MetadataCodegen : MetadataWriterBase
+internal sealed class MetadataCodegen : MetadataWriter
 {
     public static void Generate(Compilation compilation, IAssembly assembly, Stream peStream, Stream? pdbStream)
     {

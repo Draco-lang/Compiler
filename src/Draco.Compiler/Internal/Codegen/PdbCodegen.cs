@@ -16,7 +16,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// <summary>
 /// Generates PDB from IR.
 /// </summary>
-internal sealed class PdbCodegen : MetadataWriterBase
+internal sealed class PdbCodegen : MetadataWriter
 {
     private readonly record struct LocalScopeStart(
         LocalVariableHandle FirstVariable,

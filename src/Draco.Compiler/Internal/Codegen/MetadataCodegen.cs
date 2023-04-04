@@ -256,7 +256,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
         // Encode local types
         // Only add the locals if there are more than 0
-        var localTypes = cilCodegen.LocalTypes.ToList();
+        var localTypes = cilCodegen.AllocatedLocals.ToList();
         var localsHandle = localTypes.Count > 0
             ? this.MetadataBuilder.AddStandaloneSignature(this.EncodeBlob(e =>
             {

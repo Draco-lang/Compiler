@@ -20,20 +20,20 @@ internal sealed class CilCodegen
     /// </summary>
     public InstructionEncoder InstructionEncoder { get; set; }
 
-    public IEnumerable<Type> LocalTypes => this.locals
-        .Select(kv => (Index: kv.Value, Type: kv.Key.Type))
-        .Concat(this.registers.Select(kv => (Index: kv.Value, Type: kv.Key.Type)))
-        .OrderBy(p => p.Index)
-        .Select(p => p.Type);
+    /// <summary>
+    /// The allocated local types in order.
+    /// </summary>
+    public IEnumerable<Type> AllocatedLocals => this.allocatedLocals
+        .OrderBy(kv => kv.Value)
+        .Select(kv => kv.Key.Type)
+        .Cast<Type>();
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
-    private int NextLocalIndex => this.locals.Count + this.registers.Count;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
-    private readonly Dictionary<Local, int> locals = new();
-    private readonly Dictionary<Register, int> registers = new();
+    private readonly Dictionary<IOperand, int> allocatedLocals = new();
 
     public CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
     {
@@ -52,26 +52,20 @@ internal sealed class CilCodegen
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
-    private int? GetLocalIndex(Local local)
+
+    private int? GetStorageIndex(IOperand operand)
     {
-        if (ReferenceEquals(local.Type, IntrinsicTypes.Unit)) return null;
-        if (!this.locals.TryGetValue(local, out var index))
+        if (ReferenceEquals(operand.Type, IntrinsicTypes.Unit)) return null;
+        if (!this.allocatedLocals.TryGetValue(operand, out var index))
         {
-            index = this.NextLocalIndex;
-            this.locals.Add(local, index);
+            index = this.allocatedLocals.Count;
+            this.allocatedLocals.Add(operand, index);
         }
         return index;
     }
-    private int? GetRegisterIndex(Register register)
-    {
-        if (ReferenceEquals(register.Type, IntrinsicTypes.Unit)) return null;
-        if (!this.registers.TryGetValue(register, out var index))
-        {
-            index = this.NextLocalIndex;
-            this.registers.Add(register, index);
-        }
-        return index;
-    }
+
+    private int? GetLocalIndex(Local local) => this.GetStorageIndex(local);
+    private int? GetRegisterIndex(Register register) => this.GetStorageIndex(register);
 
     private LabelHandle GetLabel(IBasicBlock block)
     {

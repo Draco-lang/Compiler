@@ -89,7 +89,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             locals: ImmutableArray.Create<LocalSymbol>(result),
             statements: ImmutableArray.Create<BoundStatement>(
                 LocalDeclaration(result, null),
-                ConditionalGotoStatement(condition, thenLabel, continuesWithTarget: true),
+                ConditionalGotoStatement(condition, thenLabel),
                 ExpressionStatement(GotoExpression(elseLabel)),
                 LabelStatement(thenLabel),
                 ExpressionStatement(AssignmentExpression(null, LocalLvalue(result), then)),
@@ -127,8 +127,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                         @operator: IntrinsicSymbols.Bool_Not,
                         operand: condition,
                         type: IntrinsicTypes.Bool),
-                    target: node.BreakLabel,
-                    continuesWithTarget: false),
+                    target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
                 LabelStatement(node.BreakLabel)),

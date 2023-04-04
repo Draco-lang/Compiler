@@ -26,8 +26,6 @@
   <Node Name="BoundConditionalGotoStatement" Base="BoundStatement">
     <Field Name="Condition" Type="BoundExpression" />
     <Field Name="Target" Type="LabelSymbol" />
-    <!-- True, if topologically the Target should come next in the code -->
-    <Field Name="ContinuesWithTarget" Type="bool" />
   </Node>
 
   <Node Name="BoundExpressionStatement" Base="BoundStatement">

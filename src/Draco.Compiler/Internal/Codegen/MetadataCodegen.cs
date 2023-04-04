@@ -271,7 +271,17 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
         // Retrieve info
         var signature = this.EncodeProcedureSignature(procedure);
-        var parameterIndex = this.EncodeProcedureSignature2(procedure);
+        var parameterIndex = this.parameterIndexCounter;
+        this.parameterIndexCounter += procedure.Parameters.Count;
+        var paramIndex = 0;
+        foreach (var param in procedure.ParametersInDefinitionOrder)
+        {
+            this.MetadataBuilder.AddParameter(
+                attributes: ParameterAttributes.None,
+                name: this.GetOrAddString(param.Name),
+                sequenceNumber: paramIndex + 1);
+            ++paramIndex;
+        }
 
         // Add definition
         var definitionHandle = this.MetadataBuilder.AddMethodDefinition(
@@ -286,24 +296,6 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         cilCodegen.FinalizeProcedure(definitionHandle);
 
         return definitionHandle;
-    }
-
-    private int EncodeProcedureSignature2(IProcedure procedure)
-    {
-        // Save index offset
-        var parameterIndex = this.parameterIndexCounter;
-        this.parameterIndexCounter += procedure.Parameters.Count;
-        // Actually encode
-        var paramIndex = 0;
-        foreach (var param in procedure.ParametersInDefinitionOrder)
-        {
-            this.MetadataBuilder.AddParameter(
-                attributes: ParameterAttributes.None,
-                name: this.GetOrAddString(param.Name),
-                sequenceNumber: paramIndex + 1);
-            ++paramIndex;
-        }
-        return parameterIndex;
     }
 
     private BlobHandle EncodeProcedureSignature(IProcedure procedure)

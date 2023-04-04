@@ -79,19 +79,34 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         //     blockValue
         // }
 
-        var injectedBlock = (BoundExpression)base.VisitBlockExpression(node);
+        // Statements will wrap sequence points for themselves
+        var statements = node.Statements
+            .Select(s => s.Accept(this))
+            .Cast<BoundStatement>()
+            .ToImmutableArray();
+        // If the expression is not compund, we wrap it
+        var value = (BoundExpression)node.Value.Accept(this);
+        if (!IsCompoundExpression(value))
+        {
+            value = SequencePointExpression(
+                expression: value,
+                range: node.Value.Syntax?.Range,
+                emitNop: true);
+        }
+
         var blockValue = new SynthetizedLocalSymbol(node.Type, false);
 
         return BlockExpression(
             locals: ImmutableArray.Create<LocalSymbol>(blockValue),
             statements: ImmutableArray.Create<BoundStatement>(
-                // TODO: Fix and readd this
                 SequencePointStatement(
                     statement: null,
                     range: openBrace.Range,
                     emitNop: true),
-                LocalDeclaration(blockValue, injectedBlock),
-                // TODO: Fix and readd this
+                LocalDeclaration(blockValue, BlockExpression(
+                    locals: node.Locals,
+                    statements: statements,
+                    value: value)),
                 SequencePointStatement(
                     statement: null,
                     range: closeBrace.Range,

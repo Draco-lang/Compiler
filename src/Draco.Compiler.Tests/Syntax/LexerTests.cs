@@ -921,6 +921,77 @@ public sealed class LexerTests
     }
 
     [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestEndOfInputAfterEscapeSequenceStart(string ext)
+    {
+        var text = $"""
+            {ext}"\{ext}
+            """;
+        this.Lex(text);
+
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}", $"\\{ext}");
+        this.AssertNoTrivia();
+        this.AssertDiagnostics(SyntaxErrors.UnexpectedEscapeSequenceEnd);
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestEndOfInputAfterEscapeSequenceStartAndWhitespace(string ext)
+    {
+        var space = " ";
+        var text = $"""
+            {ext}"\{ext}{space}
+            """;
+        this.Lex(text);
+
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}{space}", $"{space}");
+        this.AssertNoTrivia();
+        this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("#")]
+    [InlineData("##")]
+    [InlineData("###")]
+    [Trait("Feature", "Strings")]
+    public void TestEndOfInputAfterEscapeSequenceStartLessDelimitersThanOnStringStart(string ext)
+    {
+        var text = $"""
+            {ext}#"\{ext}
+            """;
+        this.Lex(text);
+
+        this.AssertNextToken(TokenKind.LineStringStart, $"{ext}#\"");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}", $"\\{ext}");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Theory]
     [InlineData("if", TokenKind.KeywordIf)]
     [InlineData("else", TokenKind.KeywordElse)]
     [InlineData("while", TokenKind.KeywordWhile)]

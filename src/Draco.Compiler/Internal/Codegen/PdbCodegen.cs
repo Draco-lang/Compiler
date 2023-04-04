@@ -9,7 +9,6 @@ using System.Reflection.PortableExecutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr.Model;
-using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Codegen;
 

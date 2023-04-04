@@ -12,7 +12,6 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
-using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Type = Draco.Compiler.Internal.Types.Type;
 
 namespace Draco.Compiler.Internal.Codegen;

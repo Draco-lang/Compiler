@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -261,10 +262,11 @@ internal sealed class MetadataCodegen : MetadataWriter
             ? this.MetadataBuilder.AddStandaloneSignature(this.EncodeBlob(e =>
             {
                 var localsEncoder = e.LocalVariableSignature(localTypes.Count);
-                foreach (var localType in localTypes)
+                foreach (var local in localTypes)
                 {
                     var typeEncoder = localsEncoder.AddVariable().Type();
-                    EncodeSignatureType(typeEncoder, localType);
+                    Debug.Assert(local.Operand.Type is not null);
+                    EncodeSignatureType(typeEncoder, local.Operand.Type);
                 }
             }))
             : default;

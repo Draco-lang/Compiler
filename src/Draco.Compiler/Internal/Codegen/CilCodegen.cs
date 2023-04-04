@@ -21,12 +21,11 @@ internal sealed class CilCodegen
     public InstructionEncoder InstructionEncoder { get; }
 
     /// <summary>
-    /// The allocated local types in order.
+    /// The allocated locals in order.
     /// </summary>
-    public IEnumerable<Type> AllocatedLocals => this.allocatedLocals
+    public IEnumerable<AllocatedLocal> AllocatedLocals => this.allocatedLocals
         .OrderBy(kv => kv.Value)
-        .Select(kv => kv.Key.Type)
-        .Cast<Type>();
+        .Select(kv => new AllocatedLocal(kv.Key, kv.Value));
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
 

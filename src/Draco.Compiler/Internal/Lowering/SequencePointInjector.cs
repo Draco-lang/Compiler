@@ -34,6 +34,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             range: node.Syntax?.Range,
             // If the value is null, there is nothing to compile
             // So we enforce a NOP to be emitted
+            // If value is not null, we at least have a store
             emitNop: node.Value is null);
     }
 
@@ -47,7 +48,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             injected = SequencePointStatement(
                 statement: injected,
                 range: node.Syntax?.Range,
-                emitNop: false);
+                emitNop: true);
         }
 
         return injected;
@@ -107,9 +108,24 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             expression: condition,
             range: GetParenthesizedRange(node.Condition.Syntax),
             emitNop: true);
-        // Leave branches as-is
+        // We only wrap the branches if they are not compound expressions
+        // Compound expressions will wrap themselves nicely
         var then = (BoundExpression)node.Then.Accept(this);
+        if (!IsCompoundExpression(then))
+        {
+            then = SequencePointExpression(
+                expression: then,
+                range: node.Then.Syntax?.Range,
+                emitNop: true);
+        }
         var @else = (BoundExpression)node.Else.Accept(this);
+        if (!IsCompoundExpression(@else))
+        {
+            @else = SequencePointExpression(
+                expression: @else,
+                range: node.Else.Syntax?.Range,
+                emitNop: true);
+        }
 
         return IfExpression(
             condition: condition,
@@ -126,8 +142,16 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             expression: condition,
             range: GetParenthesizedRange(node.Condition.Syntax),
             emitNop: true);
-        // Leave body as-is
+        // We only wrap the body if it is not a compound expression
+        // Compound expressions will wrap themselves nicely
         var then = (BoundExpression)node.Then.Accept(this);
+        if (!IsCompoundExpression(then))
+        {
+            then = SequencePointExpression(
+                expression: then,
+                range: node.Then.Syntax?.Range,
+                emitNop: true);
+        }
 
         return WhileExpression(
             condition: condition,
@@ -218,6 +242,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
     private static bool IsCompoundExpression(BoundExpression expr) => expr switch
     {
         BoundBlockExpression or BoundWhileExpression or BoundIfExpression => true,
+        BoundSequencePointExpression sp => IsCompoundExpression(sp.Expression),
         _ => false,
     };
 }

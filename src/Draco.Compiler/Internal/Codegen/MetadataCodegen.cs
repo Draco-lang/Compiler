@@ -21,8 +21,6 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class MetadataCodegen : MetadataWriterBase
 {
-    public static byte[] MicrosoftPublicKeyToken { get; } = new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a };
-
     public static void Generate(Compilation compilation, IAssembly assembly, Stream peStream, Stream? pdbStream)
     {
         var codegen = new MetadataCodegen(
@@ -31,11 +29,10 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             writePdb: pdbStream is not null);
         codegen.EncodeAssembly();
         codegen.WritePe(peStream);
-        if (pdbStream is not null)
-        {
-            codegen.PdbCodegen!.WritePdb(pdbStream);
-        }
+        if (pdbStream is not null) codegen.PdbCodegen!.WritePdb(pdbStream);
     }
+
+    public static byte[] MicrosoftPublicKeyToken { get; } = new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a };
 
     /// <summary>
     /// The compilation that started codegen.
@@ -66,7 +63,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
-    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsics = new();
+    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
     private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
@@ -106,10 +103,10 @@ internal sealed class MetadataCodegen : MetadataWriterBase
                 signature: signature);
         }
 
-        this.intrinsics.Add(IntrinsicSymbols.Print_String, LoadPrintFunction("Write", p => p.String()));
-        this.intrinsics.Add(IntrinsicSymbols.Print_Int32, LoadPrintFunction("Write", p => p.Int32()));
-        this.intrinsics.Add(IntrinsicSymbols.Println_String, LoadPrintFunction("WriteLine", p => p.String()));
-        this.intrinsics.Add(IntrinsicSymbols.Println_Int32, LoadPrintFunction("WriteLine", p => p.Int32()));
+        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Print_String, LoadPrintFunction("Write", p => p.String()));
+        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Print_Int32, LoadPrintFunction("Write", p => p.Int32()));
+        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Println_String, LoadPrintFunction("WriteLine", p => p.String()));
+        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Println_Int32, LoadPrintFunction("WriteLine", p => p.Int32()));
     }
 
     private void WriteModuleAndAssemblyDefinition()
@@ -168,7 +165,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
     public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
 
-    public MemberReferenceHandle GetIntrinsicHandle(Symbol symbol) => this.intrinsics[symbol];
+    public MemberReferenceHandle GetIntrinsicReferenceHandle(Symbol symbol) => this.intrinsicReferenceHandles[symbol];
 
     private void EncodeAssembly()
     {

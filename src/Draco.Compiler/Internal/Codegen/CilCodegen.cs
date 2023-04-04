@@ -48,7 +48,7 @@ internal sealed class CilCodegen
     private MemberReferenceHandle GetGlobalReferenceHandle(Global global) => this.metadataCodegen.GetGlobalReferenceHandle(global);
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
-    private MemberReferenceHandle GetIntrinsicHandle(Intrinsic intrinsic) => this.metadataCodegen.GetIntrinsicHandle(intrinsic.Symbol);
+    private MemberReferenceHandle GetIntrinsicHandle(Intrinsic intrinsic) => this.metadataCodegen.GetIntrinsicReferenceHandle(intrinsic.Symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;

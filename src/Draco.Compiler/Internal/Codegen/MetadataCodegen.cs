@@ -82,7 +82,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             module: this.ModuleDefinitionHandle,
             @namespace: null,
             name: "FreeFunctions");
-        this.MicrosoftPublicKeyToken = this.MetadataBuilder.GetOrAddBlob(new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a });
+        this.MicrosoftPublicKeyToken = this.GetOrAddBlob(new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a });
         this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
     }
@@ -254,7 +254,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             this.MetadataBuilder.AddCustomAttribute(
                 parent: this.AssemblyDefinitionHandle,
                 constructor: debuggableAttributeCtor,
-                value: this.MetadataBuilder.GetOrAddBlob(new byte[] { 01, 00, 07, 01, 00, 00, 00, 00 }));
+                value: this.GetOrAddBlob(new byte[] { 01, 00, 07, 01, 00, 00, 00, 00 }));
         }
     }
 

@@ -21,6 +21,7 @@ internal abstract class MetadataWriterBase
         : this.MetadataBuilder.GetOrAddString(text);
     protected GuidHandle GetOrAddGuid(Guid guid) => this.MetadataBuilder.GetOrAddGuid(guid);
     protected BlobHandle GetOrAddBlob(BlobBuilder blob) => this.MetadataBuilder.GetOrAddBlob(blob);
+    protected BlobHandle GetOrAddBlob(byte[] blob) => this.MetadataBuilder.GetOrAddBlob(blob);
 
     protected AssemblyReferenceHandle AddAssemblyReference(
         string name,

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
+using Type = Draco.Compiler.Internal.Types.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -19,12 +21,6 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class MetadataCodegen : MetadataWriterBase
 {
-    private readonly record struct CompiledMethod(
-        BlobHandle SignatureBlobHandle,
-        MemberReferenceHandle MemberReferenceHandle,
-        int ParameterIndex);
-
-    // TODO: Doc
     public static void Generate(Compilation compilation, IAssembly assembly, Stream peStream, Stream? pdbStream)
     {
         var codegen = new MetadataCodegen(
@@ -57,7 +53,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
-    private readonly Dictionary<IProcedure, CompiledMethod> procedureInfo = new();
+    private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
     private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsics = new();
     private int parameterIndexCounter = 1;
@@ -126,34 +122,23 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         return handle;
     }
 
-    public MemberReferenceHandle GetProcedureReferenceHandle(IProcedure procedure) =>
-        this.GetProcedureInfo(procedure).MemberReferenceHandle;
+    public MemberReferenceHandle GetProcedureReferenceHandle(IProcedure procedure)
+    {
+        if (!this.procedureReferenceHandles.TryGetValue(procedure, out var handle))
+        {
+            var signature = this.EncodeProcedureSignature(procedure);
+            handle = this.AddMethodReference(
+                type: this.freeFunctionsTypeReferenceHandle,
+                name: procedure.Name,
+                signature: signature);
+            this.procedureReferenceHandles.Add(procedure, handle);
+        }
+        return handle;
+    }
 
     public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
 
     public MemberReferenceHandle GetIntrinsicHandle(Symbol symbol) => this.intrinsics[symbol];
-
-    private CompiledMethod GetProcedureInfo(IProcedure procedure)
-    {
-        if (!this.procedureInfo.TryGetValue(procedure, out var info))
-        {
-            var signature = new BlobBuilder();
-            var signatureEncoder = new BlobEncoder(signature).MethodSignature();
-            var parameterIndex = this.EncodeProcedureSignature(signatureEncoder, procedure);
-            var signatureHandle = this.GetOrAddBlob(signature);
-            var memberReference = this.AddMethodReference(
-                type: this.freeFunctionsTypeReferenceHandle,
-                name: procedure.Name,
-                signature: signatureHandle);
-            info = new(
-                SignatureBlobHandle: signatureHandle,
-                MemberReferenceHandle: memberReference,
-                ParameterIndex: parameterIndex);
-            this.procedureInfo.Add(procedure, info);
-        }
-        return info;
-    }
-
     private void EncodeAssembly()
     {
         // Go through globals
@@ -285,15 +270,17 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
         // Retrieve info
-        var info = this.GetProcedureInfo(procedure);
+        var signature = this.EncodeProcedureSignature(procedure);
+        var parameterIndex = this.EncodeProcedureSignature2(procedure);
+
         // Add definition
         var definitionHandle = this.MetadataBuilder.AddMethodDefinition(
             attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
             name: this.GetOrAddString(specialName ?? procedure.Name),
-            signature: info.SignatureBlobHandle,
+            signature: signature,
             bodyOffset: methodBodyOffset,
-            parameterList: MetadataTokens.ParameterHandle(info.ParameterIndex));
+            parameterList: MetadataTokens.ParameterHandle(parameterIndex));
 
         // Finalize
         cilCodegen.FinalizeProcedure(definitionHandle);
@@ -301,32 +288,37 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         return definitionHandle;
     }
 
-    private int EncodeProcedureSignature(MethodSignatureEncoder encoder, IProcedure procedure)
+    private int EncodeProcedureSignature2(IProcedure procedure)
     {
         // Save index offset
         var parameterIndex = this.parameterIndexCounter;
         this.parameterIndexCounter += procedure.Parameters.Count;
         // Actually encode
-        encoder.Parameters(procedure.Parameters.Count, out var returnTypeEncoder, out var parametersEncoder);
-        EncodeReturnType(returnTypeEncoder, procedure.ReturnType);
         var paramIndex = 0;
         foreach (var param in procedure.ParametersInDefinitionOrder)
         {
-            this.EncodeParameter(parametersEncoder, param, paramIndex);
+            this.MetadataBuilder.AddParameter(
+                attributes: ParameterAttributes.None,
+                name: this.GetOrAddString(param.Name),
+                sequenceNumber: paramIndex + 1);
             ++paramIndex;
         }
         return parameterIndex;
     }
 
-    private void EncodeParameter(ParametersEncoder encoder, Parameter param, int index)
+    private BlobHandle EncodeProcedureSignature(IProcedure procedure)
     {
-        var parameterTypeEncoder = encoder.AddParameter();
-        EncodeSignatureType(parameterTypeEncoder.Type(), param.Type);
+        var blob = new BlobBuilder();
+        var encoder = new BlobEncoder(blob);
 
-        this.MetadataBuilder.AddParameter(
-            attributes: ParameterAttributes.None,
-            name: this.GetOrAddString(param.Name),
-            sequenceNumber: index + 1);
+        encoder.MethodSignature().Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
+        EncodeReturnType(retEncoder, procedure.ReturnType);
+        foreach (var param in procedure.ParametersInDefinitionOrder)
+        {
+            EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
+        }
+
+        return this.GetOrAddBlob(blob);
     }
 
     private static void EncodeReturnType(ReturnTypeEncoder encoder, Type type)

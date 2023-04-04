@@ -21,6 +21,13 @@ internal abstract class MetadataWriterBase
     private readonly Dictionary<(string Name, Version Version), AssemblyReferenceHandle> assemblyReferences = new();
     private readonly Dictionary<(EntityHandle Parent, string Namespace, string Name), TypeReferenceHandle> typeReferences = new();
 
+    // Local state
+    private int parameterIndex = 1;
+
+    protected ParameterHandle NextParameterHandle => MetadataTokens.ParameterHandle(this.parameterIndex);
+
+    // Basic get-or-add
+
     protected StringHandle GetOrAddString(string? text) => text is null
         ? default
         : this.MetadataBuilder.GetOrAddString(text);
@@ -33,6 +40,71 @@ internal abstract class MetadataWriterBase
         encoder(new BlobEncoder(blob));
         return this.GetOrAddBlob(blob);
     }
+
+    // Abstractions for creation
+
+    protected ModuleDefinitionHandle AddModuleDefinition(
+        int generation,
+        string name,
+        Guid moduleVersionId) => this.MetadataBuilder.AddModule(
+            generation: generation,
+            moduleName: this.GetOrAddString(name),
+            mvid: this.GetOrAddGuid(moduleVersionId),
+            encId: default,
+            encBaseId: default);
+
+    protected AssemblyDefinitionHandle AddAssemblyDefinition(
+        string name,
+        Version version) => this.MetadataBuilder.AddAssembly(
+            name: this.GetOrAddString(name),
+            version: version,
+            culture: default,
+            publicKey: default,
+            flags: default,
+            hashAlgorithm: AssemblyHashAlgorithm.None);
+
+    protected TypeDefinitionHandle AddTypeDefinition(
+        TypeAttributes attributes,
+        string? @namespace,
+        string name,
+        TypeReferenceHandle baseType,
+        FieldDefinitionHandle fieldList,
+        MethodDefinitionHandle methodList) => this.MetadataBuilder.AddTypeDefinition(
+            attributes: attributes,
+            @namespace: this.GetOrAddString(@namespace),
+            name: this.GetOrAddString(name),
+            baseType: baseType,
+            fieldList: fieldList,
+            methodList: methodList);
+
+    protected FieldDefinitionHandle AddFieldDefinition(
+        FieldAttributes attributes,
+        string name,
+        BlobHandle signature) => this.MetadataBuilder.AddFieldDefinition(
+            attributes: attributes,
+            name: this.GetOrAddString(name),
+            signature: signature);
+
+    protected ParameterHandle AddParameterDefinition(
+        ParameterAttributes attributes,
+        string name,
+        int index)
+    {
+        var result = this.MetadataBuilder.AddParameter(
+            attributes: attributes,
+            name: this.GetOrAddString(name),
+            sequenceNumber: index + 1);
+        ++this.parameterIndex;
+        return result;
+    }
+
+    protected CustomAttributeHandle AddAttribute(
+        EntityHandle target,
+        MemberReferenceHandle ctor,
+        BlobHandle value) => this.MetadataBuilder.AddCustomAttribute(
+            parent: target,
+            constructor: ctor,
+            value: value);
 
     // Abstraction for references
 

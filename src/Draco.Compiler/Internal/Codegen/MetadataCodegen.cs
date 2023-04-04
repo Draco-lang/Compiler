@@ -68,7 +68,6 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsics = new();
     private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
-    private int parameterIndexCounter = 1;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
     {
@@ -117,29 +116,22 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     {
         var assemblyName = this.assembly.Name;
         var moduleName = Path.ChangeExtension(assemblyName, ".dll");
-        this.ModuleDefinitionHandle = this.MetadataBuilder.AddModule(
+        this.ModuleDefinitionHandle = this.AddModuleDefinition(
             generation: 0,
-            moduleName: this.GetOrAddString(moduleName),
+            name: moduleName,
             // TODO: Proper module-version ID
-            mvid: this.GetOrAddGuid(Guid.NewGuid()),
-            // TODO: What are these? Encryption?
-            encId: default,
-            encBaseId: default);
-        this.AssemblyDefinitionHandle = this.MetadataBuilder.AddAssembly(
-            name: this.GetOrAddString(assemblyName),
+            moduleVersionId: Guid.NewGuid());
+        this.AssemblyDefinitionHandle = this.AddAssemblyDefinition(
+            name: assemblyName,
             // TODO: Proper versioning
-            version: new Version(1, 0, 0, 0),
-            culture: default,
-            publicKey: default,
-            flags: default,
-            hashAlgorithm: AssemblyHashAlgorithm.None);
+            version: new(1, 0, 0, 0));
 
         // Create type definition for the special <Module> type that holds global functions
         // Note, that we don't use that for our free-functions
-        this.MetadataBuilder.AddTypeDefinition(
+        this.AddTypeDefinition(
             attributes: default,
             @namespace: default,
-            name: this.GetOrAddString("<Module>"),
+            name: "<Module>",
             baseType: default,
             fieldList: MetadataTokens.FieldDefinitionHandle(1),
             methodList: MetadataTokens.MethodDefinitionHandle(1));
@@ -210,10 +202,10 @@ internal sealed class MetadataCodegen : MetadataWriterBase
            name: "Object");
 
         // Create the free-functions type
-        this.MetadataBuilder.AddTypeDefinition(
+        this.AddTypeDefinition(
             attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
             @namespace: default,
-            name: this.GetOrAddString("FreeFunctions"),
+            name: "FreeFunctions",
             baseType: systemObject,
             // TODO: Again, this should be read up from an index
             fieldList: MetadataTokens.FieldDefinitionHandle(1),
@@ -241,9 +233,9 @@ internal sealed class MetadataCodegen : MetadataWriterBase
                     returnType.Void();
                     parameters.AddParameter().Type().Type(debuggingModes, true);
                 }));
-            this.MetadataBuilder.AddCustomAttribute(
-                parent: this.AssemblyDefinitionHandle,
-                constructor: debuggableAttributeCtor,
+            this.AddAttribute(
+                target: this.AssemblyDefinitionHandle,
+                ctor: debuggableAttributeCtor,
                 value: this.GetOrAddBlob(new byte[] { 01, 00, 07, 01, 00, 00, 00, 00 }));
         }
     }
@@ -251,9 +243,9 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private FieldDefinitionHandle EncodeGlobal(Global global)
     {
         // Definition
-        return this.MetadataBuilder.AddFieldDefinition(
+        return this.AddFieldDefinition(
             attributes: FieldAttributes.Public | FieldAttributes.Static,
-            name: this.GetOrAddString(global.Name),
+            name: global.Name,
             signature: this.EncodeGlobalSignature(global));
     }
 
@@ -299,16 +291,14 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             ? MethodAttributes.Public
             : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
-        // Retrieve info
-        var signature = this.EncodeProcedureSignature(procedure);
-        var parameterIndex = this.parameterIndexCounter;
-        this.parameterIndexCounter += procedure.Parameters.Count;
+        // Parameters
+        var parameterList = this.NextParameterHandle;
         foreach (var param in procedure.ParametersInDefinitionOrder)
         {
-            this.MetadataBuilder.AddParameter(
+            this.AddParameterDefinition(
                 attributes: ParameterAttributes.None,
-                name: this.GetOrAddString(param.Name),
-                sequenceNumber: param.Index + 1);
+                name: param.Name,
+                index: param.Index);
         }
 
         // Add definition
@@ -316,9 +306,9 @@ internal sealed class MetadataCodegen : MetadataWriterBase
             attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
             name: this.GetOrAddString(specialName ?? procedure.Name),
-            signature: signature,
+            signature: this.EncodeProcedureSignature(procedure),
             bodyOffset: methodBodyOffset,
-            parameterList: MetadataTokens.ParameterHandle(parameterIndex));
+            parameterList: parameterList);
 
         // Finalize
         cilCodegen.FinalizeProcedure(definitionHandle);

@@ -56,7 +56,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
-    private readonly Dictionary<Global, FieldDefinitionHandle> globalDefinitionHandles = new();
+    private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
     private readonly Dictionary<IProcedure, CompiledMethod> procedureInfo = new();
     private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsics = new();
@@ -105,9 +105,9 @@ internal sealed class MetadataCodegen : MetadataWriterBase
         this.intrinsics.Add(IntrinsicSymbols.Println_Int32, LoadPrintFunction("WriteLine", p => p.Int32()));
     }
 
-    public FieldDefinitionHandle GetGlobalDefinitionHandle(Global global)
+    public MemberReferenceHandle GetGlobalReferenceHandle(Global global)
     {
-        if (!this.globalDefinitionHandles.TryGetValue(global, out var handle))
+        if (!this.globalReferenceHandles.TryGetValue(global, out var handle))
         {
             // Encode signature
             var signature = new BlobBuilder();
@@ -115,13 +115,13 @@ internal sealed class MetadataCodegen : MetadataWriterBase
                 .Field()
                 .Type();
             EncodeSignatureType(typeEncoder, global.Type);
-            // Add the field definition
-            handle = this.MetadataBuilder.AddFieldDefinition(
-                attributes: FieldAttributes.Public | FieldAttributes.Static,
+            // Add the field reference
+            handle = this.MetadataBuilder.AddMemberReference(
+                parent: this.freeFunctionsTypeReferenceHandle,
                 name: this.GetOrAddString(global.Name),
                 signature: this.GetOrAddBlob(signature));
             // Cache
-            this.globalDefinitionHandles.Add(global, handle);
+            this.globalReferenceHandles.Add(global, handle);
         }
         return handle;
     }
@@ -157,7 +157,7 @@ internal sealed class MetadataCodegen : MetadataWriterBase
     private void EncodeAssembly()
     {
         // Go through globals
-        foreach (var global in this.assembly.Globals.Values) this.GetGlobalDefinitionHandle(global);
+        foreach (var global in this.assembly.Globals.Values) this.EncodeGlobal(global);
 
         // Go through procedures
         foreach (var procedure in this.assembly.Procedures.Values)
@@ -222,6 +222,21 @@ internal sealed class MetadataCodegen : MetadataWriterBase
                 constructor: debuggableAttributeCtor,
                 value: this.MetadataBuilder.GetOrAddBlob(new byte[] { 01, 00, 07, 01, 00, 00, 00, 00 }));
         }
+    }
+
+    private FieldDefinitionHandle EncodeGlobal(Global global)
+    {
+        // Signature
+        var signature = new BlobBuilder();
+        var typeEncoder = new BlobEncoder(signature)
+            .Field()
+            .Type();
+        EncodeSignatureType(typeEncoder, global.Type);
+        // Definition
+        return this.MetadataBuilder.AddFieldDefinition(
+            attributes: FieldAttributes.Public | FieldAttributes.Static,
+            name: this.GetOrAddString(global.Name),
+            signature: this.GetOrAddBlob(signature));
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)

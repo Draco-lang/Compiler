@@ -45,7 +45,7 @@ internal sealed class CilCodegen
         this.InstructionEncoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
     }
 
-    private FieldDefinitionHandle GetGlobalDefinitionHandle(Global global) => this.metadataCodegen.GetGlobalDefinitionHandle(global);
+    private MemberReferenceHandle GetGlobalReferenceHandle(Global global) => this.metadataCodegen.GetGlobalReferenceHandle(global);
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
     private MemberReferenceHandle GetIntrinsicHandle(Intrinsic intrinsic) => this.metadataCodegen.GetIntrinsicHandle(intrinsic.Symbol);
@@ -175,7 +175,7 @@ internal sealed class CilCodegen
                 break;
             case Global global:
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
-                this.InstructionEncoder.Token(this.GetGlobalDefinitionHandle(global));
+                this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             default:
                 throw new System.InvalidOperationException();
@@ -195,7 +195,7 @@ internal sealed class CilCodegen
                 break;
             case Global global:
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
-                this.InstructionEncoder.Token(this.GetGlobalDefinitionHandle(global));
+                this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             default:
                 throw new System.InvalidOperationException();

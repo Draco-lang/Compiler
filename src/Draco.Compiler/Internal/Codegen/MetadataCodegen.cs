@@ -249,10 +249,8 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
+        // Encode instructions
         var cilCodegen = new CilCodegen(this, procedure);
-
-        // TODO: This is where the stackification optimization step could help to reduce local allocation
-        // Encode procedure body
         cilCodegen.EncodeProcedure();
 
         // Encode locals
@@ -262,11 +260,10 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Encode body
         this.ilBuilder.Align(4);
         var encoder = new MethodBodyStreamEncoder(this.ilBuilder);
-
-        // Actually encode the entire method body
         var methodBodyOffset = encoder.AddMethodBody(
             instructionEncoder: cilCodegen.InstructionEncoder,
             // Since we don't do stackification yet, 8 is fine
+            // TODO: This is where the stackification optimization step could help to reduce local allocation
             maxStack: 8,
             localVariablesSignature: localsHandle,
             attributes: MethodBodyAttributes.None,
@@ -297,7 +294,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             bodyOffset: methodBodyOffset,
             parameterList: parameterList);
 
-        // Finalize
+        // Write out any debug information
         this.PdbCodegen?.EncodeProcedureDebugInfo(procedure, definitionHandle);
 
         return definitionHandle;

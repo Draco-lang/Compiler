@@ -1,8 +1,5 @@
 using System.Collections.Immutable;
-using System.Globalization;
-using System.Text;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Syntax;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 using SyntaxTrivia = Draco.Compiler.Internal.Syntax.SyntaxTrivia;
 

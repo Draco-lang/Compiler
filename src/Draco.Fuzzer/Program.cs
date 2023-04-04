@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Runtime.CompilerServices;
 using Draco.Fuzzer.Components;
 using Draco.Fuzzer.Generators;
 

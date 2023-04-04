@@ -18,7 +18,7 @@ internal sealed class CilCodegen
     /// <summary>
     /// The instruction encoder.
     /// </summary>
-    public InstructionEncoder InstructionEncoder { get; set; }
+    public InstructionEncoder InstructionEncoder { get; }
 
     /// <summary>
     /// The allocated local types in order.

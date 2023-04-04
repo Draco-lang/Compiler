@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -20,6 +22,7 @@ internal abstract class MetadataWriterBase
     // Cache
     private readonly Dictionary<(string Name, Version Version), AssemblyReferenceHandle> assemblyReferences = new();
     private readonly Dictionary<(EntityHandle Parent, string Namespace, string Name), TypeReferenceHandle> typeReferences = new();
+    private readonly Dictionary<Uri, DocumentHandle> documentHandles = new();
 
     // Local state
     private int parameterIndex = 1;
@@ -167,4 +170,110 @@ internal abstract class MetadataWriterBase
             parent: type,
             name: this.GetOrAddString(name),
             signature: signature);
+
+    // Abstractions for debug info
+
+    protected DocumentHandle GetOrAddDocument(Uri documentPath, Guid languageGuid)
+    {
+        if (!this.documentHandles.TryGetValue(documentPath, out var handle))
+        {
+            var documentName = this.MetadataBuilder.GetOrAddDocumentName(documentPath.AbsolutePath);
+            handle = this.MetadataBuilder.AddDocument(
+                name: documentName,
+                hashAlgorithm: default,
+                hash: default,
+                language: this.GetOrAddGuid(languageGuid));
+            this.documentHandles.Add(documentPath, handle);
+        }
+        return handle;
+    }
+
+    // From: https://github.com/dotnet/roslyn/blob/723b5ef7fc8146c65993814f1dba94f55f1c59a6/src/Compilers/Core/Portable/PEWriter/MetadataWriter.PortablePdb.cs#L618
+    protected BlobHandle AddSequencePoints(
+        StandaloneSignatureHandle localSignatureHandleOpt,
+        ImmutableArray<SequencePoint> sequencePoints)
+    {
+        // No-op
+        if (sequencePoints.Length == 0) return default;
+
+        var writer = new BlobBuilder();
+
+        var previousNonHiddenStartLine = -1;
+        var previousNonHiddenStartColumn = -1;
+
+        // Header
+        writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(localSignatureHandleOpt));
+
+        // First document
+        var previousDocument = sequencePoints[0].Document;
+
+        // Go through sequence points
+        for (var i = 0; i < sequencePoints.Length; i++)
+        {
+            var currentDocument = sequencePoints[i].Document;
+            if (currentDocument != previousDocument)
+            {
+                writer.WriteCompressedInteger(0);
+                writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(currentDocument));
+                previousDocument = currentDocument;
+            }
+
+            // Delta IL offset
+            if (i > 0)
+            {
+                writer.WriteCompressedInteger(sequencePoints[i].IlOffset - sequencePoints[i - 1].IlOffset);
+            }
+            else
+            {
+                writer.WriteCompressedInteger(sequencePoints[i].IlOffset);
+            }
+
+            if (sequencePoints[i].IsHidden)
+            {
+                writer.WriteInt16(0);
+                continue;
+            }
+
+            // Delta Lines & Columns
+            EncodeDeltaLinesAndColumns(writer, sequencePoints[i]);
+
+            // Delta Start Lines & Columns:
+            if (previousNonHiddenStartLine < 0)
+            {
+                Debug.Assert(previousNonHiddenStartColumn < 0);
+                writer.WriteCompressedInteger(sequencePoints[i].StartLine);
+                writer.WriteCompressedInteger(sequencePoints[i].StartColumn);
+            }
+            else
+            {
+                writer.WriteCompressedSignedInteger(sequencePoints[i].StartLine - previousNonHiddenStartLine);
+                writer.WriteCompressedSignedInteger(sequencePoints[i].StartColumn - previousNonHiddenStartColumn);
+            }
+
+            previousNonHiddenStartLine = sequencePoints[i].StartLine;
+            previousNonHiddenStartColumn = sequencePoints[i].StartColumn;
+        }
+
+        return this.GetOrAddBlob(writer);
+    }
+
+    private static void EncodeDeltaLinesAndColumns(BlobBuilder writer, SequencePoint sequencePoint)
+    {
+        var deltaLines = sequencePoint.EndLine - sequencePoint.StartLine;
+        var deltaColumns = sequencePoint.EndColumn - sequencePoint.StartColumn;
+
+        // Only hidden sequence points have zero width
+        Debug.Assert(deltaLines != 0 || deltaColumns != 0 || sequencePoint.IsHidden);
+
+        writer.WriteCompressedInteger(deltaLines);
+
+        if (deltaLines == 0)
+        {
+            writer.WriteCompressedInteger(deltaColumns);
+        }
+        else
+        {
+            writer.WriteCompressedSignedInteger(deltaColumns);
+        }
+    }
 }

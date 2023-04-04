@@ -24,15 +24,15 @@ internal sealed class CilCodegen
     /// The allocated locals in order.
     /// </summary>
     public IEnumerable<AllocatedLocal> AllocatedLocals => this.allocatedLocals
-        .OrderBy(kv => kv.Value)
-        .Select(kv => new AllocatedLocal(kv.Key, kv.Value));
+        .OrderBy(kv => kv.Value.Index)
+        .Select(kv => kv.Value);
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
-    private readonly Dictionary<IOperand, int> allocatedLocals = new();
+    private readonly Dictionary<IOperand, AllocatedLocal> allocatedLocals = new();
 
     public CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
     {
@@ -52,19 +52,19 @@ internal sealed class CilCodegen
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
 
-    private int? GetStorageIndex(IOperand operand)
+    private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
         if (ReferenceEquals(operand.Type, IntrinsicTypes.Unit)) return null;
-        if (!this.allocatedLocals.TryGetValue(operand, out var index))
+        if (!this.allocatedLocals.TryGetValue(operand, out var local))
         {
-            index = this.allocatedLocals.Count;
-            this.allocatedLocals.Add(operand, index);
+            local = new(operand, this.allocatedLocals.Count);
+            this.allocatedLocals.Add(operand, local);
         }
-        return index;
+        return local;
     }
 
-    private int? GetLocalIndex(Local local) => this.GetStorageIndex(local);
-    private int? GetRegisterIndex(Register register) => this.GetStorageIndex(register);
+    private int? GetLocalIndex(Local local) => this.GetAllocatedLocal(local)?.Index;
+    private int? GetRegisterIndex(Register register) => this.GetAllocatedLocal(register)?.Index;
 
     private LabelHandle GetLabel(IBasicBlock block)
     {
@@ -100,7 +100,8 @@ internal sealed class CilCodegen
         {
             var localIndices = start.Locals
                 .Select(sym => this.procedure.Locals[sym])
-                .Select(loc => (Symbol: loc.Symbol, Index: this.GetLocalIndex(loc)!.Value));
+                .Select(loc => this.GetAllocatedLocal(loc))
+                .OfType<AllocatedLocal>();
             this.PdbCodegen?.StartScope(this.InstructionEncoder.Offset, localIndices);
             break;
         }

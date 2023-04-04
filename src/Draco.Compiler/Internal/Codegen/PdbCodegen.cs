@@ -87,15 +87,15 @@ internal sealed class PdbCodegen : MetadataWriter
         this.localScopes.Clear();
     }
 
-    public void StartScope(int ilOffset, IEnumerable<(LocalSymbol Symbol, int Index)> locals)
+    public void StartScope(int ilOffset, IEnumerable<AllocatedLocal> locals)
     {
         var variableList = this.NextLocalVariableHandle;
-        foreach (var (symbol, index) in locals)
+        foreach (var local in locals)
         {
             this.AddLocalVariable(
                 attributes: LocalVariableAttributes.None,
-                index: index,
-                name: symbol.Name);
+                index: local.Index,
+                name: local.Symbol!.Name);
         }
         this.scopeStartStack.Push(new(
             VariableList: variableList,

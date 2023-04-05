@@ -20,6 +20,9 @@ internal sealed partial class DracoLanguageServer : IInlayHint
 
     public Task<IList<InlayHint>> InlayHintAsync(InlayHintParams param, CancellationToken cancellationToken)
     {
+        // Get relevant config
+        var config = this.configurationRepository.InlayHints;
+
         var range = Translator.ToCompiler(param.Range);
         // TODO: Share compilation
         var souceText = this.documentRepository.GetDocument(param.TextDocument.Uri);
@@ -32,7 +35,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
 
         foreach (var node in syntaxTree.TraverseSubtreesIntersectingRange(range))
         {
-            if (node is VariableDeclarationSyntax varDecl)
+            if (config.VariableTypes && node is VariableDeclarationSyntax varDecl)
             {
                 // Type is already specified by user
                 if (varDecl.Type is not null) continue;
@@ -50,7 +53,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                     Label = $": {varType}",
                 });
             }
-            else if (node is CallExpressionSyntax call)
+            else if (config.ParameterNames && node is CallExpressionSyntax call)
             {
                 var symbol = semanticModel.GetReferencedSymbol(call.Function);
                 if (symbol is not IFunctionSymbol funcSymbol) continue;

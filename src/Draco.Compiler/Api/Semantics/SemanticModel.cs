@@ -6,7 +6,6 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -116,9 +115,9 @@ public sealed partial class SemanticModel
             if (!this.syntaxMap.ContainsKey(syntax))
             {
                 // If not, bind it
-                var discardDiagnostics = new DiagnosticBag();
-                var bodyBinder = this.GetBinder(function);
-                _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
+                var diagnostics = this.compilation.GlobalDiagnosticBag;
+                var functionBinder = this.GetBinder(function);
+                _ = functionBinder.BindFunction(function, diagnostics);
             }
 
             // Now the syntax node should be in the map
@@ -164,22 +163,22 @@ public sealed partial class SemanticModel
                 // If not cached, bind the function body
                 if (!this.symbolMap.ContainsKey(syntax))
                 {
-                    var discardDiagnostics = new DiagnosticBag();
+                    var diagnostics = this.compilation.GlobalDiagnosticBag;
 
-                    var bodyBinder = this.GetBinder(function);
-                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
+                    var functionBinder = this.GetBinder(function);
+                    _ = functionBinder.BindFunction(function, diagnostics);
 
                     // Since the parameter types and the return type are in this scope too, bind them
                     var functionSyntax = function.DeclarationSyntax;
                     // Parameters
                     foreach (var param in functionSyntax.ParameterList.Values)
                     {
-                        _ = bodyBinder.BindType(param.Type, discardDiagnostics);
+                        _ = functionBinder.BindType(param.Type, diagnostics);
                     }
                     // Return type
                     if (functionSyntax.ReturnType is not null)
                     {
-                        _ = bodyBinder.BindType(functionSyntax.ReturnType.Type, discardDiagnostics);
+                        _ = functionBinder.BindType(functionSyntax.ReturnType.Type, diagnostics);
                     }
                 }
 
@@ -194,10 +193,9 @@ public sealed partial class SemanticModel
                 // If not cached, bind function body
                 if (!this.syntaxMap.ContainsKey(syntax))
                 {
-                    var discardDiagnostics = new DiagnosticBag();
-
-                    var bodyBinder = this.GetBinder(function);
-                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, discardDiagnostics);
+                    var diagnostics = this.compilation.GlobalDiagnosticBag;
+                    var functionBinder = this.GetBinder(function);
+                    _ = functionBinder.BindFunction(function, diagnostics);
                 }
 
                 // Now the syntax node should be in the map
@@ -220,7 +218,7 @@ public sealed partial class SemanticModel
                 // We don't have a choice, we need to go through top-level module elements
                 // and bind everything incrementally
                 var moduleBinder = this.GetBinder(module);
-                var discardDiagnostics = new DiagnosticBag();
+                var diagnostics = this.compilation.GlobalDiagnosticBag;
                 foreach (var symbol in module.Members)
                 {
                     switch (symbol)
@@ -228,15 +226,7 @@ public sealed partial class SemanticModel
                     case SourceGlobalSymbol global:
                     {
                         // Bind type and value
-                        var globalSyntax = global.DeclarationSyntax;
-                        if (globalSyntax.Type is not null)
-                        {
-                            _ = moduleBinder.BindType(globalSyntax.Type.Type, discardDiagnostics);
-                        }
-                        if (globalSyntax.Value is not null)
-                        {
-                            _ = moduleBinder.BindGlobalValue(globalSyntax.Value.Value, discardDiagnostics);
-                        }
+                        _ = moduleBinder.BindGlobal(global, diagnostics);
                         break;
                     }
                     // NOTE: Anything else to handle?

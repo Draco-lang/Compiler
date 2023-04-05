@@ -81,18 +81,12 @@ public static class LanguageServer
             if (requestAttr is not null)
             {
                 // It's a request, register it
-                jsonRpc.AddLocalRpcMethod(method, server, new(requestAttr.Method)
-                {
-                    UseSingleObjectParameterDeserialization = true,
-                });
+                jsonRpc.AddLocalRpcMethod(method, server, GenerateRpcMethodAttribute(requestAttr.Method));
             }
             if (notificationAttr is not null)
             {
                 // It's a notification, register it
-                jsonRpc.AddLocalRpcMethod(method, server, new(notificationAttr.Method)
-                {
-                    UseSingleObjectParameterDeserialization = true,
-                });
+                jsonRpc.AddLocalRpcMethod(method, server, GenerateRpcMethodAttribute(notificationAttr.Method));
             }
         }
     }
@@ -102,4 +96,9 @@ public static class LanguageServer
         var generator = new ProxyGenerator();
         return generator.CreateInterfaceProxyWithoutTarget<ILanguageClient>(new LanguageClientInterceptor(rpc));
     }
+
+    private static JsonRpcMethodAttribute GenerateRpcMethodAttribute(string name) => new(name)
+    {
+        UseSingleObjectParameterDeserialization = true,
+    };
 }

@@ -706,7 +706,8 @@ internal sealed class Lexer
                 template: SyntaxErrors.UnexpectedEscapeSequenceEnd,
                 offset: offset,
                 width: 1);
-            return string.Empty;
+            // We return the \####... literally
+            return $"\\{new string('#', offset - escapeStart - 1)}";
         }
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')

@@ -226,7 +226,7 @@ public sealed partial class SemanticModel
                     case SourceGlobalSymbol global:
                     {
                         // Bind type and value
-                        moduleBinder.BindGlobal(global, diagnostics);
+                        _ = moduleBinder.BindGlobal(global, diagnostics);
                         break;
                     }
                     // NOTE: Anything else to handle?

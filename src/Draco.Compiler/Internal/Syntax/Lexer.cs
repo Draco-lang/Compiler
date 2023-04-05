@@ -942,17 +942,26 @@ internal sealed class Lexer
         return false;
     }
 
-    private string ParseIntLiteral(uint radix, out ulong value)
+    private string ParseIntLiteral(uint radix, out ulong? value)
     {
         var offset = 0;
         value = 0;
+        bool exceedsMaxRange = false;
         while (TryParseHexDigit(this.Peek(offset), out var digit))
         {
             var temp = value * radix + (uint)digit;
-            if (temp < value) throw new NotImplementedException(); // Value too big
-            value = temp;
+            if (temp < value) // Integer overflow
+            {
+                exceedsMaxRange = true;
+                value = null;
+            }
+            if (!exceedsMaxRange) value = temp;
             offset++;
         }
+        if (exceedsMaxRange) this.AddError(
+                    template: SyntaxErrors.LiteralExceedsMaximumSupportedRange,
+                    offset: 0,
+                    width: offset);
         return this.AdvanceWithText(offset);
     }
 }

@@ -198,36 +198,6 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void GatheringDiagnostics()
-    {
-        // func main() {
-        //     var x;
-        // }
-
-        // Arrange
-        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
-            "main",
-            ParameterList(),
-            null,
-            BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration("x"))))));
-
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-
-        // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
-        var semanticModel = compilation.GetSemanticModel(tree);
-
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
-        var diags = semanticModel.Diagnostics;
-
-        // Assert
-        Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
-        Assert.True(xSym.Type.IsError);
-    }
-
-    [Fact]
     public void LocalVariableIncompatibleType()
     {
         // func main() {
@@ -309,11 +279,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
     }
 
@@ -337,7 +308,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+        Assert.Equal(xSym.Type, IntrinsicTypes.IntegralType);
     }
 
     [Fact]

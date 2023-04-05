@@ -126,4 +126,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "unexpected end of escape sequence",
         code: Code(13));
+
+    /// <summary>
+    /// The escape sequence ended unexpectedly.
+    /// </summary>
+    public static readonly DiagnosticTemplate LiteralExceedsMaximumSupportedRange = DiagnosticTemplate.Create(
+        title: "literal exceeds maximum supported range",
+        severity: DiagnosticSeverity.Error,
+        format: "literal exceeds maximum supported range",
+        code: Code(14));
 }

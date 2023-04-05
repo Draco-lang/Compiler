@@ -988,11 +988,11 @@ public sealed class LexerTests
     }
 
     [Theory]
-    [InlineData("0", 0, TokenKind.LiteralInteger)]
-    [InlineData("123", 123, TokenKind.LiteralInteger)]
+    [InlineData("0", (ulong)0, TokenKind.LiteralInteger)]
+    [InlineData("123", (ulong)123, TokenKind.LiteralInteger)]
     [InlineData("12.3", 12.3, TokenKind.LiteralFloat)]
-    [InlineData("0x4c6", 1222, TokenKind.LiteralInteger)]
-    [InlineData("0b110101", 53, TokenKind.LiteralInteger)]
+    [InlineData("0x4c6", (ulong)1222, TokenKind.LiteralInteger)]
+    [InlineData("0b110101", (ulong)53, TokenKind.LiteralInteger)]
     [InlineData("10E3", 10000d, TokenKind.LiteralFloat)]
     [InlineData("10E-3", 0.01, TokenKind.LiteralFloat)]
     [InlineData("0.1e+4", 1000d, TokenKind.LiteralFloat)]
@@ -1064,12 +1064,26 @@ public sealed class LexerTests
 
     [Fact]
     [Trait("Feature", "Literals")]
+    public void TestLiteralExceedsMaxSupportedRange()
+    {
+        var text = "18446744073709551616"; // Value bigger than uint64 max
+        this.Lex(text);
+
+        this.AssertNextToken(TokenKind.LiteralInteger, "18446744073709551616");
+        this.AssertDiagnostics(SyntaxErrors.LiteralExceedsMaximumSupportedRange);
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Fact]
+    [Trait("Feature", "Literals")]
     public void TestIntLiteralWithMethodCall()
     {
         var text = "56.MyFunction()";
         this.Lex(text);
 
-        this.AssertNextToken(TokenKind.LiteralInteger, "56", 56);
+        this.AssertNextToken(TokenKind.LiteralInteger, "56", (ulong)56);
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(TokenKind.Dot, ".");

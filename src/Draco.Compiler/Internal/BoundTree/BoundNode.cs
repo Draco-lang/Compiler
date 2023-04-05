@@ -113,8 +113,19 @@ internal partial class BoundLiteralExpression
 {
     public override Type Type => this.Value switch
     {
-        int => IntrinsicTypes.Int32,
+        sbyte => IntrinsicTypes.IntegralType,
+        short => IntrinsicTypes.IntegralType,
+        int => IntrinsicTypes.IntegralType,
+        long => IntrinsicTypes.IntegralType,
+        byte => IntrinsicTypes.IntegralType,
+        ushort => IntrinsicTypes.IntegralType,
+        uint => IntrinsicTypes.IntegralType,
+        ulong => IntrinsicTypes.IntegralType,
+
         bool => IntrinsicTypes.Bool,
+
+        float => IntrinsicTypes.FloatingPointType,
+        double => IntrinsicTypes.FloatingPointType,
         _ => throw new System.InvalidOperationException(),
     };
 }

@@ -1,11 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -58,23 +61,62 @@ internal abstract partial class Binder
     protected virtual Binder GetBinder(SyntaxNode node) =>
         this.Compilation.GetBinder(node);
 
-    public BoundStatement BindFunctionBody(FunctionBodySyntax syntax, DiagnosticBag diagnostics)
+    public BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
-        var functionName = ((FunctionDeclarationSyntax)syntax.Parent!).Name.Text;
-        var constraints = new ConstraintSolver(syntax, $"function {functionName}");
-        var untypedStatement = this.BindStatement(syntax, constraints, diagnostics);
+        var functionName = function.DeclarationSyntax.Name.Text;
+        var constraints = new ConstraintSolver(function.DeclarationSyntax, $"function {functionName}");
+        var untypedStatement = this.BindStatement(function.DeclarationSyntax.Body, constraints, diagnostics);
         constraints.Solve(diagnostics);
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
         return boundStatement;
     }
 
-    public BoundExpression BindGlobalValue(ExpressionSyntax syntax, DiagnosticBag diagnostics)
+    public (Type Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
-        var globalName = ((VariableDeclarationSyntax)syntax.Parent!.Parent!).Name.Text;
-        var constraints = new ConstraintSolver(syntax, $"global {globalName}");
-        var untypedExpression = this.BindExpression(syntax, constraints, diagnostics);
+        var globalName = global.DeclarationSyntax.Name.Text;
+        var constraints = new ConstraintSolver(global.DeclarationSyntax, $"global {globalName}");
+
+        var typeSyntax = global.DeclarationSyntax.Type;
+        var valueSyntax = global.DeclarationSyntax.Value;
+
+        // Bind type and value
+        var type = typeSyntax is null ? null : this.BindType(typeSyntax.Type, diagnostics);
+        var untypedValue = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
+
+        // Infer declared type
+        var declaredType = (type as TypeSymbol)?.Type ?? constraints.NextTypeVariable;
+
+        var boundValue = null as BoundExpression;
+        if (untypedValue is not null)
+        {
+            // Add assignability constraint
+            constraints
+                .Assignable(declaredType, untypedValue.TypeRequired)
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(global.DeclarationSyntax.Value!.Value.Location));
+
+            // Type out the expression
+            boundValue = this.TypeExpression(untypedValue, constraints, diagnostics);
+        }
+
+        // Solve
         constraints.Solve(diagnostics);
-        var boundExpression = this.TypeExpression(untypedExpression, constraints, diagnostics);
-        return boundExpression;
+
+        // Unwrap the type
+        declaredType = constraints.Unwrap(declaredType);
+
+        if (declaredType.IsTypeVariable)
+        {
+            // We could not infer the type
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.CouldNotInferType,
+                location: global.DeclarationSyntax.Location,
+                formatArgs: global.Name));
+            // We use an error type
+            declaredType = IntrinsicTypes.Error;
+        }
+
+        // Done
+        return (declaredType, boundValue);
     }
 }

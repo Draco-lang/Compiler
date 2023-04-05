@@ -117,7 +117,7 @@ public sealed partial class SemanticModel
                 // If not, bind it
                 var diagnostics = this.compilation.GlobalDiagnosticBag;
                 var bodyBinder = this.GetBinder(function);
-                _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, diagnostics);
+                _ = bodyBinder.BindFunction(function, diagnostics);
             }
 
             // Now the syntax node should be in the map
@@ -166,7 +166,7 @@ public sealed partial class SemanticModel
                     var diagnostics = this.compilation.GlobalDiagnosticBag;
 
                     var bodyBinder = this.GetBinder(function);
-                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, diagnostics);
+                    _ = bodyBinder.BindFunction(function, diagnostics);
 
                     // Since the parameter types and the return type are in this scope too, bind them
                     var functionSyntax = function.DeclarationSyntax;
@@ -195,7 +195,7 @@ public sealed partial class SemanticModel
                 {
                     var diagnostics = this.compilation.GlobalDiagnosticBag;
                     var bodyBinder = this.GetBinder(function);
-                    _ = bodyBinder.BindFunctionBody(function.DeclarationSyntax.Body, diagnostics);
+                    _ = bodyBinder.BindFunction(function, diagnostics);
                 }
 
                 // Now the syntax node should be in the map
@@ -226,15 +226,7 @@ public sealed partial class SemanticModel
                     case SourceGlobalSymbol global:
                     {
                         // Bind type and value
-                        var globalSyntax = global.DeclarationSyntax;
-                        if (globalSyntax.Type is not null)
-                        {
-                            _ = moduleBinder.BindType(globalSyntax.Type.Type, diagnostics);
-                        }
-                        if (globalSyntax.Value is not null)
-                        {
-                            _ = moduleBinder.BindGlobalValue(globalSyntax.Value.Value, diagnostics);
-                        }
+                        moduleBinder.BindGlobal(global, diagnostics);
                         break;
                     }
                     // NOTE: Anything else to handle?

@@ -15,7 +15,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol
     {
         get
         {
-            if (this.type is null) this.Build();
+            if (this.NeedsBuild) this.Build();
             Debug.Assert(this.type is not null);
             return this.type;
         }
@@ -31,13 +31,17 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol
     {
         get
         {
-            if (this.value is null) this.Build();
-            Debug.Assert(this.value is not null);
+            // NOTE: We check the TYPE here, as value is nullable,
+            // but a type always needs to be inferred
+            if (this.NeedsBuild) this.Build();
             return this.value;
         }
     }
 
     public override string Documentation => this.DeclarationSyntax.Documentation;
+
+    // NOTE: We check the TYPE here, as value is nullable
+    private bool NeedsBuild => this.type is null;
 
     private readonly GlobalDeclaration declaration;
     private Type? type;
@@ -54,7 +58,10 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol
         Debug.Assert(this.DeclaringCompilation is not null);
         var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
 
-        // TODO
-        throw new System.NotImplementedException();
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
+        var (type, value) = binder.BindGlobal(this, diagnostics);
+
+        this.type = type;
+        this.value = value;
     }
 }

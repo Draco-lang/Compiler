@@ -57,4 +57,14 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         // TODO: Body
         // TODO: Break block
     }
+
+    public override void VisitLabelStatement(BoundLabelStatement node)
+    {
+        // TODO: Join in?
+    }
+
+    public override void VisitGotoExpression(BoundGotoExpression node)
+    {
+        // TODO: Detach
+    }
 }

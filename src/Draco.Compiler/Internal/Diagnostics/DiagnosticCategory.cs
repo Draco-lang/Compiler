@@ -9,6 +9,6 @@ internal enum DiagnosticCategory
     Syntax = 1,
     SymbolResolution = 2,
     TypeChecking = 3,
-    Dataflow = 4,
+    FlowAnalysis = 4,
     Codegen = 5,
 }

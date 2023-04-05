@@ -70,10 +70,10 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
 
     private readonly Dictionary<LabelSymbol, TState> labeledStates = new();
 
-    protected FlowAnalysisPass(ILattice<TState> lattice)
+    protected FlowAnalysisPass()
     {
         // Assume beginning is reachable
-        this.State = lattice.Top;
+        this.State = this.Top;
     }
 
     private TState GetLabeledState(LabelSymbol label)
@@ -105,10 +105,19 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
 
     public override void VisitWhileExpression(BoundWhileExpression node)
     {
-        // TODO: Continue block
-        // TODO: Condition
-        // TODO: Body
-        // TODO: Break block
+        // We join in with the continue label
+        var continueState = this.GetLabeledState(node.ContinueLabel);
+        this.Join(ref this.State, in continueState);
+        // Condition always gets evaluated
+        this.VisitExpression(node.Condition);
+        // Here we have to split, we either break or run the body
+        var breakState = this.Clone(this.State);
+        // We continue with the looping, run body
+        this.VisitExpression(node.Then);
+        // Loop back to continue
+        this.labeledStates[node.ContinueLabel] = continueState;
+        // Get back to the break state
+        this.State = breakState;
     }
 
     public override void VisitLabelStatement(BoundLabelStatement node)

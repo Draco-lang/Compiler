@@ -55,4 +55,13 @@ internal static class DataflowErrors
         severity: DiagnosticSeverity.Error,
         format: "the immutable variable {0} can not be assigned to, it is read only",
         code: Code(5));
+
+    /// <summary>
+    /// Immutable variable can not be assigned to.
+    /// </summary>
+    public static readonly DiagnosticTemplate ValueOutOfRangeOfType = DiagnosticTemplate.Create(
+        title: "value was out of range of valid values",
+        severity: DiagnosticSeverity.Error,
+        format: "value was out of range of valid values of type {0}",
+        code: Code(6));
 }

@@ -476,6 +476,54 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
     }
 
     [Fact]
+    public void LocalVariableValueTooBig()
+    {
+        // func foo() {
+        //     val x: int8 = 55824685;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int8"), LiteralExpression(55824685)))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+    }
+
+    [Fact]
+    public void LocalVariableValueTooSmall()
+    {
+        // func foo() {
+        //     val x: uint8 = -1;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("uint8"), LiteralExpression(-1)))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+    }
+
+    [Fact]
     public void GobalValNotInitialized()
     {
         // val x: int32;

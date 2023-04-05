@@ -60,14 +60,6 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
     /// <returns>An equivalent clone of <paramref name="state"/>.</returns>
     public abstract TState Clone(in TState state);
 
-    /// <summary>
-    /// Checks, if two states are equivalent.
-    /// </summary>
-    /// <param name="first">The first state to compare.</param>
-    /// <param name="second">The second state to compare.</param>
-    /// <returns>True, if <paramref name="first"/> and <paramref name="second"/> are equivalent.</returns>
-    public abstract bool Equals(in TState first, in TState second);
-
     // Flow analysis related things
 
     // NOTE: This is a field for a reason, we pass refs to this

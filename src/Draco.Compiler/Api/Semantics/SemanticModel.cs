@@ -116,8 +116,8 @@ public sealed partial class SemanticModel
             {
                 // If not, bind it
                 var diagnostics = this.compilation.GlobalDiagnosticBag;
-                var bodyBinder = this.GetBinder(function);
-                _ = bodyBinder.BindFunction(function, diagnostics);
+                var functionBinder = this.GetBinder(function);
+                _ = functionBinder.BindFunction(function, diagnostics);
             }
 
             // Now the syntax node should be in the map
@@ -165,20 +165,20 @@ public sealed partial class SemanticModel
                 {
                     var diagnostics = this.compilation.GlobalDiagnosticBag;
 
-                    var bodyBinder = this.GetBinder(function);
-                    _ = bodyBinder.BindFunction(function, diagnostics);
+                    var functionBinder = this.GetBinder(function);
+                    _ = functionBinder.BindFunction(function, diagnostics);
 
                     // Since the parameter types and the return type are in this scope too, bind them
                     var functionSyntax = function.DeclarationSyntax;
                     // Parameters
                     foreach (var param in functionSyntax.ParameterList.Values)
                     {
-                        _ = bodyBinder.BindType(param.Type, diagnostics);
+                        _ = functionBinder.BindType(param.Type, diagnostics);
                     }
                     // Return type
                     if (functionSyntax.ReturnType is not null)
                     {
-                        _ = bodyBinder.BindType(functionSyntax.ReturnType.Type, diagnostics);
+                        _ = functionBinder.BindType(functionSyntax.ReturnType.Type, diagnostics);
                     }
                 }
 
@@ -194,8 +194,8 @@ public sealed partial class SemanticModel
                 if (!this.syntaxMap.ContainsKey(syntax))
                 {
                     var diagnostics = this.compilation.GlobalDiagnosticBag;
-                    var bodyBinder = this.GetBinder(function);
-                    _ = bodyBinder.BindFunction(function, diagnostics);
+                    var functionBinder = this.GetBinder(function);
+                    _ = functionBinder.BindFunction(function, diagnostics);
                 }
 
                 // Now the syntax node should be in the map

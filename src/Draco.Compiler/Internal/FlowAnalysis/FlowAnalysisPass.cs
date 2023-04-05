@@ -76,6 +76,9 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.State = this.Top;
     }
 
+    public override void VisitConditionalGotoStatement(BoundConditionalGotoStatement node) =>
+        throw new InvalidOperationException("flow analysis should run on the non-lowered bound tree");
+
     private TState GetLabeledState(LabelSymbol label)
     {
         if (!this.labeledStates.TryGetValue(label, out var state))
@@ -115,7 +118,7 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         // We continue with the looping, run body
         this.VisitExpression(node.Then);
         // Loop back to continue
-        this.labeledStates[node.ContinueLabel] = continueState;
+        this.labeledStates[node.ContinueLabel] = this.State;
         // Get back to the break state
         this.State = breakState;
     }
@@ -137,6 +140,30 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.Join(ref this.State, in state);
         this.labeledStates[node.Target] = this.State;
         // Below that the state is unreachable, detach
+        this.State = this.Bottom;
+    }
+
+    public override void VisitAndExpression(BoundAndExpression node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override void VisitOrExpression(BoundOrExpression node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override void VisitRelationalExpression(BoundRelationalExpression node)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    public override void VisitReturnExpression(BoundReturnExpression node)
+    {
+        // Detach
         this.State = this.Bottom;
     }
 }

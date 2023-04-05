@@ -75,6 +75,9 @@ internal sealed class Assembly : IAssembly
     public override string ToString()
     {
         var result = new StringBuilder();
+        result.AppendLine($"assembly {this.Name}");
+        if (this.EntryPoint is not null) result.AppendLine($"entry {this.EntryPoint.Name}");
+        result.AppendLine();
         result.AppendJoin(System.Environment.NewLine, this.globals.Values);
         if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.procedures.Values);

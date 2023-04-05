@@ -60,6 +60,14 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
     /// <returns>An equivalent clone of <paramref name="state"/>.</returns>
     public abstract TState Clone(in TState state);
 
+    /// <summary>
+    /// Checks, if two states are equivalent.
+    /// </summary>
+    /// <param name="first">The first state to compare.</param>
+    /// <param name="second">The second state to compare.</param>
+    /// <returns>True, if <paramref name="first"/> and <paramref name="second"/> are equivalent.</returns>
+    public abstract bool Equals(in TState first, in TState second);
+
     // Flow analysis related things
 
     // NOTE: This is a field for a reason, we pass refs to this
@@ -67,6 +75,11 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
     /// The current state.
     /// </summary>
     protected TState State;
+
+    /// <summary>
+    /// True, if a change occurred that justifies iterating once more.
+    /// </summary>
+    protected bool HasChanged;
 
     private readonly Dictionary<LabelSymbol, TState> labeledStates = new();
 
@@ -76,19 +89,37 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.State = this.Top;
     }
 
-    public override void VisitConditionalGotoStatement(BoundConditionalGotoStatement node) =>
-        throw new InvalidOperationException("flow analysis should run on the non-lowered bound tree");
-
-    private TState GetLabeledState(LabelSymbol label)
+    private TState GetLabelState(LabelSymbol label)
     {
         if (!this.labeledStates.TryGetValue(label, out var state))
         {
-            // By default labels are unreachable
             state = this.Bottom;
             this.labeledStates.Add(label, state);
         }
         return state;
     }
+
+    private void LoopHead(LabelSymbol continueLabel)
+    {
+        if (this.labeledStates.TryGetValue(continueLabel, out var prevState))
+        {
+            this.Join(ref this.State, in prevState);
+        }
+        this.labeledStates[continueLabel] = this.Clone(in this.State);
+    }
+
+    private void LoopTail(LabelSymbol continueLabel)
+    {
+        var prevState = this.labeledStates[continueLabel];
+        if (this.Join(ref prevState, in this.State))
+        {
+            this.labeledStates[continueLabel] = prevState;
+            this.HasChanged = true;
+        }
+    }
+
+    public override void VisitConditionalGotoStatement(BoundConditionalGotoStatement node) =>
+        throw new InvalidOperationException("flow analysis should run on the non-lowered bound tree");
 
     public override void VisitIfExpression(BoundIfExpression node)
     {
@@ -109,24 +140,19 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
     public override void VisitWhileExpression(BoundWhileExpression node)
     {
         // We join in with the continue label
-        var continueState = this.GetLabeledState(node.ContinueLabel);
-        this.Join(ref this.State, in continueState);
+        this.LoopHead(node.ContinueLabel);
         // Condition always gets evaluated
         this.VisitExpression(node.Condition);
-        // Here we have to split, we either break or run the body
-        var breakState = this.Clone(this.State);
         // We continue with the looping, run body
         this.VisitExpression(node.Then);
         // Loop back to continue
-        this.labeledStates[node.ContinueLabel] = this.State;
-        // Get back to the break state
-        this.State = breakState;
+        this.LoopTail(node.ContinueLabel);
     }
 
     public override void VisitLabelStatement(BoundLabelStatement node)
     {
         // Look up the previously saved label state
-        var state = this.GetLabeledState(node.Label);
+        var state = this.GetLabelState(node.Label);
         // Join in
         this.Join(ref this.State, in state);
         // Save a copy of this new state for the label

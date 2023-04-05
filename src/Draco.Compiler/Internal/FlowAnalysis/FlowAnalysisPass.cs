@@ -29,4 +29,32 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.Lattice = lattice;
         this.State = lattice.Top;
     }
+
+    private bool Join(in TState other) => this.Lattice.Join(ref this.State, other);
+    private bool Meet(in TState other) => this.Lattice.Meet(ref this.State, other);
+    private TState CloneState() => this.Lattice.Clone(this.State);
+
+    public override void VisitIfExpression(BoundIfExpression node)
+    {
+        // First, the condition always executes
+        this.VisitExpression(node.Condition);
+        // Then we have two alternatives, so we save
+        var elseState = this.CloneState();
+        // We run the 'then' alternative
+        this.VisitExpression(node.Then);
+        var thenState = this.State;
+        // Then we run the 'else' alternative from after the condition
+        this.State = elseState;
+        this.VisitExpression(node.Else);
+        // Finally, we merge
+        this.Join(in thenState);
+    }
+
+    public override void VisitWhileExpression(BoundWhileExpression node)
+    {
+        // TODO: Continue block
+        // TODO: Condition
+        // TODO: Body
+        // TODO: Break block
+    }
 }

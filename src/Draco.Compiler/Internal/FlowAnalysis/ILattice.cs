@@ -48,4 +48,11 @@ internal interface ILattice<TState>
     /// <param name="other">The state to merge into <paramref name="target"/>.</param>
     /// <returns>True, if <paramref name="target"/> was changed, false otherwise.</returns>
     public bool Meet(ref TState target, in TState other);
+
+    /// <summary>
+    /// Deep-copies the given state.
+    /// </summary>
+    /// <param name="state">The state to deep-copy.</param>
+    /// <returns>An equivalent clone of <paramref name="state"/>.</returns>
+    public TState Clone(in TState state);
 }

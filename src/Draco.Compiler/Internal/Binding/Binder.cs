@@ -86,21 +86,20 @@ internal abstract partial class Binder
         // Infer declared type
         var declaredType = (type as TypeSymbol)?.Type ?? constraints.NextTypeVariable;
 
-        var boundValue = null as BoundExpression;
+        // Add assignability constraint, if needed
         if (untypedValue is not null)
         {
-            // Add assignability constraint
             constraints
                 .Assignable(declaredType, untypedValue.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(global.DeclarationSyntax.Value!.Value.Location));
-
-            // Type out the expression
-            boundValue = this.TypeExpression(untypedValue, constraints, diagnostics);
         }
 
         // Solve
         constraints.Solve(diagnostics);
+
+        // Type out the expression, if needed
+        var boundValue = untypedValue is null ? null : this.TypeExpression(untypedValue, constraints, diagnostics);
 
         // Unwrap the type
         declaredType = constraints.Unwrap(declaredType);

@@ -2,7 +2,9 @@ using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
@@ -99,5 +101,38 @@ public sealed class SemanticModelTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+    }
+
+    [Fact]
+    public void RequestingFunctionBodyDoesNotDiscardFlowAnalysisDiagnostic()
+    {
+        // func main() {
+        //     var x: int32;
+        //     var y = x;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(VariableDeclaration("y", value: NameExpression("x")))))));
+
+        var mainDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        _ = GetInternalSymbol<SourceFunctionSymbol>(semanticModel.GetDefinedSymbol(mainDecl));
+        _ = mainDecl.Body;
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
 }

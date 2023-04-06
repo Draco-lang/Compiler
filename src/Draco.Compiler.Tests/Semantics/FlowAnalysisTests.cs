@@ -6,7 +6,7 @@ using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class DataFlowAnalysisTests : SemanticTestsBase
+public sealed class FlowAnalysisTests : SemanticTestsBase
 {
     [Fact]
     public void UnitFunctionReturnsImplicitly()
@@ -50,7 +50,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.DoesNotReturn);
+        AssertDiagnostic(diags, FlowAnalysisErrors.DoesNotReturn);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.DoesNotReturn);
+        AssertDiagnostic(diags, FlowAnalysisErrors.DoesNotReturn);
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.DoesNotReturn);
+        AssertDiagnostic(diags, FlowAnalysisErrors.DoesNotReturn);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.DoesNotReturn);
+        AssertDiagnostic(diags, FlowAnalysisErrors.DoesNotReturn);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertNotDiagnostic(diags, DataflowErrors.DoesNotReturn);
+        AssertNotDiagnostic(diags, FlowAnalysisErrors.DoesNotReturn);
     }
 
     [Fact]
@@ -273,7 +273,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.VariableUsedBeforeInit);
+        AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
 
     [Fact]
@@ -360,7 +360,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.VariableUsedBeforeInit);
+        AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
 
     [Fact]
@@ -430,7 +430,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.VariableUsedBeforeInit);
+        AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
 
     [Fact]
@@ -491,7 +491,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.ImmutableVariableMustBeInitialized);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableMustBeInitialized);
     }
 
     [Fact]
@@ -516,7 +516,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.ImmutableVariableMustBeInitialized);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableMustBeInitialized);
     }
 
     [Fact]
@@ -543,7 +543,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -571,6 +571,6 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, DataflowErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 }

@@ -59,21 +59,34 @@ public sealed partial class SemanticModel
                 _ = func.Parameters;
                 _ = func.ReturnType;
                 // Avoid double-evaluation of diagnostics
-                if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body)) _ = func.Body;
+                if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body))
+                {
+                    _ = func.Body;
+
+                    // Flow passes
+                    // TODO: We dump into the global bag here...
+                    ReturnsOnAllPaths.Analyze(func, this.compilation.GlobalDiagnosticBag);
+                    DefiniteAssignment.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
+                    ValAssignment.Analyze(func, this.compilation.GlobalDiagnosticBag);
+                }
             }
             else if (symbol is SourceGlobalSymbol global)
             {
                 _ = global.Type;
                 _ = global.Value;
+
+                // Flow passes
+                // TODO: We dump into the global bag here...
+                if (global.Value is not null)
+                {
+                    DefiniteAssignment.Analyze(global.Value, this.compilation.GlobalDiagnosticBag);
+                }
+                ValAssignment.Analyze(global, this.compilation.GlobalDiagnosticBag);
             }
         }
 
         // Dump back all diagnostics
         result.AddRange(this.compilation.GlobalDiagnosticBag);
-
-        // Dump in DFA analysis results
-        var dfaDiags = DataFlowPasses.Analyze((SourceModuleSymbol)this.compilation.GlobalModule);
-        result.AddRange(dfaDiags);
 
         return result.ToImmutable();
     }

@@ -1,16 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 

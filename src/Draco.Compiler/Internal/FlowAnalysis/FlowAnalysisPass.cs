@@ -125,16 +125,6 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.pendingJoins.Clear();
     }
 
-    private TState GetLabeledState(LabelSymbol label)
-    {
-        if (!this.labeledStates.TryGetValue(label, out var state))
-        {
-            state = this.Bottom;
-            this.labeledStates.Add(label, state);
-        }
-        return state;
-    }
-
     private void LoopHead(LabelSymbol continueLabel)
     {
         if (this.labeledStates.TryGetValue(continueLabel, out var prevState))
@@ -192,9 +182,11 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
     public override void VisitLabelStatement(BoundLabelStatement node)
     {
         // Look up the previously saved label state
-        var state = this.GetLabeledState(node.Label);
-        // Join in
-        this.Join(ref this.State, in state);
+        if (this.labeledStates.TryGetValue(node.Label, out var prevState))
+        {
+            // Join it in
+            this.Join(ref this.State, in prevState);
+        }
         // Save a copy of this new state for the label
         this.labeledStates[node.Label] = this.Clone(in this.State);
     }

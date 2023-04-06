@@ -13,7 +13,7 @@ public abstract class EndToEndTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(syntaxTree));
 
         using var peStream = new MemoryStream();
-        var emitResult = compilation.Emit(peStream);
+        var emitResult = compilation.Emit(peStream: peStream);
 
         Assert.True(emitResult.Success);
 

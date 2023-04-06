@@ -48,6 +48,11 @@ internal partial class BoundUnexpectedExpression
     public override Type Type => IntrinsicTypes.Error;
 }
 
+internal partial class BoundSequencePointExpression
+{
+    public override Type? Type => this.Expression.Type;
+}
+
 internal partial class BoundUnitExpression
 {
     public static BoundUnitExpression Default { get; } = new(null);

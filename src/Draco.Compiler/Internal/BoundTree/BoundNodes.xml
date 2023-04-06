@@ -32,8 +32,14 @@
     <Field Name="Expression" Type="BoundExpression" />
   </Node>
 
-  <Node Name="BoundSequencePoint" Base="BoundStatement">
+  <!-- Debug info -->
+  <Node Name="BoundSequencePointStatement" Base="BoundStatement">
+    <!-- The wrapped statement, if any -->
     <Field Name="Statement" Type="BoundStatement?" />
+    <!-- The location, if null, this is a hidden sequence point -->
+    <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
+    <!-- Emit NOP if true -->
+    <Field Name="EmitNop" Type="bool" />
   </Node>
 
   <Node Name="BoundLocalDeclaration" Base="BoundStatement">
@@ -47,6 +53,16 @@
   </Node>
 
   <Node Name="BoundUnitExpression" Base="BoundExpression">
+  </Node>
+
+  <!-- Debug info -->
+  <Node Name="BoundSequencePointExpression" Base="BoundExpression">
+    <!-- The wrapped expression -->
+    <Field Name="Expression" Type="BoundExpression" />
+    <!-- The location, if null, this is a hidden sequence point -->
+    <Field Name="Range" Type="Api.Syntax.SyntaxRange?" />
+    <!-- Emit NOP if true -->
+    <Field Name="EmitNop" Type="bool" />
   </Node>
 
   <Node Name="BoundGotoExpression" Base="BoundExpression">

@@ -43,7 +43,7 @@ public static class ScriptingEngine
         Compilation compilation)
     {
         using var peStream = new MemoryStream();
-        var emitResult = compilation.Emit(peStream);
+        var emitResult = compilation.Emit(peStream: peStream);
 
         // Check emission results
         if (!emitResult.Success)

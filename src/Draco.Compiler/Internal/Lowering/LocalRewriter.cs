@@ -57,6 +57,59 @@ internal partial class LocalRewriter : BoundTreeRewriter
         }
     }
 
+    public override BoundNode VisitIfExpression(BoundIfExpression node)
+    {
+        // if (condition) then_expr else else_expr
+        //
+        // =>
+        //
+        // {
+        //     var result;
+        //     if (condition) goto then_label;
+        //     goto else_label;
+        //     then_label:
+        //         result = then_expr;
+        //         goto finally_label;
+        //     else_label:
+        //         result = else_expr;
+        //     finally_label:
+        //     @sequence point
+        //     result
+        // }
+        //
+        // NOTE: We are putting a sequence point after the finally label to erase
+        // the previous one, so after evaluating the 'then' block and jumping to
+        // 'finally', the debugger won't highlight the 'else' block by accident,
+        // because the last sequence point was there
+
+        var condition = (BoundExpression)node.Condition.Accept(this);
+        var then = (BoundExpression)node.Then.Accept(this);
+        var @else = (BoundExpression)node.Else.Accept(this);
+
+        var result = new SynthetizedLocalSymbol(node.TypeRequired, true);
+        var thenLabel = new SynthetizedLabelSymbol("then");
+        var elseLabel = new SynthetizedLabelSymbol("else");
+        var finallyLabel = new SynthetizedLabelSymbol("finally");
+
+        return BlockExpression(
+            locals: ImmutableArray.Create<LocalSymbol>(result),
+            statements: ImmutableArray.Create<BoundStatement>(
+                LocalDeclaration(result, null),
+                ConditionalGotoStatement(condition, thenLabel),
+                ExpressionStatement(GotoExpression(elseLabel)),
+                LabelStatement(thenLabel),
+                ExpressionStatement(AssignmentExpression(null, LocalLvalue(result), then)),
+                ExpressionStatement(GotoExpression(finallyLabel)),
+                LabelStatement(elseLabel),
+                ExpressionStatement(AssignmentExpression(null, LocalLvalue(result), @else)),
+                LabelStatement(finallyLabel),
+                SequencePointStatement(
+                    statement: null,
+                    range: null,
+                    emitNop: true)),
+            value: LocalExpression(result));
+    }
+
     public override BoundNode VisitWhileExpression(BoundWhileExpression node)
     {
         // while (condition)
@@ -95,6 +148,18 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
     public override BoundNode VisitRelationalExpression(BoundRelationalExpression node)
     {
+        // In case there are only two operands, don't do any of the optimizations below
+        if (node.Comparisons.Length == 1)
+        {
+            var left = (BoundExpression)node.First.Accept(this);
+            var right = (BoundExpression)node.Comparisons[0].Next.Accept(this);
+            return BinaryExpression(
+                left: left,
+                @operator: node.Comparisons[0].Operator,
+                right: right,
+                type: IntrinsicTypes.Bool);
+        }
+
         // expr1 < expr2 == expr3 > expr4 != ...
         //
         // =>
@@ -155,11 +220,13 @@ internal partial class LocalRewriter : BoundTreeRewriter
         var left = (BoundExpression)node.Left.Accept(this);
         var right = (BoundExpression)node.Right.Accept(this);
 
-        return IfExpression(
+        var result = IfExpression(
             condition: left,
             then: right,
             @else: LiteralExpression(false),
             type: IntrinsicTypes.Bool);
+        // If-expressions can be lowered too
+        return result.Accept(this);
     }
 
     public override BoundNode VisitOrExpression(BoundOrExpression node)
@@ -173,11 +240,13 @@ internal partial class LocalRewriter : BoundTreeRewriter
         var left = (BoundExpression)node.Left.Accept(this);
         var right = (BoundExpression)node.Right.Accept(this);
 
-        return IfExpression(
+        var result = IfExpression(
             condition: left,
             then: LiteralExpression(true),
             @else: right,
             type: IntrinsicTypes.Bool);
+        // If-expressions can be lowered too
+        return result.Accept(this);
     }
 
     // Utility to store an expression to a temporary variable

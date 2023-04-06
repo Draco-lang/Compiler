@@ -74,7 +74,7 @@ public partial class Program
             var irStream = new MemoryStream();
             var emitResult = compilation.Emit(
                 peStream: dllStream,
-                dracoIrStream: irStream);
+                irStream: irStream);
             dllStream.Position = 0;
             irStream.Position = 0;
             var hasIR = irStream.Length > 0;

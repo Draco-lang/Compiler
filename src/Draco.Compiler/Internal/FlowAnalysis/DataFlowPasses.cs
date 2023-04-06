@@ -9,6 +9,7 @@ using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.Symbols.Source;
 using System.Numerics;
 using Draco.Compiler.Api.Syntax;
+using System.ComponentModel;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
@@ -172,7 +173,7 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
             || !builtin.Bases.Select(x => x.Name).Contains("integral")) return; // TODO: This is very ugly
         if (declaration.Value is BoundLiteralExpression lit && lit.Value is not null)
         {
-            this.CheckIfValueIsCorrectType(builtin, lit.Value, declaration.Syntax);
+            this.CheckIfValueIsInRangeOfItsType(builtin, lit.Value, declaration.Syntax);
             return;
         }
     }
@@ -183,45 +184,30 @@ internal sealed class DataFlowPasses : BoundTreeVisitor
             || !builtin.Bases.Select(x => x.Name).Contains("integral")) return; // TODO: This is very ugly
         if (expr.Right is BoundLiteralExpression lit && lit.Value is not null)
         {
-            this.CheckIfValueIsCorrectType(builtin, lit.Value, expr.Syntax);
+            this.CheckIfValueIsInRangeOfItsType(builtin, lit.Value, expr.Syntax);
             return;
         }
     }
 
-    private void CheckIfValueIsCorrectType(Type type, object value, SyntaxNode? node)
+    private void CheckIfValueIsInRangeOfItsType(Type type, dynamic value, SyntaxNode? node)
     {
         bool result = false;
-        if (ReferenceEquals(type, IntrinsicTypes.Int8)) result = sbyte.TryParse(value.ToString(), out _);
-        else if (ReferenceEquals(type, IntrinsicTypes.Int16)) result = short.TryParse(value.ToString(), out _);
-        else if (ReferenceEquals(type, IntrinsicTypes.Int32)) result = int.TryParse(value.ToString(), out _);
-        else if (ReferenceEquals(type, IntrinsicTypes.Int64)) result = long.TryParse(value.ToString(), out _);
+        if (ReferenceEquals(type, IntrinsicTypes.Int8)) result = sbyte.MaxValue >= value && value >= sbyte.MinValue;
+        else if (ReferenceEquals(type, IntrinsicTypes.Int16)) result = short.MaxValue >= value && value >= short.MinValue;
+        else if (ReferenceEquals(type, IntrinsicTypes.Int32)) result = int.MaxValue >= value && value >= int.MinValue;
+        else if (ReferenceEquals(type, IntrinsicTypes.Int64)) result = long.MaxValue >= value && value >= long.MinValue;
 
-        else if (ReferenceEquals(type, IntrinsicTypes.Uint8)) result = byte.TryParse(value.ToString(), out _);
-        else if (ReferenceEquals(type, IntrinsicTypes.Uint16)) result = ushort.TryParse(value.ToString(), out _);
-        else if (ReferenceEquals(type, IntrinsicTypes.Uint32)) result = uint.TryParse(value.ToString(), out _);
-        else if (ReferenceEquals(type, IntrinsicTypes.Uint64)) result = ulong.TryParse(value.ToString(), out _);
+        else if (ReferenceEquals(type, IntrinsicTypes.Uint8)) result = byte.MaxValue >= value && value >= byte.MinValue;
+        else if (ReferenceEquals(type, IntrinsicTypes.Uint16)) result = ushort.MaxValue >= value && value >= ushort.MinValue;
+        else if (ReferenceEquals(type, IntrinsicTypes.Uint32)) result = uint.MaxValue >= value && value >= uint.MinValue;
+        else if (ReferenceEquals(type, IntrinsicTypes.Uint64)) result = ulong.MaxValue >= value && value >= ulong.MinValue;
 
-        else if (ReferenceEquals(type, IntrinsicTypes.Float32)) result = float.TryParse(value.ToString(), out _);
-        else if (ReferenceEquals(type, IntrinsicTypes.Float64)) result = double.TryParse(value.ToString(), out _);
-        if (result == false) this.diagnostics.Add(Diagnostic.Create(
+        else if (ReferenceEquals(type, IntrinsicTypes.Float32)) result = float.MaxValue >= value && value >= float.MinValue;
+        else if (ReferenceEquals(type, IntrinsicTypes.Float64)) result = double.MaxValue >= value && value >= double.MinValue;
+
+        if (!result) this.diagnostics.Add(Diagnostic.Create(
             template: DataflowErrors.ValueOutOfRangeOfType,
             location: node?.Location,
-            formatArgs: (type as BuiltinType)!.Name));
+            formatArgs: type));
     }
-
-    //private Dictionary<Type, (object min, object max)> numericTypesRanges = new Dictionary<Type, (object min, object max)>()
-    //{
-    //    { IntrinsicTypes.Int8, (sbyte.MinValue, sbyte.MaxValue) },
-    //    { IntrinsicTypes.Int16, (short.MinValue, short.MaxValue) },
-    //    { IntrinsicTypes.Int32, (int.MinValue, int.MaxValue) },
-    //    { IntrinsicTypes.Int64, (long.MinValue, long.MaxValue) },
-
-    //    { IntrinsicTypes.Uint8, (byte.MinValue, byte.MaxValue) },
-    //    { IntrinsicTypes.Uint16, (ushort.MinValue, ushort.MaxValue) },
-    //    { IntrinsicTypes.Uint32, (uint.MinValue, uint.MaxValue) },
-    //    { IntrinsicTypes.Uint64, (ulong.MinValue, ulong.MaxValue) },
-
-    //    { IntrinsicTypes.Float32, (float.MinValue, float.MaxValue) },
-    //    { IntrinsicTypes.Float64, (double.MinValue, double.MaxValue) },
-    //};
 }

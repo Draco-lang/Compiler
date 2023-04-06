@@ -500,6 +500,30 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
     }
 
     [Fact]
+    public void LocalVariableMaxValue()
+    {
+        // func foo() {
+        //     val x: int8 = 127;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int8"), LiteralExpression(127)))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
     public void LocalVariableValueTooSmall()
     {
         // func foo() {

@@ -69,13 +69,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
             this.globalInitializer.Write(Store(global, value));
 
             // Compile the local functions
-            foreach (var localFunc in localFunctions)
-            {
-                if (localFunc is not SourceFunctionSymbol sourceLocalFunc) continue;
-
-                var localBody = (BoundStatement)this.RewriteBody(sourceLocalFunc.Body);
-                this.CompileFunctionWithBody(sourceLocalFunc, localBody);
-            }
+            foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
         }
     }
 
@@ -83,34 +77,20 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
+        // Add procedure, define parameters
+        var procedure = this.assembly.DefineProcedure(functionSymbol);
+        foreach (var param in functionSymbol.Parameters) procedure.DefineParameter(param);
+
+        // Create the body
         var body = this.RewriteBody(sourceFunction.Body);
         // Yank out potential local functions and closures
         var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
         // Compile it
-        this.CompileFunctionWithBody(sourceFunction, (BoundStatement)bodyWithoutLocalFunctions);
+        var bodyCodegen = new FunctionBodyCodegen(procedure);
+        bodyWithoutLocalFunctions.Accept(bodyCodegen);
 
         // Compile the local functions
-        foreach (var localFunc in localFunctions)
-        {
-            if (localFunc is not SourceFunctionSymbol sourceLocalFunc) continue;
-
-            var localBody = (BoundStatement)this.RewriteBody(sourceLocalFunc.Body);
-            this.CompileFunctionWithBody(sourceLocalFunc, localBody);
-        }
-    }
-
-    private void CompileFunctionWithBody(FunctionSymbol functionSymbol, BoundStatement body)
-    {
-        var procedure = this.assembly.DefineProcedure(functionSymbol);
-
-        // Define parameters
-        foreach (var param in functionSymbol.Parameters) procedure.DefineParameter(param);
-
-        // Transform body
-        body = (BoundStatement)this.RewriteBody(body);
-        // Compile it
-        var bodyCodegen = new FunctionBodyCodegen(procedure);
-        body.Accept(bodyCodegen);
+        foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
     }
 
     private BoundNode RewriteBody(BoundNode body)

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.DracoIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using static Draco.Compiler.Internal.FlowAnalysis.ReturnsOnAllPaths;
@@ -21,9 +23,17 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
     {
         var locals = LocalCollector.Collect(node);
         var pass = new DefiniteAssignment(locals);
-        var state = pass.Analyze(node);
-        // TODO
-        throw new NotImplementedException();
+        _ = pass.Analyze(node);
+
+        foreach (var (reference, status) in pass.referenceStates)
+        {
+            if (status != AssignmentStatus.NotInitialized) continue;
+
+            diagnostics.Add(Diagnostic.Create(
+                template: FlowAnalysisErrors.VariableUsedBeforeInit,
+                location: reference.Syntax?.Location,
+                formatArgs: reference.Local.Name));
+        }
     }
 
     private sealed class LocalCollector : BoundTreeVisitor
@@ -43,8 +53,8 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
 
     public enum AssignmentStatus
     {
-        NotInitialized,
-        Initialized,
+        NotInitialized = 0,
+        Initialized = 1,
     }
 
     public readonly record struct LocalState(Dictionary<LocalSymbol, AssignmentStatus> Locals);
@@ -59,7 +69,7 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
         var changed = false;
         foreach (var (local, status) in other.Locals)
         {
-            if (target.Locals.TryGetValue(local, out var existingStatus) && (int)existingStatus >= (int)status) continue;
+            if (target.Locals.TryGetValue(local, out var existingStatus) && (int)existingStatus <= (int)status) continue;
             target.Locals[local] = status;
             changed = true;
         }
@@ -71,7 +81,7 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
         var changed = false;
         foreach (var (local, status) in other.Locals)
         {
-            if (target.Locals.TryGetValue(local, out var existingStatus) && (int)existingStatus <= (int)status) continue;
+            if (target.Locals.TryGetValue(local, out var existingStatus) && (int)existingStatus >= (int)status) continue;
             target.Locals[local] = status;
             changed = true;
         }
@@ -79,9 +89,37 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
     }
 
     private readonly List<LocalSymbol> locals;
+    private readonly Dictionary<BoundLocalExpression, AssignmentStatus> referenceStates = new();
 
     public DefiniteAssignment(List<LocalSymbol> locals)
     {
         this.locals = locals;
+    }
+
+    public override void VisitLocalDeclaration(BoundLocalDeclaration node)
+    {
+        node.Value?.Accept(this);
+        var status = node.Value is null ? AssignmentStatus.NotInitialized : AssignmentStatus.Initialized;
+        this.State.Locals.Add(node.Local, status);
+    }
+
+    public override void VisitAssignmentExpression(BoundAssignmentExpression node)
+    {
+        node.Right.Accept(this);
+        node.Left.Accept(this);
+        if (node.Left is not BoundLocalLvalue localLvalue) return;
+        this.State.Locals[localLvalue.Local] = AssignmentStatus.Initialized;
+    }
+
+    public override void VisitLocalExpression(BoundLocalExpression node)
+    {
+        // We check referenced-ness status
+        if (!this.State.Locals.TryGetValue(node.Local, out var status))
+        {
+            // NOTE: This assumption might become bad, once we start resolving locals out of order
+            // It's probably an error, assume initialized to avoid cascading errors
+            status = AssignmentStatus.Initialized;
+        }
+        this.referenceStates[node] = status;
     }
 }

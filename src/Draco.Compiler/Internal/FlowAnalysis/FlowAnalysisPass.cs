@@ -199,6 +199,13 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.State = this.Bottom;
     }
 
+    public override void VisitAssignmentExpression(BoundAssignmentExpression node)
+    {
+        // We fix ordering
+        node.Right.Accept(this);
+        node.Left.Accept(this);
+    }
+
     public override void VisitAndExpression(BoundAndExpression node)
     {
         // TODO

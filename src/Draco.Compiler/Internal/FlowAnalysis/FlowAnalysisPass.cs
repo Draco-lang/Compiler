@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// <typeparam name="TState">The state being tracked by the pass.</typeparam>
 internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
 {
-    // Lattice operations
+    // Lattice operations //////////////////////////////////////////////////////
 
     /// <summary>
     /// The top element of this lattice, which generally represents "reachable, but no information yet",
@@ -60,7 +60,14 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
     /// <returns>An equivalent clone of <paramref name="state"/>.</returns>
     public abstract TState Clone(in TState state);
 
-    // Flow analysis related things
+    // Flow analysis related things ////////////////////////////////////////////
+
+    /// <summary>
+    /// Represents a join operation that is yet to be performed.
+    /// </summary>
+    /// <param name="Label">The label to join at.</param>
+    /// <param name="State">The state to join.</param>
+    private readonly record struct PendingJoin(LabelSymbol Label, TState State);
 
     // NOTE: This is a field for a reason, we pass refs to this
     /// <summary>
@@ -73,12 +80,47 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
     /// </summary>
     protected bool HasChanged;
 
+    // State for each label
     private readonly Dictionary<LabelSymbol, TState> labeledStates = new();
+    // Joins into labels that we have jumped to
+    private readonly List<PendingJoin> pendingJoins = new();
 
     protected FlowAnalysisPass()
     {
         // Assume beginning is reachable
         this.State = this.Top;
+    }
+
+    public void Analyze(BoundNode node)
+    {
+        do
+        {
+            this.HasChanged = false;
+            node.Accept(this);
+            this.JoinPending();
+        } while (this.HasChanged);
+    }
+
+    private void JoinPending()
+    {
+        foreach (var (label, state) in this.pendingJoins)
+        {
+            if (this.labeledStates.TryGetValue(label, out var oldState))
+            {
+                // Potential update
+                if (this.Join(ref oldState, state))
+                {
+                    this.labeledStates[label] = oldState;
+                    this.HasChanged = true;
+                }
+            }
+            else
+            {
+                // No update
+                this.labeledStates.Add(label, state);
+            }
+        }
+        this.pendingJoins.Clear();
     }
 
     private TState GetLabeledState(LabelSymbol label)
@@ -148,19 +190,14 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         // Join in
         this.Join(ref this.State, in state);
         // Save a copy of this new state for the label
-        this.labeledStates[node.Label] = this.Clone(this.State);
+        this.labeledStates[node.Label] = this.Clone(in this.State);
     }
 
     public override void VisitGotoExpression(BoundGotoExpression node)
     {
-        // We join in with the referenced label
-        var state = this.GetLabeledState(node.Target);
-        if (this.Join(ref this.State, in state))
-        {
-            this.HasChanged = true;
-            this.labeledStates[node.Target] = this.State;
-        }
-        // Below that the state is unreachable, detach
+        // Register a pending join
+        this.pendingJoins.Add(new(Label: node.Target, this.Clone(in this.State)));
+        // Detach
         this.State = this.Bottom;
     }
 

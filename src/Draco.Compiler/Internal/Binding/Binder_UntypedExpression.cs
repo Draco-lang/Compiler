@@ -141,7 +141,7 @@ internal partial class Binder
 
         var then = this.BindExpression(syntax.Then, constraints, diagnostics);
         var @else = syntax.Else is null
-            ? UntypedTreeFactory.UnitExpression()
+            ? UntypedUnitExpression.Default
             : this.BindExpression(syntax.Else.Expression, constraints, diagnostics);
 
         // Then and else must be compatible types

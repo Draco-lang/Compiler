@@ -52,6 +52,9 @@ internal abstract partial class Symbol
     /// <returns>The equivalent API symbol.</returns>
     public abstract Api.Semantics.ISymbol ToApiSymbol();
 
+    public abstract void Accept(SymbolVisitor visitor);
+    public abstract TResult Accept<TResult>(SymbolVisitor<TResult> visitor);
+
     /// <summary>
     /// Converts the symbol-tree to a DOT graph for debugging purposes.
     /// </summary>

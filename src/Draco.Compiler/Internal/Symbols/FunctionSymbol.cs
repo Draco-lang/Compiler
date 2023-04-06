@@ -73,6 +73,9 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 
+    public override void Accept(SymbolVisitor visitor) => visitor.VisitFunction(this);
+    public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitFunction(this);
+
     private Type BuildType() => new FunctionType(
         this.Parameters.Select(p => p.Type).ToImmutableArray(),
         this.ReturnType);

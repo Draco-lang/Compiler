@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
 
@@ -15,15 +13,6 @@ internal abstract partial class UntypedNode
     protected UntypedNode(SyntaxNode? syntax)
     {
         this.Syntax = syntax;
-    }
-
-    public abstract void Accept(UntypedTreeVisitor visitor);
-    public abstract TResult Accept<TResult>(UntypedTreeVisitor<TResult> visitor);
-
-    protected static bool Equals<T>(ImmutableArray<T> left, ImmutableArray<T> right)
-    {
-        if (left.Length != right.Length) return false;
-        return left.SequenceEqual(right);
     }
 }
 

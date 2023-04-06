@@ -20,4 +20,7 @@ internal sealed class UndefinedValueSymbol : Symbol, ITypedSymbol
     }
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.AnySymbol(this);
+
+    public override void Accept(SymbolVisitor visitor) => throw new System.NotSupportedException();
+    public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => throw new System.NotSupportedException();
 }

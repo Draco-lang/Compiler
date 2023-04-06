@@ -123,8 +123,7 @@ internal sealed partial class ConstraintSolver
 
         case (BuiltinType t1, BuiltinType t2):
             return t1.Name == t2.Name
-                && t1.UnderylingType == t2.UnderylingType
-                && t1.Bases.Any(x => t2.Bases.Select(x => x.Name).Contains(x.Name));
+                && t1.UnderylingType == t2.UnderylingType;
 
         case (FunctionType f1, FunctionType f2):
         {

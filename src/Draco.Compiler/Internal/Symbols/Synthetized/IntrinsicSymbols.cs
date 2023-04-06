@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
 
@@ -64,35 +65,52 @@ internal static class IntrinsicSymbols
         return array.ToImmutable();
     }
 
-    private static ImmutableArray<Symbol> GetOperatorSymbols(Type type) => new ImmutableArray<Symbol>()
-    {
+    private static ImmutableArray<Symbol> GetOperatorSymbols(Type type) => ImmutableArray.Create<Symbol>(
         Comparison(TokenKind.Equal, type, type),
         Comparison(TokenKind.Equal, type, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.Equal, IntrinsicTypes.IntegralType, type),
         Comparison(TokenKind.NotEqual, type, type),
         Comparison(TokenKind.NotEqual, type, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.NotEqual, IntrinsicTypes.IntegralType, type),
         Comparison(TokenKind.GreaterThan, type, type),
         Comparison(TokenKind.GreaterThan, type, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.GreaterThan, IntrinsicTypes.IntegralType, type),
         Comparison(TokenKind.LessThan, type, type),
         Comparison(TokenKind.LessThan, type, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.LessThan, IntrinsicTypes.IntegralType, type),
         Comparison(TokenKind.GreaterEqual, type, type),
         Comparison(TokenKind.GreaterEqual, type, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.GreaterEqual, IntrinsicTypes.IntegralType, type),
         Comparison(TokenKind.LessEqual, type, type),
         Comparison(TokenKind.LessEqual, type, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.LessEqual, IntrinsicTypes.IntegralType, type),
 
         Unary(TokenKind.Plus, type, type),
         Unary(TokenKind.Minus, type, type),
 
         Binary(TokenKind.Plus, type, type, type),
         Binary(TokenKind.Plus, type, IntrinsicTypes.IntegralType, type),
+        Binary(TokenKind.Plus, IntrinsicTypes.IntegralType, type, type),
         Binary(TokenKind.Minus, type, type, type),
         Binary(TokenKind.Minus, type, IntrinsicTypes.IntegralType, type),
+        Binary(TokenKind.Minus, IntrinsicTypes.IntegralType, type, type),
         Binary(TokenKind.Star, type, type, type),
         Binary(TokenKind.Star, type, IntrinsicTypes.IntegralType, type),
+        Binary(TokenKind.Star, IntrinsicTypes.IntegralType, type, type),
         Binary(TokenKind.Slash, type, type, type),
         Binary(TokenKind.Slash, type, IntrinsicTypes.IntegralType, type),
+        Binary(TokenKind.Slash, IntrinsicTypes.IntegralType, type, type),
         Binary(TokenKind.KeywordMod, type, type, type),
         Binary(TokenKind.KeywordMod, type, IntrinsicTypes.IntegralType, type),
+        Binary(TokenKind.KeywordMod, IntrinsicTypes.IntegralType, type, type),
         Binary(TokenKind.KeywordRem, type, type, type),
         Binary(TokenKind.KeywordRem, type, IntrinsicTypes.IntegralType, type),
-    };
+        Binary(TokenKind.KeywordRem, IntrinsicTypes.IntegralType, type, type)
+    );
+
+    // NOTE: Temporary until we access BCL
+    public static FunctionSymbol Print_String { get; } = Function("print", new[] { IntrinsicTypes.String }, IntrinsicTypes.Unit);
+    public static FunctionSymbol Print_Int32 { get; } = Function("print", new[] { IntrinsicTypes.Int32 }, IntrinsicTypes.Unit);
+    public static FunctionSymbol Println_String { get; } = Function("println", new[] { IntrinsicTypes.String }, IntrinsicTypes.Unit);
+    public static FunctionSymbol Println_Int32 { get; } = Function("println", new[] { IntrinsicTypes.Int32 }, IntrinsicTypes.Unit);
 }

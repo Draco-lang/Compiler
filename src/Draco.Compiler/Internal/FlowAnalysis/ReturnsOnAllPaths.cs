@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
@@ -11,6 +14,19 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// </summary>
 internal sealed class ReturnsOnAllPaths : FlowAnalysisPass<ReturnsOnAllPaths.ReturnStatus>
 {
+    public static void Analyze(SourceFunctionSymbol function, DiagnosticBag diagnostics)
+    {
+        var pass = new ReturnsOnAllPaths();
+        var result = pass.Analyze(function.Body);
+        if (result == ReturnStatus.DoesNotReturn)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: FlowAnalysisErrors.DoesNotReturn,
+                location: function.DeclarationSyntax.Location,
+                formatArgs: function.Name));
+        }
+    }
+
     public enum ReturnStatus
     {
         DoesNotReturn,

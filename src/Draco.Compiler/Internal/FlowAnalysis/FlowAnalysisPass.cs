@@ -91,14 +91,16 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.State = this.Top;
     }
 
-    public void Analyze(BoundNode node)
+    public TState Analyze(BoundNode node)
     {
         do
         {
+            this.State = this.Top;
             this.HasChanged = false;
             node.Accept(this);
             this.JoinPending();
         } while (this.HasChanged);
+        return this.State;
     }
 
     private void JoinPending()

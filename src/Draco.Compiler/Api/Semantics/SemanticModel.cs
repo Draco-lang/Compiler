@@ -64,6 +64,7 @@ public sealed partial class SemanticModel
                 // TODO: We dump into the global bag here...
                 ReturnsOnAllPaths.Analyze(func, this.compilation.GlobalDiagnosticBag);
                 DefiniteAssignment.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
+                ValAssignment.Analyze(func, this.compilation.GlobalDiagnosticBag);
             }
             else if (symbol is SourceGlobalSymbol global)
             {
@@ -76,6 +77,7 @@ public sealed partial class SemanticModel
                 {
                     DefiniteAssignment.Analyze(global.Value, this.compilation.GlobalDiagnosticBag);
                 }
+                ValAssignment.Analyze(global, this.compilation.GlobalDiagnosticBag);
             }
         }
 

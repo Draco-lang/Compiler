@@ -19,6 +19,7 @@ internal partial class Binder
     {
         UntypedUnexpectedStatement unexpected => new BoundUnexpectedStatement(unexpected.Syntax),
         UntypedNoOpStatement noOp => this.TypeNoOpStatement(noOp, constraints, diagnostics),
+        UntypedLocalFunction func => this.TypeLocalFunction(func, constraints, diagnostics),
         UntypedLabelStatement label => this.TypeLabelStatement(label, constraints, diagnostics),
         UntypedLocalDeclaration local => this.TypeLocalDeclaration(local, constraints, diagnostics),
         UntypedExpressionStatement expr => this.TypeExpressionStatement(expr, constraints, diagnostics),
@@ -30,6 +31,9 @@ internal partial class Binder
         if (noOp.Syntax is null) return BoundNoOpStatement.Default;
         return new BoundNoOpStatement(noOp.Syntax);
     }
+
+    private BoundStatement TypeLocalFunction(UntypedLocalFunction func, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        new BoundLocalFunction(func.Syntax, func.Symbol);
 
     private BoundStatement TypeLabelStatement(UntypedLabelStatement label, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundLabelStatement(label.Syntax, label.Label);

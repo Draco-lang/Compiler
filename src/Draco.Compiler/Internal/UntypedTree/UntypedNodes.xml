@@ -18,6 +18,12 @@
   <Node Name="UntypedNoOpStatement" Base="UntypedStatement">
   </Node>
 
+  <!-- Kept around so desugaring can collect -->
+  <Node Name="UntypedLocalFunction" Base="UntypedStatement">
+    <!-- The corresponding symbol -->
+    <Field Name="Symbol" Type="FunctionSymbol" />
+  </Node>
+
   <Node Name="UntypedLabelStatement" Base="UntypedStatement">
     <Field Name="Label" Type="LabelSymbol" />
   </Node>

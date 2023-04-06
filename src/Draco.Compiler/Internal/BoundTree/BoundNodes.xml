@@ -22,6 +22,12 @@
     <Field Name="Label" Type="LabelSymbol" />
   </Node>
 
+  <!-- Kept around so desugaring can collect -->
+  <Node Name="BoundLocalFunction" Base="BoundStatement">
+    <!-- The corresponding symbol -->
+    <Field Name="Symbol" Type="FunctionSymbol" />
+  </Node>
+
   <!-- Used for desugaring -->
   <Node Name="BoundConditionalGotoStatement" Base="BoundStatement">
     <Field Name="Condition" Type="BoundExpression" />

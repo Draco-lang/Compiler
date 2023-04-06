@@ -59,12 +59,16 @@ public sealed partial class SemanticModel
                 _ = func.Parameters;
                 _ = func.ReturnType;
                 // Avoid double-evaluation of diagnostics
-                if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body)) _ = func.Body;
-                // Flow passes
-                // TODO: We dump into the global bag here...
-                ReturnsOnAllPaths.Analyze(func, this.compilation.GlobalDiagnosticBag);
-                DefiniteAssignment.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
-                ValAssignment.Analyze(func, this.compilation.GlobalDiagnosticBag);
+                if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body))
+                {
+                    _ = func.Body;
+
+                    // Flow passes
+                    // TODO: We dump into the global bag here...
+                    ReturnsOnAllPaths.Analyze(func, this.compilation.GlobalDiagnosticBag);
+                    DefiniteAssignment.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
+                    ValAssignment.Analyze(func, this.compilation.GlobalDiagnosticBag);
+                }
             }
             else if (symbol is SourceGlobalSymbol global)
             {

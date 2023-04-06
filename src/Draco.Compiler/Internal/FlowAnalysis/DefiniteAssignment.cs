@@ -105,8 +105,7 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
 
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
     {
-        node.Right.Accept(this);
-        node.Left.Accept(this);
+        base.VisitAssignmentExpression(node);
         if (node.Left is not BoundLocalLvalue localLvalue) return;
         this.State.Locals[localLvalue.Local] = AssignmentStatus.Initialized;
     }

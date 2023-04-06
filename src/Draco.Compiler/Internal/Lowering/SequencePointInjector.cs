@@ -34,6 +34,28 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             emitNop: node.Value is null);
     }
 
+    public override BoundNode VisitLabelStatement(BoundLabelStatement node)
+    {
+        // NOTE: Labels don't need to be decorated with anything further
+        // Since labels can be generated when the codegen is in a detached state,
+        // we need to do a little tricklery to make the sequence-point valid
+        // We do that like so:
+        // {
+        // label:
+        //     <sequence point for label>
+        //     nop
+        // }
+        return ExpressionStatement(BlockExpression(
+            locals: ImmutableArray<LocalSymbol>.Empty,
+            statements: ImmutableArray.Create<BoundStatement>(
+                node,
+                SequencePointStatement(
+                    statement: null,
+                    range: node.Syntax?.Range,
+                    emitNop: true)),
+            value: BoundUnitExpression.Default));
+    }
+
     public override BoundNode VisitExpressionStatement(BoundExpressionStatement node)
     {
         var injected = (BoundStatement)base.VisitExpressionStatement(node);

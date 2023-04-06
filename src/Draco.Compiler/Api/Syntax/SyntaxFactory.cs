@@ -215,6 +215,7 @@ public static partial class SyntaxFactory
     public static SyntaxToken OpenParen { get; } = MakeToken(TokenKind.ParenOpen);
     public static SyntaxToken CloseParen { get; } = MakeToken(TokenKind.ParenClose);
     public static SyntaxToken Plus { get; } = MakeToken(TokenKind.Plus);
+    public static SyntaxToken Minus { get; } = MakeToken(TokenKind.Minus);
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
 

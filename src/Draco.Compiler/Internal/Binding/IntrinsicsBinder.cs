@@ -20,6 +20,7 @@ internal sealed class IntrinsicsBinder : Binder
         .Where(prop => prop.PropertyType.IsAssignableTo(typeof(Symbol)))
         .Select(prop => prop.GetValue(null))
         .Cast<Symbol>()
+        .Concat(Symbols.Synthetized.IntrinsicSymbols.GetOperatorSymbols())
         .ToImmutableArray();
 
     public override IEnumerable<Symbol> DeclaredSymbols => IntrinsicSymbols;

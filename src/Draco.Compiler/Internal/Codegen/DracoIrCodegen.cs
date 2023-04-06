@@ -379,6 +379,8 @@ internal sealed class DracoIrCodegen : BoundTreeVisitor<Value>
         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
     };
 
+    // TODO: use the new IntrinsicSymbols.GetOperatorSymbols
+
     private static bool IsEqual(Symbol op) => op == IntrinsicSymbols.Int32_Equal
                                            || op == IntrinsicSymbols.Float64_Equal;
     private static bool IsNotEqual(Symbol op) => op == IntrinsicSymbols.Int32_NotEqual

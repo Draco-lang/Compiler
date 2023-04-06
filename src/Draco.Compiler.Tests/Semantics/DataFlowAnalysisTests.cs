@@ -536,7 +536,7 @@ public sealed class DataFlowAnalysisTests : SemanticTestsBase
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("uint8"), LiteralExpression(-1)))))));
+                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("uint8"), UnaryExpression(Minus, LiteralExpression(1))))))));
 
         // Act
         var compilation = Compilation.Create(ImmutableArray.Create(tree));

@@ -9,7 +9,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.DracoIr;
+using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 
@@ -36,10 +36,15 @@ public sealed class Compilation
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
+    /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
-    public static Compilation Create(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName = null) => new(
+    public static Compilation Create(
+        ImmutableArray<SyntaxTree> syntaxTrees,
+        string? outputPath = null,
+        string? assemblyName = null) => new(
         syntaxTrees: syntaxTrees,
+        outputPath: outputPath,
         assemblyName: assemblyName);
 
     // TODO: Probably not the smartest idea, will only work for single files (likely)
@@ -57,9 +62,14 @@ public sealed class Compilation
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
 
     /// <summary>
+    /// The output path.
+    /// </summary>
+    public string OutputPath { get; }
+
+    /// <summary>
     /// The name of the output assembly.
     /// </summary>
-    public string? AssemblyName { get; }
+    public string AssemblyName { get; }
 
     /// <summary>
     /// The global module symbol of the compilation.
@@ -80,10 +90,14 @@ public sealed class Compilation
 
     private readonly BinderCache binderCache;
 
-    private Compilation(ImmutableArray<SyntaxTree> syntaxTrees, string? assemblyName)
+    private Compilation(
+        ImmutableArray<SyntaxTree> syntaxTrees,
+        string? outputPath,
+        string? assemblyName)
     {
         this.SyntaxTrees = syntaxTrees;
-        this.AssemblyName = assemblyName;
+        this.OutputPath = outputPath ?? ".";
+        this.AssemblyName = assemblyName ?? "output";
         this.binderCache = new(this);
     }
 
@@ -98,15 +112,17 @@ public sealed class Compilation
     /// Emits compiled binary to a <see cref="Stream"/>.
     /// </summary>
     /// <param name="peStream">The stream to write the PE to.</param>
+    /// <param name="pdbStream">The stream to write the PDB to.</param>
     /// <param name="declarationTreeStream">The stream to write the DOT graph of the declaration tree to.</param>
     /// <param name="symbolTreeStream">The stream to write the DOT graph of the symbol tree to.</param>
-    /// <param name="dracoIrStream">The stream to write a textual representation of the Draco IR to.</param>
+    /// <param name="irStream">The stream to write a textual representation of the IR to.</param>
     /// <returns>The result of the emission.</returns>
     public EmitResult Emit(
-        Stream peStream,
+        Stream? peStream = null,
+        Stream? pdbStream = null,
         Stream? declarationTreeStream = null,
         Stream? symbolTreeStream = null,
-        Stream? dracoIrStream = null)
+        Stream? irStream = null)
     {
         // Write the declaration tree, if needed
         if (declarationTreeStream is not null)
@@ -132,24 +148,25 @@ public sealed class Compilation
                 Diagnostics: existingDiags);
         }
 
-        // Generate Draco IR
-        var asm = new Assembly(this.AssemblyName ?? "output");
-        DracoIrCodegen.Generate(asm, (SourceModuleSymbol)this.GlobalModule);
-
+        // Generate IR
+        var assembly = ModuleCodegen.Generate(
+            compilation: this,
+            symbol: this.GlobalModule,
+            emitSequencePoints: pdbStream is not null);
         // Optimize the IR
         // TODO: Options for optimization
-        OptimizationPipeline.Instance.Apply(asm);
+        OptimizationPipeline.Instance.Apply(assembly);
 
         // Write the IR, if needed
-        if (dracoIrStream is not null)
+        if (irStream is not null)
         {
-            var irWriter = new StreamWriter(dracoIrStream);
-            irWriter.Write(asm.ToString());
+            var irWriter = new StreamWriter(irStream);
+            irWriter.Write(assembly.ToString());
             irWriter.Flush();
         }
 
-        // Generate CIL
-        CilCodegen.Generate(asm, peStream);
+        // Generate CIL and PDB
+        if (peStream is not null) MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
 
         return new(
             Success: true,

@@ -62,6 +62,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                 {
                     var position = argSyntax.Range.Start;
                     var name = paramSymbol.Name;
+                    if (string.IsNullOrWhiteSpace(name)) continue;
 
                     inlayHints.Add(new InlayHint()
                     {

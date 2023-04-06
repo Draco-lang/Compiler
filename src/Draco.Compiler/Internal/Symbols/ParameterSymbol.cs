@@ -10,4 +10,7 @@ internal abstract partial class ParameterSymbol : LocalSymbol
     public override bool IsMutable => false;
 
     public override IParameterSymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
+
+    public override void Accept(SymbolVisitor visitor) => visitor.VisitParameter(this);
+    public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitParameter(this);
 }

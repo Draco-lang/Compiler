@@ -27,4 +27,6 @@ internal sealed class OverloadSymbol : Symbol
     }
 
     public override ISymbol ToApiSymbol() => throw new System.NotSupportedException();
+    public override void Accept(SymbolVisitor visitor) => throw new System.NotSupportedException();
+    public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => throw new System.NotSupportedException();
 }

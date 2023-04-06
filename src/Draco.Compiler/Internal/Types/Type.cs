@@ -20,7 +20,7 @@ internal abstract partial class Type
     public override bool Equals(object? obj) => throw new InvalidOperationException("do not use equality for types");
     public override int GetHashCode() => throw new InvalidOperationException("do not use equality for types");
 
-    public abstract override string ToString();
+    public override abstract string ToString();
 
     /// <summary>
     /// Converts this type into an API type.

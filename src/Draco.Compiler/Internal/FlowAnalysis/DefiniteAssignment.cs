@@ -100,7 +100,7 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
     {
         node.Value?.Accept(this);
         var status = node.Value is null ? AssignmentStatus.NotInitialized : AssignmentStatus.Initialized;
-        this.State.Locals.Add(node.Local, status);
+        this.State.Locals[node.Local] = status;
     }
 
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)

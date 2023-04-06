@@ -208,14 +208,26 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
 
     public override void VisitAndExpression(BoundAndExpression node)
     {
-        // TODO
-        throw new NotImplementedException();
+        // The left is always evaluated
+        this.VisitExpression(node.Left);
+        // The right is optional
+        var rightNotEvaluated = this.Clone(in this.State);
+        // Evaluate right
+        this.VisitExpression(node.Right);
+        // Join in
+        this.Join(ref this.State, in rightNotEvaluated);
     }
 
     public override void VisitOrExpression(BoundOrExpression node)
     {
-        // TODO
-        throw new NotImplementedException();
+        // The left is always evaluated
+        this.VisitExpression(node.Left);
+        // The right is optional
+        var rightNotEvaluated = this.Clone(in this.State);
+        // Evaluate right
+        this.VisitExpression(node.Right);
+        // Join in
+        this.Join(ref this.State, in rightNotEvaluated);
     }
 
     public override void VisitRelationalExpression(BoundRelationalExpression node)

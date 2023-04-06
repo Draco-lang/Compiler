@@ -226,6 +226,7 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
 
     public override void VisitReturnExpression(BoundReturnExpression node)
     {
+        node.Value.Accept(this);
         // Detach
         this.State = this.Bottom;
     }

@@ -21,7 +21,7 @@ internal sealed class ClosureRewriter : BoundTreeRewriter
     public static RewriteResult Rewrite(BoundNode body)
     {
         var rewriter = new ClosureRewriter();
-        body = (BoundStatement)body.Accept(rewriter);
+        body = body.Accept(rewriter);
         return new(Body: body, LocalFunctions: rewriter.localFunctions.ToImmutable());
     }
 

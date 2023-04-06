@@ -63,11 +63,19 @@ public sealed partial class SemanticModel
                 // Flow passes
                 // TODO: We dump into the global bag here...
                 ReturnsOnAllPaths.Analyze(func, this.compilation.GlobalDiagnosticBag);
+                DefiniteAssignment.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
             }
             else if (symbol is SourceGlobalSymbol global)
             {
                 _ = global.Type;
                 _ = global.Value;
+
+                // Flow passes
+                // TODO: We dump into the global bag here...
+                if (global.Value is not null)
+                {
+                    DefiniteAssignment.Analyze(global.Value, this.compilation.GlobalDiagnosticBag);
+                }
             }
         }
 

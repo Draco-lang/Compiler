@@ -36,7 +36,9 @@ internal partial class Binder
 
     private UntypedStatement BindFunctionDeclaration(FunctionDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var symbol = new SourceFunctionSymbol(this.ContainingSymbol, syntax);
+        var symbol = this.DeclaredSymbols
+            .OfType<SourceFunctionSymbol>()
+            .First(s => s.DeclarationSyntax == syntax);
         return new UntypedLocalFunction(syntax, symbol);
     }
 

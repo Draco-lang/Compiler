@@ -60,15 +60,22 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)
         {
-            var body = sourceGlobal.Value;
-            // If needed, inject sequence points
-            if (this.emitSequencePoints) body = (BoundExpression)body.Accept(SequencePointInjector.Instance);
-            // Desugar value
-            body = (BoundExpression)body.Accept(LocalRewriter.Instance);
+            var body = this.RewriteBody(sourceGlobal.Value);
+            // Yank out potential local functions and closures
+            var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
             // Compile it
-            var value = body.Accept(this.globalInitializer);
+            var value = bodyWithoutLocalFunctions.Accept(this.globalInitializer);
             // Store it
             this.globalInitializer.Write(Store(global, value));
+
+            // Compile the local functions
+            foreach (var localFunc in localFunctions)
+            {
+                if (localFunc is not SourceFunctionSymbol sourceLocalFunc) continue;
+
+                var localBody = (BoundStatement)this.RewriteBody(sourceLocalFunc.Body);
+                this.CompileFunctionWithBody(sourceLocalFunc, localBody);
+            }
         }
     }
 
@@ -76,19 +83,43 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
+        var body = this.RewriteBody(sourceFunction.Body);
+        // Yank out potential local functions and closures
+        var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
+        // Compile it
+        this.CompileFunctionWithBody(sourceFunction, (BoundStatement)bodyWithoutLocalFunctions);
+
+        // Compile the local functions
+        foreach (var localFunc in localFunctions)
+        {
+            if (localFunc is not SourceFunctionSymbol sourceLocalFunc) continue;
+
+            var localBody = (BoundStatement)this.RewriteBody(sourceLocalFunc.Body);
+            this.CompileFunctionWithBody(sourceLocalFunc, localBody);
+        }
+    }
+
+    private void CompileFunctionWithBody(FunctionSymbol functionSymbol, BoundStatement body)
+    {
         var procedure = this.assembly.DefineProcedure(functionSymbol);
 
         // Define parameters
         foreach (var param in functionSymbol.Parameters) procedure.DefineParameter(param);
 
-        // Generate function body
-        var bodyCodegen = new FunctionBodyCodegen(procedure);
-        var body = sourceFunction.Body;
-        // If needed, inject sequence points
-        if (this.emitSequencePoints) body = (BoundStatement)body.Accept(SequencePointInjector.Instance);
-        // Desugar it
-        body = (BoundStatement)body.Accept(LocalRewriter.Instance);
+        // Transform body
+        body = (BoundStatement)this.RewriteBody(body);
         // Compile it
+        var bodyCodegen = new FunctionBodyCodegen(procedure);
         body.Accept(bodyCodegen);
+    }
+
+    private BoundNode RewriteBody(BoundNode body)
+    {
+        // If needed, inject sequence points
+        if (this.emitSequencePoints) body = body.Accept(SequencePointInjector.Instance);
+        // Desugar it
+        body = body.Accept(LocalRewriter.Instance);
+        // Done
+        return body;
     }
 }

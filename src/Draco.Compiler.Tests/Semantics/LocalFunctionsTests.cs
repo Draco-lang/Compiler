@@ -178,4 +178,99 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
         Assert.Single(diagnostics);
         AssertDiagnostic(diagnostics, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
+
+    [Fact]
+    public void LocalFunctionContributesToOverloading()
+    {
+        // func foo(x: int32) {}
+        //
+        // func main() {
+        //     func foo(x: string) {}
+        //
+        //     foo(0);
+        //     foo("Hello");
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                name: "foo",
+                parameters: ParameterList(Parameter("x", NameType("int32"))),
+                returnType: null,
+                body: BlockFunctionBody()),
+            FunctionDeclaration(
+                name: "main",
+                parameters: ParameterList(),
+                returnType: null,
+                body: BlockFunctionBody(
+                    DeclarationStatement(FunctionDeclaration(
+                        name: "foo",
+                        parameters: ParameterList(Parameter("x", NameType("string"))),
+                        returnType: null,
+                        body: BlockFunctionBody())),
+                    ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
+                    ExpressionStatement(CallExpression(NameExpression("foo"), StringExpression("Hello")))))));
+
+        var fooInt32Decl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooStringDecl = tree.FindInChildren<FunctionDeclarationSyntax>(2);
+
+        var fooInt32Call = tree.FindInChildren<CallExpressionSyntax>(0);
+        var fooStringCall = tree.FindInChildren<CallExpressionSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = compilation.Diagnostics;
+
+        var fooInt32SymDecl = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(fooInt32Decl));
+        var fooStringSymDecl = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(fooStringDecl));
+
+        var fooInt32SymRef = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooInt32Call.Function));
+        var fooStringSymRef = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooStringCall.Function));
+
+        // Assert
+        Assert.Empty(diagnostics);
+        Assert.True(ReferenceEquals(fooInt32SymDecl, fooInt32SymRef));
+        Assert.True(ReferenceEquals(fooStringSymDecl, fooStringSymRef));
+    }
+
+    // This is not done yet, we don't deal with overloads that match
+#if false
+    [Fact]
+    public void LocalFunctionCanNotShadowOverload()
+    {
+        // func foo(x: int32) {}
+        //
+        // func main() {
+        //     func foo(x: int32) {}
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                name: "foo",
+                parameters: ParameterList(Parameter("x", NameType("int32"))),
+                returnType: null,
+                body: BlockFunctionBody()),
+            FunctionDeclaration(
+                name: "main",
+                parameters: ParameterList(),
+                returnType: null,
+                body: BlockFunctionBody(
+                    DeclarationStatement(FunctionDeclaration(
+                        name: "foo",
+                        parameters: ParameterList(Parameter("x", NameType("int32"))),
+                        returnType: null,
+                        body: BlockFunctionBody()))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diagnostics);
+        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+    }
+#endif
 }

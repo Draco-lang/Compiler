@@ -92,19 +92,19 @@ internal partial class UntypedLiteralExpression
 {
     public override Type Type => this.Value switch
     {
-        sbyte => IntrinsicTypes.IntegralType,
-        short => IntrinsicTypes.IntegralType,
-        int => IntrinsicTypes.IntegralType,
-        long => IntrinsicTypes.IntegralType,
-        byte => IntrinsicTypes.IntegralType,
-        ushort => IntrinsicTypes.IntegralType,
-        uint => IntrinsicTypes.IntegralType,
-        ulong => IntrinsicTypes.IntegralType,
+        sbyte => this.VariableReference!,
+        short => this.VariableReference!,
+        int => this.VariableReference!,
+        long => this.VariableReference!,
+        byte => this.VariableReference!,
+        ushort => this.VariableReference!,
+        uint => this.VariableReference!,
+        ulong => this.VariableReference!,
 
         bool => IntrinsicTypes.Bool,
 
-        float => IntrinsicTypes.FloatingPointType,
-        double => IntrinsicTypes.FloatingPointType,
+        float => this.VariableReference!,
+        double => this.VariableReference!,
         _ => throw new System.InvalidOperationException(),
     };
 }

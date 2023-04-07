@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Error;
@@ -74,6 +75,15 @@ internal sealed partial class ConstraintSolver
 
     private SolveState Solve(DiagnosticBag diagnostics, CommonBaseConstraint constraint)
     {
+        if (this.Unwrap(constraint.First) is TypeVariable && this.Unwrap(constraint.Second) is TypeVariable)
+        {
+            foreach (var con in this.constraints)
+            {
+                if (con is BaseTypeConstraint basetype &&
+                    (ReferenceEquals(basetype.Variable, constraint.First)
+                    || ReferenceEquals(basetype.Variable, constraint.Second))) return SolveState.Stale;
+            }
+        }
         if (!this.UnifyBase(constraint.First, constraint.Second))
         {
             var diagnostic = constraint.Diagnostic
@@ -87,9 +97,49 @@ internal sealed partial class ConstraintSolver
 
     private SolveState Solve(DiagnosticBag diagnostics, BaseTypeConstraint constraint)
     {
+        Type GetInferedType(BuiltinType builtinType)
+        {
+            if (builtinType == IntrinsicTypes.IntegralType) return IntrinsicTypes.Int32;
+            else if (builtinType == IntrinsicTypes.FloatingPointType) return IntrinsicTypes.Float64;
+            else throw new System.InvalidOperationException();
+        }
         if (constraint.BaseType is not BuiltinType baseType || !baseType.IsBaseType) throw new System.InvalidOperationException();
-        if (baseType == IntrinsicTypes.IntegralType) this.Substitute(constraint.Variable, IntrinsicTypes.Int32);
-        else if (baseType == IntrinsicTypes.FloatingPointType) this.Substitute(constraint.Variable, IntrinsicTypes.Float64);
+
+        // Check if the typevar is in any SameType or CommonBase constraints, if so this constraint can't run yet
+        foreach (var con in this.constraints)
+        {
+            if (con is SameTypeConstraint same
+                && (ReferenceEquals(same.First, constraint.Variable)
+                || ReferenceEquals(same.Second, constraint.Variable))
+                || con is CommonBaseConstraint common
+                && ((ReferenceEquals(common.First, constraint.Variable)
+                && common.Second is not TypeVariable)
+                || (ReferenceEquals(common.Second, constraint.Variable)
+                && common.First is not TypeVariable))) return SolveState.Stale;
+        }
+
+        // If this TypeVariable was already substituted just return
+        if (this.substitutions.TryGetValue(constraint.Variable, out var type))
+        {
+            if (type is BuiltinType builtin)
+            {
+                var hasBase = false;
+                foreach (var builtinBase in builtin.Bases)
+                {
+                    if (builtinBase == constraint.BaseType) hasBase = true;
+                }
+                if (hasBase) return SolveState.Finished;
+            }
+            else if (type is NeverType || type is ErrorType) return SolveState.Finished;
+            var diagnostic = constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(this.Unwrap(type), this.Unwrap(GetInferedType(baseType)))
+                .Build();
+            diagnostics.Add(diagnostic);
+            return SolveState.Finished;
+        }
+
+        this.Substitute(constraint.Variable, GetInferedType(baseType));
         return SolveState.Finished;
     }
 

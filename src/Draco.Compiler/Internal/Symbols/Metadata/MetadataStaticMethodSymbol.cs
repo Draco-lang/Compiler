@@ -26,7 +26,7 @@ internal sealed class MetadataStaticMethodSymbol : FunctionSymbol
         get
         {
             if (this.NeedsBuild) this.Build();
-            return this.returnType;
+            return this.returnType!;
         }
     }
 

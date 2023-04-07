@@ -127,6 +127,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     // Expressions /////////////////////////////////////////////////////////////
 
+    public override IOperand VisitStringExpression(BoundStringExpression node) =>
+        throw new System.InvalidOperationException("should have been lowered");
+
     public override IOperand VisitSequencePointExpression(BoundSequencePointExpression node)
     {
         // Emit the sequence point
@@ -325,14 +328,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var local = this.DefineLocal(node.Local);
         this.Write(Load(result, local));
         return result;
-    }
-
-    public override IOperand VisitStringExpression(BoundStringExpression node)
-    {
-        if (node.Parts.Length == 0) return new Constant(string.Empty);
-        else if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText text) return new Constant(text.Text);
-        // TODO: Should have been desugared
-        else throw new System.NotImplementedException();
     }
 
     public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => node.Function switch

@@ -120,6 +120,7 @@ internal partial class BoundLiteralExpression
     {
         int => IntrinsicTypes.Int32,
         bool => IntrinsicTypes.Bool,
+        string => IntrinsicTypes.String,
         _ => throw new System.InvalidOperationException(),
     };
 }

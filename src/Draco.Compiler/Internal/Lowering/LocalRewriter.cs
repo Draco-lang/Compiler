@@ -251,6 +251,23 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return result.Accept(this);
     }
 
+    public override BoundNode VisitStringExpression(BoundStringExpression node)
+    {
+        // Empty string
+        if (node.Parts.Length == 0) return LiteralExpression(string.Empty);
+        // A single string
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText text) return LiteralExpression(text.Text);
+        // A single interpolated part
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringInterpolation interpolation)
+        {
+            // TODO: Just call ToString on it
+            throw new System.NotImplementedException();
+        }
+        // We need to desugar into string.Format("format string", array of args)
+        // TODO
+        throw new System.NotImplementedException();
+    }
+
     // Utility to store an expression to a temporary variable
     private TemporaryStorage StoreTemporary(BoundExpression expr)
     {

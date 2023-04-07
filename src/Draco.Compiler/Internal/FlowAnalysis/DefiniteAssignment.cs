@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
@@ -15,7 +16,7 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
 {
     public static void Analyze(BoundNode node, DiagnosticBag diagnostics)
     {
-        var locals = LocalCollector.Collect(node);
+        var locals = BoundTreeCollector.CollectLocals(node);
         var pass = new DefiniteAssignment(locals);
         _ = pass.Analyze(node);
 
@@ -28,21 +29,6 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
                 location: reference.Syntax?.Location,
                 formatArgs: reference.Local.Name));
         }
-    }
-
-    private sealed class LocalCollector : BoundTreeVisitor
-    {
-        public static List<LocalSymbol> Collect(BoundNode node)
-        {
-            var collector = new LocalCollector();
-            node.Accept(collector);
-            return collector.locals;
-        }
-
-        private readonly List<LocalSymbol> locals = new();
-
-        public override void VisitLocalDeclaration(BoundLocalDeclaration node) =>
-            this.locals.Add(node.Local);
     }
 
     public enum AssignmentStatus
@@ -82,10 +68,10 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
         return changed;
     }
 
-    private readonly List<LocalSymbol> locals;
+    private readonly ImmutableArray<LocalSymbol> locals;
     private readonly Dictionary<BoundLocalExpression, AssignmentStatus> referenceStates = new();
 
-    public DefiniteAssignment(List<LocalSymbol> locals)
+    public DefiniteAssignment(ImmutableArray<LocalSymbol> locals)
     {
         this.locals = locals;
     }

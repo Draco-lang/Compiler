@@ -150,7 +150,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
     public void ReferenceUninitializedVariable()
     {
         // func foo() {
-        //     func bar(): int32 {
+        //     func bar() {
         //         var x: int32;
         //         var y = x;
         //     }
@@ -164,7 +164,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
             BlockFunctionBody(DeclarationStatement(FunctionDeclaration(
                 "bar",
                 ParameterList(),
-                NameType("int32"),
+                null,
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
                     DeclarationStatement(VariableDeclaration("y", null, NameExpression("x"))))))))));

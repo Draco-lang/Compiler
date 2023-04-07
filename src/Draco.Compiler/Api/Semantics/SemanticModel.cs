@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -45,7 +46,51 @@ public sealed partial class SemanticModel
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     private ImmutableArray<Diagnostic> GetAllDiagnostics()
     {
-        var result = ImmutableArray.CreateBuilder<Diagnostic>();
+        void CollectFunctionDiagnostics(Internal.Symbols.FunctionSymbol func, DiagnosticBag result)
+        {
+            if (func is not SourceFunctionSymbol sourceFunc) return;
+
+            _ = sourceFunc.Parameters;
+            _ = sourceFunc.ReturnType;
+
+            // Avoid double-evaluation of diagnostics
+            if (!this.syntaxMap.ContainsKey(sourceFunc.DeclarationSyntax.Body))
+            {
+                _ = sourceFunc.Body;
+
+                // Flow passes
+                // TODO: We dump into the global bag here...
+                ReturnsOnAllPaths.Analyze(sourceFunc, result);
+                DefiniteAssignment.Analyze(sourceFunc.Body, result);
+                ValAssignment.Analyze(sourceFunc, result);
+            }
+
+            // Collect in locals
+            var localFunctions = BoundTreeCollector.CollectLocalFunctions(sourceFunc.Body);
+            foreach (var localFunc in localFunctions) CollectFunctionDiagnostics(localFunc, result);
+        }
+
+        void CollectGlobalDiagnostics(SourceGlobalSymbol global, DiagnosticBag result)
+        {
+            _ = global.Type;
+            _ = global.Value;
+
+            // Flow passes
+            if (global.Value is not null)
+            {
+                DefiniteAssignment.Analyze(global.Value, result);
+            }
+            ValAssignment.Analyze(global, result);
+
+            if (global.Value is not null)
+            {
+                // Collect in locals
+                var localFunctions = BoundTreeCollector.CollectLocalFunctions(global.Value);
+                foreach (var localFunc in localFunctions) CollectFunctionDiagnostics(localFunc, result);
+            }
+        }
+
+        var result = new DiagnosticBag();
 
         // Retrieve all syntax errors
         var syntaxDiagnostics = this.compilation.SyntaxTrees.SelectMany(tree => tree.Diagnostics);
@@ -56,40 +101,18 @@ public sealed partial class SemanticModel
         {
             if (symbol is SourceFunctionSymbol func)
             {
-                _ = func.Parameters;
-                _ = func.ReturnType;
-
-                // Avoid double-evaluation of diagnostics
-                if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body))
-                {
-                    _ = func.Body;
-
-                    // Flow passes
-                    // TODO: We dump into the global bag here...
-                    ReturnsOnAllPaths.Analyze(func, this.compilation.GlobalDiagnosticBag);
-                    DefiniteAssignment.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
-                    ValAssignment.Analyze(func, this.compilation.GlobalDiagnosticBag);
-                }
+                CollectFunctionDiagnostics(func, result);
             }
             else if (symbol is SourceGlobalSymbol global)
             {
-                _ = global.Type;
-                _ = global.Value;
-
-                // Flow passes
-                // TODO: We dump into the global bag here...
-                if (global.Value is not null)
-                {
-                    DefiniteAssignment.Analyze(global.Value, this.compilation.GlobalDiagnosticBag);
-                }
-                ValAssignment.Analyze(global, this.compilation.GlobalDiagnosticBag);
+                CollectGlobalDiagnostics(global, result);
             }
         }
 
-        // Dump back all diagnostics
+        // Dump back global diagnostics
         result.AddRange(this.compilation.GlobalDiagnosticBag);
 
-        return result.ToImmutable();
+        return result.ToImmutableArray();
     }
 
     // NOTE: These OrNull functions are not too pretty

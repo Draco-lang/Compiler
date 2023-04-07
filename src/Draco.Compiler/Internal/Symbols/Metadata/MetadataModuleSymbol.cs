@@ -14,8 +14,10 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal class MetadataModuleSymbol : ModuleSymbol
 {
-    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
-    private ImmutableArray<Symbol>? members;
+    public override IEnumerable<Symbol> Members => new[] { this.RootNamespace };
+
+    public MetadataNamespaceSymbol RootNamespace => this.rootNamespace ??= this.BuildRootNamespace();
+    private MetadataNamespaceSymbol? rootNamespace;
 
     public override string Name => this.metadataReader.GetString(this.moduleDefinition.Name);
     public override Symbol? ContainingSymbol => null;
@@ -31,13 +33,12 @@ internal class MetadataModuleSymbol : ModuleSymbol
 
     public override ISymbol ToApiSymbol() => throw new NotImplementedException();
 
-    private ImmutableArray<Symbol> BuildMembers()
+    private MetadataNamespaceSymbol BuildRootNamespace()
     {
         var rootNamespaceDefinition = this.metadataReader.GetNamespaceDefinitionRoot();
-        var rootNamespaceSymbol = new MetadataNamespaceSymbol(
+        return new MetadataNamespaceSymbol(
             containingSymbol: this,
             namespaceDefinition: rootNamespaceDefinition,
             metadataReader: this.metadataReader);
-        return ImmutableArray.Create<Symbol>(rootNamespaceSymbol);
     }
 }

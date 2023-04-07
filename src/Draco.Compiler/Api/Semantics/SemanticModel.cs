@@ -57,7 +57,6 @@ public sealed partial class SemanticModel
                 _ = func.Body;
 
                 // Flow passes
-                // TODO: We dump into the global bag here...
                 ReturnsOnAllPaths.Analyze(func, result);
                 DefiniteAssignment.Analyze(func.Body, result);
                 ValAssignment.Analyze(func, result);

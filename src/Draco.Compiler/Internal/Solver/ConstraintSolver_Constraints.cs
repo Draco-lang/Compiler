@@ -75,7 +75,7 @@ internal sealed partial class ConstraintSolver
 
     private SolveState Solve(DiagnosticBag diagnostics, CommonBaseConstraint constraint)
     {
-        if (this.Unwrap(constraint.First) is TypeVariable && this.Unwrap(constraint.Second) is TypeVariable)
+        if (this.Unwrap(constraint.First) is TypeVariable or NeverType && this.Unwrap(constraint.Second) is TypeVariable or NeverType)
         {
             foreach (var con in this.constraints)
             {
@@ -113,9 +113,9 @@ internal sealed partial class ConstraintSolver
                 || ReferenceEquals(same.Second, constraint.Variable))
                 || con is CommonBaseConstraint common
                 && ((ReferenceEquals(common.First, constraint.Variable)
-                && common.Second is not TypeVariable)
+                && common.Second is not (TypeVariable or NeverType))
                 || (ReferenceEquals(common.Second, constraint.Variable)
-                && common.First is not TypeVariable))) return SolveState.Stale;
+                && common.First is not (TypeVariable or NeverType)))) return SolveState.Stale;
         }
 
         // If this TypeVariable was already substituted just return

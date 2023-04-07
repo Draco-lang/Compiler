@@ -32,6 +32,20 @@ internal abstract partial class Symbol
     public virtual string Name => string.Empty;
 
     /// <summary>
+    /// The fully qualified name of this symbol.
+    /// </summary>
+    public virtual string FullName
+    {
+        get
+        {
+            var parentFullName = this.ContainingSymbol?.FullName;
+            return string.IsNullOrWhiteSpace(parentFullName)
+                ? this.Name
+                : $"{parentFullName}.{this.Name}";
+        }
+    }
+
+    /// <summary>
     /// All the members within this symbol.
     /// </summary>
     public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();

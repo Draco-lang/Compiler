@@ -16,5 +16,5 @@ internal readonly record struct MetadataReference(Symbol Symbol) : IOperand
     public Type? Type => (this.Symbol as ITypedSymbol)?.Type;
 
     public override string ToString() => this.ToOperandString();
-    public string ToOperandString() => $"[metadata {this.Symbol.Name}]";
+    public string ToOperandString() => $"[metadata {this.Symbol.FullName}]";
 }

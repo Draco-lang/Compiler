@@ -339,7 +339,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         FunctionSymbol f when IsIntrinsicFunction(f) => new Intrinsic(f),
         SourceFunctionSymbol func => this.DefineProcedure(func),
-        MetadataStaticMethodSymbol m => throw new System.NotImplementedException(),
+        MetadataStaticMethodSymbol m => new MetadataReference(m),
         _ => throw new System.ArgumentOutOfRangeException(nameof(node)),
     };
 

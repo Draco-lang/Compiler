@@ -20,6 +20,8 @@ internal class MetadataModuleSymbol : ModuleSymbol
     private MetadataNamespaceSymbol? rootNamespace;
 
     public override string Name => this.metadataReader.GetString(this.moduleDefinition.Name);
+    // NOTE: We don't emit the name of the module in fully qualified names
+    public override string FullName => string.Empty;
     public override Symbol? ContainingSymbol => null;
 
     private readonly ModuleDefinition moduleDefinition;

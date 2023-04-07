@@ -62,9 +62,32 @@ internal static class IntrinsicSymbols
 
         array.AddRange(GetOperatorSymbols(IntrinsicTypes.Float32));
         array.AddRange(GetOperatorSymbols(IntrinsicTypes.Float64));
+
+        // Integral
+        array.AddRange(
+        Comparison(TokenKind.Equal, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.NotEqual, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.GreaterThan, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.LessThan, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.GreaterEqual, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Comparison(TokenKind.LessEqual, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+
+        Unary(TokenKind.Plus, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Unary(TokenKind.Minus, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+
+        Binary(TokenKind.Plus, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.Minus, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.Star, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.Slash, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.KeywordMod, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.KeywordRem, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType)
+            );
         return array.ToImmutable();
     }
 
+    // TODO: This is probably very wrong
+    // TODO: (int32, int32) -> integral
+    // TODO: (integral, integral) -> integral
     private static ImmutableArray<Symbol> GetOperatorSymbols(Type type) => ImmutableArray.Create<Symbol>(
         Comparison(TokenKind.Equal, type, type),
         Comparison(TokenKind.Equal, type, IntrinsicTypes.IntegralType),
@@ -89,22 +112,40 @@ internal static class IntrinsicSymbols
         Unary(TokenKind.Minus, type, type),
 
         Binary(TokenKind.Plus, type, type, type),
+        Binary(TokenKind.Plus, type, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.Plus, IntrinsicTypes.IntegralType, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.Plus, type, IntrinsicTypes.IntegralType, type),
         Binary(TokenKind.Plus, IntrinsicTypes.IntegralType, type, type),
+        Binary(TokenKind.Plus, type, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.Minus, type, type, type),
+        Binary(TokenKind.Minus, type, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.Minus, IntrinsicTypes.IntegralType, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.Minus, type, IntrinsicTypes.IntegralType, type),
         Binary(TokenKind.Minus, IntrinsicTypes.IntegralType, type, type),
+        Binary(TokenKind.Minus, type, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.Star, type, type, type),
+        Binary(TokenKind.Star, type, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.Star, IntrinsicTypes.IntegralType, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.Star, type, IntrinsicTypes.IntegralType, type),
         Binary(TokenKind.Star, IntrinsicTypes.IntegralType, type, type),
+        Binary(TokenKind.Star, type, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.Slash, type, type, type),
+        Binary(TokenKind.Slash, type, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.Slash, IntrinsicTypes.IntegralType, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.Slash, type, IntrinsicTypes.IntegralType, type),
         Binary(TokenKind.Slash, IntrinsicTypes.IntegralType, type, type),
+        Binary(TokenKind.Slash, type, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.KeywordMod, type, type, type),
+        Binary(TokenKind.KeywordMod, type, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.KeywordMod, IntrinsicTypes.IntegralType, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.KeywordMod, type, IntrinsicTypes.IntegralType, type),
         Binary(TokenKind.KeywordMod, IntrinsicTypes.IntegralType, type, type),
+        Binary(TokenKind.KeywordMod, type, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.KeywordRem, type, type, type),
+        Binary(TokenKind.KeywordRem, type, IntrinsicTypes.IntegralType, IntrinsicTypes.IntegralType),
+        Binary(TokenKind.KeywordRem, IntrinsicTypes.IntegralType, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.KeywordRem, type, IntrinsicTypes.IntegralType, type),
+        Binary(TokenKind.KeywordRem, type, type, IntrinsicTypes.IntegralType),
         Binary(TokenKind.KeywordRem, IntrinsicTypes.IntegralType, type, type)
     );
 

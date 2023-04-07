@@ -41,9 +41,11 @@ public sealed class Compilation
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
+        ImmutableArray<MetadataReference>? metadataReferences = null,
         string? outputPath = null,
         string? assemblyName = null) => new(
         syntaxTrees: syntaxTrees,
+        metadataReferences: metadataReferences,
         outputPath: outputPath,
         assemblyName: assemblyName);
 
@@ -60,6 +62,11 @@ public sealed class Compilation
     /// The trees that are being compiled.
     /// </summary>
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
+
+    /// <summary>
+    /// The metadata references this compilation can reference from.
+    /// </summary>
+    public ImmutableArray<MetadataReference> MetadataReferences { get; }
 
     /// <summary>
     /// The output path.
@@ -92,10 +99,12 @@ public sealed class Compilation
 
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
+        ImmutableArray<MetadataReference>? metadataReferences,
         string? outputPath,
         string? assemblyName)
     {
         this.SyntaxTrees = syntaxTrees;
+        this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
         this.binderCache = new(this);

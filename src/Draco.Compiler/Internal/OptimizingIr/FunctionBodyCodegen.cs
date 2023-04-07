@@ -1,11 +1,11 @@
+using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Symbols;
-using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
-using Draco.Compiler.Internal.Types;
-using System.Linq;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Types;
+using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 

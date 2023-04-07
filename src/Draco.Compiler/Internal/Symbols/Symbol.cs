@@ -68,7 +68,7 @@ internal abstract partial class Symbol
         {
             builder!
                 .AddVertex(symbol)
-                .WithLabel($"{symbol.GetType().Name}\n{symbol.Name}");
+                .WithLabel($"{symbol.GetType().Name}\n{symbol}");
             foreach (var m in symbol.Members)
             {
                 builder.AddEdge(symbol, m);

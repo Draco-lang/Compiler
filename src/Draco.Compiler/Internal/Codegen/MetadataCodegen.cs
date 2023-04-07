@@ -10,8 +10,10 @@ using System.Reflection.PortableExecutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
+using MetadataReference = Draco.Compiler.Internal.OptimizingIr.Model.MetadataReference;
 using Type = Draco.Compiler.Internal.Types.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
@@ -166,6 +168,48 @@ internal sealed class MetadataCodegen : MetadataWriter
     public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
 
     public MemberReferenceHandle GetIntrinsicReferenceHandle(Symbol symbol) => this.intrinsicReferenceHandles[symbol];
+
+    public MemberReferenceHandle GetMemberReferenceHandle(MetadataReference reference) => this.GetMemberReferenceHandle(reference.Symbol);
+
+    public MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => symbol switch
+    {
+        FunctionSymbol func => this.AddMemberReference(
+            type: this.GetTypeReferenceHandle(func.ContainingSymbol),
+            name: func.Name,
+            signature: this.EncodeBlob(e =>
+            {
+                e.MethodSignature().Parameters(func.Parameters.Length, out var returnType, out var parameters);
+                EncodeReturnType(returnType, func.ReturnType);
+                foreach (var param in func.Parameters) EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
+            })),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
+
+    public TypeReferenceHandle GetTypeReferenceHandle(Symbol? symbol) => symbol switch
+    {
+        MetadataStaticClassSymbol staticClass => this.GetOrAddTypeReference(
+            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
+            @namespace: GetNamespaceForSymbol(symbol),
+            name: staticClass.Name),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
+
+    private EntityHandle GetContainingTypeOrModuleHandle(Symbol? symbol) => symbol switch
+    {
+        MetadataNamespaceSymbol ns => this.GetContainingTypeOrModuleHandle(ns.ContainingSymbol),
+        MetadataAssemblySymbol module => this.GetOrAddAssemblyReference(
+            name: module.Name,
+            // TODO: What version
+            version: new(1, 0)),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
+
+    private static string? GetNamespaceForSymbol(Symbol symbol) => symbol switch
+    {
+        MetadataStaticClassSymbol staticClass => GetNamespaceForSymbol(staticClass.ContainingSymbol),
+        MetadataNamespaceSymbol ns => ns.FullName,
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
 
     private void EncodeAssembly()
     {

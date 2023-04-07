@@ -38,7 +38,7 @@ internal sealed class MergedModuleSymbol : ModuleSymbol
         {
             // TODO: We need to merge modules eventually
 
-            if (module is MetadataModuleSymbol metadataModule)
+            if (module is MetadataAssemblySymbol metadataModule)
             {
                 // We skip metadata modules, we only deal with the root namespace
                 result.AddRange(metadataModule.RootNamespace.Members);

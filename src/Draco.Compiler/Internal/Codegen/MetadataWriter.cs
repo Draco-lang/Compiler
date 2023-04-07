@@ -131,7 +131,7 @@ internal abstract class MetadataWriter
         return handle;
     }
 
-    private TypeReferenceHandle GetOrAddTypeReference(
+    public TypeReferenceHandle GetOrAddTypeReference(
         EntityHandle parent,
         string? @namespace,
         string name)
@@ -158,6 +158,14 @@ internal abstract class MetadataWriter
 
     protected TypeReferenceHandle GetOrAddTypeReference(
         ModuleDefinitionHandle module,
+        string? @namespace,
+        string name) => this.GetOrAddTypeReference(
+            parent: module,
+            @namespace: @namespace,
+            name: name);
+
+    protected TypeReferenceHandle GetOrAddTypeReference(
+        ModuleReferenceHandle module,
         string? @namespace,
         string name) => this.GetOrAddTypeReference(
             parent: module,

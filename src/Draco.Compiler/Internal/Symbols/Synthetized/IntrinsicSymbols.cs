@@ -47,7 +47,18 @@ internal static class IntrinsicSymbols
 
     public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, IntrinsicTypes.Bool, IntrinsicTypes.Bool);
 
-    public static ImmutableArray<Symbol> GetOperatorSymbols()
+    public static ImmutableArray<Symbol> OperatorSymbols
+    {
+        get
+        {
+            if (operatorSymbols is null) operatorSymbols = GetOperatorSymbols();
+            return (ImmutableArray<Symbol>)operatorSymbols;
+        }
+    }
+
+    private static ImmutableArray<Symbol>? operatorSymbols;
+
+    private static ImmutableArray<Symbol> GetOperatorSymbols()
     {
         var array = ImmutableArray.CreateBuilder<Symbol>();
         array.AddRange(GetOperatorSymbols(IntrinsicTypes.Int8));

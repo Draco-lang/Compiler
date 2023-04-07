@@ -348,23 +348,23 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     // TODO: Do something with this block
 
-    private static bool IsEqual(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator ==").Any(x => x == op);
-    private static bool IsNotEqual(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator !=").Any(x => x == op);
-    private static bool IsLess(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator <").Any(x => x == op);
-    private static bool IsLessEqual(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator <=").Any(x => x == op);
-    private static bool IsGreater(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator >").Any(x => x == op);
-    private static bool IsGreaterEqual(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator >=").Any(x => x == op);
+    private static bool IsEqual(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator ==").Any(x => x == op);
+    private static bool IsNotEqual(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator !=").Any(x => x == op);
+    private static bool IsLess(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator <").Any(x => x == op);
+    private static bool IsLessEqual(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator <=").Any(x => x == op);
+    private static bool IsGreater(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator >").Any(x => x == op);
+    private static bool IsGreaterEqual(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator >=").Any(x => x == op);
 
     private static bool IsNot(Symbol op) => op == IntrinsicSymbols.Bool_Not;
-    private static bool IsPlus(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator +").Any(x => x == op);
-    private static bool IsMinus(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator -").Any(x => x == op);
+    private static bool IsPlus(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator +").Any(x => x == op);
+    private static bool IsMinus(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator -").Any(x => x == op);
 
-    private static bool IsAdd(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator +").Any(x => x == op);
-    private static bool IsSub(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator -").Any(x => x == op);
-    private static bool IsMul(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator *").Any(x => x == op);
-    private static bool IsDiv(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator /").Any(x => x == op);
-    private static bool IsRem(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator rem").Any(x => x == op);
-    private static bool IsMod(Symbol op) => IntrinsicSymbols.GetOperatorSymbols().Where(x => x.Name == "operator mod").Any(x => x == op);
+    private static bool IsAdd(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator +").Any(x => x == op);
+    private static bool IsSub(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator -").Any(x => x == op);
+    private static bool IsMul(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator *").Any(x => x == op);
+    private static bool IsDiv(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator /").Any(x => x == op);
+    private static bool IsRem(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator rem").Any(x => x == op);
+    private static bool IsMod(Symbol op) => IntrinsicSymbols.OperatorSymbols.Where(x => x.Name == "operator mod").Any(x => x == op);
 
     private static bool IsIntrinsicFunction(Symbol f) => f == IntrinsicSymbols.Print_String
                                                       || f == IntrinsicSymbols.Print_Int32

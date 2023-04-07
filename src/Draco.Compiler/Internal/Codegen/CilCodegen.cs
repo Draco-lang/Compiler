@@ -234,7 +234,7 @@ internal sealed class CilCodegen
             this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
             break;
         case Constant c:
-            switch (c.Value)
+            switch (c.Value) // Continue Here
             {
             case int i:
                 this.InstructionEncoder.LoadConstantI4(i);

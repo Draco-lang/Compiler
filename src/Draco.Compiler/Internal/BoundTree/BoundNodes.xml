@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Tree
   xmlns="http://draco-lang.com/bound-tree/bound-nodes"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -156,6 +156,7 @@
 
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object?" />
+    <Field Name="Type" Type="Type" Override="true" />
   </Node>
 
   <Node Name="BoundStringExpression" Base="BoundExpression">

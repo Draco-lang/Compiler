@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Error;
@@ -290,8 +288,24 @@ internal sealed partial class ConstraintSolver
 
         case (BuiltinType t1, BuiltinType t2):
         {
-            if (t1.IsBaseType) return t2.Bases.Select(x => x.Name).Contains(t1.Name);
-            else if (t2.IsBaseType) return t1.Bases.Select(x => x.Name).Contains(t2.Name);
+            if (t1.IsBaseType)
+            {
+                var isBase = false;
+                foreach (var baseType in t2.Bases)
+                {
+                    if (baseType.Name == t1.Name) isBase = true;
+                }
+                return isBase;
+            }
+            else if (t2.IsBaseType)
+            {
+                var isBase = false;
+                foreach (var baseType in t1.Bases)
+                {
+                    if (baseType.Name == t2.Name) isBase = true;
+                }
+                return isBase;
+            }
             else return t1.Name == t2.Name
                 && t1.UnderylingType == t2.UnderylingType;
         }

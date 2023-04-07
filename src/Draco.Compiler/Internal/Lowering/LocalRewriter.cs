@@ -223,7 +223,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         var result = IfExpression(
             condition: left,
             then: right,
-            @else: LiteralExpression(false),
+            @else: LiteralExpression(false, IntrinsicTypes.Bool),
             type: IntrinsicTypes.Bool);
         // If-expressions can be lowered too
         return result.Accept(this);
@@ -242,7 +242,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
         var result = IfExpression(
             condition: left,
-            then: LiteralExpression(true),
+            then: LiteralExpression(true, IntrinsicTypes.Bool),
             @else: right,
             type: IntrinsicTypes.Bool);
         // If-expressions can be lowered too

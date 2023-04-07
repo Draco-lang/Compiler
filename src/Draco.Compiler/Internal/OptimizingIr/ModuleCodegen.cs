@@ -60,15 +60,16 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)
         {
-            var body = sourceGlobal.Value;
-            // If needed, inject sequence points
-            if (this.emitSequencePoints) body = (BoundExpression)body.Accept(SequencePointInjector.Instance);
-            // Desugar value
-            body = (BoundExpression)body.Accept(LocalRewriter.Instance);
+            var body = this.RewriteBody(sourceGlobal.Value);
+            // Yank out potential local functions and closures
+            var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
             // Compile it
-            var value = body.Accept(this.globalInitializer);
+            var value = bodyWithoutLocalFunctions.Accept(this.globalInitializer);
             // Store it
             this.globalInitializer.Write(Store(global, value));
+
+            // Compile the local functions
+            foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
         }
     }
 
@@ -76,19 +77,29 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
+        // Add procedure, define parameters
         var procedure = this.assembly.DefineProcedure(functionSymbol);
-
-        // Define parameters
         foreach (var param in functionSymbol.Parameters) procedure.DefineParameter(param);
 
-        // Generate function body
-        var bodyCodegen = new FunctionBodyCodegen(procedure);
-        var body = sourceFunction.Body;
-        // If needed, inject sequence points
-        if (this.emitSequencePoints) body = (BoundStatement)body.Accept(SequencePointInjector.Instance);
-        // Desugar it
-        body = (BoundStatement)body.Accept(LocalRewriter.Instance);
+        // Create the body
+        var body = this.RewriteBody(sourceFunction.Body);
+        // Yank out potential local functions and closures
+        var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
         // Compile it
-        body.Accept(bodyCodegen);
+        var bodyCodegen = new FunctionBodyCodegen(procedure);
+        bodyWithoutLocalFunctions.Accept(bodyCodegen);
+
+        // Compile the local functions
+        foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
+    }
+
+    private BoundNode RewriteBody(BoundNode body)
+    {
+        // If needed, inject sequence points
+        if (this.emitSequencePoints) body = SequencePointInjector.Inject(body);
+        // Desugar it
+        body = LocalRewriter.Rewrite(body);
+        // Done
+        return body;
     }
 }

@@ -23,9 +23,7 @@ internal partial class Binder
     {
         // NOTE: The syntax error is already reported
         UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => new UntypedUnexpectedStatement(syntax),
-        // Function declarations get discarded, as they become symbols
-        // TODO: Actually make local functions work by making them symbols
-        FunctionDeclarationSyntax func => UntypedNoOpStatement.Default,
+        FunctionDeclarationSyntax func => this.BindFunctionDeclaration(func, constraints, diagnostics),
         DeclarationStatementSyntax decl => this.BindStatement(decl.Declaration, constraints, diagnostics),
         ExpressionStatementSyntax expr => this.BindExpressionStatement(expr, constraints, diagnostics),
         BlockFunctionBodySyntax body => this.BindBlockFunctionBody(body, constraints, diagnostics),
@@ -34,6 +32,14 @@ internal partial class Binder
         VariableDeclarationSyntax decl => this.BindVariableDeclaration(decl, constraints, diagnostics),
         _ => throw new System.ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private UntypedStatement BindFunctionDeclaration(FunctionDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var symbol = this.DeclaredSymbols
+            .OfType<SourceFunctionSymbol>()
+            .First(s => s.DeclarationSyntax == syntax);
+        return new UntypedLocalFunction(syntax, symbol);
+    }
 
     private UntypedStatement BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

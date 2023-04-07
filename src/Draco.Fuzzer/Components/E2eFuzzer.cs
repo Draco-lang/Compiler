@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Api;
 using Draco.Fuzzer.Generators;
 
 namespace Draco.Fuzzer.Components;

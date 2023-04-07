@@ -1,11 +1,11 @@
+using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Symbols;
-using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
-using Draco.Compiler.Internal.Types;
-using System.Linq;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Types;
+using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
@@ -19,12 +19,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private bool isDetached;
     private int blockIndex = 0;
 
-    // NOTE: Attach block takes care of the null
-#pragma warning disable CS8618
     public FunctionBodyCodegen(Procedure procedure)
-#pragma warning restore CS8618
     {
         this.procedure = procedure;
+        // NOTE: Attach block takes care of the null
+        this.currentBasicBlock = default!;
         this.AttachBlock(procedure.Entry);
     }
 

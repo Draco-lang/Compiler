@@ -88,7 +88,7 @@ internal sealed class BinderCache
     {
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);
-        return new LocalBinder(parent, syntax) as Binder;
+        return new LocalBinder(parent, syntax);
     }
 
     private Binder BuildLoopBinder(SyntaxNode syntax)

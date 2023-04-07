@@ -39,6 +39,7 @@ internal partial class Binder
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
+        MemberAccessExpressionSyntax maccess => this.BindMemberAccessExpression(maccess, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -78,6 +79,8 @@ internal partial class Binder
         {
         case Symbol when symbol.IsError:
             return new UntypedReferenceErrorExpression(syntax, symbol);
+        case ModuleSymbol module:
+            return new UntypedModuleExpression(syntax, module);
         case ParameterSymbol param:
             return new UntypedParameterExpression(syntax, param);
         case UntypedLocalSymbol local:
@@ -360,6 +363,13 @@ internal partial class Binder
                 .WithLocation(syntax.Operator.Location));
 
         return new UntypedComparison(syntax, symbolPromise, right);
+    }
+
+    private UntypedExpression BindMemberAccessExpression(MemberAccessExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
+        // TODO
+        throw new NotImplementedException();
     }
 
     private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch

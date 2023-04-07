@@ -18,7 +18,8 @@ internal static class BinderFacts
         is LocalSymbol
         or UntypedLocalSymbol
         or GlobalSymbol
-        or FunctionSymbol;
+        or FunctionSymbol
+        or ModuleSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a type-context.
@@ -26,7 +27,8 @@ internal static class BinderFacts
     /// <param name="symbol">The symbol to check.</param>
     /// <returns>True, if <paramref name="symbol"/> can be referenced in a type-context.</returns>
     public static bool IsTypeSymbol(Symbol symbol) => symbol
-        is TypeSymbol;
+        is TypeSymbol
+        or ModuleSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a label-context.

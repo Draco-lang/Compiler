@@ -114,6 +114,10 @@
     <Field Name="Right" Type="UntypedExpression" />
   </Node>
 
+  <Node Name="UntypedModuleExpression" Base="UntypedExpression">
+    <Field Name="Module" Type="ModuleSymbol" />
+  </Node>
+
   <Node Name="UntypedLocalExpression" Base="UntypedExpression">
     <!-- Locals are special, they are remapped after binding to a typed variant -->
     <Field Name="Local" Type="UntypedLocalSymbol" />

@@ -45,6 +45,26 @@
     </Field>
   </Node>
 
+  <Node Name="ImportDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      An import declaration.
+    </Documentation>
+
+    <Field Name="ImportKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'import' keyword starting the delcaration.
+      </Documentation>
+
+      <Token Kind="KeywordImport" />
+    </Field>
+
+    <Field Name="Path" Type="SeparatedSyntaxList&lt;SyntaxToken&gt;">
+      <Documentation>
+        The imported path.
+      </Documentation>
+    </Field>
+  </Node>
+
   <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">
     <Documentation>
       A function declaration.

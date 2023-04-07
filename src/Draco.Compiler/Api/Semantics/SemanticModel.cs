@@ -46,27 +46,28 @@ public sealed partial class SemanticModel
     /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
     private ImmutableArray<Diagnostic> GetAllDiagnostics()
     {
-        void CollectFunctionDiagnostics(Internal.Symbols.FunctionSymbol func, DiagnosticBag result)
+        void CollectFunctionDiagnostics(SourceFunctionSymbol func, DiagnosticBag result)
         {
-            if (func is not SourceFunctionSymbol sourceFunc) return;
-
-            _ = sourceFunc.Parameters;
-            _ = sourceFunc.ReturnType;
+            _ = func.Parameters;
+            _ = func.ReturnType;
 
             // Avoid double-evaluation of diagnostics
-            if (!this.syntaxMap.ContainsKey(sourceFunc.DeclarationSyntax.Body))
+            if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body))
             {
-                _ = sourceFunc.Body;
+                _ = func.Body;
 
                 // Flow passes
                 // TODO: We dump into the global bag here...
-                ReturnsOnAllPaths.Analyze(sourceFunc, result);
-                DefiniteAssignment.Analyze(sourceFunc.Body, result);
-                ValAssignment.Analyze(sourceFunc, result);
+                ReturnsOnAllPaths.Analyze(func, result);
+                DefiniteAssignment.Analyze(func.Body, result);
+                ValAssignment.Analyze(func, result);
 
                 // Collect in locals
-                var localFunctions = BoundTreeCollector.CollectLocalFunctions(sourceFunc.Body);
-                foreach (var localFunc in localFunctions) CollectFunctionDiagnostics(localFunc, result);
+                var localFunctions = BoundTreeCollector.CollectLocalFunctions(func.Body);
+                foreach (var localFunc in localFunctions.OfType<SourceFunctionSymbol>())
+                {
+                    CollectFunctionDiagnostics(localFunc, result);
+                }
             }
         }
 
@@ -86,7 +87,10 @@ public sealed partial class SemanticModel
             {
                 // Collect in locals
                 var localFunctions = BoundTreeCollector.CollectLocalFunctions(global.Value);
-                foreach (var localFunc in localFunctions) CollectFunctionDiagnostics(localFunc, result);
+                foreach (var localFunc in localFunctions.OfType<SourceFunctionSymbol>())
+                {
+                    CollectFunctionDiagnostics(localFunc, result);
+                }
             }
         }
 

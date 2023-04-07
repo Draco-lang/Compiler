@@ -85,15 +85,6 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
                 formatArgs: member.Name));
         }
 
-        // TODO: Do we want to inject metadata references here?
-        // Metadata references
-        foreach (var metadataReference in this.DeclaringCompilation.MetadataReferences)
-        {
-            var reader = metadataReference.MetadataReader;
-            var moduleSymbol = new MetadataModuleSymbol(reader);
-            result.Add(moduleSymbol);
-        }
-
         return result.ToImmutable();
     }
 

@@ -58,7 +58,7 @@ internal sealed class BinderCache
         // We need to wrap up the module with builtins
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         // Finally add the module
-        binder = new ModuleBinder(binder, this.compilation.GlobalModule);
+        binder = new ModuleBinder(binder, this.compilation.SourceModule);
 
         return binder;
     }

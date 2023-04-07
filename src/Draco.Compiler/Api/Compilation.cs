@@ -11,7 +11,9 @@ using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api;
 
@@ -79,10 +81,16 @@ public sealed class Compilation
     public string AssemblyName { get; }
 
     /// <summary>
-    /// The global module symbol of the compilation.
+    /// The top-level merged root module symbol of the compilation.
     /// </summary>
-    internal ModuleSymbol GlobalModule => this.globalModule ??= this.BuildGlobalModule();
-    private ModuleSymbol? globalModule;
+    internal ModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
+    private ModuleSymbol? rootModule;
+
+    /// <summary>
+    /// The top-level source module symbol of the compilation.
+    /// </summary>
+    internal ModuleSymbol SourceModule => this.sourceModule ??= this.BuildSourceModule();
+    private ModuleSymbol? sourceModule;
 
     /// <summary>
     /// The declaration table managing the top-level declarations of the compilation.
@@ -145,7 +153,7 @@ public sealed class Compilation
         if (symbolTreeStream is not null)
         {
             var symbolWriter = new StreamWriter(symbolTreeStream);
-            symbolWriter.Write(this.GlobalModule.ToDot());
+            symbolWriter.Write(this.RootModule.ToDot());
             symbolWriter.Flush();
         }
 
@@ -160,7 +168,7 @@ public sealed class Compilation
         // Generate IR
         var assembly = ModuleCodegen.Generate(
             compilation: this,
-            symbol: this.GlobalModule,
+            symbol: this.SourceModule,
             emitSequencePoints: pdbStream is not null);
         // Optimize the IR
         // TODO: Options for optimization
@@ -209,5 +217,20 @@ public sealed class Compilation
     }
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
-    private ModuleSymbol BuildGlobalModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
+    private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
+    private ModuleSymbol? BuildRootModule()
+    {
+        var modules = ImmutableArray.CreateBuilder<ModuleSymbol>();
+        // Add our source root
+        modules.Add(this.SourceModule);
+        // Add all modules constructed from metadata
+        foreach (var metadataReference in this.MetadataReferences)
+        {
+            var reader = metadataReference.MetadataReader;
+            var moduleSymbol = new MetadataModuleSymbol(reader);
+            modules.Add(moduleSymbol);
+        }
+        // Done, construct merged root
+        return new MergedModuleSymbol(null, modules.ToImmutable());
+    }
 }

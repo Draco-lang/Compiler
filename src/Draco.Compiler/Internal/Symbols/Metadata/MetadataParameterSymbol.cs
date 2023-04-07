@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Types;
@@ -14,7 +15,7 @@ internal sealed class MetadataParameterSymbol : ParameterSymbol
 {
     public override string Name => this.metadataReader.GetString(this.parameterDefinition.Name);
 
-    public override Type Type => throw new System.NotImplementedException();
+    public override Type Type { get; }
     public override Symbol ContainingSymbol { get; }
 
     private readonly Parameter parameterDefinition;
@@ -23,9 +24,11 @@ internal sealed class MetadataParameterSymbol : ParameterSymbol
     public MetadataParameterSymbol(
         Symbol containingSymbol,
         Parameter parameterDefinition,
+        Type type,
         MetadataReader metadataReader)
     {
         this.ContainingSymbol = containingSymbol;
+        this.Type = type;
         this.parameterDefinition = parameterDefinition;
         this.metadataReader = metadataReader;
     }

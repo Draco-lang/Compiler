@@ -13,10 +13,26 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataStaticMethodSymbol : FunctionSymbol
 {
-    public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
-    private ImmutableArray<ParameterSymbol>? parameters;
+    public override ImmutableArray<ParameterSymbol> Parameters
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.parameters;
+        }
+    }
+    public override Type ReturnType
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.returnType;
+        }
+    }
 
-    public override Type ReturnType => this.returnType ??= this.BuildReturnType();
+    private bool NeedsBuild => this.returnType is null;
+
+    private ImmutableArray<ParameterSymbol> parameters;
     private Type? returnType;
 
     public override string Name => this.metadataReader.GetString(this.methodDefinition.Name);
@@ -36,23 +52,26 @@ internal sealed class MetadataStaticMethodSymbol : FunctionSymbol
         this.metadataReader = metadataReader;
     }
 
-    private ImmutableArray<ParameterSymbol> BuildParameters()
+    private void Build()
     {
-        var result = ImmutableArray.CreateBuilder<ParameterSymbol>();
+        // Decode signature
+        var signature = this.methodDefinition.DecodeSignature(SignatureDecoder.Instance, default);
 
-        foreach (var paramHandle in this.methodDefinition.GetParameters())
+        // Build parameters
+        var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+        foreach (var (paramHandle, paramType) in this.methodDefinition.GetParameters().Zip(signature.ParameterTypes))
         {
             var paramDef = this.metadataReader.GetParameter(paramHandle);
             var paramSym = new MetadataParameterSymbol(
                 containingSymbol: this,
+                type: paramType,
                 parameterDefinition: paramDef,
                 metadataReader: this.metadataReader);
-            result.Add(paramSym);
+            parameters.Add(paramSym);
         }
+        this.parameters = parameters.ToImmutable();
 
-        return result.ToImmutable();
+        // Build return type
+        this.returnType = signature.ReturnType;
     }
-
-    // TODO
-    private Type BuildReturnType() => throw new System.NotImplementedException();
 }

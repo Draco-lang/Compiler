@@ -58,6 +58,7 @@ public sealed partial class SemanticModel
             {
                 _ = func.Parameters;
                 _ = func.ReturnType;
+
                 // Avoid double-evaluation of diagnostics
                 if (!this.syntaxMap.ContainsKey(func.DeclarationSyntax.Body))
                 {

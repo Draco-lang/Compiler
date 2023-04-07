@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -256,15 +257,36 @@ internal partial class LocalRewriter : BoundTreeRewriter
         // Empty string
         if (node.Parts.Length == 0) return LiteralExpression(string.Empty);
         // A single string
-        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText text) return LiteralExpression(text.Text);
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText singleText) return LiteralExpression(singleText.Text);
         // A single interpolated part
-        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringInterpolation interpolation)
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringInterpolation singleInterpolation)
         {
+            // Lower the expression
+            var arg = (BoundExpression)singleInterpolation.Value.Accept(this);
             // TODO: Just call ToString on it
             throw new System.NotImplementedException();
         }
         // We need to desugar into string.Format("format string", array of args)
-        // TODO
+        // Build up interpolation string and lower interpolated expressions
+        var formatString = new StringBuilder();
+        var args = ImmutableArray.CreateBuilder<BoundExpression>();
+        foreach (var part in node.Parts)
+        {
+            if (part is BoundStringText text)
+            {
+                formatString.Append(text.Text);
+            }
+            else if (part is BoundStringInterpolation interpolation)
+            {
+                formatString
+                    .Append('{')
+                    .Append(args.Count)
+                    .Append('}');
+                // Lower the expression
+                var arg = (BoundExpression)interpolation.Value.Accept(this);
+                args.Add(arg);
+            }
+        }
         throw new System.NotImplementedException();
     }
 

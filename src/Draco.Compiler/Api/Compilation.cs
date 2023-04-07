@@ -218,7 +218,7 @@ public sealed class Compilation
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
-    private ModuleSymbol? BuildRootModule()
+    private ModuleSymbol BuildRootModule()
     {
         var modules = ImmutableArray.CreateBuilder<ModuleSymbol>();
         // Add our source root
@@ -227,7 +227,7 @@ public sealed class Compilation
         foreach (var metadataReference in this.MetadataReferences)
         {
             var reader = metadataReference.MetadataReader;
-            var moduleSymbol = new MetadataModuleSymbol(reader);
+            var moduleSymbol = new MetadataAssemblySymbol(reader);
             modules.Add(moduleSymbol);
         }
         // Done, construct merged root

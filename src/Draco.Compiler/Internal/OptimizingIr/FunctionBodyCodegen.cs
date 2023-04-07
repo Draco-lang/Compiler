@@ -2,6 +2,7 @@ using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Types;
@@ -334,9 +335,13 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         else throw new System.NotImplementedException();
     }
 
-    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => IsIntrinsicFunction(node.Function)
-        ? new Intrinsic(node.Function)
-        : this.DefineProcedure(node.Function);
+    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => node.Function switch
+    {
+        FunctionSymbol f when IsIntrinsicFunction(f) => new Intrinsic(f),
+        SourceFunctionSymbol func => this.DefineProcedure(func),
+        MetadataStaticMethodSymbol m => throw new System.NotImplementedException(),
+        _ => throw new System.ArgumentOutOfRangeException(nameof(node)),
+    };
 
     // NOTE: Parameters don't need loading, they are read-only values by default
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>

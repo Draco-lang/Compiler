@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
@@ -54,11 +55,11 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol
         foreach (var typeHandle in this.namespaceDefinition.TypeDefinitions)
         {
             var typeDef = this.metadataReader.GetTypeDefinition(typeHandle);
-            var typeSym = new MetadataTypeSymbol(
-                containingSymbol: this,
-                typeDefinition: typeDef,
-                metadataReader: this.metadataReader);
-            result.Add(typeSym);
+            // Skip non-public types
+            if (!typeDef.Attributes.HasFlag(TypeAttributes.Public)) continue;
+            // Turn into a symbol
+            var symbol = MetadataSymbol.ToSymbol(this, typeDef, this.metadataReader);
+            result.Add(symbol);
         }
 
         // Done

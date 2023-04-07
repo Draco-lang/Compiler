@@ -63,11 +63,11 @@ public sealed partial class SemanticModel
                 ReturnsOnAllPaths.Analyze(sourceFunc, result);
                 DefiniteAssignment.Analyze(sourceFunc.Body, result);
                 ValAssignment.Analyze(sourceFunc, result);
-            }
 
-            // Collect in locals
-            var localFunctions = BoundTreeCollector.CollectLocalFunctions(sourceFunc.Body);
-            foreach (var localFunc in localFunctions) CollectFunctionDiagnostics(localFunc, result);
+                // Collect in locals
+                var localFunctions = BoundTreeCollector.CollectLocalFunctions(sourceFunc.Body);
+                foreach (var localFunc in localFunctions) CollectFunctionDiagnostics(localFunc, result);
+            }
         }
 
         void CollectGlobalDiagnostics(SourceGlobalSymbol global, DiagnosticBag result)

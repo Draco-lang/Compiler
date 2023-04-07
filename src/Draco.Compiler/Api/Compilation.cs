@@ -81,10 +81,10 @@ public sealed class Compilation
     public string AssemblyName { get; }
 
     /// <summary>
-    /// The top-level merged root module symbol of the compilation.
+    /// The top-level merged module that contains all references.
     /// </summary>
-    internal ModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
-    private ModuleSymbol? rootModule;
+    internal ModuleSymbol ReferencesModule => this.referencesModule ??= this.BuildReferencesModule();
+    private ModuleSymbol? referencesModule;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
@@ -153,7 +153,7 @@ public sealed class Compilation
         if (symbolTreeStream is not null)
         {
             var symbolWriter = new StreamWriter(symbolTreeStream);
-            symbolWriter.Write(this.RootModule.ToDot());
+            symbolWriter.Write(this.SourceModule.ToDot());
             symbolWriter.Flush();
         }
 
@@ -218,11 +218,9 @@ public sealed class Compilation
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
-    private ModuleSymbol BuildRootModule()
+    private ModuleSymbol BuildReferencesModule()
     {
         var modules = ImmutableArray.CreateBuilder<ModuleSymbol>();
-        // Add our source root
-        modules.Add(this.SourceModule);
         // Add all modules constructed from metadata
         foreach (var metadataReference in this.MetadataReferences)
         {

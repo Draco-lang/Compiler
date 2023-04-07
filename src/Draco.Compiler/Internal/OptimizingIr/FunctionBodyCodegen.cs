@@ -19,12 +19,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private bool isDetached;
     private int blockIndex = 0;
 
-    // NOTE: Attach block takes care of the null
-#pragma warning disable CS8618
     public FunctionBodyCodegen(Procedure procedure)
-#pragma warning restore CS8618
     {
         this.procedure = procedure;
+        // NOTE: Attach block takes care of the null
+        this.currentBasicBlock = default!;
         this.AttachBlock(procedure.Entry);
     }
 

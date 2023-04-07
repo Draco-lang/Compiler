@@ -14,6 +14,8 @@ namespace Draco.Compiler.Internal.Lowering;
 /// </summary>
 internal partial class LocalRewriter : BoundTreeRewriter
 {
+    public static BoundNode Rewrite(BoundNode node) => node.Accept(Instance);
+
     /// <summary>
     /// Represents a value that was temporarily stored.
     /// </summary>

@@ -98,7 +98,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // If needed, inject sequence points
         if (this.emitSequencePoints) body = SequencePointInjector.Inject(body);
         // Desugar it
-        body = body.Accept(LocalRewriter.Instance);
+        body = LocalRewriter.Rewrite(body);
         // Done
         return body;
     }

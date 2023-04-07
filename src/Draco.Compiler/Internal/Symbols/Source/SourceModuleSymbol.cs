@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Symbols.Metadata;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -62,6 +63,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
         var result = ImmutableArray.CreateBuilder<Symbol>();
         var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
 
+        // Syntax-declaration
         foreach (var declaration in this.declaration.Children)
         {
             var member = this.BuildMember(declaration);
@@ -81,6 +83,15 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
                 template: SymbolResolutionErrors.IllegalShadowing,
                 location: syntax.Location,
                 formatArgs: member.Name));
+        }
+
+        // TODO: Do we want to inject metadata references here?
+        // Metadata references
+        foreach (var metadataReference in this.DeclaringCompilation.MetadataReferences)
+        {
+            var reader = metadataReference.MetadataReader;
+            var moduleSymbol = new MetadataModuleSymbol(reader);
+            result.Add(moduleSymbol);
         }
 
         return result.ToImmutable();

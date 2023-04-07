@@ -13,7 +13,19 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataModuleSymbol : ModuleSymbol
 {
-    public override Symbol? ContainingSymbol => throw new NotImplementedException();
+    public override string Name => this.metadataReader.GetString(this.moduleDefinition.Name);
+    public override Symbol? ContainingSymbol => null;
+
+    private readonly ModuleDefinition moduleDefinition;
+    private readonly NamespaceDefinition rootNamespaceDefinition;
+    private readonly MetadataReader metadataReader;
+
+    public MetadataModuleSymbol(MetadataReader metadataReader)
+    {
+        this.metadataReader = metadataReader;
+        this.moduleDefinition = metadataReader.GetModuleDefinition();
+        this.rootNamespaceDefinition = metadataReader.GetNamespaceDefinitionRoot();
+    }
 
     public override ISymbol ToApiSymbol() => throw new NotImplementedException();
 }

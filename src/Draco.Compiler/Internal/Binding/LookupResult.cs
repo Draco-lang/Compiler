@@ -16,6 +16,13 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class LookupResult
 {
+    public static LookupResult FromResultSet(IEnumerable<Symbol> symbols)
+    {
+        var result = new LookupResult();
+        foreach (var symbol in symbols) result.Add(symbol);
+        return result;
+    }
+
     /// <summary>
     /// True, if the lookup should continue.
     /// </summary>

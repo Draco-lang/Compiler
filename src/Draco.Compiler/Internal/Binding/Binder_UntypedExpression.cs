@@ -74,31 +74,7 @@ internal partial class Binder
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        if (symbol.IsError) return new UntypedReferenceErrorExpression(syntax, symbol);
-        switch (symbol)
-        {
-        case Symbol when symbol.IsError:
-            return new UntypedReferenceErrorExpression(syntax, symbol);
-        case ModuleSymbol module:
-            return new UntypedModuleExpression(syntax, module);
-        case ParameterSymbol param:
-            return new UntypedParameterExpression(syntax, param);
-        case UntypedLocalSymbol local:
-            return new UntypedLocalExpression(syntax, local, constraints.GetLocal(local));
-        case GlobalSymbol global:
-            return new UntypedGlobalExpression(syntax, global);
-        case FunctionSymbol func:
-            return new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type);
-        case OverloadSymbol overload:
-        {
-            var (promise, callSite) = constraints.Overload(overload);
-            promise.ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location));
-            return new UntypedFunctionExpression(syntax, promise, callSite);
-        }
-        default:
-            throw new InvalidOperationException();
-        }
+        return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
     private UntypedExpression BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -368,8 +344,52 @@ internal partial class Binder
     private UntypedExpression BindMemberAccessExpression(MemberAccessExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
-        // TODO
-        throw new NotImplementedException();
+        var memberName = syntax.Member.Text;
+        if (left is UntypedModuleExpression moduleExpr)
+        {
+            var module = moduleExpr.Module;
+            var members = module.Members
+                .Where(m => m.Name == memberName)
+                .ToImmutableArray();
+            // Reuse logic from LookupResult
+            var result = LookupResult.FromResultSet(members);
+            var symbol = result.GetValue(memberName, syntax, diagnostics);
+            return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
+
+    private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        if (symbol.IsError) return new UntypedReferenceErrorExpression(syntax, symbol);
+        switch (symbol)
+        {
+        case Symbol when symbol.IsError:
+            return new UntypedReferenceErrorExpression(syntax, symbol);
+        case ModuleSymbol module:
+            return new UntypedModuleExpression(syntax, module);
+        case ParameterSymbol param:
+            return new UntypedParameterExpression(syntax, param);
+        case UntypedLocalSymbol local:
+            return new UntypedLocalExpression(syntax, local, constraints.GetLocal(local));
+        case GlobalSymbol global:
+            return new UntypedGlobalExpression(syntax, global);
+        case FunctionSymbol func:
+            return new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type);
+        case OverloadSymbol overload:
+        {
+            var (promise, callSite) = constraints.Overload(overload);
+            promise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+            return new UntypedFunctionExpression(syntax, promise, callSite);
+        }
+        default:
+            throw new InvalidOperationException();
+        }
     }
 
     private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch

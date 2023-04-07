@@ -200,6 +200,18 @@ internal sealed partial class ConstraintSolver
     }
 
     /// <summary>
+    /// Adds a base-type constraint to the solver.
+    /// </summary>
+    /// <param name="variable">The type variable to infer.</param>
+    /// <returns>The promise for the constraint added.</returns>
+    public ConstraintPromise<TypeVariable> BaseType(TypeVariable variable, Type baseType)
+    {
+        var constraint = new BaseTypeConstraint(variable, baseType);
+        this.constraints.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
     /// Adds a call constraint to the solver.
     /// </summary>
     /// <param name="functionType">The function type being called.</param>

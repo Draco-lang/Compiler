@@ -53,8 +53,12 @@ internal partial class Binder
             value: UntypedUnitExpression.Default);
     }
 
-    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new UntypedLiteralExpression(syntax, syntax.Literal.Value);
+    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var expr = new UntypedLiteralExpression(syntax, syntax.Literal.Value);
+        constraints.BaseType(constraints.NextTypeVariable, IntrinsicTypes.IntegralType);
+        return expr;
+    }
 
     private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new UntypedStringExpression(syntax, syntax.Parts.Select(p => this.BindStringPart(p, constraints, diagnostics)).ToImmutableArray());

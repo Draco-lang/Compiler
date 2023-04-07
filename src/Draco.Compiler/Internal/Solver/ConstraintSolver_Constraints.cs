@@ -13,6 +13,7 @@ internal sealed partial class ConstraintSolver
         SameTypeConstraint c => this.Solve(diagnostics, c),
         OverloadConstraint c => this.Solve(diagnostics, c),
         CommonBaseConstraint c => this.Solve(diagnostics, c),
+        BaseTypeConstraint c => this.Solve(diagnostics, c),
         _ => throw new System.ArgumentOutOfRangeException(nameof(constraint)),
     };
 
@@ -81,6 +82,14 @@ internal sealed partial class ConstraintSolver
                 .Build();
             diagnostics.Add(diagnostic);
         }
+        return SolveState.Finished;
+    }
+
+    private SolveState Solve(DiagnosticBag diagnostics, BaseTypeConstraint constraint)
+    {
+        if (constraint.BaseType is not BuiltinType baseType || !baseType.IsBaseType) throw new System.InvalidOperationException();
+        if (baseType == IntrinsicTypes.IntegralType) this.Substitute(constraint.Variable, IntrinsicTypes.Int32);
+        else if (baseType == IntrinsicTypes.FloatingPointType) this.Substitute(constraint.Variable, IntrinsicTypes.Float64);
         return SolveState.Finished;
     }
 
@@ -242,9 +251,9 @@ internal sealed partial class ConstraintSolver
             if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
             for (var i = 0; i < f1.ParameterTypes.Length; ++i)
             {
-                if (!this.Unify(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+                if (!this.UnifyBase(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
             }
-            return this.Unify(f1.ReturnType, f2.ReturnType);
+            return this.UnifyBase(f1.ReturnType, f2.ReturnType);
         }
 
         default:

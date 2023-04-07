@@ -50,7 +50,16 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol
             result.Add(subNamespaceSym);
         }
 
-        // TODO: Types
+        // Types
+        foreach (var typeHandle in this.namespaceDefinition.TypeDefinitions)
+        {
+            var typeDef = this.metadataReader.GetTypeDefinition(typeHandle);
+            var typeSym = new MetadataTypeSymbol(
+                containingSymbol: this,
+                typeDefinition: typeDef,
+                metadataReader: this.metadataReader);
+            result.Add(typeSym);
+        }
 
         // Done
         return result.ToImmutable();

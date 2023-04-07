@@ -171,6 +171,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     public MemberReferenceHandle GetMemberReferenceHandle(MetadataReference reference) => this.GetMemberReferenceHandle(reference.Symbol);
 
+    // TODO: This can be cached by symbol to avoid double reference instertion
     public MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => symbol switch
     {
         FunctionSymbol func => this.AddMemberReference(

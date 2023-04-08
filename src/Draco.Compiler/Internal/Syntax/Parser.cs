@@ -15,32 +15,6 @@ namespace Draco.Compiler.Internal.Syntax;
 internal sealed class Parser
 {
     /// <summary>
-    /// Describes a precedence level.
-    /// </summary>
-    private enum PrecLevelKind
-    {
-        /// <summary>
-        /// The level is for unary prefix operators.
-        /// </summary>
-        Prefix,
-
-        /// <summary>
-        /// The level is for binary left-associative operators.
-        /// </summary>
-        BinaryLeft,
-
-        /// <summary>
-        /// The level is for binary right-associative operators.
-        /// </summary>
-        BinaryRight,
-
-        /// <summary>
-        /// The level is completely custom with a custom parser function.
-        /// </summary>
-        Custom,
-    }
-
-    /// <summary>
     /// Control flow statements parse sligtly differently in expression and statement contexts.
     /// This is the discriminating enum for them to avoid duplicating parser code.
     /// </summary>

@@ -1,3 +1,5 @@
+using Draco.Compiler.Internal.Symbols.Synthetized;
+
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
@@ -10,7 +12,7 @@ internal sealed class UndefinedValueSymbol : Symbol, ITypedSymbol
 
     public override string Name { get; }
 
-    public Type Type => IntrinsicTypes.Error;
+    public TypeSymbol Type => IntrinsicSymbols.Error;
 
     public UndefinedValueSymbol(string name)
     {

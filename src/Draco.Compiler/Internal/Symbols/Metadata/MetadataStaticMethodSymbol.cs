@@ -17,7 +17,7 @@ internal sealed class MetadataStaticMethodSymbol : FunctionSymbol
             return this.parameters;
         }
     }
-    public override Type ReturnType
+    public override TypeSymbol ReturnType
     {
         get
         {
@@ -29,7 +29,7 @@ internal sealed class MetadataStaticMethodSymbol : FunctionSymbol
     private bool NeedsBuild => this.returnType is null;
 
     private ImmutableArray<ParameterSymbol> parameters;
-    private Type? returnType;
+    private TypeSymbol? returnType;
 
     public override string Name => this.metadataReader.GetString(this.methodDefinition.Name);
 

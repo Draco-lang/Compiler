@@ -202,11 +202,6 @@ internal sealed class CilCodegen
                 var handle = this.GetProcedureDefinitionHandle(proc);
                 this.InstructionEncoder.Call(handle);
             }
-            else if (call.Procedure is Intrinsic intrinsic)
-            {
-                var handle = this.GetIntrinsicHandle(intrinsic);
-                this.InstructionEncoder.Call(handle);
-            }
             else if (call.Procedure is MetadataReference metadataRef)
             {
                 var handle = this.GetMemberReferenceHandle(metadataRef);

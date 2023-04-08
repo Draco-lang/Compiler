@@ -331,7 +331,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => node.Function switch
     {
-        FunctionSymbol f when IsIntrinsicFunction(f) => new Intrinsic(f),
         SourceFunctionSymbol func => this.DefineProcedure(func),
         MetadataStaticMethodSymbol m => new MetadataReference(m),
         _ => throw new System.ArgumentOutOfRangeException(nameof(node)),
@@ -377,9 +376,4 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
                                          || op == IntrinsicSymbols.Float64_Rem;
     private static bool IsMod(Symbol op) => op == IntrinsicSymbols.Int32_Mod
                                          || op == IntrinsicSymbols.Float64_Mod;
-
-    private static bool IsIntrinsicFunction(Symbol f) => f == IntrinsicSymbols.Print_String
-                                                      || f == IntrinsicSymbols.Print_Int32
-                                                      || f == IntrinsicSymbols.Println_String
-                                                      || f == IntrinsicSymbols.Println_Int32;
 }

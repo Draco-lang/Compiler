@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -116,7 +117,7 @@ internal abstract partial class Binder
                 location: global.DeclarationSyntax.Location,
                 formatArgs: global.Name));
             // We use an error type
-            declaredType = IntrinsicTypes.Error;
+            declaredType = IntrinsicSymbols.Error;
         }
 
         // Done

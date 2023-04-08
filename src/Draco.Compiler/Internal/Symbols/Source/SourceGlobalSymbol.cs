@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 
 internal sealed class SourceGlobalSymbol : GlobalSymbol
 {
-    public override Type Type
+    public override TypeSymbol Type
     {
         get
         {
@@ -40,7 +40,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol
     private bool NeedsBuild => this.type is null;
 
     private readonly GlobalDeclaration declaration;
-    private Type? type;
+    private TypeSymbol? type;
     private BoundExpression? value;
 
     public SourceGlobalSymbol(Symbol? containingSymbol, GlobalDeclaration declaration)

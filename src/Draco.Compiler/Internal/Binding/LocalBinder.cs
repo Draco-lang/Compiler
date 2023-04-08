@@ -154,22 +154,6 @@ internal sealed class LocalBinder : Binder
         _ => null,
     };
 
-    private static IEnumerable<SyntaxNode> EnumerateNodesInSameScope(SyntaxNode tree)
-    {
-        // We go through each child of the current tree
-        foreach (var child in tree.Children)
-        {
-            // We skip tokens
-            if (child is SyntaxToken) continue;
-
-            // We yield the child first
-            yield return child;
-
-            // If the child defines a scope, we don't recurse
-            if (BinderFacts.DefinesScope(child)) continue;
-
-            // Otherwise, we can recurse
-            foreach (var item in EnumerateNodesInSameScope(child)) yield return item;
-        }
-    }
+    private static IEnumerable<SyntaxNode> EnumerateNodesInSameScope(SyntaxNode tree) =>
+        BinderFacts.EnumerateNodesInSameScope(tree).Where(tree => tree is not SyntaxToken);
 }

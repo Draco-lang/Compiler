@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
@@ -13,7 +14,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class BinderCache
 {
-    public Binder ModuleBinder => this.moduleBinder ??= this.BuildCompilationUnitBinder();
+    public Binder ModuleBinder => this.moduleBinder ??= this.BuildSourceModuleBinder();
     private Binder? moduleBinder;
 
     private readonly Compilation compilation;
@@ -45,7 +46,7 @@ internal sealed class BinderCache
 
     private Binder BuildBinder(SyntaxNode syntax) => syntax switch
     {
-        CompilationUnitSyntax => this.ModuleBinder,
+        CompilationUnitSyntax cu => this.BuildCompilationUnitBinder(cu),
         FunctionDeclarationSyntax decl => this.BuildFunctionDeclarationBinder(decl),
         FunctionBodySyntax body => this.BuildFunctionBodyBinder(body),
         BlockExpressionSyntax block => this.BuildLocalBinder(block),
@@ -53,7 +54,7 @@ internal sealed class BinderCache
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private Binder BuildCompilationUnitBinder()
+    private Binder BuildSourceModuleBinder()
     {
         // We need to wrap up the module with builtins
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
@@ -62,6 +63,14 @@ internal sealed class BinderCache
         // Finally add the source module
         binder = new ModuleBinder(binder, this.compilation.SourceModule);
 
+        return binder;
+    }
+
+    private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
+    {
+        // We simply take the source module binder and wrap it up in imports
+        var binder = this.ModuleBinder;
+        binder = WrapInImportBinder(binder, syntax);
         return binder;
     }
 
@@ -81,14 +90,16 @@ internal sealed class BinderCache
     {
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);
-        return new LocalBinder(parent, syntax);
+        var binder = new LocalBinder(parent, syntax);
+        return WrapInImportBinder(binder, syntax);
     }
 
     private Binder BuildLocalBinder(BlockExpressionSyntax syntax)
     {
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);
-        return new LocalBinder(parent, syntax);
+        var binder = new LocalBinder(parent, syntax);
+        return WrapInImportBinder(binder, syntax);
     }
 
     private Binder BuildLoopBinder(SyntaxNode syntax)
@@ -96,5 +107,22 @@ internal sealed class BinderCache
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);
         return new LoopBinder(parent);
+    }
+
+    /// <summary>
+    /// Wraps the given binder into an import binder, if the given syntax contains imports.
+    /// </summary>
+    /// <param name="binder">The binder to wrap.</param>
+    /// <param name="syntax">The syntax to check for imports.</param>
+    /// <returns>The <paramref name="binder"/> wrapped up in an import binder, if needed, otherwise
+    /// the <paramref name="binder"/> itself.</returns>
+    private static Binder WrapInImportBinder(Binder binder, SyntaxNode syntax)
+    {
+        var importSyntaxes = BinderFacts.EnumerateNodesInSameScope(syntax)
+            .OfType<ImportDeclarationSyntax>()
+            .ToImmutableArray();
+        return importSyntaxes.Length == 0
+            ? binder
+            : new ImportBinder(binder, importSyntaxes);
     }
 }

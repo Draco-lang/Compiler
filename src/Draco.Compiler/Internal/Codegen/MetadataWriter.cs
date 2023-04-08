@@ -32,13 +32,13 @@ internal abstract class MetadataWriter
 
     // Basic get-or-add
 
-    protected StringHandle GetOrAddString(string? text) => text is null
+    public StringHandle GetOrAddString(string? text) => text is null
         ? default
         : this.MetadataBuilder.GetOrAddString(text);
-    protected GuidHandle GetOrAddGuid(Guid guid) => this.MetadataBuilder.GetOrAddGuid(guid);
-    protected BlobHandle GetOrAddBlob(BlobBuilder blob) => this.MetadataBuilder.GetOrAddBlob(blob);
-    protected BlobHandle GetOrAddBlob(byte[] blob) => this.MetadataBuilder.GetOrAddBlob(blob);
-    protected BlobHandle EncodeBlob(Action<BlobEncoder> encoder)
+    public GuidHandle GetOrAddGuid(Guid guid) => this.MetadataBuilder.GetOrAddGuid(guid);
+    public BlobHandle GetOrAddBlob(BlobBuilder blob) => this.MetadataBuilder.GetOrAddBlob(blob);
+    public BlobHandle GetOrAddBlob(byte[] blob) => this.MetadataBuilder.GetOrAddBlob(blob);
+    public BlobHandle EncodeBlob(Action<BlobEncoder> encoder)
     {
         var blob = new BlobBuilder();
         encoder(new BlobEncoder(blob));
@@ -47,7 +47,7 @@ internal abstract class MetadataWriter
 
     // Abstractions for creation
 
-    protected ModuleDefinitionHandle AddModuleDefinition(
+    public ModuleDefinitionHandle AddModuleDefinition(
         int generation,
         string name,
         Guid moduleVersionId) => this.MetadataBuilder.AddModule(
@@ -57,7 +57,7 @@ internal abstract class MetadataWriter
             encId: default,
             encBaseId: default);
 
-    protected AssemblyDefinitionHandle AddAssemblyDefinition(
+    public AssemblyDefinitionHandle AddAssemblyDefinition(
         string name,
         Version version) => this.MetadataBuilder.AddAssembly(
             name: this.GetOrAddString(name),
@@ -67,7 +67,7 @@ internal abstract class MetadataWriter
             flags: default,
             hashAlgorithm: AssemblyHashAlgorithm.None);
 
-    protected TypeDefinitionHandle AddTypeDefinition(
+    public TypeDefinitionHandle AddTypeDefinition(
         TypeAttributes attributes,
         string? @namespace,
         string name,
@@ -81,7 +81,7 @@ internal abstract class MetadataWriter
             fieldList: fieldList,
             methodList: methodList);
 
-    protected FieldDefinitionHandle AddFieldDefinition(
+    public FieldDefinitionHandle AddFieldDefinition(
         FieldAttributes attributes,
         string name,
         BlobHandle signature) => this.MetadataBuilder.AddFieldDefinition(
@@ -89,7 +89,7 @@ internal abstract class MetadataWriter
             name: this.GetOrAddString(name),
             signature: signature);
 
-    protected ParameterHandle AddParameterDefinition(
+    public ParameterHandle AddParameterDefinition(
         ParameterAttributes attributes,
         string name,
         int index)
@@ -102,7 +102,7 @@ internal abstract class MetadataWriter
         return result;
     }
 
-    protected CustomAttributeHandle AddAttribute(
+    public CustomAttributeHandle AddAttribute(
         EntityHandle target,
         MemberReferenceHandle ctor,
         BlobHandle value) => this.MetadataBuilder.AddCustomAttribute(
@@ -112,7 +112,7 @@ internal abstract class MetadataWriter
 
     // Abstraction for references
 
-    protected AssemblyReferenceHandle GetOrAddAssemblyReference(
+    public AssemblyReferenceHandle GetOrAddAssemblyReference(
         string name,
         Version version,
         byte[]? publicKeyOrToken = null)
@@ -148,7 +148,7 @@ internal abstract class MetadataWriter
         return handle;
     }
 
-    protected TypeReferenceHandle GetOrAddTypeReference(
+    public TypeReferenceHandle GetOrAddTypeReference(
         AssemblyReferenceHandle assembly,
         string? @namespace,
         string name) => this.GetOrAddTypeReference(
@@ -156,7 +156,7 @@ internal abstract class MetadataWriter
             @namespace: @namespace,
             name: name);
 
-    protected TypeReferenceHandle GetOrAddTypeReference(
+    public TypeReferenceHandle GetOrAddTypeReference(
         ModuleDefinitionHandle module,
         string? @namespace,
         string name) => this.GetOrAddTypeReference(
@@ -164,7 +164,7 @@ internal abstract class MetadataWriter
             @namespace: @namespace,
             name: name);
 
-    protected TypeReferenceHandle GetOrAddTypeReference(
+    public TypeReferenceHandle GetOrAddTypeReference(
         ModuleReferenceHandle module,
         string? @namespace,
         string name) => this.GetOrAddTypeReference(
@@ -172,7 +172,7 @@ internal abstract class MetadataWriter
             @namespace: @namespace,
             name: name);
 
-    protected TypeReferenceHandle GetOrAddTypeReference(
+    public TypeReferenceHandle GetOrAddTypeReference(
         TypeReferenceHandle containingType,
         string? @namespace,
         string name) => this.GetOrAddTypeReference(
@@ -181,7 +181,7 @@ internal abstract class MetadataWriter
             name: name);
 
     // NOTE: non-caching, we don't deal with memoizing signatures
-    protected MemberReferenceHandle AddMemberReference(
+    public MemberReferenceHandle AddMemberReference(
         TypeReferenceHandle type,
         string name,
         BlobHandle signature) => this.MetadataBuilder.AddMemberReference(
@@ -191,7 +191,7 @@ internal abstract class MetadataWriter
 
     // Abstractions for debug info
 
-    protected DocumentHandle GetOrAddDocument(Uri documentPath, Guid languageGuid)
+    public DocumentHandle GetOrAddDocument(Uri documentPath, Guid languageGuid)
     {
         if (!this.documentHandles.TryGetValue(documentPath, out var handle))
         {
@@ -206,7 +206,7 @@ internal abstract class MetadataWriter
         return handle;
     }
 
-    protected LocalVariableHandle AddLocalVariable(
+    public LocalVariableHandle AddLocalVariable(
         LocalVariableAttributes attributes,
         int index,
         string name)
@@ -220,7 +220,7 @@ internal abstract class MetadataWriter
     }
 
     // From: https://github.com/dotnet/roslyn/blob/723b5ef7fc8146c65993814f1dba94f55f1c59a6/src/Compilers/Core/Portable/PEWriter/MetadataWriter.PortablePdb.cs#L618
-    protected BlobHandle AddSequencePoints(
+    public BlobHandle AddSequencePoints(
         StandaloneSignatureHandle localSignatureHandleOpt,
         ImmutableArray<SequencePoint> sequencePoints)
     {

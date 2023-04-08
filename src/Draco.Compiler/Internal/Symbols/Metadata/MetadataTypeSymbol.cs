@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Reflection.Metadata;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -10,6 +11,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
 {
     public override string Name => this.metadataReader.GetString(this.typeDefinition.Name);
     public override Symbol ContainingSymbol { get; }
+    // TODO: Is this correct?
+    public bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
 
     private readonly TypeDefinition typeDefinition;
     private readonly MetadataReader metadataReader;

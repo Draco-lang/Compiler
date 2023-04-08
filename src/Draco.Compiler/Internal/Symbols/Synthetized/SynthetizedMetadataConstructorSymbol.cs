@@ -17,7 +17,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 internal sealed class SynthetizedMetadataConstructorSymbol : MetadataMethodSymbol
 {
     public override TypeSymbol ReturnType => this.type;
-    public override Symbol? ContainingSymbol => throw new NotSupportedException();
+    public override Symbol? ContainingSymbol => this.type;
     public override string Name => this.type.Name;
 
     private readonly MetadataTypeSymbol type;

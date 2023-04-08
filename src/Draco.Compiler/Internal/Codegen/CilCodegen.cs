@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using Draco.Compiler.Internal.OptimizingIr.Model;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
@@ -47,7 +49,8 @@ internal sealed class CilCodegen
     private MemberReferenceHandle GetGlobalReferenceHandle(Global global) => this.metadataCodegen.GetGlobalReferenceHandle(global);
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
-    private MemberReferenceHandle GetMemberReferenceHandle(MetadataReference reference) => this.metadataCodegen.GetMemberReferenceHandle(reference);
+    private TypeReferenceHandle GetTypeReferenceHandle(Symbol symbol) => this.metadataCodegen.GetTypeReferenceHandle(symbol);
+    private MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => this.metadataCodegen.GetMemberReferenceHandle(symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
@@ -204,8 +207,35 @@ internal sealed class CilCodegen
             }
             else if (call.Procedure is MetadataReference metadataRef)
             {
-                var handle = this.GetMemberReferenceHandle(metadataRef);
-                this.InstructionEncoder.Call(handle);
+                if (metadataRef.Symbol is SynthetizedMetadataConstructorSymbol ctor)
+                {
+                    // The constructed type is from metadata, but the ctor symbol doesn't contain the real names
+                    var type = this.GetTypeReferenceHandle(ctor.ReturnType);
+                    // TODO: Not cached
+                    var handle = this.metadataCodegen.AddMemberReference(
+                        type: type,
+                        name: ".ctor",
+                        signature: this.metadataCodegen.EncodeBlob(e =>
+                        {
+                            // TODO: Don't we want to have a utility in MetadataCodegen instead?
+                            var funcType = (FunctionTypeSymbol)ctor.Type;
+                            e.MethodSignature().Parameters(funcType.Parameters.Length, out var returnType, out var parameters);
+                            this.metadataCodegen.EncodeReturnType(returnType, funcType.ReturnType);
+                            foreach (var param in funcType.Parameters)
+                            {
+                                this.metadataCodegen.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
+                            }
+                        }));
+                    // Encode instantiation
+                    this.InstructionEncoder.OpCode(ILOpCode.Newobj);
+                    this.InstructionEncoder.Token(handle);
+                }
+                else
+                {
+                    // Regular lookup
+                    var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+                    this.InstructionEncoder.Call(handle);
+                }
             }
             else
             {

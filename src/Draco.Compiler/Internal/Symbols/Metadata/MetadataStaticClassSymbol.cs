@@ -57,19 +57,6 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
                 containingSymbol: this,
                 methodDefinition: methodDef,
                 metadataReader: this.metadataReader);
-            // NOTE: We temporarily filter out elements we don't support yet
-            // For that we enforce decoding the signature and catch the signaling exception
-            try
-            {
-                // Enforce evaluation of signature
-                _ = methodSym.Parameters;
-                _ = methodSym.ReturnType;
-            }
-            catch (UnsupportedMetadataException)
-            {
-                // Bail
-                continue;
-            }
             result.Add(methodSym);
         }
 

@@ -58,9 +58,9 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public types
             if (!typeDef.Attributes.HasFlag(TypeAttributes.Public)) continue;
-            // Turn into a symbol
-            var symbol = MetadataSymbol.ToSymbol(this, typeDef, this.metadataReader);
-            result.Add(symbol);
+            // Turn into a symbol, or potentially symbols
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.metadataReader);
+            result.AddRange(symbols);
         }
 
         // Done

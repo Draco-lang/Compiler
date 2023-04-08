@@ -1,5 +1,3 @@
-using Draco.Compiler.Internal.Types;
-
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
@@ -7,11 +5,6 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class TypeSymbol : Symbol
 {
-    /// <summary>
-    /// The defined type.
-    /// </summary>
-    public abstract Type Type { get; }
-
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitType(this);

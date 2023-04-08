@@ -89,7 +89,7 @@
     <Field Name="Condition" Type="BoundExpression" />
     <Field Name="Then" Type="BoundExpression" />
     <Field Name="Else" Type="BoundExpression" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundWhileExpression" Base="BoundExpression">
@@ -102,26 +102,26 @@
   <Node Name="BoundCallExpression" Base="BoundExpression">
     <Field Name="Method" Type="BoundExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundIndexExpression" Base="BoundExpression">
     <Field Name="Collection" Type="BoundExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundUnaryExpression" Base="BoundExpression">
     <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Operand" Type="BoundExpression" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundBinaryExpression" Base="BoundExpression">
     <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundAndExpression" Base="BoundExpression">

@@ -13,14 +13,14 @@ internal sealed class Procedure : IProcedure
 {
     public FunctionSymbol Symbol { get; }
     public string Name => this.Symbol.Name;
-    public Type? Type => this.Symbol.Type;
+    public TypeSymbol? Type => this.Symbol.Type;
     public Assembly Assembly { get; }
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
     public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters => this.parameters;
     public IEnumerable<Parameter> ParametersInDefinitionOrder => this.parameters.Values.OrderBy(p => p.Index);
-    public Type ReturnType => this.Symbol.ReturnType;
+    public TypeSymbol ReturnType => this.Symbol.ReturnType;
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks => this.basicBlocks;
     public IEnumerable<IBasicBlock> BasicBlocksInDefinitionOrder => this.basicBlocks.Values
         .Cast<BasicBlock>()
@@ -73,7 +73,7 @@ internal sealed class Procedure : IProcedure
         return result;
     }
 
-    public Register DefineRegister(Type type)
+    public Register DefineRegister(TypeSymbol type)
     {
         var result = new Register(type, this.registers.Count);
         this.registers.Add(result);

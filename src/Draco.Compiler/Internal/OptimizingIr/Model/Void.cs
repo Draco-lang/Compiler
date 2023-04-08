@@ -1,3 +1,6 @@
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
+
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
@@ -5,7 +8,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal readonly record struct Void : IOperand
 {
-    public Type? Type => IntrinsicTypes.Unit;
+    public TypeSymbol Type => IntrinsicSymbols.Unit;
 
     public override string ToString() => this.ToOperandString();
     public string ToOperandString() => "unit";

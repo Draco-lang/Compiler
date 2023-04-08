@@ -124,7 +124,7 @@ internal sealed partial class ConstraintSolver
                     location: local.DeclarationSyntax.Location,
                     formatArgs: local.Name));
                 // We use an error type
-                localType = IntrinsicTypes.Error;
+                localType = IntrinsicSymbols.Error;
             }
             typedLocal = new SourceLocalSymbol(local, localType);
             this.typedLocals.Add(local, typedLocal);
@@ -199,7 +199,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="functionType">The function type being called.</param>
     /// <param name="argTypes">The argument types that the function is called with.</param>
     /// <returns>The promise for the constraint added, containing the return type.</returns>
-    public ConstraintPromise<Type> Call(TypeSymbol functionType, IEnumerable<TypeSymbol> argTypes)
+    public ConstraintPromise<TypeSymbol> Call(TypeSymbol functionType, IEnumerable<TypeSymbol> argTypes)
     {
         // We can save on type variables here
         var returnType = functionType is FunctionType f ? f.ReturnType : this.NextTypeVariable;

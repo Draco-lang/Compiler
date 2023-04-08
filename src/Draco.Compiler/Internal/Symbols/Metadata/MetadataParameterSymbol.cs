@@ -9,7 +9,7 @@ internal sealed class MetadataParameterSymbol : ParameterSymbol
 {
     public override string Name => this.metadataReader.GetString(this.parameterDefinition.Name);
 
-    public override Type Type { get; }
+    public override TypeSymbol Type { get; }
     public override Symbol ContainingSymbol { get; }
 
     private readonly Parameter parameterDefinition;
@@ -18,7 +18,7 @@ internal sealed class MetadataParameterSymbol : ParameterSymbol
     public MetadataParameterSymbol(
         Symbol containingSymbol,
         Parameter parameterDefinition,
-        Type type,
+        TypeSymbol type,
         MetadataReader metadataReader)
     {
         this.ContainingSymbol = containingSymbol;

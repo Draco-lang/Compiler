@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <param name="Symbol">The symbol referencing the metadata.</param>
 internal readonly record struct MetadataReference(Symbol Symbol) : IOperand
 {
-    public Type? Type => (this.Symbol as ITypedSymbol)?.Type;
+    public TypeSymbol? Type => (this.Symbol as ITypedSymbol)?.Type;
 
     public override string ToString() => this.ToOperandString();
     public string ToOperandString() => $"[metadata {this.Symbol.FullName}]";

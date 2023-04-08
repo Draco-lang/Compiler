@@ -41,7 +41,7 @@ internal interface IProcedure : IOperand
     /// <summary>
     /// The return type of this procedure.
     /// </summary>
-    public Type ReturnType { get; }
+    public TypeSymbol ReturnType { get; }
 
     /// <summary>
     /// All basic blocks within this procedure.

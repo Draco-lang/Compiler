@@ -234,22 +234,45 @@ internal sealed class CilCodegen
             this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
             break;
         case Constant c:
-            switch (c.Value) // Continue Here
+            if (c.Type == IntrinsicTypes.Int8
+                || c.Type == IntrinsicTypes.Int16
+                || c.Type == IntrinsicTypes.Int32
+                || c.Type == IntrinsicTypes.Uint8
+                || c.Type == IntrinsicTypes.Uint16
+                || c.Type == IntrinsicTypes.Uint32)
             {
-            case int i:
-                this.InstructionEncoder.LoadConstantI4(i);
+                this.InstructionEncoder.LoadConstantI4((int)c.Value!);
                 break;
-            case bool b:
-                this.InstructionEncoder.LoadConstantI4(b ? 1 : 0);
+            }
+            else if (c.Type == IntrinsicTypes.Int64
+                || c.Type == IntrinsicTypes.Uint64)
+            {
+                this.InstructionEncoder.LoadConstantI8((long)c.Value!);
                 break;
-            case string s:
-                var stringHandle = this.GetStringLiteralHandle(s);
+            }
+            else if (c.Type == IntrinsicTypes.Bool)
+            {
+                this.InstructionEncoder.LoadConstantI4((bool)c.Value! ? 1 : 0);
+                break;
+            }
+            else if (c.Type == IntrinsicTypes.Float32)
+            {
+                this.InstructionEncoder.LoadConstantR4((float)c.Value!);
+                break;
+            }
+            else if (c.Type == IntrinsicTypes.Float64)
+            {
+                this.InstructionEncoder.LoadConstantR8((double)c.Value!);
+                break;
+            }
+            else if (c.Type == IntrinsicTypes.String)
+            {
+                var stringHandle = this.GetStringLiteralHandle((string)c.Value!);
                 this.InstructionEncoder.LoadString(stringHandle);
                 break;
-            default:
-                throw new System.NotImplementedException();
             }
-            break;
+            // TODO: chars
+            else throw new System.NotImplementedException();
         default:
             throw new System.ArgumentOutOfRangeException(nameof(operand));
         }

@@ -9,6 +9,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <param name="Value">The constant value.</param>
 internal readonly record struct Constant(object? Value) : IOperand
 {
+    // TODO: probably get type from IR or Binder, this is not good
     public Type? Type => this.Value switch
     {
         int => IntrinsicTypes.Int32,

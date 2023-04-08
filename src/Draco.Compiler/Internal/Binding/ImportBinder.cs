@@ -17,12 +17,18 @@ internal sealed class ImportBinder : Binder
 {
     public override IEnumerable<Symbol> DeclaredSymbols => this.importedSymbols ??= this.BuildImportedSymbols();
 
+    public override SyntaxNode DeclaringSyntax { get; }
+
     private readonly ImmutableArray<ImportDeclarationSyntax> importSyntaxes;
     private ImmutableArray<Symbol>? importedSymbols;
 
-    public ImportBinder(Binder parent, ImmutableArray<ImportDeclarationSyntax> importSyntaxes)
+    public ImportBinder(
+        Binder parent,
+        SyntaxNode declaringSyntax,
+        ImmutableArray<ImportDeclarationSyntax> importSyntaxes)
         : base(parent)
     {
+        this.DeclaringSyntax = declaringSyntax;
         this.importSyntaxes = importSyntaxes;
     }
 

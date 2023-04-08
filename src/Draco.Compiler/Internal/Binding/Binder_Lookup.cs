@@ -63,17 +63,14 @@ internal partial class Binder
         var currentReference = reference;
 
         // Iterate over the binder chain
-        for (var scope = this; scope is not null; scope = scope.Parent)
+        // NOTE: The order of setting the reference and parent is CORRECT here
+        // In the parent scope, the child syntax will play the referencing role
+        for (var scope = this; scope is not null; currentReference = scope.DeclaringSyntax, scope = scope.Parent)
         {
             if (!lookupResult.ShouldContinue) break;
 
             // Look up in the current scope
             scope.LookupLocal(lookupResult, name, ref flags, allowSymbol, currentReference);
-
-            // TODO: Fix this, this will be "off-by-one" because of import binders
-            // Maybe just store the syntax for each binder it was created from?
-            // Step reference up
-            currentReference = BinderFacts.GetScopeDefiningAncestor(currentReference?.Parent);
         }
 
         return lookupResult;

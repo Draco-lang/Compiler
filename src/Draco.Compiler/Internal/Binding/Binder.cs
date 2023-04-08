@@ -28,6 +28,11 @@ internal abstract partial class Binder
     internal Binder? Parent { get; }
 
     /// <summary>
+    /// The syntax that constructed this binder.
+    /// </summary>
+    public virtual SyntaxNode? DeclaringSyntax => this.Parent?.DeclaringSyntax;
+
+    /// <summary>
     /// The symbol containing the binding context.
     /// </summary>
     public virtual Symbol? ContainingSymbol => this.Parent?.ContainingSymbol;

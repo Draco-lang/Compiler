@@ -29,6 +29,8 @@ public sealed partial class SemanticModel
 
         public override Symbol? ContainingSymbol => this.UnderlyingBinder.ContainingSymbol;
 
+        public override SyntaxNode? DeclaringSyntax => this.UnderlyingBinder.DeclaringSyntax;
+
         public override IEnumerable<Symbol> DeclaredSymbols => this.UnderlyingBinder.DeclaredSymbols;
 
         private readonly SemanticModel semanticModel;

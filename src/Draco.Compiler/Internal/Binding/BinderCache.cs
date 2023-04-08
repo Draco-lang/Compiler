@@ -108,7 +108,7 @@ internal sealed class BinderCache
     {
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);
-        return new LoopBinder(parent);
+        return new LoopBinder(parent, syntax);
     }
 
     /// <summary>
@@ -125,6 +125,6 @@ internal sealed class BinderCache
             .ToImmutableArray();
         return importSyntaxes.Length == 0
             ? binder
-            : new ImportBinder(binder, importSyntaxes);
+            : new ImportBinder(binder, syntax, importSyntaxes);
     }
 }

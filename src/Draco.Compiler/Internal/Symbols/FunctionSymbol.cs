@@ -75,7 +75,5 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     public override void Accept(SymbolVisitor visitor) => visitor.VisitFunction(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitFunction(this);
 
-    private TypeSymbol BuildType() => new FunctionType(
-        this.Parameters.Select(p => p.Type).ToImmutableArray(),
-        this.ReturnType);
+    private TypeSymbol BuildType() => new FunctionTypeSymbol(this.Parameters, this.ReturnType);
 }

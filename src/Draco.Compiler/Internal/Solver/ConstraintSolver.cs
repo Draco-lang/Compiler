@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -202,10 +203,16 @@ internal sealed partial class ConstraintSolver
     public ConstraintPromise<TypeSymbol> Call(TypeSymbol functionType, IEnumerable<TypeSymbol> argTypes)
     {
         // We can save on type variables here
-        var returnType = functionType is FunctionType f ? f.ReturnType : this.NextTypeVariable;
+        var returnType = functionType is FunctionTypeSymbol f ? f.ReturnType : this.NextTypeVariable;
         // TODO: Hack, this is temporary until we have other constraints
         // Construct a type for the call-site
-        var callSiteType = new FunctionType(argTypes.ToImmutableArray(), returnType);
+        // TODO: Hack: we erase argument names
+        var callSiteType = new FunctionTypeSymbol(
+            argTypes
+                .Select(t => new SynthetizedParameterSymbol(t))
+                .Cast<ParameterSymbol>()
+                .ToImmutableArray(),
+            returnType);
         var constraint = new SameTypeConstraint(functionType, callSiteType);
         this.constraints.Add(constraint);
         // We map the call-site to the return-type

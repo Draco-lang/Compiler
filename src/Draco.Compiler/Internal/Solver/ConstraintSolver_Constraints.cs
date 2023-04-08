@@ -48,8 +48,8 @@ internal sealed partial class ConstraintSolver
         if (constraint.Candidates.Count == 0)
         {
             // Best-effort shape approximation
-            var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionType functionType
-                ? new NoOverloadFunctionSymbol(functionType.ParameterTypes.Length)
+            var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionTypeSymbol functionType
+                ? new NoOverloadFunctionSymbol(functionType.Parameters.Length)
                 : new NoOverloadFunctionSymbol(1);
             this.Unify(errorSymbol.Type, constraint.CallSite);
             // Diagnostic, promise
@@ -83,8 +83,8 @@ internal sealed partial class ConstraintSolver
     private void FailSilently(OverloadConstraint constraint)
     {
         // Best-effort shape approximation
-        var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionType functionType
-            ? new NoOverloadFunctionSymbol(functionType.ParameterTypes.Length)
+        var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionTypeSymbol functionType
+            ? new NoOverloadFunctionSymbol(functionType.Parameters.Length)
             : new NoOverloadFunctionSymbol(1);
         constraint.Promise.FailSilently(errorSymbol);
     }
@@ -110,12 +110,12 @@ internal sealed partial class ConstraintSolver
         case (PrimitiveTypeSymbol t1, PrimitiveTypeSymbol t2):
             return ReferenceEquals(t1, t2);
 
-        case (FunctionType f1, FunctionType f2):
+        case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
         {
-            if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
-            for (var i = 0; i < f1.ParameterTypes.Length; ++i)
+            if (f1.Parameters.Length != f2.Parameters.Length) return false;
+            for (var i = 0; i < f1.Parameters.Length; ++i)
             {
-                if (!this.Matches(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+                if (!this.Matches(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
             }
             return this.Matches(f1.ReturnType, f2.ReturnType);
         }
@@ -163,12 +163,12 @@ internal sealed partial class ConstraintSolver
         case (PrimitiveTypeSymbol t1, PrimitiveTypeSymbol t2):
             return ReferenceEquals(t1, t2);
 
-        case (FunctionType f1, FunctionType f2):
+        case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
         {
-            if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
-            for (var i = 0; i < f1.ParameterTypes.Length; ++i)
+            if (f1.Parameters.Length != f2.Parameters.Length) return false;
+            for (var i = 0; i < f1.Parameters.Length; ++i)
             {
-                if (!this.Unify(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+                if (!this.Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
             }
             return this.Unify(f1.ReturnType, f2.ReturnType);
         }

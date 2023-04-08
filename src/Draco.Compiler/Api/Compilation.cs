@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,7 @@ using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Api;
 
@@ -219,15 +221,32 @@ public sealed class Compilation
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
     private ModuleSymbol BuildReferencesModule()
     {
-        var modules = ImmutableArray.CreateBuilder<ModuleSymbol>();
+        var symbols = ImmutableArray.CreateBuilder<Symbol>();
+        var modules = new List<ModuleSymbol>();
         // Add all modules constructed from metadata
         foreach (var metadataReference in this.MetadataReferences)
         {
             var reader = metadataReference.MetadataReader;
-            var moduleSymbol = new MetadataAssemblySymbol(reader);
-            modules.Add(moduleSymbol);
+            // Create the assembly
+            var assemblySymbol = new MetadataAssemblySymbol(reader);
+            // Extract elements from the root namespace
+            foreach (var element in assemblySymbol.RootNamespace.Members)
+            {
+                if (element is ModuleSymbol module) modules.Add(module);
+                else symbols.Add(element);
+            }
         }
-        // Done, construct merged root
-        return new MergedModuleSymbol(null, modules.ToImmutable());
+        // Group modules by name
+        var modulesGrouped = modules.GroupBy(m => m.Name);
+        // And add them as merged modules
+        foreach (var group in modulesGrouped)
+        {
+            var groupElements = group.ToImmutableArray();
+            // For single-element groups we skip merging
+            if (groupElements.Length == 1) symbols.Add(groupElements[0]);
+            else symbols.Add(new MergedModuleSymbol(null, groupElements));
+        }
+        // Done, construct root
+        return new SynthetizedModuleSymbol(null, string.Empty, symbols.ToImmutable());
     }
 }

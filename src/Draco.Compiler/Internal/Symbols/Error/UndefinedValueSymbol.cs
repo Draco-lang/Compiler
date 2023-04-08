@@ -12,7 +12,7 @@ internal sealed class UndefinedValueSymbol : Symbol, ITypedSymbol
 
     public override string Name { get; }
 
-    public TypeSymbol Type => IntrinsicSymbols.Error;
+    public TypeSymbol Type => IntrinsicSymbols.ErrorType;
 
     public UndefinedValueSymbol(string name)
     {

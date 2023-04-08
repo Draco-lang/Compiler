@@ -117,7 +117,7 @@ internal abstract partial class Binder
                 location: global.DeclarationSyntax.Location,
                 formatArgs: global.Name));
             // We use an error type
-            declaredType = IntrinsicSymbols.Error;
+            declaredType = IntrinsicSymbols.ErrorType;
         }
 
         // Done

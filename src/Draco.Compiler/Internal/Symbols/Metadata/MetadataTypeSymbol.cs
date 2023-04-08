@@ -23,4 +23,6 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         this.typeDefinition = typeDefinition;
         this.metadataReader = metadataReader;
     }
+
+    public override string ToString() => this.Name;
 }

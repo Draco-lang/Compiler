@@ -8,10 +8,13 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal static class IntrinsicSymbols
 {
-    public static TypeSymbol Int32 { get; } = Type(IntrinsicTypes.Int32);
-    public static TypeSymbol Float64 { get; } = Type(IntrinsicTypes.Float64);
-    public static TypeSymbol String { get; } = Type(IntrinsicTypes.String);
-    public static TypeSymbol Bool { get; } = Type(IntrinsicTypes.Bool);
+    public static TypeSymbol ErrorType => ErrorTypeSymbol.Instance;
+    public static TypeSymbol Never => NeverTypeSymbol.Instance;
+    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit");
+    public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32");
+    public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64");
+    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string");
+    public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool");
 
     // Operators
 

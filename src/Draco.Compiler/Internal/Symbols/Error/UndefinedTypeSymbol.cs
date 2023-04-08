@@ -16,4 +16,6 @@ internal sealed class UndefinedTypeSymbol : TypeSymbol
     {
         this.Name = name;
     }
+
+    public override string ToString() => this.Name;
 }

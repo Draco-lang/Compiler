@@ -106,7 +106,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // In case the condition is a never type, we don't bother writing out the then and else bodies,
         // as they can not be evaluated
         // Note, that for side-effects we still emit the condition code
-        if (ReferenceEquals(node.Condition.TypeRequired, IntrinsicTypes.Never)) return default(Void);
+        if (ReferenceEquals(node.Condition.TypeRequired, IntrinsicSymbols.Never)) return default(Void);
 
         // Allocate blocks
         var thenBlock = this.DefineBasicBlock(node.Target);

@@ -1,6 +1,8 @@
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -87,7 +89,7 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.FailSilently(errorSymbol);
     }
 
-    private bool Matches(Type left, Type right)
+    private bool Matches(TypeSymbol left, TypeSymbol right)
     {
         left = this.Unwrap(left);
         right = this.Unwrap(right);
@@ -95,19 +97,18 @@ internal sealed partial class ConstraintSolver
         switch (left, right)
         {
         // Never type is never reached, matches everything
-        case (NeverType, _):
-        case (_, NeverType):
+        case (NeverTypeSymbol, _):
+        case (_, NeverTypeSymbol):
         // Error type matches everything to avoid cascading type errors
-        case (ErrorType, _):
-        case (_, ErrorType):
+        case (ErrorTypeSymbol, _):
+        case (_, ErrorTypeSymbol):
         // Type variables could match anything
         case (TypeVariable, _):
         case (_, TypeVariable):
             return true;
 
-        case (BuiltinType t1, BuiltinType t2):
-            return t1.Name == t2.Name
-                && t1.UnderylingType == t2.UnderylingType;
+        case (PrimitiveTypeSymbol t1, PrimitiveTypeSymbol t2):
+            return ReferenceEquals(t1, t2);
 
         case (FunctionType f1, FunctionType f2):
         {
@@ -124,7 +125,7 @@ internal sealed partial class ConstraintSolver
         }
     }
 
-    private bool Unify(Type left, Type right)
+    private bool Unify(TypeSymbol left, TypeSymbol right)
     {
         left = this.Unwrap(left);
         right = this.Unwrap(right);
@@ -140,28 +141,27 @@ internal sealed partial class ConstraintSolver
             this.Substitute(v1, v2);
             return true;
         }
-        case (TypeVariable v, Type other):
+        case (TypeVariable v, TypeSymbol other):
         {
             this.Substitute(v, other);
             return true;
         }
-        case (Type other, TypeVariable v):
+        case (TypeSymbol other, TypeVariable v):
         {
             this.Substitute(v, other);
             return true;
         }
 
         // Never type is never reached, unifies with everything
-        case (NeverType, _):
-        case (_, NeverType):
+        case (NeverTypeSymbol, _):
+        case (_, NeverTypeSymbol):
         // Error type unifies with everything to avoid cascading type errors
-        case (ErrorType, _):
-        case (_, ErrorType):
+        case (ErrorTypeSymbol, _):
+        case (_, ErrorTypeSymbol):
             return true;
 
-        case (BuiltinType t1, BuiltinType t2):
-            return t1.Name == t2.Name
-                && t1.UnderylingType == t2.UnderylingType;
+        case (PrimitiveTypeSymbol t1, PrimitiveTypeSymbol t2):
+            return ReferenceEquals(t1, t2);
 
         case (FunctionType f1, FunctionType f2):
         {

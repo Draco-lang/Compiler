@@ -46,7 +46,7 @@ internal partial class BoundExpression
 
 internal partial class BoundUnexpectedExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class BoundSequencePointExpression
@@ -112,7 +112,7 @@ internal partial class BoundFunctionExpression
 
 internal partial class BoundReferenceErrorExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class BoundLiteralExpression
@@ -150,12 +150,12 @@ internal partial class BoundLvalue
 
 internal partial class BoundUnexpectedLvalue
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class BoundIllegalLvalue
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class BoundLocalLvalue

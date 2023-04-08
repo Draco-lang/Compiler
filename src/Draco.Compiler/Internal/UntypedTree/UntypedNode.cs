@@ -35,7 +35,7 @@ internal partial class UntypedExpression
 
 internal partial class UntypedUnexpectedExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedUnitExpression
@@ -86,7 +86,7 @@ internal partial class UntypedGlobalExpression
 
 internal partial class UntypedReferenceErrorExpression
 {
-    public override TypeSymbol? Type => IntrinsicSymbols.Error;
+    public override TypeSymbol? Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedLiteralExpression
@@ -119,12 +119,12 @@ internal partial class UntypedAssignmentExpression
 
 internal partial class UntypedUnexpectedLvalue
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedIllegalLvalue
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedLvalue

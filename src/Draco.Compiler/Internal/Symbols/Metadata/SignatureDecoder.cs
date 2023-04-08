@@ -19,7 +19,7 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) => throw new UnsupportedMetadataException();
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => throw new UnsupportedMetadataException();
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => throw new UnsupportedMetadataException();
-    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => IntrinsicSymbols.Error;
+    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => throw new UnsupportedMetadataException();
     public TypeSymbol GetGenericMethodParameter(Unit genericContext, int index) => throw new UnsupportedMetadataException();
     public TypeSymbol GetGenericTypeParameter(Unit genericContext, int index) => throw new UnsupportedMetadataException();
     public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => throw new UnsupportedMetadataException();

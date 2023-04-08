@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Metadata;
-using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Symbols;
 

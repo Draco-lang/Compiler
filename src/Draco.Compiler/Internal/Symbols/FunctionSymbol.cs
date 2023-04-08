@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -64,19 +63,19 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     /// <summary>
     /// The return type of this function.
     /// </summary>
-    public abstract Type ReturnType { get; }
+    public abstract TypeSymbol ReturnType { get; }
 
     public override IEnumerable<Symbol> Members => this.Parameters;
 
-    public Type Type => this.type ??= this.BuildType();
-    private Type? type;
+    public TypeSymbol Type => this.type ??= this.BuildType();
+    private TypeSymbol? type;
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitFunction(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitFunction(this);
 
-    private Type BuildType() => new FunctionType(
+    private TypeSymbol BuildType() => new FunctionType(
         this.Parameters.Select(p => p.Type).ToImmutableArray(),
         this.ReturnType);
 }

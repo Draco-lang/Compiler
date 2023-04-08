@@ -7,7 +7,6 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -114,7 +113,7 @@ internal partial class Binder
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints
-            .SameType(IntrinsicTypes.Bool, condition.TypeRequired)
+            .SameType(IntrinsicSymbols.Bool, condition.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
 
@@ -151,14 +150,14 @@ internal partial class Binder
         var condition = binder.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints
-            .SameType(IntrinsicTypes.Bool, condition.TypeRequired)
+            .SameType(IntrinsicSymbols.Bool, condition.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
 
         var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
         constraints
-            .SameType(IntrinsicTypes.Unit, then.TypeRequired)
+            .SameType(IntrinsicSymbols.Unit, then.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(ExtractValueSyntax(syntax.Then).Location));
 
@@ -232,11 +231,11 @@ internal partial class Binder
 
             // Both left and right must be bool
             constraints
-                .SameType(IntrinsicTypes.Bool, left.TypeRequired)
+                .SameType(IntrinsicSymbols.Bool, left.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(syntax.Left.Location));
             constraints
-                .SameType(IntrinsicTypes.Bool, right.TypeRequired)
+                .SameType(IntrinsicSymbols.Bool, right.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(syntax.Right.Location));
 
@@ -334,7 +333,7 @@ internal partial class Binder
             .Result;
         // For safety, we assume it has to be bool
         constraints
-            .SameType(IntrinsicTypes.Bool, resultType)
+            .SameType(IntrinsicSymbols.Bool, resultType)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
 

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using Draco.Compiler.Internal.OptimizingIr.Model;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;
@@ -55,7 +55,7 @@ internal sealed class CilCodegen
 
     private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
-        if (ReferenceEquals(operand.Type, IntrinsicTypes.Unit)) return null;
+        if (ReferenceEquals(operand.Type, IntrinsicSymbols.Unit)) return null;
         if (!this.allocatedLocals.TryGetValue(operand, out var local))
         {
             local = new(operand, this.allocatedLocals.Count);

@@ -12,9 +12,7 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
 using MetadataReference = Draco.Compiler.Internal.OptimizingIr.Model.MetadataReference;
-using Type = Draco.Compiler.Internal.Types.Type;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -83,32 +81,6 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private void LoadIntrinsics()
     {
-        var systemConsoleAssembly = this.GetOrAddAssemblyReference(
-            name: "System.Console",
-            version: new(1, 0));
-        var systemConsole = this.GetOrAddTypeReference(
-            assembly: systemConsoleAssembly,
-            @namespace: "System",
-            name: "Console");
-
-        MemberReferenceHandle LoadPrintFunction(string name, System.Action<SignatureTypeEncoder> paramTypeEncoder)
-        {
-            var signature = this.EncodeBlob(e =>
-            {
-                e.MethodSignature().Parameters(1, out var retEncoder, out var paramsEncoder);
-                retEncoder.Void();
-                paramTypeEncoder(paramsEncoder.AddParameter().Type());
-            });
-            return this.AddMemberReference(
-                type: systemConsole,
-                name: name,
-                signature: signature);
-        }
-
-        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Print_String, LoadPrintFunction("Write", p => p.String()));
-        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Print_Int32, LoadPrintFunction("Write", p => p.Int32()));
-        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Println_String, LoadPrintFunction("WriteLine", p => p.String()));
-        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Println_Int32, LoadPrintFunction("WriteLine", p => p.Int32()));
     }
 
     private void WriteModuleAndAssemblyDefinition()
@@ -373,19 +345,19 @@ internal sealed class MetadataCodegen : MetadataWriter
         }));
     }
 
-    private static void EncodeReturnType(ReturnTypeEncoder encoder, Type type)
+    private static void EncodeReturnType(ReturnTypeEncoder encoder, TypeSymbol type)
     {
-        if (ReferenceEquals(type, IntrinsicTypes.Unit)) { encoder.Void(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Unit)) { encoder.Void(); return; }
 
         EncodeSignatureType(encoder.Type(), type);
     }
 
-    private static void EncodeSignatureType(SignatureTypeEncoder encoder, Type type)
+    private static void EncodeSignatureType(SignatureTypeEncoder encoder, TypeSymbol type)
     {
-        if (ReferenceEquals(type, IntrinsicTypes.Bool)) { encoder.Boolean(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Int32)) { encoder.Int32(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Float64)) { encoder.Double(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.String)) { encoder.String(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
 
         // TODO
         throw new System.NotImplementedException();

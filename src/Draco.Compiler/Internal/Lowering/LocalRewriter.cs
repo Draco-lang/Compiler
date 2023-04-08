@@ -5,7 +5,6 @@ using System.Text;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Lowering;
@@ -139,7 +138,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                     condition: UnaryExpression(
                         @operator: IntrinsicSymbols.Bool_Not,
                         operand: condition,
-                        type: IntrinsicTypes.Bool),
+                        type: IntrinsicSymbols.Bool),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
@@ -160,7 +159,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: node.Comparisons[0].Operator,
                 right: right,
-                type: IntrinsicTypes.Bool);
+                type: IntrinsicSymbols.Bool);
         }
 
         // expr1 < expr2 == expr3 > expr4 != ...
@@ -194,7 +193,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: op,
                 right: right,
-                type: IntrinsicTypes.Bool));
+                type: IntrinsicSymbols.Bool));
         }
 
         // Fold them into conjunctions
@@ -227,7 +226,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: right,
             @else: LiteralExpression(false),
-            type: IntrinsicTypes.Bool);
+            type: IntrinsicSymbols.Bool);
         // If-expressions can be lowered too
         return result.Accept(this);
     }
@@ -247,7 +246,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: LiteralExpression(true),
             @else: right,
-            type: IntrinsicTypes.Bool);
+            type: IntrinsicSymbols.Bool);
         // If-expressions can be lowered too
         return result.Accept(this);
     }

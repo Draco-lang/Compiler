@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.BoundTree;
 

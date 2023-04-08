@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Metadata;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -13,7 +9,6 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class MetadataTypeSymbol : TypeSymbol
 {
     public override string Name => this.metadataReader.GetString(this.typeDefinition.Name);
-    public override Types.Type Type => throw new NotImplementedException();
     public override Symbol ContainingSymbol { get; }
 
     private readonly TypeDefinition typeDefinition;

@@ -1,4 +1,3 @@
-using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;

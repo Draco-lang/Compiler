@@ -13,7 +13,6 @@ using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api;
 

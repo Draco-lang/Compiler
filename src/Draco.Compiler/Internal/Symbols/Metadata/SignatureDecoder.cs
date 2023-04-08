@@ -1,10 +1,6 @@
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Reflection.Metadata;
-using System.Text;
-using System.Threading.Tasks;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -12,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// Helper for decoding signature types.
 /// </summary>
-internal sealed class SignatureDecoder : ISignatureTypeProvider<Type, Unit>
+internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit>
 {
     public static SignatureDecoder Instance { get; } = new();
 
@@ -20,25 +16,25 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<Type, Unit>
     {
     }
 
-    public Type GetArrayType(Type elementType, ArrayShape shape) => throw new UnsupportedMetadataException();
-    public Type GetByReferenceType(Type elementType) => throw new UnsupportedMetadataException();
-    public Type GetFunctionPointerType(MethodSignature<Type> signature) => throw new UnsupportedMetadataException();
-    public Type GetGenericInstantiation(Type genericType, ImmutableArray<Type> typeArguments) => IntrinsicTypes.Error;
-    public Type GetGenericMethodParameter(Unit genericContext, int index) => throw new UnsupportedMetadataException();
-    public Type GetGenericTypeParameter(Unit genericContext, int index) => throw new UnsupportedMetadataException();
-    public Type GetModifiedType(Type modifier, Type unmodifiedType, bool isRequired) => throw new UnsupportedMetadataException();
-    public Type GetPinnedType(Type elementType) => throw new UnsupportedMetadataException();
-    public Type GetPointerType(Type elementType) => throw new UnsupportedMetadataException();
-    public Type GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
+    public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetByReferenceType(TypeSymbol elementType) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => IntrinsicSymbols.Error;
+    public TypeSymbol GetGenericMethodParameter(Unit genericContext, int index) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetGenericTypeParameter(Unit genericContext, int index) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetPinnedType(TypeSymbol elementType) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetPointerType(TypeSymbol elementType) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
     {
-        PrimitiveTypeCode.Boolean => IntrinsicTypes.Bool,
-        PrimitiveTypeCode.Int32 => IntrinsicTypes.Int32,
-        PrimitiveTypeCode.String => IntrinsicTypes.String,
-        PrimitiveTypeCode.Void => IntrinsicTypes.Unit,
+        PrimitiveTypeCode.Boolean => IntrinsicSymbols.Bool,
+        PrimitiveTypeCode.Int32 => IntrinsicSymbols.Int32,
+        PrimitiveTypeCode.String => IntrinsicSymbols.String,
+        PrimitiveTypeCode.Void => IntrinsicSymbols.Unit,
         _ => throw new UnsupportedMetadataException(),
     };
-    public Type GetSZArrayType(Type elementType) => throw new UnsupportedMetadataException();
-    public Type GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind) => throw new UnsupportedMetadataException();
-    public Type GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind) => throw new UnsupportedMetadataException();
-    public Type GetTypeFromSpecification(MetadataReader reader, Unit genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetSZArrayType(TypeSymbol elementType) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind) => throw new UnsupportedMetadataException();
+    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Unit genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => throw new UnsupportedMetadataException();
 }

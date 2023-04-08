@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Solver;
 

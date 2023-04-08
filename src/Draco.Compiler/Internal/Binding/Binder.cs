@@ -8,7 +8,6 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -76,7 +75,7 @@ internal abstract partial class Binder
         return boundStatement;
     }
 
-    public (Type Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
+    public (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
         var globalName = global.DeclarationSyntax.Name.Text;
         var constraints = new ConstraintSolver(global.DeclarationSyntax, $"global {globalName}");
@@ -89,7 +88,7 @@ internal abstract partial class Binder
         var untypedValue = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
 
         // Infer declared type
-        var declaredType = (type as TypeSymbol)?.Type ?? constraints.NextTypeVariable;
+        var declaredType = (type as TypeSymbol) ?? constraints.NextTypeVariable;
 
         // Add assignability constraint, if needed
         if (untypedValue is not null)

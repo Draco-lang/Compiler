@@ -70,6 +70,8 @@ internal partial class Binder
             // Look up in the current scope
             scope.LookupLocal(lookupResult, name, ref flags, allowSymbol, currentReference);
 
+            // TODO: Fix this, this will be "off-by-one" because of import binders
+            // Maybe just store the syntax for each binder it was created from?
             // Step reference up
             currentReference = BinderFacts.GetScopeDefiningAncestor(currentReference?.Parent);
         }

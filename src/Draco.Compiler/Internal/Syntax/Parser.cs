@@ -273,6 +273,7 @@ internal sealed class Parser
         // Import keyword
         var importKeyword = this.Expect(TokenKind.KeywordImport);
         // Path
+        // TODO: This allows an empty path, do we want to allow that?
         var path = this.ParseSeparatedSyntaxList(
             elementParser: () => this.Expect(TokenKind.Identifier),
             separatorKind: TokenKind.Dot,

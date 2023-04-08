@@ -89,17 +89,19 @@ internal sealed class BinderCache
     private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax)
     {
         Debug.Assert(syntax.Parent is not null);
-        var parent = this.GetBinder(syntax.Parent);
-        var binder = new LocalBinder(parent, syntax);
-        return WrapInImportBinder(binder, syntax);
+        var binder = this.GetBinder(syntax.Parent);
+        binder = WrapInImportBinder(binder, syntax);
+        binder = new LocalBinder(binder, syntax);
+        return binder;
     }
 
     private Binder BuildLocalBinder(BlockExpressionSyntax syntax)
     {
         Debug.Assert(syntax.Parent is not null);
-        var parent = this.GetBinder(syntax.Parent);
-        var binder = new LocalBinder(parent, syntax);
-        return WrapInImportBinder(binder, syntax);
+        var binder = this.GetBinder(syntax.Parent);
+        binder = WrapInImportBinder(binder, syntax);
+        binder = new LocalBinder(binder, syntax);
+        return binder;
     }
 
     private Binder BuildLoopBinder(SyntaxNode syntax)

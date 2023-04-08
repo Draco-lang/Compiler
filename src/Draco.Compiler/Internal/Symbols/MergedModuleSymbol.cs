@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Linq;
 using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Symbols.Metadata;
 
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
-/// Represents a module merged from multiple sources.
+/// Represents a module with a single name, merged from multiple sources.
 /// </summary>
 internal sealed class MergedModuleSymbol : ModuleSymbol
 {
@@ -15,12 +18,16 @@ internal sealed class MergedModuleSymbol : ModuleSymbol
     private ImmutableArray<Symbol>? members;
 
     public override Symbol? ContainingSymbol { get; }
+    public override string Name { get; }
 
     private readonly ImmutableArray<ModuleSymbol> modules;
 
     public MergedModuleSymbol(Symbol? containingSymbol, ImmutableArray<ModuleSymbol> modules)
     {
+        Debug.Assert(modules.All(m => m.Name == modules[0].Name));
+
         this.ContainingSymbol = containingSymbol;
+        this.Name = modules[0].Name;
         this.modules = modules;
     }
 
@@ -28,23 +35,33 @@ internal sealed class MergedModuleSymbol : ModuleSymbol
 
     private ImmutableArray<Symbol> BuildMembers()
     {
-        var result = ImmutableArray.CreateBuilder<Symbol>();
-
-        foreach (var module in this.modules)
+        var members = ImmutableArray.CreateBuilder<Symbol>();
+        var submodules = new List<ModuleSymbol>();
+        foreach (var singleModule in this.modules)
         {
-            // TODO: We need to merge modules eventually
-
-            if (module is MetadataAssemblySymbol metadataModule)
+            // singleModule is a piece of this module, we need to go through each element of that
+            foreach (var member in singleModule.Members)
             {
-                // We skip metadata modules, we only deal with the root namespace
-                result.AddRange(metadataModule.RootNamespace.Members);
-                continue;
+                if (member is ModuleSymbol module)
+                {
+                    submodules.Add(module);
+                }
+                else
+                {
+                    members.Add(member);
+                }
             }
-
-            // Add all members
-            result.AddRange(module.Members);
         }
-
-        return result.ToImmutable();
+        // We need to merge submodules by name
+        var submodulesGrouped = submodules.GroupBy(m => m.Name);
+        // And add them as merged modules
+        foreach (var group in submodulesGrouped)
+        {
+            var groupElements = group.ToImmutableArray();
+            // For single-element groups we skip merging
+            if (groupElements.Length == 1) members.Add(groupElements[0]);
+            else members.Add(new MergedModuleSymbol(this, groupElements));
+        }
+        return members.ToImmutable();
     }
 }

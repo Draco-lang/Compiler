@@ -29,6 +29,10 @@ internal sealed class SingleModuleDeclaration : Declaration
 
     private static Declaration? BuildChild(SyntaxNode node) => node switch
     {
+        // NOTE: We ignore import declarations in the declaration tree, unlike Roslyn
+        // We handle import declarations during constructing the binders
+        // Since we allow for imports in local scopes too, this is the most sensible choice
+        ImportDeclarationSyntax => null,
         VariableDeclarationSyntax var => new GlobalDeclaration(var),
         FunctionDeclarationSyntax func => new FunctionDeclaration(func),
         UnexpectedDeclarationSyntax => null,

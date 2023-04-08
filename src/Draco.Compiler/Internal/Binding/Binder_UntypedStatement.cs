@@ -23,6 +23,8 @@ internal partial class Binder
     {
         // NOTE: The syntax error is already reported
         UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => new UntypedUnexpectedStatement(syntax),
+        // Ignored
+        ImportDeclarationSyntax => UntypedNoOpStatement.Default,
         FunctionDeclarationSyntax func => this.BindFunctionDeclaration(func, constraints, diagnostics),
         DeclarationStatementSyntax decl => this.BindStatement(decl.Declaration, constraints, diagnostics),
         ExpressionStatementSyntax expr => this.BindExpressionStatement(expr, constraints, diagnostics),

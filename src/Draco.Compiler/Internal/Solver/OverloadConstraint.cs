@@ -18,7 +18,7 @@ internal sealed class OverloadConstraint : Constraint
     /// <summary>
     /// The call-site to match.
     /// </summary>
-    public Type CallSite { get; }
+    public TypeSymbol CallSite { get; }
 
     /// <summary>
     /// The promise of this constraint.
@@ -30,7 +30,7 @@ internal sealed class OverloadConstraint : Constraint
     /// </summary>
     public string FunctionName { get; }
 
-    public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, Type callSite)
+    public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, TypeSymbol callSite)
     {
         this.Candidates = candidates.ToList();
         this.CallSite = callSite;

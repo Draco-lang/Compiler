@@ -7,7 +7,6 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -42,9 +41,9 @@ internal sealed partial class ConstraintSolver
     // The list of raw constraints
     private readonly List<Constraint> constraints = new();
     // Type variable substitutions
-    private readonly Dictionary<TypeVariable, Type> substitutions = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new(ReferenceEqualityComparer.Instance);
     // The declared/inferred types of locals
-    private readonly Dictionary<UntypedLocalSymbol, Type> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<UntypedLocalSymbol, TypeSymbol> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
     // All locals that have a typed variant constructed
     private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
 
@@ -91,7 +90,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="local">The symbol of the untyped local.</param>
     /// <param name="type">The optional declared type for the local.</param>
     /// <returns>The type the local was declared with.</returns>
-    public Type AddLocal(UntypedLocalSymbol local, Type? type)
+    public TypeSymbol AddLocal(UntypedLocalSymbol local, TypeSymbol? type)
     {
         var inferredType = type ?? this.NextTypeVariable;
         this.inferredLocalTypes.Add(local, inferredType);
@@ -103,7 +102,7 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="local">The local to get the type of.</param>
     /// <returns>The type of the local inferred so far.</returns>
-    public Type GetLocal(UntypedLocalSymbol local) => this.Unwrap(this.inferredLocalTypes[local]);
+    public TypeSymbol GetLocal(UntypedLocalSymbol local) => this.Unwrap(this.inferredLocalTypes[local]);
 
     /// <summary>
     /// Retrieves the typed variant of an untyped local. In case this is the first time the local is
@@ -138,7 +137,7 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="type">The type to unwrap.</param>
     /// <returns>The inferred type.</returns>
-    public Type Unwrap(Type type)
+    public TypeSymbol Unwrap(TypeSymbol type)
     {
         // If not a type-variable, we consider it substituted
         if (type is not TypeVariable typeVar) return type;
@@ -158,7 +157,7 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="typeVar">The type-variable to substitute.</param>
     /// <param name="type">The type to subsitute <paramref name="typeVar"/> for.</param>
-    private void Substitute(TypeVariable typeVar, Type type) =>
+    private void Substitute(TypeVariable typeVar, TypeSymbol type) =>
         this.substitutions.Add(typeVar, type);
 
     /// <summary>
@@ -167,7 +166,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
     /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<Type> SameType(Type first, Type second)
+    public ConstraintPromise<TypeSymbol> SameType(TypeSymbol first, TypeSymbol second)
     {
         var constraint = new SameTypeConstraint(first, second);
         this.constraints.Add(constraint);
@@ -180,7 +179,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="targetType">The type being assigned to.</param>
     /// <param name="assignedType">The type assigned.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<Type> Assignable(Type targetType, Type assignedType) =>
+    public ConstraintPromise<TypeSymbol> Assignable(TypeSymbol targetType, TypeSymbol assignedType) =>
         // TODO: Hack, this is temporary until we have other constraints
         this.SameType(targetType, assignedType);
 
@@ -190,7 +189,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="first">The first type to search a common type for.</param>
     /// <param name="second">The second type to search a common type for.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<Type> CommonType(Type first, Type second) =>
+    public ConstraintPromise<TypeSymbol> CommonType(TypeSymbol first, TypeSymbol second) =>
         // TODO: Hack, this is temporary until we have other constraints
         this.SameType(first, second);
 
@@ -200,7 +199,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="functionType">The function type being called.</param>
     /// <param name="argTypes">The argument types that the function is called with.</param>
     /// <returns>The promise for the constraint added, containing the return type.</returns>
-    public ConstraintPromise<Type> Call(Type functionType, IEnumerable<Type> argTypes)
+    public ConstraintPromise<Type> Call(TypeSymbol functionType, IEnumerable<TypeSymbol> argTypes)
     {
         // We can save on type variables here
         var returnType = functionType is FunctionType f ? f.ReturnType : this.NextTypeVariable;
@@ -218,7 +217,7 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="functions">The list of functions to choose an overload from.</param>
     /// <returns>The promise for the constraint added along with the call-site type.</returns>
-    public (ConstraintPromise<FunctionSymbol> Symbol, Type CallSite) Overload(IEnumerable<FunctionSymbol> functions)
+    public (ConstraintPromise<FunctionSymbol> Symbol, TypeSymbol CallSite) Overload(IEnumerable<FunctionSymbol> functions)
     {
         var callSite = this.NextTypeVariable;
         var constraint = new OverloadConstraint(functions, callSite);
@@ -231,7 +230,7 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="symbol">The symbol that is either a function declaration or an overload.</param>
     /// <returns>The promise for the constraint added along with the call-site type.</returns>
-    public (ConstraintPromise<FunctionSymbol> Symbol, Type CallSite) Overload(Symbol symbol) => symbol switch
+    public (ConstraintPromise<FunctionSymbol> Symbol, TypeSymbol CallSite) Overload(Symbol symbol) => symbol switch
     {
         FunctionSymbol function => (ConstraintPromise.FromResult(function), function.Type),
         OverloadSymbol overload => this.Overload(overload.Functions),

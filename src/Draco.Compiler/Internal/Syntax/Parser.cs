@@ -142,6 +142,17 @@ internal sealed class Parser
     };
 
     /// <summary>
+    /// The list of all tokens that can start a declaration.
+    /// </summary>
+    private static readonly TokenKind[] declarationStarters = new[]
+    {
+        TokenKind.KeywordImport,
+        TokenKind.KeywordFunc,
+        TokenKind.KeywordVar,
+        TokenKind.KeywordVal,
+    };
+
+    /// <summary>
     /// The list of all tokens that can start an expression.
     /// </summary>
     private static readonly TokenKind[] expressionStarters = new[]
@@ -153,6 +164,7 @@ internal sealed class Parser
         TokenKind.LineStringStart,
         TokenKind.MultiLineStringStart,
         TokenKind.KeywordFalse,
+        // NOTE: This is for later, when we decide if the lambda syntax should be func(...) = ...
         TokenKind.KeywordFunc,
         TokenKind.KeywordGoto,
         TokenKind.KeywordIf,
@@ -197,6 +209,9 @@ internal sealed class Parser
     {
         switch (this.Peek())
         {
+        case TokenKind.KeywordImport:
+            return this.ParseImportDeclaration();
+
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration();
 
@@ -260,6 +275,24 @@ internal sealed class Parser
             return new ExpressionStatementSyntax(expr, semicolon);
         }
         }
+    }
+
+    /// <summary>
+    /// Parses an <see cref="ImportDeclarationSyntax"/>.
+    /// </summary>
+    /// <returns>The parsed <see cref="ImportDeclarationSyntax"/>.</returns>
+    private ImportDeclarationSyntax ParseImportDeclaration()
+    {
+        // Import keyword
+        var importKeyword = this.Expect(TokenKind.KeywordImport);
+        // Path
+        var path = this.ParseSeparatedSyntaxList(
+            elementParser: () => this.Expect(TokenKind.Identifier),
+            separatorKind: TokenKind.Dot,
+            stopKind: TokenKind.Semicolon);
+        // Ending semicolon
+        var semicolon = this.Expect(TokenKind.Semicolon);
+        return new ImportDeclarationSyntax(importKeyword, path, semicolon);
     }
 
     /// <summary>

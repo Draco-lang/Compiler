@@ -63,6 +63,14 @@
         The imported path.
       </Documentation>
     </Field>
+
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon closing the import declaration.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
   </Node>
 
   <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">

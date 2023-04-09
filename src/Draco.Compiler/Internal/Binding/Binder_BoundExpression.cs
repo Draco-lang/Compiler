@@ -73,7 +73,7 @@ internal partial class Binder
         new BoundGlobalExpression(global.Syntax, global.Global);
 
     private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundFunctionExpression(func.Syntax, (FunctionSymbol)(func.Function.Result));
+        new BoundFunctionExpression(func.Syntax, func.Function.Result);
 
     private BoundExpression TypeReferenceErrorExpression(UntypedReferenceErrorExpression err, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundReferenceErrorExpression(err.Syntax, err.Symbol);
@@ -130,7 +130,7 @@ internal partial class Binder
         var typedLeft = this.TypeLvalue(assignment.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
         var compoundOperator = assignment.CompoundOperator?.Result;
-        return new BoundAssignmentExpression(assignment.Syntax, (FunctionSymbol?)compoundOperator, typedLeft, typedRight);
+        return new BoundAssignmentExpression(assignment.Syntax, compoundOperator, typedLeft, typedRight);
     }
 
     private BoundExpression TypeUnaryExpression(UntypedUnaryExpression ury, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -138,7 +138,7 @@ internal partial class Binder
         var typedOperand = this.TypeExpression(ury.Operand, constraints, diagnostics);
         var unaryOperator = ury.Operator.Result;
         var resultType = constraints.Unwrap(ury.TypeRequired);
-        return new BoundUnaryExpression(ury.Syntax, (FunctionSymbol)unaryOperator, typedOperand, resultType);
+        return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand, resultType);
     }
 
     private BoundExpression TypeBinaryExpression(UntypedBinaryExpression bin, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -147,7 +147,7 @@ internal partial class Binder
         var typedRight = this.TypeExpression(bin.Right, constraints, diagnostics);
         var binaryOperator = bin.Operator.Result;
         var resultType = constraints.Unwrap(bin.TypeRequired);
-        return new BoundBinaryExpression(bin.Syntax, (FunctionSymbol)binaryOperator, typedLeft, typedRight, resultType);
+        return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight, resultType);
     }
 
     private BoundExpression TypeRelationalExpression(UntypedRelationalExpression rel, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -163,7 +163,7 @@ internal partial class Binder
     {
         var next = this.TypeExpression(cmp.Next, constraints, diagnostics);
         var comparisonOperator = cmp.Operator.Result;
-        return new BoundComparison(cmp.Syntax, (FunctionSymbol)comparisonOperator, next);
+        return new BoundComparison(cmp.Syntax, comparisonOperator, next);
     }
 
     private BoundExpression TypeAndExpression(UntypedAndExpression and, ConstraintSolver constraints, DiagnosticBag diagnostics)

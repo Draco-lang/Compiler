@@ -37,7 +37,7 @@ internal sealed partial class ConstraintSolver
         for (var i = 0; i < constraint.Candidates.Count;)
         {
             var candidate = constraint.Candidates[i];
-            if (!this.Matches(((ITypedSymbol)candidate).Type, constraint.CallSite))
+            if (!this.Matches(candidate.Type, constraint.CallSite))
             {
                 constraint.Candidates.RemoveAt(i);
                 advanced = true;
@@ -65,7 +65,7 @@ internal sealed partial class ConstraintSolver
         // Ok solve
         if (constraint.Candidates.Count == 1)
         {
-            this.Unify(((ITypedSymbol)constraint.Candidates[0]).Type, constraint.CallSite);
+            this.Unify(constraint.Candidates[0].Type, constraint.CallSite);
             constraint.Promise.Resolve(constraint.Candidates[0]);
             return SolveState.Finished;
         }
@@ -100,7 +100,10 @@ internal sealed partial class ConstraintSolver
         else
         {
             // Multiple, overloading
-            var overload = new OverloadConstraint(membersWithName, constraint.MemberType, constraint.Promise);
+            var methodsWithName = membersWithName.Cast<FunctionSymbol>();
+            // We carry on this same promise
+            var promise = constraint.Promise.Map(s => (FunctionSymbol)s);
+            var overload = new OverloadConstraint(methodsWithName, constraint.MemberType, promise);
             this.constraints.Add(overload);
         }
         return SolveState.Finished;

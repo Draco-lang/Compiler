@@ -86,13 +86,13 @@
   </Node>
 
   <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
-    <Field Name="Operator" Type="ConstraintPromise&lt;Symbol&gt;" />
+    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Operand" Type="UntypedExpression" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedBinaryExpression" Base="UntypedExpression">
-    <Field Name="Operator" Type="ConstraintPromise&lt;Symbol&gt;" />
+    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
@@ -109,7 +109,7 @@
   </Node>
 
   <Node Name="UntypedAssignmentExpression" Base="UntypedExpression">
-    <Field Name="CompoundOperator" Type="ConstraintPromise&lt;Symbol&gt;?" />
+    <Field Name="CompoundOperator" Type="ConstraintPromise&lt;FunctionSymbol&gt;?" />
     <Field Name="Left" Type="UntypedLvalue" />
     <Field Name="Right" Type="UntypedExpression" />
   </Node>
@@ -139,7 +139,7 @@
   </Node>
 
   <Node Name="UntypedFunctionExpression" Base="UntypedExpression">
-    <Field Name="Function" Type="ConstraintPromise&lt;Symbol&gt;" />
+    <Field Name="Function" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
@@ -161,7 +161,7 @@
   </Node>
 
   <Node Name="UntypedComparison" Base="UntypedNode">
-    <Field Name="Operator" Type="ConstraintPromise&lt;Symbol&gt;" />
+    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Next" Type="UntypedExpression" />
   </Node>
 

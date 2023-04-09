@@ -13,7 +13,7 @@ internal sealed class OverloadConstraint : Constraint
     /// <summary>
     /// The candidate functions to search among.
     /// </summary>
-    public IList<Symbol> Candidates { get; }
+    public IList<FunctionSymbol> Candidates { get; }
 
     /// <summary>
     /// The call-site to match.
@@ -23,26 +23,26 @@ internal sealed class OverloadConstraint : Constraint
     /// <summary>
     /// The promise of this constraint.
     /// </summary>
-    public ConstraintPromise<Symbol> Promise { get; }
+    public ConstraintPromise<FunctionSymbol> Promise { get; }
 
     /// <summary>
     /// The name of the overloaded set of functions.
     /// </summary>
     public string FunctionName { get; }
 
-    public OverloadConstraint(IList<Symbol> candidates, TypeSymbol callSite, ConstraintPromise<Symbol> promise)
+    public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, TypeSymbol callSite, ConstraintPromise<FunctionSymbol> promise)
     {
-        this.Candidates = candidates;
+        this.Candidates = candidates.ToList();
         this.CallSite = callSite;
         this.Promise = promise;
         this.FunctionName = this.Candidates[0].Name;
     }
 
-    public OverloadConstraint(IList<Symbol> candidates, TypeSymbol callSite)
+    public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, TypeSymbol callSite)
     {
-        this.Candidates = candidates;
+        this.Candidates = candidates.ToList();
         this.CallSite = callSite;
-        this.Promise = ConstraintPromise.Create<Symbol>(this);
+        this.Promise = ConstraintPromise.Create<FunctionSymbol>(this);
         this.FunctionName = this.Candidates[0].Name;
     }
 }

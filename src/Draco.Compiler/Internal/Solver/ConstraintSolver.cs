@@ -224,10 +224,10 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="functions">The list of functions to choose an overload from.</param>
     /// <returns>The promise for the constraint added along with the call-site type.</returns>
-    public (ConstraintPromise<Symbol> Symbol, TypeSymbol CallSite) Overload(IEnumerable<FunctionSymbol> functions)
+    public (ConstraintPromise<FunctionSymbol> Symbol, TypeSymbol CallSite) Overload(IEnumerable<FunctionSymbol> functions)
     {
         var callSite = this.NextTypeVariable;
-        var constraint = new OverloadConstraint(functions.Cast<Symbol>().ToList(), callSite);
+        var constraint = new OverloadConstraint(functions, callSite);
         this.constraints.Add(constraint);
         return (constraint.Promise, constraint.CallSite);
     }
@@ -237,9 +237,9 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="symbol">The symbol that is either a function declaration or an overload.</param>
     /// <returns>The promise for the constraint added along with the call-site type.</returns>
-    public (ConstraintPromise<Symbol> Symbol, TypeSymbol CallSite) Overload(Symbol symbol) => symbol switch
+    public (ConstraintPromise<FunctionSymbol> Symbol, TypeSymbol CallSite) Overload(Symbol symbol) => symbol switch
     {
-        FunctionSymbol function => (ConstraintPromise.FromResult(symbol), function.Type),
+        FunctionSymbol function => (ConstraintPromise.FromResult(function), function.Type),
         OverloadSymbol overload => this.Overload(overload.Functions),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };

@@ -70,6 +70,11 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     /// </summary>
     public virtual bool IsMember => false;
 
+    /// <summary>
+    /// If true, this is a virtual function.
+    /// </summary>
+    public virtual bool IsVirtual => false;
+
     public override IEnumerable<Symbol> Members => this.Parameters;
 
     public TypeSymbol Type => this.type ??= this.BuildType();

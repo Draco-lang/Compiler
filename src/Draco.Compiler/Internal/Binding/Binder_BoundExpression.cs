@@ -118,12 +118,23 @@ internal partial class Binder
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
-        var typedArgs = call.Arguments
-            .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
-            .ToImmutableArray();
-        var resultType = constraints.Unwrap(call.TypeRequired);
-        return new BoundCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
+        var calledMember = (call.Method as UntypedMemberExpression)?.Member.Result as FunctionSymbol;
+        if (calledMember is not null)
+        {
+            // This is a member function call
+            // TODO
+            throw new NotImplementedException();
+        }
+        else
+        {
+            // This is a non-member function call
+            var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
+            var typedArgs = call.Arguments
+                .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+                .ToImmutableArray();
+            var resultType = constraints.Unwrap(call.TypeRequired);
+            return new BoundCallExpression(call.Syntax, typedFunction, null, typedArgs, resultType);
+        }
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -186,6 +197,7 @@ internal partial class Binder
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var member = mem.Member.Result;
         var resultType = constraints.Unwrap(mem.TypeRequired);
+
         // TODO
         throw new NotImplementedException();
     }

@@ -102,11 +102,9 @@ internal sealed partial class ConstraintSolver
             // Multiple, overloading
             // TODO: I have a feeling that we should add yet another promise here
             // instead of returning an overload symbol?
-            var methodsWithName = membersWithName
-                .Cast<FunctionSymbol>()
-                .ToImmutableArray();
-            var overload = new OverloadSymbol(methodsWithName);
-            constraint.Promise.Resolve(overload);
+            var methodsWithName = membersWithName.Cast<FunctionSymbol>();
+            // TODO
+            throw new System.NotImplementedException();
         }
         return SolveState.Finished;
     }

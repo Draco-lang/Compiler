@@ -48,6 +48,7 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
             return UnknownType;
         }
 
+        // TODO: Ask Reflectronic about this... way
         // We try to look up the symbol by its full name from the root
         var @namespace = reader.GetString(definition.Namespace);
         var name = reader.GetString(definition.Name);

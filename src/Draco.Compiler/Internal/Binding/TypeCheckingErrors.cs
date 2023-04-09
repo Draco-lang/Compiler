@@ -45,5 +45,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "type inference could not complete in {0}",
         code: Code(4));
+
+    /// <summary>
+    /// A member was not found in a type.
+    /// </summary>
+    public static readonly DiagnosticTemplate MemberNotFound = DiagnosticTemplate.Create(
+        title: "member not found",
+        severity: DiagnosticSeverity.Error,
+        format: "member {0} could not be found in type {1}",
+        code: Code(5));
 }
 

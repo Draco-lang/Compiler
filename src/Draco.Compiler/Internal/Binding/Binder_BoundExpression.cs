@@ -122,8 +122,14 @@ internal partial class Binder
         if (calledMember is not null)
         {
             // This is a member function call
-            // TODO
-            throw new NotImplementedException();
+            var memberAccess = (UntypedMemberExpression)call.Method;
+            var receiver = this.TypeExpression(memberAccess.Accessed, constraints, diagnostics);
+            var typedArgs = call.Arguments
+                .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+                .ToImmutableArray();
+            var calledFunc = new BoundFunctionExpression(memberAccess.Syntax, calledMember);
+            var resultType = constraints.Unwrap(call.TypeRequired);
+            return new BoundCallExpression(call.Syntax, calledFunc, receiver, typedArgs, resultType);
         }
         else
         {

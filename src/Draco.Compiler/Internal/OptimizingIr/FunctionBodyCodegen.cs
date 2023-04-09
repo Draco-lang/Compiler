@@ -144,11 +144,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
         var func = this.Compile(node.Method);
-        var args = node.Arguments.Select(this.Compile).ToList();
-
-        var result = this.DefineRegister(node.TypeRequired);
-        this.Write(Call(result, func, args));
-        return result;
+        if (node.Receiver is null)
+        {
+            var args = node.Arguments.Select(this.Compile).ToList();
+            var result = this.DefineRegister(node.TypeRequired);
+            this.Write(Call(result, func, args));
+            return result;
+        }
+        else
+        {
+            var receiver = this.Compile(node.Receiver);
+            var args = node.Arguments.Select(this.Compile).ToList();
+            var result = this.DefineRegister(node.TypeRequired);
+            this.Write(MemberCall(result, func, receiver, args));
+            return result;
+        }
     }
 
     public override IOperand VisitGotoExpression(BoundGotoExpression node)

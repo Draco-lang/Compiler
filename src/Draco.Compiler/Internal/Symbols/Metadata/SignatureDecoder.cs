@@ -63,7 +63,7 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
         // TODO
-        throw new System.NotImplementedException();
+        return UnknownType;
     }
     public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Unit genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => UnknownType;
 }

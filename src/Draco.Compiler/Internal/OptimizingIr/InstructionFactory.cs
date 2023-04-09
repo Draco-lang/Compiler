@@ -19,6 +19,8 @@ internal static class InstructionFactory
         new(condition, then, @else);
     public static CallInstruction Call(Register target, IOperand proc, IEnumerable<IOperand> args) =>
         new(target, proc, args);
+    public static MemberCallInstruction MemberCall(Register target, IOperand proc, IOperand receiver, IEnumerable<IOperand> args) =>
+        new(target, proc, receiver, args);
     public static ArithmeticInstruction Arithmetic(Register target, ArithmeticOp op, IOperand left, IOperand right) =>
         new(target, op, left, right);
     public static ArithmeticInstruction Add(Register target, IOperand left, IOperand right) =>

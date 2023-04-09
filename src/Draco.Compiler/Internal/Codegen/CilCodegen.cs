@@ -246,6 +246,29 @@ internal sealed class CilCodegen
             this.StoreLocal(call.Target);
             break;
         }
+        case MemberCallInstruction mcall:
+        {
+            // Receiver
+            this.EncodePush(mcall.Receiver);
+            // Arguments
+            foreach (var arg in mcall.Arguments) this.EncodePush(arg);
+            // Determine what we are calling
+            if (mcall.Procedure is MetadataReference metadataRef)
+            {
+                var symbol = (FunctionSymbol)metadataRef.Symbol;
+                var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+                this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
+                this.InstructionEncoder.Token(handle);
+            }
+            else
+            {
+                // TODO
+                throw new System.NotImplementedException();
+            }
+            // Store result
+            this.StoreLocal(mcall.Target);
+            break;
+        }
         default:
             throw new System.ArgumentOutOfRangeException(nameof(instruction));
         }

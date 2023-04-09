@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -12,6 +14,7 @@ internal sealed partial class ConstraintSolver
     {
         SameTypeConstraint c => this.Solve(diagnostics, c),
         OverloadConstraint c => this.Solve(diagnostics, c),
+        MemberConstraint c => this.Solve(diagnostics, c),
         _ => throw new System.ArgumentOutOfRangeException(nameof(constraint)),
     };
 
@@ -70,6 +73,21 @@ internal sealed partial class ConstraintSolver
         return advanced ? SolveState.Progressing : SolveState.Stale;
     }
 
+    private SolveState Solve(DiagnosticBag diagnostics, MemberConstraint constraint)
+    {
+        var accessed = this.Unwrap(constraint.Accessed);
+        // We can't look up the members of type variables
+        if (accessed.IsTypeVariable) return SolveState.Stale;
+
+        // Not a type variable, we can look into members
+        var membersWithName = accessed.Members
+            .Where(m => m.Name == constraint.MemberName)
+            .ToImmutableArray();
+
+        // TODO
+        throw new System.NotImplementedException();
+    }
+
     private void FailSilently(Constraint constraint)
     {
         switch (constraint)
@@ -77,6 +95,8 @@ internal sealed partial class ConstraintSolver
         case OverloadConstraint overload:
             this.FailSilently(overload);
             break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(constraint));
         }
     }
 

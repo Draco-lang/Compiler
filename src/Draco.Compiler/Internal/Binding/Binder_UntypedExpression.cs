@@ -346,6 +346,7 @@ internal partial class Binder
         var memberName = syntax.Member.Text;
         if (left is UntypedModuleExpression moduleExpr)
         {
+            // Module member access
             var module = moduleExpr.Module;
             var members = module.Members
                 .Where(m => m.Name == memberName)
@@ -357,6 +358,11 @@ internal partial class Binder
         }
         else
         {
+            // Value, add constraint
+            var promise = constraints
+                .Member(left.TypeRequired, memberName)
+                .ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Location));
             // TODO
             throw new NotImplementedException();
         }

@@ -243,4 +243,17 @@ internal sealed partial class ConstraintSolver
         OverloadSymbol overload => this.Overload(overload.Functions),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
+
+    /// <summary>
+    /// Adds a member-constraint to the solver.
+    /// </summary>
+    /// <param name="accessedType">The accessed object type.</param>
+    /// <param name="memberName">The accessed member name.</param>
+    /// <returns>The promise of the accessed member symbol.</returns>
+    public ConstraintPromise<Symbol> Member(TypeSymbol accessedType, string memberName)
+    {
+        var constraint = new MemberConstraint(accessedType, memberName);
+        this.constraints.Add(constraint);
+        return constraint.Promise;
+    }
 }

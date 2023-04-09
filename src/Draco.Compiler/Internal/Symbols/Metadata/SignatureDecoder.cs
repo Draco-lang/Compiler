@@ -10,13 +10,14 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit>
 {
-    public static SignatureDecoder Instance { get; } = new();
-
     // TODO: We return a special error type for now to swallow errors
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>");
 
-    private SignatureDecoder()
+    private readonly ModuleSymbol rootModule;
+
+    public SignatureDecoder(ModuleSymbol rootModule)
     {
+        this.rootModule = rootModule;
     }
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) => UnknownType;

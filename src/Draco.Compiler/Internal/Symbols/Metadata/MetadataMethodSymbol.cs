@@ -60,7 +60,9 @@ internal class MetadataMethodSymbol : FunctionSymbol
     private void Build()
     {
         // Decode signature
-        var signature = this.methodDefinition.DecodeSignature(SignatureDecoder.Instance, default);
+        var rootModule = this.RootModule ?? throw new InvalidOperationException();
+        var decoder = new SignatureDecoder(rootModule);
+        var signature = this.methodDefinition.DecodeSignature(decoder, default);
 
         // Build parameters
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();

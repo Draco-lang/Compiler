@@ -37,7 +37,7 @@ internal abstract partial class Symbol
     /// <summary>
     /// The root module of this hierarchy.
     /// </summary>
-    public ModuleSymbol RootModule => this.RootSymbol as ModuleSymbol;
+    public ModuleSymbol? RootModule => this.RootSymbol as ModuleSymbol;
 
     /// <summary>
     /// True, if this symbol represents some error.

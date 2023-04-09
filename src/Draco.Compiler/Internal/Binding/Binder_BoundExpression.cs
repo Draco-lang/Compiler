@@ -185,6 +185,7 @@ internal partial class Binder
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var member = mem.Member.Result;
+        var resultType = constraints.Unwrap(mem.TypeRequired);
         // TODO
         throw new NotImplementedException();
     }

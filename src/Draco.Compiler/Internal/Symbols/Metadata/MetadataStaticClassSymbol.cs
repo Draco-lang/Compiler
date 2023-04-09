@@ -43,7 +43,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
         // TODO: static properties
 
         // Methods
-        foreach (var methodHandle in this.metadataReader.MethodDefinitions)
+        foreach (var methodHandle in this.typeDefinition.GetMethods())
         {
             var methodDef = this.metadataReader.GetMethodDefinition(methodHandle);
             // Skip methods with special name

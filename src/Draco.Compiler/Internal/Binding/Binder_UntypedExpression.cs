@@ -55,7 +55,24 @@ internal partial class Binder
 
     private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var baseType = this.GetBaseForLiteral(syntax.Literal.Value);
+        var baseType = syntax.Literal.Value switch
+        {
+            sbyte => IntrinsicTypes.IntegralType,
+            short => IntrinsicTypes.IntegralType,
+            int => IntrinsicTypes.IntegralType,
+            long => IntrinsicTypes.IntegralType,
+
+            byte => IntrinsicTypes.IntegralType,
+            ushort => IntrinsicTypes.IntegralType,
+            uint => IntrinsicTypes.IntegralType,
+            ulong => IntrinsicTypes.IntegralType,
+
+            float => IntrinsicTypes.FloatingPointType,
+            double => IntrinsicTypes.FloatingPointType,
+
+            _ => null
+        };
+
         if (baseType is not null)
         {
             var typeVar = constraints.NextTypeVariable;
@@ -65,24 +82,6 @@ internal partial class Binder
 
         return new UntypedLiteralExpression(syntax, syntax.Literal.Value, null);
     }
-
-    private Types.Type? GetBaseForLiteral(object? literal) => literal switch
-    {
-        sbyte => IntrinsicTypes.IntegralType,
-        short => IntrinsicTypes.IntegralType,
-        int => IntrinsicTypes.IntegralType,
-        long => IntrinsicTypes.IntegralType,
-
-        byte => IntrinsicTypes.IntegralType,
-        ushort => IntrinsicTypes.IntegralType,
-        uint => IntrinsicTypes.IntegralType,
-        ulong => IntrinsicTypes.IntegralType,
-
-        float => IntrinsicTypes.FloatingPointType,
-        double => IntrinsicTypes.FloatingPointType,
-
-        _ => null
-    };
 
     private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new UntypedStringExpression(syntax, syntax.Parts.Select(p => this.BindStringPart(p, constraints, diagnostics)).ToImmutableArray());

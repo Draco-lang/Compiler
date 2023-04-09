@@ -53,7 +53,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             // Skip non-static methods
             // TODO: What's Invoke in System.Console?
             if (!methodDef.Attributes.HasFlag(MethodAttributes.Static)) continue;
-            var methodSym = new MetadataStaticMethodSymbol(
+            var methodSym = new MetadataMethodSymbol(
                 containingSymbol: this,
                 methodDefinition: methodDef,
                 metadataReader: this.metadataReader);

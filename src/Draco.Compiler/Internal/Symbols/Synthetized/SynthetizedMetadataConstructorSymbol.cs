@@ -16,17 +16,14 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class SynthetizedMetadataConstructorSymbol : MetadataMethodSymbol
 {
-    public override TypeSymbol ReturnType => this.type;
-    public override Symbol? ContainingSymbol => this.type;
-    public override string Name => this.type.Name;
-
-    private readonly MetadataTypeSymbol type;
+    public override TypeSymbol ReturnType => (TypeSymbol)this.ContainingSymbol;
+    public override string Name => this.ContainingSymbol.Name;
 
     public SynthetizedMetadataConstructorSymbol(
-        MetadataTypeSymbol type,
+        MetadataTypeSymbol containingType,
         MethodDefinition methodDefinition,
-        MetadataReader metadataReader) : base(methodDefinition, metadataReader)
+        MetadataReader metadataReader)
+        : base(containingType, methodDefinition, metadataReader)
     {
-        this.type = type;
     }
 }

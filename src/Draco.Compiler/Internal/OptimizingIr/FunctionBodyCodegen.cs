@@ -332,8 +332,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => node.Function switch
     {
         SourceFunctionSymbol func => this.DefineProcedure(func),
-        MetadataStaticMethodSymbol m => new MetadataReference(m),
-        SynthetizedMetadataConstructorSymbol ctor => new MetadataReference(ctor),
+        MetadataMethodSymbol m => new MetadataReference(m),
         _ => throw new System.ArgumentOutOfRangeException(nameof(node)),
     };
 

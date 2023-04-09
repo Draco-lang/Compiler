@@ -52,8 +52,12 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
             if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
             // Skip special name
             if (method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
-            // TODO
-            throw new NotImplementedException();
+            // Add it
+            var methodSymbol = new MetadataMethodSymbol(
+                containingSymbol: this,
+                methodDefinition: method,
+                metadataReader: this.metadataReader);
+            result.Add(methodSymbol);
         }
 
         // Done

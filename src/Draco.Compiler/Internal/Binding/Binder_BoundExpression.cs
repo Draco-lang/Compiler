@@ -41,6 +41,7 @@ internal partial class Binder
         UntypedRelationalExpression rel => this.TypeRelationalExpression(rel, constraints, diagnostics),
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
+        UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
 
@@ -178,5 +179,13 @@ internal partial class Binder
         var left = this.TypeExpression(or.Left, constraints, diagnostics);
         var right = this.TypeExpression(or.Right, constraints, diagnostics);
         return new BoundOrExpression(or.Syntax, left, right);
+    }
+
+    private BoundExpression TypeMemberExpression(UntypedMemberExpression mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
+        var member = mem.Member.Result;
+        // TODO
+        throw new NotImplementedException();
     }
 }

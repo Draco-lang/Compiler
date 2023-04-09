@@ -90,11 +90,25 @@ internal sealed partial class ConstraintSolver
             // TODO
             throw new System.NotImplementedException();
         }
+        else if (membersWithName.Length == 1)
+        {
+            // One member, just resolve to that
+            var result = membersWithName[0];
+            this.Unify(constraint.MemberType, ((ITypedSymbol)result).Type);
+            constraint.Promise.Resolve(result);
+        }
         else
         {
-            // TODO
-            throw new System.NotImplementedException();
+            // Multiple, overloading
+            // TODO: I have a feeling that we should add yet another promise here
+            // instead of returning an overload symbol?
+            var methodsWithName = membersWithName
+                .Cast<FunctionSymbol>()
+                .ToImmutableArray();
+            var overload = new OverloadSymbol(methodsWithName);
+            constraint.Promise.Resolve(overload);
         }
+        return SolveState.Finished;
     }
 
     private void FailSilently(Constraint constraint)

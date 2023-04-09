@@ -106,7 +106,7 @@ internal sealed partial class ConstraintSolver
 
         if (type is TypeVariable variable)
         {
-            // Check if the TypeVariable is in any SameType or CommonBase constraints, if so this constraint can't run yet
+            // Check if the TypeVariable is in any other constraints that fulfill certain rules, if so this constraint can't run yet
 
             foreach (var con in this.constraints)
             {
@@ -125,25 +125,22 @@ internal sealed partial class ConstraintSolver
         else
         {
             // If this TypeVariable was already substituted just return
-            if (type is not TypeVariable)
+            if (type is BuiltinType builtin)
             {
-                if (type is BuiltinType builtin)
+                var hasBase = false;
+                foreach (var builtinBase in builtin.Bases)
                 {
-                    var hasBase = false;
-                    foreach (var builtinBase in builtin.Bases)
-                    {
-                        if (builtinBase == constraint.BaseType) hasBase = true;
-                    }
-                    if (hasBase) return SolveState.Finished;
+                    if (builtinBase == constraint.BaseType) hasBase = true;
                 }
-                else if (type is NeverType || type is ErrorType) return SolveState.Finished;
-                var diagnostic = constraint.Diagnostic
-                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                    .WithFormatArgs(this.Unwrap(type), this.Unwrap(GetInferedType(baseType)))
-                    .Build();
-                diagnostics.Add(diagnostic);
-                return SolveState.Finished;
+                if (hasBase) return SolveState.Finished;
             }
+            else if (type is NeverType || type is ErrorType) return SolveState.Finished;
+            var diagnostic = constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(this.Unwrap(type), this.Unwrap(GetInferedType(baseType)))
+                .Build();
+            diagnostics.Add(diagnostic);
+            return SolveState.Finished;
         }
 
         // If it wasn't substituted yet, substitute it for the default type for given BaseType

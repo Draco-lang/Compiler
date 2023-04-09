@@ -6,6 +6,9 @@ using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
+/// <summary>
+/// Checks if all numeric variables have values that are in the range of given type.
+/// </summary>
 internal sealed class VariablesAreAssignedCorrectType : BoundTreeVisitor
 {
     public static void Analyze(BoundNode node, DiagnosticBag diagnostics)
@@ -28,13 +31,13 @@ internal sealed class VariablesAreAssignedCorrectType : BoundTreeVisitor
         {
             if (baseType == IntrinsicTypes.IntegralType || baseType == IntrinsicTypes.FloatingPointType)
             {
-                this.CheckIfValueIsCorrectType(node.Type, node.Value, node.Syntax);
+                this.CheckIfValueIsInRangeOfType(node.Type, node.Value, node.Syntax);
                 return;
             }
         }
     }
 
-    private void CheckIfValueIsCorrectType(Type type, object? value, SyntaxNode? node)
+    private void CheckIfValueIsInRangeOfType(Type type, object? value, SyntaxNode? node)
     {
         try
         {

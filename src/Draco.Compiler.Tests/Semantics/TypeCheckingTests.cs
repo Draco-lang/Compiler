@@ -79,7 +79,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void LocalVariablesExplicitlyTypedComplexExpressionNotInt32()
+    public void LocalVariablesExplicitlyTypedComplexExpressionInt16()
     {
         // func main() {
         //     var x: int16 = 0;

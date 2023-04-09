@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// Represents a constraint that enforces two types to have the same base type.
 /// </summary>
-internal class CommonBaseConstraint : Constraint
+internal sealed class CommonBaseConstraint : Constraint
 {
     /// <summary>
     /// The first type that must have the same base as <see cref="Second"/>.

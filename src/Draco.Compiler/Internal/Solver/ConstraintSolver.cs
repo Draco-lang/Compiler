@@ -190,7 +190,8 @@ internal sealed partial class ConstraintSolver
     /// <summary>
     /// Adds a common-type constraint to the solver.
     /// </summary>
-    /// <param name="types">The types to check for common base.</param>
+    /// <param name="first">The first type to search a common type for.</param>
+    /// <param name="second">The second type to search a common type for.</param>
     /// <returns>The promise for the constraint added.</returns>
     public ConstraintPromise<Type> CommonType(Type first, Type second)
     {
@@ -203,6 +204,7 @@ internal sealed partial class ConstraintSolver
     /// Adds a base-type constraint to the solver.
     /// </summary>
     /// <param name="variable">The type variable to infer.</param>
+    /// <param name="baseType">The base type of the infered variable.</param>
     /// <returns>The promise for the constraint added.</returns>
     public ConstraintPromise<TypeVariable> BaseType(TypeVariable variable, Type baseType)
     {

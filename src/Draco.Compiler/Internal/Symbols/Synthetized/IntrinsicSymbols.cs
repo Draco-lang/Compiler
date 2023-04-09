@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Types;
 
@@ -31,6 +30,7 @@ internal static class IntrinsicSymbols
 
     public static Symbol Float32 { get; } = Type(IntrinsicTypes.Float32);
     public static Symbol Float64 { get; } = Type(IntrinsicTypes.Float64);
+
     public static Symbol String { get; } = Type(IntrinsicTypes.String);
     public static Symbol Bool { get; } = Type(IntrinsicTypes.Bool);
 

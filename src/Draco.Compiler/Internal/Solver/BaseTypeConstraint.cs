@@ -2,6 +2,7 @@ using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Solver;
 
+// TODO: Docs
 internal sealed class BaseTypeConstraint : Constraint
 {
     public TypeVariable Variable { get; }

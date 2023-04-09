@@ -67,7 +67,7 @@ internal sealed partial class ConstraintSolver
             constraint.Promise.Resolve(constraint.Candidates[0]);
             return SolveState.Finished;
         }
-        // Depends if we removed anything 
+        // Depends if we removed anything
         return advanced ? SolveState.Progressing : SolveState.Stale;
     }
 

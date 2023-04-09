@@ -37,7 +37,7 @@ internal sealed partial class ConstraintSolver
         for (var i = 0; i < constraint.Candidates.Count;)
         {
             var candidate = constraint.Candidates[i];
-            if (!this.Matches(candidate.Type, constraint.CallSite))
+            if (!this.Matches(((ITypedSymbol)candidate).Type, constraint.CallSite))
             {
                 constraint.Candidates.RemoveAt(i);
                 advanced = true;
@@ -65,7 +65,7 @@ internal sealed partial class ConstraintSolver
         // Ok solve
         if (constraint.Candidates.Count == 1)
         {
-            this.Unify(constraint.Candidates[0].Type, constraint.CallSite);
+            this.Unify(((ITypedSymbol)constraint.Candidates[0]).Type, constraint.CallSite);
             constraint.Promise.Resolve(constraint.Candidates[0]);
             return SolveState.Finished;
         }
@@ -82,15 +82,15 @@ internal sealed partial class ConstraintSolver
         // Not a type variable, we can look into members
         var membersWithName = accessed.Members
             .Where(m => m.Name == constraint.MemberName)
-            .ToImmutableArray();
+            .ToList();
 
-        if (membersWithName.Length == 0)
+        if (membersWithName.Count == 0)
         {
             // No such member, error
             // TODO
             throw new System.NotImplementedException();
         }
-        else if (membersWithName.Length == 1)
+        else if (membersWithName.Count == 1)
         {
             // One member, just resolve to that
             var result = membersWithName[0];
@@ -100,11 +100,8 @@ internal sealed partial class ConstraintSolver
         else
         {
             // Multiple, overloading
-            // TODO: I have a feeling that we should add yet another promise here
-            // instead of returning an overload symbol?
-            var methodsWithName = membersWithName.Cast<FunctionSymbol>();
-            // TODO
-            throw new System.NotImplementedException();
+            var overload = new OverloadConstraint(membersWithName, constraint.MemberType, constraint.Promise);
+            this.constraints.Add(overload);
         }
         return SolveState.Finished;
     }

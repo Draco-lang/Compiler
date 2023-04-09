@@ -382,7 +382,7 @@ internal partial class Binder
         case GlobalSymbol global:
             return new UntypedGlobalExpression(syntax, global);
         case FunctionSymbol func:
-            return new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type);
+            return new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(symbol), func.Type);
         case OverloadSymbol overload:
         {
             var (promise, callSite) = constraints.Overload(overload);

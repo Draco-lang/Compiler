@@ -220,7 +220,8 @@ internal sealed class CilCodegen
                             // TODO: Don't we want to have a utility in MetadataCodegen instead?
                             var funcType = (FunctionTypeSymbol)ctor.Type;
                             e.MethodSignature().Parameters(funcType.Parameters.Length, out var returnType, out var parameters);
-                            this.metadataCodegen.EncodeReturnType(returnType, funcType.ReturnType);
+                            // Ctors always have void return-type
+                            returnType.Void();
                             foreach (var param in funcType.Parameters)
                             {
                                 this.metadataCodegen.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);

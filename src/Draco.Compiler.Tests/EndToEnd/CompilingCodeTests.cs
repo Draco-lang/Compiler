@@ -18,6 +18,36 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void MaxInt64()
+    {
+        var assembly = Compile("""
+            func max(a: int64, b: int64): int64 = if (a > b) a else b;
+            """);
+
+        var inputs = new (long, long)[] { (0, 0), (1, 0), (0, 1), (2147483650, 2247483650), (5, 4), (4, 5) };
+        foreach (var (a, b) in inputs)
+        {
+            var maxi = Invoke<long>(assembly, "max", a, b);
+            Assert.Equal(Math.Max(a, b), maxi);
+        }
+    }
+
+    [Fact]
+    public void MaxUint64()
+    {
+        var assembly = Compile("""
+            func max(a: uint64, b: uint64): uint64 = if (a > b) a else b;
+            """);
+
+        var inputs = new (ulong, ulong)[] { (0, 0), (1, 0), (0, 1), (9223372036854775809, 9223372036854775909), (5, 4), (4, 5) };
+        foreach (var (a, b) in inputs)
+        {
+            var maxi = Invoke<ulong>(assembly, "max", a, b);
+            Assert.Equal(Math.Max(a, b), maxi);
+        }
+    }
+
+    [Fact]
     public void Abs()
     {
         var assembly = Compile("""

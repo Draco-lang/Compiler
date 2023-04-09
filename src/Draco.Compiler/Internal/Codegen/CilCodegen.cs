@@ -241,13 +241,13 @@ internal sealed class CilCodegen
                 || c.Type == IntrinsicTypes.Uint16
                 || c.Type == IntrinsicTypes.Uint32)
             {
-                this.InstructionEncoder.LoadConstantI4((int)c.Value!);
+                this.InstructionEncoder.LoadConstantI4(System.Convert.ToInt32(c.Value!));
                 break;
             }
             else if (c.Type == IntrinsicTypes.Int64
                 || c.Type == IntrinsicTypes.Uint64)
             {
-                this.InstructionEncoder.LoadConstantI8((long)c.Value!);
+                this.InstructionEncoder.LoadConstantI8(System.Convert.ToInt64(c.Value!));
                 break;
             }
             else if (c.Type == IntrinsicTypes.Bool)
@@ -257,12 +257,12 @@ internal sealed class CilCodegen
             }
             else if (c.Type == IntrinsicTypes.Float32)
             {
-                this.InstructionEncoder.LoadConstantR4((float)c.Value!);
+                this.InstructionEncoder.LoadConstantR4(System.Convert.ToSingle(c.Value!));
                 break;
             }
             else if (c.Type == IntrinsicTypes.Float64)
             {
-                this.InstructionEncoder.LoadConstantR8((double)c.Value!);
+                this.InstructionEncoder.LoadConstantR8(System.Convert.ToDouble(c.Value!));
                 break;
             }
             else if (c.Type == IntrinsicTypes.String)

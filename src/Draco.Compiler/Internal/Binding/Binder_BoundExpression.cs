@@ -47,7 +47,7 @@ internal partial class Binder
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);
 
     private BoundExpression TypeLiteralExpression(UntypedLiteralExpression literal, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundLiteralExpression(literal.Syntax, literal.Value, literal.Type);
+        new BoundLiteralExpression(literal.Syntax, literal.Value, constraints.Unwrap(literal.Type));
 
     private BoundExpression TypeStringExpression(UntypedStringExpression str, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundStringExpression(str.Syntax, str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray());

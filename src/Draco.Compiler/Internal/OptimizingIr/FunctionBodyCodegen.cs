@@ -206,9 +206,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var sub = node.Operand.Accept(this);
         var target = this.DefineRegister(node.TypeRequired);
 
-        if (IsNot(node.Operator)) this.Write(Equal(target, sub, new Constant(false)));
+        if (IsNot(node.Operator)) this.Write(Equal(target, sub, new Constant(false, IntrinsicTypes.Bool)));
         else if (IsPlus(node.Operator)) { /* no-op */ }
-        else if (IsMinus(node.Operator)) this.Write(Mul(target, sub, new Constant(-1)));
+        else if (IsMinus(node.Operator)) this.Write(Mul(target, sub, new Constant(-1, IntrinsicTypes.Int32)));
         // TODO
         else throw new System.NotImplementedException();
 
@@ -270,7 +270,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // (b < a) == false
             var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Less(tmp, right, left));
-            this.Write(Equal(target, tmp, new Constant(false)));
+            this.Write(Equal(target, tmp, new Constant(false, IntrinsicTypes.Bool)));
         }
         else if (IsGreaterEqual(node.Operator))
         {
@@ -279,7 +279,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // (a < b) == false
             var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Less(tmp, left, right));
-            this.Write(Equal(target, tmp, new Constant(false)));
+            this.Write(Equal(target, tmp, new Constant(false, IntrinsicTypes.Bool)));
         }
         else if (IsEqual(node.Operator))
         {
@@ -292,7 +292,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // (a == b) == false
             var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Equal(tmp, left, right));
-            this.Write(Equal(target, tmp, new Constant(false)));
+            this.Write(Equal(target, tmp, new Constant(false, IntrinsicTypes.Bool)));
         }
         else
         {
@@ -329,8 +329,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitStringExpression(BoundStringExpression node)
     {
-        if (node.Parts.Length == 0) return new Constant(string.Empty);
-        else if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText text) return new Constant(text.Text);
+        if (node.Parts.Length == 0) return new Constant(string.Empty, IntrinsicTypes.String);
+        else if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText text) return new Constant(text.Text, IntrinsicTypes.String);
         // TODO: Should have been desugared
         else throw new System.NotImplementedException();
     }
@@ -343,7 +343,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>
         this.DefineParameter(node.Parameter);
 
-    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
+    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value, node.Type);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
     // TODO: Do something with this block

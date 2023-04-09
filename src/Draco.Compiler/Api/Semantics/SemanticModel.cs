@@ -68,6 +68,7 @@ public sealed partial class SemanticModel
                     ReturnsOnAllPaths.Analyze(func, this.compilation.GlobalDiagnosticBag);
                     DefiniteAssignment.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
                     ValAssignment.Analyze(func, this.compilation.GlobalDiagnosticBag);
+                    VariablesAreAssignedCorrectType.Analyze(func, this.compilation.GlobalDiagnosticBag);
                 }
             }
             else if (symbol is SourceGlobalSymbol global)

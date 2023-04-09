@@ -90,21 +90,24 @@ internal partial class UntypedReferenceErrorExpression
 
 internal partial class UntypedLiteralExpression
 {
+    // TODO: chars
     public override Type Type => this.Value switch
     {
         sbyte => this.VariableReference!,
         short => this.VariableReference!,
         int => this.VariableReference!,
         long => this.VariableReference!,
+
         byte => this.VariableReference!,
         ushort => this.VariableReference!,
         uint => this.VariableReference!,
         ulong => this.VariableReference!,
 
-        bool => IntrinsicTypes.Bool,
-
         float => this.VariableReference!,
         double => this.VariableReference!,
+
+        bool => IntrinsicTypes.Bool,
+        string => IntrinsicTypes.String,
         _ => throw new System.InvalidOperationException(),
     };
 }

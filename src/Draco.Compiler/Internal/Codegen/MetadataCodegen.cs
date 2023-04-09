@@ -339,8 +339,20 @@ internal sealed class MetadataCodegen : MetadataWriter
     private static void EncodeSignatureType(SignatureTypeEncoder encoder, Type type)
     {
         if (ReferenceEquals(type, IntrinsicTypes.Bool)) { encoder.Boolean(); return; }
+
+        if (ReferenceEquals(type, IntrinsicTypes.Int8)) { encoder.SByte(); return; }
+        if (ReferenceEquals(type, IntrinsicTypes.Int16)) { encoder.Int16(); return; }
         if (ReferenceEquals(type, IntrinsicTypes.Int32)) { encoder.Int32(); return; }
+        if (ReferenceEquals(type, IntrinsicTypes.Int64)) { encoder.Int64(); return; }
+
+        if (ReferenceEquals(type, IntrinsicTypes.Uint8)) { encoder.Byte(); return; }
+        if (ReferenceEquals(type, IntrinsicTypes.Uint16)) { encoder.UInt16(); return; }
+        if (ReferenceEquals(type, IntrinsicTypes.Uint32)) { encoder.UInt32(); return; }
+        if (ReferenceEquals(type, IntrinsicTypes.Uint64)) { encoder.UInt64(); return; }
+
+        if (ReferenceEquals(type, IntrinsicTypes.Float32)) { encoder.Single(); return; }
         if (ReferenceEquals(type, IntrinsicTypes.Float64)) { encoder.Double(); return; }
+
         if (ReferenceEquals(type, IntrinsicTypes.String)) { encoder.String(); return; }
 
         // TODO

@@ -135,6 +135,8 @@ internal sealed partial class ConstraintSolver
         left = this.Unwrap(left);
         right = this.Unwrap(right);
 
+        if (ReferenceEquals(left, right)) return true;
+
         switch (left, right)
         {
         // Never type is never reached, matches everything
@@ -148,8 +150,7 @@ internal sealed partial class ConstraintSolver
         case (_, TypeVariable):
             return true;
 
-        case (PrimitiveTypeSymbol t1, PrimitiveTypeSymbol t2):
-            return ReferenceEquals(t1, t2);
+        // NOTE: Primitives are filtered out already, along with metadata types
 
         case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
         {
@@ -162,7 +163,7 @@ internal sealed partial class ConstraintSolver
         }
 
         default:
-            throw new System.NotImplementedException();
+            return false;
         }
     }
 
@@ -170,6 +171,8 @@ internal sealed partial class ConstraintSolver
     {
         left = this.Unwrap(left);
         right = this.Unwrap(right);
+
+        if (ReferenceEquals(left, right)) return true;
 
         switch (left, right)
         {
@@ -201,8 +204,7 @@ internal sealed partial class ConstraintSolver
         case (_, ErrorTypeSymbol):
             return true;
 
-        case (PrimitiveTypeSymbol t1, PrimitiveTypeSymbol t2):
-            return ReferenceEquals(t1, t2);
+        // NOTE: Primitives are filtered out already, along with metadata types
 
         case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
         {
@@ -215,7 +217,7 @@ internal sealed partial class ConstraintSolver
         }
 
         default:
-            throw new System.NotImplementedException();
+            return false;
         }
     }
 }

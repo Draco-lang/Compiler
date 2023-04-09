@@ -149,7 +149,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             name: func.Name,
             signature: this.EncodeBlob(e =>
             {
-                e.MethodSignature().Parameters(func.Parameters.Length, out var returnType, out var parameters);
+                e
+                    .MethodSignature(isInstanceMethod: func.IsMember)
+                    .Parameters(func.Parameters.Length, out var returnType, out var parameters);
                 this.EncodeReturnType(returnType, func.ReturnType);
                 foreach (var param in func.Parameters) this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
             })),

@@ -22,6 +22,24 @@ internal abstract partial class Symbol
     public abstract Symbol? ContainingSymbol { get; }
 
     /// <summary>
+    /// The root of this hierarchy.
+    /// </summary>
+    public Symbol? RootSymbol
+    {
+        get
+        {
+            var result = this;
+            while (result.ContainingSymbol is not null) result = result.ContainingSymbol;
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// The root module of this hierarchy.
+    /// </summary>
+    public ModuleSymbol RootModule => this.RootSymbol as ModuleSymbol;
+
+    /// <summary>
     /// True, if this symbol represents some error.
     /// </summary>
     public virtual bool IsError => false;

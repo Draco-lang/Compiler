@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Metadata;
 
@@ -9,6 +11,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataTypeSymbol : TypeSymbol
 {
+    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
+    private ImmutableArray<Symbol>? members;
+
     public override string Name => this.metadataReader.GetString(this.typeDefinition.Name);
     public override Symbol ContainingSymbol { get; }
     // TODO: Is this correct?
@@ -28,4 +33,30 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     }
 
     public override string ToString() => this.Name;
+
+    private ImmutableArray<Symbol> BuildMembers()
+    {
+        var result = ImmutableArray.CreateBuilder<Symbol>();
+
+        // TODO: nested-types
+        // TODO: static fields
+        // TODO: static properties
+        // TODO: nonstatic fields
+        // TODO: nonstatic properties
+
+        // Methods
+        foreach (var methodHandle in this.typeDefinition.GetMethods())
+        {
+            var method = this.metadataReader.GetMethodDefinition(methodHandle);
+            // Skip private
+            if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
+            // Skip special name
+            if (method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
+            // TODO
+            throw new NotImplementedException();
+        }
+
+        // Done
+        return result.ToImmutable();
+    }
 }

@@ -249,11 +249,12 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="accessedType">The accessed object type.</param>
     /// <param name="memberName">The accessed member name.</param>
-    /// <returns>The promise of the accessed member symbol.</returns>
-    public ConstraintPromise<Symbol> Member(TypeSymbol accessedType, string memberName)
+    /// <returns>The promise of the accessed member symbol along with the inferred member type.</returns>
+    public (ConstraintPromise<Symbol> Symbol, TypeSymbol MemberType) Member(TypeSymbol accessedType, string memberName)
     {
-        var constraint = new MemberConstraint(accessedType, memberName);
+        var memberType = this.NextTypeVariable;
+        var constraint = new MemberConstraint(accessedType, memberName, memberType);
         this.constraints.Add(constraint);
-        return constraint.Promise;
+        return (constraint.Promise, memberType);
     }
 }

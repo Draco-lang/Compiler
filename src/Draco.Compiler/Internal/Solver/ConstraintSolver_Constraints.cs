@@ -84,8 +84,17 @@ internal sealed partial class ConstraintSolver
             .Where(m => m.Name == constraint.MemberName)
             .ToImmutableArray();
 
-        // TODO
-        throw new System.NotImplementedException();
+        if (membersWithName.Length == 0)
+        {
+            // No such member, error
+            // TODO
+            throw new System.NotImplementedException();
+        }
+        else
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
     }
 
     private void FailSilently(Constraint constraint)

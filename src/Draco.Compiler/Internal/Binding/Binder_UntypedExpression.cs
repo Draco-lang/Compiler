@@ -359,11 +359,10 @@ internal partial class Binder
         else
         {
             // Value, add constraint
-            var promise = constraints
-                .Member(left.TypeRequired, memberName)
-                .ConfigureDiagnostic(diag => diag
-                    .WithLocation(syntax.Location));
-            return new UntypedMemberExpression(syntax, left, promise);
+            var (promise, type) = constraints.Member(left.TypeRequired, memberName);
+            promise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+            return new UntypedMemberExpression(syntax, left, promise, type);
         }
     }
 

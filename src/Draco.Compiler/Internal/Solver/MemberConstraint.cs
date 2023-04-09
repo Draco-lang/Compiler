@@ -23,14 +23,20 @@ internal sealed class MemberConstraint : Constraint
     public string MemberName { get; }
 
     /// <summary>
+    /// The type of the member.
+    /// </summary>
+    public TypeSymbol MemberType { get; }
+
+    /// <summary>
     /// The promise of the accessed member symbol.
     /// </summary>
     public ConstraintPromise<Symbol> Promise { get; }
 
-    public MemberConstraint(TypeSymbol accessed, string memberName)
+    public MemberConstraint(TypeSymbol accessed, string memberName, TypeSymbol memberType)
     {
         this.Accessed = accessed;
         this.MemberName = memberName;
+        this.MemberType = memberType;
         this.Promise = ConstraintPromise.Create<Symbol>(this);
     }
 }

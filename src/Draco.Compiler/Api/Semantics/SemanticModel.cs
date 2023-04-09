@@ -68,7 +68,7 @@ public sealed partial class SemanticModel
                     ReturnsOnAllPaths.Analyze(func, this.compilation.GlobalDiagnosticBag);
                     DefiniteAssignment.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
                     ValAssignment.Analyze(func, this.compilation.GlobalDiagnosticBag);
-                    VariablesAreAssignedCorrectType.Analyze(func, this.compilation.GlobalDiagnosticBag);
+                    VariablesAreAssignedCorrectType.Analyze(func.Body, this.compilation.GlobalDiagnosticBag);
                 }
             }
             else if (symbol is SourceGlobalSymbol global)
@@ -81,6 +81,7 @@ public sealed partial class SemanticModel
                 if (global.Value is not null)
                 {
                     DefiniteAssignment.Analyze(global.Value, this.compilation.GlobalDiagnosticBag);
+                    VariablesAreAssignedCorrectType.Analyze(global.Value, this.compilation.GlobalDiagnosticBag);
                 }
                 ValAssignment.Analyze(global, this.compilation.GlobalDiagnosticBag);
             }

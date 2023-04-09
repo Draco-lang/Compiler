@@ -9,10 +9,10 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 
 internal sealed class VariablesAreAssignedCorrectType : BoundTreeVisitor
 {
-    public static void Analyze(SourceFunctionSymbol function, DiagnosticBag diagnostics)
+    public static void Analyze(BoundNode node, DiagnosticBag diagnostics)
     {
         var pass = new VariablesAreAssignedCorrectType(diagnostics);
-        function.Body.Accept(pass);
+        node.Accept(pass);
     }
 
     private readonly DiagnosticBag diagnostics;

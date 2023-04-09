@@ -476,6 +476,24 @@ public sealed class FlowAnalysisTests : SemanticTestsBase
     }
 
     [Fact]
+    public void GlobalVariableValueTooBig()
+    {
+        // val x: int8 = 55824685;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+                ImmutableVariableDeclaration("x", NameType("int8"), LiteralExpression(55824685))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+    }
+
+    [Fact]
     public void LocalVariableValueTooBig()
     {
         // func foo() {

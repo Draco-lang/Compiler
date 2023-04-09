@@ -50,6 +50,10 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
 
         // TODO: Ask Reflectronic about this... way
         // We try to look up the symbol by its full name from the root
+
+        // We discussed, this is _almost_ good, but we need to filter with "originating assembly"
+        // to be 100% accurate. It should also work fine with metadata refs.
+
         var @namespace = reader.GetString(definition.Namespace);
         var name = reader.GetString(definition.Name);
         var fullName = $"{@namespace}.{name}";

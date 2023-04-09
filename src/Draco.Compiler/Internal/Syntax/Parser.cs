@@ -725,7 +725,7 @@ internal sealed class Parser
             else if (this.Matches(TokenKind.Dot, out var dot))
             {
                 var name = this.Expect(TokenKind.Identifier);
-                result = new MemberAccessExpressionSyntax(result, dot, name);
+                result = new MemberExpressionSyntax(result, dot, name);
             }
             else
             {

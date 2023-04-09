@@ -672,7 +672,7 @@
     </Field>
   </Node>
 
-  <Node Name="MemberAccessExpressionSyntax" Base="ExpressionSyntax">
+  <Node Name="MemberExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
       A member access expression.
     </Documentation>

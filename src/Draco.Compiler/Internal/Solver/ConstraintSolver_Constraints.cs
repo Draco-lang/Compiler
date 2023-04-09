@@ -102,7 +102,7 @@ internal sealed partial class ConstraintSolver
             // Multiple, overloading
             var methodsWithName = membersWithName.Cast<FunctionSymbol>();
             // We carry on this same promise
-            var promise = constraint.Promise.Map(s => (FunctionSymbol)s);
+            var promise = constraint.Promise.Cast<Symbol, FunctionSymbol>();
             var overload = new OverloadConstraint(methodsWithName, constraint.MemberType, promise);
             this.constraints.Add(overload);
         }

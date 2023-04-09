@@ -26,6 +26,10 @@ internal static class ConstraintPromise
         this ConstraintPromise<TOldResult> promise,
         Func<TOldResult, TNewResult> mapFunc) =>
         new MappedConstraintPromise<TOldResult, TNewResult>(promise, mapFunc);
+
+    public static ConstraintPromise<TNewResult> Cast<TOldResult, TNewResult>(
+        this ConstraintPromise<TOldResult> promise) =>
+        new CastConstraintPromise<TOldResult, TNewResult>(promise);
 }
 
 /// <summary>
@@ -172,6 +176,36 @@ internal sealed class MappedConstraintPromise<TOldResult, TNewResult> : Constrai
         throw new NotSupportedException("can not fail a mapped constraint");
     public override void FailSilently(TNewResult result) =>
         throw new NotSupportedException("can not fail a mapped constraint");
+    public override ConstraintPromise<TNewResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
+    {
+        this.underlying.ConfigureDiagnostic(configure);
+        return this;
+    }
+}
+
+/// <summary>
+/// A <see cref="ConstraintPromise{TNewResult}"/> that casts the result of an <see cref="ConstraintPromise{TOldResult}"/>.
+/// </summary>
+/// <typeparam name="TOldResult">The original constraint promise result type.</typeparam>
+/// <typeparam name="TOldResult">The casted result type.</typeparam>
+internal sealed class CastConstraintPromise<TOldResult, TNewResult> : ConstraintPromise<TNewResult>
+{
+    public override bool IsResolved => this.underlying.IsResolved;
+    public override TNewResult Result => (TNewResult)(object)this.underlying.Result!;
+
+    private readonly ConstraintPromise<TOldResult> underlying;
+
+    public CastConstraintPromise(ConstraintPromise<TOldResult> underlying)
+    {
+        this.underlying = underlying;
+    }
+
+    public override void Resolve(TNewResult result) =>
+        this.underlying.Resolve((TOldResult)(object)result!);
+    public override void Fail(TNewResult result, DiagnosticBag diagnostics) =>
+        this.underlying.Fail((TOldResult)(object)result!, diagnostics);
+    public override void FailSilently(TNewResult result) =>
+        this.underlying.FailSilently((TOldResult)(object)result!);
     public override ConstraintPromise<TNewResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
     {
         this.underlying.ConfigureDiagnostic(configure);

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
@@ -38,7 +39,30 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
         _ => UnknownType,
     };
     public TypeSymbol GetSZArrayType(TypeSymbol elementType) => UnknownType;
-    public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind) => UnknownType;
-    public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind) => UnknownType;
+    public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
+    {
+        var definition = reader.GetTypeDefinition(handle);
+        if (definition.IsNested)
+        {
+            // TODO
+            return UnknownType;
+        }
+
+        // We try to look up the symbol by its full name from the root
+        var @namespace = reader.GetString(definition.Namespace);
+        var name = reader.GetString(definition.Name);
+        var fullName = $"{@namespace}.{name}";
+        var parts = fullName.Split('.').ToImmutableArray();
+        var typeSymbol = this.rootModule
+            .Lookup(parts)
+            .OfType<TypeSymbol>()
+            .Single();
+        return typeSymbol;
+    }
+    public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
+    {
+        // TODO
+        throw new System.NotImplementedException();
+    }
     public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Unit genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => UnknownType;
 }

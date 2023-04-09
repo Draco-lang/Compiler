@@ -23,6 +23,13 @@ internal abstract partial class Type
     public override abstract string ToString();
 
     /// <summary>
+    /// Checks if the type contains certain <see cref="TypeVariable"/>.
+    /// </summary>
+    /// <param name="variable">The <see cref="TypeVariable"/> the type could contain.</param>
+    /// <returns>True, if this type contains <paramref name="variable"/>.</returns>
+    public virtual bool ContainsTypeVariable(TypeVariable variable) => false;
+
+    /// <summary>
     /// Converts this type into an API type.
     /// </summary>
     /// <returns>The equivalent API type.</returns>

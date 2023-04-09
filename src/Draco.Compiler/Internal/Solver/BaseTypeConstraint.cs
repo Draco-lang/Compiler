@@ -2,11 +2,19 @@ using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Solver;
 
-// TODO: Docs
+/// <summary>
+/// Constraint that enforces literal to have certain base type.
+/// </summary>
 internal sealed class BaseTypeConstraint : Constraint
 {
+    /// <summary>
+    /// The <see cref="TypeVariable"/> to substitute.
+    /// </summary>
     public TypeVariable Variable { get; }
 
+    /// <summary>
+    /// The base type that the <see cref="TypeVariable"/> should have.
+    /// </summary>
     public Type BaseType { get; }
 
     /// <summary>

@@ -102,41 +102,51 @@ internal sealed partial class ConstraintSolver
             else throw new System.InvalidOperationException();
         }
         if (constraint.BaseType is not BuiltinType baseType || !baseType.IsBaseType) throw new System.InvalidOperationException();
+        var type = this.Unwrap(constraint.Variable);
 
-        // Check if the typevar is in any SameType or CommonBase constraints, if so this constraint can't run yet
-        foreach (var con in this.constraints)
+        if (type is TypeVariable variable)
         {
-            if (con is SameTypeConstraint same
-                && (ReferenceEquals(same.First, constraint.Variable)
-                || ReferenceEquals(same.Second, constraint.Variable))
-                || con is CommonBaseConstraint common
-                && ((ReferenceEquals(common.First, constraint.Variable)
-                && common.Second is not (TypeVariable or NeverType))
-                || (ReferenceEquals(common.Second, constraint.Variable)
-                && common.First is not (TypeVariable or NeverType)))) return SolveState.Stale;
-        }
+            // Check if the TypeVariable is in any SameType or CommonBase constraints, if so this constraint can't run yet
 
-        // If this TypeVariable was already substituted just return
-        if (this.substitutions.TryGetValue(constraint.Variable, out var type))
-        {
-            if (type is BuiltinType builtin)
+            foreach (var con in this.constraints)
             {
-                var hasBase = false;
-                foreach (var builtinBase in builtin.Bases)
-                {
-                    if (builtinBase == constraint.BaseType) hasBase = true;
-                }
-                if (hasBase) return SolveState.Finished;
+                if (con is SameTypeConstraint same
+                    && (this.Unwrap(same.First).ContainsTypeVariable(variable)
+                    || this.Unwrap(same.Second).ContainsTypeVariable(variable))
+                    || con is CommonBaseConstraint common
+                    && ((this.Unwrap(common.First).ContainsTypeVariable(variable)
+                    && this.Unwrap(common.Second) is not (TypeVariable or NeverType))
+                    || (this.Unwrap(common.Second).ContainsTypeVariable(variable)
+                    && this.Unwrap(common.First) is not (TypeVariable or NeverType)))
+                    || con is OverloadConstraint overload
+                    && this.Unwrap(overload.CallSite).ContainsTypeVariable(variable)) return SolveState.Stale;
             }
-            else if (type is NeverType || type is ErrorType) return SolveState.Finished;
-            var diagnostic = constraint.Diagnostic
-                .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                .WithFormatArgs(this.Unwrap(type), this.Unwrap(GetInferedType(baseType)))
-                .Build();
-            diagnostics.Add(diagnostic);
-            return SolveState.Finished;
+        }
+        else
+        {
+            // If this TypeVariable was already substituted just return
+            if (type is not TypeVariable)
+            {
+                if (type is BuiltinType builtin)
+                {
+                    var hasBase = false;
+                    foreach (var builtinBase in builtin.Bases)
+                    {
+                        if (builtinBase == constraint.BaseType) hasBase = true;
+                    }
+                    if (hasBase) return SolveState.Finished;
+                }
+                else if (type is NeverType || type is ErrorType) return SolveState.Finished;
+                var diagnostic = constraint.Diagnostic
+                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                    .WithFormatArgs(this.Unwrap(type), this.Unwrap(GetInferedType(baseType)))
+                    .Build();
+                diagnostics.Add(diagnostic);
+                return SolveState.Finished;
+            }
         }
 
+        // If it wasn't substituted yet, substitute it for the default type for given BaseType
         this.Substitute(constraint.Variable, GetInferedType(baseType));
         return SolveState.Finished;
     }

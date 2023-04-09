@@ -66,34 +66,37 @@ internal static class IntrinsicSymbols
         array.AddRange(GetOperatorSymbols(IntrinsicTypes.Int32));
         array.AddRange(GetOperatorSymbols(IntrinsicTypes.Int64));
 
-        array.AddRange(GetOperatorSymbols(IntrinsicTypes.Uint8));
-        array.AddRange(GetOperatorSymbols(IntrinsicTypes.Uint16));
-        array.AddRange(GetOperatorSymbols(IntrinsicTypes.Uint32));
-        array.AddRange(GetOperatorSymbols(IntrinsicTypes.Uint64));
+        array.AddRange(GetOperatorSymbols(IntrinsicTypes.Uint8, true));
+        array.AddRange(GetOperatorSymbols(IntrinsicTypes.Uint16, true));
+        array.AddRange(GetOperatorSymbols(IntrinsicTypes.Uint32, true));
+        array.AddRange(GetOperatorSymbols(IntrinsicTypes.Uint64, true));
 
         array.AddRange(GetOperatorSymbols(IntrinsicTypes.Float32));
         array.AddRange(GetOperatorSymbols(IntrinsicTypes.Float64));
         return array.ToImmutable();
     }
 
-    private static ImmutableArray<Symbol> GetOperatorSymbols(Type type) => ImmutableArray.Create<Symbol>(
-        Comparison(TokenKind.Equal, type, type),
-        Comparison(TokenKind.NotEqual, type, type),
-        Comparison(TokenKind.GreaterThan, type, type),
-        Comparison(TokenKind.LessThan, type, type),
-        Comparison(TokenKind.GreaterEqual, type, type),
-        Comparison(TokenKind.LessEqual, type, type),
+    private static ImmutableArray<Symbol> GetOperatorSymbols(Type type, bool isUnsigned = false)
+    {
+        var array = ImmutableArray.CreateBuilder<Symbol>();
+        array.Add(Comparison(TokenKind.Equal, type, type));
+        array.Add(Comparison(TokenKind.NotEqual, type, type));
+        array.Add(Comparison(TokenKind.GreaterThan, type, type));
+        array.Add(Comparison(TokenKind.LessThan, type, type));
+        array.Add(Comparison(TokenKind.GreaterEqual, type, type));
+        array.Add(Comparison(TokenKind.LessEqual, type, type));
 
-        Unary(TokenKind.Plus, type, type),
-        Unary(TokenKind.Minus, type, type),
+        array.Add(Unary(TokenKind.Plus, type, type));
+        if (!isUnsigned) array.Add(Unary(TokenKind.Minus, type, type));
 
-        Binary(TokenKind.Plus, type, type, type),
-        Binary(TokenKind.Minus, type, type, type),
-        Binary(TokenKind.Star, type, type, type),
-        Binary(TokenKind.Slash, type, type, type),
-        Binary(TokenKind.KeywordMod, type, type, type),
-        Binary(TokenKind.KeywordRem, type, type, type)
-    );
+        array.Add(Binary(TokenKind.Plus, type, type, type));
+        array.Add(Binary(TokenKind.Minus, type, type, type));
+        array.Add(Binary(TokenKind.Star, type, type, type));
+        array.Add(Binary(TokenKind.Slash, type, type, type));
+        array.Add(Binary(TokenKind.KeywordMod, type, type, type));
+        array.Add(Binary(TokenKind.KeywordRem, type, type, type));
+        return array.ToImmutable();
+    }
 
     // NOTE: Temporary until we access BCL
     public static FunctionSymbol Print_String { get; } = Function("print", new[] { IntrinsicTypes.String }, IntrinsicTypes.Unit);

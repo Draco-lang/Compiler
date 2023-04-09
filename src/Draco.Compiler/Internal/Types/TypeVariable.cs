@@ -17,4 +17,6 @@ internal sealed class TypeVariable : Type
     }
 
     public override string ToString() => $"{StringUtils.IndexToExcelColumnName(this.index)}'";
+
+    public override bool ContainsTypeVariable(TypeVariable variable) => ReferenceEquals(variable, this);
 }

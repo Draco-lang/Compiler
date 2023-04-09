@@ -24,4 +24,13 @@ internal sealed class FunctionType : Type
     }
 
     public override string ToString() => $"({string.Join(", ", this.ParameterTypes)}) -> {this.ReturnType}";
+
+    public override bool ContainsTypeVariable(TypeVariable variable)
+    {
+        foreach (var parameter in this.ParameterTypes)
+        {
+            if (ReferenceEquals(variable, parameter)) return true;
+        }
+        return ReferenceEquals(this.ReturnType, variable);
+    }
 }

@@ -79,6 +79,79 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void LocalVariablesExplicitlyTypedComplexExpressionNotInt32()
+    {
+        // func main() {
+        //     var x: int16 = 0;
+        //     var y = x - foo();
+        // }
+        // func foo(): int16 = 9;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int16"), LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration("y", null, BinaryExpression(NameExpression("x"), Minus, CallExpression(NameExpression("foo"))))))),
+            FunctionDeclaration("foo",
+            ParameterList(),
+            NameType("int16"),
+            InlineFunctionBody(LiteralExpression(9)))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var ySym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(yDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
+        Assert.Equal(ySym.Type, IntrinsicTypes.Int16);
+    }
+
+    [Fact]
+    public void LocalVariablesExplicitlyTypedInt16AddIntegralLiteral()
+    {
+        // func main() {
+        //     var x: int16 = 0;
+        //     var y = x + 2;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int16"), LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration("y", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(2))))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var ySym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(yDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
+        Assert.Equal(ySym.Type, IntrinsicTypes.Int16);
+    }
+
+    [Fact]
     public void LocalVariableTypeInferredFromValue()
     {
         // func main() {
@@ -134,6 +207,35 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+    }
+
+    [Fact]
+    public void LocalVariableExplicitlyTypedWithoutValueInt16()
+    {
+        // func main() {
+        //     var x: int16;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int16")))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
     }
 
     [Fact]
@@ -286,6 +388,29 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Empty(diags);
         Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+    }
+
+    [Fact]
+    public void GlobalVariableExplicitlyTypedInt16()
+    {
+        // var x: int16 = 0;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("x", NameType("int16"), LiteralExpression(0))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
     }
 
     [Fact]
@@ -667,6 +792,84 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Equal(IntrinsicTypes.Error, xSym.Type);
         Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+    }
+
+    [Fact]
+    public void AssigninInt32ToInt16Variable()
+    {
+        // func foo() {
+        //     var x = 1;
+        //     var y: int16 = x;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, LiteralExpression(1))),
+                    DeclarationStatement(VariableDeclaration("y", NameType("int16"), NameExpression("x")))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var ySym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(yDecl));
+
+        // Assert
+        Assert.Equal(IntrinsicTypes.Int32, xSym.Type);
+        Assert.Equal(IntrinsicTypes.Int16, ySym.Type);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+    }
+
+    [Fact]
+    public void NoOverloadAddInt32AndInt16()
+    {
+        // func foo() {
+        //     var x = 1;
+        //     var y: int16 = 2;
+        //     var z = x + y;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, LiteralExpression(1))),
+                    DeclarationStatement(VariableDeclaration("y", NameType("int16"), NameExpression("x"))),
+                    DeclarationStatement(VariableDeclaration("z", null, BinaryExpression(NameExpression("x"), Plus, NameExpression("y"))))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var zDecl = tree.FindInChildren<VariableDeclarationSyntax>(2);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var ySym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(yDecl));
+        var zSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(zDecl));
+
+        // Assert
+        Assert.Equal(IntrinsicTypes.Int32, xSym.Type);
+        Assert.Equal(IntrinsicTypes.Int16, ySym.Type);
+        Assert.Equal(IntrinsicTypes.Error, zSym.Type);
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
         AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 }

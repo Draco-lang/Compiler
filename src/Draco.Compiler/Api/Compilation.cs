@@ -82,10 +82,10 @@ public sealed class Compilation
     public string AssemblyName { get; }
 
     /// <summary>
-    /// The top-level merged module that contains all references.
+    /// The top-level merged module that contains the source along with references.
     /// </summary>
-    internal ModuleSymbol ReferencesModule => this.referencesModule ??= this.BuildReferencesModule();
-    private ModuleSymbol? referencesModule;
+    internal ModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
+    private ModuleSymbol? rootModule;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
@@ -219,34 +219,5 @@ public sealed class Compilation
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
-    private ModuleSymbol BuildReferencesModule()
-    {
-        var symbols = ImmutableArray.CreateBuilder<Symbol>();
-        var modules = new List<ModuleSymbol>();
-        // Add all modules constructed from metadata
-        foreach (var metadataReference in this.MetadataReferences)
-        {
-            var reader = metadataReference.MetadataReader;
-            // Create the assembly
-            var assemblySymbol = new MetadataAssemblySymbol(reader);
-            // Extract elements from the root namespace
-            foreach (var element in assemblySymbol.RootNamespace.Members)
-            {
-                if (element is ModuleSymbol module) modules.Add(module);
-                else symbols.Add(element);
-            }
-        }
-        // Group modules by name
-        var modulesGrouped = modules.GroupBy(m => m.Name);
-        // And add them as merged modules
-        foreach (var group in modulesGrouped)
-        {
-            var groupElements = group.ToImmutableArray();
-            // For single-element groups we skip merging
-            if (groupElements.Length == 1) symbols.Add(groupElements[0]);
-            else symbols.Add(new MergedModuleSymbol(null, groupElements));
-        }
-        // Done, construct root
-        return new SynthetizedModuleSymbol(null, string.Empty, symbols.ToImmutable());
-    }
+    private ModuleSymbol BuildRootModule() => new RootModuleSymbol(this);
 }

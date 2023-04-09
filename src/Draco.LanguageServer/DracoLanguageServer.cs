@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server;
 
@@ -26,6 +29,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private readonly ILanguageClient client;
     private readonly DracoConfigurationRepository configurationRepository;
     private readonly DracoDocumentRepository documentRepository = new();
+    private Compilation compilation;
+    private SemanticModel semanticModel;
+    private SyntaxTree syntaxTree;
 
     public DracoLanguageServer(ILanguageClient client)
     {

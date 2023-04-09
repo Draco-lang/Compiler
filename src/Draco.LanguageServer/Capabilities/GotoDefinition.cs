@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api;
-using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 
@@ -21,16 +18,10 @@ internal sealed partial class DracoLanguageServer : IGotoDefinition
     public Task<IList<Location>> GotoDefinitionAsync(DefinitionParams param, CancellationToken cancellationToken)
     {
         var cursorPosition = Translator.ToCompiler(param.Position);
-        // TODO: Share compilation
-        var souceText = this.documentRepository.GetDocument(param.TextDocument.Uri);
-        var syntaxTree = SyntaxTree.Parse(souceText);
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree));
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
-        var referencedSymbol = syntaxTree
+        var referencedSymbol = this.syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(semanticModel.GetReferencedSymbol)
+            .Select(this.semanticModel.GetReferencedSymbol)
             .LastOrDefault(symbol => symbol is not null);
 
         if (referencedSymbol is not null && referencedSymbol.Definition is not null)

@@ -114,11 +114,6 @@
     <Field Name="Right" Type="UntypedExpression" />
   </Node>
 
-  <Node Name="UntypedModuleMemberAccessExpression" Base="UntypedExpression">
-    <Field Name="Module" Type="ModuleSymbol" />
-    <Field Name="Member" Type="string" />
-  </Node>
-
   <Node Name="UntypedModuleExpression" Base="UntypedExpression">
     <Field Name="Module" Type="ModuleSymbol" />
   </Node>

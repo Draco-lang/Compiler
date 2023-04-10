@@ -15,8 +15,6 @@ namespace Draco.Compiler.Internal.Lowering;
 /// </summary>
 internal partial class LocalRewriter : BoundTreeRewriter
 {
-    private readonly Compilation compilation;
-
     /// <summary>
     /// Represents a value that was temporarily stored.
     /// </summary>
@@ -27,6 +25,10 @@ internal partial class LocalRewriter : BoundTreeRewriter
         LocalSymbol? Symbol,
         BoundExpression Reference,
         BoundStatement Assignment);
+
+    private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
+
+    private readonly Compilation compilation;
 
     public LocalRewriter(Compilation compilation)
     {
@@ -285,9 +287,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
         }
 
         var arrayType = new ArrayTypeSymbol(
-            this.compilation.WellKnownTypes.SystemObject,
+            this.WellKnownTypes.SystemObject,
             1,
-            this.compilation.WellKnownTypes.SystemArray);
+            this.WellKnownTypes.SystemArray);
         var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
 
         var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
@@ -321,7 +323,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             locals: ImmutableArray.Create<LocalSymbol>(arrayLocal),
             statements: arrayAssignmentBuilder.ToImmutable(),
             value: CallExpression(
-                method: FunctionExpression(this.compilation.WellKnownTypes.SystemString_Format),
+                method: FunctionExpression(this.WellKnownTypes.SystemString_Format),
                 receiver: null,
                 arguments: ImmutableArray.Create<BoundExpression>(
                     LiteralExpression(formatString.ToString()),

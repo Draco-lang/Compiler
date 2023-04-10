@@ -34,7 +34,7 @@ public static class CompletionService
     private static Context GetContext(SyntaxNode node, SyntaxPosition cursor)
     {
         var subtree = node.TraverseSubtreesAtPosition(cursor);
-        //if (subtree.LastOrDefault(x => x is ExpressionStatementSyntax)) return Context.ElseBranchStart;
+        if (subtree.LastOrDefault(x => x is ExpressionStatementSyntax)) return Context.ElseBranchStart;
         if (subtree.Any(x => x is FunctionDeclarationSyntax)) return Context.StatementStart; // TODO: EOF wrong
         else return Context.DeclarationStart;
     }

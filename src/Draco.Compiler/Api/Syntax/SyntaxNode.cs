@@ -162,6 +162,34 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     }
 
     /// <summary>
+    /// Enumerates this subtree, yielding all descendant nodes that are involved with a cursor position.
+    /// This differs from <see cref="TraverseSubtreesAtPosition(SyntaxPosition)"/> in a sense, because a
+    /// cursor cares about things immediately before or after it.
+    /// </summary>
+    /// <param name="position">The position of the cursor.</param>
+    /// <returns>All subtrees involved with <paramref name="position"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtCursorPosition(SyntaxPosition position)
+    {
+        var root = this;
+        while (true)
+        {
+            yield return root;
+            foreach (var child in root.Children)
+            {
+                // NOTE: This allows touching at the end
+                if (child.Range.Start <= position && position <= child.Range.End)
+                {
+                    root = child;
+                    goto found;
+                }
+            }
+            // No child found that is involved with position.
+            break;
+        found:;
+        }
+    }
+
+    /// <summary>
     /// Enumerates this subtree, yielding all descendant nodes intersecting the given range.
     /// </summary>
     /// <param name="range">The range to check for intersection with the nodes.</param>

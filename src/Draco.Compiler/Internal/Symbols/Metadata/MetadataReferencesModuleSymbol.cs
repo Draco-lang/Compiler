@@ -11,12 +11,12 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
-namespace Draco.Compiler.Internal.Symbols;
+namespace Draco.Compiler.Internal.Symbols.Metadata;
 
 /// <summary>
-/// A module merging all of the root compilation modules.
+/// A module merging all metadata references in the compilation.
 /// </summary>
-internal sealed class RootModuleSymbol : ModuleSymbol
+internal sealed class MetadataReferencesModuleSymbol : ModuleSymbol
 {
     public override IEnumerable<Symbol> Members
     {
@@ -48,7 +48,7 @@ internal sealed class RootModuleSymbol : ModuleSymbol
     // NOTE: This is NOT declaring compilation
     private readonly Compilation compilation;
 
-    public RootModuleSymbol(Compilation compilation)
+    public MetadataReferencesModuleSymbol(Compilation compilation)
     {
         this.compilation = compilation;
     }
@@ -65,8 +65,7 @@ internal sealed class RootModuleSymbol : ModuleSymbol
         var submodules = new List<ModuleSymbol>();
         // Symbols left for processing
         var worklist = new Queue<Symbol>();
-        // Add source module
-        worklist.Enqueue(this.compilation.SourceModule);
+
         // Add metadata reference modules
         foreach (var metadataReference in this.compilation.MetadataReferences)
         {

@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 
 namespace Draco.Compiler.Api;
 
@@ -27,6 +29,7 @@ public abstract class MetadataReference
             {
                 throw new ArgumentException("could not retrieve metadata section from assembly", nameof(assembly));
             }
+
             var reader = new MetadataReader(blob, length);
             return new MetadataReaderReference(reader);
         }
@@ -39,6 +42,24 @@ public abstract class MetadataReference
         public MetadataReaderReference(MetadataReader metadataReader)
         {
             this.MetadataReader = metadataReader;
+        }
+    }
+
+    public static MetadataReference FromPEStream(Stream peStream)
+    {
+        return new PEStreamReference(peStream);
+    }
+
+    private sealed class PEStreamReference : MetadataReference
+    {
+        public override MetadataReader MetadataReader => this.metadataReader ??= this.peReader.GetMetadataReader();
+
+        private readonly PEReader peReader;
+        private MetadataReader? metadataReader;
+
+        public PEStreamReference(Stream peStream)
+        {
+            this.peReader = new PEReader(peStream);
         }
     }
 }

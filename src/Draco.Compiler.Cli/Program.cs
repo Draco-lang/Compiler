@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
+using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Scripting;
@@ -20,6 +21,7 @@ internal class Program
         var fileArgument = new Argument<FileInfo>("file", description: "The Draco source file");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
         var optionalOutputOption = new Option<FileInfo?>(new string[] { "-o", "--output" }, () => null, "Specifies the (optional) output file");
+        var referencesOption = new Option<FileInfo[]>(new string[] { "-r", "--reference" }, Array.Empty<FileInfo>, "Specifies assembly references to use when compiling");
         var pdbOption = new Option<bool>("--pdb", () => false, "Specifies that a PDB should be generated for debugging");
         var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
 
@@ -29,10 +31,11 @@ internal class Program
         {
             fileArgument,
             outputOption,
+            referencesOption,
             pdbOption,
             msbuildDiagOption,
         };
-        compileCommand.SetHandler(CompileCommand, fileArgument, outputOption, pdbOption, msbuildDiagOption);
+        compileCommand.SetHandler(CompileCommand, fileArgument, outputOption, referencesOption, pdbOption, msbuildDiagOption);
 
         // Run
 
@@ -72,21 +75,23 @@ internal class Program
         };
         formatCommand.SetHandler(FormatCommand, fileArgument, optionalOutputOption);
 
-        var rootCommand = new RootCommand("CLI for the Draco compiler");
-        rootCommand.AddCommand(compileCommand);
-        rootCommand.AddCommand(runCommand);
-        rootCommand.AddCommand(irCommand);
-        rootCommand.AddCommand(symbolsCommand);
-        rootCommand.AddCommand(formatCommand);
-        return rootCommand;
+        return new RootCommand("CLI for the Draco compiler")
+        {
+            compileCommand,
+            runCommand,
+            irCommand,
+            symbolsCommand,
+            formatCommand
+        };
     }
 
-    private static void CompileCommand(FileInfo input, FileInfo output, bool emitPdb, bool msbuildDiags)
+    private static void CompileCommand(FileInfo input, FileInfo output, FileInfo[] references, bool emitPdb, bool msbuildDiags)
     {
         var syntaxTree = GetSyntaxTree(input);
         var (path, name) = ExtractOutputPathAndName(output);
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(syntaxTree),
+            metadataReferences: references.Select(r => MetadataReference.FromPEStream(r.OpenRead())).ToImmutableArray(),
             outputPath: path,
             assemblyName: name);
         using var peStream = new FileStream(Path.ChangeExtension(output.FullName, ".dll"), FileMode.OpenOrCreate);

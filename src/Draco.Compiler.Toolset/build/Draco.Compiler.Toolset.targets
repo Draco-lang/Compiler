@@ -15,7 +15,8 @@
                    ProjectDirectory="$(MSBuildProjectDirectory)"
                    ProjectName="$(MSBuildProjectName)"
                    OutputFile="$(IntermediateOutputPath)$(TargetName)$(TargetExt)"
-                   Compile="@(Compile)"/>
+                   Compile="@(Compile)"
+                   References="@(ReferencePathWithRefAssemblies)" />
   </Target>
     
   <!--TODO: Should do something, don't know what yet-->

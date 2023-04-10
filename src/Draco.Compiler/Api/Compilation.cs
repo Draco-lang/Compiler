@@ -84,8 +84,13 @@ public sealed class Compilation
     /// <summary>
     /// The top-level merged module that contains the source along with references.
     /// </summary>
-    internal ModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
-    private ModuleSymbol? rootModule;
+    internal RootModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
+    private RootModuleSymbol? rootModule;
+
+    /// <summary>
+    /// The metadata assemblies this compilation references.
+    /// </summary>
+    internal ImmutableArray<MetadataAssemblySymbol> MetadataAssemblies => this.RootModule.MetadataAssemblies;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
@@ -219,5 +224,5 @@ public sealed class Compilation
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
-    private ModuleSymbol BuildRootModule() => new RootModuleSymbol(this);
+    private RootModuleSymbol BuildRootModule() => new RootModuleSymbol(this);
 }

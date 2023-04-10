@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
@@ -285,47 +284,49 @@ internal partial class LocalRewriter : BoundTreeRewriter
             }
         }
 
-        var rootModule = this.compilation.RootModule;
-        var objectType = rootModule.Lookup(ImmutableArray.Create("System", "Object")).OfType<TypeSymbol>().First();
-        var systemArrayType = rootModule.Lookup(ImmutableArray.Create("System", "Array")).OfType<TypeSymbol>().First();
-
-        var arrayType = new ArrayTypeSymbol(objectType, 1, systemArrayType);
+        var arrayType = new ArrayTypeSymbol(
+            this.compilation.WellKnownTypes.SystemObject,
+            1,
+            this.compilation.WellKnownTypes.SystemArray);
         var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
 
         var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
-        arrayAssignmentBuilder.Add(
-            LocalDeclaration(
-                arrayLocal,
-                CallExpression(
-                    FunctionExpression(arrayType.ConstructorFunction),
-                    receiver: null,
-                    ImmutableArray.Create<BoundExpression>(LiteralExpression(args.Count)),
-                    arrayType)));
+
+        // var args = new object[number of interpolated expressions];
+        arrayAssignmentBuilder.Add(LocalDeclaration(
+            local: arrayLocal,
+            value: CallExpression(
+                method: FunctionExpression(arrayType.ConstructorFunction),
+                receiver: null,
+                arguments: ImmutableArray.Create<BoundExpression>(LiteralExpression(args.Count)),
+                type: arrayType)));
 
         for (var i = 0; i < args.Count; i++)
         {
-            arrayAssignmentBuilder.Add(
-                ExpressionStatement(
-                    CallExpression(
-                        FunctionExpression(arrayType.SetFunction),
-                            LocalExpression(arrayLocal),
-                            ImmutableArray.Create(LiteralExpression(i), args[i]),
-                            IntrinsicSymbols.Unit)));
+            // args[i] = interpolatedExpr;
+            arrayAssignmentBuilder.Add(ExpressionStatement(CallExpression(
+                method: FunctionExpression(arrayType.SetFunction),
+                receiver: LocalExpression(arrayLocal),
+                arguments: ImmutableArray.Create(LiteralExpression(i), args[i]),
+                type: IntrinsicSymbols.Unit)));
         }
 
-        var stringType = rootModule.Lookup(ImmutableArray.Create("System", "String")).OfType<TypeSymbol>().First();
-        var format = stringType.Members.OfType<FunctionSymbol>().First(a => a is { Name: "Format", Parameters: [_, { Type: ArrayTypeSymbol }] });
-
+        // {
+        //     var args = new object[...];
+        //     args[0] = ...;
+        //     args[1] = ...;
+        //     string.Format("...", args);
+        // }
         var result = BlockExpression(
-            ImmutableArray.Create<LocalSymbol>(arrayLocal),
-            arrayAssignmentBuilder.MoveToImmutable(),
-            CallExpression(
-                FunctionExpression(format),
+            locals: ImmutableArray.Create<LocalSymbol>(arrayLocal),
+            statements: arrayAssignmentBuilder.ToImmutable(),
+            value: CallExpression(
+                method: FunctionExpression(this.compilation.WellKnownTypes.SystemString_Format),
                 receiver: null,
-                ImmutableArray.Create<BoundExpression>(
+                arguments: ImmutableArray.Create<BoundExpression>(
                     LiteralExpression(formatString.ToString()),
                     LocalExpression(arrayLocal)),
-                stringType));
+                type: IntrinsicSymbols.String));
 
         return result.Accept(this);
     }

@@ -33,12 +33,21 @@ internal sealed class WellKnownTypes
         .Lookup(ImmutableArray.Create("System", "Object"))
         .OfType<MetadataTypeSymbol>()
         .First();
-    public MetadataTypeSymbol? systemObject;
+    private MetadataTypeSymbol? systemObject;
+
+    /// <summary>
+    /// System.Array inside System.Runtime.
+    /// </summary>
+    public MetadataTypeSymbol SystemArray => this.systemArray ??= this.SystemRuntime
+        .Lookup(ImmutableArray.Create("System", "Array"))
+        .OfType<MetadataTypeSymbol>()
+        .First();
+    private MetadataTypeSymbol? systemArray;
 
     /// <summary>
     /// object.ToString().
     /// </summary>
-    public MetadataMethodSymbol Object_ToString => this.object_ToString ??= this.SystemObject
+    public MetadataMethodSymbol SystemObject_ToString => this.object_ToString ??= this.SystemObject
         .Members
         .OfType<MetadataMethodSymbol>()
         .Single(m => m.Name == "ToString");

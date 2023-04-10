@@ -84,6 +84,11 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public IEnumerable<SyntaxToken> Tokens => this.PreOrderTraverse().OfType<SyntaxToken>();
 
     /// <summary>
+    /// All <see cref="SyntaxNode"/>s that have same parent as this node.
+    /// </summary>
+    public IEnumerable<SyntaxNode>? Siblings => this.Parent?.Children;
+
+    /// <summary>
     /// The documentation attacked before this node.
     /// </summary>
     public string Documentation => this.Green.Documentation;

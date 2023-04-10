@@ -22,17 +22,20 @@ internal abstract partial class Symbol
     public abstract Symbol? ContainingSymbol { get; }
 
     /// <summary>
-    /// The root of this hierarchy.
+    /// The ancestory chain of this symbol, starting with this one.
     /// </summary>
-    public Symbol? RootSymbol
+    public IEnumerable<Symbol> AncestorChain
     {
         get
         {
-            var result = this;
-            while (result.ContainingSymbol is not null) result = result.ContainingSymbol;
-            return result;
+            for (var result = this; result is not null; result = result.ContainingSymbol) yield return result;
         }
     }
+
+    /// <summary>
+    /// The root of this hierarchy.
+    /// </summary>
+    public Symbol? RootSymbol => this.AncestorChain.LastOrDefault();
 
     /// <summary>
     /// The root module of this hierarchy.

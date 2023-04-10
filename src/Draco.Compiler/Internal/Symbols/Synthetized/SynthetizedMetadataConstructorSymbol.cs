@@ -19,11 +19,8 @@ internal sealed class SynthetizedMetadataConstructorSymbol : MetadataMethodSymbo
     public override TypeSymbol ReturnType => (TypeSymbol)this.ContainingSymbol;
     public override string Name => this.ContainingSymbol.Name;
 
-    public SynthetizedMetadataConstructorSymbol(
-        MetadataTypeSymbol containingType,
-        MethodDefinition methodDefinition,
-        MetadataReader metadataReader)
-        : base(containingType, methodDefinition, metadataReader)
+    public SynthetizedMetadataConstructorSymbol(MetadataTypeSymbol containingType, MethodDefinition methodDefinition)
+        : base(containingType, methodDefinition)
     {
     }
 }

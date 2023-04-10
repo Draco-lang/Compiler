@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Semantics;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -11,12 +12,12 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal class MetadataAssemblySymbol : ModuleSymbol
 {
-    public override IEnumerable<Symbol> Members => new[] { this.RootNamespace };
+    public override IEnumerable<Symbol> Members => this.RootNamespace.Members;
 
     public MetadataNamespaceSymbol RootNamespace => this.rootNamespace ??= this.BuildRootNamespace();
     private MetadataNamespaceSymbol? rootNamespace;
 
-    public override string Name => this.metadataReader.GetString(this.assemblyDefinition.Name);
+    public override string Name => this.MetadataReader.GetString(this.assemblyDefinition.Name);
     // NOTE: We don't emit the name of the module in fully qualified names
     public override string FullName => string.Empty;
     public override Symbol ContainingSymbol { get; }
@@ -27,14 +28,27 @@ internal class MetadataAssemblySymbol : ModuleSymbol
     public AssemblyName AssemblyName => this.assemblyName ??= this.assemblyDefinition.GetAssemblyName();
     private AssemblyName? assemblyName;
 
+    /// <summary>
+    /// The metadata reader used to read this assembly.
+    /// </summary>
+    public MetadataReader MetadataReader { get; }
+
+    /// <summary>
+    /// The compilation this assembly belongs to.
+    /// </summary>
+    public Compilation Compilation { get; }
+
     private readonly ModuleDefinition moduleDefinition;
     private readonly AssemblyDefinition assemblyDefinition;
-    private readonly MetadataReader metadataReader;
 
-    public MetadataAssemblySymbol(Symbol containingSymbol, MetadataReader metadataReader)
+    public MetadataAssemblySymbol(
+        Symbol containingSymbol,
+        Compilation compilation,
+        MetadataReader metadataReader)
     {
         this.ContainingSymbol = containingSymbol;
-        this.metadataReader = metadataReader;
+        this.Compilation = compilation;
+        this.MetadataReader = metadataReader;
         this.moduleDefinition = metadataReader.GetModuleDefinition();
         this.assemblyDefinition = metadataReader.GetAssemblyDefinition();
     }
@@ -43,10 +57,9 @@ internal class MetadataAssemblySymbol : ModuleSymbol
 
     private MetadataNamespaceSymbol BuildRootNamespace()
     {
-        var rootNamespaceDefinition = this.metadataReader.GetNamespaceDefinitionRoot();
+        var rootNamespaceDefinition = this.MetadataReader.GetNamespaceDefinitionRoot();
         return new MetadataNamespaceSymbol(
             containingSymbol: this,
-            namespaceDefinition: rootNamespaceDefinition,
-            metadataReader: this.metadataReader);
+            namespaceDefinition: rootNamespaceDefinition);
     }
 }

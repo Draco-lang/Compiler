@@ -71,7 +71,7 @@ internal sealed class MetadataReferencesModuleSymbol : ModuleSymbol
         {
             var reader = metadataReference.MetadataReader;
             // Create the assembly
-            var assemblySymbol = new MetadataAssemblySymbol(this, reader);
+            var assemblySymbol = new MetadataAssemblySymbol(this, this.compilation, reader);
             // Add it to the worklist for further processing
             worklist.Enqueue(assemblySymbol);
             // Save it into the result list

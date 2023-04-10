@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api.Semantics;
@@ -15,20 +16,26 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
-    public override string Name => this.metadataReader.GetString(this.namespaceDefinition.Name);
+    public override string Name => this.MetadataReader.GetString(this.namespaceDefinition.Name);
     public override Symbol ContainingSymbol { get; }
 
-    private readonly NamespaceDefinition namespaceDefinition;
-    private readonly MetadataReader metadataReader;
+    /// <summary>
+    /// The metadata assembly of this metadata symbol.
+    /// </summary>
+    public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
+    private MetadataAssemblySymbol? assembly;
 
-    public MetadataNamespaceSymbol(
-        Symbol containingSymbol,
-        NamespaceDefinition namespaceDefinition,
-        MetadataReader metadataReader)
+    /// <summary>
+    /// The metadata reader that was used to read up this metadata symbol.
+    /// </summary>
+    public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+
+    private readonly NamespaceDefinition namespaceDefinition;
+
+    public MetadataNamespaceSymbol(Symbol containingSymbol, NamespaceDefinition namespaceDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.namespaceDefinition = namespaceDefinition;
-        this.metadataReader = metadataReader;
     }
 
     public override ISymbol ToApiSymbol() => throw new NotImplementedException();
@@ -40,18 +47,17 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol
         // Sub-namespaces
         foreach (var subNamespaceHandle in this.namespaceDefinition.NamespaceDefinitions)
         {
-            var subNamespaceDef = this.metadataReader.GetNamespaceDefinition(subNamespaceHandle);
+            var subNamespaceDef = this.MetadataReader.GetNamespaceDefinition(subNamespaceHandle);
             var subNamespaceSym = new MetadataNamespaceSymbol(
                 containingSymbol: this,
-                namespaceDefinition: subNamespaceDef,
-                metadataReader: this.metadataReader);
+                namespaceDefinition: subNamespaceDef);
             result.Add(subNamespaceSym);
         }
 
         // Types
         foreach (var typeHandle in this.namespaceDefinition.TypeDefinitions)
         {
-            var typeDef = this.metadataReader.GetTypeDefinition(typeHandle);
+            var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
             // Skip nested types, that will be handled by the type itself
             if (typeDef.IsNested) continue;
             // Skip types with special name
@@ -59,7 +65,7 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol
             // Skip non-public types
             if (!typeDef.Attributes.HasFlag(TypeAttributes.Public)) continue;
             // Turn into a symbol, or potentially symbols
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.metadataReader);
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
             result.AddRange(symbols);
         }
 

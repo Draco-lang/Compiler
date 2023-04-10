@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
@@ -14,17 +15,19 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
     // TODO: We return a special error type for now to swallow errors
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>");
 
-    private readonly ModuleSymbol rootModule;
+    private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
 
-    public SignatureDecoder(ModuleSymbol rootModule)
+    private readonly Compilation compilation;
+
+    public SignatureDecoder(Compilation compilation)
     {
-        this.rootModule = rootModule;
+        this.compilation = compilation;
     }
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape)
-        => new ArrayTypeSymbol(elementType, shape.Rank, this.rootModule.Lookup(ImmutableArray.Create("System", "Array")).OfType<TypeSymbol>().First());
+        => new ArrayTypeSymbol(elementType, shape.Rank, this.WellKnownTypes.SystemArray);
     public TypeSymbol GetSZArrayType(TypeSymbol elementType)
-        => new ArrayTypeSymbol(elementType, 1, this.rootModule.Lookup(ImmutableArray.Create("System", "Array")).OfType<TypeSymbol>().First());
+        => new ArrayTypeSymbol(elementType, 1, this.WellKnownTypes.SystemArray);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
     public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => UnknownType;
@@ -39,7 +42,7 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
         PrimitiveTypeCode.Int32 => IntrinsicSymbols.Int32,
         PrimitiveTypeCode.String => IntrinsicSymbols.String,
         PrimitiveTypeCode.Void => IntrinsicSymbols.Unit,
-        PrimitiveTypeCode.Object => this.rootModule.Lookup(ImmutableArray.Create("System", "Object")).OfType<TypeSymbol>().First(),
+        PrimitiveTypeCode.Object => this.WellKnownTypes.SystemObject,
         _ => UnknownType
     };
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
@@ -61,7 +64,7 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
         var name = reader.GetString(definition.Name);
         var fullName = $"{@namespace}.{name}";
         var parts = fullName.Split('.').ToImmutableArray();
-        var typeSymbol = this.rootModule
+        var typeSymbol = this.compilation.RootModule
             .Lookup(parts)
             .OfType<TypeSymbol>()
             .Single();

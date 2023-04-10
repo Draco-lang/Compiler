@@ -24,13 +24,13 @@ internal static class MetadataSymbol
         if (type.Attributes.HasFlag(StaticClassAttributes))
         {
             // Static classes are treated as modules, nothing extra to do
-            var result = new MetadataStaticClassSymbol(containingSymbol, type, metadataReader);
+            var result = new MetadataStaticClassSymbol(containingSymbol, type);
             return new[] { result };
         }
         else
         {
             // Non-static classes get constructor methods injected, in case they are not abstract
-            var typeSymbol = new MetadataTypeSymbol(containingSymbol, type, metadataReader);
+            var typeSymbol = new MetadataTypeSymbol(containingSymbol, type);
             var results = new List<Symbol>() { typeSymbol };
             if (!type.Attributes.HasFlag(TypeAttributes.Abstract))
             {
@@ -42,7 +42,7 @@ internal static class MetadataSymbol
                     if (methodName != ".ctor") continue;
 
                     // This is a constructor
-                    var ctor = new SynthetizedMetadataConstructorSymbol(typeSymbol, method, metadataReader);
+                    var ctor = new SynthetizedMetadataConstructorSymbol(typeSymbol, method);
                     results.Add(ctor);
                 }
             }

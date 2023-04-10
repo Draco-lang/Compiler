@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -43,38 +44,42 @@ internal class MetadataMethodSymbol : FunctionSymbol
     private ImmutableArray<ParameterSymbol> parameters;
     private TypeSymbol? returnType;
 
-    public override string Name => this.metadataReader.GetString(this.methodDefinition.Name);
+    public override string Name => this.MetadataReader.GetString(this.methodDefinition.Name);
+
+    /// <summary>
+    /// The metadata assembly of this metadata symbol.
+    /// </summary>
+    public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
+    private MetadataAssemblySymbol? assembly;
+
+    /// <summary>
+    /// The metadata reader that was used to read up this metadata symbol.
+    /// </summary>
+    public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly MethodDefinition methodDefinition;
-    private readonly MetadataReader metadataReader;
 
-    public MetadataMethodSymbol(
-        Symbol containingSymbol,
-        MethodDefinition methodDefinition,
-        MetadataReader metadataReader)
+    public MetadataMethodSymbol(Symbol containingSymbol, MethodDefinition methodDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.methodDefinition = methodDefinition;
-        this.metadataReader = metadataReader;
     }
 
     private void Build()
     {
         // Decode signature
-        var rootModule = this.RootModule ?? throw new InvalidOperationException();
-        var decoder = new SignatureDecoder(rootModule);
+        var decoder = new SignatureDecoder(this.Assembly.Compilation);
         var signature = this.methodDefinition.DecodeSignature(decoder, default);
 
         // Build parameters
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
         foreach (var (paramHandle, paramType) in this.methodDefinition.GetParameters().Zip(signature.ParameterTypes))
         {
-            var paramDef = this.metadataReader.GetParameter(paramHandle);
+            var paramDef = this.MetadataReader.GetParameter(paramHandle);
             var paramSym = new MetadataParameterSymbol(
                 containingSymbol: this,
                 type: paramType,
-                parameterDefinition: paramDef,
-                metadataReader: this.metadataReader);
+                parameterDefinition: paramDef);
             parameters.Add(paramSym);
         }
         this.parameters = parameters.ToImmutable();

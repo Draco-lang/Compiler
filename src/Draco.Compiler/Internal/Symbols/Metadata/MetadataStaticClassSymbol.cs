@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api.Semantics;
@@ -15,21 +16,27 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
-    public override string Name => this.metadataReader.GetString(this.typeDefinition.Name);
+    public override string Name => this.MetadataReader.GetString(this.typeDefinition.Name);
 
     public override Symbol ContainingSymbol { get; }
 
-    private readonly TypeDefinition typeDefinition;
-    private readonly MetadataReader metadataReader;
+    /// <summary>
+    /// The metadata assembly of this metadata symbol.
+    /// </summary>
+    public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
+    private MetadataAssemblySymbol? assembly;
 
-    public MetadataStaticClassSymbol(
-        Symbol containingSymbol,
-        TypeDefinition typeDefinition,
-        MetadataReader metadataReader)
+    /// <summary>
+    /// The metadata reader that was used to read up this metadata symbol.
+    /// </summary>
+    public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+
+    private readonly TypeDefinition typeDefinition;
+
+    public MetadataStaticClassSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.typeDefinition = typeDefinition;
-        this.metadataReader = metadataReader;
     }
 
     public override ISymbol ToApiSymbol() => throw new NotImplementedException();
@@ -45,7 +52,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
         // Methods
         foreach (var methodHandle in this.typeDefinition.GetMethods())
         {
-            var methodDef = this.metadataReader.GetMethodDefinition(methodHandle);
+            var methodDef = this.MetadataReader.GetMethodDefinition(methodHandle);
             // Skip methods with special name
             if (methodDef.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
             // Skip non-public methods
@@ -55,8 +62,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             if (!methodDef.Attributes.HasFlag(MethodAttributes.Static)) continue;
             var methodSym = new MetadataMethodSymbol(
                 containingSymbol: this,
-                methodDefinition: methodDef,
-                metadataReader: this.metadataReader);
+                methodDefinition: methodDef);
             result.Add(methodSym);
         }
 

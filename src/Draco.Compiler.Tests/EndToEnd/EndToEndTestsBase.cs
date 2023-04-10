@@ -14,7 +14,7 @@ public abstract class EndToEndTestsBase
         var compilation = Compilation.Create(
             ImmutableArray.Create(syntaxTree),
             Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPEStream(new MemoryStream(r.ImageBytes)))
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray()
         );
 

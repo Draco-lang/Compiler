@@ -41,7 +41,7 @@ public partial class Program
         foreach (var resourceName in thisAssembly.GetManifestResourceNames().Where(n => n.StartsWith("ReferenceAssembly.")))
         {
             var stream = thisAssembly.GetManifestResourceStream(resourceName)!;
-            refs.Add(MetadataReference.FromPEStream(stream));
+            refs.Add(MetadataReference.FromPeStream(stream));
         }
 
         return refs.ToImmutable();

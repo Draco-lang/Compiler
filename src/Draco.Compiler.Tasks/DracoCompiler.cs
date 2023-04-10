@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -47,6 +46,10 @@ public sealed class DracoCompiler : ToolTask
     /// </summary>
     public string DracoCompilerPath { get; set; }
 
+    protected override string ToolName => Path.GetFileName(this.GetDotNetPath());
+
+    private readonly List<string> errorLines = new();
+
     protected override bool ValidateParameters()
     {
         var mainFile = this.Compile.FirstOrDefault(f => f == "main.draco");
@@ -59,10 +62,7 @@ public sealed class DracoCompiler : ToolTask
         return true;
     }
 
-    protected override string GenerateCommandLineCommands()
-    {
-        return $"exec \"{this.DracoCompilerPath}\"";
-    }
+    protected override string GenerateCommandLineCommands() => $"exec \"{this.DracoCompilerPath}\"";
 
     protected override string GenerateResponseFileCommands()
     {
@@ -79,25 +79,28 @@ public sealed class DracoCompiler : ToolTask
         return sb.ToString();
     }
 
-    private List<string> errorLines;
-
     protected override void LogEventsFromTextOutput(string singleLine, MessageImportance messageImportance)
     {
-        if (messageImportance == MessageImportance.Normal) // was singleLine read from standard error?
+        if (messageImportance == MessageImportance.Normal)
         {
-            this.errorLines ??= new();
+            // was singleLine read from standard error?
             this.errorLines.Add(singleLine);
         }
     }
 
     protected override bool HandleTaskExecutionErrors()
     {
-        if (this.errorLines?.Count > 0)
+        if (this.errorLines.Count > 0)
         {
-            this.Log.LogCriticalMessage(null, "DR0001", null, null, 0, 0, 0, 0,
-                "Internal compiler error. Please open an issue with a repro case at https://github.com/Draco-lang/Compiler/issues"
-                + Environment.NewLine
-                + string.Join(Environment.NewLine, this.errorLines));
+            var message = new StringBuilder();
+            message.AppendLine("Internal compiler error. Please open an issue with a repro case at https://github.com/Draco-lang/Compiler/issues");
+            message.Append(string.Join(Environment.NewLine, this.errorLines));
+            this.Log.LogCriticalMessage(
+                subcategory: null, code: "DR0001", helpKeyword: null,
+                file: null,
+                lineNumber: 0, columnNumber: 0,
+                endLineNumber: 0, endColumnNumber: 0,
+                message: message.ToString());
         }
 
         return base.HandleTaskExecutionErrors();
@@ -115,8 +118,6 @@ public sealed class DracoCompiler : ToolTask
 
         return path;
     }
-
-    protected override string ToolName => Path.GetFileName(this.GetDotNetPath());
 
     protected override string GenerateFullPathToTool() => Path.GetFullPath(this.GetDotNetPath());
 }

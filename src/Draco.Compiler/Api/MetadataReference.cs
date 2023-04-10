@@ -45,7 +45,7 @@ public abstract class MetadataReference
         }
     }
 
-    public static MetadataReference FromPEStream(Stream peStream)
+    public static MetadataReference FromPeStream(Stream peStream)
     {
         return new PEStreamReference(peStream);
     }

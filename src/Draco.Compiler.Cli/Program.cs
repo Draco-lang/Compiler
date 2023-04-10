@@ -42,9 +42,10 @@ internal class Program
         var runCommand = new Command("run", "Runs the Draco program")
         {
             fileArgument,
+            referencesOption,
             msbuildDiagOption,
         };
-        runCommand.SetHandler(RunCommand, fileArgument, msbuildDiagOption);
+        runCommand.SetHandler(RunCommand, fileArgument, referencesOption, msbuildDiagOption);
 
         // IR code
 
@@ -91,7 +92,9 @@ internal class Program
         var (path, name) = ExtractOutputPathAndName(output);
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(syntaxTree),
-            metadataReferences: references.Select(r => MetadataReference.FromPEStream(r.OpenRead())).ToImmutableArray(),
+            metadataReferences: references
+                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .ToImmutableArray(),
             outputPath: path,
             assemblyName: name);
         using var peStream = new FileStream(Path.ChangeExtension(output.FullName, ".dll"), FileMode.OpenOrCreate);
@@ -104,11 +107,14 @@ internal class Program
         EmitDiagnostics(emitResult, msbuildDiags);
     }
 
-    private static void RunCommand(FileInfo input, bool msbuildDiags)
+    private static void RunCommand(FileInfo input, FileInfo[] references, bool msbuildDiags)
     {
         var syntaxTree = GetSyntaxTree(input);
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree));
+            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            metadataReferences: references
+                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .ToImmutableArray());
         var execResult = ScriptingEngine.Execute(compilation);
         if (!EmitDiagnostics(execResult, msbuildDiags))
         {

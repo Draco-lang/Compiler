@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api.Semantics;
 
@@ -19,6 +20,12 @@ internal class MetadataAssemblySymbol : ModuleSymbol
     // NOTE: We don't emit the name of the module in fully qualified names
     public override string FullName => string.Empty;
     public override Symbol ContainingSymbol { get; }
+
+    /// <summary>
+    /// The <see cref="System.Reflection.AssemblyName"/> of this referenced assembly.
+    /// </summary>
+    public AssemblyName AssemblyName => this.assemblyName ??= this.assemblyDefinition.GetAssemblyName();
+    private AssemblyName? assemblyName;
 
     private readonly ModuleDefinition moduleDefinition;
     private readonly AssemblyDefinition assemblyDefinition;

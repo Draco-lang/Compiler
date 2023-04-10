@@ -109,6 +109,11 @@ public sealed class Compilation
     /// </summary>
     internal DiagnosticBag GlobalDiagnosticBag { get; } = new();
 
+    /// <summary>
+    /// Welol-known types that need to be referenced during compilation.
+    /// </summary>
+    internal WellKnownTypes WellKnownTypes { get; }
+
     private readonly BinderCache binderCache;
 
     private Compilation(
@@ -121,6 +126,7 @@ public sealed class Compilation
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
+        this.WellKnownTypes = new(this);
         this.binderCache = new(this);
     }
 

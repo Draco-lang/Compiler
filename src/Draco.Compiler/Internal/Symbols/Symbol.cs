@@ -27,6 +27,11 @@ internal abstract partial class Symbol
     public virtual bool IsError => false;
 
     /// <summary>
+    /// True, if this symbol represents special symbol.
+    /// </summary>
+    public virtual bool IsSpecialName => false;
+
+    /// <summary>
     /// The name of this symbol.
     /// </summary>
     public virtual string Name => string.Empty;

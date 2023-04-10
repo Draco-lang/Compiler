@@ -24,6 +24,11 @@ public interface ISymbol : IEquatable<ISymbol>
     public bool IsError { get; }
 
     /// <summary>
+    /// True, if this symbol represents special symbol.
+    /// </summary>
+    public bool IsSpecialName { get; }
+
+    /// <summary>
     /// The location where this symbol was defined.
     /// </summary>
     public Location? Definition { get; }
@@ -104,6 +109,7 @@ internal abstract class SymbolBase : ISymbol
 
     public string Name => this.Symbol.Name;
     public bool IsError => this.Symbol.IsError;
+    public bool IsSpecialName => this.Symbol.IsSpecialName;
     public Location? Definition => this.Symbol.DeclarationSyntax?.Location;
     public string Documentation => this.Symbol.Documentation;
 

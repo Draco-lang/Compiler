@@ -118,6 +118,23 @@ public sealed partial class SemanticModel
         return result.ToImmutableArray();
     }
 
+    /// <summary>
+    /// Retrieves all <see cref="ISymbol"/>s accesible from given <paramref name="node"/>.
+    /// </summary>
+    /// <param name="node">The <see cref="SyntaxNode"/> from which to start looking for declared symbols.</param>
+    /// <returns>All the <see cref="ISymbol"/>s accesible from the <paramref name="node"/>.</returns>
+    public ImmutableArray<ISymbol> GetAllDefinedSymbols(SyntaxNode node)
+    {
+        var result = ImmutableArray.CreateBuilder<ISymbol>();
+        var binder = this.compilation.GetBinder(node);
+        while (binder is not null)
+        {
+            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDefinedSymbol(loc.DeclarationSyntax)! : x.ToApiSymbol()));
+            binder = binder.Parent;
+        }
+        return result.ToImmutable();
+    }
+
     // NOTE: These OrNull functions are not too pretty
     // For now public API is not that big of a concern, so they can stay
     // Instead we could just always return a nullable or an error symbol when appropriate

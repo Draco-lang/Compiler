@@ -88,6 +88,22 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// </summary>
     public IEnumerable<SyntaxNode>? Siblings => this.Parent?.Children;
 
+    public SyntaxNode? LeftSibling
+    {
+        get
+        {
+            if (this.Siblings is null) return null;
+            var leftSibling = this.Siblings.First();
+            var siblings = this.Siblings.ToList();
+            for (int i = 1; i < siblings.Count; i++)
+            {
+                if (siblings[i] == this) return leftSibling;
+                leftSibling = siblings[i];
+            }
+            return null;
+        }
+    }
+
     /// <summary>
     /// The documentation attacked before this node.
     /// </summary>

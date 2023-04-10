@@ -1,30 +1,22 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.CodeCompletion;
 
-public static class CompletionService
+public sealed class CompletionService
 {
-    private readonly static CompletionItem[] keywords = new CompletionItem[]
-    {
-        new("func", Context.DeclarationStart, Context.StatementStart),
-        new("var", Context.DeclarationStart, Context.StatementStart),
-        new("val", Context.DeclarationStart, Context.StatementStart),
-
-        new("goto", Context.StatementStart),
-        new("return", Context.StatementStart),
-        new("if", Context.StatementStart),
-        new("while", Context.StatementStart),
-
-        new("else", Context.ElseBranchStart),
-    };
-
+    // TODO: different icons for functions
     public static IList<string> GetCompletions(SyntaxTree tree, SyntaxPosition cursor)
     {
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).Select(x => new CompletionItem(x.Name, GetContext(x)));
         var context = GetContext(tree.Root, cursor);
         var result = new List<string>();
-        foreach (var item in keywords.Where(x => x.Contexts.Contains(context)))
+        foreach (var item in completions.Where(x => x.Contexts.Contains(context)))
         {
             result.Add(item.Text);
         }
@@ -33,9 +25,16 @@ public static class CompletionService
 
     private static Context GetContext(SyntaxNode node, SyntaxPosition cursor)
     {
-        var subtree = node.TraverseSubtreesAtPosition(cursor);
-        if (subtree.LastOrDefault(x => x is ExpressionStatementSyntax)) return Context.ElseBranchStart;
-        if (subtree.Any(x => x is FunctionDeclarationSyntax)) return Context.StatementStart; // TODO: EOF wrong
-        else return Context.DeclarationStart;
+        var subtree = node.TraverseSubtreesAtCursorPosition(cursor);
+        if (subtree.Any(x => x is FunctionDeclarationSyntax)) return Context.StatementContent;
+        else return Context.Unknown;
     }
+
+    private static Context GetContext(ISymbol symbol) => symbol switch
+    {
+        TypeSymbol => Context.TypeRefeence,
+        LocalSymbol => Context.StatementContent,
+        FunctionSymbol fun when !fun.IsSpecialName => Context.StatementContent,
+        _ => Context.Unknown
+    };
 }

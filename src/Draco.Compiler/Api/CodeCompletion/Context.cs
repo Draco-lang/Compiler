@@ -1,6 +1,6 @@
 namespace Draco.Compiler.Api.CodeCompletion;
 
-internal enum Context
+public enum CompletionContext
 {
     Unknown,
     StatementContent,

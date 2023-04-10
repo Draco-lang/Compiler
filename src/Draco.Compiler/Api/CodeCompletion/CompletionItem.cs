@@ -1,3 +1,3 @@
 namespace Draco.Compiler.Api.CodeCompletion;
 
-internal record class CompletionItem(string Text, params Context[] Contexts);
+public record class CompletionItem(string Text, CompletionKind Kind, params CompletionContext[] Contexts);

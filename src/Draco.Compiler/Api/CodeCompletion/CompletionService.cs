@@ -8,33 +8,30 @@ namespace Draco.Compiler.Api.CodeCompletion;
 
 public sealed class CompletionService
 {
-    // TODO: different icons for functions
-    public static IList<string> GetCompletions(SyntaxTree tree, SyntaxPosition cursor)
+    // TODO: types
+    public static IList<CompletionItem> GetCompletions(SyntaxTree tree, SyntaxPosition cursor)
     {
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).Select(x => new CompletionItem(x.Name, GetContext(x)));
+        var completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).DistinctBy(x => x.Name).Select(x => GetCompletionItem(x));
         var context = GetContext(tree.Root, cursor);
-        var result = new List<string>();
-        foreach (var item in completions.Where(x => x.Contexts.Contains(context)))
-        {
-            result.Add(item.Text);
-        }
+        var result = new List<CompletionItem>();
+        result.AddRange(completions.Where(x => x is not null && x.Contexts.Contains(context))!);
         return result;
     }
 
-    private static Context GetContext(SyntaxNode node, SyntaxPosition cursor)
+    private static CompletionContext GetContext(SyntaxNode node, SyntaxPosition cursor)
     {
         var subtree = node.TraverseSubtreesAtCursorPosition(cursor);
-        if (subtree.Any(x => x is FunctionDeclarationSyntax)) return Context.StatementContent;
-        else return Context.Unknown;
+        if (subtree.Any(x => x is FunctionDeclarationSyntax)) return CompletionContext.StatementContent;
+        else return CompletionContext.Unknown;
     }
 
-    private static Context GetContext(ISymbol symbol) => symbol switch
+    private static CompletionItem? GetCompletionItem(ISymbol symbol) => symbol switch
     {
-        TypeSymbol => Context.TypeRefeence,
-        LocalSymbol => Context.StatementContent,
-        FunctionSymbol fun when !fun.IsSpecialName => Context.StatementContent,
-        _ => Context.Unknown
+        //TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Idk, Context.TypeRefeence),
+        LocalSymbol => new CompletionItem(symbol.Name, CompletionKind.Variable, CompletionContext.StatementContent),
+        FunctionSymbol fun when !fun.IsSpecialName => new CompletionItem(symbol.Name, CompletionKind.Function, CompletionContext.StatementContent),
+        _ => null
     };
 }

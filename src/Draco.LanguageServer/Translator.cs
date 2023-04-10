@@ -62,4 +62,18 @@ internal static class Translator
         Line = (uint)position.Line,
         Character = (uint)position.Column,
     };
+
+    public static LspModels.CompletionItem ToLsp(CompilerApi.CodeCompletion.CompletionItem item) => new()
+    {
+        Label = item.Text,
+        Kind = ToLsp(item.Kind),
+    };
+
+    public static LspModels.CompletionItemKind ToLsp(CompilerApi.CodeCompletion.CompletionKind kind) => kind switch
+    {
+        CompilerApi.CodeCompletion.CompletionKind.Variable => LspModels.CompletionItemKind.Variable,
+        CompilerApi.CodeCompletion.CompletionKind.Function => LspModels.CompletionItemKind.Function,
+        CompilerApi.CodeCompletion.CompletionKind.Keyword => LspModels.CompletionItemKind.Keyword,
+        _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
+    };
 }

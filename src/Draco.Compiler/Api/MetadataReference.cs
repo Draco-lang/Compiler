@@ -35,6 +35,18 @@ public abstract class MetadataReference
         }
     }
 
+    /// <summary>
+    /// Creates a metadata reference from the given PE stream.
+    /// </summary>
+    /// <param name="peStream">The PE stream to create the metadata reference from.</param>
+    /// <returns>The <see cref="MetadataReference"/> reading up from <paramref name="peStream"/>.</returns>
+    public static MetadataReference FromPeStream(Stream peStream)
+    {
+        var peReader = new PEReader(peStream);
+        var metadataReader = peReader.GetMetadataReader();
+        return new MetadataReaderReference(metadataReader);
+    }
+
     private sealed class MetadataReaderReference : MetadataReference
     {
         public override MetadataReader MetadataReader { get; }
@@ -42,24 +54,6 @@ public abstract class MetadataReference
         public MetadataReaderReference(MetadataReader metadataReader)
         {
             this.MetadataReader = metadataReader;
-        }
-    }
-
-    public static MetadataReference FromPeStream(Stream peStream)
-    {
-        return new PEStreamReference(peStream);
-    }
-
-    private sealed class PEStreamReference : MetadataReference
-    {
-        public override MetadataReader MetadataReader => this.metadataReader ??= this.peReader.GetMetadataReader();
-
-        private readonly PEReader peReader;
-        private MetadataReader? metadataReader;
-
-        public PEStreamReference(Stream peStream)
-        {
-            this.peReader = new PEReader(peStream);
         }
     }
 }

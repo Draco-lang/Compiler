@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -14,7 +16,7 @@ namespace Draco.Compiler.Internal.Lowering;
 /// </summary>
 internal partial class LocalRewriter : BoundTreeRewriter
 {
-    public static BoundNode Rewrite(BoundNode node) => node.Accept(Instance);
+    private readonly Compilation compilation;
 
     /// <summary>
     /// Represents a value that was temporarily stored.
@@ -27,13 +29,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
         BoundExpression Reference,
         BoundStatement Assignment);
 
-    /// <summary>
-    /// The singleton instance to use.
-    /// </summary>
-    public static LocalRewriter Instance { get; } = new();
-
-    private LocalRewriter()
+    public LocalRewriter(Compilation compilation)
     {
+        this.compilation = compilation;
     }
 
     public override BoundNode VisitBlockExpression(BoundBlockExpression node)
@@ -268,7 +266,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         // We need to desugar into string.Format("format string", array of args)
         // Build up interpolation string and lower interpolated expressions
         var formatString = new StringBuilder();
-        var args = ImmutableArray.CreateBuilder<BoundExpression>();
+        var args = new List<BoundExpression>();
         foreach (var part in node.Parts)
         {
             if (part is BoundStringText text)
@@ -286,7 +284,50 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 args.Add(arg);
             }
         }
-        throw new System.NotImplementedException();
+
+        var rootModule = this.compilation.RootModule;
+        var objectType = rootModule.Lookup(ImmutableArray.Create("System", "Object")).OfType<TypeSymbol>().First();
+        var systemArrayType = rootModule.Lookup(ImmutableArray.Create("System", "Array")).OfType<TypeSymbol>().First();
+
+        var arrayType = new ArrayTypeSymbol(objectType, 1, systemArrayType);
+        var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
+
+        var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
+        arrayAssignmentBuilder.Add(
+            LocalDeclaration(
+                arrayLocal,
+                CallExpression(
+                    FunctionExpression(arrayType.ConstructorFunction),
+                    receiver: null,
+                    ImmutableArray.Create<BoundExpression>(LiteralExpression(args.Count)),
+                    arrayType)));
+
+        for (var i = 0; i < args.Count; i++)
+        {
+            arrayAssignmentBuilder.Add(
+                ExpressionStatement(
+                    CallExpression(
+                        FunctionExpression(arrayType.SetFunction),
+                            LocalExpression(arrayLocal),
+                            ImmutableArray.Create(LiteralExpression(i), args[i]),
+                            IntrinsicSymbols.Unit)));
+        }
+
+        var stringType = rootModule.Lookup(ImmutableArray.Create("System", "String")).OfType<TypeSymbol>().First();
+        var format = stringType.Members.OfType<FunctionSymbol>().First(a => a is { Name: "Format", Parameters: [_, { Type: ArrayTypeSymbol }] });
+
+        var result = BlockExpression(
+            ImmutableArray.Create<LocalSymbol>(arrayLocal),
+            arrayAssignmentBuilder.MoveToImmutable(),
+            CallExpression(
+                FunctionExpression(format),
+                receiver: null,
+                ImmutableArray.Create<BoundExpression>(
+                    LiteralExpression(formatString.ToString()),
+                    LocalExpression(arrayLocal)),
+                stringType));
+
+        return result.Accept(this);
     }
 
     // Utility to store an expression to a temporary variable

@@ -367,13 +367,28 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         if (type is MetadataTypeSymbol metadataType)
         {
-            var reference = this.GetTypeReferenceHandle(metadataType);
-            encoder.Type(reference, metadataType.IsValueType);
+            // TODO: This needs to be made more robust
+            if (metadataType.FullName == "System.Object")
+            {
+                encoder.Object();
+            }
+            else
+            {
+                var reference = this.GetTypeReferenceHandle(metadataType);
+                encoder.Type(reference, metadataType.IsValueType);
+            }
+            return;
+        }
+
+        // TODO: Multi-dimensional arrays
+        if (type is ArrayTypeSymbol { Rank: 1 } arrayType)
+        {
+            this.EncodeSignatureType(encoder.SZArray(), arrayType.ElementType);
             return;
         }
 
         // TODO
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 
     private void WritePe(Stream peStream)

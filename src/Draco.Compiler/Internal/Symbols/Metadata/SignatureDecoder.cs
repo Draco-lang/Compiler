@@ -21,7 +21,10 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
         this.rootModule = rootModule;
     }
 
-    public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) => UnknownType;
+    public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape)
+        => new ArrayTypeSymbol(elementType, shape.Rank, this.rootModule.Lookup(ImmutableArray.Create("System", "Array")).OfType<TypeSymbol>().First());
+    public TypeSymbol GetSZArrayType(TypeSymbol elementType)
+        => new ArrayTypeSymbol(elementType, 1, this.rootModule.Lookup(ImmutableArray.Create("System", "Array")).OfType<TypeSymbol>().First());
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
     public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => UnknownType;
@@ -36,9 +39,9 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
         PrimitiveTypeCode.Int32 => IntrinsicSymbols.Int32,
         PrimitiveTypeCode.String => IntrinsicSymbols.String,
         PrimitiveTypeCode.Void => IntrinsicSymbols.Unit,
-        _ => UnknownType,
+        PrimitiveTypeCode.Object => this.rootModule.Lookup(ImmutableArray.Create("System", "Object")).OfType<TypeSymbol>().First(),
+        _ => UnknownType
     };
-    public TypeSymbol GetSZArrayType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
         var definition = reader.GetTypeDefinition(handle);

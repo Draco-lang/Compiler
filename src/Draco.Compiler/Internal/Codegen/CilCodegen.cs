@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -152,7 +153,7 @@ internal sealed class CilCodegen
                 ArithmeticOp.Rem => ILOpCode.Rem,
                 ArithmeticOp.Less => ILOpCode.Clt,
                 ArithmeticOp.Equal => ILOpCode.Ceq,
-                _ => throw new System.InvalidOperationException(),
+                _ => throw new InvalidOperationException(),
             });
             this.StoreLocal(arithmetic.Target);
             break;
@@ -170,7 +171,7 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             default:
-                throw new System.InvalidOperationException();
+                throw new InvalidOperationException();
             }
             // Just copy to the target local
             this.StoreLocal(load.Target);
@@ -190,7 +191,7 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             default:
-                throw new System.InvalidOperationException();
+                throw new InvalidOperationException();
             }
             break;
         }
@@ -207,7 +208,9 @@ internal sealed class CilCodegen
             }
             else if (call.Procedure is MetadataReference metadataRef)
             {
-                if (metadataRef.Symbol is SynthetizedMetadataConstructorSymbol ctor)
+                switch (metadataRef.Symbol)
+                {
+                case SynthetizedMetadataConstructorSymbol ctor:
                 {
                     // The constructed type is from metadata, but the ctor symbol doesn't contain the real names
                     var type = this.GetTypeReferenceHandle(ctor.ReturnType);
@@ -232,18 +235,42 @@ internal sealed class CilCodegen
                     // Encode instantiation
                     this.InstructionEncoder.OpCode(ILOpCode.Newobj);
                     this.InstructionEncoder.Token(handle);
+                    break;
                 }
-                else
+                case SynthetizedArrayFunctionSymbol arr:
+                {
+                    if (arr.ArrayType.Rank != 1)
+                    {
+                        // TODO: Only support SZ arrays for now.
+                        throw new NotImplementedException();
+                    }
+
+                    var elementTypeRef = this.GetTypeReferenceHandle(arr.ArrayType.ElementType);
+                    switch (arr.Kind)
+                    {
+                    case SynthetizedArrayFunctionSymbol.FunctionKind.Constructor:
+                        this.InstructionEncoder.OpCode(ILOpCode.Newarr);
+                        this.InstructionEncoder.Token(elementTypeRef);
+                        break;
+                    default:
+                        // I'm not sure what else can get here
+                        throw new UnreachableException();
+                    }
+                    break;
+                }
+                default:
                 {
                     // Regular lookup
                     var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
                     this.InstructionEncoder.Call(handle);
+                    break;
+                }
                 }
             }
             else
             {
                 // TODO
-                throw new System.NotImplementedException();
+                throw new NotImplementedException();
             }
             // Store result
             this.StoreLocal(call.Target);
@@ -259,21 +286,39 @@ internal sealed class CilCodegen
             if (mcall.Procedure is MetadataReference metadataRef)
             {
                 var symbol = (FunctionSymbol)metadataRef.Symbol;
-                var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
-                this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
-                this.InstructionEncoder.Token(handle);
+                if (symbol is SynthetizedArrayFunctionSymbol arr)
+                {
+                    var elementTypeRef = this.GetTypeReferenceHandle(arr.ArrayType.ElementType);
+                    switch (arr.Kind)
+                    {
+                    case SynthetizedArrayFunctionSymbol.FunctionKind.Get:
+                        this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
+                        this.InstructionEncoder.Token(elementTypeRef);
+                        break;
+                    case SynthetizedArrayFunctionSymbol.FunctionKind.Set:
+                        this.InstructionEncoder.OpCode(ILOpCode.Stelem);
+                        this.InstructionEncoder.Token(elementTypeRef);
+                        break;
+                    }
+                }
+                else
+                {
+                    var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+                    this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
+                    this.InstructionEncoder.Token(handle);
+                }
             }
             else
             {
                 // TODO
-                throw new System.NotImplementedException();
+                throw new NotImplementedException();
             }
             // Store result
             this.StoreLocal(mcall.Target);
             break;
         }
         default:
-            throw new System.ArgumentOutOfRangeException(nameof(instruction));
+            throw new ArgumentOutOfRangeException(nameof(instruction));
         }
     }
 
@@ -303,11 +348,11 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.LoadString(stringHandle);
                 break;
             default:
-                throw new System.NotImplementedException();
+                throw new NotImplementedException();
             }
             break;
         default:
-            throw new System.ArgumentOutOfRangeException(nameof(operand));
+            throw new ArgumentOutOfRangeException(nameof(operand));
         }
     }
 

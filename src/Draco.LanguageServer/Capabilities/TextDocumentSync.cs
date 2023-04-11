@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,10 +16,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
     public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken)
     {
         this.documentRepository.AddOrUpdateDocument(param.TextDocument.Uri, param.TextDocument.Text);
-        this.syntaxTree = SyntaxTree.Parse(param.TextDocument.Text);
-        this.compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(this.syntaxTree));
-        this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
+        this.UpdateCompilation(param.TextDocument.Text);
         await this.PublishDiagnosticsAsync(param.TextDocument.Uri, param.TextDocument.Text);
     }
 
@@ -31,11 +29,21 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var change = param.ContentChanges.First();
         var sourceText = change.Text;
         this.documentRepository.AddOrUpdateDocument(uri, sourceText);
-        this.syntaxTree = SyntaxTree.Parse(sourceText);
-        this.compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(this.syntaxTree));
-        this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
+        this.UpdateCompilation(sourceText);
         await this.PublishDiagnosticsAsync(uri, sourceText);
+    }
+
+    // NOTE: This needs to be more sophisticated, once we have multiple files and such
+    private void UpdateCompilation(string text)
+    {
+        this.syntaxTree = SyntaxTree.Parse(text);
+        this.compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(this.syntaxTree),
+            // NOTE: Temporary until we solve MSBuild communication
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
     }
 
     private async Task PublishDiagnosticsAsync(DocumentUri uri, string text)

@@ -34,17 +34,17 @@
                 }
             ],
             "defaultValue": "net7.0",
-            "replaces": "{TargetFramework}",
+            "replaces": "$(TargetFramework)",
             "displayName": "Target framework",
             "description": "The target framework for the project."
         }
     },
     "primaryOutputs": [
         {
-            "path": "./main.draco"
+            "path": "main.draco"
         },
         {
-            "path": "./ConsoleApplication.dracoproj"
+            "path": "DracoConsole.dracoproj"
         }
     ]
 }

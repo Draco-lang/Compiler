@@ -11,29 +11,46 @@ public sealed class CompletionService
 {
     public static IList<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
-        var completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).GroupBy(x => x.Name).Select(x =>
-            x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
-        var context = GetContext(tree.Root, cursor);
+        IEnumerable<CompletionItem?>? completions = null;
+        if (TryGetMemberAccess(tree, cursor, semanticModel))
+        {
+            completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).GroupBy(x => x.Name).Select(x =>
+                x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
+        }
+        else
+        {
+            completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).GroupBy(x => x.Name).Select(x =>
+                x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
+        }
         var result = new List<CompletionItem>();
-        result.AddRange(completions.Where(x => x is not null && x.Contexts.Contains(context))!);
+        result.AddRange(completions.Where(x => x is not null)!);
         return result;
     }
 
-    private static CompletionContext GetContext(SyntaxNode node, SyntaxPosition cursor)
+    private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel)
     {
-        var subtree = node.TraverseSubtreesAtCursorPosition(cursor);
-        if (subtree.Last().Parent is NameTypeSyntax) return CompletionContext.TypeReference;
-        if (subtree.Any(x => x is FunctionDeclarationSyntax)) return CompletionContext.StatementContent;
-        else return CompletionContext.Unknown;
+        var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
+        if (expr is not null
+            && expr is MemberExpressionSyntax member)
+        {
+            var symbol = semanticModel.GetReferencedSymbol(member.Accessed);
+            return true;
+        }
+        return false;
     }
 
     private static CompletionItem? GetCompletionItem(ISymbol symbol, string? type = null) => symbol switch
     {
-        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.TypeReference),
+        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation),
+
         LocalSymbol loc =>
-            new CompletionItem(symbol.Name, CompletionKind.Variable, type ?? loc.Type.Name, symbol.Documentation, CompletionContext.StatementContent),
+            new CompletionItem(symbol.Name, CompletionKind.Variable, type ?? loc.Type.Name, symbol.Documentation),
+
+        ModuleSymbol module =>
+            new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation),
+
         FunctionSymbol fun when !fun.IsSpecialName =>
-            new CompletionItem(symbol.Name, CompletionKind.Function, type ?? fun.Type.ToString(), symbol.Documentation, CompletionContext.StatementContent),
+            new CompletionItem(symbol.Name, CompletionKind.Function, type ?? fun.Type.ToString(), symbol.Documentation),
         _ => null
     };
 

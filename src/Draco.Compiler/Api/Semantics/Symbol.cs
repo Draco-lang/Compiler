@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -37,6 +38,11 @@ public interface ISymbol : IEquatable<ISymbol>
     /// Documentation attached to this symbol.
     /// </summary>
     public string Documentation { get; }
+
+    /// <summary>
+    /// All the members within this symbol.
+    /// </summary>
+    public IEnumerable<ISymbol> Members { get; }
 }
 
 /// <summary>
@@ -125,6 +131,7 @@ internal abstract class SymbolBase : ISymbol
     public bool IsSpecialName => this.Symbol.IsSpecialName;
     public Location? Definition => this.Symbol.DeclarationSyntax?.Location;
     public string Documentation => this.Symbol.Documentation;
+    public IEnumerable<ISymbol> Members => this.Symbol.Members.Select(x => x.ToApiSymbol());
 
     public SymbolBase(Symbol symbol)
     {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -12,6 +13,8 @@ internal abstract partial class ModuleSymbol : Symbol
 {
     public override void Accept(SymbolVisitor visitor) => visitor.VisitModule(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitModule(this);
+
+    public override ISymbol ToApiSymbol() => new Api.Semantics.ModuleSymbol(this);
 
     // TODO: Doc, make up something nicer?
     // NOTE: Some very janky lookup capability

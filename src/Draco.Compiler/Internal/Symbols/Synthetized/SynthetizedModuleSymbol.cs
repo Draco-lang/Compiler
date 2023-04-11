@@ -20,6 +20,4 @@ internal sealed class SynthetizedModuleSymbol : ModuleSymbol
         this.Name = name;
         this.Members = members;
     }
-
-    public override ISymbol ToApiSymbol() => throw new NotImplementedException();
 }

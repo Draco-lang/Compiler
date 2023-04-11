@@ -55,8 +55,6 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
     {
     }
 
-    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
-
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();

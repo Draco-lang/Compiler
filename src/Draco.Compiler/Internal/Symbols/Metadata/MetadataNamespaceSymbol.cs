@@ -38,8 +38,6 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol
         this.namespaceDefinition = namespaceDefinition;
     }
 
-    public override ISymbol ToApiSymbol() => throw new NotImplementedException();
-
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();

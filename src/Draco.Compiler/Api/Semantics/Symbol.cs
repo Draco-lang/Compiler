@@ -40,6 +40,13 @@ public interface ISymbol : IEquatable<ISymbol>
 }
 
 /// <summary>
+/// Represents a module symbol.
+/// </summary>
+public interface IModuleSymbol : ISymbol
+{
+}
+
+/// <summary>
 /// Represents a variable symbol.
 /// </summary>
 public interface IVariableSymbol : ISymbol
@@ -138,6 +145,14 @@ internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
 }
 
 // Proxy classes ///////////////////////////////////////////////////////////////
+
+internal sealed class ModuleSymbol : SymbolBase<Internal.Symbols.ModuleSymbol>, IModuleSymbol
+{
+    public ModuleSymbol(Internal.Symbols.ModuleSymbol module)
+        : base(module)
+    {
+    }
+}
 
 internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, IGlobalSymbol
 {

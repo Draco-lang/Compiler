@@ -17,7 +17,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
     {
         this.documentRepository.AddOrUpdateDocument(param.TextDocument.Uri, param.TextDocument.Text);
         this.UpdateCompilation(param.TextDocument.Text);
-        await this.PublishDiagnosticsAsync(param.TextDocument.Uri, param.TextDocument.Text);
+        await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
     }
 
     public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken) =>
@@ -30,7 +30,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var sourceText = change.Text;
         this.documentRepository.AddOrUpdateDocument(uri, sourceText);
         this.UpdateCompilation(sourceText);
-        await this.PublishDiagnosticsAsync(uri, sourceText);
+        await this.PublishDiagnosticsAsync(uri);
     }
 
     // NOTE: This needs to be more sophisticated, once we have multiple files and such
@@ -46,7 +46,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
     }
 
-    private async Task PublishDiagnosticsAsync(DocumentUri uri, string text)
+    private async Task PublishDiagnosticsAsync(DocumentUri uri)
     {
         var diags = this.compilation.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();

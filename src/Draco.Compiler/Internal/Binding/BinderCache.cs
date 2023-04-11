@@ -77,13 +77,16 @@ internal sealed class BinderCache
     private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)
     {
         Debug.Assert(syntax.Parent is not null);
-        var parent = this.GetBinder(syntax.Parent);
+        var binder = this.GetBinder(syntax.Parent);
         // Search for the function in the parents container
+        // For that we unwrap from the injected import layer(s)
+        var parent = UnwrapFromImportBinder(binder);
         var functionSymbol = parent.DeclaredSymbols
             .OfType<SourceFunctionSymbol>()
             .FirstOrDefault(member => member.DeclarationSyntax == syntax);
         Debug.Assert(functionSymbol is not null);
-        return new FunctionBinder(parent, functionSymbol);
+        // NOTE: We are not using the unwrapped parent, we need the injected import layers
+        return new FunctionBinder(binder, functionSymbol);
     }
 
     private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax)
@@ -126,5 +129,19 @@ internal sealed class BinderCache
         return importSyntaxes.Length == 0
             ? binder
             : new ImportBinder(binder, syntax, importSyntaxes);
+    }
+
+    /// <summary>
+    /// Unwraps a binder from import nesting.
+    /// </summary>
+    /// <param name="binder">The binder to unwrap.</param>
+    /// <returns>The binder that was wrapped in imports.</returns>
+    private static Binder UnwrapFromImportBinder(Binder binder)
+    {
+        while (binder is ImportBinder)
+        {
+            binder = binder.Parent ?? throw new InvalidOperationException();
+        }
+        return binder;
     }
 }

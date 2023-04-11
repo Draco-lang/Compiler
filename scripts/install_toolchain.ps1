@@ -47,7 +47,7 @@ if (!(Test-Path $nugetConfigPath)) {
       </config>
     </configuration>'
 
-    Out-File -FilePath $nugetConfigPath -InputObject $nugetConfig
+    Out-File -FilePath $nugetConfigPath -InputObject $nugetConfig -Encoding utf8
     Write-Host "Successfully created NuGet.config."
 }
 

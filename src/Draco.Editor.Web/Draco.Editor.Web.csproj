@@ -8,6 +8,7 @@
     <LangVersion>11</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
+    <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,13 @@
     <!--We need an alpha version to have this patch included: https://github.com/dotnet/aspnetcore/pull/44968 -->
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0-alpha.1.22567.5" />
     <PackageReference Include="Microsoft.JSInterop" Version="8.0.0-alpha.1.22567.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="app\**" />
+    <Content Remove="app\**" />
+    <EmbeddedResource Remove="app\**" />
+    <None Remove="app\**" />
   </ItemGroup>
 
   <Target Name="JSSetup" AfterTargets="AfterBuild">
@@ -31,10 +39,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.App.Ref" Version="7.0.4" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
-    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net7.0\*.dll"
-                      LogicalName="ReferenceAssembly.%(Filename)%(Extension)"
-                      Visible="false"
-                      Link="Reference Assemblies\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net7.0\*.dll" LogicalName="ReferenceAssembly.%(Filename)%(Extension)" Visible="false" Link="Reference Assemblies\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

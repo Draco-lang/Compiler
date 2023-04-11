@@ -47,8 +47,6 @@ internal sealed class MetadataReferencesModuleSymbol : ModuleSymbol
         this.compilation = compilation;
     }
 
-    public override ISymbol ToApiSymbol() => throw new NotImplementedException();
-
     private void Build()
     {
         // Member list

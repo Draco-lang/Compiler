@@ -29,8 +29,6 @@ internal sealed class MergedModuleSymbol : ModuleSymbol
         this.modules = modules;
     }
 
-    public override ISymbol ToApiSymbol() => throw new NotImplementedException();
-
     private ImmutableArray<Symbol> BuildMembers()
     {
         var members = ImmutableArray.CreateBuilder<Symbol>();

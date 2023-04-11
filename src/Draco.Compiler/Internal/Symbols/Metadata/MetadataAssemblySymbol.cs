@@ -53,8 +53,6 @@ internal class MetadataAssemblySymbol : ModuleSymbol
         this.assemblyDefinition = metadataReader.GetAssemblyDefinition();
     }
 
-    public override ISymbol ToApiSymbol() => throw new NotImplementedException();
-
     private MetadataNamespaceSymbol BuildRootNamespace()
     {
         var rootNamespaceDefinition = this.MetadataReader.GetNamespaceDefinitionRoot();

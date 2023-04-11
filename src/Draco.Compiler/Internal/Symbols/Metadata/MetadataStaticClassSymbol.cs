@@ -39,8 +39,6 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
         this.typeDefinition = typeDefinition;
     }
 
-    public override ISymbol ToApiSymbol() => throw new NotImplementedException();
-
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();

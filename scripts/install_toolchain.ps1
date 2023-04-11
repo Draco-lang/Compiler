@@ -28,7 +28,7 @@ Push-Location
 Set-Location $path
 
 # Create a test project in Draco if one doesn't exist yet
-if (!(Get-ChildItem -Path $path -Include *.dracoproj)) {
+if (!(Get-ChildItem -Path $path -Filter *.dracoproj)) {
     dotnet new console --language draco
 }
 

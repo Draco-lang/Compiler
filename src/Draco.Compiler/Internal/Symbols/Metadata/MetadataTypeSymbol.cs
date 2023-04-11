@@ -18,7 +18,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     public override string Name => this.MetadataReader.GetString(this.typeDefinition.Name);
     public override Symbol ContainingSymbol { get; }
     // TODO: Is this correct?
-    public bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
+    public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
 
     /// <summary>
     /// The metadata assembly of this metadata symbol.

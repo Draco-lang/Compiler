@@ -10,6 +10,11 @@ internal abstract partial class TypeSymbol : Symbol
     /// </summary>
     public virtual bool IsTypeVariable => false;
 
+    /// <summary>
+    /// True, if this type is a value-type.
+    /// </summary>
+    public virtual bool IsValueType => false;
+
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitType(this);

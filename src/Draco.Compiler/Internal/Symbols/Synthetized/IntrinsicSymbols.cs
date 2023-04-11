@@ -10,11 +10,11 @@ internal static class IntrinsicSymbols
 {
     public static TypeSymbol ErrorType => ErrorTypeSymbol.Instance;
     public static TypeSymbol Never => NeverTypeSymbol.Instance;
-    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit");
-    public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32");
-    public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64");
-    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string");
-    public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool");
+    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
+    public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", isValueType: true);
+    public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);
+    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
+    public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
 
     // Operators
 

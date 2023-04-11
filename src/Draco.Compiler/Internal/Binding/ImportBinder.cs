@@ -69,7 +69,12 @@ internal sealed class ImportBinder : Binder
         for (var i = 1; i < path.Length; ++i)
         {
             var pathElement = path[i];
-            if (result is ModuleSymbol module)
+            if (result.IsError)
+            {
+                // Error, already reported
+                break;
+            }
+            else if (result is ModuleSymbol module)
             {
                 // Search for the elements in the module with that name
                 var membersWithName = module.Members
@@ -86,7 +91,12 @@ internal sealed class ImportBinder : Binder
             }
         }
         // We are at the end of the chain, we got something in result
-        if (result is ModuleSymbol importedModule)
+        if (result.IsError)
+        {
+            // Error, already reported
+            return Enumerable.Empty<Symbol>();
+        }
+        else if (result is ModuleSymbol importedModule)
         {
             // We imported a module, we need its contents
             return importedModule.Members;

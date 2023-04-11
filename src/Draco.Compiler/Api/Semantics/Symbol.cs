@@ -40,6 +40,17 @@ public interface ISymbol : IEquatable<ISymbol>
 }
 
 /// <summary>
+/// Represents a symbol that has type.
+/// </summary>
+public interface ITypedSymbol
+{
+    /// <summary>
+    /// The type of this symbol.
+    /// </summary>
+    public ITypeSymbol Type { get; }
+}
+
+/// <summary>
 /// Represents a module symbol.
 /// </summary>
 public interface IModuleSymbol : ISymbol
@@ -49,17 +60,12 @@ public interface IModuleSymbol : ISymbol
 /// <summary>
 /// Represents a variable symbol.
 /// </summary>
-public interface IVariableSymbol : ISymbol
+public interface IVariableSymbol : ISymbol, ITypedSymbol
 {
     /// <summary>
     /// True, if this is a mutable variable.
     /// </summary>
     public bool IsMutable { get; }
-
-    /// <summary>
-    /// The type of this variable.
-    /// </summary>
-    public ITypeSymbol Type { get; }
 }
 
 /// <summary>
@@ -86,7 +92,7 @@ public interface IParameterSymbol : IVariableSymbol
 /// <summary>
 /// Represents a parameter symbol.
 /// </summary>
-public interface IFunctionSymbol : ISymbol
+public interface IFunctionSymbol : ISymbol, ITypedSymbol
 {
     /// <summary>
     /// The parameters this function defines.
@@ -189,6 +195,8 @@ internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSym
 
 internal sealed class FunctionSymbol : SymbolBase<Internal.Symbols.FunctionSymbol>, IFunctionSymbol
 {
+    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+
     public ImmutableArray<IParameterSymbol> Parameters => this.Symbol.Parameters
         .Select(s => s.ToApiSymbol())
         .ToImmutableArray();

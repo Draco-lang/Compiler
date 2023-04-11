@@ -67,6 +67,12 @@ internal static class Translator
     {
         Label = item.Text,
         Kind = ToLsp(item.Kind),
+        Documentation = new LspModels.MarkupContent()
+        {
+            Kind = LspModels.MarkupKind.Markdown,
+            Value = item.Documentation ?? "",
+        },
+        Detail = item.Type ?? "",
     };
 
     public static LspModels.CompletionItemKind ToLsp(CompilerApi.CodeCompletion.CompletionKind kind) => kind switch

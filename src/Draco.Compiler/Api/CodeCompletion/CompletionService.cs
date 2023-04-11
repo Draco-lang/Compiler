@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -8,11 +9,10 @@ namespace Draco.Compiler.Api.CodeCompletion;
 
 public sealed class CompletionService
 {
-    public static IList<CompletionItem> GetCompletions(SyntaxTree tree, SyntaxPosition cursor)
+    public static IList<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
-        var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).DistinctBy(x => x.Name).Select(x => GetCompletionItem(x));
+        var completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).GroupBy(x => x.Name).Select(x =>
+            x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
         var context = GetContext(tree.Root, cursor);
         var result = new List<CompletionItem>();
         result.AddRange(completions.Where(x => x is not null && x.Contexts.Contains(context))!);
@@ -27,11 +27,15 @@ public sealed class CompletionService
         else return CompletionContext.Unknown;
     }
 
-    private static CompletionItem? GetCompletionItem(ISymbol symbol) => symbol switch
+    private static CompletionItem? GetCompletionItem(ISymbol symbol, string? type = null) => symbol switch
     {
-        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, CompletionContext.TypeReference),
-        LocalSymbol => new CompletionItem(symbol.Name, CompletionKind.Variable, CompletionContext.StatementContent),
-        FunctionSymbol fun when !fun.IsSpecialName => new CompletionItem(symbol.Name, CompletionKind.Function, CompletionContext.StatementContent),
+        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.TypeReference),
+        LocalSymbol loc =>
+            new CompletionItem(symbol.Name, CompletionKind.Variable, type ?? loc.Type.Name, symbol.Documentation, CompletionContext.StatementContent),
+        FunctionSymbol fun when !fun.IsSpecialName =>
+            new CompletionItem(symbol.Name, CompletionKind.Function, type ?? fun.Type.ToString(), symbol.Documentation, CompletionContext.StatementContent),
         _ => null
     };
+
+    private static CompletionItem? GetOverloadedCompletionItem(ISymbol symbol, int overloadCount) => GetCompletionItem(symbol, $"{overloadCount} overloads");
 }

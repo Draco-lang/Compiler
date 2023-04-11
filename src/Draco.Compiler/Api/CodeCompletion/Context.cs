@@ -4,5 +4,5 @@ public enum CompletionContext
 {
     Unknown,
     StatementContent,
-    TypeRefeence
+    TypeReference
 }

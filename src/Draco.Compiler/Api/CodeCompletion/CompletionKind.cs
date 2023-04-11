@@ -4,5 +4,6 @@ public enum CompletionKind
 {
     Variable,
     Function,
+    Class,
     Keyword
 }

@@ -46,6 +46,7 @@ internal sealed class SynthetizedFunctionSymbol : FunctionSymbol
 
     public override Type ReturnType { get; }
     public override Symbol? ContainingSymbol => null;
+    public override bool IsSpecialName => true;
 
     public override string Name { get; }
 

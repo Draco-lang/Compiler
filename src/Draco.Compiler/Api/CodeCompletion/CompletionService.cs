@@ -8,7 +8,6 @@ namespace Draco.Compiler.Api.CodeCompletion;
 
 public sealed class CompletionService
 {
-    // TODO: types
     public static IList<CompletionItem> GetCompletions(SyntaxTree tree, SyntaxPosition cursor)
     {
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
@@ -23,13 +22,14 @@ public sealed class CompletionService
     private static CompletionContext GetContext(SyntaxNode node, SyntaxPosition cursor)
     {
         var subtree = node.TraverseSubtreesAtCursorPosition(cursor);
+        if (subtree.Last().Parent is NameTypeSyntax) return CompletionContext.TypeReference;
         if (subtree.Any(x => x is FunctionDeclarationSyntax)) return CompletionContext.StatementContent;
         else return CompletionContext.Unknown;
     }
 
     private static CompletionItem? GetCompletionItem(ISymbol symbol) => symbol switch
     {
-        //TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Idk, Context.TypeRefeence),
+        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, CompletionContext.TypeReference),
         LocalSymbol => new CompletionItem(symbol.Name, CompletionKind.Variable, CompletionContext.StatementContent),
         FunctionSymbol fun when !fun.IsSpecialName => new CompletionItem(symbol.Name, CompletionKind.Function, CompletionContext.StatementContent),
         _ => null

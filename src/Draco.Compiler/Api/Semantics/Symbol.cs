@@ -127,6 +127,8 @@ internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
         : base(symbol)
     {
     }
+
+    public override string ToString() => this.Symbol.ToString();
 }
 
 // Proxy classes ///////////////////////////////////////////////////////////////

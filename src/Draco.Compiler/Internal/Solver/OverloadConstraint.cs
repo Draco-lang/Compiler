@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Types;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -18,7 +18,7 @@ internal sealed class OverloadConstraint : Constraint
     /// <summary>
     /// The call-site to match.
     /// </summary>
-    public Type CallSite { get; }
+    public TypeSymbol CallSite { get; }
 
     /// <summary>
     /// The promise of this constraint.
@@ -30,7 +30,15 @@ internal sealed class OverloadConstraint : Constraint
     /// </summary>
     public string FunctionName { get; }
 
-    public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, Type callSite)
+    public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, TypeSymbol callSite, ConstraintPromise<FunctionSymbol> promise)
+    {
+        this.Candidates = candidates.ToList();
+        this.CallSite = callSite;
+        this.Promise = promise;
+        this.FunctionName = this.Candidates[0].Name;
+    }
+
+    public OverloadConstraint(IEnumerable<FunctionSymbol> candidates, TypeSymbol callSite)
     {
         this.Candidates = candidates.ToList();
         this.CallSite = callSite;

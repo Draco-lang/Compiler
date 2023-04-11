@@ -45,6 +45,34 @@
     </Field>
   </Node>
 
+  <Node Name="ImportDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      An import declaration.
+    </Documentation>
+
+    <Field Name="ImportKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'import' keyword starting the delcaration.
+      </Documentation>
+
+      <Token Kind="KeywordImport" />
+    </Field>
+
+    <Field Name="Path" Type="SeparatedSyntaxList&lt;SyntaxToken&gt;">
+      <Documentation>
+        The imported path.
+      </Documentation>
+    </Field>
+
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon closing the import declaration.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
   <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">
     <Documentation>
       A function declaration.
@@ -644,7 +672,7 @@
     </Field>
   </Node>
 
-  <Node Name="MemberAccessExpressionSyntax" Base="ExpressionSyntax">
+  <Node Name="MemberExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
       A member access expression.
     </Documentation>

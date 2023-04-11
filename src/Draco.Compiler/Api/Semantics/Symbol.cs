@@ -52,7 +52,7 @@ public interface IVariableSymbol : ISymbol
     /// <summary>
     /// The type of this variable.
     /// </summary>
-    public IType Type { get; }
+    public ITypeSymbol Type { get; }
 }
 
 /// <summary>
@@ -133,6 +133,8 @@ internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
         : base(symbol)
     {
     }
+
+    public override string ToString() => this.Symbol.ToString();
 }
 
 // Proxy classes ///////////////////////////////////////////////////////////////
@@ -140,7 +142,7 @@ internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
 internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, IGlobalSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
-    public IType Type => this.Symbol.Type.ToApiType();
+    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
 
     public GlobalSymbol(Internal.Symbols.GlobalSymbol global)
         : base(global)
@@ -151,7 +153,7 @@ internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, 
 internal sealed class LocalSymbol : SymbolBase<Internal.Symbols.LocalSymbol>, ILocalSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
-    public IType Type => this.Symbol.Type.ToApiType();
+    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
 
     public LocalSymbol(Internal.Symbols.LocalSymbol local)
         : base(local)
@@ -162,7 +164,7 @@ internal sealed class LocalSymbol : SymbolBase<Internal.Symbols.LocalSymbol>, IL
 internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSymbol>, IParameterSymbol
 {
     public bool IsMutable => this.Symbol.IsMutable;
-    public IType Type => this.Symbol.Type.ToApiType();
+    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
 
     public ParameterSymbol(Internal.Symbols.ParameterSymbol parameter)
         : base(parameter)

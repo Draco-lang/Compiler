@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 
@@ -16,13 +15,11 @@ internal sealed partial class DracoLanguageServer : ITextDocumentFormatting
 
     public Task<IList<TextEdit>?> FormatTextDocumentAsync(DocumentFormattingParams param, CancellationToken cancellationToken)
     {
-        var sourceText = this.documentRepository.GetDocument(param.TextDocument.Uri);
-        var tree = SyntaxTree.Parse(sourceText);
-        var originalRange = tree.Root.Range;
-        tree = tree.Format();
+        var originalRange = this.syntaxTree.Root.Range;
+        this.syntaxTree = this.syntaxTree.Format();
         var edit = new TextEdit()
         {
-            NewText = tree.ToString(),
+            NewText = this.syntaxTree.ToString(),
             Range = Translator.ToLsp(originalRange),
         };
         return Task.FromResult<IList<TextEdit>?>(new[] { edit });

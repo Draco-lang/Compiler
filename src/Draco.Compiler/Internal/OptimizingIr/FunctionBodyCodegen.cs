@@ -2,9 +2,9 @@ using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
@@ -57,7 +57,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     private Global DefineGlobal(GlobalSymbol global) => this.procedure.Assembly.DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
-    private Register DefineRegister(Type type) => this.procedure.DefineRegister(type);
+    private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
     // Statements //////////////////////////////////////////////////////////////
 
@@ -106,7 +106,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // In case the condition is a never type, we don't bother writing out the then and else bodies,
         // as they can not be evaluated
         // Note, that for side-effects we still emit the condition code
-        if (ReferenceEquals(node.Condition.TypeRequired, IntrinsicTypes.Never)) return default(Void);
+        if (ReferenceEquals(node.Condition.TypeRequired, IntrinsicSymbols.Never)) return default(Void);
 
         // Allocate blocks
         var thenBlock = this.DefineBasicBlock(node.Target);
@@ -126,6 +126,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     // Expressions /////////////////////////////////////////////////////////////
 
+    public override IOperand VisitStringExpression(BoundStringExpression node) =>
+        throw new System.InvalidOperationException("should have been lowered");
+
     public override IOperand VisitSequencePointExpression(BoundSequencePointExpression node)
     {
         // Emit the sequence point
@@ -141,11 +144,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
         var func = this.Compile(node.Method);
-        var args = node.Arguments.Select(this.Compile).ToList();
-
-        var result = this.DefineRegister(node.TypeRequired);
-        this.Write(Call(result, func, args));
-        return result;
+        if (node.Receiver is null)
+        {
+            var args = node.Arguments.Select(this.Compile).ToList();
+            var result = this.DefineRegister(node.TypeRequired);
+            this.Write(Call(result, func, args));
+            return result;
+        }
+        else
+        {
+            var receiver = this.Compile(node.Receiver);
+            var args = node.Arguments.Select(this.Compile).ToList();
+            var result = this.DefineRegister(node.TypeRequired);
+            this.Write(MemberCall(result, func, receiver, args));
+            return result;
+        }
     }
 
     public override IOperand VisitGotoExpression(BoundGotoExpression node)
@@ -326,17 +339,13 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitStringExpression(BoundStringExpression node)
+    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => node.Function switch
     {
-        if (node.Parts.Length == 0) return new Constant(string.Empty);
-        else if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText text) return new Constant(text.Text);
-        // TODO: Should have been desugared
-        else throw new System.NotImplementedException();
-    }
-
-    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => IsIntrinsicFunction(node.Function)
-        ? new Intrinsic(node.Function)
-        : this.DefineProcedure(node.Function);
+        SourceFunctionSymbol func => this.DefineProcedure(func),
+        MetadataMethodSymbol m => new MetadataReference(m),
+        SynthetizedArrayFunctionSymbol arr => new MetadataReference(arr),
+        _ => throw new System.ArgumentOutOfRangeException(nameof(node)),
+    };
 
     // NOTE: Parameters don't need loading, they are read-only values by default
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>
@@ -378,9 +387,4 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
                                          || op == IntrinsicSymbols.Float64_Rem;
     private static bool IsMod(Symbol op) => op == IntrinsicSymbols.Int32_Mod
                                          || op == IntrinsicSymbols.Float64_Mod;
-
-    private static bool IsIntrinsicFunction(Symbol f) => f == IntrinsicSymbols.Print_String
-                                                      || f == IntrinsicSymbols.Print_Int32
-                                                      || f == IntrinsicSymbols.Println_String
-                                                      || f == IntrinsicSymbols.Println_Int32;
 }

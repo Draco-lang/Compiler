@@ -10,7 +10,12 @@ public abstract class EndToEndTestsBase
     protected static Assembly Compile(string sourceCode)
     {
         var syntaxTree = SyntaxTree.Parse(sourceCode);
-        var compilation = Compilation.Create(ImmutableArray.Create(syntaxTree));
+
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
 
         using var peStream = new MemoryStream();
         var emitResult = compilation.Emit(peStream: peStream);

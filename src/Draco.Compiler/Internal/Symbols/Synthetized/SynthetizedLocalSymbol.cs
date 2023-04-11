@@ -1,5 +1,3 @@
-using Draco.Compiler.Internal.Types;
-
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
 /// <summary>
@@ -7,11 +5,11 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class SynthetizedLocalSymbol : LocalSymbol
 {
-    public override Type Type { get; }
+    public override TypeSymbol Type { get; }
     public override bool IsMutable { get; }
     public override Symbol? ContainingSymbol => null;
 
-    public SynthetizedLocalSymbol(Type type, bool isMutable)
+    public SynthetizedLocalSymbol(TypeSymbol type, bool isMutable)
     {
         this.Type = type;
         this.IsMutable = isMutable;

@@ -1,5 +1,3 @@
-using Draco.Compiler.Internal.Types;
-
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
@@ -8,12 +6,19 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract partial class TypeSymbol : Symbol
 {
     /// <summary>
-    /// The defined type.
+    /// True, if this is a type variable, false otherwise.
     /// </summary>
-    public abstract Type Type { get; }
+    public virtual bool IsTypeVariable => false;
+
+    /// <summary>
+    /// True, if this type is a value-type.
+    /// </summary>
+    public virtual bool IsValueType => false;
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitType(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitType(this);
+
+    public override abstract string ToString();
 }

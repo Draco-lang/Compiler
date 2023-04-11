@@ -1,5 +1,3 @@
-using Draco.Compiler.Internal.Types;
-
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
@@ -10,7 +8,7 @@ internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
     /// <summary>
     /// The type of the local.
     /// </summary>
-    public abstract Type Type { get; }
+    public abstract TypeSymbol Type { get; }
 
     /// <summary>
     /// True, if this local is mutable.

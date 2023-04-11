@@ -7,7 +7,6 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -39,6 +38,7 @@ internal partial class Binder
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
+        MemberExpressionSyntax maccess => this.BindMemberAccessExpression(maccess, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -73,29 +73,7 @@ internal partial class Binder
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        if (symbol.IsError) return new UntypedReferenceErrorExpression(syntax, symbol);
-        switch (symbol)
-        {
-        case Symbol when symbol.IsError:
-            return new UntypedReferenceErrorExpression(syntax, symbol);
-        case ParameterSymbol param:
-            return new UntypedParameterExpression(syntax, param);
-        case UntypedLocalSymbol local:
-            return new UntypedLocalExpression(syntax, local, constraints.GetLocal(local));
-        case GlobalSymbol global:
-            return new UntypedGlobalExpression(syntax, global);
-        case FunctionSymbol func:
-            return new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type);
-        case OverloadSymbol overload:
-        {
-            var (promise, callSite) = constraints.Overload(overload);
-            promise.ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location));
-            return new UntypedFunctionExpression(syntax, promise, callSite);
-        }
-        default:
-            throw new InvalidOperationException();
-        }
+        return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
     private UntypedExpression BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -135,7 +113,7 @@ internal partial class Binder
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints
-            .SameType(IntrinsicTypes.Bool, condition.TypeRequired)
+            .SameType(IntrinsicSymbols.Bool, condition.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
 
@@ -172,14 +150,14 @@ internal partial class Binder
         var condition = binder.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints
-            .SameType(IntrinsicTypes.Bool, condition.TypeRequired)
+            .SameType(IntrinsicSymbols.Bool, condition.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
 
         var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
         constraints
-            .SameType(IntrinsicTypes.Unit, then.TypeRequired)
+            .SameType(IntrinsicSymbols.Unit, then.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(ExtractValueSyntax(syntax.Then).Location));
 
@@ -253,11 +231,11 @@ internal partial class Binder
 
             // Both left and right must be bool
             constraints
-                .SameType(IntrinsicTypes.Bool, left.TypeRequired)
+                .SameType(IntrinsicSymbols.Bool, left.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(syntax.Left.Location));
             constraints
-                .SameType(IntrinsicTypes.Bool, right.TypeRequired)
+                .SameType(IntrinsicSymbols.Bool, right.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(syntax.Right.Location));
 
@@ -355,11 +333,66 @@ internal partial class Binder
             .Result;
         // For safety, we assume it has to be bool
         constraints
-            .SameType(IntrinsicTypes.Bool, resultType)
+            .SameType(IntrinsicSymbols.Bool, resultType)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
 
         return new UntypedComparison(syntax, symbolPromise, right);
+    }
+
+    private UntypedExpression BindMemberAccessExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
+        var memberName = syntax.Member.Text;
+        if (left is UntypedModuleExpression moduleExpr)
+        {
+            // Module member access
+            var module = moduleExpr.Module;
+            var members = module.Members
+                .Where(m => m.Name == memberName)
+                .ToImmutableArray();
+            // Reuse logic from LookupResult
+            var result = LookupResult.FromResultSet(members);
+            var symbol = result.GetValue(memberName, syntax, diagnostics);
+            return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
+        }
+        else
+        {
+            // Value, add constraint
+            var (promise, type) = constraints.Member(left.TypeRequired, memberName);
+            promise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+            return new UntypedMemberExpression(syntax, left, promise, type);
+        }
+    }
+
+    private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        if (symbol.IsError) return new UntypedReferenceErrorExpression(syntax, symbol);
+        switch (symbol)
+        {
+        case Symbol when symbol.IsError:
+            return new UntypedReferenceErrorExpression(syntax, symbol);
+        case ModuleSymbol module:
+            return new UntypedModuleExpression(syntax, module);
+        case ParameterSymbol param:
+            return new UntypedParameterExpression(syntax, param);
+        case UntypedLocalSymbol local:
+            return new UntypedLocalExpression(syntax, local, constraints.GetLocal(local));
+        case GlobalSymbol global:
+            return new UntypedGlobalExpression(syntax, global);
+        case FunctionSymbol func:
+            return new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type);
+        case OverloadSymbol overload:
+        {
+            var (promise, callSite) = constraints.Overload(overload);
+            promise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+            return new UntypedFunctionExpression(syntax, promise, callSite);
+        }
+        default:
+            throw new InvalidOperationException();
+        }
     }
 
     private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch

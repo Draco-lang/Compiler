@@ -1,5 +1,3 @@
-using Draco.Compiler.Internal.Types;
-
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
@@ -10,5 +8,5 @@ internal interface ITypedSymbol
     /// <summary>
     /// The type of value the symbol references.
     /// </summary>
-    public Type Type { get; }
+    public TypeSymbol Type { get; }
 }

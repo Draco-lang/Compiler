@@ -10,32 +10,46 @@ if (!(Test-Path $path)) {
     New-Item -ItemType Directory -Path $path
 }
 
-# Remove everything that used to be there and could be relevant
-Remove-Item -Path $path -Include *.dracoproj -Recurse
-Remove-Item -Path $path -Include *.draco -Recurse
-Remove-Item -Path $path -Include *.nupkg -Recurse
-Remove-Item -Path $path -Include *.config -Recurse
+$toolchainPath = Join-Path -Path $path -ChildPath "Toolchain"
 
-# We package the toolchain
-$toolchainPath = Join-Path -Path $path -ChildPath "toolchain"
-dotnet pack ../src --output $toolchainPath
+# Remove previous toolchain
+Remove-Item -Path $toolchainPath -Recurse -ErrorAction SilentlyContinue
+
+# Install the new toolchain in its place
+dotnet pack ../src/Draco.sln --output $toolchainPath
 
 # Install the project templates
-$templateProjectPath = Get-ChildItem -Path $toolchainPath -Filter "*Draco.ProjectTemplates.*.nupkg*" | % { $_.FullName }
-try { dotnet new uninstall Draco.ProjectTemplates } catch {}
+$templateProjectPath = Get-ChildItem -Path $toolchainPath -Filter "*Draco.ProjectTemplates.*.nupkg*" | ForEach-Object { $_.FullName }
+try { dotnet new uninstall Draco.ProjectTemplates --verbosity quiet } catch { }
 dotnet new install --force $templateProjectPath
 
 # We save the current location and go to the specified path
 Push-Location
-cd $path
+Set-Location $path
 
-# Create a test project in Draco
-dotnet new console --language draco
+# Create a test project in Draco if one doesn't exist yet
+if (!(Get-ChildItem -Path $path -Filter *.dracoproj)) {
+    dotnet new console --language draco
+}
 
-# Add the toolchain as the primary nuget source
-dotnet new nugetconfig
-dotnet nuget remove source nuget --configfile nuget.config
-dotnet nuget add source ./toolchain --name DracoToolchain --configfile nuget.config
+# Add the toolchain as the primary nuget source and change the restore direcotry
+$nugetConfigPath = Join-Path -Path $path -ChildPath "nuget.config"
+if (!(Test-Path $nugetConfigPath)) {
+    $nugetConfig = '<?xml version="1.0" encoding="utf-8"?>
+    <configuration>
+      <packageSources>
+        <clear />
+        <add key="draco" value=".\Toolchain" />
+        <add key="nuget" value="https://api.nuget.org/v3/index.json" />
+      </packageSources>
+      <config>
+        <add key="globalPackagesFolder" value="Toolchain\GlobalPackages" />
+      </config>
+    </configuration>'
+
+    Out-File -FilePath $nugetConfigPath -InputObject $nugetConfig
+    Write-Host "Successfully created NuGet.config."
+}
 
 # Restore old location
 Pop-Location

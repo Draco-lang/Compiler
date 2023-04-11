@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
@@ -20,17 +18,11 @@ internal sealed partial class DracoLanguageServer : IFindReferences
 
     public Task<IList<Location>> FindReferencesAsync(ReferenceParams param, CancellationToken cancellationToken)
     {
-        // TODO: Share compilation
         var cursorPosition = Translator.ToCompiler(param.Position);
-        var souceText = this.documentRepository.GetDocument(param.TextDocument.Uri);
-        var syntaxTree = SyntaxTree.Parse(souceText);
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree));
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
-        var referencedSymbol = syntaxTree
+        var referencedSymbol = this.syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(symbol => semanticModel.GetReferencedSymbol(symbol) ?? semanticModel.GetDefinedSymbol(symbol))
+            .Select(symbol => this.semanticModel.GetReferencedSymbol(symbol) ?? this.semanticModel.GetDefinedSymbol(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
         var references = new List<Location>();
@@ -38,8 +30,8 @@ internal sealed partial class DracoLanguageServer : IFindReferences
         if (referencedSymbol is not null)
         {
             var referencingNodes = FindAllReferences(
-                tree: syntaxTree,
-            semanticModel: semanticModel,
+                tree: this.syntaxTree,
+            semanticModel: this.semanticModel,
                 symbol: referencedSymbol,
                 includeDeclaration: param.Context.IncludeDeclaration,
                 cancellationToken: cancellationToken);

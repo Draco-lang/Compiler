@@ -1,5 +1,3 @@
-using Draco.Compiler.Internal.Types;
-
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
 /// <summary>
@@ -7,11 +5,11 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class SynthetizedParameterSymbol : ParameterSymbol
 {
-    public override Type Type { get; }
+    public override TypeSymbol Type { get; }
 
     public override Symbol? ContainingSymbol => null;
 
-    public SynthetizedParameterSymbol(Type type)
+    public SynthetizedParameterSymbol(TypeSymbol type)
     {
         this.Type = type;
     }

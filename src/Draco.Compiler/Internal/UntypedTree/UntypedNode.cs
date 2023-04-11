@@ -1,5 +1,6 @@
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.UntypedTree;
 
@@ -27,111 +28,111 @@ internal partial class UntypedNoOpStatement
 
 internal partial class UntypedExpression
 {
-    public virtual Type? Type => null;
+    public virtual TypeSymbol? Type => null;
 
-    public Type TypeRequired => this.Type ?? throw new System.InvalidOperationException();
+    public TypeSymbol TypeRequired => this.Type ?? throw new System.InvalidOperationException();
 }
 
 internal partial class UntypedUnexpectedExpression
 {
-    public override Type Type => IntrinsicTypes.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedUnitExpression
 {
     public static UntypedUnitExpression Default { get; } = new(null);
-    public override Type Type => IntrinsicTypes.Unit;
+    public override TypeSymbol Type => IntrinsicSymbols.Unit;
 }
 
 internal partial class UntypedGotoExpression
 {
-    public override Type Type => IntrinsicTypes.Never;
+    public override TypeSymbol Type => IntrinsicSymbols.Never;
 }
 
 internal partial class UntypedReturnExpression
 {
-    public override Type Type => IntrinsicTypes.Never;
+    public override TypeSymbol Type => IntrinsicSymbols.Never;
 }
 
 internal partial class UntypedBlockExpression
 {
-    public override Type Type => this.Value.TypeRequired;
+    public override TypeSymbol Type => this.Value.TypeRequired;
 }
 
 internal partial class UntypedWhileExpression
 {
-    public override Type Type => IntrinsicTypes.Unit;
+    public override TypeSymbol Type => IntrinsicSymbols.Unit;
 }
 
 internal partial class UntypedAndExpression
 {
-    public override Type Type => IntrinsicTypes.Bool;
+    public override TypeSymbol Type => IntrinsicSymbols.Bool;
 }
 
 internal partial class UntypedOrExpression
 {
-    public override Type Type => IntrinsicTypes.Bool;
+    public override TypeSymbol Type => IntrinsicSymbols.Bool;
 }
 
 internal partial class UntypedParameterExpression
 {
-    public override Type Type => this.Parameter.Type;
+    public override TypeSymbol Type => this.Parameter.Type;
 }
 
 internal partial class UntypedGlobalExpression
 {
-    public override Type Type => this.Global.Type;
+    public override TypeSymbol Type => this.Global.Type;
 }
 
 internal partial class UntypedReferenceErrorExpression
 {
-    public override Type? Type => Types.IntrinsicTypes.Error;
+    public override TypeSymbol? Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedLiteralExpression
 {
-    public override Type Type => this.Value switch
+    public override TypeSymbol Type => this.Value switch
     {
-        int => IntrinsicTypes.Int32,
-        bool => IntrinsicTypes.Bool,
-        double => IntrinsicTypes.Float64,
+        int => IntrinsicSymbols.Int32,
+        bool => IntrinsicSymbols.Bool,
+        double => IntrinsicSymbols.Float64,
         _ => throw new System.InvalidOperationException(),
     };
 }
 
 internal partial class UntypedStringExpression
 {
-    public override Type? Type => IntrinsicTypes.String;
+    public override TypeSymbol? Type => IntrinsicSymbols.String;
 }
 
 internal partial class UntypedRelationalExpression
 {
-    public override Type Type => IntrinsicTypes.Bool;
+    public override TypeSymbol Type => IntrinsicSymbols.Bool;
 }
 
 internal partial class UntypedAssignmentExpression
 {
-    public override Type Type => this.Left.Type;
+    public override TypeSymbol Type => this.Left.Type;
 }
 
 // Lvalues
 
 internal partial class UntypedUnexpectedLvalue
 {
-    public override Type Type => IntrinsicTypes.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedIllegalLvalue
 {
-    public override Type Type => IntrinsicTypes.Error;
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedLvalue
 {
-    public abstract Type Type { get; }
+    public abstract TypeSymbol Type { get; }
 }
 
 internal partial class UntypedGlobalLvalue
 {
-    public override Type Type => this.Global.Type;
+    public override TypeSymbol Type => this.Global.Type;
 }

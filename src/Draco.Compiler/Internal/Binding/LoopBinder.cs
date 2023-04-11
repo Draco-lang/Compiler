@@ -21,11 +21,14 @@ internal sealed class LoopBinder : Binder
     /// </summary>
     public LabelSymbol ContinueLabel { get; } = new SynthetizedLabelSymbol("continue");
 
+    public override SyntaxNode DeclaringSyntax { get; }
+
     public override IEnumerable<Symbol> DeclaredSymbols => new[] { this.BreakLabel, this.ContinueLabel };
 
-    public LoopBinder(Binder parent)
+    public LoopBinder(Binder parent, SyntaxNode declaringSyntax)
         : base(parent)
     {
+        this.DeclaringSyntax = declaringSyntax;
     }
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)

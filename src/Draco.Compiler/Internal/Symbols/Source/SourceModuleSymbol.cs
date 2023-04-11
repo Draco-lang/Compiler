@@ -62,6 +62,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
         var result = ImmutableArray.CreateBuilder<Symbol>();
         var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
 
+        // Syntax-declaration
         foreach (var declaration in this.declaration.Children)
         {
             var member = this.BuildMember(declaration);

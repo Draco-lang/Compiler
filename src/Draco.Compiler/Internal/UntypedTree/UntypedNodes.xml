@@ -63,7 +63,7 @@
     <Field Name="Condition" Type="UntypedExpression" />
     <Field Name="Then" Type="UntypedExpression" />
     <Field Name="Else" Type="UntypedExpression" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedWhileExpression" Base="UntypedExpression">
@@ -76,26 +76,26 @@
   <Node Name="UntypedCallExpression" Base="UntypedExpression">
     <Field Name="Method" Type="UntypedExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedIndexExpression" Base="UntypedExpression">
     <Field Name="Collection" Type="UntypedExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Operand" Type="UntypedExpression" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedBinaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedAndExpression" Base="UntypedExpression">
@@ -114,11 +114,15 @@
     <Field Name="Right" Type="UntypedExpression" />
   </Node>
 
+  <Node Name="UntypedModuleExpression" Base="UntypedExpression">
+    <Field Name="Module" Type="ModuleSymbol" />
+  </Node>
+
   <Node Name="UntypedLocalExpression" Base="UntypedExpression">
     <!-- Locals are special, they are remapped after binding to a typed variant -->
     <Field Name="Local" Type="UntypedLocalSymbol" />
     <!-- Locals are uninferred, can't rely on symbol type -->
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedGlobalExpression" Base="UntypedExpression">
@@ -131,7 +135,7 @@
 
   <Node Name="UntypedFunctionExpression" Base="UntypedExpression">
     <Field Name="Function" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedReferenceErrorExpression" Base="UntypedExpression">
@@ -154,6 +158,12 @@
   <Node Name="UntypedComparison" Base="UntypedNode">
     <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Next" Type="UntypedExpression" />
+  </Node>
+
+  <Node Name="UntypedMemberExpression" Base="UntypedExpression">
+    <Field Name="Accessed" Type="UntypedExpression" />
+    <Field Name="Member" Type="ConstraintPromise&lt;Symbol&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <AbstractNode Name="UntypedStringPart" Base="UntypedNode" />
@@ -183,7 +193,7 @@
     <!-- Locals are special, they are remapped after binding to a typed variant -->
     <Field Name="Local" Type="UntypedLocalSymbol" />
     <!-- Locals are uninferred, can't rely on symbol type -->
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedGlobalLvalue" Base="UntypedLvalue">

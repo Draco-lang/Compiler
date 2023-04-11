@@ -10,9 +10,9 @@ using System.Reflection.PortableExecutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
-using Type = Draco.Compiler.Internal.Types.Type;
+using MetadataReference = Draco.Compiler.Internal.OptimizingIr.Model.MetadataReference;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -81,32 +81,6 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private void LoadIntrinsics()
     {
-        var systemConsoleAssembly = this.GetOrAddAssemblyReference(
-            name: "System.Console",
-            version: new(1, 0));
-        var systemConsole = this.GetOrAddTypeReference(
-            assembly: systemConsoleAssembly,
-            @namespace: "System",
-            name: "Console");
-
-        MemberReferenceHandle LoadPrintFunction(string name, System.Action<SignatureTypeEncoder> paramTypeEncoder)
-        {
-            var signature = this.EncodeBlob(e =>
-            {
-                e.MethodSignature().Parameters(1, out var retEncoder, out var paramsEncoder);
-                retEncoder.Void();
-                paramTypeEncoder(paramsEncoder.AddParameter().Type());
-            });
-            return this.AddMemberReference(
-                type: systemConsole,
-                name: name,
-                signature: signature);
-        }
-
-        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Print_String, LoadPrintFunction("Write", p => p.String()));
-        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Print_Int32, LoadPrintFunction("Write", p => p.Int32()));
-        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Println_String, LoadPrintFunction("WriteLine", p => p.String()));
-        this.intrinsicReferenceHandles.Add(IntrinsicSymbols.Println_Int32, LoadPrintFunction("WriteLine", p => p.Int32()));
     }
 
     private void WriteModuleAndAssemblyDefinition()
@@ -166,6 +140,55 @@ internal sealed class MetadataCodegen : MetadataWriter
     public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
 
     public MemberReferenceHandle GetIntrinsicReferenceHandle(Symbol symbol) => this.intrinsicReferenceHandles[symbol];
+
+    // TODO: This can be cached by symbol to avoid double reference instertion
+    public MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => symbol switch
+    {
+        FunctionSymbol func => this.AddMemberReference(
+            type: this.GetTypeReferenceHandle(func.ContainingSymbol),
+            name: func.Name,
+            signature: this.EncodeBlob(e =>
+            {
+                e
+                    .MethodSignature(isInstanceMethod: func.IsMember)
+                    .Parameters(func.Parameters.Length, out var returnType, out var parameters);
+                this.EncodeReturnType(returnType, func.ReturnType);
+                foreach (var param in func.Parameters) this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
+            })),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
+
+    // TODO: Cache?
+    public TypeReferenceHandle GetTypeReferenceHandle(Symbol? symbol) => symbol switch
+    {
+        MetadataStaticClassSymbol staticClass => this.GetOrAddTypeReference(
+            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
+            @namespace: GetNamespaceForSymbol(symbol),
+            name: staticClass.Name),
+        MetadataTypeSymbol metadataType => this.GetOrAddTypeReference(
+            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
+            @namespace: GetNamespaceForSymbol(symbol),
+            name: metadataType.Name),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
+
+    private EntityHandle GetContainingTypeOrModuleHandle(Symbol? symbol) => symbol switch
+    {
+        MetadataNamespaceSymbol ns => this.GetContainingTypeOrModuleHandle(ns.ContainingSymbol),
+        MetadataAssemblySymbol module => this.GetOrAddAssemblyReference(
+            name: module.Name,
+            // TODO: What version
+            version: new(1, 0)),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
+
+    private static string? GetNamespaceForSymbol(Symbol symbol) => symbol switch
+    {
+        MetadataStaticClassSymbol staticClass => GetNamespaceForSymbol(staticClass.ContainingSymbol),
+        MetadataTypeSymbol type => GetNamespaceForSymbol(type.ContainingSymbol),
+        MetadataNamespaceSymbol ns => ns.FullName,
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
 
     private void EncodeAssembly()
     {
@@ -300,15 +323,15 @@ internal sealed class MetadataCodegen : MetadataWriter
     }
 
     private BlobHandle EncodeGlobalSignature(Global global) =>
-        this.EncodeBlob(e => EncodeSignatureType(e.Field().Type(), global.Type));
+        this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), global.Type));
 
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {
         e.MethodSignature().Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
-        EncodeReturnType(retEncoder, procedure.ReturnType);
+        this.EncodeReturnType(retEncoder, procedure.ReturnType);
         foreach (var param in procedure.ParametersInDefinitionOrder)
         {
-            EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
+            this.EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
         }
     });
 
@@ -323,27 +346,49 @@ internal sealed class MetadataCodegen : MetadataWriter
             {
                 var typeEncoder = localsEncoder.AddVariable().Type();
                 Debug.Assert(local.Operand.Type is not null);
-                EncodeSignatureType(typeEncoder, local.Operand.Type);
+                this.EncodeSignatureType(typeEncoder, local.Operand.Type);
             }
         }));
     }
 
-    private static void EncodeReturnType(ReturnTypeEncoder encoder, Type type)
+    public void EncodeReturnType(ReturnTypeEncoder encoder, TypeSymbol type)
     {
-        if (ReferenceEquals(type, IntrinsicTypes.Unit)) { encoder.Void(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Unit)) { encoder.Void(); return; }
 
-        EncodeSignatureType(encoder.Type(), type);
+        this.EncodeSignatureType(encoder.Type(), type);
     }
 
-    private static void EncodeSignatureType(SignatureTypeEncoder encoder, Type type)
+    public void EncodeSignatureType(SignatureTypeEncoder encoder, TypeSymbol type)
     {
-        if (ReferenceEquals(type, IntrinsicTypes.Bool)) { encoder.Boolean(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Int32)) { encoder.Int32(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Float64)) { encoder.Double(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.String)) { encoder.String(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
+
+        if (type is MetadataTypeSymbol metadataType)
+        {
+            // TODO: This needs to be made more robust
+            if (metadataType.FullName == "System.Object")
+            {
+                encoder.Object();
+            }
+            else
+            {
+                var reference = this.GetTypeReferenceHandle(metadataType);
+                encoder.Type(reference, metadataType.IsValueType);
+            }
+            return;
+        }
+
+        // TODO: Multi-dimensional arrays
+        if (type is ArrayTypeSymbol { Rank: 1 } arrayType)
+        {
+            this.EncodeSignatureType(encoder.SZArray(), arrayType.ElementType);
+            return;
+        }
 
         // TODO
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 
     private void WritePe(Stream peStream)

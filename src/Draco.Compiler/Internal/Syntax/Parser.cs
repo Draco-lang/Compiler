@@ -15,32 +15,6 @@ namespace Draco.Compiler.Internal.Syntax;
 internal sealed class Parser
 {
     /// <summary>
-    /// Describes a precedence level.
-    /// </summary>
-    private enum PrecLevelKind
-    {
-        /// <summary>
-        /// The level is for unary prefix operators.
-        /// </summary>
-        Prefix,
-
-        /// <summary>
-        /// The level is for binary left-associative operators.
-        /// </summary>
-        BinaryLeft,
-
-        /// <summary>
-        /// The level is for binary right-associative operators.
-        /// </summary>
-        BinaryRight,
-
-        /// <summary>
-        /// The level is completely custom with a custom parser function.
-        /// </summary>
-        Custom,
-    }
-
-    /// <summary>
     /// Control flow statements parse sligtly differently in expression and statement contexts.
     /// This is the discriminating enum for them to avoid duplicating parser code.
     /// </summary>
@@ -142,6 +116,17 @@ internal sealed class Parser
     };
 
     /// <summary>
+    /// The list of all tokens that can start a declaration.
+    /// </summary>
+    private static readonly TokenKind[] declarationStarters = new[]
+    {
+        TokenKind.KeywordImport,
+        TokenKind.KeywordFunc,
+        TokenKind.KeywordVar,
+        TokenKind.KeywordVal,
+    };
+
+    /// <summary>
     /// The list of all tokens that can start an expression.
     /// </summary>
     private static readonly TokenKind[] expressionStarters = new[]
@@ -153,6 +138,7 @@ internal sealed class Parser
         TokenKind.LineStringStart,
         TokenKind.MultiLineStringStart,
         TokenKind.KeywordFalse,
+        // NOTE: This is for later, when we decide if the lambda syntax should be func(...) = ...
         TokenKind.KeywordFunc,
         TokenKind.KeywordGoto,
         TokenKind.KeywordIf,
@@ -178,6 +164,23 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// Checks, if the current token kind and the potentially following tokens form a declaration.
+    /// </summary>
+    /// <param name="kind">The current token kind.</param>
+    /// <returns>True, if <paramref name="kind"/> in the current state can form the start of a declaration.</returns>
+    private bool IsDeclarationStarter(TokenKind kind) =>
+           declarationStarters.Contains(kind)
+        // Label
+        || kind == TokenKind.Identifier && this.Peek(1) == TokenKind.Colon;
+
+    /// <summary>
+    /// Checks, if the current token kind and the potentially following tokens form an expression.
+    /// </summary>
+    /// <param name="kind">The current token kind.</param>
+    /// <returns>True, uf <paramref name="kind"/> in the current state can form the start of an expression.</returns>
+    private bool IsExpressionStarter(TokenKind kind) => expressionStarters.Contains(kind);
+
+    /// <summary>
     /// Parses a <see cref="CompilationUnitSyntax"/> until the end of input.
     /// </summary>
     /// <returns>The parsed <see cref="CompilationUnitSyntax"/>.</returns>
@@ -197,6 +200,9 @@ internal sealed class Parser
     {
         switch (this.Peek())
         {
+        case TokenKind.KeywordImport:
+            return this.ParseImportDeclaration();
+
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration();
 
@@ -211,8 +217,7 @@ internal sealed class Parser
         {
             var input = this.Synchronize(t => t switch
             {
-                TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal => false,
-                TokenKind.Identifier when this.Peek(1) == TokenKind.Colon => false,
+                _ when this.IsDeclarationStarter(t) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
@@ -233,10 +238,7 @@ internal sealed class Parser
         switch (this.Peek())
         {
         // Declarations
-        case TokenKind.KeywordFunc when allowDecl:
-        case TokenKind.KeywordVar when allowDecl:
-        case TokenKind.KeywordVal when allowDecl:
-        case TokenKind.Identifier when allowDecl && this.Peek(1) == TokenKind.Colon:
+        case TokenKind t when this.IsDeclarationStarter(t):
         {
             var decl = this.ParseDeclaration();
             return new DeclarationStatementSyntax(decl);
@@ -263,6 +265,25 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// Parses an <see cref="ImportDeclarationSyntax"/>.
+    /// </summary>
+    /// <returns>The parsed <see cref="ImportDeclarationSyntax"/>.</returns>
+    private ImportDeclarationSyntax ParseImportDeclaration()
+    {
+        // Import keyword
+        var importKeyword = this.Expect(TokenKind.KeywordImport);
+        // Path
+        // TODO: This allows an empty path, do we want to allow that?
+        var path = this.ParseSeparatedSyntaxList(
+            elementParser: () => this.Expect(TokenKind.Identifier),
+            separatorKind: TokenKind.Dot,
+            stopKind: TokenKind.Semicolon);
+        // Ending semicolon
+        var semicolon = this.Expect(TokenKind.Semicolon);
+        return new ImportDeclarationSyntax(importKeyword, path, semicolon);
+    }
+
+    /// <summary>
     /// Parses a <see cref="VariableDeclarationSyntax"/>.
     /// </summary>
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
@@ -270,7 +291,7 @@ internal sealed class Parser
     {
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
-        Debug.Assert(keyword.Kind == TokenKind.KeywordVal || keyword.Kind == TokenKind.KeywordVar);
+        Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);
         var identifier = this.Expect(TokenKind.Identifier);
         // We don't necessarily have type specifier
         TypeSpecifierSyntax? type = null;
@@ -363,8 +384,9 @@ internal sealed class Parser
             // Maybe if we get to a '=' or '{' we could actually try to re-parse and prepend with the bogus input
             var input = this.Synchronize(t => t switch
             {
-                TokenKind.Semicolon or TokenKind.CurlyClose
-                or TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal => false,
+                TokenKind.Semicolon or TokenKind.CurlyClose => false,
+                // NOTE: We don't consider label here
+                _ when declarationStarters.Contains(t) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "function body");
@@ -404,7 +426,7 @@ internal sealed class Parser
                 or TokenKind.ParenClose or TokenKind.BracketClose
                 or TokenKind.CurlyClose or TokenKind.InterpolationEnd
                 or TokenKind.Assign => false,
-                var kind when expressionStarters.Contains(kind) => false,
+                _ when this.IsExpressionStarter(t) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "type");
@@ -423,9 +445,9 @@ internal sealed class Parser
     private ExpressionSyntax ParseControlFlowExpression(ControlFlowContext ctx)
     {
         var peekKind = this.Peek();
-        Debug.Assert(peekKind == TokenKind.CurlyOpen
-                  || peekKind == TokenKind.KeywordIf
-                  || peekKind == TokenKind.KeywordWhile);
+        Debug.Assert(peekKind is TokenKind.CurlyOpen
+                              or TokenKind.KeywordIf
+                              or TokenKind.KeywordWhile);
         return peekKind switch
         {
             TokenKind.CurlyOpen => this.ParseBlockExpression(ctx),
@@ -487,10 +509,7 @@ internal sealed class Parser
                 // On a close curly or out of input, we can immediately exit
                 goto end_of_block;
 
-            case TokenKind.KeywordFunc:
-            case TokenKind.KeywordVar:
-            case TokenKind.KeywordVal:
-            case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
+            case TokenKind t when this.IsDeclarationStarter(t):
             {
                 var decl = this.ParseDeclaration();
                 stmts.Add(new DeclarationStatementSyntax(decl));
@@ -515,7 +534,7 @@ internal sealed class Parser
 
             default:
             {
-                if (expressionStarters.Contains(this.Peek()))
+                if (this.IsExpressionStarter(this.Peek()))
                 {
                     // Some expression
                     var expr = this.ParseExpression();
@@ -537,10 +556,9 @@ internal sealed class Parser
                     // Error, synchronize
                     var input = this.Synchronize(kind => kind switch
                     {
-                        TokenKind.CurlyClose
-                        or TokenKind.KeywordFunc or TokenKind.KeywordVar or TokenKind.KeywordVal
-                        or TokenKind.Identifier when this.Peek(1) == TokenKind.Colon => false,
-                        var tt when expressionStarters.Contains(tt) => false,
+                        TokenKind.CurlyClose => false,
+                        _ when this.IsDeclarationStarter(kind) => false,
+                        _ when this.IsExpressionStarter(kind) => false,
                         _ => true,
                     });
                     var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "statement");
@@ -647,7 +665,7 @@ internal sealed class Parser
         {
             var returnKeyword = this.Advance();
             ExpressionSyntax? value = null;
-            if (expressionStarters.Contains(this.Peek())) value = this.ParseExpression();
+            if (this.IsExpressionStarter(this.Peek())) value = this.ParseExpression();
             return new ReturnExpressionSyntax(returnKeyword, value);
         }
         case TokenKind.KeywordGoto:
@@ -707,7 +725,7 @@ internal sealed class Parser
             else if (this.Matches(TokenKind.Dot, out var dot))
             {
                 var name = this.Expect(TokenKind.Identifier);
-                result = new MemberAccessExpressionSyntax(result, dot, name);
+                result = new MemberExpressionSyntax(result, dot, name);
             }
             else
             {
@@ -761,7 +779,7 @@ internal sealed class Parser
                 TokenKind.Semicolon or TokenKind.Comma
                 or TokenKind.ParenClose or TokenKind.BracketClose
                 or TokenKind.CurlyClose or TokenKind.InterpolationEnd => false,
-                var kind when expressionStarters.Contains(kind) => false,
+                var kind when this.IsExpressionStarter(kind) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "expression");

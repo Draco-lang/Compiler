@@ -4,6 +4,7 @@ using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -40,6 +41,7 @@ internal partial class Binder
         UntypedRelationalExpression rel => this.TypeRelationalExpression(rel, constraints, diagnostics),
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
+        UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
 
@@ -116,12 +118,29 @@ internal partial class Binder
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
-        var typedArgs = call.Arguments
-            .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
-            .ToImmutableArray();
-        var resultType = constraints.Unwrap(call.TypeRequired);
-        return new BoundCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
+        var calledMember = (call.Method as UntypedMemberExpression)?.Member.Result as FunctionSymbol;
+        if (calledMember is not null)
+        {
+            // This is a member function call
+            var memberAccess = (UntypedMemberExpression)call.Method;
+            var receiver = this.TypeExpression(memberAccess.Accessed, constraints, diagnostics);
+            var typedArgs = call.Arguments
+                .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+                .ToImmutableArray();
+            var calledFunc = new BoundFunctionExpression(memberAccess.Syntax, calledMember);
+            var resultType = constraints.Unwrap(call.TypeRequired);
+            return new BoundCallExpression(call.Syntax, calledFunc, receiver, typedArgs, resultType);
+        }
+        else
+        {
+            // This is a non-member function call
+            var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
+            var typedArgs = call.Arguments
+                .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+                .ToImmutableArray();
+            var resultType = constraints.Unwrap(call.TypeRequired);
+            return new BoundCallExpression(call.Syntax, typedFunction, null, typedArgs, resultType);
+        }
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -177,5 +196,15 @@ internal partial class Binder
         var left = this.TypeExpression(or.Left, constraints, diagnostics);
         var right = this.TypeExpression(or.Right, constraints, diagnostics);
         return new BoundOrExpression(or.Syntax, left, right);
+    }
+
+    private BoundExpression TypeMemberExpression(UntypedMemberExpression mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
+        var member = mem.Member.Result;
+        var resultType = constraints.Unwrap(mem.TypeRequired);
+
+        // TODO
+        throw new NotImplementedException();
     }
 }

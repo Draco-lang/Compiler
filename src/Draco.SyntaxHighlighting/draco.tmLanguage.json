@@ -42,12 +42,29 @@
           "include": "#comments"
         },
         {
+          "include": "#import-declaration"
+        },
+        {
           "include": "#variable-declaration"
         },
         {
           "include": "#function-declaration"
         }
       ]
+    },
+    "import-declaration": {
+      "match": "\\b(import)\\b\\s*(?:([A-Za-z_][A-Za-z0-9_]*)(?:\\.([A-Za-z_][A-Za-z0-9_]*))*)?;?",
+      "captures": {
+        "1": {
+          "name": "keyword.other.draco"
+        },
+        "2": {
+          "name": "entity.name.module.draco"
+        },
+        "3": {
+          "name": "entity.name.module.draco"
+        }
+      }
     },
     "variable-declaration": {
       "begin": "\\b(var|val)\\b\\s*\\b([A-Za-z_][A-Za-z0-9_]*)\\b",

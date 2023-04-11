@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -18,7 +17,7 @@ internal sealed class SynthetizedFunctionSymbol : FunctionSymbol
     /// <param name="operandType">The operand type.</param>
     /// <param name="returnType">The return type.</param>
     /// <returns>The constructed function symbol.</returns>
-    public static FunctionSymbol UnaryOperator(TokenKind token, Type operandType, Type returnType) =>
+    public static FunctionSymbol UnaryOperator(TokenKind token, TypeSymbol operandType, TypeSymbol returnType) =>
         new SynthetizedFunctionSymbol(GetUnaryOperatorName(token), new[] { operandType }, returnType);
 
     /// <summary>
@@ -29,7 +28,7 @@ internal sealed class SynthetizedFunctionSymbol : FunctionSymbol
     /// <param name="rightType">The right operand type.</param>
     /// <param name="returnType">The return type.</param>
     /// <returns>The constructed function symbol.</returns>
-    public static FunctionSymbol BinaryOperator(TokenKind token, Type leftType, Type rightType, Type returnType) =>
+    public static FunctionSymbol BinaryOperator(TokenKind token, TypeSymbol leftType, TypeSymbol rightType, TypeSymbol returnType) =>
         new SynthetizedFunctionSymbol(GetBinaryOperatorName(token), new[] { leftType, rightType }, returnType);
 
     /// <summary>
@@ -39,18 +38,18 @@ internal sealed class SynthetizedFunctionSymbol : FunctionSymbol
     /// <param name="leftType">The left operand type.</param>
     /// <param name="rightType">The right operand type.</param>
     /// <returns>The constructed function symbol.</returns>
-    public static FunctionSymbol ComparisonOperator(TokenKind token, Type leftType, Type rightType) =>
-        new SynthetizedFunctionSymbol(GetComparisonOperatorName(token), new[] { leftType, rightType }, IntrinsicTypes.Bool);
+    public static FunctionSymbol ComparisonOperator(TokenKind token, TypeSymbol leftType, TypeSymbol rightType) =>
+        new SynthetizedFunctionSymbol(GetComparisonOperatorName(token), new[] { leftType, rightType }, IntrinsicSymbols.Bool);
 
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
 
-    public override Type ReturnType { get; }
+    public override TypeSymbol ReturnType { get; }
     public override Symbol? ContainingSymbol => null;
     public override bool IsSpecialName => true;
 
     public override string Name { get; }
 
-    public SynthetizedFunctionSymbol(string name, IEnumerable<Type> paramTypes, Type returnType)
+    public SynthetizedFunctionSymbol(string name, IEnumerable<TypeSymbol> paramTypes, TypeSymbol returnType)
     {
         this.Name = name;
         this.Parameters = paramTypes

@@ -1,7 +1,10 @@
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -11,6 +14,7 @@ internal sealed partial class ConstraintSolver
     {
         SameTypeConstraint c => this.Solve(diagnostics, c),
         OverloadConstraint c => this.Solve(diagnostics, c),
+        MemberConstraint c => this.Solve(diagnostics, c),
         _ => throw new System.ArgumentOutOfRangeException(nameof(constraint)),
     };
 
@@ -47,8 +51,8 @@ internal sealed partial class ConstraintSolver
         if (constraint.Candidates.Count == 0)
         {
             // Best-effort shape approximation
-            var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionType functionType
-                ? new NoOverloadFunctionSymbol(functionType.ParameterTypes.Length)
+            var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionTypeSymbol functionType
+                ? new NoOverloadFunctionSymbol(functionType.Parameters.Length)
                 : new NoOverloadFunctionSymbol(1);
             this.Unify(errorSymbol.Type, constraint.CallSite);
             // Diagnostic, promise
@@ -69,6 +73,42 @@ internal sealed partial class ConstraintSolver
         return advanced ? SolveState.Progressing : SolveState.Stale;
     }
 
+    private SolveState Solve(DiagnosticBag diagnostics, MemberConstraint constraint)
+    {
+        var accessed = this.Unwrap(constraint.Accessed);
+        // We can't look up the members of type variables
+        if (accessed.IsTypeVariable) return SolveState.Stale;
+
+        // Not a type variable, we can look into members
+        var membersWithName = accessed.Members
+            .Where(m => m.Name == constraint.MemberName)
+            .ToList();
+
+        if (membersWithName.Count == 0)
+        {
+            // No such member, error
+            // TODO
+            throw new System.NotImplementedException();
+        }
+        else if (membersWithName.Count == 1)
+        {
+            // One member, just resolve to that
+            var result = membersWithName[0];
+            this.Unify(constraint.MemberType, ((ITypedSymbol)result).Type);
+            constraint.Promise.Resolve(result);
+        }
+        else
+        {
+            // Multiple, overloading
+            var methodsWithName = membersWithName.Cast<FunctionSymbol>();
+            // We carry on this same promise
+            var promise = constraint.Promise.Cast<Symbol, FunctionSymbol>();
+            var overload = new OverloadConstraint(methodsWithName, constraint.MemberType, promise);
+            this.constraints.Add(overload);
+        }
+        return SolveState.Finished;
+    }
+
     private void FailSilently(Constraint constraint)
     {
         switch (constraint)
@@ -76,59 +116,63 @@ internal sealed partial class ConstraintSolver
         case OverloadConstraint overload:
             this.FailSilently(overload);
             break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(constraint));
         }
     }
 
     private void FailSilently(OverloadConstraint constraint)
     {
         // Best-effort shape approximation
-        var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionType functionType
-            ? new NoOverloadFunctionSymbol(functionType.ParameterTypes.Length)
+        var errorSymbol = this.Unwrap(constraint.CallSite) is FunctionTypeSymbol functionType
+            ? new NoOverloadFunctionSymbol(functionType.Parameters.Length)
             : new NoOverloadFunctionSymbol(1);
         constraint.Promise.FailSilently(errorSymbol);
     }
 
-    private bool Matches(Type left, Type right)
+    private bool Matches(TypeSymbol left, TypeSymbol right)
     {
         left = this.Unwrap(left);
         right = this.Unwrap(right);
 
+        if (ReferenceEquals(left, right)) return true;
+
         switch (left, right)
         {
         // Never type is never reached, matches everything
-        case (NeverType, _):
-        case (_, NeverType):
+        case (NeverTypeSymbol, _):
+        case (_, NeverTypeSymbol):
         // Error type matches everything to avoid cascading type errors
-        case (ErrorType, _):
-        case (_, ErrorType):
+        case (ErrorTypeSymbol, _):
+        case (_, ErrorTypeSymbol):
         // Type variables could match anything
         case (TypeVariable, _):
         case (_, TypeVariable):
             return true;
 
-        case (BuiltinType t1, BuiltinType t2):
-            return t1.Name == t2.Name
-                && t1.UnderylingType == t2.UnderylingType;
+        // NOTE: Primitives are filtered out already, along with metadata types
 
-        case (FunctionType f1, FunctionType f2):
+        case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
         {
-            if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
-            for (var i = 0; i < f1.ParameterTypes.Length; ++i)
+            if (f1.Parameters.Length != f2.Parameters.Length) return false;
+            for (var i = 0; i < f1.Parameters.Length; ++i)
             {
-                if (!this.Matches(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+                if (!this.Matches(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
             }
             return this.Matches(f1.ReturnType, f2.ReturnType);
         }
 
         default:
-            throw new System.NotImplementedException();
+            return false;
         }
     }
 
-    private bool Unify(Type left, Type right)
+    private bool Unify(TypeSymbol left, TypeSymbol right)
     {
         left = this.Unwrap(left);
         right = this.Unwrap(right);
+
+        if (ReferenceEquals(left, right)) return true;
 
         switch (left, right)
         {
@@ -141,41 +185,39 @@ internal sealed partial class ConstraintSolver
             this.Substitute(v1, v2);
             return true;
         }
-        case (TypeVariable v, Type other):
+        case (TypeVariable v, TypeSymbol other):
         {
             this.Substitute(v, other);
             return true;
         }
-        case (Type other, TypeVariable v):
+        case (TypeSymbol other, TypeVariable v):
         {
             this.Substitute(v, other);
             return true;
         }
 
         // Never type is never reached, unifies with everything
-        case (NeverType, _):
-        case (_, NeverType):
+        case (NeverTypeSymbol, _):
+        case (_, NeverTypeSymbol):
         // Error type unifies with everything to avoid cascading type errors
-        case (ErrorType, _):
-        case (_, ErrorType):
+        case (ErrorTypeSymbol, _):
+        case (_, ErrorTypeSymbol):
             return true;
 
-        case (BuiltinType t1, BuiltinType t2):
-            return t1.Name == t2.Name
-                && t1.UnderylingType == t2.UnderylingType;
+        // NOTE: Primitives are filtered out already, along with metadata types
 
-        case (FunctionType f1, FunctionType f2):
+        case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
         {
-            if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
-            for (var i = 0; i < f1.ParameterTypes.Length; ++i)
+            if (f1.Parameters.Length != f2.Parameters.Length) return false;
+            for (var i = 0; i < f1.Parameters.Length; ++i)
             {
-                if (!this.Unify(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+                if (!this.Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
             }
             return this.Unify(f1.ReturnType, f2.ReturnType);
         }
 
         default:
-            throw new System.NotImplementedException();
+            return false;
         }
     }
 }

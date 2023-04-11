@@ -1,5 +1,4 @@
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -8,7 +7,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceLocalSymbol : LocalSymbol
 {
-    public override Type Type { get; }
+    public override TypeSymbol Type { get; }
 
     public override Symbol? ContainingSymbol => this.untypedSymbol.ContainingSymbol;
     public override string Name => this.untypedSymbol.Name;
@@ -21,7 +20,7 @@ internal sealed class SourceLocalSymbol : LocalSymbol
 
     private readonly UntypedLocalSymbol untypedSymbol;
 
-    public SourceLocalSymbol(UntypedLocalSymbol untypedSymbol, Type type)
+    public SourceLocalSymbol(UntypedLocalSymbol untypedSymbol, TypeSymbol type)
     {
         this.untypedSymbol = untypedSymbol;
         this.Type = type;

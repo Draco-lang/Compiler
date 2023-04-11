@@ -1,6 +1,5 @@
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -19,7 +18,7 @@ internal readonly record struct Local(LocalSymbol Symbol, int Index) : IOperand
     /// <summary>
     /// The type this local holds.
     /// </summary>
-    public Type Type => this.Symbol.Type;
+    public TypeSymbol Type => this.Symbol.Type;
 
     public override string ToString()
     {

@@ -100,7 +100,7 @@ public sealed partial class SemanticModel
         result.AddRange(syntaxDiagnostics);
 
         // Next, we enforce binding everywhere
-        foreach (var symbol in this.compilation.GlobalModule.Members)
+        foreach (var symbol in this.compilation.SourceModule.Members)
         {
             if (symbol is SourceFunctionSymbol func)
             {

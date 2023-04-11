@@ -13,4 +13,8 @@ internal abstract partial class ParameterSymbol : LocalSymbol
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitParameter(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitParameter(this);
+
+    public override string ToString() => string.IsNullOrWhiteSpace(this.Name)
+        ? this.Type.ToString()
+        : $"{this.Name}: {this.Type}";
 }

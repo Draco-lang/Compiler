@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using Draco.Compiler.Internal.OptimizingIr.Model;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;
@@ -47,14 +50,15 @@ internal sealed class CilCodegen
     private MemberReferenceHandle GetGlobalReferenceHandle(Global global) => this.metadataCodegen.GetGlobalReferenceHandle(global);
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
-    private MemberReferenceHandle GetIntrinsicHandle(Intrinsic intrinsic) => this.metadataCodegen.GetIntrinsicReferenceHandle(intrinsic.Symbol);
+    private TypeReferenceHandle GetTypeReferenceHandle(Symbol symbol) => this.metadataCodegen.GetTypeReferenceHandle(symbol);
+    private MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => this.metadataCodegen.GetMemberReferenceHandle(symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
 
     private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
-        if (ReferenceEquals(operand.Type, IntrinsicTypes.Unit)) return null;
+        if (ReferenceEquals(operand.Type, IntrinsicSymbols.Unit)) return null;
         if (!this.allocatedLocals.TryGetValue(operand, out var local))
         {
             local = new(operand, this.allocatedLocals.Count);
@@ -149,7 +153,7 @@ internal sealed class CilCodegen
                 ArithmeticOp.Rem => ILOpCode.Rem,
                 ArithmeticOp.Less => ILOpCode.Clt,
                 ArithmeticOp.Equal => ILOpCode.Ceq,
-                _ => throw new System.InvalidOperationException(),
+                _ => throw new InvalidOperationException(),
             });
             this.StoreLocal(arithmetic.Target);
             break;
@@ -167,7 +171,7 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             default:
-                throw new System.InvalidOperationException();
+                throw new InvalidOperationException();
             }
             // Just copy to the target local
             this.StoreLocal(load.Target);
@@ -187,7 +191,7 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             default:
-                throw new System.InvalidOperationException();
+                throw new InvalidOperationException();
             }
             break;
         }
@@ -202,22 +206,119 @@ internal sealed class CilCodegen
                 var handle = this.GetProcedureDefinitionHandle(proc);
                 this.InstructionEncoder.Call(handle);
             }
-            else if (call.Procedure is Intrinsic intrinsic)
+            else if (call.Procedure is MetadataReference metadataRef)
             {
-                var handle = this.GetIntrinsicHandle(intrinsic);
-                this.InstructionEncoder.Call(handle);
+                switch (metadataRef.Symbol)
+                {
+                case SynthetizedMetadataConstructorSymbol ctor:
+                {
+                    // The constructed type is from metadata, but the ctor symbol doesn't contain the real names
+                    var type = this.GetTypeReferenceHandle(ctor.ReturnType);
+                    // TODO: Not cached
+                    var handle = this.metadataCodegen.AddMemberReference(
+                        type: type,
+                        name: ".ctor",
+                        signature: this.metadataCodegen.EncodeBlob(e =>
+                        {
+                            // TODO: Don't we want to have a utility in MetadataCodegen instead?
+                            var funcType = (FunctionTypeSymbol)ctor.Type;
+                            e
+                                .MethodSignature(isInstanceMethod: true)
+                                .Parameters(funcType.Parameters.Length, out var returnType, out var parameters);
+                            // Ctors always have void return-type
+                            returnType.Void();
+                            foreach (var param in funcType.Parameters)
+                            {
+                                this.metadataCodegen.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
+                            }
+                        }));
+                    // Encode instantiation
+                    this.InstructionEncoder.OpCode(ILOpCode.Newobj);
+                    this.InstructionEncoder.Token(handle);
+                    break;
+                }
+                case SynthetizedArrayFunctionSymbol arr:
+                {
+                    if (arr.ArrayType.Rank != 1)
+                    {
+                        // TODO: Only support SZ arrays for now.
+                        throw new NotImplementedException();
+                    }
+
+                    var elementTypeRef = this.GetTypeReferenceHandle(arr.ArrayType.ElementType);
+                    switch (arr.Kind)
+                    {
+                    case SynthetizedArrayFunctionSymbol.FunctionKind.Constructor:
+                        this.InstructionEncoder.OpCode(ILOpCode.Newarr);
+                        this.InstructionEncoder.Token(elementTypeRef);
+                        break;
+                    default:
+                        // I'm not sure what else can get here
+                        throw new UnreachableException();
+                    }
+                    break;
+                }
+                default:
+                {
+                    // Regular lookup
+                    var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+                    this.InstructionEncoder.Call(handle);
+                    break;
+                }
+                }
             }
             else
             {
                 // TODO
-                throw new System.NotImplementedException();
+                throw new NotImplementedException();
             }
             // Store result
             this.StoreLocal(call.Target);
             break;
         }
+        case MemberCallInstruction mcall:
+        {
+            // Receiver
+            this.EncodePush(mcall.Receiver);
+            // Arguments
+            foreach (var arg in mcall.Arguments) this.EncodePush(arg);
+            // Determine what we are calling
+            if (mcall.Procedure is MetadataReference metadataRef)
+            {
+                var symbol = (FunctionSymbol)metadataRef.Symbol;
+                if (symbol is SynthetizedArrayFunctionSymbol arr)
+                {
+                    var elementTypeRef = this.GetTypeReferenceHandle(arr.ArrayType.ElementType);
+                    switch (arr.Kind)
+                    {
+                    case SynthetizedArrayFunctionSymbol.FunctionKind.Get:
+                        this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
+                        this.InstructionEncoder.Token(elementTypeRef);
+                        break;
+                    case SynthetizedArrayFunctionSymbol.FunctionKind.Set:
+                        this.InstructionEncoder.OpCode(ILOpCode.Stelem);
+                        this.InstructionEncoder.Token(elementTypeRef);
+                        break;
+                    }
+                }
+                else
+                {
+                    var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+                    this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
+                    this.InstructionEncoder.Token(handle);
+                }
+            }
+            else
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+            // Store result
+            this.StoreLocal(mcall.Target);
+            break;
+        }
         default:
-            throw new System.ArgumentOutOfRangeException(nameof(instruction));
+            throw new ArgumentOutOfRangeException(nameof(instruction));
         }
     }
 
@@ -247,11 +348,11 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.LoadString(stringHandle);
                 break;
             default:
-                throw new System.NotImplementedException();
+                throw new NotImplementedException();
             }
             break;
         default:
-            throw new System.ArgumentOutOfRangeException(nameof(operand));
+            throw new ArgumentOutOfRangeException(nameof(operand));
         }
     }
 

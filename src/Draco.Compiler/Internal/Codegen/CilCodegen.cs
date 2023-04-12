@@ -31,6 +31,7 @@ internal sealed class CilCodegen
         .Select(kv => kv.Value);
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
+    private WellKnownTypes WellKnownTypes => this.metadataCodegen.Compilation.WellKnownTypes;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
@@ -179,16 +180,30 @@ internal sealed class CilCodegen
         }
         case StoreInstruction store:
         {
-            this.EncodePush(store.Source);
-            // Depends on where we store to
             switch (store.Target)
             {
             case Local local:
+                this.EncodePush(store.Source);
                 this.StoreLocal(local);
                 break;
             case Global global:
+                this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
+                break;
+            case ArrayAccess access:
+                foreach (var index in access.Indices) this.EncodePush(index);
+                this.EncodePush(store.Source);
+                if (access.Indices.Length == 1)
+                {
+                    this.InstructionEncoder.OpCode(ILOpCode.Stelem_i4);
+                }
+                else
+                {
+                    // TODO: More complex, involves member functions
+                    throw new NotImplementedException();
+                }
+                this.InstructionEncoder.OpCode(ILOpCode.Stelem_i4);
                 break;
             default:
                 throw new InvalidOperationException();
@@ -240,9 +255,41 @@ internal sealed class CilCodegen
             this.StoreLocal(newObj.Target);
             break;
         }
+        case NewArrayInstruction newArr:
+        {
+            // Dimensions
+            foreach (var dim in newArr.Dimensions) this.EncodePush(dim);
+            // One-dimensional and multi-dimensional arrays are very different
+            if (newArr.Dimensions.Count == 1)
+            {
+                this.InstructionEncoder.OpCode(ILOpCode.Newarr);
+                this.EncodeToken(newArr.ElementType);
+            }
+            else
+            {
+                // TODO: More complicated, because it's a proper type
+                throw new NotImplementedException();
+            }
+            // Store result
+            this.StoreLocal(newArr.Target);
+            break;
+        }
         default:
             throw new ArgumentOutOfRangeException(nameof(instruction));
         }
+    }
+
+    private void EncodeToken(Symbol symbol)
+    {
+        if (ReferenceEquals(symbol, IntrinsicSymbols.Object))
+        {
+            var objHandle = this.GetTypeReferenceHandle(this.WellKnownTypes.SystemObject);
+            this.InstructionEncoder.Token(objHandle);
+            return;
+        }
+
+        // TODO
+        throw new NotImplementedException();
     }
 
     private void EncodeToken(IOperand operand)

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
@@ -137,7 +138,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
     public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
-    public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) => throw new System.NotImplementedException();
+    public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) =>
+        new ArrayAccess(this.Compile(node.Array), node.Indices.Select(this.Compile).ToImmutableArray());
 
     // Expressions /////////////////////////////////////////////////////////////
 
@@ -187,8 +189,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitArrayCreationExpression(BoundArrayCreationExpression node)
     {
-        // TODO
-        throw new System.NotImplementedException();
+        var dimensions = node.Sizes.Select(this.Compile).ToList();
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(NewArray(result, node.ElementType, dimensions));
+        return result;
     }
 
     public override IOperand VisitGotoExpression(BoundGotoExpression node)

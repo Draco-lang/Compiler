@@ -15,7 +15,7 @@ internal sealed class NewObjectInstruction : InstructionBase
         .Concat(this.Arguments);
 
     /// <summary>
-    /// The register to write the call result to.
+    /// The register to write the instantiated object to.
     /// </summary>
     public Register Target { get; set; }
 
@@ -25,7 +25,7 @@ internal sealed class NewObjectInstruction : InstructionBase
     public IOperand Constructor { get; set; }
 
     /// <summary>
-    /// The arguments that are passed to the procedure.
+    /// The arguments that are passed to the constructor.
     /// </summary>
     public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
 

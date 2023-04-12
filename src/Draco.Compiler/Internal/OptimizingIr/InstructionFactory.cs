@@ -23,6 +23,8 @@ internal static class InstructionFactory
         new(target, proc, receiver, args);
     public static NewObjectInstruction NewObject(Register target, IOperand ctor, IEnumerable<IOperand> args) =>
         new(target, ctor, args);
+    public static NewArrayInstruction NewArray(Register target, TypeSymbol elementType, IEnumerable<IOperand> dimensions) =>
+        new(target, elementType, dimensions);
     public static ArithmeticInstruction Arithmetic(Register target, ArithmeticOp op, IOperand left, IOperand right) =>
         new(target, op, left, right);
     public static ArithmeticInstruction Add(Register target, IOperand left, IOperand right) =>

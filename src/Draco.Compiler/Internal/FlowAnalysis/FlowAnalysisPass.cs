@@ -251,4 +251,22 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         // Detach
         this.State = this.Bottom;
     }
+
+    public override void VisitCallExpression(BoundCallExpression node)
+    {
+        // Receiver first
+        node.Receiver?.Accept(this);
+        // Args then
+        foreach (var arg in node.Arguments) arg.Accept(this);
+        // Function last
+        node.Method.Accept(this);
+    }
+
+    public override void VisitArrayAccessLvalue(BoundArrayAccessLvalue node)
+    {
+        // Indices first
+        foreach (var index in node.Indices) index.Accept(this);
+        // Array last
+        node.Array.Accept(this);
+    }
 }

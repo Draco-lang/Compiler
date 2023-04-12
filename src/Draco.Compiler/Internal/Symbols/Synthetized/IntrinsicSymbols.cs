@@ -15,6 +15,7 @@ internal static class IntrinsicSymbols
     public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);
     public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
     public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
+    public static TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
 
     // Operators
 

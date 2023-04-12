@@ -364,19 +364,12 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (ReferenceEquals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
         if (ReferenceEquals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
         if (ReferenceEquals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Object)) { encoder.Object(); return; }
 
         if (type is MetadataTypeSymbol metadataType)
         {
-            // TODO: This needs to be made more robust
-            if (metadataType.FullName == "System.Object")
-            {
-                encoder.Object();
-            }
-            else
-            {
-                var reference = this.GetTypeReferenceHandle(metadataType);
-                encoder.Type(reference, metadataType.IsValueType);
-            }
+            var reference = this.GetTypeReferenceHandle(metadataType);
+            encoder.Type(reference, metadataType.IsValueType);
             return;
         }
 

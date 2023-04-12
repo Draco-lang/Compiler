@@ -39,10 +39,12 @@
   <Generate Name="PublishDiagnosticsParams" />
   <Generate Name="DocumentFormattingParams" />
   <Generate Name="CompletionParams"/>
+  <Generate Name="SignatureHelpParams"/>
   
   <Generate Name="Hover" />
   <Generate Name="InlayHint" />
   <Generate Name="CompletionItem"/>
+  <Generate Name="SignatureHelp"/>
 
   <Generate Name="DefinitionRegistrationOptions" />
   <Generate Name="ReferenceRegistrationOptions" />

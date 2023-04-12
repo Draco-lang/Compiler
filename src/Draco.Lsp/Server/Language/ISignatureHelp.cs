@@ -1,8 +1,6 @@
 using Draco.Lsp.Attributes;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
-using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
@@ -16,5 +14,5 @@ public interface ISignatureHelp
     public SignatureHelpRegistrationOptions SignatureHelpRegistrationOptions { get; }
 
     [Request("textDocument/signatureHelp")]
-    public Task<IList<TextEdit>?> FormatTextDocumentAsync(SignatureHelpParams param, CancellationToken cancellationToken);
+    public Task<SignatureHelp?> FormatTextDocumentAsync(SignatureHelpParams param, CancellationToken cancellationToken);
 }

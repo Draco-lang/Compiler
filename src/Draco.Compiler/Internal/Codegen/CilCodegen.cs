@@ -192,18 +192,26 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             case ArrayAccess access:
+                this.EncodePush(access.Array);
                 foreach (var index in access.Indices) this.EncodePush(index);
                 this.EncodePush(store.Source);
                 if (access.Indices.Length == 1)
                 {
-                    this.InstructionEncoder.OpCode(ILOpCode.Stelem_i4);
+                    if (store.Source.Type!.IsValueType)
+                    {
+                        // TODO
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        this.InstructionEncoder.OpCode(ILOpCode.Stelem_ref);
+                    }
                 }
                 else
                 {
                     // TODO: More complex, involves member functions
                     throw new NotImplementedException();
                 }
-                this.InstructionEncoder.OpCode(ILOpCode.Stelem_i4);
                 break;
             default:
                 throw new InvalidOperationException();

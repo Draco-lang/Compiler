@@ -365,9 +365,10 @@ public sealed class LexerTests
     [Trait("Feature", "Strings")]
     public void TestMultilineStringWithSpacesAround()
     {
-        var text = """"
+        const string spaceAfter = "   ";
+        var text = $""""
             """
-                  hello
+                  hello{spaceAfter}
                 """
             """";
         this.Lex(NormalizeNewliens(text));
@@ -380,8 +381,8 @@ public sealed class LexerTests
 
         this.AssertNextToken(
             TokenKind.StringContent,
-            "      hello",
-            "      hello");
+            $"      hello{spaceAfter}",
+            $"      hello{spaceAfter}");
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(TokenKind.MultiLineStringEnd, "\"\"\"");

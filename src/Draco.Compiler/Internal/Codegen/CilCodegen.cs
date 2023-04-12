@@ -199,13 +199,11 @@ internal sealed class CilCodegen
                 {
                     if (store.Source.Type!.IsValueType)
                     {
-                        // TODO
-                        throw new NotImplementedException();
+                        // We need to box it
+                        this.InstructionEncoder.OpCode(ILOpCode.Box);
+                        this.EncodeToken(store.Source.Type);
                     }
-                    else
-                    {
-                        this.InstructionEncoder.OpCode(ILOpCode.Stelem_ref);
-                    }
+                    this.InstructionEncoder.OpCode(ILOpCode.Stelem_ref);
                 }
                 else
                 {
@@ -292,6 +290,13 @@ internal sealed class CilCodegen
         if (ReferenceEquals(symbol, IntrinsicSymbols.Object))
         {
             var objHandle = this.GetTypeReferenceHandle(this.WellKnownTypes.SystemObject);
+            this.InstructionEncoder.Token(objHandle);
+            return;
+        }
+
+        if (ReferenceEquals(symbol, IntrinsicSymbols.Int32))
+        {
+            var objHandle = this.GetTypeReferenceHandle(this.WellKnownTypes.SystemInt32);
             this.InstructionEncoder.Token(objHandle);
             return;
         }

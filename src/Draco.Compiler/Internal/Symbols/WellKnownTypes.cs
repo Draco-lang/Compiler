@@ -36,6 +36,15 @@ internal sealed class WellKnownTypes
     private MetadataTypeSymbol? systemObject;
 
     /// <summary>
+    /// System.Int32 inside System.Runtime.
+    /// </summary>
+    public MetadataTypeSymbol SystemInt32 => this.systemInt32 ??= this.SystemRuntime
+        .Lookup(ImmutableArray.Create("System", "Int32"))
+        .OfType<MetadataTypeSymbol>()
+        .First();
+    private MetadataTypeSymbol? systemInt32;
+
+    /// <summary>
     /// System.Array inside System.Runtime.
     /// </summary>
     public MetadataTypeSymbol SystemArray => this.systemArray ??= this.SystemRuntime

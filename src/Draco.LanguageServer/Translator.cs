@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = Draco.Lsp.Model;
@@ -82,5 +84,21 @@ internal static class Translator
         CompilerApi.CodeCompletion.CompletionKind.Keyword => LspModels.CompletionItemKind.Keyword,
         CompilerApi.CodeCompletion.CompletionKind.Class => LspModels.CompletionItemKind.Class,
         _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
+    };
+
+    public static LspModels.SignatureHelp? ToLsp(ImmutableArray<CompilerApi.CodeCompletion.SignatureItem>? item) =>
+        item is ImmutableArray<CompilerApi.CodeCompletion.SignatureItem> notNull ? new()
+        {
+            Signatures = notNull.Select(x => ToLsp(x)).ToArray()
+        } : null;
+
+    public static LspModels.SignatureInformation ToLsp(CompilerApi.CodeCompletion.SignatureItem item) => new()
+    {
+        Label = item.Label,
+        Documentation = new LspModels.MarkupContent()
+        {
+            Kind = LspModels.MarkupKind.Markdown,
+            Value = item.Documentation ?? "",
+        },
     };
 }

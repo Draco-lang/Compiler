@@ -7,7 +7,7 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.CodeCompletion;
 
-public sealed class CompletionService
+public static class CompletionService
 {
     private static CompletionItem[] keywords = new[]
     {
@@ -27,7 +27,7 @@ public sealed class CompletionService
         new CompletionItem("mod", CompletionKind.Keyword, null, null, CompletionContext.ExpressionContent),
         new CompletionItem("rem", CompletionKind.Keyword, null, null, CompletionContext.ExpressionContent),
     };
-    public static IList<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
+    public static ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
         IEnumerable<CompletionItem?>? completions = null;
         if (TryGetMemberAccess(tree, cursor, semanticModel))
@@ -41,10 +41,10 @@ public sealed class CompletionService
                 x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
         }
         var contexts = GetContexts(tree, cursor);
-        var result = new List<CompletionItem>();
+        var result = ImmutableArray.CreateBuilder<CompletionItem>();
         result.AddRange(keywords.Where(x => contexts.Contains(x.Context)));
         result.AddRange(completions.Where(x => x is not null && contexts.Contains(x.Context))!);
-        return result;
+        return result.ToImmutable();
     }
 
     private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel)

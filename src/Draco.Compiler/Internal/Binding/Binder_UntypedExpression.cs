@@ -38,7 +38,7 @@ internal partial class Binder
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
-        MemberExpressionSyntax maccess => this.BindMemberAccessExpression(maccess, constraints, diagnostics),
+        MemberExpressionSyntax maccess => this.BindMemberExpression(maccess, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -340,7 +340,7 @@ internal partial class Binder
         return new UntypedComparison(syntax, symbolPromise, right);
     }
 
-    private UntypedExpression BindMemberAccessExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private UntypedExpression BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;

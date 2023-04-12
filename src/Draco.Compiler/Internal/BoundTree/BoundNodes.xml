@@ -141,6 +141,11 @@
     <Field Name="Right" Type="BoundExpression" />
   </Node>
 
+  <Node Name="BoundArrayCreationExpression" Base="BoundExpression">
+    <Field Name="ElementType" Type="TypeSymbol" />
+    <Field Name="Sizes" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
   <Node Name="BoundLocalExpression" Base="BoundExpression">
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
@@ -208,5 +213,10 @@
 
   <Node Name="BoundGlobalLvalue" Base="BoundLvalue">
     <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
+    <Field Name="Array" Type="BoundExpression" />
+    <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 </Tree>

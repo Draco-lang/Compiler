@@ -141,6 +141,11 @@ internal partial class BoundAssignmentExpression
     public override TypeSymbol Type => this.Left.Type;
 }
 
+internal partial class BoundArrayCreationExpression
+{
+    public override TypeSymbol Type => new ArrayTypeSymbol(this.ElementType, this.Sizes.Length);
+}
+
 // Lvalues
 
 internal partial class BoundLvalue
@@ -166,4 +171,9 @@ internal partial class BoundLocalLvalue
 internal partial class BoundGlobalLvalue
 {
     public override TypeSymbol Type => this.Global.Type;
+}
+
+internal partial class BoundArrayAccessLvalue
+{
+    public override TypeSymbol Type => ((ArrayTypeSymbol)this.Array.TypeRequired).ElementType;
 }

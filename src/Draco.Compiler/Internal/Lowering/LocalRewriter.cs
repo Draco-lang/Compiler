@@ -286,10 +286,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             }
         }
 
-        var arrayType = new ArrayTypeSymbol(
-            this.WellKnownTypes.SystemObject,
-            1,
-            this.WellKnownTypes.SystemArray);
+        var arrayType = new ArrayTypeSymbol(IntrinsicSymbols.Object, 1);
         var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
 
         var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
@@ -297,20 +294,19 @@ internal partial class LocalRewriter : BoundTreeRewriter
         // var args = new object[number of interpolated expressions];
         arrayAssignmentBuilder.Add(LocalDeclaration(
             local: arrayLocal,
-            value: CallExpression(
-                method: FunctionExpression(arrayType.ConstructorFunction),
-                receiver: null,
-                arguments: ImmutableArray.Create<BoundExpression>(LiteralExpression(args.Count)),
-                type: arrayType)));
+            value: ArrayCreationExpression(
+                elementType: IntrinsicSymbols.Object,
+                sizes: ImmutableArray.Create<BoundExpression>(LiteralExpression(args.Count)))));
 
         for (var i = 0; i < args.Count; i++)
         {
             // args[i] = interpolatedExpr;
-            arrayAssignmentBuilder.Add(ExpressionStatement(CallExpression(
-                method: FunctionExpression(arrayType.SetFunction),
-                receiver: LocalExpression(arrayLocal),
-                arguments: ImmutableArray.Create(LiteralExpression(i), args[i]),
-                type: IntrinsicSymbols.Unit)));
+            arrayAssignmentBuilder.Add(ExpressionStatement(AssignmentExpression(
+                compoundOperator: null,
+                left: ArrayAccessLvalue(
+                    array: LocalExpression(arrayLocal),
+                    indices: ImmutableArray.Create<BoundExpression>(LiteralExpression(i))),
+                right: args[i])));
         }
 
         // {

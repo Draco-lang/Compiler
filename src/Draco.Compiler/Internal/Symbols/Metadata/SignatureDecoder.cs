@@ -25,9 +25,9 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
     }
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
-        new ArrayTypeSymbol(this.compilation, elementType, shape.Rank);
+        new ArrayTypeSymbol(elementType, shape.Rank);
     public TypeSymbol GetSZArrayType(TypeSymbol elementType) =>
-        new ArrayTypeSymbol(this.compilation, elementType, 1);
+        new ArrayTypeSymbol(elementType, 1);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
     public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => UnknownType;

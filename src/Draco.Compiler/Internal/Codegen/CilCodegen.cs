@@ -237,27 +237,6 @@ internal sealed class CilCodegen
                     this.InstructionEncoder.Token(handle);
                     break;
                 }
-                case SynthetizedArrayFunctionSymbol arr:
-                {
-                    if (arr.ArrayType.Rank != 1)
-                    {
-                        // TODO: Only support SZ arrays for now.
-                        throw new NotImplementedException();
-                    }
-
-                    var elementTypeRef = this.GetTypeReferenceHandle(arr.ArrayType.ElementType);
-                    switch (arr.Kind)
-                    {
-                    case SynthetizedArrayFunctionSymbol.FunctionKind.Constructor:
-                        this.InstructionEncoder.OpCode(ILOpCode.Newarr);
-                        this.InstructionEncoder.Token(elementTypeRef);
-                        break;
-                    default:
-                        // I'm not sure what else can get here
-                        throw new UnreachableException();
-                    }
-                    break;
-                }
                 default:
                 {
                     // Regular lookup
@@ -286,27 +265,9 @@ internal sealed class CilCodegen
             if (mcall.Procedure is MetadataReference metadataRef)
             {
                 var symbol = (FunctionSymbol)metadataRef.Symbol;
-                if (symbol is SynthetizedArrayFunctionSymbol arr)
-                {
-                    var elementTypeRef = this.GetTypeReferenceHandle(arr.ArrayType.ElementType);
-                    switch (arr.Kind)
-                    {
-                    case SynthetizedArrayFunctionSymbol.FunctionKind.Get:
-                        this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
-                        this.InstructionEncoder.Token(elementTypeRef);
-                        break;
-                    case SynthetizedArrayFunctionSymbol.FunctionKind.Set:
-                        this.InstructionEncoder.OpCode(ILOpCode.Stelem);
-                        this.InstructionEncoder.Token(elementTypeRef);
-                        break;
-                    }
-                }
-                else
-                {
-                    var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
-                    this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
-                    this.InstructionEncoder.Token(handle);
-                }
+                var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+                this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
+                this.InstructionEncoder.Token(handle);
             }
             else
             {

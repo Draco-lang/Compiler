@@ -59,6 +59,20 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
     private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
+    private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
+    {
+        // We handle synthetized functions a bit specially, as they are not part of our symbol
+        // tree, so we compile them, in case they have not been yet
+        var compiledAlready = this.procedure.Assembly.Procedures.ContainsKey(func);
+        var proc = this.DefineProcedure(func);
+        if (!compiledAlready)
+        {
+            var codegen = new FunctionBodyCodegen(proc);
+            func.Body.Accept(codegen);
+        }
+        return proc;
+    }
+
     // Statements //////////////////////////////////////////////////////////////
 
     public override IOperand VisitSequencePointStatement(BoundSequencePointStatement node)
@@ -342,6 +356,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => node.Function switch
     {
         SourceFunctionSymbol func => this.DefineProcedure(func),
+        SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
         MetadataMethodSymbol m => new MetadataReference(m),
         _ => throw new System.ArgumentOutOfRangeException(nameof(node)),
     };

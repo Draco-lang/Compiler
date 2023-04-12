@@ -37,7 +37,7 @@ public sealed class CompletionService
         }
         else
         {
-            completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).GroupBy(x => x.Name).Select(x =>
+            completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).GroupBy(x => (x.GetType(), x.Name)).Select(x =>
                 x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
         }
         var contexts = GetContexts(tree, cursor);
@@ -61,6 +61,7 @@ public sealed class CompletionService
 
     private static IList<CompletionContext> GetContexts(SyntaxTree tree, SyntaxPosition cursor)
     {
+        // TODO: function param names
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
         // Global declaration
         if (token.Parent is UnexpectedDeclarationSyntax declaration) return new[] { CompletionContext.DeclarationKeyword };

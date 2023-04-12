@@ -137,6 +137,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
     public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
+    public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) => throw new System.NotImplementedException();
 
     // Expressions /////////////////////////////////////////////////////////////
 

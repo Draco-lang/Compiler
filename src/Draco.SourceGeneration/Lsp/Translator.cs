@@ -414,6 +414,13 @@ internal sealed class Translator
             var element = this.TranslateType(array.ElementType, nameHint: Singular(nameHint), containingClass: containingClass);
             return new Cs.ArrayType(element);
         }
+        case Ts.ArrayExpression array:
+        {
+            var elements = array.Elements
+                .Select(e => this.TranslateType(e, nameHint: null, containingClass: containingClass))
+                .ToImmutableArray();
+            return new Cs.TupleType(elements);
+        }
         case Ts.UnionTypeExpression union:
         {
             // If the union consists of a single type, just propagate

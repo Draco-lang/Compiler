@@ -210,3 +210,10 @@ public sealed record class NullableType(
 public sealed record class DictionaryType(
     Type KeyType,
     Type ValueType) : Type;
+
+/// <summary>
+/// A C# tuple type.
+/// </summary>
+/// <param name="Elements">The types of the tuple elements.</param>
+public sealed record class TupleType(
+    ImmutableArray<Type> Elements) : Type;

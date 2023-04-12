@@ -380,15 +380,13 @@ public sealed class LexerTests
 
         this.AssertNextToken(
             TokenKind.StringContent,
-            "  hello",
-            "  hello");
-        this.AssertLeadingTrivia(
-            (TriviaKind.Whitespace, "    "));
-        this.AssertTrailingTrivia();
-        this.AssertDiagnostics();
+            "      hello",
+            "      hello");
+        this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(TokenKind.MultiLineStringEnd, "\"\"\"");
         this.AssertLeadingTrivia(
+            (TriviaKind.Newline, "\n"),
             (TriviaKind.Whitespace, "    "));
         this.AssertTrailingTrivia();
         this.AssertDiagnostics();

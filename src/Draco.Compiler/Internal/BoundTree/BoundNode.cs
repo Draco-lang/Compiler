@@ -141,6 +141,11 @@ internal partial class BoundAssignmentExpression
     public override TypeSymbol Type => this.Left.Type;
 }
 
+internal partial class BoundObjectCreationExpression
+{
+    public override TypeSymbol Type => this.ObjectType;
+}
+
 internal partial class BoundArrayCreationExpression
 {
     public override TypeSymbol Type => new ArrayTypeSymbol(this.ElementType, this.Sizes.Length);

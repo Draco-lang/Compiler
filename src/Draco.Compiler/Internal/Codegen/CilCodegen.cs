@@ -208,43 +208,9 @@ internal sealed class CilCodegen
             }
             else if (call.Procedure is MetadataReference metadataRef)
             {
-                switch (metadataRef.Symbol)
-                {
-                case SynthetizedMetadataConstructorSymbol ctor:
-                {
-                    // The constructed type is from metadata, but the ctor symbol doesn't contain the real names
-                    var type = this.GetTypeReferenceHandle(ctor.ReturnType);
-                    // TODO: Not cached
-                    var handle = this.metadataCodegen.AddMemberReference(
-                        type: type,
-                        name: ".ctor",
-                        signature: this.metadataCodegen.EncodeBlob(e =>
-                        {
-                            // TODO: Don't we want to have a utility in MetadataCodegen instead?
-                            var funcType = (FunctionTypeSymbol)ctor.Type;
-                            e
-                                .MethodSignature(isInstanceMethod: true)
-                                .Parameters(funcType.Parameters.Length, out var returnType, out var parameters);
-                            // Ctors always have void return-type
-                            returnType.Void();
-                            foreach (var param in funcType.Parameters)
-                            {
-                                this.metadataCodegen.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
-                            }
-                        }));
-                    // Encode instantiation
-                    this.InstructionEncoder.OpCode(ILOpCode.Newobj);
-                    this.InstructionEncoder.Token(handle);
-                    break;
-                }
-                default:
-                {
-                    // Regular lookup
-                    var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
-                    this.InstructionEncoder.Call(handle);
-                    break;
-                }
-                }
+                // Regular lookup
+                var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+                this.InstructionEncoder.Call(handle);
             }
             else
             {

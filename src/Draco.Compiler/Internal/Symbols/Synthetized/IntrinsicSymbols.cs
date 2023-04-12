@@ -20,13 +20,13 @@ internal static class IntrinsicSymbols
     // Operators
 
     private static FunctionSymbol Unary(TokenKind token, TypeSymbol operandType, TypeSymbol returnType) =>
-        SynthetizedFunctionSymbol.UnaryOperator(token, operandType, returnType);
+        IntrinsicFunctionSymbol.UnaryOperator(token, operandType, returnType);
     private static FunctionSymbol Binary(TokenKind token, TypeSymbol leftType, TypeSymbol rightType, TypeSymbol returnType) =>
-        SynthetizedFunctionSymbol.BinaryOperator(token, leftType, rightType, returnType);
+        IntrinsicFunctionSymbol.BinaryOperator(token, leftType, rightType, returnType);
     private static FunctionSymbol Comparison(TokenKind token, TypeSymbol leftType, TypeSymbol rightType) =>
-        SynthetizedFunctionSymbol.ComparisonOperator(token, leftType, rightType);
+        IntrinsicFunctionSymbol.ComparisonOperator(token, leftType, rightType);
     private static FunctionSymbol Function(string name, IEnumerable<TypeSymbol> paramTypes, TypeSymbol returnType) =>
-        new SynthetizedFunctionSymbol(name, paramTypes, returnType);
+        new IntrinsicFunctionSymbol(name, paramTypes, returnType);
 
     public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Bool, Bool);
 

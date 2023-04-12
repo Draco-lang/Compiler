@@ -11,7 +11,7 @@ using Draco.Compiler.Api;
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
 // NOTE: This is not abstract or sealed, as this is a legit implementation on its own
-// but some symbols (like synthetized constructors) reuse this implementation
+// but some symbols will/might reuse this implementation
 /// <summary>
 /// Utility base-class for methods read up from metadata.
 /// </summary>

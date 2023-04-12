@@ -141,6 +141,12 @@
     <Field Name="Right" Type="BoundExpression" />
   </Node>
 
+  <Node Name="BoundObjectCreationExpression" Base="BoundExpression">
+    <Field Name="ObjectType" Type="TypeSymbol" />
+    <Field Name="Constructor" Type="FunctionSymbol" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
   <Node Name="BoundArrayCreationExpression" Base="BoundExpression">
     <Field Name="ElementType" Type="TypeSymbol" />
     <Field Name="Sizes" Type="ImmutableArray&lt;BoundExpression&gt;" />

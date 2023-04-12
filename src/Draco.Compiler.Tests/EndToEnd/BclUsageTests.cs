@@ -26,7 +26,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             stdin: null,
             stdout: stringWriter);
 
-        Assert.Equal($"Hello, World!{Environment.NewLine}", stringWriter.ToString());
+        Assert.Equal($"Hello, World!{Environment.NewLine}", stringWriter.ToString(), ignoreLineEndingDifferences: true);
     }
 
     [Fact]

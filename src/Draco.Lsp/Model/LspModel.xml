@@ -39,6 +39,7 @@
   <Generate Name="PublishDiagnosticsParams" />
   <Generate Name="DocumentFormattingParams" />
   <Generate Name="CompletionParams"/>
+  <Generate Name="SignatureHelpParams"/>
   
   <Generate Name="Hover" />
   <Generate Name="InlayHint" />
@@ -50,6 +51,7 @@
   <Generate Name="InlayHintRegistrationOptions" />
   <Generate Name="DocumentFormattingRegistrationOptions" />
   <Generate Name="CompletionRegistrationOptions"/>
+  <Generate Name="SignatureHelpRegistrationOptions"/>
 
   <!-- Workspace -->
   <Generate Name="ConfigurationParams" />

@@ -71,18 +71,14 @@ internal static class MetadataSymbol
             }
 
             // Build body
-            var body = ExpressionStatement(BlockExpression(
-                locals: ImmutableArray<LocalSymbol>.Empty,
-                statements: ImmutableArray.Create<BoundStatement>(
-                    ExpressionStatement(ReturnExpression(
-                        value: ObjectCreationExpression(
-                            objectType: type,
-                            constructor: ctorSymbol,
-                            arguments: parameters
-                                .Select(ParameterExpression)
-                                .Cast<BoundExpression>()
-                                .ToImmutableArray())))),
-                value: BoundUnitExpression.Default));
+            var body = ExpressionStatement(ReturnExpression(
+                value: ObjectCreationExpression(
+                    objectType: type,
+                    constructor: ctorSymbol,
+                    arguments: parameters
+                        .Select(ParameterExpression)
+                        .Cast<BoundExpression>()
+                        .ToImmutableArray())));
 
             // Done
             return (parameters.ToImmutable(), type, body);

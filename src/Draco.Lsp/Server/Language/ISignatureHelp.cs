@@ -16,5 +16,5 @@ public interface ISignatureHelp
     public SignatureHelpRegistrationOptions SignatureHelpRegistrationOptions { get; }
 
     [Request("textDocument/signatureHelp")]
-    public Task<IList<TextEdit>?> FormatTextDocumentAsync(DocumentFormattingParams param, CancellationToken cancellationToken);
+    public Task<IList<TextEdit>?> FormatTextDocumentAsync(SignatureHelpParams param, CancellationToken cancellationToken);
 }

@@ -107,6 +107,8 @@ namespace Draco.Lsp.Model;
         OneOf<{{wrap separated(', ', t.Alternatives)}}{{type($element)}}{{end}}>
     {{when 'Dictionary'}}
         IDictionary<{{type(t.KeyType)}}, {{type(t.ValueType)}}>
+    {{when 'Tuple'}}
+        ({{wrap separated(', ', t.Elements)}}{{type($element)}}{{end}})
     {{end}}
 {{end}}
 

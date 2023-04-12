@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
 using Draco.Lsp.Attributes;
+using Draco.Lsp.Serialization;
 using StreamJsonRpc;
 
 namespace Draco.Lsp.Server;
@@ -23,6 +24,7 @@ public static class LanguageServer
     {
         // Create an RPC message handler with the custom JSON converters
         var messageFormatter = new JsonMessageFormatter();
+        messageFormatter.JsonSerializer.Converters.Add(new TupleConverter());
         var messageHandler = new HeaderDelimitedMessageHandler(stream, messageFormatter);
 
         // Create the connection

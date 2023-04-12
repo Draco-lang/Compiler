@@ -199,24 +199,9 @@ internal sealed class CilCodegen
         {
             // Arguments
             foreach (var arg in call.Arguments) this.EncodePush(arg);
-            // Determine what we are calling
-            if (call.Procedure is IProcedure proc)
-            {
-                // Regular procedure call
-                var handle = this.GetProcedureDefinitionHandle(proc);
-                this.InstructionEncoder.Call(handle);
-            }
-            else if (call.Procedure is MetadataReference metadataRef)
-            {
-                // Regular lookup
-                var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
-                this.InstructionEncoder.Call(handle);
-            }
-            else
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
+            // Call
+            this.InstructionEncoder.OpCode(ILOpCode.Call);
+            this.EncodeToken(call.Procedure);
             // Store result
             this.StoreLocal(call.Target);
             break;
@@ -227,6 +212,7 @@ internal sealed class CilCodegen
             this.EncodePush(mcall.Receiver);
             // Arguments
             foreach (var arg in mcall.Arguments) this.EncodePush(arg);
+            // TODO: If IOperand could tell by itself if it's virtual, we could reuse our token encoding
             // Determine what we are calling
             if (mcall.Procedure is MetadataReference metadataRef)
             {
@@ -244,8 +230,41 @@ internal sealed class CilCodegen
             this.StoreLocal(mcall.Target);
             break;
         }
+        case NewObjectInstruction newObj:
+        {
+            // Arguments
+            foreach (var arg in newObj.Arguments) this.EncodePush(arg);
+            this.InstructionEncoder.OpCode(ILOpCode.Newobj);
+            this.EncodeToken(newObj.Constructor);
+            // Store result
+            this.StoreLocal(newObj.Target);
+            break;
+        }
         default:
             throw new ArgumentOutOfRangeException(nameof(instruction));
+        }
+    }
+
+    private void EncodeToken(IOperand operand)
+    {
+        switch (operand)
+        {
+        case IProcedure proc:
+        {
+            // Regular procedure call
+            var handle = this.GetProcedureDefinitionHandle(proc);
+            this.InstructionEncoder.Token(handle);
+            break;
+        }
+        case MetadataReference metadataRef:
+        {
+            // Regular lookup
+            var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+            this.InstructionEncoder.Token(handle);
+            break;
+        }
+        default:
+            throw new ArgumentOutOfRangeException(nameof(operand));
         }
     }
 

@@ -21,6 +21,8 @@ internal static class InstructionFactory
         new(target, proc, args);
     public static MemberCallInstruction MemberCall(Register target, IOperand proc, IOperand receiver, IEnumerable<IOperand> args) =>
         new(target, proc, receiver, args);
+    public static NewObjectInstruction NewObject(Register target, IOperand ctor, IEnumerable<IOperand> args) =>
+        new(target, ctor, args);
     public static ArithmeticInstruction Arithmetic(Register target, ArithmeticOp op, IOperand left, IOperand right) =>
         new(target, op, left, right);
     public static ArithmeticInstruction Add(Register target, IOperand left, IOperand right) =>

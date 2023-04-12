@@ -175,6 +175,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
+    public override IOperand VisitObjectCreationExpression(BoundObjectCreationExpression node)
+    {
+        var ctor = this.TranslateFunctionSymbol(node.Constructor);
+        var args = node.Arguments.Select(this.Compile).ToList();
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(NewObject(result, ctor, args));
+        return result;
+    }
+
+    public override IOperand VisitArrayCreationExpression(BoundArrayCreationExpression node)
+    {
+        // TODO
+        throw new System.NotImplementedException();
+    }
+
     public override IOperand VisitGotoExpression(BoundGotoExpression node)
     {
         var target = this.DefineBasicBlock(node.Target);
@@ -353,12 +368,15 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => node.Function switch
+    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) =>
+        this.TranslateFunctionSymbol(node.Function);
+
+    private IOperand TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
     {
         SourceFunctionSymbol func => this.DefineProcedure(func),
         SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
         MetadataMethodSymbol m => new MetadataReference(m),
-        _ => throw new System.ArgumentOutOfRangeException(nameof(node)),
+        _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 
     // NOTE: Parameters don't need loading, they are read-only values by default

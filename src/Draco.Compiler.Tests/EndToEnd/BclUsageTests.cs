@@ -28,4 +28,25 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal($"Hello, World!{Environment.NewLine}", stringWriter.ToString());
     }
+
+    [Fact]
+    public void SimpleInterpolation()
+    {
+        var assembly = Compile("""
+            import System.Console;
+
+            func main() {
+                Write("\{1} + \{2} = \{1 + 2}");
+            }
+            """);
+
+        var stringWriter = new StringWriter();
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("1 + 2 = 3", stringWriter.ToString());
+    }
 }

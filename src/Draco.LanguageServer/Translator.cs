@@ -65,17 +65,21 @@ internal static class Translator
         Character = (uint)position.Column,
     };
 
-    public static LspModels.CompletionItem ToLsp(CompilerApi.CodeCompletion.CompletionItem item) => new()
+    public static LspModels.CompletionItem ToLsp(CompilerApi.CodeCompletion.CompletionItem item)
     {
-        Label = item.Text,
-        Kind = ToLsp(item.Kind),
-        Documentation = new LspModels.MarkupContent()
+        var result = new LspModels.CompletionItem()
+        {
+            Label = item.Text,
+            Kind = ToLsp(item.Kind),
+            Detail = item.Type ?? "",
+        };
+        if (!string.IsNullOrEmpty(item.Documentation)) result.Documentation = new LspModels.MarkupContent()
         {
             Kind = LspModels.MarkupKind.Markdown,
-            Value = item.Documentation ?? "",
-        },
-        Detail = item.Type ?? "",
-    };
+            Value = item.Documentation,
+        };
+        return result;
+    }
 
     public static LspModels.CompletionItemKind ToLsp(CompilerApi.CodeCompletion.CompletionKind kind) => kind switch
     {
@@ -92,13 +96,21 @@ internal static class Translator
             Signatures = notNull.Select(x => ToLsp(x)).ToArray()
         } : null;
 
-    public static LspModels.SignatureInformation ToLsp(CompilerApi.CodeCompletion.SignatureItem item) => new()
+    public static LspModels.SignatureInformation ToLsp(CompilerApi.CodeCompletion.SignatureItem item)
     {
-        Label = item.Label,
-        Documentation = new LspModels.MarkupContent()
+        var result = new LspModels.SignatureInformation()
+        {
+            Label = item.Label,
+            Parameters = item.Parameters.Select(x => new LspModels.ParameterInformation()
+            {
+                Label = x,
+            }).ToList(),
+        };
+        if (!string.IsNullOrEmpty(item.Documentation)) result.Documentation = new LspModels.MarkupContent()
         {
             Kind = LspModels.MarkupKind.Markdown,
-            Value = item.Documentation ?? "",
-        },
-    };
+            Value = item.Documentation,
+        };
+        return result;
+    }
 }

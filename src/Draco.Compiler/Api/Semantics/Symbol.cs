@@ -104,6 +104,8 @@ public interface IFunctionSymbol : ISymbol, ITypedSymbol
     /// The parameters this function defines.
     /// </summary>
     public ImmutableArray<IParameterSymbol> Parameters { get; }
+
+    public ITypeSymbol ReturnType { get; }
 }
 
 /// <summary>
@@ -203,6 +205,7 @@ internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSym
 internal sealed class FunctionSymbol : SymbolBase<Internal.Symbols.FunctionSymbol>, IFunctionSymbol
 {
     public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+    public ITypeSymbol ReturnType => (ITypeSymbol)this.Symbol.ReturnType.ToApiSymbol();
 
     public ImmutableArray<IParameterSymbol> Parameters => this.Symbol.Parameters
         .Select(s => s.ToApiSymbol())

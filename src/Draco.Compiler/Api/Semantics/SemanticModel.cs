@@ -331,6 +331,25 @@ public sealed partial class SemanticModel
         }
     }
 
+    /// <summary>
+    /// Retrieves the <see cref="ISymbol"/> referenced by <paramref name="syntax"/>.
+    /// </summary>
+    /// <param name="syntax">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
+    /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="syntax"/>, or null
+    /// if it does not reference any.</returns>
+    public ImmutableArray<ISymbol> GetReferencedOverloads(ExpressionSyntax syntax)
+    {
+        // We look up syntax based on the symbol in context
+        var binder = this.compilation.GetBinder(syntax);
+        var result = ImmutableArray.CreateBuilder<ISymbol>();
+        while (binder is not null)
+        {
+            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDefinedSymbol(loc.DeclarationSyntax)! : x.ToApiSymbol()).Where(x => x is FunctionSymbol && x.Name == syntax.ToString()));
+            binder = binder.Parent;
+        }
+        return result.ToImmutable();
+    }
+
     private Binder GetBinder(Symbol symbol)
     {
         var binder = this.compilation.GetBinder(symbol);

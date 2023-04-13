@@ -100,8 +100,14 @@
   </Node>
 
   <Node Name="BoundCallExpression" Base="BoundExpression">
-    <Field Name="Method" Type="BoundExpression" />
     <Field Name="Receiver" Type="BoundExpression?" />
+    <Field Name="Method" Type="FunctionSymbol" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="BoundIndirectCallExpression" Base="BoundExpression">
+    <Field Name="Method" Type="BoundExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>

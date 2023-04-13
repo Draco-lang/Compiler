@@ -1,0 +1,5 @@
+namespace Draco.Compiler.Internal.Symbols;
+
+internal sealed partial class WellKnownTypes
+{
+}

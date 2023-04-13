@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<WellKnownTypes
+  xmlns="http://draco-lang.com/symbols/well-known-types"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/symbols/well-known-types ../../../Draco.SourceGeneration/WellKnownTypes/WellKnownTypes.xsd">
+
+</WellKnownTypes>

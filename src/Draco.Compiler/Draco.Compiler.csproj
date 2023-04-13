@@ -11,6 +11,7 @@
     <AdditionalFiles Include="Internal\Syntax\Syntax.xml" />
     <AdditionalFiles Include="Internal\BoundTree\BoundNodes.xml" />
     <AdditionalFiles Include="Internal\UntypedTree\UntypedNodes.xml" />
+    <AdditionalFiles Include="Internal\Symbols\WellKnownTypes.xml" />
   </ItemGroup>
 
   <ItemGroup>

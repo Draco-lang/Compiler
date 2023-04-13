@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// A colelction of well-known types that the compiler needs.
 /// </summary>
-internal sealed class WellKnownTypes
+internal sealed partial class WellKnownTypes
 {
     /// <summary>
     /// The public-key token of Microsoft assemblies.

@@ -108,5 +108,6 @@ internal static class BinderFacts
     public static bool ReferencesSymbol(SyntaxNode node) => node
         is NameExpressionSyntax
         or NameTypeSyntax
-        or NameLabelSyntax;
+        or NameLabelSyntax
+        or MemberExpressionSyntax;
 }

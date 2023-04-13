@@ -78,6 +78,14 @@ internal sealed class OneOfConverter : JsonConverter
             : null;
     }
 
+    private static bool IsPrimitive(JsonToken token) => token
+        is JsonToken.Boolean
+        or JsonToken.Integer
+        or JsonToken.Float
+        or JsonToken.String
+        or JsonToken.Date
+        or JsonToken.Null;
+
     public override bool CanConvert(Type objectType) => ExtractOneOfType(objectType) is not null;
 
     public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
@@ -86,10 +94,10 @@ internal sealed class OneOfConverter : JsonConverter
                      ?? throw new InvalidOperationException();
 
         // Primitive type
-        if (reader.ValueType?.IsPrimitive ?? false) return Activator.CreateInstance(oneOfType, reader.Value);
+        if (IsPrimitive(reader.TokenType)) return Activator.CreateInstance(oneOfType, reader.Value);
 
         // It could be a tuple
-        if (reader.ValueType?.IsArray ?? false)
+        if (reader.TokenType == JsonToken.StartArray)
         {
             var array = JArray.Load(reader);
             var tupleVariant = oneOfType

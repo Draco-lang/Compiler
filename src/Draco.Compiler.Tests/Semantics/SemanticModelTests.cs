@@ -153,7 +153,8 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 DeclarationStatement(ImportDeclaration("System")),
                 ExpressionStatement(CallExpression(MemberExpression(NameExpression("Console"), "WriteLine")))))));
 
-        var memberExpr = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -163,13 +164,16 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var symbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExpr));
+        var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Empty(diags);
-        Assert.NotNull(symbol);
+        Assert.NotNull(writeLineSymbol);
+        Assert.NotNull(consoleSymbol);
+        Assert.Contains(writeLineSymbol, consoleSymbol.Members);
     }
 
     [Fact]
@@ -191,7 +195,8 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
                 ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "AppendLine")))))));
 
-        var memberExpr = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
 
         // Act
         var compilation = Compilation.Create(
@@ -201,12 +206,15 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var symbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExpr));
+        var appendLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var builderSymbol = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(builderNameSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Empty(diags);
-        Assert.NotNull(symbol);
+        Assert.NotNull(appendLineSymbol);
+        Assert.NotNull(builderSymbol);
+        Assert.Contains(appendLineSymbol, builderSymbol.Type.Members);
     }
 }

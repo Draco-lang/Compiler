@@ -150,13 +150,17 @@ public sealed class SemanticModelTests : SemanticTestsBase
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImportDeclaration(Import, SeparatedSyntaxList(Dot, Name("System")), Semicolon)),
-                ExpressionStatement(CallExpression(MemberExpression(NameExpression("Console"), Dot, Name("WriteLine"))))))));
+                DeclarationStatement(ImportDeclaration("System")),
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("Console"), "WriteLine")))))));
 
         var memberExpr = tree.FindInChildren<MemberExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var symbol = semanticModel.GetReferencedSymbol(memberExpr);
@@ -174,7 +178,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         // func main() {
         //     import System.Text;
         //     var builder = StringBuilder();
-        //     builder.Append();
+        //     builder.AppendLine();
         // }
 
         // Arrange
@@ -183,14 +187,18 @@ public sealed class SemanticModelTests : SemanticTestsBase
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImportDeclaration(Import, SeparatedSyntaxList(Dot, Name("System"), Name("Text")), Semicolon)),
+                DeclarationStatement(ImportDeclaration("System", "Text")),
                 DeclarationStatement(VariableDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
-                ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), Dot, Name("Append()"))))))));
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "AppendLine")))))));
 
         var memberExpr = tree.FindInChildren<MemberExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var symbol = semanticModel.GetReferencedSymbol(memberExpr);

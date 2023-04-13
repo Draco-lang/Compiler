@@ -93,6 +93,9 @@ public static partial class SyntaxFactory
     public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
         CompilationUnit(SyntaxList(decls), EndOfInput);
 
+    public static ImportDeclarationSyntax ImportDeclaration(params string[] path) =>
+        ImportDeclaration(Import, SeparatedSyntaxList(Dot, path.Select(Name)), Semicolon);
+
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
         SeparatedSyntaxList<ParameterSyntax> parameters,
@@ -177,6 +180,10 @@ public static partial class SyntaxFactory
     public static CallExpressionSyntax CallExpression(
         ExpressionSyntax called,
         params ExpressionSyntax[] args) => CallExpression(called, args.AsEnumerable());
+
+    public static MemberExpressionSyntax MemberExpression(
+        ExpressionSyntax accessed,
+        string member) => MemberExpression(accessed, Dot, Name(member));
 
     public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(Return, value);
     public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(Name(label)));

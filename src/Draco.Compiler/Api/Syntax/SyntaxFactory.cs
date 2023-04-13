@@ -197,7 +197,9 @@ public static partial class SyntaxFactory
     public static SyntaxToken Assign { get; } = MakeToken(TokenKind.Assign);
     public static SyntaxToken Comma { get; } = MakeToken(TokenKind.Comma);
     public static SyntaxToken Colon { get; } = MakeToken(TokenKind.Colon);
+    public static SyntaxToken Dot { get; } = MakeToken(TokenKind.Dot);
     public static SyntaxToken Semicolon { get; } = MakeToken(TokenKind.Semicolon);
+    public static SyntaxToken Import { get; } = MakeToken(TokenKind.KeywordImport);
     public static SyntaxToken Return { get; } = MakeToken(TokenKind.KeywordReturn);
     public static SyntaxToken If { get; } = MakeToken(TokenKind.KeywordIf);
     public static SyntaxToken While { get; } = MakeToken(TokenKind.KeywordWhile);

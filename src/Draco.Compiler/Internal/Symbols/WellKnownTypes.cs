@@ -48,9 +48,6 @@ internal sealed partial class WellKnownTypes
             .Single(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName));
     }
 
-    private MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path)
-    {
-        // TODO
-        throw new NotImplementedException();
-    }
+    private MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
+        assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
 }

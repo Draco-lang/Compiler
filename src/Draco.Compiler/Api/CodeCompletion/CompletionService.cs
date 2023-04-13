@@ -63,7 +63,7 @@ public static class CompletionService
     {
         // TODO: function param names
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
-        if (token.Parent is NameExpressionSyntax && token.Parent?.Parent is ParameterSyntax) return new List<CompletionContext>();
+        if (token.Parent is ParameterSyntax) return new List<CompletionContext>();
         // Global declaration
         if (token.Parent is UnexpectedDeclarationSyntax declaration) return new[] { CompletionContext.DeclarationKeyword };
         // Declaring identifier

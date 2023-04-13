@@ -6,9 +6,9 @@
 
   <Assembly Name="System.Runtime" PublicKeyToken="b03f5f7f11d50a3a" />
 
-  <Type Name="System.Int32" Assembly="System.Runtime" />
-  <Type Name="System.String" Assembly="System.Runtime" />
-  <Type Name="System.Object" Assembly="System.Runtime" />
+  <Type Name="System.Int32" Assembly="System.Runtime" Symbol="IntrinsicSymbols.Int32" />
+  <Type Name="System.String" Assembly="System.Runtime" Symbol="IntrinsicSymbols.String" />
+  <Type Name="System.Object" Assembly="System.Runtime" Symbol="IntrinsicSymbols.Object" />
   <Type Name="System.Array" Assembly="System.Runtime" />
 
 </WellKnownTypes>

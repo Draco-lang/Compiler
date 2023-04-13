@@ -233,6 +233,10 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 null,
                 BlockFunctionBody())));
 
+        // Act
+
+        // Assert
+
         // TODO
         Assert.Fail("We need import elements to actually have some differentiating syntax");
     }

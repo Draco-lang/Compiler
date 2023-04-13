@@ -68,7 +68,10 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
     }
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
-        // TODO
+        var reference = reader.GetTypeReference(handle);
+        var resolutionScope = reference.ResolutionScope;
+
+        // TODO: Based on resolution scope, do the lookup
         return UnknownType;
     }
     public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Unit genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => UnknownType;

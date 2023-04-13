@@ -135,4 +135,71 @@ public sealed class SemanticModelTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
+
+
+    [Fact]
+    public void GetReferencedSymbolModuleMemberAccess()
+    {
+        // func main() {
+        //     import System;
+        //     Console.WriteLine();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration(Import, SeparatedSyntaxList(Dot, Name("System")), Semicolon)),
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("Console"), Dot, Name("WriteLine"))))))));
+
+        var memberExpr = tree.FindInChildren<MemberExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var symbol = semanticModel.GetReferencedSymbol(memberExpr);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(symbol);
+    }
+
+    [Fact]
+    public void GetReferencedSymbolTypeMemberAccess()
+    {
+        // func main() {
+        //     import System.Text;
+        //     var builder = StringBuilder();
+        //     builder.Append();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration(Import, SeparatedSyntaxList(Dot, Name("System"), Name("Text")), Semicolon)),
+                DeclarationStatement(VariableDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), Dot, Name("Append()"))))))));
+
+        var memberExpr = tree.FindInChildren<MemberExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var symbol = semanticModel.GetReferencedSymbol(memberExpr);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(symbol);
+    }
 }

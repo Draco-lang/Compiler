@@ -156,6 +156,8 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
         var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
 
+        // TODO: We need a way to access 'WriteLine' and test for what it references
+
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -197,6 +199,8 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
         var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
+
+        // TODO: We need a way to access 'AppendLine' and test for what it references
 
         // Act
         var compilation = Compilation.Create(

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Draco.Lsp.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -87,7 +88,17 @@ internal sealed class OneOfConverter : JsonConverter
         // Primitive type
         if (reader.ValueType?.IsPrimitive ?? false) return Activator.CreateInstance(oneOfType, reader.Value);
 
-        // It's an object
+        // It could be a tuple
+        if (reader.ValueType?.IsArray ?? false)
+        {
+            var array = JArray.Load(reader);
+            var tupleVariant = oneOfType
+                .GetGenericArguments()
+                .Single(t => t.IsAssignableTo(typeof(ITuple)));
+            return array.ToObject(tupleVariant, serializer);
+        }
+
+        // Assume it's an object
         var obj = JObject.Load(reader);
         // Get the discriminative fields
         var discriminators = GetDiscriminators(oneOfType);

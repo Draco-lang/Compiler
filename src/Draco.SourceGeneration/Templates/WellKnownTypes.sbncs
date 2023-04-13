@@ -1,5 +1,43 @@
+using Draco.Compiler.Internal.Symbols.Metadata;
+using System.Collections.Immutable;
+
 namespace Draco.Compiler.Internal.Symbols;
 
+{{include 'Utils.sbncs'}}
+
+{{func nameify(name)}}
+    {{ret string.replace(name, '.', '')}}
+{{end}}
+
+#nullable enable
 internal sealed partial class WellKnownTypes
 {
+    {{for $assembly in Assemblies}}
+        {{$prop_name = nameify($assembly.Name)}}
+        {{$field_name = camel_case($prop_name)}}
+
+        private static byte[] {{$prop_name}}_PublicKeyToken { get; } = new byte[]
+        {
+            {{for $b in $assembly.PublicKeyToken}}{{$b}}, {{end}}
+        };
+
+        public MetadataAssemblySymbol {{$prop_name}} =>
+            this.{{$field_name}} ??= this.GetAssemblyWithNameAndToken("{{$assembly.Name}}", {{$prop_name}}_PublicKeyToken);
+        private MetadataAssemblySymbol? {{$field_name}};
+    {{end}}
+
+    {{for $type in Types}}
+        {{$prop_name = nameify($type.Name)}}
+        {{$field_name = camel_case($prop_name)}}
+        {{$path = string.split($type.Name, '.')}}
+
+        public MetadataTypeSymbol {{$prop_name}} =>
+            this.{{$field_name}} ??= this.GetTypeFromAssembly(
+                {{nameify($type.Assembly.Name)}},
+                ImmutableArray.Create({{wrap separated(', ', $path)}}
+                    "{{$element}}"
+                {{end}}));
+        private MetadataTypeSymbol? {{$field_name}};
+    {{end}}
 }
+#nullable restore

@@ -16,44 +16,6 @@ namespace Draco.Compiler.Internal.Symbols;
 internal sealed partial class WellKnownTypes
 {
     /// <summary>
-    /// The public-key token of Microsoft assemblies.
-    /// </summary>
-    public static byte[] MicrosoftPublicKeyToken { get; } = new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a };
-
-    /// <summary>
-    /// The System.Runtime assembly referenced by the compilation.
-    /// </summary>
-    public MetadataAssemblySymbol SystemRuntime => this.systemRuntime ??= this.GetAssemblyWithNameAndToken("System.Runtime", MicrosoftPublicKeyToken);
-    private MetadataAssemblySymbol? systemRuntime;
-
-    /// <summary>
-    /// System.Object inside System.Runtime.
-    /// </summary>
-    public MetadataTypeSymbol SystemObject => this.systemObject ??= this.SystemRuntime
-        .Lookup(ImmutableArray.Create("System", "Object"))
-        .OfType<MetadataTypeSymbol>()
-        .First();
-    private MetadataTypeSymbol? systemObject;
-
-    /// <summary>
-    /// System.Int32 inside System.Runtime.
-    /// </summary>
-    public MetadataTypeSymbol SystemInt32 => this.systemInt32 ??= this.SystemRuntime
-        .Lookup(ImmutableArray.Create("System", "Int32"))
-        .OfType<MetadataTypeSymbol>()
-        .First();
-    private MetadataTypeSymbol? systemInt32;
-
-    /// <summary>
-    /// System.Array inside System.Runtime.
-    /// </summary>
-    public MetadataTypeSymbol SystemArray => this.systemArray ??= this.SystemRuntime
-        .Lookup(ImmutableArray.Create("System", "Array"))
-        .OfType<MetadataTypeSymbol>()
-        .First();
-    private MetadataTypeSymbol? systemArray;
-
-    /// <summary>
     /// object.ToString().
     /// </summary>
     public MetadataMethodSymbol SystemObject_ToString => this.object_ToString ??= this.SystemObject
@@ -61,15 +23,6 @@ internal sealed partial class WellKnownTypes
         .OfType<MetadataMethodSymbol>()
         .Single(m => m.Name == "ToString");
     private MetadataMethodSymbol? object_ToString;
-
-    /// <summary>
-    /// System.String inside System.Runtime.
-    /// </summary>
-    public MetadataTypeSymbol SystemString => this.systemString ??= this.SystemRuntime
-        .Lookup(ImmutableArray.Create("System", "String"))
-        .OfType<MetadataTypeSymbol>()
-        .First();
-    private MetadataTypeSymbol? systemString;
 
     /// <summary>
     /// string.Format(string formatString, object[] args).
@@ -93,5 +46,11 @@ internal sealed partial class WellKnownTypes
         assemblyName.SetPublicKeyToken(token);
         return this.compilation.MetadataAssemblies
             .Single(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName));
+    }
+
+    private MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path)
+    {
+        // TODO
+        throw new NotImplementedException();
     }
 }

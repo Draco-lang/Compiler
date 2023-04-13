@@ -21,11 +21,9 @@ public sealed class WellKnownTypes
         foreach (var type in model.Types)
         {
             var name = type.Name;
-            var assembly = assemblies.FirstOrDefault(a => a.Name == type.Assembly);
-            if (assembly is null)
-            {
-                throw new InvalidOperationException($"well-known type {name} references assembly {type.Assembly}, which is not found");
-            }
+            var assembly = assemblies.FirstOrDefault(a => a.Name == type.Assembly)
+                        ?? throw new InvalidOperationException($"well-known type {name} references assembly {type.Assembly}, which is not found");
+            types.Add(new(name, assembly));
         }
 
         return new(assemblies, types);
@@ -50,12 +48,12 @@ public sealed class WellKnownTypes
         _ => throw new ArgumentOutOfRangeException(nameof(ch)),
     };
 
-    public IReadOnlyList<WellKnownAssembly> Assemblies { get; }
-    public IReadOnlyList<WellKnownType> Types { get; }
+    public IList<WellKnownAssembly> Assemblies { get; }
+    public IList<WellKnownType> Types { get; }
 
     public WellKnownTypes(
-        IReadOnlyList<WellKnownAssembly> assemblies,
-        IReadOnlyList<WellKnownType> types)
+        IList<WellKnownAssembly> assemblies,
+        IList<WellKnownType> types)
     {
         this.Assemblies = assemblies;
         this.Types = types;

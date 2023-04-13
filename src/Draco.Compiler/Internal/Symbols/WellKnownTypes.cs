@@ -46,7 +46,7 @@ internal sealed partial class WellKnownTypes
         return this.GetTypeFromAssembly(assembly, path);
     }
 
-    private MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
+    public MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
         assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
 
     private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>

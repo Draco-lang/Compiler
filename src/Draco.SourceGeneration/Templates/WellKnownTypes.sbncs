@@ -42,7 +42,7 @@ internal sealed partial class WellKnownTypes
         private MetadataTypeSymbol? {{$field_name}};
     {{end}}
 
-    private bool TryTranslateIntrinsicToMetadataSymbol(
+    public bool TryTranslateIntrinsicToMetadataSymbol(
         Symbol intrinsicSymbol,
         [MaybeNullWhen(false)] out MetadataTypeSymbol metadataSymbol)
     {

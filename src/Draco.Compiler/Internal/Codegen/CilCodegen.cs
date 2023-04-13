@@ -235,7 +235,7 @@ internal sealed class CilCodegen
             foreach (var arg in mcall.Arguments) this.EncodePush(arg);
             // TODO: If IOperand could tell by itself if it's virtual, we could reuse our token encoding
             // Determine what we are calling
-            if (mcall.Procedure is MetadataReference metadataRef)
+            if (mcall.Procedure is SymbolReference metadataRef)
             {
                 var symbol = (FunctionSymbol)metadataRef.Symbol;
                 var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
@@ -285,24 +285,10 @@ internal sealed class CilCodegen
         }
     }
 
-    private void EncodeToken(Symbol symbol)
+    private void EncodeToken(TypeSymbol symbol)
     {
-        if (ReferenceEquals(symbol, IntrinsicSymbols.Object))
-        {
-            var objHandle = this.GetTypeReferenceHandle(this.WellKnownTypes.SystemObject);
-            this.InstructionEncoder.Token(objHandle);
-            return;
-        }
-
-        if (ReferenceEquals(symbol, IntrinsicSymbols.Int32))
-        {
-            var objHandle = this.GetTypeReferenceHandle(this.WellKnownTypes.SystemInt32);
-            this.InstructionEncoder.Token(objHandle);
-            return;
-        }
-
-        // TODO
-        throw new NotImplementedException();
+        var handle = this.GetTypeReferenceHandle(symbol);
+        this.InstructionEncoder.Token(handle);
     }
 
     private void EncodeToken(IOperand operand)
@@ -316,10 +302,15 @@ internal sealed class CilCodegen
             this.InstructionEncoder.Token(handle);
             break;
         }
-        case MetadataReference metadataRef:
+        case SymbolReference symbolRef when symbolRef.Symbol is TypeSymbol type:
+        {
+            this.EncodeToken(type);
+            break;
+        }
+        case SymbolReference symbolRef:
         {
             // Regular lookup
-            var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+            var handle = this.GetMemberReferenceHandle(symbolRef.Symbol);
             this.InstructionEncoder.Token(handle);
             break;
         }

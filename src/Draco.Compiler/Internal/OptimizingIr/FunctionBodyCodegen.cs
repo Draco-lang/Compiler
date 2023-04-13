@@ -380,7 +380,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         SourceFunctionSymbol func => this.DefineProcedure(func),
         SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
-        MetadataMethodSymbol m => new MetadataReference(m),
+        MetadataMethodSymbol m => new SymbolReference(m),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 

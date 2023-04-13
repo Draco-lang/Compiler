@@ -12,7 +12,6 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using MetadataReference = Draco.Compiler.Internal.OptimizingIr.Model.MetadataReference;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -58,6 +57,8 @@ internal sealed class MetadataCodegen : MetadataWriter
     /// Handle for the entry point.
     /// </summary>
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
+
+    private WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
@@ -161,6 +162,8 @@ internal sealed class MetadataCodegen : MetadataWriter
     // TODO: Cache?
     public TypeReferenceHandle GetTypeReferenceHandle(Symbol? symbol) => symbol switch
     {
+        Symbol s when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(s, out var metadataSymbol) =>
+            this.GetTypeReferenceHandle(metadataSymbol),
         MetadataStaticClassSymbol staticClass => this.GetOrAddTypeReference(
             parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
             @namespace: GetNamespaceForSymbol(symbol),

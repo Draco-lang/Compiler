@@ -136,9 +136,8 @@ public sealed class SemanticModelTests : SemanticTestsBase
         AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
 
-
     [Fact]
-    public void GetReferencedSymbolModuleMemberAccess()
+    public void GetReferencedSymbolFromModuleMemberAccess()
     {
         // func main() {
         //     import System;
@@ -170,7 +169,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
     }
 
     [Fact]
-    public void GetReferencedSymbolTypeMemberAccess()
+    public void GetReferencedSymbolFromTypeMemberAccess()
     {
         // func main() {
         //     import System.Text;

@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
-using Draco.Compiler.Internal.Declarations;
-using Draco.Compiler.Internal.Symbols.Metadata;
 
 namespace Draco.Compiler.Internal.Symbols;
 

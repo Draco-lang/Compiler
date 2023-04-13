@@ -319,7 +319,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             locals: ImmutableArray.Create<LocalSymbol>(arrayLocal),
             statements: arrayAssignmentBuilder.ToImmutable(),
             value: CallExpression(
-                method: FunctionExpression(this.WellKnownTypes.SystemString_Format),
+                method: this.WellKnownTypes.SystemString_Format,
                 receiver: null,
                 arguments: ImmutableArray.Create<BoundExpression>(
                     LiteralExpression(formatString.ToString()),

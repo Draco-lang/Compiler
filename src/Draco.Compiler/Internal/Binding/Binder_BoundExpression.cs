@@ -118,7 +118,13 @@ internal partial class Binder
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+        // We have 3 cases:
+        //  - called is a member access -> direct call with receiver
+        //  - called is a function symbol -> direct call without receiver
+        //  - anything else -> indirect call
+
         var calledMember = (call.Method as UntypedMemberExpression)?.Member.Result as FunctionSymbol;
+        var calledFunction = (call.Method as UntypedFunctionExpression)?.Function.Result;
         if (calledMember is not null)
         {
             // This is a member function call
@@ -127,19 +133,27 @@ internal partial class Binder
             var typedArgs = call.Arguments
                 .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
                 .ToImmutableArray();
-            var calledFunc = new BoundFunctionExpression(memberAccess.Syntax, calledMember);
             var resultType = constraints.Unwrap(call.TypeRequired);
-            return new BoundCallExpression(call.Syntax, calledFunc, receiver, typedArgs, resultType);
+            return new BoundCallExpression(call.Syntax, receiver, calledMember, typedArgs, resultType);
+        }
+        else if (calledFunction is not null)
+        {
+            // Free-function call
+            var typedArgs = call.Arguments
+                .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+                .ToImmutableArray();
+            var resultType = constraints.Unwrap(call.TypeRequired);
+            return new BoundCallExpression(call.Syntax, null, calledFunction, typedArgs, resultType);
         }
         else
         {
-            // This is a non-member function call
+            // Indirect call
             var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
             var typedArgs = call.Arguments
                 .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
                 .ToImmutableArray();
             var resultType = constraints.Unwrap(call.TypeRequired);
-            return new BoundCallExpression(call.Syntax, typedFunction, null, typedArgs, resultType);
+            return new BoundIndirectCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
         }
     }
 

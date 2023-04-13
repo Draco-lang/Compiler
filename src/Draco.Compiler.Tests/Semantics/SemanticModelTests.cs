@@ -163,7 +163,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var symbol = semanticModel.GetReferencedSymbol(memberExpr);
+        var symbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExpr));
 
         var diags = semanticModel.Diagnostics;
 
@@ -201,7 +201,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var symbol = semanticModel.GetReferencedSymbol(memberExpr);
+        var symbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExpr));
 
         var diags = semanticModel.Diagnostics;
 

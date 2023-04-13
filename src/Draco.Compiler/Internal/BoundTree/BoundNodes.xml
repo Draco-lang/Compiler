@@ -99,6 +99,12 @@
     <Field Name="BreakLabel" Type="LabelSymbol" />
   </Node>
 
+  <Node Name="BoundMemberExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?" />
+    <Field Name="Member" Type="Symbol" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
   <Node Name="BoundCallExpression" Base="BoundExpression">
     <Field Name="Receiver" Type="BoundExpression?" />
     <Field Name="Method" Type="FunctionSymbol" />

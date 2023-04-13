@@ -54,21 +54,17 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
             return UnknownType;
         }
 
-        // TODO: Ask Reflectronic about this... way
-        // We try to look up the symbol by its full name from the root
+        var assemblyName = reader
+            .GetAssemblyDefinition()
+            .GetAssemblyName();
 
-        // We discussed, this is _almost_ good, but we need to filter with "originating assembly"
-        // to be 100% accurate. It should also work fine with metadata refs.
-
+        // Type path
         var @namespace = reader.GetString(definition.Namespace);
         var name = reader.GetString(definition.Name);
-        var fullName = $"{@namespace}.{name}";
-        var parts = fullName.Split('.').ToImmutableArray();
-        var typeSymbol = this.compilation.RootModule
-            .Lookup(parts)
-            .OfType<TypeSymbol>()
-            .Single();
-        return typeSymbol;
+        var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
+        var path = fullName.Split('.').ToImmutableArray();
+
+        return this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
     }
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {

@@ -40,6 +40,18 @@ internal sealed partial class WellKnownTypes
         this.compilation = compilation;
     }
 
+    public MetadataTypeSymbol GetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)
+    {
+        var assembly = this.GetAssemblyWithAssemblyName(name);
+        return this.GetTypeFromAssembly(assembly, path);
+    }
+
+    private MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
+        assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
+
+    private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>
+        this.compilation.MetadataAssemblies.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
+
     private MetadataAssemblySymbol GetAssemblyWithNameAndToken(string name, byte[] token)
     {
         var assemblyName = new AssemblyName() { Name = name };
@@ -47,7 +59,4 @@ internal sealed partial class WellKnownTypes
         return this.compilation.MetadataAssemblies
             .Single(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName));
     }
-
-    private MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
-        assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
 }

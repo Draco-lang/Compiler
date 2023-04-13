@@ -217,4 +217,23 @@ public sealed class SemanticModelTests : SemanticTestsBase
         Assert.NotNull(builderSymbol);
         Assert.Contains(appendLineSymbol, builderSymbol.Type.Members);
     }
+
+    [Fact]
+    public void GetPathSymbolsFromImport()
+    {
+        // import System.Collections.Generic;
+        // func main() { }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody())));
+
+        // TODO
+        Assert.Fail("We need import elements to actually have some differentiating syntax");
+    }
 }

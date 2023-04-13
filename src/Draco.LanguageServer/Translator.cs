@@ -90,11 +90,12 @@ internal static class Translator
         _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
     };
 
-    public static LspModels.SignatureHelp? ToLsp(ImmutableArray<CompilerApi.CodeCompletion.SignatureItem>? item) =>
-        item is ImmutableArray<CompilerApi.CodeCompletion.SignatureItem> notNull ? new()
-        {
-            Signatures = notNull.Select(x => ToLsp(x)).ToArray()
-        } : null;
+    public static LspModels.SignatureHelp? ToLsp(CompilerApi.CodeCompletion.SignatureCollection item) => new()
+    {
+        Signatures = item.Signatures.Select(x => ToLsp(x)).ToArray(),
+        ActiveParameter = item.ActiveParameter is null ? null : (uint)item.ActiveParameter,
+        ActiveSignature = (uint)item.ActiveOverload
+    };
 
     public static LspModels.SignatureInformation ToLsp(CompilerApi.CodeCompletion.SignatureItem item)
     {

@@ -49,12 +49,12 @@ internal static class SymbolResolutionErrors
         code: Code(4));
 
     /// <summary>
-    /// There is no such member in expression.
+    /// A member was not found in a type or module.
     /// </summary>
-    public static readonly DiagnosticTemplate NoSuchMember = DiagnosticTemplate.Create(
-        title: "no such member",
+    public static readonly DiagnosticTemplate MemberNotFound = DiagnosticTemplate.Create(
+        title: "member not found",
         severity: DiagnosticSeverity.Error,
-        format: "no such member {0} in the expression {1}",
-        code: Code(4));
+        format: "member {0} could not be found in {1}",
+        code: Code(5));
 }
 

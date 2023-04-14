@@ -51,11 +51,10 @@ internal partial class Binder
         }
         else if (membersWithName.Count == 0)
         {
-            var diag = Diagnostic.Create(
-                template: SymbolResolutionErrors.NoSuchMember,
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.MemberNotFound,
                 location: syntax.Member.Location,
-                formatArgs: new[] { "syntax.Member.Text", syntax.Accessed.ToString() });
-            diagnostics.Add(diag);
+                formatArgs: new[] { syntax.Member.Text, parent.Name }));
             return new UndefinedMemberSymbol();
         }
         else

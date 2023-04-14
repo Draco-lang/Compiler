@@ -3,7 +3,7 @@ using Draco.Compiler.Internal.Symbols.Synthetized;
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// Represents an undefined member symbol.
+/// Represents an undefined member reference.
 /// </summary>
 internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol
 {

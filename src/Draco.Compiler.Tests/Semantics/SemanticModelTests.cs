@@ -347,9 +347,11 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoSuchMember);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
         Assert.NotNull(appendLineSymbol);
         Assert.NotNull(builderSymbol);
+        Assert.False(builderSymbol.IsError);
+        Assert.True(appendLineSymbol.IsError);
     }
 
     [Fact]
@@ -438,8 +440,11 @@ public sealed class SemanticModelTests : SemanticTestsBase
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Nonexisting", "Foo")));
+
         var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
-        var systemCollectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
+        var collectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(2);
+        var nonexistingSyntax = tree.FindInChildren<MemberImportPathSyntax>(1);
+        var fooSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -450,13 +455,20 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
-        var entireImportPathSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsSyntax));
+        var collectionsSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(collectionsSyntax));
+        var nonexistingSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(nonexistingSyntax));
+        var fooSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(fooSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Single(diags);
         Assert.NotNull(systemSymbol);
-        Assert.NotNull(entireImportPathSymbol);
+        Assert.NotNull(collectionsSymbol);
+        Assert.NotNull(nonexistingSymbol);
+        Assert.NotNull(fooSymbol);
+        Assert.Contains(collectionsSymbol, systemSymbol.Members);
+        Assert.True(nonexistingSymbol.IsError);
+        Assert.True(fooSymbol.IsError);
     }
 }

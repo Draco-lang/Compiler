@@ -30,8 +30,16 @@ public abstract class EndToEndTestsBase
         return assembly;
     }
 
-    protected static TResult Invoke<TResult>(Assembly assembly, string methodName, params object[] args)
+    protected static TResult Invoke<TResult>(
+        Assembly assembly,
+        string methodName,
+        TextReader? stdin,
+        TextWriter? stdout,
+        params object[] args)
     {
+        Console.SetIn(stdin ?? Console.In);
+        Console.SetOut(stdout ?? Console.Out);
+
         var method = assembly
             .GetType("FreeFunctions")?
             .GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
@@ -40,4 +48,11 @@ public abstract class EndToEndTestsBase
         var result = (TResult?)method?.Invoke(null, args);
         return result!;
     }
+
+    protected static TResult Invoke<TResult>(Assembly assembly, string methodName, params object[] args) => Invoke<TResult>(
+        assembly: assembly,
+        methodName: methodName,
+        stdin: null,
+        stdout: null,
+        args: args);
 }

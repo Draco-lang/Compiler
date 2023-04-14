@@ -12,7 +12,6 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using MetadataReference = Draco.Compiler.Internal.OptimizingIr.Model.MetadataReference;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -58,6 +57,8 @@ internal sealed class MetadataCodegen : MetadataWriter
     /// Handle for the entry point.
     /// </summary>
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
+
+    private WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
@@ -161,6 +162,8 @@ internal sealed class MetadataCodegen : MetadataWriter
     // TODO: Cache?
     public TypeReferenceHandle GetTypeReferenceHandle(Symbol? symbol) => symbol switch
     {
+        Symbol s when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(s, out var metadataSymbol) =>
+            this.GetTypeReferenceHandle(metadataSymbol),
         MetadataStaticClassSymbol staticClass => this.GetOrAddTypeReference(
             parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
             @namespace: GetNamespaceForSymbol(symbol),
@@ -364,19 +367,12 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (ReferenceEquals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
         if (ReferenceEquals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
         if (ReferenceEquals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Object)) { encoder.Object(); return; }
 
         if (type is MetadataTypeSymbol metadataType)
         {
-            // TODO: This needs to be made more robust
-            if (metadataType.FullName == "System.Object")
-            {
-                encoder.Object();
-            }
-            else
-            {
-                var reference = this.GetTypeReferenceHandle(metadataType);
-                encoder.Type(reference, metadataType.IsValueType);
-            }
+            var reference = this.GetTypeReferenceHandle(metadataType);
+            encoder.Type(reference, metadataType.IsValueType);
             return;
         }
 

@@ -45,7 +45,7 @@ internal sealed class Assembly : IAssembly
     public Assembly(ModuleSymbol symbol)
     {
         this.Symbol = symbol;
-        this.GlobalInitializer = this.DefineProcedure(new SynthetizedFunctionSymbol(
+        this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
             name: "<global initializer>",
             paramTypes: Enumerable.Empty<TypeSymbol>(),
             returnType: IntrinsicSymbols.Unit));

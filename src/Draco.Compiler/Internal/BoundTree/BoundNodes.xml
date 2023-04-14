@@ -99,9 +99,21 @@
     <Field Name="BreakLabel" Type="LabelSymbol" />
   </Node>
 
-  <Node Name="BoundCallExpression" Base="BoundExpression">
-    <Field Name="Method" Type="BoundExpression" />
+  <Node Name="BoundMemberExpression" Base="BoundExpression">
     <Field Name="Receiver" Type="BoundExpression?" />
+    <Field Name="Member" Type="Symbol" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="BoundCallExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?" />
+    <Field Name="Method" Type="FunctionSymbol" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="BoundIndirectCallExpression" Base="BoundExpression">
+    <Field Name="Method" Type="BoundExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
@@ -139,6 +151,17 @@
     <Field Name="CompoundOperator" Type="FunctionSymbol?" />
     <Field Name="Left" Type="BoundLvalue" />
     <Field Name="Right" Type="BoundExpression" />
+  </Node>
+
+  <Node Name="BoundObjectCreationExpression" Base="BoundExpression">
+    <Field Name="ObjectType" Type="TypeSymbol" />
+    <Field Name="Constructor" Type="FunctionSymbol" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
+  <Node Name="BoundArrayCreationExpression" Base="BoundExpression">
+    <Field Name="ElementType" Type="TypeSymbol" />
+    <Field Name="Sizes" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 
   <Node Name="BoundLocalExpression" Base="BoundExpression">
@@ -208,5 +231,10 @@
 
   <Node Name="BoundGlobalLvalue" Base="BoundLvalue">
     <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
+    <Field Name="Array" Type="BoundExpression" />
+    <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 </Tree>

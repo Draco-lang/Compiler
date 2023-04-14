@@ -135,4 +135,230 @@ public sealed class SemanticModelTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
+
+    [Fact]
+    public void GetReferencedSymbolFromModuleMemberAccess()
+    {
+        // func main() {
+        //     import System;
+        //     Console.WriteLine();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System")),
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("Console"), "WriteLine")))))));
+
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(writeLineSymbol);
+        Assert.NotNull(consoleSymbol);
+        Assert.Contains(writeLineSymbol, consoleSymbol.Members);
+    }
+
+    [Fact]
+    public void GetReferencedSymbolFromFullyQualifiedName()
+    {
+        // func main() {
+        //     System.Console.WriteLine();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                ExpressionStatement(CallExpression(
+                    MemberExpression(
+                        MemberExpression(NameExpression("System"), "Console"),
+                        "WriteLine")))))));
+
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var memberSubexprSyntax = tree.FindInChildren<MemberExpressionSyntax>(1);
+        var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubexprSyntax));
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(writeLineSymbol);
+        Assert.NotNull(consoleSymbol);
+        Assert.NotNull(systemSymbol);
+        Assert.Contains(writeLineSymbol, consoleSymbol.Members);
+        Assert.Contains(consoleSymbol, systemSymbol.Members);
+    }
+
+    [Fact]
+    public void GetReferencedSymbolFromFullyQualifiedIncompleteName()
+    {
+        // func main() {
+        //     System.Console.;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                ExpressionStatement(CallExpression(
+                    MemberExpression(
+                        MemberExpression(NameExpression("System"), "Console"),
+                        Dot,
+                        Missing(TokenKind.Identifier))))))));
+
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var memberSubexprSyntax = tree.FindInChildren<MemberExpressionSyntax>(1);
+        var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var errorSymbol = semanticModel.GetReferencedSymbol(memberExprSyntax);
+        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubexprSyntax));
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        Assert.NotNull(errorSymbol);
+        Assert.NotNull(consoleSymbol);
+        Assert.NotNull(systemSymbol);
+        Assert.Contains(consoleSymbol, systemSymbol.Members);
+        Assert.True(errorSymbol.IsError);
+    }
+
+    [Fact]
+    public void GetReferencedSymbolFromTypeMemberAccess()
+    {
+        // func main() {
+        //     import System.Text;
+        //     var builder = StringBuilder();
+        //     builder.AppendLine();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System", "Text")),
+                DeclarationStatement(VariableDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "AppendLine")))))));
+
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var appendLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var builderSymbol = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(builderNameSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(appendLineSymbol);
+        Assert.NotNull(builderSymbol);
+        Assert.Contains(appendLineSymbol, builderSymbol.Type.Members);
+    }
+
+    [Fact]
+    public void GetPathSymbolsFromImport()
+    {
+        // import System.Collections.Generic;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Generic")));
+
+        var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
+        var systemCollectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(1);
+        var systemCollectionsGenericSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+        var systemCollectionsSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsSyntax));
+        var systemCollectionsGenericSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsGenericSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(systemSymbol);
+        Assert.NotNull(systemCollectionsSymbol);
+        Assert.NotNull(systemCollectionsGenericSymbol);
+        Assert.Contains(systemCollectionsSymbol, systemSymbol.Members);
+        Assert.Contains(systemCollectionsGenericSymbol, systemCollectionsSymbol.Members);
+    }
+
+    [Fact]
+    public void GetPathSymbolsFromPartiallyNonExistingImport()
+    {
+        // import System.Collections.Nonexisting.Foo;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Nonexisting", "Foo")));
+
+        // Act
+
+        // Assert
+
+        // TODO
+        Assert.Fail("We need import elements to actually have some differentiating syntax");
+    }
 }

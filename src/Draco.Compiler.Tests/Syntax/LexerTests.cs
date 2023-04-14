@@ -336,6 +336,66 @@ public sealed class LexerTests
         this.AssertNoTriviaOrDiagnostics();
     }
 
+    [Fact]
+    [Trait("Feature", "Strings")]
+    public void TestLineStringWithSpacesAround()
+    {
+        var text = """
+            "  hello   "
+            """;
+        this.Lex(text);
+
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(
+            TokenKind.StringContent,
+            "  hello   ",
+            "  hello   ");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.LineStringEnd, "\"");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Fact]
+    [Trait("Feature", "Strings")]
+    public void TestMultilineStringWithSpacesAround()
+    {
+        const string spaceAfter = "   ";
+        var text = $""""
+            """
+                  hello{spaceAfter}
+                """
+            """";
+        this.Lex(NormalizeNewliens(text));
+
+        this.AssertNextToken(TokenKind.MultiLineStringStart, "\"\"\"");
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia(
+            (TriviaKind.Newline, "\n"));
+        this.AssertDiagnostics();
+
+        this.AssertNextToken(
+            TokenKind.StringContent,
+            $"      hello{spaceAfter}",
+            $"      hello{spaceAfter}");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.MultiLineStringEnd, "\"\"\"");
+        this.AssertLeadingTrivia(
+            (TriviaKind.Newline, "\n"),
+            (TriviaKind.Whitespace, "    "));
+        this.AssertTrailingTrivia();
+        this.AssertDiagnostics();
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("#")]

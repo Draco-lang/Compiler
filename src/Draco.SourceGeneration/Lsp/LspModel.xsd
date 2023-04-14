@@ -5,9 +5,9 @@
   attributeFormDefault="unqualified"
   elementFormDefault="qualified">
 
-  <xs:element name="LspModel" type="LspModel" />
+  <xs:element name="LspModel" type="LspModelType" />
 
-  <xs:complexType name="LspModel">
+  <xs:complexType name="LspModelType">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
       <xs:element name="BuiltinType" type="BuiltinTypeType" />
       <xs:element name="Generate" type="GenerateType" />

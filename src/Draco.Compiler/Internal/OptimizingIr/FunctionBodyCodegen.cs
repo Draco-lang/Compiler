@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
@@ -58,6 +59,20 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Global DefineGlobal(GlobalSymbol global) => this.procedure.Assembly.DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
     private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
+
+    private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
+    {
+        // We handle synthetized functions a bit specially, as they are not part of our symbol
+        // tree, so we compile them, in case they have not been yet
+        var compiledAlready = this.procedure.Assembly.Procedures.ContainsKey(func);
+        var proc = this.DefineProcedure(func);
+        if (!compiledAlready)
+        {
+            var codegen = new FunctionBodyCodegen(proc);
+            func.Body.Accept(codegen);
+        }
+        return proc;
+    }
 
     // Statements //////////////////////////////////////////////////////////////
 
@@ -123,6 +138,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
     public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
+    public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) =>
+        new ArrayAccess(this.Compile(node.Array), node.Indices.Select(this.Compile).ToImmutableArray());
 
     // Expressions /////////////////////////////////////////////////////////////
 
@@ -143,12 +160,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
-        var func = this.Compile(node.Method);
         if (node.Receiver is null)
         {
             var args = node.Arguments.Select(this.Compile).ToList();
             var result = this.DefineRegister(node.TypeRequired);
-            this.Write(Call(result, func, args));
+            var proc = this.TranslateFunctionSymbol(node.Method);
+            this.Write(Call(result, proc, args));
             return result;
         }
         else
@@ -156,9 +173,27 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var receiver = this.Compile(node.Receiver);
             var args = node.Arguments.Select(this.Compile).ToList();
             var result = this.DefineRegister(node.TypeRequired);
-            this.Write(MemberCall(result, func, receiver, args));
+            var proc = this.TranslateFunctionSymbol(node.Method);
+            this.Write(MemberCall(result, proc, receiver, args));
             return result;
         }
+    }
+
+    public override IOperand VisitObjectCreationExpression(BoundObjectCreationExpression node)
+    {
+        var ctor = this.TranslateFunctionSymbol(node.Constructor);
+        var args = node.Arguments.Select(this.Compile).ToList();
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(NewObject(result, ctor, args));
+        return result;
+    }
+
+    public override IOperand VisitArrayCreationExpression(BoundArrayCreationExpression node)
+    {
+        var dimensions = node.Sizes.Select(this.Compile).ToList();
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(NewArray(result, node.ElementType, dimensions));
+        return result;
     }
 
     public override IOperand VisitGotoExpression(BoundGotoExpression node)
@@ -339,12 +374,15 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) => node.Function switch
+    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) =>
+        this.TranslateFunctionSymbol(node.Function);
+
+    private IOperand TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
     {
         SourceFunctionSymbol func => this.DefineProcedure(func),
-        MetadataMethodSymbol m => new MetadataReference(m),
-        SynthetizedArrayFunctionSymbol arr => new MetadataReference(arr),
-        _ => throw new System.ArgumentOutOfRangeException(nameof(node)),
+        SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
+        MetadataMethodSymbol m => new SymbolReference(m),
+        _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 
     // NOTE: Parameters don't need loading, they are read-only values by default

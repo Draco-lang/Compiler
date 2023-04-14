@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Text.Json;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;

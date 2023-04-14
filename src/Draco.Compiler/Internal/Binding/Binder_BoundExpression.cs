@@ -118,28 +118,31 @@ internal partial class Binder
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var calledMember = (call.Method as UntypedMemberExpression)?.Member.Result as FunctionSymbol;
-        if (calledMember is not null)
+        // We have 3 cases:
+        //  - called is a member access -> direct call with receiver
+        //  - called is a function symbol -> direct call without receiver
+        //  - anything else -> indirect call
+
+        var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
+        var typedArgs = call.Arguments
+            .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+            .ToImmutableArray();
+        var resultType = constraints.Unwrap(call.TypeRequired);
+
+        if (typedFunction is BoundMemberExpression memberExpr && memberExpr.Member is FunctionSymbol memberFunc)
         {
-            // This is a member function call
-            var memberAccess = (UntypedMemberExpression)call.Method;
-            var receiver = this.TypeExpression(memberAccess.Accessed, constraints, diagnostics);
-            var typedArgs = call.Arguments
-                .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
-                .ToImmutableArray();
-            var calledFunc = new BoundFunctionExpression(memberAccess.Syntax, calledMember);
-            var resultType = constraints.Unwrap(call.TypeRequired);
-            return new BoundCallExpression(call.Syntax, calledFunc, receiver, typedArgs, resultType);
+            // Member function call
+            return new BoundCallExpression(call.Syntax, memberExpr.Receiver, memberFunc, typedArgs, resultType);
+        }
+        else if (typedFunction is BoundFunctionExpression funcExpr)
+        {
+            // Free-function call
+            return new BoundCallExpression(call.Syntax, null, funcExpr.Function, typedArgs, resultType);
         }
         else
         {
-            // This is a non-member function call
-            var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
-            var typedArgs = call.Arguments
-                .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
-                .ToImmutableArray();
-            var resultType = constraints.Unwrap(call.TypeRequired);
-            return new BoundCallExpression(call.Syntax, typedFunction, null, typedArgs, resultType);
+            // Indirect function call
+            return new BoundIndirectCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
         }
     }
 
@@ -204,7 +207,6 @@ internal partial class Binder
         var member = mem.Member.Result;
         var resultType = constraints.Unwrap(mem.TypeRequired);
 
-        // TODO
-        throw new NotImplementedException();
+        return new BoundMemberExpression(mem.Syntax, left, member, resultType);
     }
 }

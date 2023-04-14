@@ -58,7 +58,7 @@
       <Token Kind="KeywordImport" />
     </Field>
 
-    <Field Name="Path" Type="SeparatedSyntaxList&lt;SyntaxToken&gt;">
+    <Field Name="Path" Type="ImportPathSyntax">
       <Documentation>
         The imported path.
       </Documentation>
@@ -70,6 +70,52 @@
       </Documentation>
 
       <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="ImportPathSyntax" Base="SyntaxNode">
+    <Documentation>
+      Represents an import path.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="RootImportPathSyntax" Base="ImportPathSyntax">
+    <Documentation>
+      The root of an import path.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the imported module root.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <Node Name="MemberImportPathSyntax" Base="ImportPathSyntax">
+    <Documentation>
+      A submodule-access in an import path.
+    </Documentation>
+
+    <Field Name="Accessed" Type="ImportPathSyntax">
+      <Documentation>
+        The accessed module path.
+      </Documentation>
+    </Field>
+    <Field Name="Dot" Type="SyntaxToken">
+      <Documentation>
+        The separator dot.
+      </Documentation>
+
+      <Token Kind="Dot" />
+    </Field>
+    <Field Name="Member" Type="SyntaxToken">
+      <Documentation>
+        The name of the accessed module member.
+      </Documentation>
+
+      <Token Kind="Identifier" />
     </Field>
   </Node>
 

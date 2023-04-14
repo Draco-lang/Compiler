@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -25,8 +27,10 @@ internal partial class Binder
     };
 
     private Symbol BindRootImportPath(RootImportPathSyntax syntax, DiagnosticBag diagnostics) =>
-        // Simple lookup from here
-        this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        // Simple lookup from parent
+        // NOTE: We will ask the parent to look up import paths, because the current binder is under construction
+        // If we called the binding of import paths on this, we'd hit infinite recursion
+        this.Parent!.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
 
     private Symbol BindMemberImportPath(MemberImportPathSyntax syntax, DiagnosticBag diagnostics)
     {
@@ -44,6 +48,15 @@ internal partial class Binder
         {
             // Simply return this
             return membersWithName[0];
+        }
+        else if (membersWithName.Count == 0)
+        {
+            var diag = Diagnostic.Create(
+                template: SymbolResolutionErrors.NoSuchMember,
+                location: syntax.Member.Location,
+                formatArgs: new[] { "syntax.Member.Text", syntax.Accessed.ToString() });
+            diagnostics.Add(diag);
+            return new UndefinedMemberSymbol();
         }
         else
         {

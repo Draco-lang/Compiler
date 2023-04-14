@@ -4,6 +4,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -85,9 +86,12 @@ internal sealed partial class ConstraintSolver
 
         if (membersWithName.Count == 0)
         {
-            // No such member, error
-            // TODO
-            throw new System.NotImplementedException();
+            var diagnostic = constraint.Diagnostic
+                .WithTemplate(SymbolResolutionErrors.NoSuchMember)
+                .WithFormatArgs(constraint.MemberName, this.Unwrap(constraint.Accessed))
+                .Build();
+            diagnostics.Add(diagnostic);
+            constraint.Promise.Resolve(new UndefinedMemberSymbol());
         }
         else if (membersWithName.Count == 1)
         {

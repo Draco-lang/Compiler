@@ -4,6 +4,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
@@ -310,6 +311,48 @@ public sealed class SemanticModelTests : SemanticTestsBase
     }
 
     [Fact]
+    public void GetReferencedSymbolFromTypeMemberAccessWithNonExistingMember()
+    {
+        // func main() {
+        //     import System.Text;
+        //     var builder = StringBuilder();
+        //     builder.Ap();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System", "Text")),
+                DeclarationStatement(VariableDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "Ap")))))));
+
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var appendLineSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var builderSymbol = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(builderNameSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoSuchMember);
+        Assert.NotNull(appendLineSymbol);
+        Assert.NotNull(builderSymbol);
+    }
+
+    [Fact]
     public void GetPathSymbolsFromImport()
     {
         // import System.Collections.Generic;
@@ -346,6 +389,48 @@ public sealed class SemanticModelTests : SemanticTestsBase
     }
 
     [Fact]
+    public void GetPathSymbolsFromLocalImport()
+    {
+        // func main() {
+        //     import System.Collections.Generic;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System", "Collections", "Generic"))))));
+
+        var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
+        var systemCollectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(1);
+        var systemCollectionsGenericSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+        var systemCollectionsSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsSyntax));
+        var systemCollectionsGenericSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsGenericSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(systemSymbol);
+        Assert.NotNull(systemCollectionsSymbol);
+        Assert.NotNull(systemCollectionsGenericSymbol);
+        Assert.Contains(systemCollectionsSymbol, systemSymbol.Members);
+        Assert.Contains(systemCollectionsGenericSymbol, systemCollectionsSymbol.Members);
+    }
+
+    [Fact]
     public void GetPathSymbolsFromPartiallyNonExistingImport()
     {
         // import System.Collections.Nonexisting.Foo;
@@ -353,12 +438,25 @@ public sealed class SemanticModelTests : SemanticTestsBase
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Nonexisting", "Foo")));
+        var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
+        var systemCollectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
 
         // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+        var entireImportPathSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsSyntax));
+
+        var diags = semanticModel.Diagnostics;
 
         // Assert
-
-        // TODO
-        Assert.Fail("We need import elements to actually have some differentiating syntax");
+        Assert.Single(diags);
+        Assert.NotNull(systemSymbol);
+        Assert.NotNull(entireImportPathSymbol);
     }
 }

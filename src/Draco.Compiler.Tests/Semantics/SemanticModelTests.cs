@@ -192,7 +192,6 @@ public sealed class SemanticModelTests : SemanticTestsBase
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImportDeclaration("System")),
                 ExpressionStatement(CallExpression(
                     MemberExpression(
                         MemberExpression(NameExpression("System"), "Console"),
@@ -244,17 +243,20 @@ public sealed class SemanticModelTests : SemanticTestsBase
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImportDeclaration("System")),
                 ExpressionStatement(CallExpression(
                     MemberExpression(
                         MemberExpression(NameExpression("System"), "Console"),
                         Dot,
                         Missing(TokenKind.Identifier))))))));
 
-        // var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
-        // var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
-
-        // TODO: We need a way to access 'System' & 'Console' and test for what it references
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var memberSubexprSyntax = tree.FindInChildren<MemberExpressionSyntax>(1);
+        var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+        var consoleSyntax = tree.PreOrderTraverse().OfType<SyntaxToken>().First(t => t.Text == "Console");
+        var missingNameSyntax = tree
+            .PreOrderTraverse()
+            .OfType<SyntaxToken>()
+            .First(t => t.Kind == TokenKind.Identifier && string.IsNullOrWhiteSpace(t.Text));
 
         // Act
         var compilation = Compilation.Create(
@@ -264,15 +266,21 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        // var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
-        // var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+        var errorFromMemberSymbol = semanticModel.GetReferencedSymbol(memberExprSyntax);
+        var consoleFromMemberSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubexprSyntax));
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+        var errorSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(missingNameSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
-
-        // TODO
-        Assert.Fail("Incomplete");
+        Assert.Single(diags);
+        Assert.NotNull(errorFromMemberSymbol);
+        Assert.NotNull(consoleFromMemberSymbol);
+        Assert.NotNull(systemSymbol);
+        Assert.Contains(consoleFromMemberSymbol, systemSymbol.Members);
+        Assert.Same(consoleFromMemberSymbol, consoleSymbol);
     }
 
     [Fact]

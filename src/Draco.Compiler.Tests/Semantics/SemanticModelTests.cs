@@ -155,8 +155,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
         var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
-
-        // TODO: We need a way to access 'WriteLine' and test for what it references
+        var writeLineSyntax = tree.PreOrderTraverse().OfType<SyntaxToken>().First(t => t.Text == "WriteLine");
 
         // Act
         var compilation = Compilation.Create(
@@ -166,16 +165,18 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var writeLineFromMemberSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
         var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+        var writeLineFromNameSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(writeLineSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Empty(diags);
-        Assert.NotNull(writeLineSymbol);
+        Assert.NotNull(writeLineFromMemberSymbol);
         Assert.NotNull(consoleSymbol);
-        Assert.Contains(writeLineSymbol, consoleSymbol.Members);
+        Assert.Contains(writeLineFromMemberSymbol, consoleSymbol.Members);
+        Assert.Same(writeLineFromMemberSymbol, writeLineFromNameSymbol);
     }
 
     [Fact]

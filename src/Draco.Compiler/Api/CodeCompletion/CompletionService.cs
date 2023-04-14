@@ -29,17 +29,12 @@ public static class CompletionService
     };
     public static ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
-        IEnumerable<CompletionItem?>? completions = null;
-        if (TryGetMemberAccess(tree, cursor, semanticModel))
+        if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols))
         {
-            completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).GroupBy(x => x.Name).Select(x =>
-                x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
+            symbols = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last());
         }
-        else
-        {
-            completions = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last()).GroupBy(x => (x.GetType(), x.Name)).Select(x =>
+        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x =>
                 x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
-        }
         var contexts = GetContexts(tree, cursor);
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
         result.AddRange(keywords.Where(x => x.Context.Intersect(contexts).Count() > 0));
@@ -47,13 +42,16 @@ public static class CompletionService
         return result.ToImmutable();
     }
 
-    private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel)
+    private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<ISymbol> result)
     {
         var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
+        result = ImmutableArray<ISymbol>.Empty;
         if (expr is not null
             && expr is MemberExpressionSyntax member)
         {
             var symbol = semanticModel.GetReferencedSymbol(member.Accessed);
+            if (symbol is null) return false;
+            result = symbol.Members.ToImmutableArray();
             return true;
         }
         return false;

@@ -340,17 +340,16 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var appendLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var appendLineSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
         var builderSymbol = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(builderNameSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Single(diags);
-        // AssertDiagnostic(diags,); TODO
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoSuchMember);
         Assert.NotNull(appendLineSymbol);
         Assert.NotNull(builderSymbol);
-        Assert.Contains(appendLineSymbol, builderSymbol.Type.Members);
     }
 
     [Fact]

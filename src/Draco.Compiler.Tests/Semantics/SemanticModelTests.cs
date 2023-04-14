@@ -198,10 +198,11 @@ public sealed class SemanticModelTests : SemanticTestsBase
                         MemberExpression(NameExpression("System"), "Console"),
                         "WriteLine")))))));
 
-        // var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
-        // var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
-
-        // TODO: We need a way to access 'Console' & 'WriteLine' and test for what it references
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var memberSubexprSyntax = tree.FindInChildren<MemberExpressionSyntax>(1);
+        var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+        var consoleSyntax = tree.PreOrderTraverse().OfType<SyntaxToken>().First(t => t.Text == "Console");
+        var writeLineSyntax = tree.PreOrderTraverse().OfType<SyntaxToken>().First(t => t.Text == "WriteLine");
 
         // Act
         var compilation = Compilation.Create(
@@ -211,15 +212,23 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        // var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
-        // var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+        var writeLineFromMemberSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var consoleFromMemberSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubexprSyntax));
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+        var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(writeLineSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
-
-        // TODO
-        Assert.Fail("Incomplete");
+        Assert.Empty(diags);
+        Assert.NotNull(writeLineFromMemberSymbol);
+        Assert.NotNull(consoleFromMemberSymbol);
+        Assert.NotNull(systemSymbol);
+        Assert.Contains(writeLineFromMemberSymbol, consoleSymbol.Members);
+        Assert.Contains(consoleSymbol, systemSymbol.Members);
+        Assert.Same(writeLineFromMemberSymbol, writeLineSymbol);
+        Assert.Same(consoleFromMemberSymbol, consoleSymbol);
     }
 
     [Fact]

@@ -7,6 +7,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 
 public static class SignatureService
 {
+    // TODO: member signature
     public static SignatureCollection GetSignature(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
         var call = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault(x => x is CallExpressionSyntax) as CallExpressionSyntax;

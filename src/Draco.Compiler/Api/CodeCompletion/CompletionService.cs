@@ -51,12 +51,14 @@ public static class CompletionService
         {
             var symbol = semanticModel.GetReferencedSymbol(member.Accessed);
             if (symbol is null) return false;
-            result = symbol.Members.ToImmutableArray();
+            if (symbol is ITypedSymbol typeSymbol) result = typeSymbol.Type.Members.ToImmutableArray();
+            else result = symbol.Members.ToImmutableArray();
             return true;
         }
         return false;
     }
 
+    // TODO: Don't allow keywords in member context
     private static CompletionContext[] GetContexts(SyntaxTree tree, SyntaxPosition cursor)
     {
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();

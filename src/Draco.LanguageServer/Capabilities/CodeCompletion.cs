@@ -10,6 +10,7 @@ namespace Draco.LanguageServer;
 
 internal sealed partial class DracoLanguageServer : ICodeCompletion
 {
+    // TODO: Trigger char .
     public CompletionRegistrationOptions CompletionRegistrationOptions => new()
     {
         DocumentSelector = this.DocumentSelector,

@@ -350,7 +350,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
         Assert.NotNull(appendLineSymbol);
         Assert.NotNull(builderSymbol);
-        Assert.NotEmpty(builderSymbol.Members);
+        Assert.NotEmpty(builderSymbol.Type.Members);
         Assert.False(builderSymbol.IsError);
         Assert.True(appendLineSymbol.IsError);
     }

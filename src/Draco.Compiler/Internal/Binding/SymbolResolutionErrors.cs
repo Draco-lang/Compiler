@@ -47,5 +47,14 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "illegal expression on the left-hand side of assignment",
         code: Code(4));
+
+    /// <summary>
+    /// There is no such member in expression.
+    /// </summary>
+    public static readonly DiagnosticTemplate NoSuchMember = DiagnosticTemplate.Create(
+        title: "no such member",
+        severity: DiagnosticSeverity.Error,
+        format: "no such member {0} in the expression {1}",
+        code: Code(4));
 }
 

@@ -4,6 +4,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
@@ -438,12 +439,25 @@ public sealed class SemanticModelTests : SemanticTestsBase
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Nonexisting", "Foo")));
+        var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
+        var systemCollectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
 
         // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+        var entireImportPathSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsSyntax));
+
+        var diags = semanticModel.Diagnostics;
 
         // Assert
-
-        // TODO
-        Assert.Fail("We need import elements to actually have some differentiating syntax");
+        Assert.Single(diags);
+        Assert.NotNull(systemSymbol);
+        Assert.NotNull(entireImportPathSymbol);
     }
 }

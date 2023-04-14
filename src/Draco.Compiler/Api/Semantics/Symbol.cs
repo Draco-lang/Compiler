@@ -64,13 +64,6 @@ public interface IModuleSymbol : ISymbol
 }
 
 /// <summary>
-/// Represents a module symbol.
-/// </summary>
-public interface IModuleSymbol : ISymbol
-{
-}
-
-/// <summary>
 /// Represents a variable symbol.
 /// </summary>
 public interface IVariableSymbol : ISymbol, ITypedSymbol

@@ -4,5 +4,6 @@ public enum CompletionContext
 {
     Unknown,
     ExpressionContent,
+    TypeExpression,
     DeclarationKeyword
 }

@@ -42,8 +42,8 @@ public static class CompletionService
         }
         var contexts = GetContexts(tree, cursor);
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        result.AddRange(keywords.Where(x => contexts.Contains(x.Context)));
-        result.AddRange(completions.Where(x => x is not null && contexts.Contains(x.Context))!);
+        result.AddRange(keywords.Where(x => x.Context.Intersect(contexts).Count() > 0));
+        result.AddRange(completions.Where(x => x is not null && x.Context.Intersect(contexts).Count() > 0)!);
         return result.ToImmutable();
     }
 
@@ -59,29 +59,29 @@ public static class CompletionService
         return false;
     }
 
-    private static IList<CompletionContext> GetContexts(SyntaxTree tree, SyntaxPosition cursor)
+    private static CompletionContext[] GetContexts(SyntaxTree tree, SyntaxPosition cursor)
     {
-        // TODO: function param names
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
-        if (token.Parent is ParameterSyntax) return new List<CompletionContext>();
+        if (token.Parent is NameTypeSyntax) return new[] { CompletionContext.TypeExpression };
+        if (token.Parent is ParameterSyntax) return new CompletionContext[0];
         // Global declaration
         if (token.Parent is UnexpectedDeclarationSyntax declaration) return new[] { CompletionContext.DeclarationKeyword };
         // Declaring identifier
-        if (token.Parent is DeclarationSyntax) return new List<CompletionContext>();
+        if (token.Parent is DeclarationSyntax) return new CompletionContext[0];
         // Start of statement in function
         else if (token.Parent?.Parent is ExpressionStatementSyntax)
         {
             var result = new List<CompletionContext>() { CompletionContext.ExpressionContent };
             // Only one token (second is expected semicolon), we can suggest declaration start
             if (token.Parent.Parent.Children.Count() == 2) result.Add(CompletionContext.DeclarationKeyword);
-            return result;
+            return result.ToArray();
         }
         return new[] { CompletionContext.ExpressionContent };
     }
 
     private static CompletionItem? GetCompletionItem(ISymbol symbol, string? type = null) => symbol switch
     {
-        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.ExpressionContent),
+        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.TypeExpression),
 
         LocalSymbol loc =>
             new CompletionItem(symbol.Name, CompletionKind.Variable, type ?? loc.Type.Name, symbol.Documentation, CompletionContext.ExpressionContent),

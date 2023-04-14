@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -48,10 +49,16 @@ internal sealed class ImportBinder : Binder
         foreach (var importSyntax in this.importSyntaxes)
         {
             var importedSymbol = this.BindImportPath(importSyntax.Path, diagnostics);
-            if (importedSymbol is not ModuleSymbol)
+            if (importedSymbol.IsError)
             {
-                // TODO: Error
-                throw new NotImplementedException();
+                // No-op, don't cascade
+            }
+            else if (importedSymbol is not ModuleSymbol)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.IllegalImport,
+                    location: importSyntax.Path.Location,
+                    formatArgs: ImportPathToString(importSyntax.Path)));
             }
             else
             {
@@ -60,4 +67,11 @@ internal sealed class ImportBinder : Binder
         }
         return result.ToImmutable();
     }
+
+    private static string ImportPathToString(ImportPathSyntax syntax) => syntax switch
+    {
+        RootImportPathSyntax root => root.Name.Text,
+        MemberImportPathSyntax mem => $"{ImportPathToString(mem.Accessed)}.{mem.Member.Text}",
+        _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
+    };
 }

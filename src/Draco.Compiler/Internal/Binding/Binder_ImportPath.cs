@@ -51,6 +51,7 @@ internal partial class Binder
         }
         else if (membersWithName.Count == 0)
         {
+            // Not found
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.MemberNotFound,
                 location: syntax.Member.Location,
@@ -59,8 +60,13 @@ internal partial class Binder
         }
         else
         {
-            // TODO: 0 or multiple should give some nice error message
-            throw new NotImplementedException();
+            // Multiple
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalImport,
+                location: syntax.Location,
+                formatArgs: syntax.Member.Text));
+            // NOTE: For now this result is fine
+            return new UndefinedMemberSymbol();
         }
     }
 }

@@ -56,5 +56,14 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "member {0} could not be found in {1}",
         code: Code(5));
+
+    /// <summary>
+    /// A path points to an illegal import.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalImport = DiagnosticTemplate.Create(
+        title: "illegal import",
+        severity: DiagnosticSeverity.Error,
+        format: "the path {0} can not be imported",
+        code: Code(6));
 }
 

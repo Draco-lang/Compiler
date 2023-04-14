@@ -313,16 +313,10 @@ public sealed class SemanticModelTests : SemanticTestsBase
     public void GetPathSymbolsFromImport()
     {
         // import System.Collections.Generic;
-        // func main() { }
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            ImportDeclaration("System", "Collections", "Generic"),
-            FunctionDeclaration(
-                "main",
-                ParameterList(),
-                null,
-                BlockFunctionBody())));
+            ImportDeclaration("System", "Collections", "Generic")));
 
         // Act
 
@@ -336,16 +330,10 @@ public sealed class SemanticModelTests : SemanticTestsBase
     public void GetPathSymbolsFromPartiallyNonExistingImport()
     {
         // import System.Collections.Nonexisting.Foo;
-        // func main() { }
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            ImportDeclaration("System", "Collections", "Nonexisting", "Foo"),
-            FunctionDeclaration(
-                "main",
-                ParameterList(),
-                null,
-                BlockFunctionBody())));
+            ImportDeclaration("System", "Collections", "Nonexisting", "Foo")));
 
         // Act
 

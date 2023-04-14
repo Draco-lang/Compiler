@@ -318,12 +318,31 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var tree = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Generic")));
 
+        var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
+        var systemCollectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(1);
+        var systemCollectionsGenericSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
+
         // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+        var systemCollectionsSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsSyntax));
+        var systemCollectionsGenericSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemCollectionsGenericSyntax));
+
+        var diags = semanticModel.Diagnostics;
 
         // Assert
-
-        // TODO
-        Assert.Fail("We need import elements to actually have some differentiating syntax");
+        Assert.Empty(diags);
+        Assert.NotNull(systemSymbol);
+        Assert.NotNull(systemCollectionsSymbol);
+        Assert.NotNull(systemCollectionsGenericSymbol);
+        Assert.Contains(systemCollectionsSymbol, systemSymbol.Members);
+        Assert.Contains(systemCollectionsGenericSymbol, systemCollectionsSymbol.Members);
     }
 
     [Fact]

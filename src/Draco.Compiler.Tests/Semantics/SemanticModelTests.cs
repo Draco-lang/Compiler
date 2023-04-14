@@ -155,7 +155,6 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
         var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
-        var writeLineSyntax = tree.PreOrderTraverse().OfType<SyntaxToken>().First(t => t.Text == "WriteLine");
 
         // Act
         var compilation = Compilation.Create(
@@ -165,18 +164,16 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var writeLineFromMemberSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
         var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
-        var writeLineFromNameSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(writeLineSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Empty(diags);
-        Assert.NotNull(writeLineFromMemberSymbol);
+        Assert.NotNull(writeLineSymbol);
         Assert.NotNull(consoleSymbol);
-        Assert.Contains(writeLineFromMemberSymbol, consoleSymbol.Members);
-        Assert.Same(writeLineFromMemberSymbol, writeLineFromNameSymbol);
+        Assert.Contains(writeLineSymbol, consoleSymbol.Members);
     }
 
     [Fact]
@@ -200,8 +197,6 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
         var memberSubexprSyntax = tree.FindInChildren<MemberExpressionSyntax>(1);
         var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
-        var consoleSyntax = tree.PreOrderTraverse().OfType<SyntaxToken>().First(t => t.Text == "Console");
-        var writeLineSyntax = tree.PreOrderTraverse().OfType<SyntaxToken>().First(t => t.Text == "WriteLine");
 
         // Act
         var compilation = Compilation.Create(
@@ -211,23 +206,19 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var writeLineFromMemberSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
-        var consoleFromMemberSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubexprSyntax));
+        var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubexprSyntax));
         var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
-        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
-        var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(writeLineSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Empty(diags);
-        Assert.NotNull(writeLineFromMemberSymbol);
-        Assert.NotNull(consoleFromMemberSymbol);
+        Assert.NotNull(writeLineSymbol);
+        Assert.NotNull(consoleSymbol);
         Assert.NotNull(systemSymbol);
-        Assert.Contains(writeLineFromMemberSymbol, consoleSymbol.Members);
+        Assert.Contains(writeLineSymbol, consoleSymbol.Members);
         Assert.Contains(consoleSymbol, systemSymbol.Members);
-        Assert.Same(writeLineFromMemberSymbol, writeLineSymbol);
-        Assert.Same(consoleFromMemberSymbol, consoleSymbol);
     }
 
     [Fact]
@@ -252,11 +243,6 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
         var memberSubexprSyntax = tree.FindInChildren<MemberExpressionSyntax>(1);
         var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
-        var consoleSyntax = tree.PreOrderTraverse().OfType<SyntaxToken>().First(t => t.Text == "Console");
-        var missingNameSyntax = tree
-            .PreOrderTraverse()
-            .OfType<SyntaxToken>()
-            .First(t => t.Kind == TokenKind.Identifier && string.IsNullOrWhiteSpace(t.Text));
 
         // Act
         var compilation = Compilation.Create(
@@ -266,21 +252,19 @@ public sealed class SemanticModelTests : SemanticTestsBase
                 .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var errorFromMemberSymbol = semanticModel.GetReferencedSymbol(memberExprSyntax);
-        var consoleFromMemberSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubexprSyntax));
+        var errorSymbol = semanticModel.GetReferencedSymbol(memberExprSyntax);
+        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubexprSyntax));
         var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
-        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
-        var errorSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(missingNameSyntax));
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Single(diags);
-        Assert.NotNull(errorFromMemberSymbol);
-        Assert.NotNull(consoleFromMemberSymbol);
+        Assert.NotNull(errorSymbol);
+        Assert.NotNull(consoleSymbol);
         Assert.NotNull(systemSymbol);
-        Assert.Contains(consoleFromMemberSymbol, systemSymbol.Members);
-        Assert.Same(consoleFromMemberSymbol, consoleSymbol);
+        Assert.Contains(consoleSymbol, systemSymbol.Members);
+        Assert.True(errorSymbol.IsError);
     }
 
     [Fact]
@@ -304,8 +288,6 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
         var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
-
-        // TODO: We need a way to access 'AppendLine' and test for what it references
 
         // Act
         var compilation = Compilation.Create(

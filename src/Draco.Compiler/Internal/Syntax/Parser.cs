@@ -273,14 +273,28 @@ internal sealed class Parser
         // Import keyword
         var importKeyword = this.Expect(TokenKind.KeywordImport);
         // Path
-        // TODO: This allows an empty path, do we want to allow that?
-        var path = this.ParseSeparatedSyntaxList(
-            elementParser: () => this.Expect(TokenKind.Identifier),
-            separatorKind: TokenKind.Dot,
-            stopKind: TokenKind.Semicolon);
+        var path = this.ParseImportPath();
         // Ending semicolon
         var semicolon = this.Expect(TokenKind.Semicolon);
         return new ImportDeclarationSyntax(importKeyword, path, semicolon);
+    }
+
+    /// <summary>
+    /// Parses an <see cref="ImportPathSyntax"/>.
+    /// </summary>
+    /// <returns>The parsed <see cref="ImportPathSyntax"/>.</returns>
+    private ImportPathSyntax ParseImportPath()
+    {
+        // Root element
+        var rootName = this.Expect(TokenKind.Identifier);
+        var result = new RootImportPathSyntax(rootName) as ImportPathSyntax;
+        // For every dot, we make a member-access
+        while (this.Matches(TokenKind.Dot, out var dot))
+        {
+            var memberName = this.Expect(TokenKind.Identifier);
+            result = new MemberImportPathSyntax(result, dot, memberName);
+        }
+        return result;
     }
 
     /// <summary>

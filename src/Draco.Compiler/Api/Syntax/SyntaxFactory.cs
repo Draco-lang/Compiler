@@ -96,8 +96,12 @@ public static partial class SyntaxFactory
     public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
         CompilationUnit(SyntaxList(decls), EndOfInput);
 
-    public static ImportDeclarationSyntax ImportDeclaration(params string[] path) =>
-        ImportDeclaration(Import, SeparatedSyntaxList(Dot, path.Select(Name)), Semicolon);
+    public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
+        Import,
+        path.Aggregate(
+            RootImportPath(Name(root)) as ImportPathSyntax,
+            (path, member) => MemberImportPath(path, Dot, Name(member))),
+        Semicolon);
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,

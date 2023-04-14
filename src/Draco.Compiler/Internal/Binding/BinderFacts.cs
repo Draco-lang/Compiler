@@ -109,5 +109,7 @@ internal static class BinderFacts
         is NameExpressionSyntax
         or NameTypeSyntax
         or NameLabelSyntax
-        or MemberExpressionSyntax;
+        or MemberExpressionSyntax
+        or RootImportPathSyntax
+        or MemberImportPathSyntax;
 }

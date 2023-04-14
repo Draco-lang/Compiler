@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -13,7 +14,8 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ImportBinder : Binder
 {
-    public override IEnumerable<Symbol> DeclaredSymbols => this.importedSymbols ??= this.BuildImportedSymbols();
+    public override IEnumerable<Symbol> DeclaredSymbols =>
+        this.importedSymbols ??= this.BuildImportedSymbols(this.Compilation.GlobalDiagnosticBag);
 
     public override SyntaxNode DeclaringSyntax { get; }
 
@@ -40,71 +42,26 @@ internal sealed class ImportBinder : Binder
         }
     }
 
-    private ImmutableArray<Symbol> BuildImportedSymbols()
+    private ImmutableArray<Symbol> BuildImportedSymbols(DiagnosticBag diagnostics)
     {
+        // NOTE: We will ask the parent to look up import paths, because the current binder is under construction
+        // If we called the binding of import paths on this, we'd hit infinite recursion
+        Debug.Assert(this.Parent is not null);
+
         var result = ImmutableArray.CreateBuilder<Symbol>();
         foreach (var importSyntax in this.importSyntaxes)
         {
-            var path = importSyntax.Path.Values
-                .Select(v => v.Text)
-                .ToImmutableArray();
-            var symbols = this.ImportPath(path, importSyntax);
-            result.AddRange(symbols);
-        }
-        return result.ToImmutable();
-    }
-
-    private IEnumerable<Symbol> ImportPath(ImmutableArray<string> path, SyntaxNode reference)
-    {
-        if (path.Length == 0) return Enumerable.Empty<Symbol>();
-
-        // TODO: We are dumping into global diagnostics, maybe that's not good...
-        var diagnostics = this.Compilation.GlobalDiagnosticBag;
-        // We look up the first component
-        // NOTE: We don't start the lookup here, as this binder scope is currently being constructed
-        // Calling this.LookupValueSymbol would cause recursion
-        Debug.Assert(this.Parent is not null);
-        var result = this.Parent.LookupValueSymbol(path[0], reference, diagnostics);
-        // Based on the result we start to look up the sub-elements
-        for (var i = 1; i < path.Length; ++i)
-        {
-            var pathElement = path[i];
-            if (result.IsError)
+            var importedSymbol = this.Parent.BindImportPath(importSyntax.Path, diagnostics);
+            if (importedSymbol is not ModuleSymbol)
             {
-                // Error, already reported
-                break;
-            }
-            else if (result is ModuleSymbol module)
-            {
-                // Search for the elements in the module with that name
-                var membersWithName = module.Members
-                    .Where(m => m.Name == pathElement);
-                // Construct a result from it
-                var lookupResult = LookupResult.FromResultSet(membersWithName);
-                // Step forward in the chain
-                result = lookupResult.GetValue(pathElement, reference, diagnostics);
+                // TODO: Error
+                throw new NotImplementedException();
             }
             else
             {
-                // TODO
-                throw new NotImplementedException();
+                result.AddRange(importedSymbol.Members);
             }
         }
-        // We are at the end of the chain, we got something in result
-        if (result.IsError)
-        {
-            // Error, already reported
-            return Enumerable.Empty<Symbol>();
-        }
-        else if (result is ModuleSymbol importedModule)
-        {
-            // We imported a module, we need its contents
-            return importedModule.Members;
-        }
-        else
-        {
-            // TODO
-            throw new NotImplementedException();
-        }
+        return result.ToImmutable();
     }
 }

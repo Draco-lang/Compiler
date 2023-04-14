@@ -44,14 +44,10 @@ internal sealed class ImportBinder : Binder
 
     private ImmutableArray<Symbol> BuildImportedSymbols(DiagnosticBag diagnostics)
     {
-        // NOTE: We will ask the parent to look up import paths, because the current binder is under construction
-        // If we called the binding of import paths on this, we'd hit infinite recursion
-        Debug.Assert(this.Parent is not null);
-
         var result = ImmutableArray.CreateBuilder<Symbol>();
         foreach (var importSyntax in this.importSyntaxes)
         {
-            var importedSymbol = this.Parent.BindImportPath(importSyntax.Path, diagnostics);
+            var importedSymbol = this.BindImportPath(importSyntax.Path, diagnostics);
             if (importedSymbol is not ModuleSymbol)
             {
                 // TODO: Error

@@ -25,8 +25,10 @@ internal partial class Binder
     };
 
     private Symbol BindRootImportPath(RootImportPathSyntax syntax, DiagnosticBag diagnostics) =>
-        // Simple lookup from here
-        this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        // Simple lookup from parent
+        // NOTE: We will ask the parent to look up import paths, because the current binder is under construction
+        // If we called the binding of import paths on this, we'd hit infinite recursion
+        this.Parent!.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
 
     private Symbol BindMemberImportPath(MemberImportPathSyntax syntax, DiagnosticBag diagnostics)
     {

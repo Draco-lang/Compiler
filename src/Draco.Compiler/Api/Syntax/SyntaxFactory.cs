@@ -62,6 +62,9 @@ public static partial class SyntaxFactory
         where TNode : SyntaxNode =>
         WithLeadingTrivia(node, CreateCommentBlockTrivia("///", docs));
 
+    public static SyntaxToken Missing(TokenKind kind) =>
+        Internal.Syntax.SyntaxToken.From(kind, string.Empty).ToRedNode(null!, null);
+
     public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
 

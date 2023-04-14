@@ -179,6 +179,93 @@ public sealed class SemanticModelTests : SemanticTestsBase
     }
 
     [Fact]
+    public void GetReferencedSymbolFromFullyQualifiedName()
+    {
+        // func main() {
+        //     System.Console.WriteLine();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System")),
+                ExpressionStatement(CallExpression(
+                    MemberExpression(
+                        MemberExpression(NameExpression("System"), "Console"),
+                        "WriteLine")))))));
+
+        // var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        // var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // TODO: We need a way to access 'Console' & 'WriteLine' and test for what it references
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        // var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        // var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+
+        // TODO
+        Assert.Fail("Incomplete");
+    }
+
+    [Fact]
+    public void GetReferencedSymbolFromFullyQualifiedIncompleteName()
+    {
+        // func main() {
+        //     System.Console.;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System")),
+                ExpressionStatement(CallExpression(
+                    MemberExpression(
+                        MemberExpression(NameExpression("System"), "Console"),
+                        Dot,
+                        Missing(TokenKind.Identifier))))))));
+
+        // var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        // var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // TODO: We need a way to access 'System' & 'Console' and test for what it references
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        // var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        // var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+
+        // TODO
+        Assert.Fail("Incomplete");
+    }
+
+    [Fact]
     public void GetReferencedSymbolFromTypeMemberAccess()
     {
         // func main() {
@@ -231,6 +318,29 @@ public sealed class SemanticModelTests : SemanticTestsBase
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+
+        // Assert
+
+        // TODO
+        Assert.Fail("We need import elements to actually have some differentiating syntax");
+    }
+
+    [Fact]
+    public void GetPathSymbolsFromPartiallyNonExistingImport()
+    {
+        // import System.Collections.Nonexisting.Foo;
+        // func main() { }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Nonexisting", "Foo"),
             FunctionDeclaration(
                 "main",
                 ParameterList(),

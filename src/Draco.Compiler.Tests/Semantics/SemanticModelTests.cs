@@ -310,6 +310,49 @@ public sealed class SemanticModelTests : SemanticTestsBase
     }
 
     [Fact]
+    public void GetReferencedSymbolFromTypeMemberAccessWithNonExistingMember()
+    {
+        // func main() {
+        //     import System.Text;
+        //     var builder = StringBuilder();
+        //     builder.Ap();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System", "Text")),
+                DeclarationStatement(VariableDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "Ap")))))));
+
+        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
+        var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var appendLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var builderSymbol = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(builderNameSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        // AssertDiagnostic(diags,); TODO
+        Assert.NotNull(appendLineSymbol);
+        Assert.NotNull(builderSymbol);
+        Assert.Contains(appendLineSymbol, builderSymbol.Type.Members);
+    }
+
+    [Fact]
     public void GetPathSymbolsFromImport()
     {
         // import System.Collections.Generic;

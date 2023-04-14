@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Emit;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -204,6 +205,11 @@ public sealed partial class SemanticModel
 
                 var functionBinder = this.GetBinder(function);
                 _ = functionBinder.BindFunction(function, diagnostics);
+
+                if (syntax is ImportPathSyntax importPath)
+                {
+                    _ = functionBinder.BindImportPath(importPath, diagnostics);
+                }
 
                 // Since the parameter types and the return type are in this scope too, bind them
                 var functionSyntax = function.DeclarationSyntax;

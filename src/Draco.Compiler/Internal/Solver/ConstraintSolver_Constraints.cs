@@ -86,12 +86,10 @@ internal sealed partial class ConstraintSolver
 
         if (membersWithName.Count == 0)
         {
-            var diagnostic = constraint.Diagnostic
-                .WithTemplate(SymbolResolutionErrors.NoSuchMember)
-                .WithFormatArgs(constraint.MemberName, this.Unwrap(constraint.Accessed))
-                .Build();
-            diagnostics.Add(diagnostic);
-            constraint.Promise.Resolve(new UndefinedMemberSymbol());
+            constraint.Promise.ConfigureDiagnostic(diag => diag
+                .WithTemplate(SymbolResolutionErrors.MemberNotFound)
+                .WithFormatArgs(constraint.MemberName, this.Unwrap(constraint.Accessed)));
+            constraint.Promise.Fail(new UndefinedMemberSymbol(), diagnostics);
         }
         else if (membersWithName.Count == 1)
         {

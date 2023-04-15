@@ -109,8 +109,8 @@ public static class CompletionService
     {
         TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.MemberAccess, CompletionContext.TypeExpression),
 
-        LocalSymbol loc =>
-            new CompletionItem(symbol.Name, CompletionKind.Variable, type ?? loc.Type.Name, symbol.Documentation, CompletionContext.ExpressionContent),
+        IVariableSymbol @var =>
+            new CompletionItem(symbol.Name, CompletionKind.Variable, type ?? @var.Type.Name, symbol.Documentation, CompletionContext.ExpressionContent),
 
         ModuleSymbol module =>
             new CompletionItem(symbol.Name, CompletionKind.Module, null, symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.ModuleImport, CompletionContext.MemberAccess),

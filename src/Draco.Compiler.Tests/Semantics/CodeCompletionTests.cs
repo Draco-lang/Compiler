@@ -169,6 +169,35 @@ public sealed class CodeCompletionTests
     }
 
     [Fact]
+    public void TestCompletionImportMember()
+    {
+        string code = """
+            import System.Co
+            """;
+        var tree = SyntaxTree.Parse(SourceText.FromText(code));
+        var cursor = new SyntaxPosition(0, 16);
+
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var completions = CompletionService.GetCompletions(tree, semanticModel, cursor).Where(x => x.Text.StartsWith("Co")).ToImmutableArray();
+        var expected = new[]
+        {
+            "CodeDom",
+            "Collections",
+            "ComponentModel",
+            "Configuration",
+            "Console",
+            "Convert",
+        };
+        this.AssertCompletions(completions, expected);
+    }
+
+    [Fact]
     public void TestCompletionImportRoot()
     {
         string code = """

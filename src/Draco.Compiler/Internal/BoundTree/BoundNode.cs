@@ -41,7 +41,7 @@ internal partial class BoundExpression
 {
     public virtual TypeSymbol? Type => null;
 
-    public TypeSymbol TypeRequired => this.Type ?? throw new System.InvalidOperationException();
+    public TypeSymbol TypeRequired => this.Type ?? IntrinsicSymbols.ErrorType;
 }
 
 internal partial class BoundUnexpectedExpression

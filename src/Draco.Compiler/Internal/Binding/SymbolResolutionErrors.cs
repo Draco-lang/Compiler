@@ -65,5 +65,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "the path {0} can not be imported",
         code: Code(6));
-}
 
+    /// <summary>
+    /// A module was used as an expression.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalModuleExpression = DiagnosticTemplate.Create(
+        title: "illegal expression",
+        severity: DiagnosticSeverity.Error,
+        format: "the module {0} is illegal in expression context",
+        code: Code(7));
+}

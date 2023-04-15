@@ -7,18 +7,22 @@ namespace Draco.Compiler.Api.CodeCompletion;
 
 public static class SignatureService
 {
-    // TODO: member signature
     public static SignatureCollection GetSignature(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
+        // Check if this is a call expression
         var call = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault(x => x is CallExpressionSyntax) as CallExpressionSyntax;
         if (call is null) return new SignatureCollection(ImmutableArray<SignatureItem>.Empty, 0, null);
+        // Get all overloads
         var symbols = semanticModel.GetReferencedOverloads(call.Function).Select(x => (FunctionSymbol)x).OrderBy(x => x.Parameters.Length).ToList();
+        // Figure out which param should be active
         var paramCount = call.ArgumentList.Values.Count();
         var separatorCount = call.ArgumentList.Separators.Count();
         var activeParam = separatorCount == paramCount - 1 ? paramCount - 1 : paramCount;
+        // Select the best overload to show as default in the signature
         var matchingOverload = symbols.FirstOrDefault(x => x.Parameters.Length == paramCount && (separatorCount == paramCount - 1 || paramCount == 0));
         if (matchingOverload is null) matchingOverload = symbols.FirstOrDefault(x => x.Parameters.Length > paramCount);
         var activeOverload = matchingOverload is null ? 0 : symbols.IndexOf(matchingOverload);
+        // Return all the overloads
         var result = ImmutableArray.CreateBuilder<SignatureItem>();
         for (int i = 0; i < symbols.Count; i++)
         {

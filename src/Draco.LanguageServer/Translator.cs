@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = Draco.Lsp.Model;

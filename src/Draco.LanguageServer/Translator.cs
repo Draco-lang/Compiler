@@ -87,6 +87,7 @@ internal static class Translator
         CompilerApi.CodeCompletion.CompletionKind.Function => LspModels.CompletionItemKind.Function,
         CompilerApi.CodeCompletion.CompletionKind.Keyword => LspModels.CompletionItemKind.Keyword,
         CompilerApi.CodeCompletion.CompletionKind.Class => LspModels.CompletionItemKind.Class,
+        CompilerApi.CodeCompletion.CompletionKind.Module => LspModels.CompletionItemKind.Module,
         _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
     };
 

@@ -5,5 +5,6 @@ public enum CompletionKind
     Variable,
     Function,
     Class,
+    Module,
     Keyword
 }

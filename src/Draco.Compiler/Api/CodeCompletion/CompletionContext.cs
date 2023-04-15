@@ -6,5 +6,6 @@ public enum CompletionContext
     ExpressionContent,
     TypeExpression,
     MemberAccess,
+    ModuleImport,
     DeclarationKeyword
 }

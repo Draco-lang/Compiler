@@ -45,6 +45,7 @@ internal sealed class IntrinsicFunctionSymbol : FunctionSymbol
 
     public override TypeSymbol ReturnType { get; }
     public override Symbol? ContainingSymbol => null;
+    public override bool IsSpecialName => true;
 
     public override string Name { get; }
 

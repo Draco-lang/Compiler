@@ -47,13 +47,19 @@ public static class CompletionService
     {
         var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
         result = ImmutableArray<ISymbol>.Empty;
-        if (expr is not null
-            && expr is MemberExpressionSyntax member)
+        if (expr is MemberExpressionSyntax member)
         {
             var symbol = semanticModel.GetReferencedSymbol(member.Accessed);
             if (symbol is null) return false;
             if (symbol is ITypedSymbol typeSymbol) result = typeSymbol.Type.Members.ToImmutableArray();
             else result = symbol.Members.ToImmutableArray();
+            return true;
+        }
+        else if (expr is MemberImportPathSyntax import)
+        {
+            var symbol = semanticModel.GetReferencedSymbol(import.Accessed);
+            if (symbol is null) return false;
+            result = symbol.Members.ToImmutableArray();
             return true;
         }
         return false;
@@ -70,6 +76,8 @@ public static class CompletionService
         if (token.Parent is DeclarationSyntax) return new CompletionContext[0];
         // Member access
         else if (token.Parent is MemberExpressionSyntax) return new[] { CompletionContext.MemberAccess };
+        // Import start
+        else if (token.Parent is ImportPathSyntax) return new[] { CompletionContext.ModuleImport }; // TODO: when aliasing this should be just MemberAccess
         // Start of statement inside function
         else if (token.Parent?.Parent is ExpressionStatementSyntax)
         {
@@ -89,7 +97,7 @@ public static class CompletionService
             new CompletionItem(symbol.Name, CompletionKind.Variable, type ?? loc.Type.Name, symbol.Documentation, CompletionContext.ExpressionContent),
 
         ModuleSymbol module =>
-            new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.MemberAccess),
+            new CompletionItem(symbol.Name, CompletionKind.Module, null, symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.ModuleImport, CompletionContext.MemberAccess),
 
         FunctionSymbol fun when !fun.IsSpecialName =>
             new CompletionItem(symbol.Name, CompletionKind.Function, type ?? fun.Type.ToString(), symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.MemberAccess),

@@ -166,7 +166,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
-        var consoleSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
+        var consoleSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleSyntax));
 
         var diags = semanticModel.Diagnostics;
 

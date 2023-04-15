@@ -42,6 +42,7 @@ internal partial class Binder
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
+        // TODO: Untyped module expression
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
 

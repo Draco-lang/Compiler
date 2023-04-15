@@ -374,6 +374,8 @@ internal partial class Binder
         case Symbol when symbol.IsError:
             return new UntypedReferenceErrorExpression(syntax, symbol);
         case ModuleSymbol module:
+            // NOTE: Hack, see the node above this method definition
+            this.BindModuleSyntaxToSymbol(syntax, module);
             return new UntypedModuleExpression(syntax, module);
         case ParameterSymbol param:
             return new UntypedParameterExpression(syntax, param);

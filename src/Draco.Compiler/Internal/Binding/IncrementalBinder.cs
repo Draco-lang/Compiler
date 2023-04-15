@@ -71,6 +71,9 @@ public sealed partial class SemanticModel
         internal override Symbol BindImportPath(ImportPathSyntax syntax, DiagnosticBag diagnostics) =>
             this.LookupNode(syntax, () => base.BindImportPath(syntax, diagnostics));
 
+        internal override void BindModuleSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.ModuleSymbol module) =>
+            this.semanticModel.symbolMap[syntax] = module;
+
         // TODO: There's nothing incremental in this,
         // but current usage doesn't require it either
         private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode node, Func<TBoundNode> binder)

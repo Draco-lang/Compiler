@@ -832,4 +832,76 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleExpression);
     }
+
+    [Fact]
+    public void ImportIsNotAtTheTopOfCompilationUnit()
+    {
+        // func foo() {}
+        // import System;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody()),
+            ImportDeclaration("System")));
+
+        var importPath = tree.FindInChildren<ImportPathSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(importPath));
+
+        // Assert
+        Assert.False(systemSymbol.IsError);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.ImportNotAtTop);
+    }
+
+    [Fact]
+    public void ImportIsNotAtTheTopOfFunctionBody()
+    {
+        // func foo() {
+        //     var x = 0;
+        //     import System;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", null, LiteralExpression(0))),
+                DeclarationStatement(ImportDeclaration("System"))))));
+
+        var importPath = tree.FindInChildren<ImportPathSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(importPath));
+
+        // Assert
+        Assert.False(systemSymbol.IsError);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.ImportNotAtTop);
+    }
 }

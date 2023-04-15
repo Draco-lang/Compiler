@@ -60,7 +60,7 @@ public partial class Program
         }
         catch (Exception e)
         {
-            SetOutputText("IL", "HELLO WORLD." + e.ToString());
+            SetOutputText("IL", e.ToString());
             SetOutputText("IR", e.ToString());
             SetOutputText("Run", e.ToString());
         }

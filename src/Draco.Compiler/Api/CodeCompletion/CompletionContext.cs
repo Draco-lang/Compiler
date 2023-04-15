@@ -5,5 +5,6 @@ public enum CompletionContext
     Unknown,
     ExpressionContent,
     TypeExpression,
+    MemberAccess,
     DeclarationKeyword
 }

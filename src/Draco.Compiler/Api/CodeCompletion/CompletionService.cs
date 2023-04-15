@@ -13,6 +13,7 @@ public static class CompletionService
     {
         // TODO: else
         // TODO: break and continue labels
+        new CompletionItem("import", CompletionKind.Keyword, null, null, CompletionContext.DeclarationKeyword),
         new CompletionItem("var", CompletionKind.Keyword, null, null, CompletionContext.DeclarationKeyword),
         new CompletionItem("val", CompletionKind.Keyword, null, null, CompletionContext.DeclarationKeyword),
         new CompletionItem("func", CompletionKind.Keyword, null, null, CompletionContext.DeclarationKeyword),
@@ -35,7 +36,7 @@ public static class CompletionService
         }
         var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x =>
                 x.Count() == 1 ? GetCompletionItem(x.First()) : GetOverloadedCompletionItem(x.First(), x.Count()));
-        var contexts = GetContexts(tree, cursor);
+        var contexts = GeturrentContexts(tree, cursor);
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
         result.AddRange(keywords.Where(x => x.Context.Intersect(contexts).Count() > 0));
         result.AddRange(completions.Where(x => x is not null && x.Context.Intersect(contexts).Count() > 0)!);
@@ -58,8 +59,7 @@ public static class CompletionService
         return false;
     }
 
-    // TODO: Don't allow keywords in member context
-    private static CompletionContext[] GetContexts(SyntaxTree tree, SyntaxPosition cursor)
+    private static CompletionContext[] GeturrentContexts(SyntaxTree tree, SyntaxPosition cursor)
     {
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
         if (token.Parent is NameTypeSyntax) return new[] { CompletionContext.TypeExpression };
@@ -68,7 +68,9 @@ public static class CompletionService
         if (token.Parent is UnexpectedDeclarationSyntax declaration) return new[] { CompletionContext.DeclarationKeyword };
         // Declaring identifier
         if (token.Parent is DeclarationSyntax) return new CompletionContext[0];
-        // Start of statement in function
+        // Member access
+        else if (token.Parent is MemberExpressionSyntax) return new[] { CompletionContext.MemberAccess };
+        // Start of statement inside function
         else if (token.Parent?.Parent is ExpressionStatementSyntax)
         {
             var result = new List<CompletionContext>() { CompletionContext.ExpressionContent };
@@ -81,16 +83,16 @@ public static class CompletionService
 
     private static CompletionItem? GetCompletionItem(ISymbol symbol, string? type = null) => symbol switch
     {
-        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.TypeExpression),
+        TypeSymbol => new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.MemberAccess, CompletionContext.TypeExpression),
 
         LocalSymbol loc =>
             new CompletionItem(symbol.Name, CompletionKind.Variable, type ?? loc.Type.Name, symbol.Documentation, CompletionContext.ExpressionContent),
 
         ModuleSymbol module =>
-            new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.ExpressionContent),
+            new CompletionItem(symbol.Name, CompletionKind.Class, null, symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.MemberAccess),
 
         FunctionSymbol fun when !fun.IsSpecialName =>
-            new CompletionItem(symbol.Name, CompletionKind.Function, type ?? fun.Type.ToString(), symbol.Documentation, CompletionContext.ExpressionContent),
+            new CompletionItem(symbol.Name, CompletionKind.Function, type ?? fun.Type.ToString(), symbol.Documentation, CompletionContext.ExpressionContent, CompletionContext.MemberAccess),
         _ => null
     };
 

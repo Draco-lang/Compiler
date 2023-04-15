@@ -51,7 +51,7 @@ public static class CompletionService
         {
             var symbol = semanticModel.GetReferencedSymbol(member.Accessed);
             if (symbol is null) return false;
-            if (symbol is ITypedSymbol typeSymbol) result = typeSymbol.Type.Members.ToImmutableArray();
+            if (symbol is ITypedSymbol typed) result = typed.Type.Members.ToImmutableArray();
             else result = symbol.Members.ToImmutableArray();
             return true;
         }

@@ -301,6 +301,13 @@ public sealed partial class SemanticModel
     /// if it does not reference any.</returns>
     public ImmutableArray<ISymbol> GetReferencedOverloads(ExpressionSyntax syntax)
     {
+        if (syntax is MemberExpressionSyntax member)
+        {
+            var accessed = this.GetReferencedSymbol(member.Accessed);
+            if (accessed is null) return ImmutableArray<ISymbol>.Empty;
+            if (accessed is ITypedSymbol typed) return typed.Type.Members.Where(x => x is FunctionSymbol && x.Name == member.Member.Text).ToImmutableArray();
+            else return accessed.Members.Where(x => x is FunctionSymbol && x.Name == syntax.ToString()).ToImmutableArray();
+        }
         // We look up syntax based on the symbol in context
         var binder = this.compilation.GetBinder(syntax);
         var result = ImmutableArray.CreateBuilder<ISymbol>();

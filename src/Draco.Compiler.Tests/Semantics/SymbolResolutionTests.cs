@@ -793,4 +793,43 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(ReferenceEquals(innerBreakRefSym, outerBreakRefSym));
         Assert.False(ReferenceEquals(innerContinueRefSym, outerContinueRefSym));
     }
+
+    [Fact]
+    public void ModuleIsIllegalInExpressionContext()
+    {
+        // func foo() {
+        //     var a = System;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("a", null, NameExpression("System")))))));
+
+        var varDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var moduleRef = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var localSymbol = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(varDecl));
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(moduleRef));
+
+        // Assert
+        Assert.True(localSymbol.Type.IsError);
+        Assert.False(systemSymbol.IsError);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleExpression);
+    }
 }

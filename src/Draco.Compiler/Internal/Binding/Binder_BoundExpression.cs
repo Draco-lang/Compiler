@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -21,6 +22,7 @@ internal partial class Binder
     internal virtual BoundExpression TypeExpression(UntypedExpression expression, ConstraintSolver constraints, DiagnosticBag diagnostics) => expression switch
     {
         UntypedUnexpectedExpression unexpected => new BoundUnexpectedExpression(unexpected.Syntax),
+        UntypedModuleExpression module => this.TypeModuleExpression(module, constraints, diagnostics),
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedStringExpression str => this.TypeStringExpression(str, constraints, diagnostics),
@@ -42,9 +44,18 @@ internal partial class Binder
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
-        // TODO: Untyped module expression
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
+
+    private BoundUnexpectedExpression TypeModuleExpression(UntypedModuleExpression module, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // A module expression is illegal by itself, report it
+        diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.IllegalModuleExpression,
+            location: module.Syntax?.Location,
+            formatArgs: module.Module.Name));
+        return new BoundUnexpectedExpression(module.Syntax);
+    }
 
     private BoundExpression TypeUnitExpression(UntypedUnitExpression unit, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);

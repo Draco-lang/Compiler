@@ -30,7 +30,7 @@ internal partial class UntypedExpression
 {
     public virtual TypeSymbol? Type => null;
 
-    public TypeSymbol TypeRequired => this.Type ?? throw new System.InvalidOperationException();
+    public TypeSymbol TypeRequired => this.Type ?? IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedUnexpectedExpression

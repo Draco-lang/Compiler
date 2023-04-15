@@ -31,7 +31,7 @@ internal sealed partial class DracoLanguageServer : IFindReferences
         {
             var referencingNodes = FindAllReferences(
                 tree: this.syntaxTree,
-            semanticModel: this.semanticModel,
+                semanticModel: this.semanticModel,
                 symbol: referencedSymbol,
                 includeDeclaration: param.Context.IncludeDeclaration,
                 cancellationToken: cancellationToken);

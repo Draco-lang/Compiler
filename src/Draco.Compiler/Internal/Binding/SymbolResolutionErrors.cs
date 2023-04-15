@@ -72,7 +72,7 @@ internal static class SymbolResolutionErrors
     public static readonly DiagnosticTemplate IllegalModuleExpression = DiagnosticTemplate.Create(
         title: "illegal expression",
         severity: DiagnosticSeverity.Error,
-        format: "the module {0} is illegal in expression context",
+        format: "the module name {0} is illegal in expression context",
         code: Code(7));
 
     /// <summary>

@@ -834,6 +834,52 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
+    public void ImportPointsToNonExistingModuleInCompilationUnit()
+    {
+        // import Nonexisting;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("Nonexisting")));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void ImportPointsToNonExistingModuleInFunctionBody()
+    {
+        // func foo() {
+        //     import Nonexisting;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("Nonexisting"))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
     public void ImportIsNotAtTheTopOfCompilationUnit()
     {
         // func foo() {}

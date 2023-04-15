@@ -100,6 +100,18 @@ public sealed partial class SemanticModel
         var syntaxDiagnostics = this.compilation.SyntaxTrees.SelectMany(tree => tree.Diagnostics);
         result.AddRange(syntaxDiagnostics);
 
+        // Enforce import bindings
+        // TODO: This is an awful hack
+        // Maybe we should introduce some "EnforceBinding(DiagnosticBag)" method for bindable things
+        foreach (var import in this.Tree.PreOrderTraverse().OfType<ImportDeclarationSyntax>())
+        {
+            if (this.symbolMap.ContainsKey(import.Path)) continue;
+            // TODO: We are escaping memoization, this is AWFUL
+            var binder = this.compilation.GetBinder(import);
+            while (binder is not ImportBinder) binder = binder.Parent!;
+            _ = binder.DeclaredSymbols;
+        }
+
         // Next, we enforce binding everywhere
         foreach (var symbol in this.compilation.SourceModule.Members)
         {
@@ -206,6 +218,9 @@ public sealed partial class SemanticModel
                 var functionBinder = this.GetBinder(function);
                 _ = functionBinder.BindFunction(function, diagnostics);
 
+                // TODO: This is not even close to correct, the functionBinder is likely not responsible
+                // for binding this syntax
+                // We should retrieve the proper binder
                 if (syntax is ImportPathSyntax importPath)
                 {
                     _ = functionBinder.BindImportPath(importPath, diagnostics);
@@ -243,6 +258,9 @@ public sealed partial class SemanticModel
                 var moduleBinder = this.GetBinder(this.Tree.Root);
                 var diagnostics = this.compilation.GlobalDiagnosticBag;
 
+                // TODO: This is not even close to correct, the moduleBinder is likely not responsible
+                // for binding this syntax
+                // We should retrieve the proper binder
                 if (syntax is ImportPathSyntax importPath)
                 {
                     _ = moduleBinder.BindImportPath(importPath, diagnostics);

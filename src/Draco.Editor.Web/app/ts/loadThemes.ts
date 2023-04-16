@@ -9,7 +9,7 @@ export async function loadThemes() {
     const wasmPromise = loadWASM(onigasmWasm.buffer); // https://www.npmjs.com/package/onigasm;
 
     const choosenTheme = window.localStorage.getItem('theme'); // get previous user theme choice
-    const themes = await (await fetch('themes.json')).json();
+    const themes : unknown = (await (await fetch('themes.json')).json());
     function setTheme(theme: string) {
         try {
             if (theme == 'Default' || theme == null) {
@@ -26,7 +26,7 @@ export async function loadThemes() {
         }
         let selectedTheme = themes[currentTheme];
         if (selectedTheme == undefined) {
-            selectedTheme = Object.values(selectedTheme)[0]; // defensive programming: dark_vs, and light_vs don't exists anymore.
+            selectedTheme = Object.values(themes)[0]; // defensive programming: dark_vs, and light_vs don't exists anymore.
         }
         monaco.editor.defineTheme('dynamic-theme', selectedTheme as monaco.editor.IStandaloneThemeData);
         monaco.editor.setTheme('dynamic-theme');

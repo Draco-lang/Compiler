@@ -231,9 +231,9 @@ public sealed partial class SemanticModel
             if (!isInMap)
             {
                 var diagnostics = this.compilation.GlobalDiagnosticBag;
-                if (!this.symbolMap.ContainsKey(syntax))
-                {
-                    var diagnostics = this.compilation.GlobalDiagnosticBag;
+
+                var functionBinder = this.GetBinder(function);
+                _ = functionBinder.BindFunction(function, diagnostics);
 
                 // TODO: This is not even close to correct, the functionBinder is likely not responsible
                 // for binding this syntax
@@ -264,9 +264,6 @@ public sealed partial class SemanticModel
             if (boundNodes.Count != 1) throw new NotImplementedException();
             // Just return the singleton symbol
             return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
-        }
-                return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
-            }
         }
         case SourceModuleSymbol module:
         {
@@ -309,6 +306,9 @@ public sealed partial class SemanticModel
             // Just return the singleton symbol
             return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
         }
+        default:
+            return null;
+        }
     }
 
     /// <summary>
@@ -341,9 +341,6 @@ public sealed partial class SemanticModel
     {
         var binder = this.compilation.GetBinder(syntax);
         return new IncrementalBinder(binder, this);
-        default:
-            return null;
-        }
     }
 
     private Binder GetBinder(Symbol symbol)

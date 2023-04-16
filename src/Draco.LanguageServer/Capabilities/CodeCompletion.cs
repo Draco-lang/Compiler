@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CompletionService = Draco.Compiler.Api.CodeCompletion.CompletionService;
+using CompletionService_old = Draco.Compiler.Api.CodeCompletion.CompletionService_old;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 
@@ -19,6 +19,6 @@ internal sealed partial class DracoLanguageServer : ICodeCompletion
     public Task<IList<CompletionItem>> CompleteAsync(CompletionParams param, CancellationToken cancellationToken)
     {
         var cursorPosition = Translator.ToCompiler(param.Position);
-        return Task.FromResult<IList<CompletionItem>>(CompletionService.GetCompletions(this.syntaxTree, this.semanticModel, cursorPosition).Select(x => Translator.ToLsp(x)).ToList());
+        return Task.FromResult<IList<CompletionItem>>(CompletionService_old.GetCompletions(this.syntaxTree, this.semanticModel, cursorPosition).Select(x => Translator.ToLsp(x)).ToList());
     }
 }

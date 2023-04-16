@@ -48,11 +48,20 @@ public sealed partial class SemanticModel
     /// <returns>All <see cref="Diagnostic"/>s for <see cref="Tree"/>.</returns>
     private ImmutableArray<Diagnostic> GetDiagnostics(SourceSpan? span = null)
     {
+        var diagnostics = new DiagnosticBag();
+
         var syntaxNodes = span is null
             ? this.Tree.PreOrderTraverse()
             : this.Tree.TraverseSubtreesIntersectingSpan(span.Value);
 
-        // Add all syntax errors
+        foreach (var syntaxNode in syntaxNodes)
+        {
+            // Add syntax diagnostics
+            var syntaxDiagnostics = this.Tree.SyntaxDiagnosticTable.Get(syntaxNode);
+            diagnostics.AddRange(syntaxDiagnostics);
+
+            // TODO
+        }
 
         // For functions:
         //  - parameters

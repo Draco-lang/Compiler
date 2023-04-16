@@ -80,6 +80,8 @@ public sealed class Compilation
     /// </summary>
     public string AssemblyName { get; }
 
+    // TODO: Currently this does NOT include the sources, which might make merging same package names
+    // invalid between metadata and source. For now we don't care.
     /// <summary>
     /// The top-level merged module that contains the source along with references.
     /// </summary>

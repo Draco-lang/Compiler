@@ -123,12 +123,12 @@ internal sealed class BinderCache
     /// the <paramref name="binder"/> itself.</returns>
     private static Binder WrapInImportBinder(Binder binder, SyntaxNode syntax)
     {
-        var importSyntaxes = BinderFacts.EnumerateNodesInSameScope(syntax)
+        var hasImportSyntaxes = BinderFacts.EnumerateNodesInSameScope(syntax)
             .OfType<ImportDeclarationSyntax>()
-            .ToImmutableArray();
-        return importSyntaxes.Length == 0
-            ? binder
-            : new ImportBinder(binder, syntax, importSyntaxes);
+            .Any();
+        return hasImportSyntaxes
+            ? new ImportBinder(binder, syntax)
+            : binder;
     }
 
     /// <summary>

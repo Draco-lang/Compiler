@@ -110,6 +110,5 @@ internal static class BinderFacts
         or NameTypeSyntax
         or NameLabelSyntax
         or MemberExpressionSyntax
-        or RootImportPathSyntax
-        or MemberImportPathSyntax;
+        or ImportPathSyntax;
 }

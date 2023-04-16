@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 
@@ -18,7 +17,3 @@ public record class CompletionItem(TextChange Change, ImmutableArray<ISymbol> Sy
 }
 
 public record class TextChange(SyntaxPosition? Start, int? RemoveLength, string InsertedText);
-
-public record class SignatureItem(string Label, string Documentation, ImmutableArray<string> Parameters);
-
-public record class SignatureCollection(ImmutableArray<SignatureItem> Signatures, int ActiveOverload, int? ActiveParameter);

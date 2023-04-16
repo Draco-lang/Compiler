@@ -341,10 +341,11 @@ public sealed class CodeCompletionTests
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var signatures = SignatureService.GetSignature(tree, semanticModel, cursor);
-        Assert.Single(signatures.Signatures);
-        Assert.Single(signatures.Signatures[0].Parameters);
-        Assert.Equal("func something(x: string): int32", signatures.Signatures[0].Label);
-        Assert.Equal("x", signatures.Signatures[0].Parameters[0]);
+        Assert.NotNull(signatures);
+        Assert.Single(signatures.Overloads);
+        Assert.Single(signatures.Overloads[0].Parameters);
+        Assert.True(signatures.CurrentOverload.Equals(signatures.Overloads[0]));
+        Assert.True(signatures.CurrentParameter.Equals(signatures.Overloads[0].Parameters[0]));
     }
 
     [Fact]
@@ -367,7 +368,8 @@ public sealed class CodeCompletionTests
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var signatures = SignatureService.GetSignature(tree, semanticModel, cursor);
-        Assert.Equal(17, signatures.Signatures.Length);
+        Assert.NotNull(signatures);
+        Assert.Equal(17, signatures.Overloads.Length);
     }
 
     [Fact]
@@ -391,6 +393,7 @@ public sealed class CodeCompletionTests
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var signatures = SignatureService.GetSignature(tree, semanticModel, cursor);
-        Assert.Equal(26, signatures.Signatures.Length);
+        Assert.NotNull(signatures);
+        Assert.Equal(26, signatures.Overloads.Length);
     }
 }

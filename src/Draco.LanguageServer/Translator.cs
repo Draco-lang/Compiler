@@ -67,14 +67,17 @@ internal static class Translator
     {
         var result = new LspModels.CompletionItem()
         {
-            Label = item.Text,
+            Label = item.Change.InsertedText,
             Kind = ToLsp(item.Kind),
-            Detail = item.Type ?? "",
         };
-        if (!string.IsNullOrEmpty(item.Documentation)) result.Documentation = new LspModels.MarkupContent()
+        if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
+        {
+            result.Detail = item.Symbols.Count() == 1 ? typed.Type.ToString() : $"{item.Symbols.Count()} overloads";
+        }
+        if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation)) result.Documentation = new LspModels.MarkupContent()
         {
             Kind = LspModels.MarkupKind.Markdown,
-            Value = item.Documentation,
+            Value = item.Symbols.First().Documentation,
         };
         return result;
     }
@@ -89,21 +92,21 @@ internal static class Translator
         _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
     };
 
-    public static LspModels.SignatureHelp? ToLsp(CompilerApi.CodeCompletion.SignatureCollection item) => new()
+    public static LspModels.SignatureHelp? ToLsp(CompilerApi.CodeCompletion.SignatureItem? item) => item is null ? null : new()
     {
-        Signatures = item.Signatures.Select(x => ToLsp(x)).ToArray(),
-        ActiveParameter = item.ActiveParameter is null ? null : (uint)item.ActiveParameter,
-        ActiveSignature = (uint)item.ActiveOverload
+        Signatures = item.Overloads.Select(x => ToLsp(x)).ToArray(),
+        ActiveParameter = item.CurrentParameter is null ? null : (uint)item.CurrentOverload.Parameters.IndexOf(item.CurrentParameter),
+        ActiveSignature = (uint)item.Overloads.IndexOf(item.CurrentOverload)
     };
 
-    public static LspModels.SignatureInformation ToLsp(CompilerApi.CodeCompletion.SignatureItem item)
+    public static LspModels.SignatureInformation ToLsp(CompilerApi.Semantics.IFunctionSymbol item)
     {
         var result = new LspModels.SignatureInformation()
         {
-            Label = item.Label,
+            Label = $"func {item.Name}({string.Join(", ", item.Parameters.Select(x => $"{x.Name}: {x.Type}"))}): {item.ReturnType}",
             Parameters = item.Parameters.Select(x => new LspModels.ParameterInformation()
             {
-                Label = x,
+                Label = x.Name,
             }).ToList(),
         };
         if (!string.IsNullOrEmpty(item.Documentation)) result.Documentation = new LspModels.MarkupContent()

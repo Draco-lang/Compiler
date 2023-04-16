@@ -392,6 +392,7 @@ internal partial class Binder
                 .WithLocation(syntax.Location));
             return new UntypedFunctionExpression(syntax, promise, callSite);
         }
+        // TODO: System.Collections.Stack throws here
         default:
             throw new InvalidOperationException();
         }

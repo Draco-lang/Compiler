@@ -69,6 +69,13 @@ public abstract class SourceText
     internal abstract SyntaxPosition IndexToSyntaxPosition(int index);
 
     /// <summary>
+    /// Translates a syntax position into a 0-based index.
+    /// </summary>
+    /// <param name="position">The index to translate.</param>
+    /// <returns>The index equivalent to <paramref name="position"/>.</returns>
+    internal abstract int SyntaxPositionToIndex(SyntaxPosition position);
+
+    /// <summary>
     /// Translatesd a source span into a syntax range.
     /// </summary>
     /// <param name="span">The source span to translate.</param>
@@ -76,4 +83,16 @@ public abstract class SourceText
     internal SyntaxRange SourceSpanToSyntaxRange(SourceSpan span) => new(
         Start: this.IndexToSyntaxPosition(span.Start),
         End: this.IndexToSyntaxPosition(span.End));
+
+    /// <summary>
+    /// Translatesd a syntax range into a source span.
+    /// </summary>
+    /// <param name="range">The range to translate.</param>
+    /// <returns>The source span equivalent to <paramref name="range"/>.</returns>
+    internal SourceSpan SyntaxRangeToSourceSpan(SyntaxRange range)
+    {
+        var start = this.SyntaxPositionToIndex(range.Start);
+        var end = this.SyntaxPositionToIndex(range.End);
+        return new(Start: start, Length: end - start);
+    }
 }

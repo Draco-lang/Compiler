@@ -27,7 +27,7 @@ public sealed partial class SemanticModel
     /// <summary>
     /// All <see cref="Diagnostic"/>s in this model.
     /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics ??= this.GetAllDiagnostics();
+    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics ??= this.GetDiagnostics();
     private ImmutableArray<Diagnostic>? diagnostics;
 
     private readonly Compilation compilation;
@@ -48,6 +48,10 @@ public sealed partial class SemanticModel
     /// <returns>All <see cref="Diagnostic"/>s for <see cref="Tree"/>.</returns>
     private ImmutableArray<Diagnostic> GetDiagnostics(SourceSpan? span = null)
     {
+        var syntaxNodes = span is null
+            ? this.Tree.PreOrderTraverse()
+            : this.Tree.TraverseSubtreesIntersectingSpan(span.Value);
+
         // Add all syntax errors
 
         // For functions:

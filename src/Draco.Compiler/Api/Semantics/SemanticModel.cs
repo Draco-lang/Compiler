@@ -40,7 +40,6 @@ public sealed partial class SemanticModel
         this.compilation = compilation;
     }
 
-    // TODO: This isn't exactly retrieving the diags only for this tree...
     /// <summary>
     /// Retrieves all semantic <see cref="Diagnostic"/>s.
     /// </summary>

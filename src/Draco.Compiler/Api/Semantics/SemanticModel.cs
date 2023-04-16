@@ -41,11 +41,15 @@ public sealed partial class SemanticModel
     }
 
     /// <summary>
-    /// Retrieves all semantic <see cref="Diagnostic"/>s.
+    /// Retrieves all <see cref="Diagnostic"/>s.
     /// </summary>
-    /// <returns>All <see cref="Diagnostic"/>s produced during semantic analysis.</returns>
-    private ImmutableArray<Diagnostic> GetAllDiagnostics()
+    /// <param name="span">The span to retrieve the diagnostics in. If null, it retrieves all diagnostics
+    /// regardless of the location.</param>
+    /// <returns>All <see cref="Diagnostic"/>s for <see cref="Tree"/>.</returns>
+    private ImmutableArray<Diagnostic> GetDiagnostics(SourceSpan? span = null)
     {
+        // Add all syntax errors
+
         // For functions:
         //  - parameters
         //  - return type

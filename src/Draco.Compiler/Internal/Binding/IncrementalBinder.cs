@@ -29,6 +29,8 @@ public sealed partial class SemanticModel
 
         public override Symbol? ContainingSymbol => this.UnderlyingBinder.ContainingSymbol;
 
+        public override SyntaxNode? DeclaringSyntax => this.UnderlyingBinder.DeclaringSyntax;
+
         public override IEnumerable<Symbol> DeclaredSymbols => this.UnderlyingBinder.DeclaredSymbols;
 
         private readonly SemanticModel semanticModel;
@@ -65,6 +67,12 @@ public sealed partial class SemanticModel
 
         internal override Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) =>
             this.LookupNode(syntax, () => base.BindType(syntax, diagnostics));
+
+        internal override Symbol BindImportPath(ImportPathSyntax syntax, DiagnosticBag diagnostics) =>
+            this.LookupNode(syntax, () => base.BindImportPath(syntax, diagnostics));
+
+        internal override void BindModuleSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.ModuleSymbol module) =>
+            this.semanticModel.symbolMap[syntax] = module;
 
         // TODO: There's nothing incremental in this,
         // but current usage doesn't require it either

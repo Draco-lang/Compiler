@@ -1,0 +1,35 @@
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://draco-lang.com/symbols/well-known-types"
+  xmlns="http://draco-lang.com/symbols/well-known-types"
+  attributeFormDefault="unqualified"
+  elementFormDefault="qualified">
+
+  <xs:element name="WellKnownTypes" type="WellKnownTypesType" />
+
+  <xs:complexType name="WellKnownTypesType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="Assembly" type="AssemblyType" />
+      <xs:element name="Type" type="TypeType" />
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="AssemblyType">
+    <xs:attribute name="Name" type="xs:string" use="required" />
+    <!-- Only allow 16 characters of hex string -->
+    <xs:attribute name="PublicKeyToken" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:pattern value="[0-9a-fA-F]{16}" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="TypeType">
+    <xs:attribute name="Name" type="xs:string" use="required" />
+    <xs:attribute name="Assembly" type="xs:string" use="required" />
+    <xs:attribute name="Symbol" type="xs:string" use="optional" />
+  </xs:complexType>
+
+</xs:schema>

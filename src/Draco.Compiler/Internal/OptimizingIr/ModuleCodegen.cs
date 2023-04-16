@@ -25,12 +25,14 @@ internal sealed class ModuleCodegen : SymbolVisitor
         return codegen.assembly;
     }
 
+    private readonly Compilation compilation;
     private readonly Assembly assembly;
     private readonly FunctionBodyCodegen globalInitializer;
     private readonly bool emitSequencePoints;
 
     private ModuleCodegen(Compilation compilation, ModuleSymbol module, bool emitSequencePoints)
     {
+        this.compilation = compilation;
         this.assembly = new(module)
         {
             Name = compilation.AssemblyName,
@@ -98,8 +100,6 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // If needed, inject sequence points
         if (this.emitSequencePoints) body = SequencePointInjector.Inject(body);
         // Desugar it
-        body = LocalRewriter.Rewrite(body);
-        // Done
-        return body;
+        return body.Accept(new LocalRewriter(this.compilation));
     }
 }

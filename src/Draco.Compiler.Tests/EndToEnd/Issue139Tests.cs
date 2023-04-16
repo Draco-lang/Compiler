@@ -167,11 +167,20 @@ public sealed class Issue139Tests
     [InlineData(""""
         6w08'\
         """")]
+    [InlineData(""""
+        func main() {
+            System
+        }
+        """")]
     [Theory]
     public void DoesNotCrash(string source)
     {
         var syntaxTree = SyntaxTree.Parse(source);
-        var compilation = Compilation.Create(ImmutableArray.Create(syntaxTree));
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
         _ = compilation.Diagnostics.ToList();
         compilation.Emit(peStream: new MemoryStream());
     }

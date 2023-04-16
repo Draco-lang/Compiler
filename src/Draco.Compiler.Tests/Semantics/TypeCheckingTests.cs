@@ -3,7 +3,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
@@ -35,7 +35,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Equal(IntrinsicTypes.Int32, xSym.Type);
+        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
         Assert.False(xSym.Type.IsError);
@@ -241,7 +241,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
     }
 
     [Fact]
@@ -285,7 +285,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int32);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
     }
 
     [Fact]
@@ -587,8 +587,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(IntrinsicTypes.Int32, xSym.Type);
-        Assert.Equal(IntrinsicTypes.Int32, ySym.Type);
+        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(IntrinsicSymbols.Int32, ySym.Type);
     }
 
     [Fact]
@@ -619,7 +619,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
 
         // Assert
-        Assert.Equal(IntrinsicTypes.Error, xSym.Type);
+        Assert.Equal(IntrinsicSymbols.ErrorType, xSym.Type);
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
     }

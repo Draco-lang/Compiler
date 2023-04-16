@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Emit;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -99,8 +100,20 @@ public sealed partial class SemanticModel
         var syntaxDiagnostics = this.compilation.SyntaxTrees.SelectMany(tree => tree.Diagnostics);
         result.AddRange(syntaxDiagnostics);
 
+        // Enforce import bindings
+        // TODO: This is an awful hack
+        // Maybe we should introduce some "EnforceBinding(DiagnosticBag)" method for bindable things
+        foreach (var import in this.Tree.PreOrderTraverse().OfType<ImportDeclarationSyntax>())
+        {
+            if (this.symbolMap.ContainsKey(import.Path)) continue;
+            // TODO: We are escaping memoization, this is AWFUL
+            var binder = this.compilation.GetBinder(import);
+            while (binder is not ImportBinder) binder = binder.Parent!;
+            _ = binder.DeclaredSymbols;
+        }
+
         // Next, we enforce binding everywhere
-        foreach (var symbol in this.compilation.GlobalModule.Members)
+        foreach (var symbol in this.compilation.SourceModule.Members)
         {
             if (symbol is SourceFunctionSymbol func)
             {
@@ -197,71 +210,65 @@ public sealed partial class SemanticModel
         {
         case SourceFunctionSymbol function:
         {
-            // If the syntax binds to a symbol directly, we check that map
-            if (BindsToSymbol(syntax))
+            var isInMap = this.symbolMap.ContainsKey(syntax) || this.syntaxMap.ContainsKey(syntax);
+            if (!isInMap)
             {
-                // If not cached, bind the function body
-                if (!this.symbolMap.ContainsKey(syntax))
+                var diagnostics = this.compilation.GlobalDiagnosticBag;
+
+                var functionBinder = this.GetBinder(function);
+                _ = functionBinder.BindFunction(function, diagnostics);
+
+                // TODO: This is not even close to correct, the functionBinder is likely not responsible
+                // for binding this syntax
+                // We should retrieve the proper binder
+                if (syntax is ImportPathSyntax importPath)
                 {
-                    var diagnostics = this.compilation.GlobalDiagnosticBag;
-
-                    var functionBinder = this.GetBinder(function);
-                    _ = functionBinder.BindFunction(function, diagnostics);
-
-                    // Since the parameter types and the return type are in this scope too, bind them
-                    var functionSyntax = function.DeclarationSyntax;
-                    // Parameters
-                    foreach (var param in functionSyntax.ParameterList.Values)
-                    {
-                        _ = functionBinder.BindType(param.Type, diagnostics);
-                    }
-                    // Return type
-                    if (functionSyntax.ReturnType is not null)
-                    {
-                        _ = functionBinder.BindType(functionSyntax.ReturnType.Type, diagnostics);
-                    }
+                    _ = functionBinder.BindImportPath(importPath, diagnostics);
                 }
 
-                // Now the syntax node should be in the map
-                return this.symbolMap.TryGetValue(syntax, out var symbol)
-                    ? symbol.ToApiSymbol()
-                    : null;
-            }
-            else
-            {
-                // Binds to a bound node
-                // If not cached, bind function body
-                if (!this.syntaxMap.ContainsKey(syntax))
+                // Since the parameter types and the return type are in this scope too, bind them
+                var functionSyntax = function.DeclarationSyntax;
+                // Parameters
+                foreach (var param in functionSyntax.ParameterList.Values)
                 {
-                    var diagnostics = this.compilation.GlobalDiagnosticBag;
-                    var functionBinder = this.GetBinder(function);
-                    _ = functionBinder.BindFunction(function, diagnostics);
+                    _ = functionBinder.BindType(param.Type, diagnostics);
                 }
-
-                // Now the syntax node should be in the map
-                if (!this.syntaxMap.TryGetValue(syntax, out var boundNodes)) return null;
-
-                // TODO: We need to deal with potential multiple returns here
-                if (boundNodes.Count != 1) throw new NotImplementedException();
-
-                // Just return the singleton symbol
-                return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
+                // Return type
+                if (functionSyntax.ReturnType is not null)
+                {
+                    _ = functionBinder.BindType(functionSyntax.ReturnType.Type, diagnostics);
+                }
             }
+
+            // Now the syntax node should be in the map
+            if (this.symbolMap.TryGetValue(syntax, out var symbol)) return symbol.ToApiSymbol();
+            if (!this.syntaxMap.TryGetValue(syntax, out var boundNodes)) return null;
+            // TODO: We need to deal with potential multiple returns here
+            if (boundNodes.Count != 1) throw new NotImplementedException();
+            // Just return the singleton symbol
+            return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
         }
         case SourceModuleSymbol module:
         {
-            var isInMap = BindsToSymbol(syntax)
-                ? this.symbolMap.ContainsKey(syntax)
-                : this.syntaxMap.ContainsKey(syntax);
+            var isInMap = this.symbolMap.ContainsKey(syntax) || this.syntaxMap.ContainsKey(syntax);
             if (!isInMap)
             {
                 // We don't have a choice, we need to go through top-level module elements
                 // and bind everything incrementally
-                var moduleBinder = this.GetBinder(module);
+                var moduleBinder = this.GetBinder(this.Tree.Root);
                 var diagnostics = this.compilation.GlobalDiagnosticBag;
-                foreach (var symbol in module.Members)
+
+                // TODO: This is not even close to correct, the moduleBinder is likely not responsible
+                // for binding this syntax
+                // We should retrieve the proper binder
+                if (syntax is ImportPathSyntax importPath)
                 {
-                    switch (symbol)
+                    _ = moduleBinder.BindImportPath(importPath, diagnostics);
+                }
+
+                foreach (var member in module.Members)
+                {
+                    switch (member)
                     {
                     case SourceGlobalSymbol global:
                     {
@@ -275,26 +282,22 @@ public sealed partial class SemanticModel
             }
 
             // Now the syntax node should be in the appropriate map
-            if (BindsToSymbol(syntax))
-            {
-                return this.symbolMap.TryGetValue(syntax, out var symbol)
-                    ? symbol.ToApiSymbol()
-                    : null;
-            }
-            else
-            {
-                if (!this.syntaxMap.TryGetValue(syntax, out var boundNodes)) return null;
-
-                // TODO: We need to deal with potential multiple returns here
-                if (boundNodes.Count != 1) throw new NotImplementedException();
-
-                // Just return the singleton symbol
-                return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
-            }
+            if (this.symbolMap.TryGetValue(syntax, out var symbol)) return symbol.ToApiSymbol();
+            if (!this.syntaxMap.TryGetValue(syntax, out var boundNodes)) return null;
+            // TODO: We need to deal with potential multiple returns here
+            if (boundNodes.Count != 1) throw new NotImplementedException();
+            // Just return the singleton symbol
+            return ExtractReferencedSymbol(boundNodes[0])?.ToApiSymbol();
         }
         default:
             return null;
         }
+    }
+
+    private Binder GetBinder(SyntaxNode syntax)
+    {
+        var binder = this.compilation.GetBinder(syntax);
+        return new IncrementalBinder(binder, this);
     }
 
     private Binder GetBinder(Symbol symbol)
@@ -302,8 +305,6 @@ public sealed partial class SemanticModel
         var binder = this.compilation.GetBinder(symbol);
         return new IncrementalBinder(binder, this);
     }
-
-    private static bool BindsToSymbol(SyntaxNode syntax) => syntax is TypeSyntax or LabelSyntax;
 
     private static Symbol ExtractDefinedSymbol(BoundNode node) => node switch
     {
@@ -321,6 +322,7 @@ public sealed partial class SemanticModel
         BoundReferenceErrorExpression e => e.Symbol,
         BoundLocalLvalue l => l.Local,
         BoundGlobalLvalue g => g.Global,
+        BoundMemberExpression m => m.Member,
         BoundIllegalLvalue => null,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };

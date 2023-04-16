@@ -58,6 +58,8 @@ internal sealed class LocalBinder : Binder
         }
     }
 
+    public override SyntaxNode DeclaringSyntax { get; }
+
     public override IEnumerable<Symbol> DeclaredSymbols => this.Declarations
         .Concat(this.LocalDeclarations.Select(d => d.Symbol));
 
@@ -67,8 +69,6 @@ internal sealed class LocalBinder : Binder
     private ImmutableArray<Symbol> declarations;
     private ImmutableArray<LocalDeclaration> localDeclarations;
 
-    private readonly SyntaxNode syntax;
-
     public LocalBinder(Binder parent, SyntaxNode syntax)
         : base(parent)
     {
@@ -76,7 +76,7 @@ internal sealed class LocalBinder : Binder
         {
             throw new ArgumentException("the bound syntax must define a scope for local binding", nameof(syntax));
         }
-        this.syntax = syntax;
+        this.DeclaringSyntax = syntax;
     }
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
@@ -114,7 +114,7 @@ internal sealed class LocalBinder : Binder
         var declarationsBuilder = ImmutableArray.CreateBuilder<Symbol>();
         var localDeclarationsBuilder = ImmutableArray.CreateBuilder<LocalDeclaration>();
         var position = 0;
-        foreach (var syntax in EnumerateNodesInSameScope(this.syntax))
+        foreach (var syntax in EnumerateNodesInSameScope(this.DeclaringSyntax))
         {
             // First off, we add to the position translator
             relativePositionsBuilder.Add(syntax, position);
@@ -154,22 +154,6 @@ internal sealed class LocalBinder : Binder
         _ => null,
     };
 
-    private static IEnumerable<SyntaxNode> EnumerateNodesInSameScope(SyntaxNode tree)
-    {
-        // We go through each child of the current tree
-        foreach (var child in tree.Children)
-        {
-            // We skip tokens
-            if (child is SyntaxToken) continue;
-
-            // We yield the child first
-            yield return child;
-
-            // If the child defines a scope, we don't recurse
-            if (BinderFacts.DefinesScope(child)) continue;
-
-            // Otherwise, we can recurse
-            foreach (var item in EnumerateNodesInSameScope(child)) yield return item;
-        }
-    }
+    private static IEnumerable<SyntaxNode> EnumerateNodesInSameScope(SyntaxNode tree) =>
+        BinderFacts.EnumerateNodesInSameScope(tree).Where(tree => tree is not SyntaxToken);
 }

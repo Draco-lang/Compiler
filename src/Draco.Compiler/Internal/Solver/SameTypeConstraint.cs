@@ -1,4 +1,4 @@
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -10,19 +10,19 @@ internal sealed class SameTypeConstraint : Constraint
     /// <summary>
     /// The first type that has to be the same as <see cref="Second"/>.
     /// </summary>
-    public Type First { get; }
+    public TypeSymbol First { get; }
 
     /// <summary>
     /// The second type that has to be the same as <see cref="First"/>.
     /// </summary>
-    public Type Second { get; }
+    public TypeSymbol Second { get; }
 
     /// <summary>
     /// The promise of this constraint.
     /// </summary>
-    public ConstraintPromise<Type> Promise { get; }
+    public ConstraintPromise<TypeSymbol> Promise { get; }
 
-    public SameTypeConstraint(Type first, Type second)
+    public SameTypeConstraint(TypeSymbol first, TypeSymbol second)
     {
         this.First = first;
         this.Second = second;

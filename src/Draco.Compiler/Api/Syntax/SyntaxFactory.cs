@@ -62,6 +62,9 @@ public static partial class SyntaxFactory
         where TNode : SyntaxNode =>
         WithLeadingTrivia(node, CreateCommentBlockTrivia("///", docs));
 
+    public static SyntaxToken Missing(TokenKind kind) =>
+        Internal.Syntax.SyntaxToken.From(kind, string.Empty).ToRedNode(null!, null);
+
     public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
 
@@ -92,6 +95,13 @@ public static partial class SyntaxFactory
         CompilationUnit(SyntaxList(decls), EndOfInput);
     public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
         CompilationUnit(SyntaxList(decls), EndOfInput);
+
+    public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
+        Import,
+        path.Aggregate(
+            RootImportPath(Name(root)) as ImportPathSyntax,
+            (path, member) => MemberImportPath(path, Dot, Name(member))),
+        Semicolon);
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
@@ -178,6 +188,10 @@ public static partial class SyntaxFactory
         ExpressionSyntax called,
         params ExpressionSyntax[] args) => CallExpression(called, args.AsEnumerable());
 
+    public static MemberExpressionSyntax MemberExpression(
+        ExpressionSyntax accessed,
+        string member) => MemberExpression(accessed, Dot, Name(member));
+
     public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(Return, value);
     public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(Name(label)));
 
@@ -197,7 +211,9 @@ public static partial class SyntaxFactory
     public static SyntaxToken Assign { get; } = MakeToken(TokenKind.Assign);
     public static SyntaxToken Comma { get; } = MakeToken(TokenKind.Comma);
     public static SyntaxToken Colon { get; } = MakeToken(TokenKind.Colon);
+    public static SyntaxToken Dot { get; } = MakeToken(TokenKind.Dot);
     public static SyntaxToken Semicolon { get; } = MakeToken(TokenKind.Semicolon);
+    public static SyntaxToken Import { get; } = MakeToken(TokenKind.KeywordImport);
     public static SyntaxToken Return { get; } = MakeToken(TokenKind.KeywordReturn);
     public static SyntaxToken If { get; } = MakeToken(TokenKind.KeywordIf);
     public static SyntaxToken While { get; } = MakeToken(TokenKind.KeywordWhile);

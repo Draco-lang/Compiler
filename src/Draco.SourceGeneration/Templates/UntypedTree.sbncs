@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.UntypedTree;
 

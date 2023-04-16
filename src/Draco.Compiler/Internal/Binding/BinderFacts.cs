@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -18,7 +19,8 @@ internal static class BinderFacts
         is LocalSymbol
         or UntypedLocalSymbol
         or GlobalSymbol
-        or FunctionSymbol;
+        or FunctionSymbol
+        or ModuleSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a type-context.
@@ -26,7 +28,8 @@ internal static class BinderFacts
     /// <param name="symbol">The symbol to check.</param>
     /// <returns>True, if <paramref name="symbol"/> can be referenced in a type-context.</returns>
     public static bool IsTypeSymbol(Symbol symbol) => symbol
-        is TypeSymbol;
+        is TypeSymbol
+        or ModuleSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a label-context.
@@ -51,6 +54,27 @@ internal static class BinderFacts
             if (result is null) return null;
         }
         return result;
+    }
+
+    /// <summary>
+    /// Enumerates the subtree that does not cross scope boundaries.
+    /// </summary>
+    /// <param name="tree">The subtree to enumerate.</param>
+    /// <returns>The iterator over <paramref name="tree"/>.</returns>
+    public static IEnumerable<SyntaxNode> EnumerateNodesInSameScope(SyntaxNode tree)
+    {
+        // We go through each child of the current tree
+        foreach (var child in tree.Children)
+        {
+            // We yield the child first
+            yield return child;
+
+            // If the child defines a scope, we don't recurse
+            if (DefinesScope(child)) continue;
+
+            // Otherwise, we can recurse
+            foreach (var item in EnumerateNodesInSameScope(child)) yield return item;
+        }
     }
 
     /// <summary>
@@ -84,5 +108,7 @@ internal static class BinderFacts
     public static bool ReferencesSymbol(SyntaxNode node) => node
         is NameExpressionSyntax
         or NameTypeSyntax
-        or NameLabelSyntax;
+        or NameLabelSyntax
+        or MemberExpressionSyntax
+        or ImportPathSyntax;
 }

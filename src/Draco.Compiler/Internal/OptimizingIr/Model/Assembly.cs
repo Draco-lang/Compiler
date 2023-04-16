@@ -3,7 +3,6 @@ using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -46,10 +45,10 @@ internal sealed class Assembly : IAssembly
     public Assembly(ModuleSymbol symbol)
     {
         this.Symbol = symbol;
-        this.GlobalInitializer = this.DefineProcedure(new SynthetizedFunctionSymbol(
+        this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
             name: "<global initializer>",
-            paramTypes: Enumerable.Empty<Type>(),
-            returnType: IntrinsicTypes.Unit));
+            paramTypes: Enumerable.Empty<TypeSymbol>(),
+            returnType: IntrinsicSymbols.Unit));
     }
 
     public Global DefineGlobal(GlobalSymbol globalSymbol)

@@ -66,7 +66,7 @@ internal static class MetadataSymbol
             var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
             foreach (var param in ctorSymbol.Parameters)
             {
-                var paramSym = new SynthetizedParameterSymbol(param.Type);
+                var paramSym = new SynthetizedParameterSymbol(param.Name, param.Type);
                 parameters.Add(paramSym);
             }
 

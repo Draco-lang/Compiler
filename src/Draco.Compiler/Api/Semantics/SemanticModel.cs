@@ -11,6 +11,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -31,7 +32,10 @@ public sealed partial class SemanticModel
     private ImmutableArray<Diagnostic>? diagnostics;
 
     private readonly Compilation compilation;
-    private readonly Dictionary<SyntaxNode, IList<BoundNode>> boundNodeMap = new();
+
+    // Filled out by incremental binding
+    private readonly Dictionary<SyntaxNode, UntypedNode> untypedNodeMap = new();
+    private readonly Dictionary<UntypedNode, BoundNode> boundNodeMap = new();
     private readonly Dictionary<SyntaxNode, Symbol> symbolMap = new();
 
     internal SemanticModel(Compilation compilation, SyntaxTree tree)

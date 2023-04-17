@@ -7,17 +7,24 @@ namespace Draco.Compiler.Api.CodeCompletion;
 
 public sealed class SemanticCompletionProvider : CompletionProvider
 {
-    internal override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
+    internal override CompletionContext[] ValidContexts { get; } = new[]
+    {
+        CompletionContext.ExpressionContent,
+        CompletionContext.MemberAccess,
+        CompletionContext.TypeExpression,
+        CompletionContext.ModuleImport
+    };
+
+    internal override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts)
     {
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols))
         {
             symbols = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last());
         }
         var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray()));
-        var contexts = this.GetCurrentContexts(tree, cursor);
 
         // If the current valid contexts intersect with contexts of given completion, we add it to the result
-        return completions.Where(x => x is not null && x.Context.Intersect(contexts).Count() > 0).ToImmutableArray()!;
+        return completions.Where(x => x is not null && x.Context.Intersect(currentContexts).Count() > 0).ToImmutableArray()!;
     }
 
     private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<ISymbol> result)

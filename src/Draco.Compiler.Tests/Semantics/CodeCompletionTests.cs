@@ -133,11 +133,14 @@ public sealed class CodeCompletionTests
         var expected = new[]
         {
             "Console",
-            "ConsoleCancelEventArgs",
-            "ConsoleCancelEventHandler",
+            "ConsoleCancelEventArgs", // The actuall type
+            "ConsoleCancelEventArgs", // Its ctor
+            "ConsoleCancelEventHandler", // The actuall type
+            "ConsoleCancelEventHandler", // Its ctor
             "ConsoleColor",
             "ConsoleKey",
-            "ConsoleKeyInfo",
+            "ConsoleKeyInfo", // The actuall type
+            "ConsoleKeyInfo", // Its ctor
             "ConsoleModifiers",
             "ConsoleSpecialKey"
         };
@@ -166,11 +169,14 @@ public sealed class CodeCompletionTests
         var expected = new[]
         {
             "Console",
-            "ConsoleCancelEventArgs",
-            "ConsoleCancelEventHandler",
+            "ConsoleCancelEventArgs", // The actuall type
+            "ConsoleCancelEventArgs", // Its ctor
+            "ConsoleCancelEventHandler", // The actuall type
+            "ConsoleCancelEventHandler", // Its ctor
             "ConsoleColor",
             "ConsoleKey",
-            "ConsoleKeyInfo",
+            "ConsoleKeyInfo", // The actuall type
+            "ConsoleKeyInfo", // Its ctor
             "ConsoleModifiers",
             "ConsoleSpecialKey"
         };

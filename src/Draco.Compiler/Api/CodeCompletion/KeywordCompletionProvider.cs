@@ -7,6 +7,12 @@ namespace Draco.Compiler.Api.CodeCompletion;
 
 public sealed class KeywordCompletionProvider : CompletionProvider
 {
+    internal override CompletionContext[] ValidContexts { get; } = new[]
+    {
+        CompletionContext.DeclarationKeyword,
+        CompletionContext.ExpressionContent
+    };
+
     private CompletionItem[] keywords = new[]
     {
         // TODO: else
@@ -27,6 +33,6 @@ public sealed class KeywordCompletionProvider : CompletionProvider
         CompletionItem.Create("rem", CompletionKind.Keyword, CompletionContext.ExpressionContent),
     };
 
-    internal override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor) =>
-        this.keywords.Where(x => x.Context.Intersect(this.GetCurrentContexts(tree, cursor)).Count() > 0).ToImmutableArray();
+    internal override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts) =>
+        this.keywords.Where(x => x.Context.Intersect(currentContexts).Count() > 0).ToImmutableArray();
 }

@@ -123,15 +123,18 @@ public sealed partial class SemanticModel
     // Instead we could just always return a nullable or an error symbol when appropriate
 
     /// <summary>
-    /// Retrieves the <see cref="ISymbol"/> defined by <paramref name="syntax"/>.
+    /// Retrieves the <see cref="ISymbol"/> declared by <paramref name="syntax"/>.
     /// </summary>
     /// <param name="syntax">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="syntax"/>, or null if it does not
-    /// define any.</returns>
-    public ISymbol? GetDefinedSymbol(SyntaxNode syntax)
+    /// declared any.</returns>
+    public ISymbol? GetDeclaredSymbol(SyntaxNode syntax)
     {
-        // TODO
-        throw new NotImplementedException();
+        switch (syntax)
+        {
+        default:
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -142,8 +145,31 @@ public sealed partial class SemanticModel
     /// if it does not reference any.</returns>
     public ISymbol? GetReferencedSymbol(SyntaxNode syntax)
     {
-        // TODO
-        throw new NotImplementedException();
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing?.ToApiSymbol();
+
+        void BindEnclosing()
+        {
+            var binder = this.GetBinder(syntax);
+            var containingSymbol = binder.ContainingSymbol;
+            switch (containingSymbol)
+            {
+            default:
+                throw new NotImplementedException();
+            }
+        }
+
+        switch (syntax)
+        {
+        case MemberExpressionSyntax:
+        {
+            // Bind the enclosing entity
+            BindEnclosing();
+            return this.symbolMap[syntax]?.ToApiSymbol();
+        }
+        default:
+            // TODO
+            throw new NotImplementedException();
+        }
     }
 
     private Binder GetBinder(SyntaxNode syntax)

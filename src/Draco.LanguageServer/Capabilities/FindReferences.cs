@@ -22,7 +22,7 @@ internal sealed partial class DracoLanguageServer : IFindReferences
 
         var referencedSymbol = this.syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(symbol => this.semanticModel.GetReferencedSymbol(symbol) ?? this.semanticModel.GetDefinedSymbol(symbol))
+            .Select(symbol => this.semanticModel.GetReferencedSymbol(symbol) ?? this.semanticModel.GetDeclaredSymbol(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
         var references = new List<Location>();
@@ -60,7 +60,7 @@ internal sealed partial class DracoLanguageServer : IFindReferences
             {
                 yield return node;
             }
-            if (includeDeclaration && symbol.Equals(semanticModel.GetDefinedSymbol(node)))
+            if (includeDeclaration && symbol.Equals(semanticModel.GetDeclaredSymbol(node)))
             {
                 yield return node;
             }

@@ -32,7 +32,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                 // Type is already specified by user
                 if (varDecl.Type is not null) continue;
 
-                var symbol = this.semanticModel.GetDefinedSymbol(varDecl);
+                var symbol = this.semanticModel.GetDeclaredSymbol(varDecl);
                 if (symbol is not IVariableSymbol varSymbol) continue;
 
                 var varType = varSymbol.Type;

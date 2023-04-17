@@ -130,14 +130,17 @@ public sealed partial class SemanticModel
     /// declared any.</returns>
     public ISymbol? GetDeclaredSymbol(SyntaxNode syntax)
     {
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing?.ToApiSymbol();
+
+        // Get enclosing context
+        var binder = this.GetBinder(syntax);
+        var containingSymbol = binder.ContainingSymbol;
+
         switch (syntax)
         {
         case LabelDeclarationSyntax:
         case VariableDeclarationSyntax:
         {
-            // Get enclosing context
-            var binder = this.GetBinder(syntax);
-            var containingSymbol = binder.ContainingSymbol;
             // Search for the symbol with this declaring syntax
             var symbol = containingSymbol?.Members
                 .Single(sym => sym.DeclaringSyntax == syntax);

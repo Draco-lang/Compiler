@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -19,7 +20,8 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 {
     public override Compilation DeclaringCompilation { get; }
 
-    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
+    public override IEnumerable<Symbol> Members =>
+        this.members ??= this.BindMembers(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private ImmutableArray<Symbol>? members;
 
     public override Symbol? ContainingSymbol { get; }
@@ -55,10 +57,13 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     {
     }
 
-    private ImmutableArray<Symbol> BuildMembers()
+    public void Bind(DiagnosticBag diagnostics) => this.BindMembers(diagnostics);
+
+    private ImmutableArray<Symbol> BindMembers(DiagnosticBag diagnostics)
     {
+        if (this.members is not null) return this.members.Value;
+
         var result = ImmutableArray.CreateBuilder<Symbol>();
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
 
         // Syntax-declaration
         foreach (var declaration in this.declaration.Children)
@@ -82,7 +87,8 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
                 formatArgs: member.Name));
         }
 
-        return result.ToImmutable();
+        this.members = result.ToImmutable();
+        return this.members.Value;
     }
 
     private Symbol BuildMember(Declaration declaration) => declaration switch

@@ -65,10 +65,7 @@ public sealed partial class SemanticModel
             var containingSymbol = binder.ContainingSymbol;
 
             // If it's a source symbol, enforce binding
-            if (containingSymbol is ISourceSymbol sourceSymbol)
-            {
-                // TODO
-            }
+            if (containingSymbol is ISourceSymbol sourceSymbol) sourceSymbol.Bind(diagnostics);
 
             // If it's an import syntax, we need special handling
             if (syntaxNode is ImportDeclarationSyntax importSyntax)

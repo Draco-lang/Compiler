@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -8,7 +9,8 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 {
-    public override TypeSymbol Type => this.type ??= this.BuildType();
+    public override TypeSymbol Type =>
+        this.type ??= this.BindType(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private TypeSymbol? type;
 
     public override Symbol? ContainingSymbol { get; }
@@ -24,12 +26,17 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
         this.DeclarationSyntax = syntax;
     }
 
-    private TypeSymbol BuildType()
+    public void Bind(DiagnosticBag diagnostics) => this.BindType(diagnostics);
+
+    private TypeSymbol BindType(DiagnosticBag diagnostics)
     {
+        if (this.type is not null) return this.type;
+
         Debug.Assert(this.DeclaringCompilation is not null);
 
         var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Type);
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
-        return (TypeSymbol)binder.BindType(this.DeclarationSyntax.Type, diagnostics);
+        this.type = (TypeSymbol)binder.BindType(this.DeclarationSyntax.Type, diagnostics);
+
+        return this.type;
     }
 }

@@ -2,6 +2,8 @@ using System.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.FlowAnalysis;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -11,7 +13,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
+            if (this.NeedsBuild) this.BindTypeAndValue(this.DeclaringCompilation!.GlobalDiagnosticBag);
             Debug.Assert(this.type is not null);
             return this.type;
         }
@@ -29,7 +31,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         {
             // NOTE: We check the TYPE here, as value is nullable,
             // but a type always needs to be inferred
-            if (this.NeedsBuild) this.Build();
+            if (this.NeedsBuild) this.BindTypeAndValue(this.DeclaringCompilation!.GlobalDiagnosticBag);
             return this.value;
         }
     }
@@ -49,10 +51,20 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         this.declaration = declaration;
     }
 
-    private void Build()
+    public void Bind(DiagnosticBag diagnostics)
     {
+        this.BindTypeAndValue(diagnostics);
+
+        // Flow analysis
+        if (this.Value is not null) DefiniteAssignment.Analyze(this.Value, diagnostics);
+        ValAssignment.Analyze(this, diagnostics);
+    }
+
+    private void BindTypeAndValue(DiagnosticBag diagnostics)
+    {
+        if (!this.NeedsBuild) return;
+
         Debug.Assert(this.DeclaringCompilation is not null);
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
 
         var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
         var (type, value) = binder.BindGlobal(this, diagnostics);

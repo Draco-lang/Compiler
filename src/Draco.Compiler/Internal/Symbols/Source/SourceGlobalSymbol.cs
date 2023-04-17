@@ -5,7 +5,7 @@ using Draco.Compiler.Internal.Declarations;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
-internal sealed class SourceGlobalSymbol : GlobalSymbol
+internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 {
     public override TypeSymbol Type
     {

@@ -60,7 +60,21 @@ public sealed partial class SemanticModel
             var syntaxDiagnostics = this.Tree.SyntaxDiagnosticTable.Get(syntaxNode);
             diagnostics.AddRange(syntaxDiagnostics);
 
-            // TODO
+            // Get the symbol this embodies
+            var binder = this.GetBinder(syntaxNode);
+            var containingSymbol = binder.ContainingSymbol;
+
+            // If it's a source symbol, enforce binding
+            if (containingSymbol is ISourceSymbol sourceSymbol)
+            {
+                // TODO
+            }
+
+            // If it's an import syntax, we need special handling
+            if (syntaxNode is ImportDeclarationSyntax importSyntax)
+            {
+                // TODO
+            }
         }
 
         // For functions:
@@ -84,8 +98,7 @@ public sealed partial class SemanticModel
         // For every scope:
         //  - imports
 
-        // TODO
-        throw new NotImplementedException();
+        return diagnostics.ToImmutableArray();
     }
 
     // NOTE: These OrNull functions are not too pretty

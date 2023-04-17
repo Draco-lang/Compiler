@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// An in-source function-definition.
 /// </summary>
-internal sealed class SourceFunctionSymbol : FunctionSymbol
+internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
     private ImmutableArray<ParameterSymbol>? parameters;

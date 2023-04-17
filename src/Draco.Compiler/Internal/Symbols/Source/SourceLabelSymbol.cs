@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// An in-source label definition.
 /// </summary>
-internal sealed class SourceLabelSymbol : LabelSymbol
+internal sealed class SourceLabelSymbol : LabelSymbol, ISourceSymbol
 {
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.DeclarationSyntax.Name.Text;

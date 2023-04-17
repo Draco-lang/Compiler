@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// An in-source local declaration.
 /// </summary>
-internal sealed class SourceLocalSymbol : LocalSymbol
+internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
 {
     public override TypeSymbol Type { get; }
 

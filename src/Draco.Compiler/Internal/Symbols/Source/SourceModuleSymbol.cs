@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// A module defined in-source.
 /// </summary>
-internal sealed class SourceModuleSymbol : ModuleSymbol
+internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 {
     public override Compilation DeclaringCompilation { get; }
 

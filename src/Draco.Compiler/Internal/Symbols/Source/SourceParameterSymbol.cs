@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// A function parameter defined in-source.
 /// </summary>
-internal sealed class SourceParameterSymbol : ParameterSymbol
+internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 {
     public override TypeSymbol Type => this.type ??= this.BuildType();
     private TypeSymbol? type;

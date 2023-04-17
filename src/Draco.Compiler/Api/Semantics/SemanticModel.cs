@@ -31,7 +31,7 @@ public sealed partial class SemanticModel
     private ImmutableArray<Diagnostic>? diagnostics;
 
     private readonly Compilation compilation;
-    private readonly Dictionary<SyntaxNode, IList<BoundNode>> syntaxMap = new();
+    private readonly Dictionary<SyntaxNode, IList<BoundNode>> boundNodeMap = new();
     private readonly Dictionary<SyntaxNode, Symbol> symbolMap = new();
 
     internal SemanticModel(Compilation compilation, SyntaxTree tree)
@@ -130,21 +130,25 @@ public sealed partial class SemanticModel
     /// declared any.</returns>
     public ISymbol? GetDeclaredSymbol(SyntaxNode syntax)
     {
-        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing?.ToApiSymbol();
-
         // Get enclosing context
         var binder = this.GetBinder(syntax);
         var containingSymbol = binder.ContainingSymbol;
 
-        switch (syntax)
+        switch (containingSymbol)
         {
-        case LabelDeclarationSyntax:
-        case VariableDeclarationSyntax:
+        case SourceFunctionSymbol func:
         {
-            // Search for the symbol with this declaring syntax
-            var symbol = containingSymbol?.Members
-                .Single(sym => sym.DeclaringSyntax == syntax);
-            return symbol?.ToApiSymbol();
+            if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
+            // We are within a function, let's bind the function
+            var functionBinder = this.GetBinder(func);
+            functionBinder.BindFunction(func, this.compilation.GlobalDiagnosticBag);
+            return this.symbolMap[syntax].ToApiSymbol();
+        }
+        case SourceModuleSymbol module:
+        {
+            // Just search for the corresponding syntax
+            var symbol = module.Members.Single(sym => sym.DeclaringSyntax == syntax);
+            return symbol.ToApiSymbol();
         }
         default:
             throw new NotImplementedException();
@@ -178,7 +182,7 @@ public sealed partial class SemanticModel
         {
             // Bind the enclosing entity
             BindEnclosing();
-            return this.symbolMap[syntax]?.ToApiSymbol();
+            return this.symbolMap[syntax].ToApiSymbol();
         }
         default:
             // TODO

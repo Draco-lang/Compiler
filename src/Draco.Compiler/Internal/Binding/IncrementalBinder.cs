@@ -81,10 +81,10 @@ public sealed partial class SemanticModel
             where TBoundNode : BoundNode
         {
             if (node.Syntax is null) return binder();
-            if (!this.semanticModel.syntaxMap.TryGetValue(node.Syntax, out var nodeList))
+            if (!this.semanticModel.boundNodeMap.TryGetValue(node.Syntax, out var nodeList))
             {
                 nodeList = new List<BoundNode>();
-                this.semanticModel.syntaxMap.Add(node.Syntax, nodeList);
+                this.semanticModel.boundNodeMap.Add(node.Syntax, nodeList);
             }
             var boundNode = binder();
             nodeList.Add(boundNode);

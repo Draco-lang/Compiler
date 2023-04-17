@@ -136,16 +136,26 @@ public sealed partial class SemanticModel
 
         switch (containingSymbol)
         {
-        case SourceFunctionSymbol:
+        case SourceFunctionSymbol func:
         {
-            // This is just the function binder
-            return containingSymbol.ToApiSymbol();
+            // This is just the function itself
+            if (func.DeclaringSyntax == syntax) return containingSymbol.ToApiSymbol();
+
+            // TODO: Use func.Bind instead, but pass in binder provider
+            // Assume contents of the function, bind the function
+            var functionBinder = this.GetBinder(func);
+            functionBinder.BindFunction(func, this.compilation.GlobalDiagnosticBag);
+            // Look up inside the binder
+            var symbol = binder.DeclaredSymbols
+                .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
+            return symbol?.ToApiSymbol();
         }
         case SourceModuleSymbol module:
         {
             // Just search for the corresponding syntax
-            var symbol = module.Members.Single(sym => sym.DeclaringSyntax == syntax);
-            return symbol.ToApiSymbol();
+            var symbol = module.Members
+                .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
+            return symbol?.ToApiSymbol();
         }
         default:
             throw new NotImplementedException();

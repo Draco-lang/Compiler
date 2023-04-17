@@ -62,10 +62,30 @@ public sealed partial class SemanticModel
 
             // Get the symbol this embodies
             var binder = this.GetBinder(syntaxNode);
-            var containingSymbol = binder.ContainingSymbol;
+            var containingSymbol = binder.ContainingSymbol as ISourceSymbol;
 
-            // If it's a source symbol, enforce binding
-            if (containingSymbol is ISourceSymbol sourceSymbol) sourceSymbol.Bind(diagnostics);
+            // We want exact syntax matches to avoid duplication
+            // This is a cheap way to not to attempt finding a function symbol from its body
+            // and from its signature
+            switch (syntaxNode)
+            {
+            case CompilationUnitSyntax:
+            case FunctionDeclarationSyntax:
+            {
+                containingSymbol?.Bind(diagnostics);
+                break;
+            }
+            // NOTE: Only globals need binding
+            case VariableDeclarationSyntax when containingSymbol is SourceModuleSymbol containingModule:
+            {
+                // We need to search for this global
+                var globalSymbol = containingModule.Members
+                    .OfType<SourceGlobalSymbol>()
+                    .Single(s => s.DeclarationSyntax == syntaxNode);
+                globalSymbol.Bind(diagnostics);
+                break;
+            }
+            }
 
             // If it's an import syntax, we need special handling
             if (syntaxNode is ImportDeclarationSyntax importSyntax)

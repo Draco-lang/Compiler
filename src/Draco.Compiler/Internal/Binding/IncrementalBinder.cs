@@ -81,6 +81,10 @@ public sealed partial class SemanticModel
             where TBoundNode : BoundNode
         {
             if (node.Syntax is null) return binder();
+            // TODO: If the list is created, this node is bound already,
+            // we should just search for the existing node somehow...
+            // Problem is, we have multiple corresponding nodes
+            // Maybe have an untyped -> typed map to resolve cases like this?
             if (!this.semanticModel.boundNodeMap.TryGetValue(node.Syntax, out var nodeList))
             {
                 nodeList = new List<BoundNode>();
@@ -88,6 +92,9 @@ public sealed partial class SemanticModel
             }
             var boundNode = binder();
             nodeList.Add(boundNode);
+            var symbol = ExtractSymbol(boundNode);
+            // TODO: Once the above is resolved, all we should have is an Add for safety
+            if (symbol is not null) this.semanticModel.symbolMap[node.Syntax] = symbol;
             return boundNode;
         }
 
@@ -102,5 +109,20 @@ public sealed partial class SemanticModel
             }
             return symbol;
         }
+
+        private static Symbol? ExtractSymbol(BoundNode node) => node switch
+        {
+            BoundLocalDeclaration l => l.Local,
+            BoundLabelStatement l => l.Label,
+            BoundFunctionExpression f => f.Function,
+            BoundParameterExpression p => p.Parameter,
+            BoundLocalExpression l => l.Local,
+            BoundGlobalExpression g => g.Global,
+            BoundReferenceErrorExpression e => e.Symbol,
+            BoundLocalLvalue l => l.Local,
+            BoundGlobalLvalue g => g.Global,
+            BoundMemberExpression m => m.Member,
+            _ => null,
+        };
     }
 }

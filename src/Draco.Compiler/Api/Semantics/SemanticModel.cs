@@ -148,6 +148,11 @@ public sealed partial class SemanticModel
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
+            if (symbol is UntypedLocalSymbol)
+            {
+                // NOTE: Special case, locals are untyped, we need the typed variant
+                symbol = this.symbolMap[syntax];
+            }
             return symbol?.ToApiSymbol();
         }
         case SourceModuleSymbol module:
@@ -208,25 +213,4 @@ public sealed partial class SemanticModel
         var binder = this.compilation.GetBinder(symbol);
         return new IncrementalBinder(binder, this);
     }
-
-    private static Symbol ExtractDefinedSymbol(BoundNode node) => node switch
-    {
-        BoundLocalDeclaration l => l.Local,
-        BoundLabelStatement l => l.Label,
-        _ => throw new ArgumentOutOfRangeException(nameof(node)),
-    };
-
-    private static Symbol? ExtractReferencedSymbol(BoundNode node) => node switch
-    {
-        BoundFunctionExpression f => f.Function,
-        BoundParameterExpression p => p.Parameter,
-        BoundLocalExpression l => l.Local,
-        BoundGlobalExpression g => g.Global,
-        BoundReferenceErrorExpression e => e.Symbol,
-        BoundLocalLvalue l => l.Local,
-        BoundGlobalLvalue g => g.Global,
-        BoundMemberExpression m => m.Member,
-        BoundIllegalLvalue => null,
-        _ => throw new ArgumentOutOfRangeException(nameof(node)),
-    };
 }

@@ -146,7 +146,18 @@ public sealed record class Property(
     string Name,
     string SerializedName,
     bool OmitIfNull,
-    bool IsExtensionData);
+    bool IsExtensionData,
+    object? ConstantValue)
+{
+    /// <summary>
+    /// A discriminator string for the value.
+    /// </summary>
+    public string ValueDiscriminator => this.ConstantValue switch
+    {
+        string => "String",
+        _ => throw new ArgumentOutOfRangeException(),
+    };
+}
 
 /// <summary>
 /// A C# type.

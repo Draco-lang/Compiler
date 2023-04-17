@@ -70,7 +70,17 @@ namespace Draco.Lsp.Model;
             PropertyName = {{string.literal(decl.SerializedName)}},
             NullValueHandling = NullValueHandling.{{if decl.OmitIfNull}}Ignore{{else}}Include{{end}})]
     {{end}}
-    public {{type(decl.Type)}} {{decl.Name}} { get; set; }
+    public {{type(decl.Type)}} {{decl.Name}}
+    {{if decl.ConstantValue}}
+        =>
+        {{case decl.ValueDiscriminator}}
+        {{when 'String'}}
+            {{string.literal(decl.ConstantValue)}}
+        {{end}}
+        ;
+    {{else}}
+        { get; set; }
+    {{end}}
 {{end}}
 
 {{func enum_member(decl)}}

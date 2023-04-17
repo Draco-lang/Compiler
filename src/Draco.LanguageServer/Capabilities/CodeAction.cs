@@ -14,8 +14,28 @@ internal sealed partial class DracoLanguageServer : ICodeAction
         CodeActionKinds = new[] { CodeActionKind.QuickFix }
     };
 
-    public Task<CompletionItem[]?> CompleteAsync(CodeActionParams param, CancellationToken cancellationToken)
+    public Task<CodeAction[]?> CompleteAsync(CodeActionParams param, CancellationToken cancellationToken)
     {
-        return Task.FromResult(new[] {new com})
+        return Task.FromResult(new[] {new CodeAction()
+        {
+            Kind = CodeActionKind.QuickFix,
+            Edit = new WorkspaceEdit()
+            {
+                DocumentChanges = new[]
+                {
+                    new TextDocumentEdit()
+                    {
+                        Edits = new[]
+                        {
+                            new TextEdit()
+                            {
+                                
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
     }
 }

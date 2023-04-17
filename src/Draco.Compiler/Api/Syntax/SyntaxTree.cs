@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Syntax.Rewriting;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -96,6 +97,14 @@ public sealed class SyntaxTree
     /// </summary>
     /// <returns>The formatted tree.</returns>
     public SyntaxTree Format() => new SyntaxTreeFormatter(FormatterSettings).Format(this);
+
+    /// <summary>
+    /// Replaces <paramref name="original"/> node for <paramref name="replacement"/> node.
+    /// </summary>
+    /// <param name="original">The original <see cref="SyntaxNode"/> to replace.</param>
+    /// <param name="replacement">The <see cref="SyntaxNode"/> that will replace the <paramref name="original"/> node.</param>
+    /// <returns>New constructed syntax tree with <paramref name="original"/> node replaced for <paramref name="replacement"/> node.</returns>
+    public SyntaxTree Replace(SyntaxNode original, SyntaxNode replacement) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new ReplaceRewriter(original.Green, replacement.Green)), new());
 
     /// <summary>
     /// The internal root of the tree.

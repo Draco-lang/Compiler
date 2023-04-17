@@ -136,13 +136,10 @@ public sealed partial class SemanticModel
 
         switch (containingSymbol)
         {
-        case SourceFunctionSymbol func:
+        case SourceFunctionSymbol:
         {
-            if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
-            // We are within a function, let's bind the function
-            var functionBinder = this.GetBinder(func);
-            functionBinder.BindFunction(func, this.compilation.GlobalDiagnosticBag);
-            return this.symbolMap[syntax].ToApiSymbol();
+            // This is just the function binder
+            return containingSymbol.ToApiSymbol();
         }
         case SourceModuleSymbol module:
         {

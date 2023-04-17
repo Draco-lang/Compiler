@@ -83,7 +83,7 @@ internal sealed class BinderCache
         var parent = UnwrapFromImportBinder(binder);
         var functionSymbol = parent.DeclaredSymbols
             .OfType<SourceFunctionSymbol>()
-            .FirstOrDefault(member => member.DeclarationSyntax == syntax);
+            .FirstOrDefault(member => member.DeclaringSyntax == syntax);
         Debug.Assert(functionSymbol is not null);
         // NOTE: We are not using the unwrapped parent, we need the injected import layers
         return new FunctionBinder(binder, functionSymbol);

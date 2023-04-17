@@ -81,7 +81,7 @@ public sealed partial class SemanticModel
                 // We need to search for this global
                 var globalSymbol = containingModule.Members
                     .OfType<SourceGlobalSymbol>()
-                    .Single(s => s.DeclarationSyntax == syntaxNode);
+                    .Single(s => s.DeclaringSyntax == syntaxNode);
                 globalSymbol.Bind(diagnostics);
                 break;
             }
@@ -132,6 +132,17 @@ public sealed partial class SemanticModel
     {
         switch (syntax)
         {
+        case LabelDeclarationSyntax:
+        case VariableDeclarationSyntax:
+        {
+            // Get enclosing context
+            var binder = this.GetBinder(syntax);
+            var containingSymbol = binder.ContainingSymbol;
+            // Search for the symbol with this declaring syntax
+            var symbol = containingSymbol?.Members
+                .Single(sym => sym.DeclaringSyntax == syntax);
+            return symbol?.ToApiSymbol();
+        }
         default:
             throw new NotImplementedException();
         }

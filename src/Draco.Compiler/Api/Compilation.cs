@@ -221,12 +221,12 @@ public sealed class Compilation
         {
             return this.binderCache.ModuleBinder;
         }
-        if (symbol.DeclarationSyntax is null)
+        if (symbol.DeclaringSyntax is null)
         {
             throw new ArgumentException("symbol must have a declaration syntax", nameof(symbol));
         }
 
-        return this.GetBinder(symbol.DeclarationSyntax);
+        return this.GetBinder(symbol.DeclaringSyntax);
     }
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);

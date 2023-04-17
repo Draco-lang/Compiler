@@ -39,7 +39,7 @@ internal partial class Binder
     {
         var symbol = this.DeclaredSymbols
             .OfType<SourceFunctionSymbol>()
-            .First(s => s.DeclarationSyntax == syntax);
+            .First(s => s.DeclaringSyntax == syntax);
         return new UntypedLocalFunction(syntax, symbol);
     }
 
@@ -89,7 +89,7 @@ internal partial class Binder
         // Look up the corresponding symbol defined
         var labelSymbol = this.DeclaredSymbols
             .OfType<LabelSymbol>()
-            .First(sym => sym.DeclarationSyntax == syntax);
+            .First(sym => sym.DeclaringSyntax == syntax);
 
         return new UntypedLabelStatement(syntax, labelSymbol);
     }
@@ -99,7 +99,7 @@ internal partial class Binder
         // Look up the corresponding symbol defined
         var localSymbol = this.DeclaredSymbols
             .OfType<UntypedLocalSymbol>()
-            .First(sym => sym.DeclarationSyntax == syntax);
+            .First(sym => sym.DeclaringSyntax == syntax);
 
         var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);

@@ -14,16 +14,16 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     private TypeSymbol? type;
 
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.DeclarationSyntax.Name.Text;
+    public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override ParameterSyntax DeclarationSyntax { get; }
+    public override ParameterSyntax DeclaringSyntax { get; }
 
     // TODO: Extracting parameter docs involves looking into the function docs and searching in the MD
 
     public SourceParameterSymbol(Symbol? containingSymbol, ParameterSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.DeclarationSyntax = syntax;
+        this.DeclaringSyntax = syntax;
     }
 
     public void Bind(DiagnosticBag diagnostics) => this.BindType(diagnostics);
@@ -34,8 +34,8 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 
         Debug.Assert(this.DeclaringCompilation is not null);
 
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Type);
-        this.type = (TypeSymbol)binder.BindType(this.DeclarationSyntax.Type, diagnostics);
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclaringSyntax.Type);
+        this.type = (TypeSymbol)binder.BindType(this.DeclaringSyntax.Type, diagnostics);
 
         return this.type;
     }

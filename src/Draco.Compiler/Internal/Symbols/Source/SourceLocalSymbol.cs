@@ -13,11 +13,11 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol => this.untypedSymbol.ContainingSymbol;
     public override string Name => this.untypedSymbol.Name;
 
-    public override VariableDeclarationSyntax DeclarationSyntax => this.untypedSymbol.DeclarationSyntax;
+    public override VariableDeclarationSyntax DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;
 
     public override bool IsMutable => this.untypedSymbol.IsMutable;
 
-    public override string Documentation => this.DeclarationSyntax.Documentation;
+    public override string Documentation => this.DeclaringSyntax.Documentation;
 
     private readonly UntypedLocalSymbol untypedSymbol;
 

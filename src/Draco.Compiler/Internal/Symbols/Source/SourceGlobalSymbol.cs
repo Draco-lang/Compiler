@@ -23,7 +23,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public override VariableDeclarationSyntax DeclarationSyntax => this.declaration.Syntax;
+    public override VariableDeclarationSyntax DeclaringSyntax => this.declaration.Syntax;
 
     public BoundExpression? Value
     {
@@ -36,7 +36,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         }
     }
 
-    public override string Documentation => this.DeclarationSyntax.Documentation;
+    public override string Documentation => this.DeclaringSyntax.Documentation;
 
     // NOTE: We check the TYPE here, as value is nullable
     private bool NeedsBuild => this.type is null;
@@ -66,7 +66,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 
         Debug.Assert(this.DeclaringCompilation is not null);
 
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclaringSyntax);
         var (type, value) = binder.BindGlobal(this, diagnostics);
 
         this.type = type;

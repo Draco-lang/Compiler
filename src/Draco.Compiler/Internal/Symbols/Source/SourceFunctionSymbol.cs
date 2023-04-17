@@ -24,19 +24,19 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private TypeSymbol? returnType;
 
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.DeclarationSyntax.Name.Text;
+    public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override FunctionDeclarationSyntax DeclarationSyntax { get; }
+    public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 
     public BoundStatement Body => this.BindBody(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private BoundStatement? body;
 
-    public override string Documentation => this.DeclarationSyntax.Documentation;
+    public override string Documentation => this.DeclaringSyntax.Documentation;
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.DeclarationSyntax = syntax;
+        this.DeclaringSyntax = syntax;
     }
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclaration declaration)
@@ -60,7 +60,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     {
         if (this.parameters is not null) return this.parameters.Value;
 
-        var parameterSyntaxes = this.DeclarationSyntax.ParameterList.Values.ToList();
+        var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
         for (var i = 0; i < parameterSyntaxes.Count; ++i)
@@ -92,13 +92,13 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         if (this.returnType is not null) return this.returnType;
 
         // If the return type is unspecified, it's assumed to be unit
-        if (this.DeclarationSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
+        if (this.DeclaringSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
 
         // Otherwise, we need to resolve
         Debug.Assert(this.DeclaringCompilation is not null);
 
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
-        this.returnType = (TypeSymbol)binder.BindType(this.DeclarationSyntax.ReturnType.Type, diagnostics);
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclaringSyntax);
+        this.returnType = (TypeSymbol)binder.BindType(this.DeclaringSyntax.ReturnType.Type, diagnostics);
 
         return this.returnType;
     }
@@ -108,7 +108,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         if (this.body is not null) return this.body;
 
         Debug.Assert(this.DeclaringCompilation is not null);
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Body);
+        var binder = this.DeclaringCompilation.GetBinder(this.DeclaringSyntax.Body);
         this.body = binder.BindFunction(this, diagnostics);
 
         return this.body;

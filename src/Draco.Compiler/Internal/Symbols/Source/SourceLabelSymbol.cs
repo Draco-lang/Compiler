@@ -9,14 +9,14 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 internal sealed class SourceLabelSymbol : LabelSymbol, ISourceSymbol
 {
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.DeclarationSyntax.Name.Text;
+    public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override LabelDeclarationSyntax DeclarationSyntax { get; }
+    public override LabelDeclarationSyntax DeclaringSyntax { get; }
 
     public SourceLabelSymbol(Symbol? containingSymbol, LabelDeclarationSyntax declarationSyntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.DeclarationSyntax = declarationSyntax;
+        this.DeclaringSyntax = declarationSyntax;
     }
 
     public void Bind(DiagnosticBag diagnostics) { }

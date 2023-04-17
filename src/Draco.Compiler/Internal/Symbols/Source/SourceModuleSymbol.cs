@@ -27,7 +27,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public override SyntaxNode? DeclarationSyntax => null;
+    public override SyntaxNode? DeclaringSyntax => null;
 
     private readonly Declaration declaration;
 
@@ -79,7 +79,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
             if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
 
             // Illegal
-            var syntax = member.DeclarationSyntax;
+            var syntax = member.DeclaringSyntax;
             Debug.Assert(syntax is not null);
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalShadowing,

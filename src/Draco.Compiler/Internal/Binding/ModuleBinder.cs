@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ModuleBinder : Binder
 {
-    public override SyntaxNode? DeclaringSyntax => this.symbol.DeclarationSyntax;
+    public override SyntaxNode? DeclaringSyntax => this.symbol.DeclaringSyntax;
 
     public override Symbol? ContainingSymbol => this.symbol;
 

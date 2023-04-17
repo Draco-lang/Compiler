@@ -13,7 +13,7 @@ internal sealed class FunctionBinder : Binder
 {
     public override Symbol? ContainingSymbol => this.symbol;
 
-    public override SyntaxNode? DeclaringSyntax => this.symbol.DeclarationSyntax;
+    public override SyntaxNode? DeclaringSyntax => this.symbol.DeclaringSyntax;
 
     public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Parameters;
 

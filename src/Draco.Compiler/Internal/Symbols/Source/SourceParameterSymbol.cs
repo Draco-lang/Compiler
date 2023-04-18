@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -10,7 +11,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 {
     public override TypeSymbol Type =>
-        this.type ??= this.BindType(this.DeclaringCompilation!.GlobalDiagnosticBag);
+        this.type ??= this.BindType(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
     private TypeSymbol? type;
 
     public override Symbol? ContainingSymbol { get; }
@@ -26,15 +27,14 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
         this.DeclaringSyntax = syntax;
     }
 
-    public void Bind(DiagnosticBag diagnostics) => this.BindType(diagnostics);
+    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics) =>
+        this.BindType(binderProvider, diagnostics);
 
-    private TypeSymbol BindType(DiagnosticBag diagnostics)
+    private TypeSymbol BindType(IBinderProvider binderProvider, DiagnosticBag diagnostics)
     {
         if (this.type is not null) return this.type;
 
-        Debug.Assert(this.DeclaringCompilation is not null);
-
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclaringSyntax.Type);
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax.Type);
         this.type = (TypeSymbol)binder.BindType(this.DeclaringSyntax.Type, diagnostics);
 
         return this.type;

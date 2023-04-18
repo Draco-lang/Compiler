@@ -20,7 +20,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     public override ImmutableArray<ParameterSymbol> Parameters => this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private ImmutableArray<ParameterSymbol>? parameters;
 
-    public override TypeSymbol ReturnType => this.BindReturnType(this.DeclaringCompilation!.GlobalDiagnosticBag);
+    public override TypeSymbol ReturnType => this.BindReturnType(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
     private TypeSymbol? returnType;
 
     public override Symbol? ContainingSymbol { get; }
@@ -28,7 +28,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 
-    public BoundStatement Body => this.BindBody(this.DeclaringCompilation!.GlobalDiagnosticBag);
+    public BoundStatement Body => this.BindBody(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
     private BoundStatement? body;
 
     public override string Documentation => this.DeclaringSyntax.Documentation;
@@ -44,11 +44,11 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     {
     }
 
-    public void Bind(DiagnosticBag diagnostics)
+    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics)
     {
         this.BindParameters(diagnostics);
-        this.BindReturnType(diagnostics);
-        this.BindBody(diagnostics);
+        this.BindReturnType(binderProvider, diagnostics);
+        this.BindBody(binderProvider, diagnostics);
 
         // Flow analysis
         ReturnsOnAllPaths.Analyze(this, diagnostics);
@@ -87,7 +87,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         return this.parameters.Value;
     }
 
-    private TypeSymbol BindReturnType(DiagnosticBag diagnostics)
+    private TypeSymbol BindReturnType(IBinderProvider binderProvider, DiagnosticBag diagnostics)
     {
         if (this.returnType is not null) return this.returnType;
 
@@ -97,18 +97,17 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         // Otherwise, we need to resolve
         Debug.Assert(this.DeclaringCompilation is not null);
 
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclaringSyntax);
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         this.returnType = (TypeSymbol)binder.BindType(this.DeclaringSyntax.ReturnType.Type, diagnostics);
 
         return this.returnType;
     }
 
-    private BoundStatement BindBody(DiagnosticBag diagnostics)
+    private BoundStatement BindBody(IBinderProvider binderProvider, DiagnosticBag diagnostics)
     {
         if (this.body is not null) return this.body;
 
-        Debug.Assert(this.DeclaringCompilation is not null);
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclaringSyntax.Body);
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax.Body);
         this.body = binder.BindFunction(this, diagnostics);
 
         return this.body;

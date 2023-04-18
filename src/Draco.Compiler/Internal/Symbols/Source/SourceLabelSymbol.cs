@@ -1,4 +1,5 @@
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -19,5 +20,5 @@ internal sealed class SourceLabelSymbol : LabelSymbol, ISourceSymbol
         this.DeclaringSyntax = declarationSyntax;
     }
 
-    public void Bind(DiagnosticBag diagnostics) { }
+    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics) { }
 }

@@ -1,6 +1,7 @@
 using System;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -24,7 +25,7 @@ internal sealed class UntypedLocalSymbol : Symbol, ISourceSymbol
     }
 
     public override ISymbol ToApiSymbol() => throw new NotSupportedException();
-    public void Bind(DiagnosticBag diagnostics) => throw new NotSupportedException();
+    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics) => throw new NotSupportedException();
     public override void Accept(SymbolVisitor visitor) => throw new NotSupportedException();
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => throw new NotSupportedException();
 }

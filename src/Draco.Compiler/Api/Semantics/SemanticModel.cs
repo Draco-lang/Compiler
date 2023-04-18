@@ -18,7 +18,7 @@ namespace Draco.Compiler.Api.Semantics;
 /// <summary>
 /// The semantic model of a subtree.
 /// </summary>
-public sealed partial class SemanticModel
+public sealed partial class SemanticModel : IBinderProvider
 {
     /// <summary>
     /// The the tree that the semantic model is for.
@@ -76,7 +76,7 @@ public sealed partial class SemanticModel
             case CompilationUnitSyntax:
             case FunctionDeclarationSyntax:
             {
-                containingSymbol?.Bind(diagnostics);
+                containingSymbol?.Bind(this, diagnostics);
                 break;
             }
             // NOTE: Only globals need binding
@@ -86,7 +86,7 @@ public sealed partial class SemanticModel
                 var globalSymbol = containingModule.Members
                     .OfType<SourceGlobalSymbol>()
                     .Single(s => s.DeclaringSyntax == syntaxNode);
-                globalSymbol.Bind(diagnostics);
+                globalSymbol.Bind(this, diagnostics);
                 break;
             }
             }
@@ -145,10 +145,9 @@ public sealed partial class SemanticModel
             // This is just the function itself
             if (func.DeclaringSyntax == syntax) return containingSymbol.ToApiSymbol();
 
-            // TODO: Use func.Bind instead, but pass in binder provider
-            // Assume contents of the function, bind the function
-            var functionBinder = this.GetBinder(func);
-            functionBinder.BindFunction(func, this.compilation.GlobalDiagnosticBag);
+            // Bind the function contents
+            func.Bind(this, this.compilation.GlobalDiagnosticBag);
+
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
@@ -194,6 +193,7 @@ public sealed partial class SemanticModel
 
         switch (syntax)
         {
+        case NameExpressionSyntax:
         case MemberExpressionSyntax:
         {
             // Bind the enclosing entity
@@ -217,4 +217,7 @@ public sealed partial class SemanticModel
         var binder = this.compilation.GetBinder(symbol);
         return new IncrementalBinder(binder, this);
     }
+
+    Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);
+    Binder IBinderProvider.GetBinder(Symbol symbol) => this.GetBinder(symbol);
 }

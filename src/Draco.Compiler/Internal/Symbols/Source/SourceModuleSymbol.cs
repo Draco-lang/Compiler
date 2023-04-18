@@ -57,7 +57,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     {
     }
 
-    public void Bind(DiagnosticBag diagnostics) => this.BindMembers(diagnostics);
+    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics) => this.BindMembers(diagnostics);
 
     private ImmutableArray<Symbol> BindMembers(DiagnosticBag diagnostics)
     {

@@ -32,7 +32,7 @@ public readonly record struct EmitResult(
 /// <summary>
 /// Represents a single compilation session.
 /// </summary>
-public sealed class Compilation
+public sealed class Compilation : IBinderProvider
 {
     /// <summary>
     /// Constructs a <see cref="Compilation"/>.
@@ -203,18 +203,8 @@ public sealed class Compilation
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
 
-    /// <summary>
-    /// Retrieves the <see cref="Binder"/> for a given syntax node.
-    /// </summary>
-    /// <param name="syntax">The syntax node to retrieve the binder for.</param>
-    /// <returns>The binder that corresponds to <paramref name="syntax"/>.</returns>
     internal Binder GetBinder(SyntaxNode syntax) => this.binderCache.GetBinder(syntax);
 
-    /// <summary>
-    /// Retrieves the <see cref="Binder"/> for a given symbol definition.
-    /// </summary>
-    /// <param name="symbol">The symbol to retrieve the binder for.</param>
-    /// <returns>The binder that corresponds to <paramref name="symbol"/>.</returns>
     internal Binder GetBinder(Symbol symbol)
     {
         if (symbol is SourceModuleSymbol)
@@ -228,6 +218,9 @@ public sealed class Compilation
 
         return this.GetBinder(symbol.DeclaringSyntax);
     }
+
+    Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);
+    Binder IBinderProvider.GetBinder(Symbol symbol) => this.GetBinder(symbol);
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);

@@ -1,6 +1,8 @@
-using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.CodeFixes;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 
@@ -16,26 +18,26 @@ internal sealed partial class DracoLanguageServer : ICodeAction
 
     public Task<CodeAction[]?> CompleteAsync(CodeActionParams param, CancellationToken cancellationToken)
     {
-        return Task.FromResult(new[] {new CodeAction()
+        var service = new CodeFixService();
+        service.AddProvider(new ImportCodeFixProvider(this.syntaxTree, Translator.ToCompiler(param.Range)));
+        var fixes = service.GetCodeFixes(this.syntaxTree, this.semanticModel);
+        var actions = new CodeAction[fixes.Length];
+
+        for (int i = 0; i < fixes.Length; i++)
         {
-            Kind = CodeActionKind.QuickFix,
-            Edit = new WorkspaceEdit()
+            actions[i] = new CodeAction()
             {
-                DocumentChanges = new[]
+                Title = fixes[i].DisplayText,
+                Kind = CodeActionKind.QuickFix, //TODO: we might have some other fixes in future
+                Edit = new WorkspaceEdit()
                 {
-                    new TextDocumentEdit()
+                    Changes = new Dictionary<DocumentUri, IList<Lsp.Model.TextEdit>>()
                     {
-                        Edits = new[]
-                        {
-                            new TextEdit()
-                            {
-                                
-                            }
-                        }
+                        { param.TextDocument.Uri, fixes[i].Edits.Select(x => Translator.ToLsp(x)).ToList() }
                     }
                 }
-            }
-        });
-
+            };
+        }
+        return Task.FromResult<CodeAction[]?>(actions);
     }
 }

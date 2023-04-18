@@ -1,30 +1,38 @@
+using System.Linq;
+
 namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
-internal sealed class ReplaceRewriter : SyntaxRewriter
+internal sealed class ReorderRewriter : SyntaxRewriter
 {
-    private SyntaxNode Original { get; }
-    private SyntaxNode Replacement { get; }
-    public ReplaceRewriter(SyntaxNode original, SyntaxNode replacement)
+    private SyntaxNode ToReorder { get; }
+    private int Position { get; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="toReorder">The node that will be reordered.</param>
+    /// <param name="position">0-based position in the original syntax list this node will be put to.</param>
+    public ReorderRewriter(SyntaxNode toReorder, int position)
     {
-        this.Original = original;
-        this.Replacement = replacement;
+        this.ToReorder = toReorder;
+        this.Position = position;
     }
 
-    public override SyntaxNode VisitStatement(StatementSyntax node)
+    public override SyntaxList<TNode> VisitSyntaxList<TNode>(SyntaxList<TNode> node)
     {
-        if (node == this.Original) return this.Replacement;
-        return base.VisitStatement(node);
-    }
-
-    public override SyntaxNode VisitExpression(ExpressionSyntax node)
-    {
-        if (node == this.Original) return this.Replacement;
-        return base.VisitExpression(node);
-    }
-
-    public override SyntaxNode VisitDeclaration(DeclarationSyntax node)
-    {
-        if (node == this.Original) return this.Replacement;
-        return base.VisitDeclaration(node);
+        for (int i = 0; i < node.Count; i++)
+        {
+            if (node[i] == this.ToReorder)
+            {
+                var list = node.ToList();
+                list.RemoveAt(i);
+                list.Insert(this.Position, node[i]);
+                var builder = SyntaxList.CreateBuilder<TNode>();
+                builder.AddRange(list);
+                node = builder.ToSyntaxList();
+                break;
+            }
+        }
+        return base.VisitSyntaxList(node);
     }
 }

@@ -4,4 +4,4 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.CodeFixes;
 
-internal record class CodeFix(string DisplayText, Func<ImmutableArray<TextEdit>> ApplyFix);
+public record class CodeFix(string DisplayText, ImmutableArray<TextEdit> Edits);

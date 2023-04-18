@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.CodeFixes;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Syntax.Rewriting;
@@ -99,12 +101,22 @@ public sealed class SyntaxTree
     public SyntaxTree Format() => new SyntaxTreeFormatter(FormatterSettings).Format(this);
 
     /// <summary>
-    /// Replaces <paramref name="original"/> node for <paramref name="replacement"/> node.
+    /// Reorders the <see cref="SyntaxTree"/> that contains <paramref name="toReorder"/> node and puts <paramref name="toReorder"/> to specified <paramref name="position"/> in the original <see cref="SyntaxList"/>.
     /// </summary>
-    /// <param name="original">The original <see cref="SyntaxNode"/> to replace.</param>
-    /// <param name="replacement">The <see cref="SyntaxNode"/> that will replace the <paramref name="original"/> node.</param>
-    /// <returns>New constructed syntax tree with <paramref name="original"/> node replaced for <paramref name="replacement"/> node.</returns>
-    public SyntaxTree Replace(SyntaxNode original, SyntaxNode replacement) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new ReplaceRewriter(original.Green, replacement.Green)), new());
+    /// <param name="toReorder">The <see cref="SyntaxNode"/> that will be reordered.</param>
+    /// <param name="position">The position in the original <see cref="SyntaxList"/> where <paramref name="toReorder"/> node will be put.</param>
+    /// <returns>New constructed <see cref="SyntaxTree"/> with <paramref name="toReorder"/> at new <paramref name="position"/>.</returns>
+    public SyntaxTree Reorder(SyntaxNode toReorder, int position) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new ReorderRewriter(toReorder.Green, position)), new());
+
+    /// <summary>
+    /// Returns the difference between this <see cref="SyntaxTree"/> and <paramref name="other"/>.
+    /// </summary>
+    /// <param name="other">The other <see cref="SyntaxTree"/> to find differences with this tree.</param>
+    /// <returns>Array of <see cref="TextEdit"/>s.</returns>
+    public ImmutableArray<TextEdit> SyntaxTreeDiff(SyntaxTree other)
+    {
+        return ImmutableArray.Create(new TextEdit(other.ToString(), this.Root.Range));
+    }
 
     /// <summary>
     /// The internal root of the tree.

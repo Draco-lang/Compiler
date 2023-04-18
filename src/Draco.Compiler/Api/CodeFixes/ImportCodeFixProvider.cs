@@ -12,25 +12,25 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
 {
     private SyntaxTree SyntaxTree { get; }
     private SyntaxRange Range { get; }
-    private SemanticModel SemanticModel { get; }
 
-    public ImportCodeFixProvider(SyntaxTree tree, SyntaxRange range, SemanticModel semanticModel)
+    public ImportCodeFixProvider(SyntaxTree tree, SyntaxRange range)
     {
         this.SyntaxTree = tree;
         this.Range = range;
-        this.SemanticModel = semanticModel;
     }
 
     internal override DiagnosticTemplate DiagnosticToFix => SymbolResolutionErrors.ImportNotAtTop;
 
     internal override ImmutableArray<CodeFix> CodeFixes => ImmutableArray.Create(
-        new CodeFix("Move import statement to be at the top of a scope", this.TopOfScope),
-        new CodeFix("Move import statement  to be at the top of a file", this.TopOfFile));
+        new CodeFix("Move import statement to be at the top of a scope", this.TopOfScope()),
+        new CodeFix("Move import statement  to be at the top of a file", this.TopOfFile()));
 
     private ImmutableArray<TextEdit> TopOfScope()
     {
         var import = this.SyntaxTree.TraverseSubtreesIntersectingRange(this.Range).LastOrDefault(x => x is ImportDeclarationSyntax);
         if (import is null) throw new InvalidOperationException();
+        var newTree = this.SyntaxTree.Reorder(import, 0);
+        return this.SyntaxTree.SyntaxTreeDiff(newTree);
     }
 
     private ImmutableArray<TextEdit> TopOfFile() => ImmutableArray<TextEdit>.Empty;

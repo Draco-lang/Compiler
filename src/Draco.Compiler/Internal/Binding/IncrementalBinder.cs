@@ -55,7 +55,14 @@ public sealed partial class SemanticModel
 
         // Memoizing overrides /////////////////////////////////////////////////
 
-        // TODO: Override Bind... functions and call 'BindNode<...>'
+        protected override UntypedStatement BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.BindNode(syntax, () => base.BindStatement(syntax, constraints, diagnostics));
+
+        protected override UntypedExpression BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.BindNode(syntax, () => base.BindExpression(syntax, constraints, diagnostics));
+
+        protected override UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.BindNode(syntax, () => base.BindLvalue(syntax, constraints, diagnostics));
 
         internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));

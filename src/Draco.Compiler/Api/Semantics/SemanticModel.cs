@@ -92,35 +92,16 @@ public sealed partial class SemanticModel : IBinderProvider
                 globalSymbol.Bind(this, diagnostics);
                 break;
             }
-            }
-
-            // If it's an import syntax, we need special handling
-            if (syntaxNode is ImportDeclarationSyntax importSyntax)
+            case ImportDeclarationSyntax:
             {
-                // TODO
+                // TODO: We are escaping memoization, this is AWFUL
+                // Perform binding
+                while (binder is not ImportBinder) binder = binder.Parent!;
+                _ = binder.DeclaredSymbols;
+                break;
+            }
             }
         }
-
-        // For functions:
-        //  - parameters
-        //  - return type
-        //  - body
-        //  - flow passes
-        //    - return on all paths
-        //    - definite assignment
-        //    - val assignment
-        //  - recurse into local functions
-
-        // For globals:
-        //  - type
-        //  - value
-        //  - flow passes
-        //    - definite assignment
-        //    - val assignment
-        //  - recurse into local functions
-
-        // For every scope:
-        //  - imports
 
         return diagnostics.ToImmutableArray();
     }

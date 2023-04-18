@@ -9,7 +9,7 @@ export async function loadThemes() {
     const wasmPromise = loadWASM(onigasmWasm.buffer); // https://www.npmjs.com/package/onigasm;
 
     const choosenTheme = window.localStorage.getItem('theme'); // get previous user theme choice
-    const themes : unknown = (await (await fetch('themes.json')).json());
+    const themes: unknown = (await (await fetch('themes.json')).json());
     function setTheme(theme: string) {
         try {
             if (theme == 'Default' || theme == null) {

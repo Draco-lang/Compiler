@@ -95,7 +95,9 @@ public sealed partial class SemanticModel : IBinderProvider
             case ImportDeclarationSyntax:
             {
                 // TODO: We are escaping memoization, this is AWFUL
+                // TODO: This is also not correct, we are unwrapping...
                 // Perform binding
+                if (binder is IncrementalBinder incrementalBinder) binder = incrementalBinder.UnderlyingBinder;
                 while (binder is not ImportBinder) binder = binder.Parent!;
                 _ = binder.DeclaredSymbols;
                 break;

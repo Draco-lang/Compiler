@@ -137,6 +137,8 @@ public sealed partial class SemanticModel : IBinderProvider
     /// declared any.</returns>
     public ISymbol? GetDeclaredSymbol(SyntaxNode syntax)
     {
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing?.ToApiSymbol();
+
         // Get enclosing context
         var binder = this.GetBinder(syntax);
         var containingSymbol = binder.ContainingSymbol;
@@ -183,30 +185,34 @@ public sealed partial class SemanticModel : IBinderProvider
     {
         if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing?.ToApiSymbol();
 
-        void BindEnclosing()
-        {
-            var binder = this.GetBinder(syntax);
-            var containingSymbol = binder.ContainingSymbol;
-            switch (containingSymbol)
-            {
-            default:
-                throw new NotImplementedException();
-            }
-        }
+        // Get enclosing context
+        var binder = this.GetBinder(syntax);
+        var containingSymbol = binder.ContainingSymbol;
 
-        switch (syntax)
+        switch (containingSymbol)
         {
-        case NameExpressionSyntax:
-        case MemberExpressionSyntax:
+        case SourceFunctionSymbol func:
         {
-            // Bind the enclosing entity
-            BindEnclosing();
-            return this.symbolMap[syntax].ToApiSymbol();
+            // Bind the function contents
+            func.Bind(this, this.compilation.GlobalDiagnosticBag);
+            break;
+        }
+        case SourceModuleSymbol module:
+        {
+            // Bind top-level members
+            foreach (var member in module.Members.OfType<ISourceSymbol>())
+            {
+                member.Bind(this, this.compilation.GlobalDiagnosticBag);
+            }
+            break;
         }
         default:
-            // TODO
             throw new NotImplementedException();
         }
+
+        // Attempt to retrieve
+        this.symbolMap.TryGetValue(syntax, out var symbol);
+        return symbol?.ToApiSymbol();
     }
 
     private Binder GetBinder(SyntaxNode syntax)

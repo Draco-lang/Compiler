@@ -54,6 +54,9 @@ public sealed partial class SemanticModel : IBinderProvider
     {
         var diagnostics = new DiagnosticBag();
 
+        // Add global diagnostics
+        diagnostics.AddRange(this.compilation.GlobalDiagnosticBag);
+
         var syntaxNodes = span is null
             ? this.Tree.PreOrderTraverse()
             : this.Tree.TraverseSubtreesIntersectingSpan(span.Value);

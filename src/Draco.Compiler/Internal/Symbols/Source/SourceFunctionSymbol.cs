@@ -17,10 +17,12 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
-    public override ImmutableArray<ParameterSymbol> Parameters => this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
+    public override ImmutableArray<ParameterSymbol> Parameters =>
+        this.parameters ??= this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private ImmutableArray<ParameterSymbol>? parameters;
 
-    public override TypeSymbol ReturnType => this.BindReturnType(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+    public override TypeSymbol ReturnType =>
+        this.returnType ??= this.BindReturnType(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
     private TypeSymbol? returnType;
 
     public override Symbol? ContainingSymbol { get; }
@@ -28,7 +30,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 
-    public BoundStatement Body => this.BindBody(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+    public BoundStatement Body =>
+        this.body ??= this.BindBody(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
     private BoundStatement? body;
 
     public override string Documentation => this.DeclaringSyntax.Documentation;
@@ -58,8 +61,6 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     private ImmutableArray<ParameterSymbol> BindParameters(DiagnosticBag diagnostics)
     {
-        if (this.parameters is not null) return this.parameters.Value;
-
         var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
@@ -83,33 +84,22 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
             parameters.Add(parameter);
         }
 
-        this.parameters = parameters.ToImmutable();
-        return this.parameters.Value;
+        return parameters.ToImmutable();
     }
 
     private TypeSymbol BindReturnType(IBinderProvider binderProvider, DiagnosticBag diagnostics)
     {
-        if (this.returnType is not null) return this.returnType;
-
         // If the return type is unspecified, it's assumed to be unit
         if (this.DeclaringSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
 
         // Otherwise, we need to resolve
-        Debug.Assert(this.DeclaringCompilation is not null);
-
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        this.returnType = (TypeSymbol)binder.BindType(this.DeclaringSyntax.ReturnType.Type, diagnostics);
-
-        return this.returnType;
+        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.ReturnType.Type, diagnostics);
     }
 
     private BoundStatement BindBody(IBinderProvider binderProvider, DiagnosticBag diagnostics)
     {
-        if (this.body is not null) return this.body;
-
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Body);
-        this.body = binder.BindFunction(this, diagnostics);
-
-        return this.body;
+        return binder.BindFunction(this, diagnostics);
     }
 }

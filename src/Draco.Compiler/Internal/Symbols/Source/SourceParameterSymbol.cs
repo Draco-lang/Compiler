@@ -32,11 +32,7 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 
     private TypeSymbol BindType(IBinderProvider binderProvider, DiagnosticBag diagnostics)
     {
-        if (this.type is not null) return this.type;
-
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Type);
-        this.type = (TypeSymbol)binder.BindType(this.DeclaringSyntax.Type, diagnostics);
-
-        return this.type;
+        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.Type, diagnostics);
     }
 }

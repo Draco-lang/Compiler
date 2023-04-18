@@ -14,7 +14,12 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     {
         get
         {
-            if (this.NeedsBuild) this.BindTypeAndValue(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+            if (this.NeedsBuild)
+            {
+                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+                this.type = type;
+                this.value = value;
+            }
             Debug.Assert(this.type is not null);
             return this.type;
         }
@@ -32,7 +37,12 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         {
             // NOTE: We check the TYPE here, as value is nullable,
             // but a type always needs to be inferred
-            if (this.NeedsBuild) this.BindTypeAndValue(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+            if (this.NeedsBuild)
+            {
+                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+                this.type = type;
+                this.value = value;
+            }
             return this.value;
         }
     }
@@ -61,14 +71,9 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         ValAssignment.Analyze(this, diagnostics);
     }
 
-    private void BindTypeAndValue(IBinderProvider binderProvider, DiagnosticBag diagnostics)
+    private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValue(IBinderProvider binderProvider, DiagnosticBag diagnostics)
     {
-        if (!this.NeedsBuild) return;
-
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        var (type, value) = binder.BindGlobal(this, diagnostics);
-
-        this.type = type;
-        this.value = value;
+        return binder.BindGlobal(this, diagnostics);
     }
 }

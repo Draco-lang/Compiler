@@ -61,8 +61,6 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 
     private ImmutableArray<Symbol> BindMembers(DiagnosticBag diagnostics)
     {
-        if (this.members is not null) return this.members.Value;
-
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // Syntax-declaration
@@ -87,8 +85,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
                 formatArgs: member.Name));
         }
 
-        this.members = result.ToImmutable();
-        return this.members.Value;
+        return result.ToImmutable();
     }
 
     private Symbol BuildMember(Declaration declaration) => declaration switch

@@ -137,7 +137,7 @@ public sealed partial class SemanticModel : IBinderProvider
     /// declared any.</returns>
     public ISymbol? GetDeclaredSymbol(SyntaxNode syntax)
     {
-        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing?.ToApiSymbol();
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
 
         // Get enclosing context
         var binder = this.GetBinder(syntax);
@@ -183,7 +183,7 @@ public sealed partial class SemanticModel : IBinderProvider
     /// if it does not reference any.</returns>
     public ISymbol? GetReferencedSymbol(SyntaxNode syntax)
     {
-        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing?.ToApiSymbol();
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
 
         // Get enclosing context
         var binder = this.GetBinder(syntax);

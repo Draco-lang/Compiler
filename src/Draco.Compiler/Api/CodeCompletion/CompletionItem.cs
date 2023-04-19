@@ -11,7 +11,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// <param name="Symbols">All <see cref="ISymbol"/>s representing this completion (usually symbol representing type etc. or multiple <see cref="FunctionSymbol"/>s representing an overload).</param>
 /// <param name="Kind">The <see cref="CompletionKind"/> of this completion.</param>
 /// <param name="Context">The <see cref="CompletionContext"/> of this completion.</param>
-public record class CompletionItem(TextChange Change, ImmutableArray<ISymbol> Symbols, CompletionKind Kind, params CompletionContext[] Context)
+public sealed record class CompletionItem(TextChange Change, ImmutableArray<ISymbol> Symbols, CompletionKind Kind, params CompletionContext[] Context)
 {
     public static CompletionItem Create(string text, CompletionKind kind, params CompletionContext[] contexts) =>
         new CompletionItem(new TextChange(null, null, text), ImmutableArray<ISymbol>.Empty, kind, contexts);
@@ -29,4 +29,4 @@ public record class CompletionItem(TextChange Change, ImmutableArray<ISymbol> Sy
 /// <param name="Start">The <see cref="SyntaxPosition"/> where this change starts.</param>
 /// <param name="RemoveLength">The length of code that should be removed from the <paramref name="Start"/>.</param>
 /// <param name="InsertedText">The text that should be inserted into the free space.</param>
-public record class TextChange(SyntaxPosition? Start, int? RemoveLength, string InsertedText);
+public sealed record class TextChange(SyntaxPosition? Start, int? RemoveLength, string InsertedText);

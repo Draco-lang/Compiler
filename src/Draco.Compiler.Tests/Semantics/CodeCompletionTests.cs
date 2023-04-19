@@ -348,6 +348,7 @@ public sealed class CodeCompletionTests
         var semanticModel = compilation.GetSemanticModel(tree);
         var signatures = SignatureService.GetSignature(tree, semanticModel, cursor);
         Assert.NotNull(signatures);
+        Assert.NotNull(signatures.CurrentParameter);
         Assert.Single(signatures.Overloads);
         Assert.Single(signatures.Overloads[0].Parameters);
         Assert.True(signatures.CurrentOverload.Equals(signatures.Overloads[0]));

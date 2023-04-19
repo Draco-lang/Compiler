@@ -79,9 +79,6 @@ public sealed partial class SemanticModel
         internal override Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) =>
             this.BindSymbol(syntax, () => base.BindType(syntax, diagnostics));
 
-        internal override Symbol BindImportPath(ImportPathSyntax syntax, DiagnosticBag diagnostics) =>
-            this.BindSymbol(syntax, () => base.BindImportPath(syntax, diagnostics));
-
         // TODO: Hack
         internal override void BindModuleSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.ModuleSymbol module) =>
             this.semanticModel.symbolMap[syntax] = module;

@@ -123,7 +123,7 @@ internal sealed partial class ConstraintSolver
                     || (this.Unwrap(common.Second).ContainsTypeVariable(variable)
                     && this.Unwrap(common.First) is not (TypeVariable or NeverTypeSymbol)))
                     || con is OverloadConstraint overload
-                    && this.Unwrap(overload.CallSite).ContainsTypeVariable(variable)) return SolveState.Stale;
+                    && this.Unwrap(overload.CallSite).ContainsTypeVariable(variable)) return SolveState.Stale; //TODO: if overload call site is function symbol, which has all Params TypeVars and all the TypeVars have BaseTypeConstraint (something like 5 + 3), let this run
             }
         }
         else

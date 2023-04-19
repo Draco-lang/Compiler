@@ -6,7 +6,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 public enum CompletionContext
 {
     /// <summary>
-    /// Part of an expression (can be also keyword if its usable in expressions for example or).
+    /// Part of an expression (can be also keyword if its usable in expressions, for example 'or').
     /// </summary>
     ExpressionContent,
 

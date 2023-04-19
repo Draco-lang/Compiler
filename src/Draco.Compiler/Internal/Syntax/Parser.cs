@@ -238,7 +238,7 @@ internal sealed class Parser
         switch (this.Peek())
         {
         // Declarations
-        case TokenKind t when this.IsDeclarationStarter(t):
+        case TokenKind t when allowDecl && this.IsDeclarationStarter(t):
         {
             var decl = this.ParseDeclaration();
             return new DeclarationStatementSyntax(decl);

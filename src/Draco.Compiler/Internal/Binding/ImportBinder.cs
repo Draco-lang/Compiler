@@ -55,12 +55,12 @@ internal sealed class ImportBinder : Binder
         foreach (var syntax in importSyntaxes)
         {
             var importItem = this.BindImport(syntax, diagnostics);
-            if (importItem is not null) importItems.Add(importItem);
+            importItems.Add(importItem);
         }
         return importItems.ToImmutable();
     }
 
-    private ImportItem? BindImport(ImportDeclarationSyntax syntax, DiagnosticBag diagnostics)
+    private ImportItem BindImport(ImportDeclarationSyntax syntax, DiagnosticBag diagnostics)
     {
         var parts = ImmutableArray.CreateBuilder<KeyValuePair<ImportPathSyntax, Symbol>>();
 
@@ -71,7 +71,7 @@ internal sealed class ImportBinder : Binder
         if (importedSymbol.IsError)
         {
             // No-op, don't cascade
-            return null;
+            return new(syntax, parts.ToImmutable(), Enumerable.Empty<Symbol>());
         }
         else if (importedSymbol is not ModuleSymbol)
         {
@@ -80,7 +80,7 @@ internal sealed class ImportBinder : Binder
                 template: SymbolResolutionErrors.IllegalImport,
                 location: syntax.Path.Location,
                 formatArgs: syntax.Path));
-            return null;
+            return new(syntax, parts.ToImmutable(), Enumerable.Empty<Symbol>());
         }
         else
         {
@@ -106,7 +106,12 @@ internal sealed class ImportBinder : Binder
             {
                 var parent = BindImportPath(mem.Accessed);
                 // Don't cascade errors
-                if (parent.IsError) return parent;
+                if (parent.IsError)
+                {
+                    var symbol = new UndefinedMemberSymbol();
+                    parts!.Add(new(mem, symbol));
+                    return parent;
+                }
                 // Look up in parent
                 var membersWithName = parent.Members
                     .Where(m => m.Name == mem.Member.Text)

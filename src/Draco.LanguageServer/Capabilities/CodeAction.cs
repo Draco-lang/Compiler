@@ -13,7 +13,8 @@ internal sealed partial class DracoLanguageServer : ICodeAction
     public CodeActionRegistrationOptions CodeActionRegistrationOptions => new()
     {
         DocumentSelector = this.DocumentSelector,
-        CodeActionKinds = new[] { CodeActionKind.QuickFix }
+        CodeActionKinds = new[] { CodeActionKind.QuickFix },
+        ResolveProvider = false
     };
 
     public Task<CodeAction[]?> CompleteAsync(CodeActionParams param, CancellationToken cancellationToken)

@@ -28,8 +28,8 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
     private ImmutableArray<TextEdit> TopOfScope()
     {
         var import = this.SyntaxTree.TraverseSubtreesIntersectingRange(this.Range).LastOrDefault(x => x is ImportDeclarationSyntax);
-        if (import is null) throw new InvalidOperationException();
-        var newTree = this.SyntaxTree.Reorder(import, 0);
+        if (import is null) return ImmutableArray<TextEdit>.Empty;
+        var newTree = this.SyntaxTree.Reorder(import.Parent!, 0);
         return this.SyntaxTree.SyntaxTreeDiff(newTree);
     }
 

@@ -35,4 +35,6 @@ internal sealed class ReorderRewriter : SyntaxRewriter
         }
         return base.VisitSyntaxList(node);
     }
+
+    public override SyntaxNode VisitSyntaxToken(SyntaxToken node) => node;
 }

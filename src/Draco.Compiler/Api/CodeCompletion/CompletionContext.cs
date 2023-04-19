@@ -28,5 +28,5 @@ public enum CompletionContext
     /// <summary>
     /// Keyword that starts declaration.
     /// </summary>
-    DeclarationKeyword
+    DeclarationKeyword,
 }

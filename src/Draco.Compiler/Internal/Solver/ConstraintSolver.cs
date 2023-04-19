@@ -180,7 +180,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="targetType">The type being assigned to.</param>
     /// <param name="assignedType">The type assigned.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<Type> Assignable(Type targetType, Type assignedType)
+    public ConstraintPromise<TypeSymbol> Assignable(TypeSymbol targetType, TypeSymbol assignedType)
     {
         var constraint = new CommonBaseConstraint(targetType, assignedType);
         this.constraints.Add(constraint);
@@ -193,7 +193,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="first">The first type to search a common type for.</param>
     /// <param name="second">The second type to search a common type for.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<Type> CommonType(Type first, Type second)
+    public ConstraintPromise<TypeSymbol> CommonType(TypeSymbol first, TypeSymbol second)
     {
         var constraint = new CommonBaseConstraint(first, second);
         this.constraints.Add(constraint);
@@ -206,7 +206,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="variable">The type variable to infer.</param>
     /// <param name="baseType">The base type of the infered variable.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<TypeVariable> BaseType(TypeVariable variable, Type baseType)
+    public ConstraintPromise<TypeVariable> BaseType(TypeVariable variable, TypeSymbol baseType)
     {
         var constraint = new BaseTypeConstraint(variable, baseType);
         this.constraints.Add(constraint);

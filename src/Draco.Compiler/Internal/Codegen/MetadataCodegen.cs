@@ -363,22 +363,22 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     public void EncodeSignatureType(SignatureTypeEncoder encoder, TypeSymbol type)
     {
-        if (ReferenceEquals(type, IntrinsicTypes.Bool)) { encoder.Boolean(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
 
-        if (ReferenceEquals(type, IntrinsicTypes.Int8)) { encoder.SByte(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Int16)) { encoder.Int16(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Int32)) { encoder.Int32(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Int64)) { encoder.Int64(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Int8)) { encoder.SByte(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Int16)) { encoder.Int16(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Int64)) { encoder.Int64(); return; }
 
-        if (ReferenceEquals(type, IntrinsicTypes.Uint8)) { encoder.Byte(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Uint16)) { encoder.UInt16(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Uint32)) { encoder.UInt32(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Uint64)) { encoder.UInt64(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Uint8)) { encoder.Byte(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Uint16)) { encoder.UInt16(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Uint32)) { encoder.UInt32(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Uint64)) { encoder.UInt64(); return; }
 
-        if (ReferenceEquals(type, IntrinsicTypes.Float32)) { encoder.Single(); return; }
-        if (ReferenceEquals(type, IntrinsicTypes.Float64)) { encoder.Double(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Float32)) { encoder.Single(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
 
-        if (ReferenceEquals(type, IntrinsicTypes.String)) { encoder.String(); return; }
+        if (ReferenceEquals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
 
         // TODO
         throw new System.NotImplementedException();

@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// A constant value.
 /// </summary>
 /// <param name="Value">The constant value.</param>
-internal readonly record struct Constant(object? Value, Type Type) : IOperand
+internal readonly record struct Constant(object? Value, TypeSymbol Type) : IOperand
 {
     public override string ToString() => this.ToOperandString();
     public string ToOperandString() => this.Value switch

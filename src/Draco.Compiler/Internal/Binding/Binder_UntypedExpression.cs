@@ -57,18 +57,18 @@ internal partial class Binder
     {
         var baseType = syntax.Literal.Value switch
         {
-            sbyte => IntrinsicTypes.IntegralType,
-            short => IntrinsicTypes.IntegralType,
-            int => IntrinsicTypes.IntegralType,
-            long => IntrinsicTypes.IntegralType,
+            sbyte => IntrinsicSymbols.IntegralType,
+            short => IntrinsicSymbols.IntegralType,
+            int => IntrinsicSymbols.IntegralType,
+            long => IntrinsicSymbols.IntegralType,
 
-            byte => IntrinsicTypes.IntegralType,
-            ushort => IntrinsicTypes.IntegralType,
-            uint => IntrinsicTypes.IntegralType,
-            ulong => IntrinsicTypes.IntegralType,
+            byte => IntrinsicSymbols.IntegralType,
+            ushort => IntrinsicSymbols.IntegralType,
+            uint => IntrinsicSymbols.IntegralType,
+            ulong => IntrinsicSymbols.IntegralType,
 
-            float => IntrinsicTypes.FloatingPointType,
-            double => IntrinsicTypes.FloatingPointType,
+            float => IntrinsicSymbols.FloatingPointType,
+            double => IntrinsicSymbols.FloatingPointType,
 
             _ => null
         };

@@ -23,6 +23,8 @@ internal sealed class TypeVariable : TypeSymbol
         this.index = index;
     }
 
+    public override bool ContainsTypeVariable(TypeVariable variable) => ReferenceEquals(this, variable);
+
     public override string ToString() => $"{StringUtils.IndexToExcelColumnName(this.index)}'";
 
     public override void Accept(SymbolVisitor visitor) => throw new NotSupportedException();

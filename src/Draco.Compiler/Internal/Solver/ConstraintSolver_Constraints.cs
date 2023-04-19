@@ -77,7 +77,7 @@ internal sealed partial class ConstraintSolver
 
     private SolveState Solve(DiagnosticBag diagnostics, CommonBaseConstraint constraint)
     {
-        if (this.Unwrap(constraint.First) is TypeVariable or NeverType && this.Unwrap(constraint.Second) is TypeVariable or NeverType)
+        if (this.Unwrap(constraint.First) is TypeVariable or NeverTypeSymbol && this.Unwrap(constraint.Second) is TypeVariable or NeverTypeSymbol)
         {
             foreach (var con in this.constraints)
             {
@@ -99,13 +99,13 @@ internal sealed partial class ConstraintSolver
 
     private SolveState Solve(DiagnosticBag diagnostics, BaseTypeConstraint constraint)
     {
-        Type GetInferedType(BuiltinType builtinType)
+        TypeSymbol GetInferedType(PrimitiveTypeSymbol builtinType)
         {
-            if (builtinType == IntrinsicTypes.IntegralType) return IntrinsicTypes.Int32;
-            else if (builtinType == IntrinsicTypes.FloatingPointType) return IntrinsicTypes.Float64;
+            if (builtinType == IntrinsicSymbols.IntegralType) return IntrinsicSymbols.Int32;
+            else if (builtinType == IntrinsicSymbols.FloatingPointType) return IntrinsicSymbols.Float64;
             else throw new System.InvalidOperationException();
         }
-        if (constraint.BaseType is not BuiltinType baseType || !baseType.IsBaseType) throw new System.InvalidOperationException();
+        if (constraint.BaseType is not PrimitiveTypeSymbol baseType || !baseType.IsBaseType) throw new System.InvalidOperationException();
         var type = this.Unwrap(constraint.Variable);
 
         if (type is TypeVariable variable)
@@ -119,9 +119,9 @@ internal sealed partial class ConstraintSolver
                     || this.Unwrap(same.Second).ContainsTypeVariable(variable))
                     || con is CommonBaseConstraint common
                     && ((this.Unwrap(common.First).ContainsTypeVariable(variable)
-                    && this.Unwrap(common.Second) is not (TypeVariable or NeverType))
+                    && this.Unwrap(common.Second) is not (TypeVariable or NeverTypeSymbol))
                     || (this.Unwrap(common.Second).ContainsTypeVariable(variable)
-                    && this.Unwrap(common.First) is not (TypeVariable or NeverType)))
+                    && this.Unwrap(common.First) is not (TypeVariable or NeverTypeSymbol)))
                     || con is OverloadConstraint overload
                     && this.Unwrap(overload.CallSite).ContainsTypeVariable(variable)) return SolveState.Stale;
             }
@@ -129,7 +129,7 @@ internal sealed partial class ConstraintSolver
         else
         {
             // If this TypeVariable was already substituted just return
-            if (type is BuiltinType builtin)
+            if (type is PrimitiveTypeSymbol builtin)
             {
                 var hasBase = false;
                 foreach (var builtinBase in builtin.Bases)
@@ -138,7 +138,7 @@ internal sealed partial class ConstraintSolver
                 }
                 if (hasBase) return SolveState.Finished;
             }
-            else if (type is NeverType || type is ErrorType) return SolveState.Finished;
+            else if (type is NeverTypeSymbol || type is ErrorTypeSymbol) return SolveState.Finished;
             var diagnostic = constraint.Diagnostic
                 .WithTemplate(TypeCheckingErrors.TypeMismatch)
                 .WithFormatArgs(this.Unwrap(type), this.Unwrap(GetInferedType(baseType)))
@@ -301,7 +301,7 @@ internal sealed partial class ConstraintSolver
         }
     }
 
-    private bool UnifyBase(Type left, Type right)
+    private bool UnifyBase(TypeSymbol left, TypeSymbol right)
     {
         left = this.Unwrap(left);
         right = this.Unwrap(right);
@@ -317,26 +317,26 @@ internal sealed partial class ConstraintSolver
             this.Substitute(v1, v2);
             return true;
         }
-        case (TypeVariable v, Type other):
+        case (TypeVariable v, TypeSymbol other):
         {
             this.Substitute(v, other);
             return true;
         }
-        case (Type other, TypeVariable v):
+        case (TypeSymbol other, TypeVariable v):
         {
             this.Substitute(v, other);
             return true;
         }
 
         // Never type is never reached, unifies with everything
-        case (NeverType, _):
-        case (_, NeverType):
+        case (NeverTypeSymbol, _):
+        case (_, NeverTypeSymbol):
         // Error type unifies with everything to avoid cascading type errors
-        case (ErrorType, _):
-        case (_, ErrorType):
+        case (ErrorTypeSymbol, _):
+        case (_, ErrorTypeSymbol):
             return true;
 
-        case (BuiltinType t1, BuiltinType t2):
+        case (PrimitiveTypeSymbol t1, PrimitiveTypeSymbol t2):
         {
             if (t1.IsBaseType)
             {
@@ -356,16 +356,15 @@ internal sealed partial class ConstraintSolver
                 }
                 return isBase;
             }
-            else return t1.Name == t2.Name
-                && t1.UnderylingType == t2.UnderylingType;
+            else return ReferenceEquals(left, right);
         }
 
-        case (FunctionType f1, FunctionType f2):
+        case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
         {
-            if (f1.ParameterTypes.Length != f2.ParameterTypes.Length) return false;
-            for (var i = 0; i < f1.ParameterTypes.Length; ++i)
+            if (f1.Parameters.Length != f2.Parameters.Length) return false;
+            for (var i = 0; i < f1.Parameters.Length; ++i)
             {
-                if (!this.UnifyBase(f1.ParameterTypes[i], f2.ParameterTypes[i])) return false;
+                if (!this.UnifyBase(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
             }
             return this.UnifyBase(f1.ReturnType, f2.ReturnType);
         }

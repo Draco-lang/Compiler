@@ -92,7 +92,7 @@ internal partial class UntypedReferenceErrorExpression
 internal partial class UntypedLiteralExpression
 {
     // TODO: chars
-    public override Type Type => this.Value switch
+    public override TypeSymbol Type => this.Value switch
     {
         sbyte => this.VariableReference!,
         short => this.VariableReference!,
@@ -107,8 +107,8 @@ internal partial class UntypedLiteralExpression
         float => this.VariableReference!,
         double => this.VariableReference!,
 
-        bool => IntrinsicTypes.Bool,
-        string => IntrinsicTypes.String,
+        bool => IntrinsicSymbols.Bool,
+        string => IntrinsicSymbols.String,
         _ => throw new System.InvalidOperationException(),
     };
 }

@@ -144,7 +144,7 @@
 
   <Node Name="UntypedLiteralExpression" Base="UntypedExpression">
     <Field Name="Value" Type="object?" />
-    <Field Name="VariableReference" Type="Type?" />
+    <Field Name="VariableReference" Type="TypeSymbol?" />
   </Node>
 
   <Node Name="UntypedStringExpression" Base="UntypedExpression">

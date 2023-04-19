@@ -186,7 +186,7 @@
 
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object?" />
-    <Field Name="Type" Type="Type" Override="true" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundStringExpression" Base="BoundExpression">

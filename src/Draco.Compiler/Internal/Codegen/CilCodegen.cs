@@ -331,38 +331,38 @@ internal sealed class CilCodegen
             this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
             break;
         case Constant c:
-            if (c.Type == IntrinsicTypes.Int8
-                || c.Type == IntrinsicTypes.Int16
-                || c.Type == IntrinsicTypes.Int32
-                || c.Type == IntrinsicTypes.Uint8
-                || c.Type == IntrinsicTypes.Uint16
-                || c.Type == IntrinsicTypes.Uint32)
+            if (c.Type == IntrinsicSymbols.Int8
+                || c.Type == IntrinsicSymbols.Int16
+                || c.Type == IntrinsicSymbols.Int32
+                || c.Type == IntrinsicSymbols.Uint8
+                || c.Type == IntrinsicSymbols.Uint16
+                || c.Type == IntrinsicSymbols.Uint32)
             {
                 this.InstructionEncoder.LoadConstantI4(System.Convert.ToInt32(c.Value!));
                 break;
             }
-            else if (c.Type == IntrinsicTypes.Int64
-                || c.Type == IntrinsicTypes.Uint64)
+            else if (c.Type == IntrinsicSymbols.Int64
+                || c.Type == IntrinsicSymbols.Uint64)
             {
                 this.InstructionEncoder.LoadConstantI8(System.Convert.ToInt64(c.Value!));
                 break;
             }
-            else if (c.Type == IntrinsicTypes.Bool)
+            else if (c.Type == IntrinsicSymbols.Bool)
             {
                 this.InstructionEncoder.LoadConstantI4((bool)c.Value! ? 1 : 0);
                 break;
             }
-            else if (c.Type == IntrinsicTypes.Float32)
+            else if (c.Type == IntrinsicSymbols.Float32)
             {
                 this.InstructionEncoder.LoadConstantR4(System.Convert.ToSingle(c.Value!));
                 break;
             }
-            else if (c.Type == IntrinsicTypes.Float64)
+            else if (c.Type == IntrinsicSymbols.Float64)
             {
                 this.InstructionEncoder.LoadConstantR8(System.Convert.ToDouble(c.Value!));
                 break;
             }
-            else if (c.Type == IntrinsicTypes.String)
+            else if (c.Type == IntrinsicSymbols.String)
             {
                 var stringHandle = this.GetStringLiteralHandle((string)c.Value!);
                 this.InstructionEncoder.LoadString(stringHandle);

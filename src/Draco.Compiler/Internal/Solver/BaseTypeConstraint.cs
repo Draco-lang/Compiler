@@ -1,4 +1,4 @@
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -15,14 +15,14 @@ internal sealed class BaseTypeConstraint : Constraint
     /// <summary>
     /// The base type that the <see cref="TypeVariable"/> should have.
     /// </summary>
-    public Type BaseType { get; }
+    public TypeSymbol BaseType { get; }
 
     /// <summary>
     /// The promise of this constraint.
     /// </summary>
     public ConstraintPromise<TypeVariable> Promise { get; }
 
-    public BaseTypeConstraint(TypeVariable variable, Type baseType)
+    public BaseTypeConstraint(TypeVariable variable, TypeSymbol baseType)
     {
         this.Variable = variable;
         this.BaseType = baseType;

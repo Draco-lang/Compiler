@@ -25,6 +25,15 @@ internal sealed class FunctionTypeSymbol : TypeSymbol
         this.ReturnType = returnType;
     }
 
+    public override bool ContainsTypeVariable(TypeVariable variable)
+    {
+        for (var i = 0; i < this.Parameters.Length; ++i)
+        {
+            if (ReferenceEquals(this.Parameters[i].Type, variable)) return true;
+        }
+        return ReferenceEquals(this.ReturnType, variable);
+    }
+
     public override string ToString() =>
         $"({string.Join(", ", this.Parameters)}) -> {this.ReturnType}";
 }

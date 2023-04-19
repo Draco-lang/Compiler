@@ -73,9 +73,9 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
-        Assert.Equal(ySym.Type, IntrinsicTypes.Float32);
-        Assert.Equal(zSym.Type, IntrinsicTypes.Float64);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int16);
+        Assert.Equal(ySym.Type, IntrinsicSymbols.Float32);
+        Assert.Equal(zSym.Type, IntrinsicSymbols.Float64);
     }
 
     [Fact]
@@ -113,8 +113,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
-        Assert.Equal(ySym.Type, IntrinsicTypes.Int16);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int16);
+        Assert.Equal(ySym.Type, IntrinsicSymbols.Int16);
     }
 
     [Fact]
@@ -147,8 +147,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
-        Assert.Equal(ySym.Type, IntrinsicTypes.Int16);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int16);
+        Assert.Equal(ySym.Type, IntrinsicSymbols.Int16);
     }
 
     [Fact]
@@ -235,7 +235,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int16);
     }
 
     [Fact]
@@ -410,7 +410,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(xSym.Type, IntrinsicTypes.Int16);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int16);
     }
 
     [Fact]
@@ -825,8 +825,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var ySym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(yDecl));
 
         // Assert
-        Assert.Equal(IntrinsicTypes.Int32, xSym.Type);
-        Assert.Equal(IntrinsicTypes.Int16, ySym.Type);
+        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(IntrinsicSymbols.Int16, ySym.Type);
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
@@ -865,9 +865,9 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var zSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(zDecl));
 
         // Assert
-        Assert.Equal(IntrinsicTypes.Int32, xSym.Type);
-        Assert.Equal(IntrinsicTypes.Int16, ySym.Type);
-        Assert.Equal(IntrinsicTypes.Error, zSym.Type);
+        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(IntrinsicSymbols.Int16, ySym.Type);
+        Assert.Equal(IntrinsicSymbols.ErrorType, zSym.Type);
         Assert.Equal(2, diags.Length);
         AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
         AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);

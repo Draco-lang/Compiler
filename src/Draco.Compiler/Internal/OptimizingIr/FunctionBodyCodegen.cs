@@ -253,9 +253,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var sub = node.Operand.Accept(this);
         var target = this.DefineRegister(node.TypeRequired);
 
-        if (IsNot(node.Operator)) this.Write(Equal(target, sub, new Constant(false, IntrinsicTypes.Bool)));
+        if (IsNot(node.Operator)) this.Write(Equal(target, sub, new Constant(false, IntrinsicSymbols.Bool)));
         else if (IsPlus(node.Operator)) { /* no-op */ }
-        else if (IsMinus(node.Operator)) this.Write(Mul(target, sub, new Constant(-1, IntrinsicTypes.Int32)));
+        else if (IsMinus(node.Operator)) this.Write(Mul(target, sub, new Constant(-1, IntrinsicSymbols.Int32)));
         // TODO
         else throw new System.NotImplementedException();
 
@@ -317,7 +317,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // (b < a) == false
             var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Less(tmp, right, left));
-            this.Write(Equal(target, tmp, new Constant(false, IntrinsicTypes.Bool)));
+            this.Write(Equal(target, tmp, new Constant(false, IntrinsicSymbols.Bool)));
         }
         else if (IsGreaterEqual(node.Operator))
         {
@@ -326,7 +326,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // (a < b) == false
             var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Less(tmp, left, right));
-            this.Write(Equal(target, tmp, new Constant(false, IntrinsicTypes.Bool)));
+            this.Write(Equal(target, tmp, new Constant(false, IntrinsicSymbols.Bool)));
         }
         else if (IsEqual(node.Operator))
         {
@@ -339,7 +339,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // (a == b) == false
             var tmp = this.DefineRegister(node.TypeRequired);
             this.Write(Equal(tmp, left, right));
-            this.Write(Equal(target, tmp, new Constant(false, IntrinsicTypes.Bool)));
+            this.Write(Equal(target, tmp, new Constant(false, IntrinsicSymbols.Bool)));
         }
         else
         {

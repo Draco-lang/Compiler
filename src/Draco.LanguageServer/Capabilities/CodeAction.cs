@@ -29,7 +29,8 @@ internal sealed partial class DracoLanguageServer : ICodeAction
             actions[i] = new CodeAction()
             {
                 Title = fixes[i].DisplayText,
-                Kind = CodeActionKind.QuickFix, //TODO: we might have some other fixes in future
+                //TODO: we might have some other fixes in future
+                Kind = CodeActionKind.QuickFix,
                 Edit = new WorkspaceEdit()
                 {
                     Changes = new Dictionary<DocumentUri, IList<Lsp.Model.TextEdit>>()

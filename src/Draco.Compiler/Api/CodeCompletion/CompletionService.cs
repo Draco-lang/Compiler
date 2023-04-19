@@ -6,6 +6,9 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.CodeCompletion;
 
+/// <summary>
+/// Allows to get <see cref="CompletionItem"/>s from multiple <see cref="CompletionProvider"/>s.
+/// </summary>
 public sealed class CompletionService
 {
     private List<CompletionProvider> Providers = new List<CompletionProvider>();

@@ -5,6 +5,9 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.CodeCompletion;
 
+/// <summary>
+/// Provides keyword completions.
+/// </summary>
 public sealed class KeywordCompletionProvider : CompletionProvider
 {
     internal override CompletionContext[] ValidContexts { get; } = new[]

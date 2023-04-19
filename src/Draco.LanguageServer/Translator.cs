@@ -68,6 +68,7 @@ internal static class Translator
     {
         var result = new LspModels.CompletionItem()
         {
+            // TODO: Maybe we will have completions that don't just append text
             Label = item.Change.InsertedText,
             Kind = ToLsp(item.Kind),
         };

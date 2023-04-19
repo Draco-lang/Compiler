@@ -1,13 +1,14 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 
 namespace Draco.Compiler.Api.CodeFixes;
 
+/// <summary>
+/// Provides <see cref="CodeFix"/>es for import issues.
+/// </summary>
 public sealed class ImportCodeFixProvider : CodeFixProvider
 {
     private SyntaxTree SyntaxTree { get; }

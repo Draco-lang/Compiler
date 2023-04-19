@@ -5,6 +5,9 @@ using System.Collections.Immutable;
 
 namespace Draco.Compiler.Api.CodeFixes;
 
+/// <summary>
+/// Allows to get <see cref="CodeFix"/>es from multiple <see cref="CodeFixProvider"/>s.
+/// </summary>
 public sealed class CodeFixService
 {
     private List<CodeFixProvider> Providers = new List<CodeFixProvider>();
@@ -20,7 +23,7 @@ public sealed class CodeFixService
     /// </summary>
     /// <param name="tree">The <see cref="SyntaxTree"/> for which this service will create codefixes.</param>
     /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
-    /// <returns><see cref="CodeFix"/>es from all <see cref="CodeFixProvider"/>s.</returns>
+    /// <returns><see cref="CodeFix"/>es from all registered <see cref="CodeFixProvider"/>s.</returns>
     public ImmutableArray<CodeFix> GetCodeFixes(SyntaxTree tree, SemanticModel semanticModel)
     {
         var result = ImmutableArray.CreateBuilder<CodeFix>();

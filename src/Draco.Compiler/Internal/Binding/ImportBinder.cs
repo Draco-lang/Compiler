@@ -15,8 +15,13 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ImportBinder : Binder
 {
+    /// <summary>
+    /// The diagnostics produced during import resolution.
+    /// </summary>
+    public DiagnosticBag ImportDiagnostics { get; } = new();
+
     public override IEnumerable<Symbol> DeclaredSymbols =>
-        this.importedSymbols ??= this.BuildImportedSymbols(this.Compilation.GlobalDiagnosticBag);
+        this.importedSymbols ??= this.BuildImportedSymbols(this.ImportDiagnostics);
 
     public override SyntaxNode DeclaringSyntax { get; }
 

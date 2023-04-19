@@ -30,8 +30,10 @@ self.MonacoEnvironment = {
 };
 
 const hash = window.location.hash.slice(1);
-export let inputCode = `func main() {
-    println("Hello!");
+export let inputCode = `import System.Console;
+
+func main() {
+    WriteLine("Hello, World!");
 }
 `;
 

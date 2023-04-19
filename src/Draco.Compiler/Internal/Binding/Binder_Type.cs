@@ -12,7 +12,6 @@ internal partial class Binder
     /// Binds the given syntax node to a type symbol.
     /// </summary>
     /// <param name="syntax">The type to bind.</param>
-    /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The looked up type symbol for <paramref name="syntax"/>.</returns>
     internal virtual Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) => syntax switch

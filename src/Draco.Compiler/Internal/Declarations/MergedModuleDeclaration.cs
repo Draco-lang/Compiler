@@ -42,7 +42,12 @@ internal sealed class MergedModuleDeclaration : Declaration
         // We need to merge submodules by name
         var submodulesGrouped = submodules.GroupBy(m => m.Name);
         // And add them as merged modules
-        foreach (var group in submodulesGrouped) children.Add(new MergedModuleDeclaration(group.ToImmutableArray()));
+        foreach (var group in submodulesGrouped)
+        {
+            var groupArray = group.ToImmutableArray();
+            if (groupArray.Length == 1) children.Add(groupArray[0]);
+            else children.Add(new MergedModuleDeclaration(groupArray));
+        }
         return children.ToImmutable();
     }
 }

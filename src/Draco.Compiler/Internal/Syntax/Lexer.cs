@@ -129,8 +129,12 @@ internal sealed class Lexer
             // Normal tokens can have trivia
             this.ParseLeadingTriviaList();
             this.LexNormal();
-            // If we just ended interpolation, we are within a string, don't consume
-            if (this.tokenBuilder.Kind != TokenKind.InterpolationEnd) this.ParseTrailingTriviaList();
+            // If we just started a line-string or ended interpolation, we are within a string, don't consume
+            if (this.tokenBuilder.Kind != TokenKind.InterpolationEnd
+             && this.tokenBuilder.Kind != TokenKind.LineStringStart)
+            {
+                this.ParseTrailingTriviaList();
+            }
             break;
         }
 

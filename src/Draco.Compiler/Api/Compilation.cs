@@ -11,7 +11,9 @@ using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
+using ModuleSymbol = Draco.Compiler.Internal.Symbols.ModuleSymbol;
 
 namespace Draco.Compiler.Api;
 
@@ -41,9 +43,11 @@ public sealed class Compilation
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
+        ImmutableArray<MetadataReference>? metadataReferences = null,
         string? outputPath = null,
         string? assemblyName = null) => new(
         syntaxTrees: syntaxTrees,
+        metadataReferences: metadataReferences,
         outputPath: outputPath,
         assemblyName: assemblyName);
 
@@ -62,6 +66,11 @@ public sealed class Compilation
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
 
     /// <summary>
+    /// The metadata references this compilation can reference from.
+    /// </summary>
+    public ImmutableArray<MetadataReference> MetadataReferences { get; }
+
+    /// <summary>
     /// The output path.
     /// </summary>
     public string OutputPath { get; }
@@ -71,11 +80,24 @@ public sealed class Compilation
     /// </summary>
     public string AssemblyName { get; }
 
+    // TODO: Currently this does NOT include the sources, which might make merging same package names
+    // invalid between metadata and source. For now we don't care.
     /// <summary>
-    /// The global module symbol of the compilation.
+    /// The top-level merged module that contains the source along with references.
     /// </summary>
-    internal ModuleSymbol GlobalModule => this.globalModule ??= this.BuildGlobalModule();
-    private ModuleSymbol? globalModule;
+    internal MetadataReferencesModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
+    private MetadataReferencesModuleSymbol? rootModule;
+
+    /// <summary>
+    /// The metadata assemblies this compilation references.
+    /// </summary>
+    internal ImmutableArray<MetadataAssemblySymbol> MetadataAssemblies => this.RootModule.MetadataAssemblies;
+
+    /// <summary>
+    /// The top-level source module symbol of the compilation.
+    /// </summary>
+    internal ModuleSymbol SourceModule => this.sourceModule ??= this.BuildSourceModule();
+    private ModuleSymbol? sourceModule;
 
     /// <summary>
     /// The declaration table managing the top-level declarations of the compilation.
@@ -88,16 +110,24 @@ public sealed class Compilation
     /// </summary>
     internal DiagnosticBag GlobalDiagnosticBag { get; } = new();
 
+    /// <summary>
+    /// Welol-known types that need to be referenced during compilation.
+    /// </summary>
+    internal WellKnownTypes WellKnownTypes { get; }
+
     private readonly BinderCache binderCache;
 
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
+        ImmutableArray<MetadataReference>? metadataReferences,
         string? outputPath,
         string? assemblyName)
     {
         this.SyntaxTrees = syntaxTrees;
+        this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
+        this.WellKnownTypes = new(this);
         this.binderCache = new(this);
     }
 
@@ -136,7 +166,7 @@ public sealed class Compilation
         if (symbolTreeStream is not null)
         {
             var symbolWriter = new StreamWriter(symbolTreeStream);
-            symbolWriter.Write(this.GlobalModule.ToDot());
+            symbolWriter.Write(this.SourceModule.ToDot());
             symbolWriter.Flush();
         }
 
@@ -151,7 +181,7 @@ public sealed class Compilation
         // Generate IR
         var assembly = ModuleCodegen.Generate(
             compilation: this,
-            symbol: this.GlobalModule,
+            symbol: this.SourceModule,
             emitSequencePoints: pdbStream is not null);
         // Optimize the IR
         // TODO: Options for optimization
@@ -200,5 +230,6 @@ public sealed class Compilation
     }
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
-    private ModuleSymbol BuildGlobalModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
+    private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
+    private MetadataReferencesModuleSymbol BuildRootModule() => new(this);
 }

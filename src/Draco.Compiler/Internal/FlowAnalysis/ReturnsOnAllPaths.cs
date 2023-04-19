@@ -17,7 +17,7 @@ internal sealed class ReturnsOnAllPaths : FlowAnalysisPass<ReturnsOnAllPaths.Ret
         {
             diagnostics.Add(Diagnostic.Create(
                 template: FlowAnalysisErrors.DoesNotReturn,
-                location: function.DeclarationSyntax.Location,
+                location: function.DeclarationSyntax.Name.Location,
                 formatArgs: function.Name));
         }
     }

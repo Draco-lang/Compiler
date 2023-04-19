@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -42,7 +41,7 @@ internal interface IProcedure : IOperand
     /// <summary>
     /// The return type of this procedure.
     /// </summary>
-    public Type ReturnType { get; }
+    public TypeSymbol ReturnType { get; }
 
     /// <summary>
     /// All basic blocks within this procedure.

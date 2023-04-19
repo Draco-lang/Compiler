@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Ts = Draco.SourceGeneration.Lsp.TypeScript;
 using Cs = Draco.SourceGeneration.Lsp.CSharp;
+using Ts = Draco.SourceGeneration.Lsp.TypeScript;
 
 namespace Draco.SourceGeneration.Lsp;
 

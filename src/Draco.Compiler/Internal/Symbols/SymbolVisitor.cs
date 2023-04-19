@@ -14,6 +14,7 @@ internal abstract class SymbolVisitor
 
     public virtual void VisitType(TypeSymbol typeSymbol)
     {
+        foreach (var member in typeSymbol.Members) member.Accept(this);
     }
 
     public virtual void VisitParameter(ParameterSymbol parameterSymbol)
@@ -47,7 +48,11 @@ internal abstract class SymbolVisitor<TResult>
         return default!;
     }
 
-    public virtual TResult VisitType(TypeSymbol typeSymbol) => default!;
+    public virtual TResult VisitType(TypeSymbol typeSymbol)
+    {
+        foreach (var member in typeSymbol.Members) member.Accept(this);
+        return default!;
+    }
 
     public virtual TResult VisitParameter(ParameterSymbol parameterSymbol) => default!;
 

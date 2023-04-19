@@ -1,5 +1,4 @@
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -17,7 +16,7 @@ internal readonly record struct Global(GlobalSymbol Symbol) : IOperand
     /// <summary>
     /// The type this global holds.
     /// </summary>
-    public Type Type => this.Symbol.Type;
+    public TypeSymbol Type => this.Symbol.Type;
 
     public override string ToString() => $"global {this.ToOperandString()}: {this.Type}";
     public string ToOperandString() => this.Name;

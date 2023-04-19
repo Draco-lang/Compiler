@@ -22,6 +22,27 @@ internal abstract partial class Symbol
     public abstract Symbol? ContainingSymbol { get; }
 
     /// <summary>
+    /// The ancestory chain of this symbol, starting with this one.
+    /// </summary>
+    public IEnumerable<Symbol> AncestorChain
+    {
+        get
+        {
+            for (var result = this; result is not null; result = result.ContainingSymbol) yield return result;
+        }
+    }
+
+    /// <summary>
+    /// The root of this hierarchy.
+    /// </summary>
+    public Symbol? RootSymbol => this.AncestorChain.LastOrDefault();
+
+    /// <summary>
+    /// The root module of this hierarchy.
+    /// </summary>
+    public ModuleSymbol? RootModule => this.RootSymbol as ModuleSymbol;
+
+    /// <summary>
     /// True, if this symbol represents some error.
     /// </summary>
     public virtual bool IsError => false;
@@ -30,6 +51,20 @@ internal abstract partial class Symbol
     /// The name of this symbol.
     /// </summary>
     public virtual string Name => string.Empty;
+
+    /// <summary>
+    /// The fully qualified name of this symbol.
+    /// </summary>
+    public virtual string FullName
+    {
+        get
+        {
+            var parentFullName = this.ContainingSymbol?.FullName;
+            return string.IsNullOrWhiteSpace(parentFullName)
+                ? this.Name
+                : $"{parentFullName}.{this.Name}";
+        }
+    }
 
     /// <summary>
     /// All the members within this symbol.
@@ -68,7 +103,7 @@ internal abstract partial class Symbol
         {
             builder!
                 .AddVertex(symbol)
-                .WithLabel($"{symbol.GetType().Name}\n{symbol.Name}");
+                .WithLabel($"{symbol.GetType().Name}\n{symbol}");
             foreach (var m in symbol.Members)
             {
                 builder.AddEdge(symbol, m);

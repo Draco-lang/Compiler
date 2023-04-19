@@ -6,7 +6,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -18,8 +18,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
     private ImmutableArray<ParameterSymbol>? parameters;
 
-    public override Type ReturnType => this.returnType ??= this.BuildReturnType();
-    private Type? returnType;
+    public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
+    private TypeSymbol? returnType;
 
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.DeclarationSyntax.Name.Text;
@@ -73,10 +73,10 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
         return parameters.ToImmutable();
     }
 
-    private Type BuildReturnType()
+    private TypeSymbol BuildReturnType()
     {
         // If the return type is unspecified, it's assumed to be unit
-        if (this.DeclarationSyntax.ReturnType is null) return IntrinsicTypes.Unit;
+        if (this.DeclarationSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
 
         // Otherwise, we need to resolve
         Debug.Assert(this.DeclaringCompilation is not null);
@@ -84,8 +84,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
         // NOTE: We are using the global diagnostic bag, maybe that's not a good idea here?
         var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
         var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
-        var returnTypeSymbol = binder.BindType(this.DeclarationSyntax.ReturnType.Type, diagnostics);
-        return ((TypeSymbol)returnTypeSymbol).Type;
+        return (TypeSymbol)binder.BindType(this.DeclarationSyntax.ReturnType.Type, diagnostics);
     }
 
     private BoundStatement BuildBody()

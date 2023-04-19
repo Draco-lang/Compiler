@@ -5,7 +5,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -23,9 +23,9 @@ internal partial class Binder
     {
         // NOTE: The syntax error is already reported
         UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => new UntypedUnexpectedStatement(syntax),
-        // Function declarations get discarded, as they become symbols
-        // TODO: Actually make local functions work by making them symbols
-        FunctionDeclarationSyntax func => UntypedNoOpStatement.Default,
+        // Ignored
+        ImportDeclarationSyntax => UntypedNoOpStatement.Default,
+        FunctionDeclarationSyntax func => this.BindFunctionDeclaration(func, constraints, diagnostics),
         DeclarationStatementSyntax decl => this.BindStatement(decl.Declaration, constraints, diagnostics),
         ExpressionStatementSyntax expr => this.BindExpressionStatement(expr, constraints, diagnostics),
         BlockFunctionBodySyntax body => this.BindBlockFunctionBody(body, constraints, diagnostics),
@@ -34,6 +34,14 @@ internal partial class Binder
         VariableDeclarationSyntax decl => this.BindVariableDeclaration(decl, constraints, diagnostics),
         _ => throw new System.ArgumentOutOfRangeException(nameof(syntax)),
     };
+
+    private UntypedStatement BindFunctionDeclaration(FunctionDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var symbol = this.DeclaredSymbols
+            .OfType<SourceFunctionSymbol>()
+            .First(s => s.DeclarationSyntax == syntax);
+        return new UntypedLocalFunction(syntax, symbol);
+    }
 
     private UntypedStatement BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
@@ -52,7 +60,7 @@ internal partial class Binder
         // TODO: Do we want to handle this here, or during DFA?
         // If this function returns unit, we implicitly append a return expression
         var function = (FunctionSymbol)this.ContainingSymbol!;
-        if (ReferenceEquals(function.ReturnType, IntrinsicTypes.Unit))
+        if (ReferenceEquals(function.ReturnType, IntrinsicSymbols.Unit))
         {
             statements = statements
                 .Append(new UntypedExpressionStatement(
@@ -96,7 +104,7 @@ internal partial class Binder
         var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);
 
-        var declaredType = constraints.AddLocal(localSymbol, (type as TypeSymbol)?.Type);
+        var declaredType = constraints.AddLocal(localSymbol, type as TypeSymbol);
         if (value is not null)
         {
             // It has to be assignable

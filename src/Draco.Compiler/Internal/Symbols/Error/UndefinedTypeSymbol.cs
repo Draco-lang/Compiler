@@ -1,5 +1,3 @@
-using Draco.Compiler.Internal.Types;
-
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
@@ -8,7 +6,6 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class UndefinedTypeSymbol : TypeSymbol
 {
     public override bool IsError => true;
-    public override Type Type => IntrinsicTypes.Error;
     public override Symbol? ContainingSymbol => null;
 
     public override string Name { get; }
@@ -17,4 +14,6 @@ internal sealed class UndefinedTypeSymbol : TypeSymbol
     {
         this.Name = name;
     }
+
+    public override string ToString() => this.Name;
 }

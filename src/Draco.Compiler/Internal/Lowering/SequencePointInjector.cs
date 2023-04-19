@@ -13,13 +13,17 @@ namespace Draco.Compiler.Internal.Lowering;
 /// </summary>
 internal sealed class SequencePointInjector : BoundTreeRewriter
 {
-    /// <summary>
-    /// The singleton instance to use.
-    /// </summary>
-    public static SequencePointInjector Instance { get; } = new();
-
-    private SequencePointInjector()
+    public static BoundNode Inject(BoundNode node)
     {
+        var rewriter = new SequencePointInjector(node);
+        return node.Accept(rewriter);
+    }
+
+    private readonly BoundNode context;
+
+    private SequencePointInjector(BoundNode context)
+    {
+        this.context = context;
     }
 
     public override BoundNode VisitLocalDeclaration(BoundLocalDeclaration node)
@@ -195,7 +199,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
 
     public override BoundNode VisitReturnExpression(BoundReturnExpression node)
     {
-        var ancestorBlock = GetBlockFunctionBodyAncestor(node.Syntax);
+        var ancestorBlock = this.GetBlockFunctionBodyAncestor();
         if (ancestorBlock is null) return base.VisitReturnExpression(node);
 
         // We are in a block function, step onto the close brace before exiting
@@ -231,8 +235,9 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             value: BoundUnitExpression.Default);
     }
 
-    private static BlockFunctionBodySyntax? GetBlockFunctionBodyAncestor(SyntaxNode? syntax)
+    private BlockFunctionBodySyntax? GetBlockFunctionBodyAncestor()
     {
+        var syntax = this.context.Syntax;
         while (true)
         {
             if (syntax is null) return null;

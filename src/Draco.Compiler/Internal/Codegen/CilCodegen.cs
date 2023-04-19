@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using Draco.Compiler.Internal.OptimizingIr.Model;
-using Draco.Compiler.Internal.Types;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;
@@ -28,6 +30,7 @@ internal sealed class CilCodegen
         .Select(kv => kv.Value);
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
+    private WellKnownTypes WellKnownTypes => this.metadataCodegen.Compilation.WellKnownTypes;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
@@ -47,14 +50,15 @@ internal sealed class CilCodegen
     private MemberReferenceHandle GetGlobalReferenceHandle(Global global) => this.metadataCodegen.GetGlobalReferenceHandle(global);
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
-    private MemberReferenceHandle GetIntrinsicHandle(Intrinsic intrinsic) => this.metadataCodegen.GetIntrinsicReferenceHandle(intrinsic.Symbol);
+    private TypeReferenceHandle GetTypeReferenceHandle(Symbol symbol) => this.metadataCodegen.GetTypeReferenceHandle(symbol);
+    private MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => this.metadataCodegen.GetMemberReferenceHandle(symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
 
     private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
-        if (ReferenceEquals(operand.Type, IntrinsicTypes.Unit)) return null;
+        if (ReferenceEquals(operand.Type, IntrinsicSymbols.Unit)) return null;
         if (!this.allocatedLocals.TryGetValue(operand, out var local))
         {
             local = new(operand, this.allocatedLocals.Count);
@@ -149,7 +153,7 @@ internal sealed class CilCodegen
                 ArithmeticOp.Rem => ILOpCode.Rem,
                 ArithmeticOp.Less => ILOpCode.Clt,
                 ArithmeticOp.Equal => ILOpCode.Ceq,
-                _ => throw new System.InvalidOperationException(),
+                _ => throw new InvalidOperationException(),
             });
             this.StoreLocal(arithmetic.Target);
             break;
@@ -167,7 +171,7 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             default:
-                throw new System.InvalidOperationException();
+                throw new InvalidOperationException();
             }
             // Just copy to the target local
             this.StoreLocal(load.Target);
@@ -175,19 +179,39 @@ internal sealed class CilCodegen
         }
         case StoreInstruction store:
         {
-            this.EncodePush(store.Source);
-            // Depends on where we store to
             switch (store.Target)
             {
             case Local local:
+                this.EncodePush(store.Source);
                 this.StoreLocal(local);
                 break;
             case Global global:
+                this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
+            case ArrayAccess access:
+                this.EncodePush(access.Array);
+                foreach (var index in access.Indices) this.EncodePush(index);
+                this.EncodePush(store.Source);
+                if (access.Indices.Length == 1)
+                {
+                    if (store.Source.Type!.IsValueType)
+                    {
+                        // We need to box it
+                        this.InstructionEncoder.OpCode(ILOpCode.Box);
+                        this.EncodeToken(store.Source.Type);
+                    }
+                    this.InstructionEncoder.OpCode(ILOpCode.Stelem_ref);
+                }
+                else
+                {
+                    // TODO: More complex, involves member functions
+                    throw new NotImplementedException();
+                }
+                break;
             default:
-                throw new System.InvalidOperationException();
+                throw new InvalidOperationException();
             }
             break;
         }
@@ -195,29 +219,102 @@ internal sealed class CilCodegen
         {
             // Arguments
             foreach (var arg in call.Arguments) this.EncodePush(arg);
-            // Determine what we are calling
-            if (call.Procedure is IProcedure proc)
-            {
-                // Regular procedure call
-                var handle = this.GetProcedureDefinitionHandle(proc);
-                this.InstructionEncoder.Call(handle);
-            }
-            else if (call.Procedure is Intrinsic intrinsic)
-            {
-                var handle = this.GetIntrinsicHandle(intrinsic);
-                this.InstructionEncoder.Call(handle);
-            }
-            else
-            {
-                // TODO
-                throw new System.NotImplementedException();
-            }
+            // Call
+            this.InstructionEncoder.OpCode(ILOpCode.Call);
+            this.EncodeToken(call.Procedure);
             // Store result
             this.StoreLocal(call.Target);
             break;
         }
+        case MemberCallInstruction mcall:
+        {
+            // Receiver
+            this.EncodePush(mcall.Receiver);
+            // Arguments
+            foreach (var arg in mcall.Arguments) this.EncodePush(arg);
+            // TODO: If IOperand could tell by itself if it's virtual, we could reuse our token encoding
+            // Determine what we are calling
+            if (mcall.Procedure is SymbolReference metadataRef)
+            {
+                var symbol = (FunctionSymbol)metadataRef.Symbol;
+                var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
+                this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
+                this.InstructionEncoder.Token(handle);
+            }
+            else
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+            // Store result
+            this.StoreLocal(mcall.Target);
+            break;
+        }
+        case NewObjectInstruction newObj:
+        {
+            // Arguments
+            foreach (var arg in newObj.Arguments) this.EncodePush(arg);
+            this.InstructionEncoder.OpCode(ILOpCode.Newobj);
+            this.EncodeToken(newObj.Constructor);
+            // Store result
+            this.StoreLocal(newObj.Target);
+            break;
+        }
+        case NewArrayInstruction newArr:
+        {
+            // Dimensions
+            foreach (var dim in newArr.Dimensions) this.EncodePush(dim);
+            // One-dimensional and multi-dimensional arrays are very different
+            if (newArr.Dimensions.Count == 1)
+            {
+                this.InstructionEncoder.OpCode(ILOpCode.Newarr);
+                this.EncodeToken(newArr.ElementType);
+            }
+            else
+            {
+                // TODO: More complicated, because it's a proper type
+                throw new NotImplementedException();
+            }
+            // Store result
+            this.StoreLocal(newArr.Target);
+            break;
+        }
         default:
-            throw new System.ArgumentOutOfRangeException(nameof(instruction));
+            throw new ArgumentOutOfRangeException(nameof(instruction));
+        }
+    }
+
+    private void EncodeToken(TypeSymbol symbol)
+    {
+        var handle = this.GetTypeReferenceHandle(symbol);
+        this.InstructionEncoder.Token(handle);
+    }
+
+    private void EncodeToken(IOperand operand)
+    {
+        switch (operand)
+        {
+        case IProcedure proc:
+        {
+            // Regular procedure call
+            var handle = this.GetProcedureDefinitionHandle(proc);
+            this.InstructionEncoder.Token(handle);
+            break;
+        }
+        case SymbolReference symbolRef when symbolRef.Symbol is TypeSymbol type:
+        {
+            this.EncodeToken(type);
+            break;
+        }
+        case SymbolReference symbolRef:
+        {
+            // Regular lookup
+            var handle = this.GetMemberReferenceHandle(symbolRef.Symbol);
+            this.InstructionEncoder.Token(handle);
+            break;
+        }
+        default:
+            throw new ArgumentOutOfRangeException(nameof(operand));
         }
     }
 
@@ -274,7 +371,7 @@ internal sealed class CilCodegen
             // TODO: chars
             else throw new System.NotImplementedException();
         default:
-            throw new System.ArgumentOutOfRangeException(nameof(operand));
+            throw new ArgumentOutOfRangeException(nameof(operand));
         }
     }
 

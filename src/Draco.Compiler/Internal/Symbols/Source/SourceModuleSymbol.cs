@@ -55,13 +55,12 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
     {
     }
 
-    public override ISymbol ToApiSymbol() => throw new System.NotImplementedException();
-
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
         var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
 
+        // Syntax-declaration
         foreach (var declaration in this.declaration.Children)
         {
             var member = this.BuildMember(declaration);

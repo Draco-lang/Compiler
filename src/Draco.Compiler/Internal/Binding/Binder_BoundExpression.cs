@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -20,6 +22,7 @@ internal partial class Binder
     internal virtual BoundExpression TypeExpression(UntypedExpression expression, ConstraintSolver constraints, DiagnosticBag diagnostics) => expression switch
     {
         UntypedUnexpectedExpression unexpected => new BoundUnexpectedExpression(unexpected.Syntax),
+        UntypedModuleExpression module => this.TypeModuleExpression(module, constraints, diagnostics),
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedStringExpression str => this.TypeStringExpression(str, constraints, diagnostics),
@@ -40,8 +43,19 @@ internal partial class Binder
         UntypedRelationalExpression rel => this.TypeRelationalExpression(rel, constraints, diagnostics),
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
+        UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
+
+    private BoundUnexpectedExpression TypeModuleExpression(UntypedModuleExpression module, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // A module expression is illegal by itself, report it
+        diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.IllegalModuleExpression,
+            location: module.Syntax?.Location,
+            formatArgs: module.Module.Name));
+        return new BoundUnexpectedExpression(module.Syntax);
+    }
 
     private BoundExpression TypeUnitExpression(UntypedUnitExpression unit, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);
@@ -116,12 +130,32 @@ internal partial class Binder
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+        // We have 3 cases:
+        //  - called is a member access -> direct call with receiver
+        //  - called is a function symbol -> direct call without receiver
+        //  - anything else -> indirect call
+
         var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
         var typedArgs = call.Arguments
             .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
         var resultType = constraints.Unwrap(call.TypeRequired);
-        return new BoundCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
+
+        if (typedFunction is BoundMemberExpression memberExpr && memberExpr.Member is FunctionSymbol memberFunc)
+        {
+            // Member function call
+            return new BoundCallExpression(call.Syntax, memberExpr.Receiver, memberFunc, typedArgs, resultType);
+        }
+        else if (typedFunction is BoundFunctionExpression funcExpr)
+        {
+            // Free-function call
+            return new BoundCallExpression(call.Syntax, null, funcExpr.Function, typedArgs, resultType);
+        }
+        else
+        {
+            // Indirect function call
+            return new BoundIndirectCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
+        }
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -177,5 +211,14 @@ internal partial class Binder
         var left = this.TypeExpression(or.Left, constraints, diagnostics);
         var right = this.TypeExpression(or.Right, constraints, diagnostics);
         return new BoundOrExpression(or.Syntax, left, right);
+    }
+
+    private BoundExpression TypeMemberExpression(UntypedMemberExpression mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
+        var member = mem.Member.Result;
+        var resultType = constraints.Unwrap(mem.TypeRequired);
+
+        return new BoundMemberExpression(mem.Syntax, left, member, resultType);
     }
 }

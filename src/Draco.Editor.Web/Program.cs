@@ -13,7 +13,10 @@ public partial class Program
 {
     private static string code = null!;
 
-    public static void Main() => Interop.Messages += OnMessage;
+    public static void Main()
+    {
+        Interop.Messages += OnMessage;
+    }
 
     public static void OnMessage(string type, string payload)
     {
@@ -28,13 +31,31 @@ public partial class Program
         }
     }
 
+    private static ImmutableArray<MetadataReference>? references;
+
+    private static ImmutableArray<MetadataReference> BuildReferences()
+    {
+        var thisAssembly = typeof(Program).Assembly;
+        var refs = ImmutableArray.CreateBuilder<MetadataReference>();
+        foreach (var resourceName in thisAssembly.GetManifestResourceNames().Where(n => n.StartsWith("ReferenceAssembly.")))
+        {
+            var stream = thisAssembly.GetManifestResourceStream(resourceName)!;
+            refs.Add(MetadataReference.FromPeStream(stream));
+        }
+
+        return refs.ToImmutable();
+    }
+
     private static void ProcessUserInput()
     {
         try
         {
+            var refs = references ??= BuildReferences();
+
             var tree = SyntaxTree.Parse(code);
             var compilation = Compilation.Create(
-                syntaxTrees: ImmutableArray.Create(tree));
+                syntaxTrees: ImmutableArray.Create(tree),
+                metadataReferences: refs);
             RunScript(compilation);
         }
         catch (Exception e)

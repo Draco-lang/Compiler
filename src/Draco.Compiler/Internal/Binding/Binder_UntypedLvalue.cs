@@ -21,6 +21,7 @@ internal partial class Binder
     {
         // NOTE: The syntax error is already reported
         UnexpectedExpressionSyntax => new UntypedUnexpectedLvalue(syntax),
+        GroupingExpressionSyntax group => this.BindLvalue(group.Expression, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameLvalue(name, constraints, diagnostics),
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };

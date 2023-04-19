@@ -16,6 +16,13 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class LookupResult
 {
+    public static LookupResult FromResultSet(IEnumerable<Symbol> symbols)
+    {
+        var result = new LookupResult();
+        foreach (var symbol in symbols) result.Add(symbol);
+        return result;
+    }
+
     /// <summary>
     /// True, if the lookup should continue.
     /// </summary>
@@ -31,13 +38,13 @@ internal sealed class LookupResult
     /// </summary>
     public bool IsOverloadSet =>
            this.Symbols.Count > 0
-        && this.Symbols[0] is FunctionSymbol;
+        && this.Symbols.First() is FunctionSymbol;
 
     /// <summary>
     /// The symbols found during lookup.
     /// </summary>
-    public IReadOnlyList<Symbol> Symbols => this.symbols;
-    private readonly List<Symbol> symbols = new();
+    public IReadOnlySet<Symbol> Symbols => this.symbols;
+    private readonly HashSet<Symbol> symbols = new();
 
     /// <summary>
     /// Attempts to add a symbol to the result set.
@@ -105,7 +112,7 @@ internal sealed class LookupResult
                 throw new NotImplementedException();
             }
         }
-        return this.Symbols[0];
+        return this.Symbols.First();
     }
 
     /// <summary>
@@ -133,7 +140,7 @@ internal sealed class LookupResult
             // This should have been handled by binder when constructing the scope
             throw new NotImplementedException();
         }
-        return (TypeSymbol)this.Symbols[0];
+        return (TypeSymbol)this.Symbols.First();
     }
 
     /// <summary>
@@ -161,6 +168,6 @@ internal sealed class LookupResult
             // This should have been handled by binder when constructing the scope
             throw new NotImplementedException();
         }
-        return (LabelSymbol)this.Symbols[0];
+        return (LabelSymbol)this.Symbols.First();
     }
 }

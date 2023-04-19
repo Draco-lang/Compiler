@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Types;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Lowering;
@@ -25,13 +26,13 @@ internal partial class LocalRewriter : BoundTreeRewriter
         BoundExpression Reference,
         BoundStatement Assignment);
 
-    /// <summary>
-    /// The singleton instance to use.
-    /// </summary>
-    public static LocalRewriter Instance { get; } = new();
+    private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
 
-    private LocalRewriter()
+    private readonly Compilation compilation;
+
+    public LocalRewriter(Compilation compilation)
     {
+        this.compilation = compilation;
     }
 
     public override BoundNode VisitBlockExpression(BoundBlockExpression node)
@@ -136,7 +137,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                     condition: UnaryExpression(
                         @operator: IntrinsicSymbols.Bool_Not,
                         operand: condition,
-                        type: IntrinsicTypes.Bool),
+                        type: IntrinsicSymbols.Bool),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
@@ -157,7 +158,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: node.Comparisons[0].Operator,
                 right: right,
-                type: IntrinsicTypes.Bool);
+                type: IntrinsicSymbols.Bool);
         }
 
         // expr1 < expr2 == expr3 > expr4 != ...
@@ -191,7 +192,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: op,
                 right: right,
-                type: IntrinsicTypes.Bool));
+                type: IntrinsicSymbols.Bool));
         }
 
         // Fold them into conjunctions
@@ -244,8 +245,87 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: LiteralExpression(true, IntrinsicTypes.Bool),
             @else: right,
-            type: IntrinsicTypes.Bool);
+            type: IntrinsicSymbols.Bool);
         // If-expressions can be lowered too
+        return result.Accept(this);
+    }
+
+    public override BoundNode VisitStringExpression(BoundStringExpression node)
+    {
+        // Empty string
+        if (node.Parts.Length == 0) return LiteralExpression(string.Empty);
+        // A single string
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText singleText) return LiteralExpression(singleText.Text);
+        // A single interpolated part
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringInterpolation singleInterpolation)
+        {
+            // Lower the expression
+            var arg = (BoundExpression)singleInterpolation.Value.Accept(this);
+            // TODO: Just call ToString on it
+            throw new System.NotImplementedException();
+        }
+        // We need to desugar into string.Format("format string", array of args)
+        // Build up interpolation string and lower interpolated expressions
+        var formatString = new StringBuilder();
+        var args = new List<BoundExpression>();
+        foreach (var part in node.Parts)
+        {
+            if (part is BoundStringText text)
+            {
+                formatString.Append(text.Text);
+            }
+            else if (part is BoundStringInterpolation interpolation)
+            {
+                formatString
+                    .Append('{')
+                    .Append(args.Count)
+                    .Append('}');
+                // Lower the expression
+                var arg = (BoundExpression)interpolation.Value.Accept(this);
+                args.Add(arg);
+            }
+        }
+
+        var arrayType = new ArrayTypeSymbol(IntrinsicSymbols.Object, 1);
+        var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
+
+        var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
+
+        // var args = new object[number of interpolated expressions];
+        arrayAssignmentBuilder.Add(LocalDeclaration(
+            local: arrayLocal,
+            value: ArrayCreationExpression(
+                elementType: IntrinsicSymbols.Object,
+                sizes: ImmutableArray.Create<BoundExpression>(LiteralExpression(args.Count)))));
+
+        for (var i = 0; i < args.Count; i++)
+        {
+            // args[i] = interpolatedExpr;
+            arrayAssignmentBuilder.Add(ExpressionStatement(AssignmentExpression(
+                compoundOperator: null,
+                left: ArrayAccessLvalue(
+                    array: LocalExpression(arrayLocal),
+                    indices: ImmutableArray.Create<BoundExpression>(LiteralExpression(i))),
+                right: args[i])));
+        }
+
+        // {
+        //     var args = new object[...];
+        //     args[0] = ...;
+        //     args[1] = ...;
+        //     string.Format("...", args);
+        // }
+        var result = BlockExpression(
+            locals: ImmutableArray.Create<LocalSymbol>(arrayLocal),
+            statements: arrayAssignmentBuilder.ToImmutable(),
+            value: CallExpression(
+                method: this.WellKnownTypes.SystemString_Format,
+                receiver: null,
+                arguments: ImmutableArray.Create<BoundExpression>(
+                    LiteralExpression(formatString.ToString()),
+                    LocalExpression(arrayLocal)),
+                type: IntrinsicSymbols.String));
+
         return result.Accept(this);
     }
 

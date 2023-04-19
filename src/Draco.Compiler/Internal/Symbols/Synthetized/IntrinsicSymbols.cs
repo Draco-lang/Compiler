@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Types;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -10,42 +9,39 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal static class IntrinsicSymbols
 {
-    // Types
+    public static TypeSymbol ErrorType => ErrorTypeSymbol.Instance;
+    public static TypeSymbol Never => NeverTypeSymbol.Instance;
+    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
 
-    private static Symbol Type(Type type) => type switch
-    {
-        BuiltinType builtin => new SynthetizedTypeSymbol(builtin),
-        _ => throw new System.ArgumentOutOfRangeException(nameof(type)),
-    };
+    public static TypeSymbol Int8 { get; } = new PrimitiveTypeSymbol("int8", isValueType: true);
+    public static TypeSymbol Int16 { get; } = new PrimitiveTypeSymbol("int16", isValueType: true);
+    public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", isValueType: true);
+    public static TypeSymbol Int64 { get; } = new PrimitiveTypeSymbol("int64", isValueType: true);
 
-    public static Symbol Int8 { get; } = Type(IntrinsicTypes.Int8);
-    public static Symbol Int16 { get; } = Type(IntrinsicTypes.Int16);
-    public static Symbol Int32 { get; } = Type(IntrinsicTypes.Int32);
-    public static Symbol Int64 { get; } = Type(IntrinsicTypes.Int64);
+    public static TypeSymbol Uint8 { get; } = new PrimitiveTypeSymbol("uint8", isValueType: true);
+    public static TypeSymbol Uint16 { get; } = new PrimitiveTypeSymbol("uint16", isValueType: true);
+    public static TypeSymbol Uint32 { get; } = new PrimitiveTypeSymbol("uint32", isValueType: true);
+    public static TypeSymbol Uint64 { get; } = new PrimitiveTypeSymbol("uint64", isValueType: true);
 
-    public static Symbol Uint8 { get; } = Type(IntrinsicTypes.Uint8);
-    public static Symbol Uint16 { get; } = Type(IntrinsicTypes.Uint16);
-    public static Symbol Uint32 { get; } = Type(IntrinsicTypes.Uint32);
-    public static Symbol Uint64 { get; } = Type(IntrinsicTypes.Uint64);
+    public static TypeSymbol Float32 { get; } = new PrimitiveTypeSymbol("float32", isValueType: true);
+    public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);
 
-    public static Symbol Float32 { get; } = Type(IntrinsicTypes.Float32);
-    public static Symbol Float64 { get; } = Type(IntrinsicTypes.Float64);
-
-    public static Symbol String { get; } = Type(IntrinsicTypes.String);
-    public static Symbol Bool { get; } = Type(IntrinsicTypes.Bool);
+    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
+    public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
+    public static TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
 
     // Operators
 
-    private static FunctionSymbol Unary(TokenKind token, Type operandType, Type returnType) =>
-        SynthetizedFunctionSymbol.UnaryOperator(token, operandType, returnType);
-    private static FunctionSymbol Binary(TokenKind token, Type leftType, Type rightType, Type returnType) =>
-        SynthetizedFunctionSymbol.BinaryOperator(token, leftType, rightType, returnType);
-    private static FunctionSymbol Comparison(TokenKind token, Type leftType, Type rightType) =>
-        SynthetizedFunctionSymbol.ComparisonOperator(token, leftType, rightType);
-    private static FunctionSymbol Function(string name, IEnumerable<Type> paramTypes, Type returnType) =>
-        new SynthetizedFunctionSymbol(name, paramTypes, returnType);
+    private static FunctionSymbol Unary(TokenKind token, TypeSymbol operandType, TypeSymbol returnType) =>
+        IntrinsicFunctionSymbol.UnaryOperator(token, operandType, returnType);
+    private static FunctionSymbol Binary(TokenKind token, TypeSymbol leftType, TypeSymbol rightType, TypeSymbol returnType) =>
+        IntrinsicFunctionSymbol.BinaryOperator(token, leftType, rightType, returnType);
+    private static FunctionSymbol Comparison(TokenKind token, TypeSymbol leftType, TypeSymbol rightType) =>
+        IntrinsicFunctionSymbol.ComparisonOperator(token, leftType, rightType);
+    private static FunctionSymbol Function(string name, IEnumerable<TypeSymbol> paramTypes, TypeSymbol returnType) =>
+        new IntrinsicFunctionSymbol(name, paramTypes, returnType);
 
-    public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, IntrinsicTypes.Bool, IntrinsicTypes.Bool);
+    public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Bool, Bool);
 
     public static ImmutableArray<Symbol> OperatorSymbols
     {
@@ -97,10 +93,4 @@ internal static class IntrinsicSymbols
         array.Add(Binary(TokenKind.KeywordRem, type, type, type));
         return array.ToImmutable();
     }
-
-    // NOTE: Temporary until we access BCL
-    public static FunctionSymbol Print_String { get; } = Function("print", new[] { IntrinsicTypes.String }, IntrinsicTypes.Unit);
-    public static FunctionSymbol Print_Int32 { get; } = Function("print", new[] { IntrinsicTypes.Int32 }, IntrinsicTypes.Unit);
-    public static FunctionSymbol Println_String { get; } = Function("println", new[] { IntrinsicTypes.String }, IntrinsicTypes.Unit);
-    public static FunctionSymbol Println_Int32 { get; } = Function("println", new[] { IntrinsicTypes.Int32 }, IntrinsicTypes.Unit);
 }

@@ -19,17 +19,25 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
         this.Range = range;
     }
 
-    internal override DiagnosticTemplate DiagnosticToFix => SymbolResolutionErrors.ImportNotAtTop;
-
-    internal override ImmutableArray<CodeFix> CodeFixes => ImmutableArray.Create(
-        new CodeFix("Move import statement to be at the top of a scope", this.TopOfScope()),
-        new CodeFix("Move import statement  to be at the top of a file", this.TopOfFile()));
+    internal override ImmutableArray<CodeFix> GetCodeFixes(ImmutableArray<Diagnostic> diagnostics)
+    {
+        if (this.SyntaxTree.TraverseSubtreesIntersectingRange(this.Range).LastOrDefault(x => x is ImportDeclarationSyntax) is ImportDeclarationSyntax import
+            && diagnostics.Any(x => x.Template == SymbolResolutionErrors.ImportNotAtTop && x.Location.Range!.Value.Intersects(this.Range)))
+        {
+            return ImmutableArray.Create(
+                new CodeFix("Move import statement to be at the top of a scope", this.TopOfScope()),
+                new CodeFix("Move import statement  to be at the top of a file", this.TopOfFile()));
+        }
+        return ImmutableArray<CodeFix>.Empty;
+    }
 
     private ImmutableArray<TextEdit> TopOfScope()
     {
         var import = this.SyntaxTree.TraverseSubtreesIntersectingRange(this.Range).LastOrDefault(x => x is ImportDeclarationSyntax);
         if (import is null) return ImmutableArray<TextEdit>.Empty;
-        var newTree = this.SyntaxTree.Reorder(import.Parent!, 0);
+        SyntaxTree newTree;
+        if (import.Parent is DeclarationStatementSyntax) newTree = this.SyntaxTree.Reorder(import.Parent, 0);
+        else newTree = this.SyntaxTree.Reorder(import, 0);
         return this.SyntaxTree.SyntaxTreeDiff(newTree);
     }
 

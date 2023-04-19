@@ -1,9 +1,7 @@
-using Draco.Compiler.Api.CodeCompletion;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace Draco.Compiler.Api.CodeFixes;
 
@@ -26,13 +24,10 @@ public sealed class CodeFixService
     public ImmutableArray<CodeFix> GetCodeFixes(SyntaxTree tree, SemanticModel semanticModel)
     {
         var result = ImmutableArray.CreateBuilder<CodeFix>();
-        var diags = semanticModel.Diagnostics.Select(x => x.Template);
+        var diags = semanticModel.Diagnostics;
         foreach (var provider in this.Providers)
         {
-            if (diags.Contains(provider.DiagnosticToFix))
-            {
-                result.AddRange(provider.CodeFixes);
-            }
+            result.AddRange(provider.GetCodeFixes(diags));
         }
         return result.ToImmutable();
     }

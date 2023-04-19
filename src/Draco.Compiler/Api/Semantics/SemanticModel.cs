@@ -90,6 +90,7 @@ public sealed partial class SemanticModel : IBinderProvider
                 globalSymbol.Bind(this);
                 break;
             }
+            /*
             case ImportDeclarationSyntax:
             {
                 // TODO: We are escaping memoization, this is AWFUL
@@ -100,6 +101,7 @@ public sealed partial class SemanticModel : IBinderProvider
                 _ = binder.DeclaredSymbols;
                 break;
             }
+            */
             }
         }
 
@@ -152,7 +154,7 @@ public sealed partial class SemanticModel : IBinderProvider
             return symbol?.ToApiSymbol();
         }
         default:
-            throw new NotImplementedException();
+            return null;
         }
     }
 
@@ -187,8 +189,6 @@ public sealed partial class SemanticModel : IBinderProvider
             }
             break;
         }
-        default:
-            throw new NotImplementedException();
         }
 
         // Attempt to retrieve

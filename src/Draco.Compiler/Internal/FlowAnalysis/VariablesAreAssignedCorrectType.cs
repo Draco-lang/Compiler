@@ -2,7 +2,6 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Types;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Symbols;
 

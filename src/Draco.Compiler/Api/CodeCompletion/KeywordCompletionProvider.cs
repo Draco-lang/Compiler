@@ -13,7 +13,7 @@ public sealed class KeywordCompletionProvider : CompletionProvider
     internal override CompletionContext[] ValidContexts { get; } = new[]
     {
         CompletionContext.DeclarationKeyword,
-        CompletionContext.ExpressionContent
+        CompletionContext.ExpressionContent,
     };
 
     private CompletionItem[] keywords = new[]

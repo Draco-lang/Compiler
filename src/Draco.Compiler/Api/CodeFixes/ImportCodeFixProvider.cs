@@ -41,5 +41,14 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
         return this.SyntaxTree.SyntaxTreeDiff(newTree);
     }
 
-    private ImmutableArray<TextEdit> TopOfFile() => ImmutableArray<TextEdit>.Empty;
+    private ImmutableArray<TextEdit> TopOfFile()
+    {
+        var import = this.SyntaxTree.TraverseSubtreesIntersectingRange(this.Range).LastOrDefault(x => x is ImportDeclarationSyntax);
+        if (import is null) return ImmutableArray<TextEdit>.Empty;
+        SyntaxTree newTree;
+        if (import.Parent is DeclarationStatementSyntax) newTree = this.SyntaxTree.Remove(import.Parent);
+        else newTree = this.SyntaxTree.Remove(import);
+        newTree = newTree.Insert(import, newTree.Root, 0);
+        return this.SyntaxTree.SyntaxTreeDiff(newTree);
+    }
 }

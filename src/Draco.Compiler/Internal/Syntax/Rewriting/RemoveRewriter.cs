@@ -2,31 +2,23 @@ using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
-internal sealed class ReorderRewriter : SyntaxRewriter
+internal sealed class RemoveRewriter : SyntaxRewriter
 {
-    private SyntaxNode ToReorder { get; }
-    private int Position { get; }
+    private SyntaxNode ToRemove { get; }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="toReorder">The node that will be reordered.</param>
-    /// <param name="position">0-based position in the original syntax list this node will be put to.</param>
-    public ReorderRewriter(SyntaxNode toReorder, int position)
+    public RemoveRewriter(SyntaxNode toRemove)
     {
-        this.ToReorder = toReorder;
-        this.Position = position;
+        this.ToRemove = toRemove;
     }
 
     public override SyntaxList<TNode> VisitSyntaxList<TNode>(SyntaxList<TNode> node)
     {
         for (int i = 0; i < node.Count; i++)
         {
-            if (node[i] == this.ToReorder)
+            if (node[i] == this.ToRemove)
             {
                 var list = node.ToList();
                 list.RemoveAt(i);
-                list.Insert(this.Position, node[i]);
                 var builder = SyntaxList.CreateBuilder<TNode>();
                 builder.AddRange(list);
                 node = builder.ToSyntaxList();

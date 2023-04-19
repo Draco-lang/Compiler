@@ -109,6 +109,22 @@ public sealed class SyntaxTree
     public SyntaxTree Reorder(SyntaxNode toReorder, int position) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new ReorderRewriter(toReorder.Green, position)), new());
 
     /// <summary>
+    /// Removes the <paramref name="toRemove"/> node from the <see cref="SyntaxList"/> <paramref name="toRemove"/> is contained in.
+    /// </summary>
+    /// <param name="toRemove">The <see cref="SyntaxNode"/> that will be removed.</param>
+    /// <returns>New constructed <see cref="SyntaxTree"/> with <paramref name="toRemove"/> remove from the <see cref="SyntaxTree"/>.</returns>
+    public SyntaxTree Remove(SyntaxNode toRemove) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new RemoveRewriter(toRemove.Green)), new());
+
+    /// <summary>
+    /// Inserts the <paramref name="toInsert"/> node to <paramref name="insertInto"/> at specified <paramref name="position"/> if <paramref name="insertInto"/> is a <see cref="SyntaxList"/>.
+    /// </summary>
+    /// <param name="toInsert">The <see cref="SyntaxNode"/> that will be inserted.</param>
+    /// <param name="insertInto">The <see cref="SyntaxNode"/> <paramref name="toInsert"/> will be inserted to.</param>
+    /// <param name="position">The position <paramref name="toInsert"/> node will be put.</param>
+    /// <returns>New constructed <see cref="SyntaxTree"/> with <paramref name="toInsert"/> inserted into <paramref name="insertInto"/>.</returns>
+    public SyntaxTree Insert(SyntaxNode toInsert, SyntaxNode insertInto, int position) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new InsertRewriter(toInsert.Green, insertInto.Green, position)), new());
+
+    /// <summary>
     /// Returns the difference between this <see cref="SyntaxTree"/> and <paramref name="other"/>.
     /// </summary>
     /// <param name="other">The other <see cref="SyntaxTree"/> to find differences with this tree.</param>

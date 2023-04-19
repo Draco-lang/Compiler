@@ -59,6 +59,8 @@ public sealed partial class SemanticModel : IBinderProvider
             ? this.Tree.PreOrderTraverse()
             : this.Tree.TraverseSubtreesIntersectingSpan(span.Value);
 
+        var addedImportBinders = new HashSet<ImportBinder>();
+
         foreach (var syntaxNode in syntaxNodes)
         {
             // Add syntax diagnostics
@@ -90,18 +92,19 @@ public sealed partial class SemanticModel : IBinderProvider
                 globalSymbol.Bind(this);
                 break;
             }
-            /*
             case ImportDeclarationSyntax:
             {
-                // TODO: We are escaping memoization, this is AWFUL
-                // TODO: This is also not correct, we are unwrapping...
-                // Perform binding
-                if (binder is IncrementalBinder incrementalBinder) binder = incrementalBinder.UnderlyingBinder;
-                while (binder is not ImportBinder) binder = binder.Parent!;
-                _ = binder.DeclaredSymbols;
+                // We get the binder, and if this binder wasn't added yet, we add its import errors
+                var importBinder = this.GetImportBinder(syntaxNode);
+                if (addedImportBinders.Add(importBinder))
+                {
+                    // New binder, add errors
+                    // First, enforce binding
+                    _ = importBinder.ImportItems;
+                    this.DiagnosticBag.AddRange(importBinder.ImportDiagnostics);
+                }
                 break;
             }
-            */
             }
         }
 
@@ -166,6 +169,29 @@ public sealed partial class SemanticModel : IBinderProvider
     /// if it does not reference any.</returns>
     public ISymbol? GetReferencedSymbol(SyntaxNode syntax)
     {
+        if (syntax is ImportPathSyntax)
+        {
+            // Imports are special, we need to search in the binder
+            var importBinder = this.GetImportBinder(syntax);
+            var importItems = importBinder.ImportItems;
+            var importSyntax = GetImportSyntax(syntax);
+            // Search for the import item
+            var importItem = importItems.SingleOrDefault(i => i.Syntax == importSyntax);
+            // Not found in item
+            if (importItem is null) return null;
+            // Search for path element
+            // NOTE: Yes, this could be simplified to a SingleOrDefault to a predicate,
+            // but the default for a KeyValuePair is not nullable, so a null-warn would be swallowed
+            // Decided to write it this way, in case the code gets shuffled around later
+            var pathSymbol = importItem.Path
+                .Where(i => i.Key == syntax)
+                .Select(i => i.Value)
+                .SingleOrDefault();
+            // Not found in path
+            if (pathSymbol is null) return null;
+            return pathSymbol.ToApiSymbol();
+        }
+
         if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
 
         // Get enclosing context
@@ -196,6 +222,16 @@ public sealed partial class SemanticModel : IBinderProvider
         return symbol?.ToApiSymbol();
     }
 
+    private ImportBinder GetImportBinder(SyntaxNode syntax)
+    {
+        var binder = this.compilation.GetBinder(syntax);
+        while (true)
+        {
+            if (binder is ImportBinder importBinder) return importBinder;
+            binder = binder.Parent!;
+        }
+    }
+
     private Binder GetBinder(SyntaxNode syntax)
     {
         var binder = this.compilation.GetBinder(syntax);
@@ -210,4 +246,13 @@ public sealed partial class SemanticModel : IBinderProvider
 
     Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);
     Binder IBinderProvider.GetBinder(Symbol symbol) => this.GetBinder(symbol);
+
+    private static ImportDeclarationSyntax GetImportSyntax(SyntaxNode syntax)
+    {
+        while (true)
+        {
+            if (syntax is ImportDeclarationSyntax decl) return decl;
+            syntax = syntax.Parent!;
+        }
+    }
 }

@@ -153,7 +153,7 @@ internal sealed class ImportBinder : Binder
     /// for illegally placed imports.
     /// </summary>
     /// <param name="diagnostics">The bad to report diagnostics to.</param>
-    /// <returns></returns>
+    /// <returns>The collected declarations.</returns>
     private ImmutableArray<ImportDeclarationSyntax> CollectImportDeclarations(DiagnosticBag diagnostics)
     {
         var importSyntaxes = ImmutableArray.CreateBuilder<ImportDeclarationSyntax>();

@@ -46,10 +46,55 @@ internal sealed class ImportBinder : Binder
         }
     }
 
-    private ImmutableArray<ImportItem> BindImportItems(DiagnosticBag importDiagnostics)
+    private ImmutableArray<ImportItem> BindImportItems(DiagnosticBag diagnostics)
     {
+        var importSyntaxes = this.CollectImportDeclarations(diagnostics);
+        var importItems = ImmutableArray.CreateBuilder<ImportItem>();
+        foreach (var syntax in importSyntaxes)
+        {
+            var importItem = this.BindImport(syntax, diagnostics);
+            importItems.Add(importItem);
+        }
+        return importItems.ToImmutable();
+    }
+
+    private ImportItem BindImport(ImportDeclarationSyntax syntax, DiagnosticBag diagnostics) =>
         // TODO
         throw new NotImplementedException();
+
+    /// <summary>
+    /// Collects import declarations from the <see cref="DeclaringSyntax"/> and reports diagnostics
+    /// for illegally placed imports.
+    /// </summary>
+    /// <param name="diagnostics">The bad to report diagnostics to.</param>
+    /// <returns></returns>
+    private ImmutableArray<ImportDeclarationSyntax> CollectImportDeclarations(DiagnosticBag diagnostics)
+    {
+        var importSyntaxes = ImmutableArray.CreateBuilder<ImportDeclarationSyntax>();
+        var hasNonImport = false;
+        foreach (var syntax in BinderFacts.EnumerateNodesInSameScope(this.DeclaringSyntax))
+        {
+            if (syntax is DeclarationStatementSyntax) continue;
+
+            if (syntax is ImportDeclarationSyntax importSyntax)
+            {
+                importSyntaxes.Add(importSyntax);
+                if (hasNonImport)
+                {
+                    diagnostics.Add(Diagnostic.Create(
+                        template: SymbolResolutionErrors.ImportNotAtTop,
+                        location: syntax.Location));
+                }
+            }
+            else
+            {
+                hasNonImport = hasNonImport || syntax
+                    is DeclarationSyntax
+                    or StatementSyntax
+                    or ExpressionSyntax;
+            }
+        }
+        return importSyntaxes.ToImmutable();
     }
 
     private ImmutableArray<Symbol> BuildImportedSymbols(DiagnosticBag diagnostics)
@@ -93,7 +138,7 @@ internal sealed class ImportBinder : Binder
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalImport,
                     location: importSyntax.Path.Location,
-                    formatArgs: ImportPathToString(importSyntax.Path)));
+                    formatArgs: importSyntax.Path));
             }
             else
             {
@@ -102,11 +147,4 @@ internal sealed class ImportBinder : Binder
         }
         return result.ToImmutable();
     }
-
-    private static string ImportPathToString(ImportPathSyntax syntax) => syntax switch
-    {
-        RootImportPathSyntax root => root.Name.Text,
-        MemberImportPathSyntax mem => $"{ImportPathToString(mem.Accessed)}.{mem.Member.Text}",
-        _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
-    };
 }

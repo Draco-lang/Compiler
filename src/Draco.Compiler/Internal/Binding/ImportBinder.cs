@@ -20,12 +20,15 @@ internal sealed class ImportBinder : Binder
     /// </summary>
     public DiagnosticBag ImportDiagnostics { get; } = new();
 
-    public override IEnumerable<Symbol> DeclaredSymbols =>
-        this.importedSymbols ??= this.BuildImportedSymbols(this.ImportDiagnostics);
+    /// <summary>
+    /// The import items this binder brings in.
+    /// </summary>
+    public ImmutableArray<ImportItem> ImportItems => this.importItems ??= this.BindImportItems(this.ImportDiagnostics);
+    private ImmutableArray<ImportItem>? importItems;
+
+    public override IEnumerable<Symbol> DeclaredSymbols => this.ImportItems.SelectMany(i => i.ImportedSymbols);
 
     public override SyntaxNode DeclaringSyntax { get; }
-
-    private ImmutableArray<Symbol>? importedSymbols;
 
     public ImportBinder(Binder parent, SyntaxNode declaringSyntax)
         : base(parent)
@@ -41,6 +44,12 @@ internal sealed class ImportBinder : Binder
             if (!allowSymbol(symbol)) continue;
             result.Add(symbol);
         }
+    }
+
+    private ImmutableArray<ImportItem> BindImportItems(DiagnosticBag importDiagnostics)
+    {
+        // TODO
+        throw new NotImplementedException();
     }
 
     private ImmutableArray<Symbol> BuildImportedSymbols(DiagnosticBag diagnostics)

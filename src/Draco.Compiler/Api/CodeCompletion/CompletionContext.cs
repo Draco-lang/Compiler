@@ -1,7 +1,7 @@
 namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
-/// Repressents a context of a completion.
+/// Represents a context of a completion.
 /// </summary>
 public enum CompletionContext
 {

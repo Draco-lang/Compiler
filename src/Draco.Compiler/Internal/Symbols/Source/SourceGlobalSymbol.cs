@@ -16,7 +16,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         {
             if (this.NeedsBuild)
             {
-                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
                 this.type = type;
                 this.value = value;
             }
@@ -39,7 +39,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
             // but a type always needs to be inferred
             if (this.NeedsBuild)
             {
-                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
                 this.type = type;
                 this.value = value;
             }
@@ -62,18 +62,18 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         this.declaration = declaration;
     }
 
-    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics)
+    public void Bind(IBinderProvider binderProvider)
     {
-        this.BindTypeAndValue(binderProvider, diagnostics);
+        this.BindTypeAndValue(binderProvider);
 
         // Flow analysis
-        if (this.Value is not null) DefiniteAssignment.Analyze(this.Value, diagnostics);
-        ValAssignment.Analyze(this, diagnostics);
+        if (this.Value is not null) DefiniteAssignment.Analyze(this.Value, binderProvider.DiagnosticBag);
+        ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
     }
 
-    private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValue(IBinderProvider binderProvider, DiagnosticBag diagnostics)
+    private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValue(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        return binder.BindGlobal(this, diagnostics);
+        return binder.BindGlobal(this, binderProvider.DiagnosticBag);
     }
 }

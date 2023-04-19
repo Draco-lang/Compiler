@@ -25,7 +25,7 @@ internal sealed class UntypedLocalSymbol : Symbol, ISourceSymbol
     }
 
     public override ISymbol ToApiSymbol() => throw new NotSupportedException();
-    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics) => throw new NotSupportedException();
+    public void Bind(IBinderProvider binderProvider) => throw new NotSupportedException();
     public override void Accept(SymbolVisitor visitor) => throw new NotSupportedException();
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => throw new NotSupportedException();
 }

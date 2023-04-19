@@ -17,6 +17,5 @@ internal interface ISourceSymbol
     /// Enforced binding of the symbol. It does not recurse to bind members of the symbol.
     /// </summary>
     /// <param name="binderProvider">The provider to get binders from.</param>
-    /// <param name="diagnostics">The bag to report diagnostics to.</param>
-    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics);
+    public void Bind(IBinderProvider binderProvider);
 }

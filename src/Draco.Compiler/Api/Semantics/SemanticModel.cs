@@ -31,6 +31,9 @@ public sealed partial class SemanticModel : IBinderProvider
     public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics ??= this.GetDiagnostics();
     private ImmutableArray<Diagnostic>? diagnostics;
 
+    internal DiagnosticBag DiagnosticBag { get; } = new();
+    DiagnosticBag IBinderProvider.DiagnosticBag => this.DiagnosticBag;
+
     private readonly Compilation compilation;
 
     // Filled out by incremental binding
@@ -52,11 +55,6 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <returns>All <see cref="Diagnostic"/>s for <see cref="Tree"/>.</returns>
     private ImmutableArray<Diagnostic> GetDiagnostics(SourceSpan? span = null)
     {
-        var diagnostics = new DiagnosticBag();
-
-        // Add global diagnostics
-        diagnostics.AddRange(this.compilation.GlobalDiagnosticBag);
-
         var syntaxNodes = span is null
             ? this.Tree.PreOrderTraverse()
             : this.Tree.TraverseSubtreesIntersectingSpan(span.Value);
@@ -65,7 +63,7 @@ public sealed partial class SemanticModel : IBinderProvider
         {
             // Add syntax diagnostics
             var syntaxDiagnostics = this.Tree.SyntaxDiagnosticTable.Get(syntaxNode);
-            diagnostics.AddRange(syntaxDiagnostics);
+            this.DiagnosticBag.AddRange(syntaxDiagnostics);
 
             // Get the symbol this embodies
             var binder = this.GetBinder(syntaxNode);
@@ -79,7 +77,7 @@ public sealed partial class SemanticModel : IBinderProvider
             case CompilationUnitSyntax:
             case FunctionDeclarationSyntax:
             {
-                containingSymbol?.Bind(this, diagnostics);
+                containingSymbol?.Bind(this);
                 break;
             }
             // NOTE: Only globals need binding
@@ -89,7 +87,7 @@ public sealed partial class SemanticModel : IBinderProvider
                 var globalSymbol = containingModule.Members
                     .OfType<SourceGlobalSymbol>()
                     .Single(s => s.DeclaringSyntax == syntaxNode);
-                globalSymbol.Bind(this, diagnostics);
+                globalSymbol.Bind(this);
                 break;
             }
             case ImportDeclarationSyntax:
@@ -105,7 +103,7 @@ public sealed partial class SemanticModel : IBinderProvider
             }
         }
 
-        return diagnostics.ToImmutableArray();
+        return this.DiagnosticBag.ToImmutableArray();
     }
 
     // NOTE: These OrNull functions are not too pretty
@@ -134,7 +132,7 @@ public sealed partial class SemanticModel : IBinderProvider
             if (func.DeclaringSyntax == syntax) return containingSymbol.ToApiSymbol();
 
             // Bind the function contents
-            func.Bind(this, this.compilation.GlobalDiagnosticBag);
+            func.Bind(this);
 
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
@@ -177,7 +175,7 @@ public sealed partial class SemanticModel : IBinderProvider
         case SourceFunctionSymbol func:
         {
             // Bind the function contents
-            func.Bind(this, this.compilation.GlobalDiagnosticBag);
+            func.Bind(this);
             break;
         }
         case SourceModuleSymbol module:
@@ -185,7 +183,7 @@ public sealed partial class SemanticModel : IBinderProvider
             // Bind top-level members
             foreach (var member in module.Members.OfType<ISourceSymbol>())
             {
-                member.Bind(this, this.compilation.GlobalDiagnosticBag);
+                member.Bind(this);
             }
             break;
         }

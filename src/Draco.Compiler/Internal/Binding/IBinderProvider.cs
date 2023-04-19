@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -13,6 +14,11 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal interface IBinderProvider
 {
+    /// <summary>
+    /// The diagnostic bag to write diagnostics to.
+    /// </summary>
+    public DiagnosticBag DiagnosticBag { get; }
+
     /// <summary>
     /// Retrieves the <see cref="Binder"/> for a given syntax node.
     /// </summary>

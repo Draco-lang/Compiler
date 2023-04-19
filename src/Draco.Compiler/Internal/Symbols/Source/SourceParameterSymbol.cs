@@ -10,8 +10,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 {
-    public override TypeSymbol Type =>
-        this.type ??= this.BindType(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+    public override TypeSymbol Type => this.type ??= this.BindType(this.DeclaringCompilation!);
     private TypeSymbol? type;
 
     public override Symbol? ContainingSymbol { get; }
@@ -27,12 +26,12 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
         this.DeclaringSyntax = syntax;
     }
 
-    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics) =>
-        this.BindType(binderProvider, diagnostics);
+    public void Bind(IBinderProvider binderProvider) =>
+        this.BindType(binderProvider);
 
-    private TypeSymbol BindType(IBinderProvider binderProvider, DiagnosticBag diagnostics)
+    private TypeSymbol BindType(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Type);
-        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.Type, diagnostics);
+        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.Type, binderProvider.DiagnosticBag);
     }
 }

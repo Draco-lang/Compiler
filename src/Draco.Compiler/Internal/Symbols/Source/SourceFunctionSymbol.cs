@@ -22,7 +22,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private ImmutableArray<ParameterSymbol>? parameters;
 
     public override TypeSymbol ReturnType =>
-        this.returnType ??= this.BindReturnType(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+        this.returnType ??= this.BindReturnType(this.DeclaringCompilation!);
     private TypeSymbol? returnType;
 
     public override Symbol? ContainingSymbol { get; }
@@ -30,8 +30,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 
-    public BoundStatement Body =>
-        this.body ??= this.BindBody(this.DeclaringCompilation!, this.DeclaringCompilation!.GlobalDiagnosticBag);
+    public BoundStatement Body => this.body ??= this.BindBody(this.DeclaringCompilation!);
     private BoundStatement? body;
 
     public override string Documentation => this.DeclaringSyntax.Documentation;
@@ -47,16 +46,16 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     {
     }
 
-    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics)
+    public void Bind(IBinderProvider binderProvider)
     {
-        this.BindParameters(diagnostics);
-        this.BindReturnType(binderProvider, diagnostics);
-        this.BindBody(binderProvider, diagnostics);
+        this.BindParameters(binderProvider.DiagnosticBag);
+        this.BindReturnType(binderProvider);
+        this.BindBody(binderProvider);
 
         // Flow analysis
-        ReturnsOnAllPaths.Analyze(this, diagnostics);
-        DefiniteAssignment.Analyze(this.Body, diagnostics);
-        ValAssignment.Analyze(this, diagnostics);
+        ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
+        DefiniteAssignment.Analyze(this.Body, binderProvider.DiagnosticBag);
+        ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
     }
 
     private ImmutableArray<ParameterSymbol> BindParameters(DiagnosticBag diagnostics)
@@ -87,19 +86,19 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         return parameters.ToImmutable();
     }
 
-    private TypeSymbol BindReturnType(IBinderProvider binderProvider, DiagnosticBag diagnostics)
+    private TypeSymbol BindReturnType(IBinderProvider binderProvider)
     {
         // If the return type is unspecified, it's assumed to be unit
         if (this.DeclaringSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
 
         // Otherwise, we need to resolve
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.ReturnType.Type, diagnostics);
+        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.ReturnType.Type, binderProvider.DiagnosticBag);
     }
 
-    private BoundStatement BindBody(IBinderProvider binderProvider, DiagnosticBag diagnostics)
+    private BoundStatement BindBody(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Body);
-        return binder.BindFunction(this, diagnostics);
+        return binder.BindFunction(this, binderProvider.DiagnosticBag);
     }
 }

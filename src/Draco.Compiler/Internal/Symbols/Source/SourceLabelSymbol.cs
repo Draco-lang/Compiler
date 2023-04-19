@@ -20,5 +20,5 @@ internal sealed class SourceLabelSymbol : LabelSymbol, ISourceSymbol
         this.DeclaringSyntax = declarationSyntax;
     }
 
-    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics) { }
+    public void Bind(IBinderProvider binderProvider) { }
 }

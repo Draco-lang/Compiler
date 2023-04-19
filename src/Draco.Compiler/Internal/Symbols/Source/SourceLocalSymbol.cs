@@ -28,5 +28,5 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
         this.Type = type;
     }
 
-    public void Bind(IBinderProvider binderProvider, DiagnosticBag diagnostics) { }
+    public void Bind(IBinderProvider binderProvider) { }
 }

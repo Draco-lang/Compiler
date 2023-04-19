@@ -6,5 +6,5 @@ public enum CompletionKind
     Function,
     Class,
     Module,
-    Keyword
+    Keyword,
 }

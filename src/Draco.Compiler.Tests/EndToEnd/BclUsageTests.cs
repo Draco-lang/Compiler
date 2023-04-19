@@ -1,5 +1,6 @@
 namespace Draco.Compiler.Tests.EndToEnd;
 
+[Collection(nameof(NoParallelizationCollectionDefinition))]
 public sealed class BclUsageTests : EndToEndTestsBase
 {
     [Fact]

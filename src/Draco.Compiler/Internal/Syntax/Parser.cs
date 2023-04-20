@@ -443,8 +443,7 @@ internal sealed class Parser
                 // Member access
                 var dot = this.Advance();
                 var member = this.Expect(TokenKind.Identifier);
-                // TODO: Instantiate
-                throw new NotImplementedException();
+                result = new MemberTypeSyntax(result, dot, member);
             }
             else
             {

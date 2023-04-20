@@ -21,7 +21,7 @@ public enum CompletionContext
     MemberAccess,
 
     /// <summary>
-    /// Import statement where only modules are valid suggestions.
+    /// Import statement, where only modules are valid suggestions.
     /// </summary>
     ModuleImport,
 

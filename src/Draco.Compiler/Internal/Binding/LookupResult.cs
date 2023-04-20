@@ -121,8 +121,8 @@ internal sealed class LookupResult
     /// <param name="name">The referenced symbol name.</param>
     /// <param name="syntax">The referencing syntax, if any.</param>
     /// <param name="diagnostics">The diagnostics are added here.</param>
-    /// <returns>The <see cref="TypeSymbol"/> retrieved in a type context.</returns>
-    public TypeSymbol GetType(string name, SyntaxNode? syntax, DiagnosticBag diagnostics)
+    /// <returns>The <see cref="Symbol"/> retrieved in a type context.</returns>
+    public Symbol GetType(string name, SyntaxNode? syntax, DiagnosticBag diagnostics)
     {
         if (!this.FoundAny)
         {
@@ -140,7 +140,7 @@ internal sealed class LookupResult
             // This should have been handled by binder when constructing the scope
             throw new NotImplementedException();
         }
-        return (TypeSymbol)this.Symbols.First();
+        return this.Symbols.First();
     }
 
     /// <summary>

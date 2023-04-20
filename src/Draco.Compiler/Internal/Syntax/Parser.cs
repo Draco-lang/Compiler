@@ -426,7 +426,39 @@ internal sealed class Parser
     /// Parses a type expression.
     /// </summary>
     /// <returns>The parsed <see cref="TypeSyntax"/>.</returns>
-    private TypeSyntax ParseType()
+    private TypeSyntax ParseType() => this.ParseGenericLevelType();
+
+    /// <summary>
+    /// Parses a type expression with potential postfix notations, like member access or generics.
+    /// </summary>
+    /// <returns>The parsed <see cref="TypeSyntax"/>.</returns>
+    private TypeSyntax ParseGenericLevelType()
+    {
+        var result = this.ParseAtomType();
+        while (true)
+        {
+            var peek = this.Peek();
+            if (peek == TokenKind.Dot)
+            {
+                // Member access
+                var dot = this.Advance();
+                var member = this.Expect(TokenKind.Identifier);
+                // TODO: Instantiate
+                throw new NotImplementedException();
+            }
+            else
+            {
+                break;
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Parses an atomic type expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="TypeSyntax"/>.</returns>
+    private TypeSyntax ParseAtomType()
     {
         if (this.Matches(TokenKind.Identifier, out var typeName))
         {

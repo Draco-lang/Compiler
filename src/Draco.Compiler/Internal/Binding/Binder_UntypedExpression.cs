@@ -344,7 +344,12 @@ internal partial class Binder
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
-        if (left is UntypedModuleExpression moduleExpr)
+        if (left is UntypedReferenceErrorExpression err)
+        {
+            // Error, don't cascade
+            return new UntypedReferenceErrorExpression(syntax, err.Symbol);
+        }
+        else if (left is UntypedModuleExpression moduleExpr)
         {
             // Module member access
             var module = moduleExpr.Module;

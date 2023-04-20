@@ -71,4 +71,31 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal("Hello, 123True - and bye!", stringWriter.ToString());
     }
+
+    [Fact]
+    public void FullyQualifiedNames()
+    {
+        var assembly = Compile("""
+            import System.Console;
+            import System.Text;
+
+            func make_builder(): System.Text.StringBuilder = StringBuilder();
+
+            func main() {
+                var sb = make_builder();
+                var myName = "Draco";
+                sb.Append("Hello \{myName}!");
+                Write(sb.ToString());
+            }
+            """);
+
+        var stringWriter = new StringWriter();
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("Hello Draco!", stringWriter.ToString());
+    }
 }

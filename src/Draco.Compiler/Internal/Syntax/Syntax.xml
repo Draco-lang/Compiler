@@ -395,6 +395,32 @@
     </Field>
   </Node>
 
+  <Node Name="MemberTypeSyntax" Base="TypeSyntax">
+    <Documentation>
+      A type nested as a member of something.
+    </Documentation>
+
+    <Field Name="Accessed" Type="TypeSyntax">
+      <Documentation>
+        The accessed element, like a type or module.
+      </Documentation>
+    </Field>
+    <Field Name="Dot" Type="SyntaxToken">
+      <Documentation>
+        The dot between the accessed element and the member name.
+      </Documentation>
+
+      <Token Kind="Dot" />
+    </Field>
+    <Field Name="Member" Type="SyntaxToken">
+      <Documentation>
+        The accessed member name.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
   <AbstractNode Name="StatementSyntax" Base="SyntaxNode">
     <Documentation>
       Any statement.

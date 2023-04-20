@@ -26,7 +26,7 @@ public enum CompletionContext
     ModuleImport,
 
     /// <summary>
-    /// Keyword that starts declaration.
+    /// Keyword that starts a declaration.
     /// </summary>
     DeclarationKeyword,
 }

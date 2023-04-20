@@ -85,11 +85,11 @@ internal abstract partial class Binder
         var valueSyntax = global.DeclaringSyntax.Value;
 
         // Bind type and value
-        var type = typeSyntax is null ? null : this.BindType(typeSyntax.Type, diagnostics);
+        var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
         var untypedValue = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
 
         // Infer declared type
-        var declaredType = (type as TypeSymbol) ?? constraints.NextTypeVariable;
+        var declaredType = type ?? constraints.NextTypeVariable;
 
         // Add assignability constraint, if needed
         if (untypedValue is not null)

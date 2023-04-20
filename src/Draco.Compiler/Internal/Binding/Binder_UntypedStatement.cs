@@ -100,10 +100,10 @@ internal partial class Binder
             .OfType<UntypedLocalSymbol>()
             .First(sym => sym.DeclaringSyntax == syntax);
 
-        var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, diagnostics);
+        var type = syntax.Type is null ? null : this.BindTypeToTypeSymbol(syntax.Type.Type, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);
 
-        var declaredType = constraints.AddLocal(localSymbol, type as TypeSymbol);
+        var declaredType = constraints.AddLocal(localSymbol, type);
         if (value is not null)
         {
             // It has to be assignable

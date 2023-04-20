@@ -30,6 +30,6 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Type);
-        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.Type, binderProvider.DiagnosticBag);
+        return binder.BindTypeToTypeSymbol(this.DeclaringSyntax.Type, binderProvider.DiagnosticBag);
     }
 }

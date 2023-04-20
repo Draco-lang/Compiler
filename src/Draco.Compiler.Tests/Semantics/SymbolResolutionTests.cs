@@ -950,4 +950,74 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.ImportNotAtTop);
     }
+
+    [Fact]
+    public void ModuleAsReturnType()
+    {
+        // func foo(): System = 0;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("System"),
+            InlineFunctionBody(
+                LiteralExpression(0)))));
+
+        var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var returnTypeSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(returnTypeSyntax));
+
+        // Assert
+        Assert.NotNull(returnTypeSymbol);
+        Assert.False(returnTypeSymbol.IsError);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+    }
+
+    [Fact]
+    public void ModuleAsVariableType()
+    {
+        // func foo() {
+        //     var x: System = 0;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("System"), LiteralExpression(0)))))));
+
+        var varTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var varTypeSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(varTypeSyntax));
+
+        // Assert
+        Assert.NotNull(varTypeSymbol);
+        Assert.False(varTypeSymbol.IsError);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+    }
 }

@@ -76,11 +76,20 @@ internal static class SymbolResolutionErrors
         code: Code(7));
 
     /// <summary>
+    /// A module was used as an expression.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalModuleType = DiagnosticTemplate.Create(
+        title: "illegal type",
+        severity: DiagnosticSeverity.Error,
+        format: "the module name {0} is illegal in type context",
+        code: Code(8));
+
+    /// <summary>
     /// Import is not at the top of the scope.
     /// </summary>
     public static readonly DiagnosticTemplate ImportNotAtTop = DiagnosticTemplate.Create(
         title: "import not at the top of the scope",
         severity: DiagnosticSeverity.Error,
         format: "import directives must appear at the top of the scope",
-        code: Code(8));
+        code: Code(9));
 }

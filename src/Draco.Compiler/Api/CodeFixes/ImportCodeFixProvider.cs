@@ -20,8 +20,9 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
         this.Range = range;
     }
 
-    internal override ImmutableArray<CodeFix> GetCodeFixes(ImmutableArray<Diagnostic> diagnostics)
+    public override ImmutableArray<CodeFix> GetCodeFixes(ImmutableArray<Diagnostic> diagnostics)
     {
+        // Checks if in the diagnostics is any diag this provider can fix, meaning it has the correct template and if it is in the range of this codefix
         if (this.SyntaxTree.TraverseSubtreesIntersectingRange(this.Range).LastOrDefault(x => x is ImportDeclarationSyntax) is ImportDeclarationSyntax import
             && diagnostics.Any(x => x.Template == SymbolResolutionErrors.ImportNotAtTop && x.Location.Range!.Value.Intersects(this.Range)))
         {

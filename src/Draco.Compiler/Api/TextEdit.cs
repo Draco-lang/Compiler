@@ -1,6 +1,6 @@
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Api.CodeFixes;
+namespace Draco.Compiler.Api;
 
 /// <summary>
 /// Represents an edit in source text.

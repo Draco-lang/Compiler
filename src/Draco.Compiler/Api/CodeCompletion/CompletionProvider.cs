@@ -18,10 +18,10 @@ public abstract class CompletionProvider
     /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
     /// <param name="cursor">Position of cursor in the <paramref name="tree"/>.</param>
     /// <returns>All the <see cref="CompletionItem"/>s this <see cref="CompletionProvider"/> created.</returns>
-    internal abstract ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts);
+    public abstract ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts);
 
     /// <summary>
-    /// Array of completion contexts this <see cref="CompletionProvider"/> allows.
+    /// Array of completion contexts this <see cref="CompletionProvider"/> is applicable in.
     /// </summary>
-    internal abstract CompletionContext[] ValidContexts { get; }
+    public abstract CompletionContext[] ValidContexts { get; }
 }

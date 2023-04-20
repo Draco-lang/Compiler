@@ -69,7 +69,7 @@ internal static class Translator
         var result = new LspModels.CompletionItem()
         {
             // TODO: Maybe we will have completions that don't just append text
-            Label = item.Change.InsertedText,
+            Label = item.Edit.Text,
             Kind = ToLsp(item.Kind),
         };
         if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
@@ -119,7 +119,7 @@ internal static class Translator
         return result;
     }
 
-    public static LspModels.TextEdit ToLsp(CompilerApi.CodeFixes.TextEdit edit) => new()
+    public static LspModels.TextEdit ToLsp(CompilerApi.TextEdit edit) => new()
     {
         NewText = edit.Text,
         Range = ToLsp(edit.Range),

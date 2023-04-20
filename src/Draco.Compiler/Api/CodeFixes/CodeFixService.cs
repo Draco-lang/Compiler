@@ -10,13 +10,13 @@ namespace Draco.Compiler.Api.CodeFixes;
 /// </summary>
 public sealed class CodeFixService
 {
-    private List<CodeFixProvider> Providers = new List<CodeFixProvider>();
+    private readonly List<CodeFixProvider> providers = new List<CodeFixProvider>();
 
     /// <summary>
     /// Adds <see cref="CodeFixProvider"/> this service can use.
     /// </summary>
     /// <param name="provider">The provider to add to this service.</param>
-    public void AddProvider(CodeFixProvider provider) => this.Providers.Add(provider);
+    public void AddProvider(CodeFixProvider provider) => this.providers.Add(provider);
 
     /// <summary>
     /// Gets <see cref="CodeFix"/>es from all registered <see cref="CodeFixProvider"/>s.
@@ -28,7 +28,7 @@ public sealed class CodeFixService
     {
         var result = ImmutableArray.CreateBuilder<CodeFix>();
         var diags = semanticModel.Diagnostics;
-        foreach (var provider in this.Providers)
+        foreach (var provider in this.providers)
         {
             result.AddRange(provider.GetCodeFixes(diags));
         }

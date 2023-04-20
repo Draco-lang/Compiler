@@ -1,7 +1,7 @@
 namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
-/// Represents a context of a completion.
+/// Represents a code context of a completion (For example if the completion is part of expression/ModuleImport/...).
 /// </summary>
 public enum CompletionContext
 {
@@ -13,7 +13,7 @@ public enum CompletionContext
     /// <summary>
     /// Expression where only valid suggestions are types.
     /// </summary>
-    TypeExpression,
+    Type,
 
     /// <summary>
     /// Member access expression.

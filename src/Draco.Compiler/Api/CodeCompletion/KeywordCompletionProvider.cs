@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
@@ -10,32 +11,38 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class KeywordCompletionProvider : CompletionProvider
 {
-    internal override CompletionContext[] ValidContexts { get; } = new[]
+    public override CompletionContext[] ValidContexts { get; } = new[]
     {
         CompletionContext.DeclarationKeyword,
         CompletionContext.ExpressionContent,
     };
 
-    private CompletionItem[] keywords = new[]
+    private readonly CompletionItem[] declarationKeywords = new[]
     {
-        // TODO: else
-        // TODO: break and continue labels
-        CompletionItem.Create("import", CompletionKind.Keyword, CompletionContext.DeclarationKeyword),
-        CompletionItem.Create("var", CompletionKind.Keyword, CompletionContext.DeclarationKeyword),
-        CompletionItem.Create("val", CompletionKind.Keyword, CompletionContext.DeclarationKeyword),
-        CompletionItem.Create("func", CompletionKind.Keyword, CompletionContext.DeclarationKeyword),
-
-        CompletionItem.Create("if", CompletionKind.Keyword, CompletionContext.ExpressionContent),
-        CompletionItem.Create("while", CompletionKind.Keyword, CompletionContext.ExpressionContent),
-        CompletionItem.Create("return", CompletionKind.Keyword, CompletionContext.ExpressionContent),
-        CompletionItem.Create("goto", CompletionKind.Keyword, CompletionContext.ExpressionContent),
-        CompletionItem.Create("and", CompletionKind.Keyword, CompletionContext.ExpressionContent),
-        CompletionItem.Create("or", CompletionKind.Keyword, CompletionContext.ExpressionContent),
-        CompletionItem.Create("not", CompletionKind.Keyword, CompletionContext.ExpressionContent),
-        CompletionItem.Create("mod", CompletionKind.Keyword, CompletionContext.ExpressionContent),
-        CompletionItem.Create("rem", CompletionKind.Keyword, CompletionContext.ExpressionContent),
+        CompletionItem.Create("import", CompletionKind.Keyword),
+        CompletionItem.Create("var", CompletionKind.Keyword),
+        CompletionItem.Create("val", CompletionKind.Keyword),
+        CompletionItem.Create("func", CompletionKind.Keyword)
     };
 
-    internal override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts) =>
-        this.keywords.Where(x => x.Context.Intersect(currentContexts).Count() > 0).ToImmutableArray();
+    private readonly CompletionItem[] expressionKeywords = new[]
+    {
+        CompletionItem.Create("if", CompletionKind.Keyword),
+        CompletionItem.Create("while", CompletionKind.Keyword),
+        CompletionItem.Create("return", CompletionKind.Keyword),
+        CompletionItem.Create("goto", CompletionKind.Keyword),
+        CompletionItem.Create("and", CompletionKind.Keyword),
+        CompletionItem.Create("or", CompletionKind.Keyword),
+        CompletionItem.Create("not", CompletionKind.Keyword),
+        CompletionItem.Create("mod", CompletionKind.Keyword),
+        CompletionItem.Create("rem", CompletionKind.Keyword)
+    };
+
+    public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts)
+    {
+        var result = ImmutableArray.CreateBuilder<CompletionItem>();
+        if (currentContexts.Contains(CompletionContext.ExpressionContent)) result.AddRange(this.expressionKeywords);
+        if (currentContexts.Contains(CompletionContext.DeclarationKeyword)) result.AddRange(this.declarationKeywords);
+        return result.ToImmutable();
+    }
 }

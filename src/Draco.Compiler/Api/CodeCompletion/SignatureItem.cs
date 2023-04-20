@@ -9,4 +9,4 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// <param name="Overloads">List of all function overloads this <see cref="SignatureItem"/> represents.</param>
 /// <param name="CurrentOverload">The function overload that should be currently active based on parameter information.</param>
 /// <param name="CurrentParameter">The function parameter that should be currently active based on parameter information.</param>
-public record class SignatureItem(ImmutableArray<IFunctionSymbol> Overloads, IFunctionSymbol CurrentOverload, IParameterSymbol? CurrentParameter);
+public sealed record class SignatureItem(ImmutableArray<IFunctionSymbol> Overloads, IFunctionSymbol CurrentOverload, IParameterSymbol? CurrentParameter);

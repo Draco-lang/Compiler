@@ -10,24 +10,24 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class SemanticCompletionProvider : CompletionProvider
 {
-    internal override CompletionContext[] ValidContexts { get; } = new[]
+    public override CompletionContext[] ValidContexts { get; } = new[]
     {
         CompletionContext.ExpressionContent,
         CompletionContext.MemberAccess,
-        CompletionContext.TypeExpression,
+        CompletionContext.Type,
         CompletionContext.ModuleImport
     };
 
-    internal override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts)
+    public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts)
     {
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols))
         {
             symbols = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last());
         }
-        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray()));
+        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), currentContexts));
 
         // If the current valid contexts intersect with contexts of given completion, we add it to the result
-        return completions.Where(x => x is not null && x.Context.Intersect(currentContexts).Count() > 0).ToImmutableArray()!;
+        return completions.Where(x => x is not null).ToImmutableArray()!;
     }
 
     private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<ISymbol> result)
@@ -58,18 +58,19 @@ public sealed class SemanticCompletionProvider : CompletionProvider
     /// <param name="symbol">The <see cref="ISymbol"/> to construct the <see cref="CompletionItem"/> from.</param>
     /// <param name="type">Optional type, used only for specifying overloads.</param>
     /// <returns>The constructed <see cref="CompletionItem"/>.</returns>
-    private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, string? type = null) => symbols.First() switch
+    private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext[] currentContexts) => symbols.First() switch
     {
-        TypeSymbol => CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Class, CompletionContext.ExpressionContent, CompletionContext.MemberAccess, CompletionContext.TypeExpression),
+        TypeSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess || x == CompletionContext.Type) =>
+            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Class),
 
-        IVariableSymbol =>
-            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Variable, CompletionContext.ExpressionContent),
+        IVariableSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent) =>
+            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Variable),
 
-        ModuleSymbol =>
-            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Module, CompletionContext.ExpressionContent, CompletionContext.ModuleImport, CompletionContext.MemberAccess),
+        ModuleSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess || x == CompletionContext.ModuleImport) =>
+            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Module),
 
-        FunctionSymbol fun when !fun.IsSpecialName =>
-            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Function, CompletionContext.ExpressionContent, CompletionContext.MemberAccess),
+        FunctionSymbol fun when !fun.IsSpecialName && currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess) =>
+            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Function),
         _ => null
     };
 }

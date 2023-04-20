@@ -13,5 +13,5 @@ public abstract class CodeFixProvider
     /// </summary>
     /// <param name="diagnostics">Current <see cref="Diagnostic"/>s.</param>
     /// <returns>All <see cref="CodeFix"/>es from this <see cref="CodeFixProvider"/>.</returns>
-    internal abstract ImmutableArray<CodeFix> GetCodeFixes(ImmutableArray<Diagnostic> diagnostics);
+    public abstract ImmutableArray<CodeFix> GetCodeFixes(ImmutableArray<Diagnostic> diagnostics);
 }

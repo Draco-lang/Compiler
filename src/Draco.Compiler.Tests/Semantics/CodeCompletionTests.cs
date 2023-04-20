@@ -11,11 +11,11 @@ public sealed class CodeCompletionTests
     private void AssertCompletions(ImmutableArray<CompletionItem> actuall, params string[] expected)
     {
         Assert.Equal(expected.Length, actuall.Length);
-        actuall = actuall.OrderBy(x => x.Change.InsertedText).ToImmutableArray();
+        actuall = actuall.OrderBy(x => x.Edit.Text).ToImmutableArray();
         expected = expected.Order().ToArray();
         for (int i = 0; i < actuall.Length; i++)
         {
-            Assert.Equal(expected[i], actuall[i].Change.InsertedText);
+            Assert.Equal(expected[i], actuall[i].Edit.Text);
         }
     }
 
@@ -40,7 +40,7 @@ public sealed class CodeCompletionTests
         var cursor = new SyntaxPosition(2, 18);
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("gl")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("gl")).ToImmutableArray();
         this.AssertCompletions(completions, "global");
     }
 
@@ -57,7 +57,7 @@ public sealed class CodeCompletionTests
         var cursor = new SyntaxPosition(2, 18);
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("lo")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("lo")).ToImmutableArray();
         this.AssertCompletions(completions, "local");
     }
 
@@ -75,7 +75,7 @@ public sealed class CodeCompletionTests
         var cursor = new SyntaxPosition(1, 18);
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("so")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("so")).ToImmutableArray();
         this.AssertCompletions(completions, "something");
     }
 
@@ -90,7 +90,7 @@ public sealed class CodeCompletionTests
         var cursor = new SyntaxPosition(1, 10);
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("gl")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("gl")).ToImmutableArray();
         this.AssertCompletions(completions, "global");
     }
 
@@ -106,7 +106,7 @@ public sealed class CodeCompletionTests
         var cursor = new SyntaxPosition(0, 10);
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("so")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("so")).ToImmutableArray();
         this.AssertCompletions(completions, "something");
     }
 
@@ -129,7 +129,7 @@ public sealed class CodeCompletionTests
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("Consol")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("Consol")).ToImmutableArray();
         var expected = new[]
         {
             "Console",
@@ -165,7 +165,7 @@ public sealed class CodeCompletionTests
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("Consol")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("Consol")).ToImmutableArray();
         var expected = new[]
         {
             "Console",
@@ -199,7 +199,7 @@ public sealed class CodeCompletionTests
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("Co")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("Co")).ToImmutableArray();
         var expected = new[]
         {
             "CodeDom",
@@ -228,7 +228,7 @@ public sealed class CodeCompletionTests
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("S")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("S")).ToImmutableArray();
         this.AssertCompletions(completions, "System");
     }
 
@@ -251,7 +251,7 @@ public sealed class CodeCompletionTests
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("Wr")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("Wr")).ToImmutableArray();
         var expected = new[]
         {
             "Write",
@@ -280,7 +280,7 @@ public sealed class CodeCompletionTests
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.StartsWith("App")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.StartsWith("App")).ToImmutableArray();
         var expected = new[]
         {
             "Append",
@@ -310,7 +310,7 @@ public sealed class CodeCompletionTests
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Change.InsertedText.Contains("W")).ToImmutableArray();
+        var completions = this.GetCompletions(tree, semanticModel, cursor).Where(x => x.Edit.Text.Contains("W")).ToImmutableArray();
         var expected = new Dictionary<string, int>
         {
             { "Write", 17},
@@ -321,7 +321,7 @@ public sealed class CodeCompletionTests
         Assert.Equal(4, completions.Length);
         foreach (var completion in completions)
         {
-            Assert.True(expected.TryGetValue(completion.Change.InsertedText, out var type));
+            Assert.True(expected.TryGetValue(completion.Edit.Text, out var type));
             Assert.Equal(type, completion.Symbols.Length);
         }
     }

@@ -9,4 +9,4 @@ namespace Draco.Compiler.Api.CodeFixes;
 /// </summary>
 /// <param name="DisplayText">The name of this <see cref="CodeFix"/>.</param>
 /// <param name="Edits">The <see cref="TextEdit"/>s this <see cref="CodeFix"/> will do if aplied.</param>
-public record class CodeFix(string DisplayText, ImmutableArray<TextEdit> Edits);
+public sealed record class CodeFix(string DisplayText, ImmutableArray<TextEdit> Edits);

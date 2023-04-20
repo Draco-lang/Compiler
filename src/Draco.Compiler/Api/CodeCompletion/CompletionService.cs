@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -11,13 +12,13 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class CompletionService
 {
-    private List<CompletionProvider> Providers = new List<CompletionProvider>();
+    private readonly List<CompletionProvider> providers = new List<CompletionProvider>();
 
     /// <summary>
     /// Adds <see cref="CompletionProvider"/> this service can use.
     /// </summary>
     /// <param name="provider">The provider to add to this service.</param>
-    public void AddProvider(CompletionProvider provider) => this.Providers.Add(provider);
+    public void AddProvider(CompletionProvider provider) => this.providers.Add(provider);
 
     /// <summary>
     /// Gets <see cref="CompletionItem"/>s from all registered <see cref="CompletionProvider"/>s.
@@ -29,7 +30,7 @@ public sealed class CompletionService
     public ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        foreach (var provider in this.Providers)
+        foreach (var provider in this.providers)
         {
             var currentContexts = this.GetCurrentContexts(tree, cursor);
             if (provider.ValidContexts.Intersect(currentContexts).Count() > 0)
@@ -50,13 +51,13 @@ public sealed class CompletionService
     {
         var token = syntaxTree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
         // Type expression
-        if (token.Parent is NameTypeSyntax) return new[] { CompletionContext.TypeExpression };
+        if (token.Parent is NameTypeSyntax) return new[] { CompletionContext.Type };
         // Parameter name declaration
-        if (token.Parent is ParameterSyntax) return new CompletionContext[0];
+        else if (token.Parent is ParameterSyntax) return Array.Empty<CompletionContext>();
         // Global declaration
-        if (token.Parent is UnexpectedDeclarationSyntax declaration) return new[] { CompletionContext.DeclarationKeyword };
+        else if (token.Parent is UnexpectedDeclarationSyntax declaration) return new[] { CompletionContext.DeclarationKeyword };
         // Declaring identifier
-        if (token.Parent is DeclarationSyntax) return new CompletionContext[0];
+        else if (token.Parent is DeclarationSyntax) return Array.Empty<CompletionContext>();
         // Member access
         else if (token.Parent is MemberExpressionSyntax) return new[] { CompletionContext.MemberAccess };
         // Import start

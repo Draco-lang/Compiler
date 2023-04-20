@@ -16,7 +16,7 @@ public enum CompletionContext
     Type,
 
     /// <summary>
-    /// Member access expression.
+    /// Inside some kind of member access syntax.
     /// </summary>
     MemberAccess,
 

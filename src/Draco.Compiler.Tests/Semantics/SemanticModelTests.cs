@@ -34,7 +34,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -65,7 +65,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -94,9 +94,9 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
-        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
-        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -127,7 +127,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        _ = GetInternalSymbol<SourceFunctionSymbol>(semanticModel.GetDefinedSymbol(mainDecl));
+        _ = GetInternalSymbol<SourceFunctionSymbol>(semanticModel.GetDeclaredSymbol(mainDecl));
         _ = mainDecl.Body;
 
         var diags = semanticModel.Diagnostics;

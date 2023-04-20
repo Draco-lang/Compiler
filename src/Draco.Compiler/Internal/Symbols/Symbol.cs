@@ -79,7 +79,7 @@ internal abstract partial class Symbol
     /// <summary>
     /// The syntax declaring this symbol.
     /// </summary>
-    public virtual SyntaxNode? DeclarationSyntax => null;
+    public virtual SyntaxNode? DeclaringSyntax => null;
 
     /// <summary>
     /// Converts this symbol into an API symbol.

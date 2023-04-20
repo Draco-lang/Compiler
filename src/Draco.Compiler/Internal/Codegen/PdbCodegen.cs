@@ -64,7 +64,7 @@ internal sealed class PdbCodegen : MetadataWriter
         var sequencePointsForMethod = this.sequencePoints.ToImmutable();
         var sequencePoints = this.AddSequencePoints(default, sequencePointsForMethod);
         this.MetadataBuilder.AddMethodDebugInformation(
-            document: this.GetOrAddDocument(procedure.Symbol.DeclarationSyntax),
+            document: this.GetOrAddDocument(procedure.Symbol.DeclaringSyntax),
             sequencePoints: sequencePoints);
 
         // Local scopes

@@ -1,35 +1,35 @@
-using System.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
 /// <summary>
 /// A function parameter defined in-source.
 /// </summary>
-internal sealed class SourceParameterSymbol : ParameterSymbol
+internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 {
-    public override TypeSymbol Type => this.type ??= this.BuildType();
+    public override TypeSymbol Type => this.type ??= this.BindType(this.DeclaringCompilation!);
     private TypeSymbol? type;
 
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.DeclarationSyntax.Name.Text;
+    public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override ParameterSyntax DeclarationSyntax { get; }
+    public override ParameterSyntax DeclaringSyntax { get; }
 
     // TODO: Extracting parameter docs involves looking into the function docs and searching in the MD
 
     public SourceParameterSymbol(Symbol? containingSymbol, ParameterSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.DeclarationSyntax = syntax;
+        this.DeclaringSyntax = syntax;
     }
 
-    private TypeSymbol BuildType()
-    {
-        Debug.Assert(this.DeclaringCompilation is not null);
+    public void Bind(IBinderProvider binderProvider) =>
+        this.BindType(binderProvider);
 
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Type);
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
-        return (TypeSymbol)binder.BindType(this.DeclarationSyntax.Type, diagnostics);
+    private TypeSymbol BindType(IBinderProvider binderProvider)
+    {
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax.Type);
+        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.Type, binderProvider.DiagnosticBag);
     }
 }

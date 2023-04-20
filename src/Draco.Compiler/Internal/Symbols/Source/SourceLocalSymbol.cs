@@ -1,22 +1,23 @@
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
 /// <summary>
 /// An in-source local declaration.
 /// </summary>
-internal sealed class SourceLocalSymbol : LocalSymbol
+internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
 {
     public override TypeSymbol Type { get; }
 
     public override Symbol? ContainingSymbol => this.untypedSymbol.ContainingSymbol;
     public override string Name => this.untypedSymbol.Name;
 
-    public override VariableDeclarationSyntax DeclarationSyntax => this.untypedSymbol.DeclarationSyntax;
+    public override VariableDeclarationSyntax DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;
 
     public override bool IsMutable => this.untypedSymbol.IsMutable;
 
-    public override string Documentation => this.DeclarationSyntax.Documentation;
+    public override string Documentation => this.DeclaringSyntax.Documentation;
 
     private readonly UntypedLocalSymbol untypedSymbol;
 
@@ -25,4 +26,6 @@ internal sealed class SourceLocalSymbol : LocalSymbol
         this.untypedSymbol = untypedSymbol;
         this.Type = type;
     }
+
+    public void Bind(IBinderProvider binderProvider) { }
 }

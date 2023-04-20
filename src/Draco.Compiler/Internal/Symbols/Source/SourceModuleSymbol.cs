@@ -5,27 +5,28 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
 /// <summary>
 /// A module defined in-source.
 /// </summary>
-internal sealed class SourceModuleSymbol : ModuleSymbol
+internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 {
     public override Compilation DeclaringCompilation { get; }
 
-    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
+    public override IEnumerable<Symbol> Members =>
+        this.members ??= this.BindMembers(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private ImmutableArray<Symbol>? members;
 
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public override SyntaxNode? DeclarationSyntax => null;
+    public override SyntaxNode? DeclaringSyntax => null;
 
     private readonly Declaration declaration;
 
@@ -55,10 +56,11 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
     {
     }
 
-    private ImmutableArray<Symbol> BuildMembers()
+    public void Bind(IBinderProvider binderProvider) => this.BindMembers(binderProvider.DiagnosticBag);
+
+    private ImmutableArray<Symbol> BindMembers(DiagnosticBag diagnostics)
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
 
         // Syntax-declaration
         foreach (var declaration in this.declaration.Children)
@@ -74,7 +76,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol
             if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
 
             // Illegal
-            var syntax = member.DeclarationSyntax;
+            var syntax = member.DeclaringSyntax;
             Debug.Assert(syntax is not null);
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalShadowing,

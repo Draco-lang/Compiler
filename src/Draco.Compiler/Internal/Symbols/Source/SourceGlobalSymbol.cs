@@ -1,17 +1,24 @@
 using System.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.FlowAnalysis;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
-internal sealed class SourceGlobalSymbol : GlobalSymbol
+internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 {
     public override TypeSymbol Type
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
+            if (this.NeedsBuild)
+            {
+                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
+                this.type = type;
+                this.value = value;
+            }
             Debug.Assert(this.type is not null);
             return this.type;
         }
@@ -21,7 +28,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public override VariableDeclarationSyntax DeclarationSyntax => this.declaration.Syntax;
+    public override VariableDeclarationSyntax DeclaringSyntax => this.declaration.Syntax;
 
     public BoundExpression? Value
     {
@@ -29,12 +36,17 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol
         {
             // NOTE: We check the TYPE here, as value is nullable,
             // but a type always needs to be inferred
-            if (this.NeedsBuild) this.Build();
+            if (this.NeedsBuild)
+            {
+                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
+                this.type = type;
+                this.value = value;
+            }
             return this.value;
         }
     }
 
-    public override string Documentation => this.DeclarationSyntax.Documentation;
+    public override string Documentation => this.DeclaringSyntax.Documentation;
 
     // NOTE: We check the TYPE here, as value is nullable
     private bool NeedsBuild => this.type is null;
@@ -49,15 +61,18 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol
         this.declaration = declaration;
     }
 
-    private void Build()
+    public void Bind(IBinderProvider binderProvider)
     {
-        Debug.Assert(this.DeclaringCompilation is not null);
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
+        this.BindTypeAndValue(binderProvider);
 
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
-        var (type, value) = binder.BindGlobal(this, diagnostics);
+        // Flow analysis
+        if (this.Value is not null) DefiniteAssignment.Analyze(this.Value, binderProvider.DiagnosticBag);
+        ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+    }
 
-        this.type = type;
-        this.value = value;
+    private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValue(IBinderProvider binderProvider)
+    {
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
+        return binder.BindGlobal(this, binderProvider.DiagnosticBag);
     }
 }

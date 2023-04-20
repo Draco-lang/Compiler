@@ -53,6 +53,17 @@ public sealed partial class SemanticModel
         internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference) =>
             this.UnderlyingBinder.LookupLocal(result, name, ref flags, allowSymbol, currentReference);
 
+        // Memoizing overrides /////////////////////////////////////////////////
+
+        protected override UntypedStatement BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.BindNode(syntax, () => base.BindStatement(syntax, constraints, diagnostics));
+
+        protected override UntypedExpression BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.BindNode(syntax, () => base.BindExpression(syntax, constraints, diagnostics));
+
+        protected override UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.BindNode(syntax, () => base.BindLvalue(syntax, constraints, diagnostics));
+
         internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));
 
@@ -63,37 +74,47 @@ public sealed partial class SemanticModel
             this.TypeNode(lvalue, () => base.TypeLvalue(lvalue, constraints, diagnostics));
 
         internal override Symbol BindLabel(LabelSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.LookupNode(syntax, () => base.BindLabel(syntax, constraints, diagnostics));
+            this.BindSymbol(syntax, () => base.BindLabel(syntax, constraints, diagnostics));
 
         internal override Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) =>
-            this.LookupNode(syntax, () => base.BindType(syntax, diagnostics));
+            this.BindSymbol(syntax, () => base.BindType(syntax, diagnostics));
 
-        internal override Symbol BindImportPath(ImportPathSyntax syntax, DiagnosticBag diagnostics) =>
-            this.LookupNode(syntax, () => base.BindImportPath(syntax, diagnostics));
-
+        // TODO: Hack
         internal override void BindModuleSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.ModuleSymbol module) =>
             this.semanticModel.symbolMap[syntax] = module;
 
-        // TODO: There's nothing incremental in this,
-        // but current usage doesn't require it either
-        private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode node, Func<TBoundNode> binder)
+        // Memo logic
+
+        private TUntypedNode BindNode<TUntypedNode>(SyntaxNode syntax, Func<TUntypedNode> binder)
+            where TUntypedNode : UntypedNode
+        {
+            if (!this.semanticModel.untypedNodeMap.TryGetValue(syntax, out var node))
+            {
+                node = binder();
+                this.semanticModel.untypedNodeMap.Add(syntax, node);
+            }
+            return (TUntypedNode)node;
+        }
+
+        private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode untyped, Func<TBoundNode> binder)
             where TUntypedNode : UntypedNode
             where TBoundNode : BoundNode
         {
-            if (node.Syntax is null) return binder();
-            if (!this.semanticModel.syntaxMap.TryGetValue(node.Syntax, out var nodeList))
+            if (!this.semanticModel.boundNodeMap.TryGetValue(untyped, out var node))
             {
-                nodeList = new List<BoundNode>();
-                this.semanticModel.syntaxMap.Add(node.Syntax, nodeList);
+                node = binder();
+                this.semanticModel.boundNodeMap.Add(untyped, node);
+
+                if (untyped.Syntax is not null)
+                {
+                    var symbol = ExtractSymbol(node);
+                    if (symbol is not null) this.semanticModel.symbolMap.Add(untyped.Syntax, symbol);
+                }
             }
-            var boundNode = binder();
-            nodeList.Add(boundNode);
-            return boundNode;
+            return (TBoundNode)node;
         }
 
-        // TODO: There's nothing incremental in this,
-        // but current usage doesn't require it either
-        private Symbol LookupNode(SyntaxNode node, Func<Symbol> binder)
+        private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder)
         {
             if (!this.semanticModel.symbolMap.TryGetValue(node, out var symbol))
             {
@@ -102,5 +123,20 @@ public sealed partial class SemanticModel
             }
             return symbol;
         }
+
+        private static Symbol? ExtractSymbol(BoundNode node) => node switch
+        {
+            BoundLocalDeclaration l => l.Local,
+            BoundLabelStatement l => l.Label,
+            BoundFunctionExpression f => f.Function,
+            BoundParameterExpression p => p.Parameter,
+            BoundLocalExpression l => l.Local,
+            BoundGlobalExpression g => g.Global,
+            BoundReferenceErrorExpression e => e.Symbol,
+            BoundLocalLvalue l => l.Local,
+            BoundGlobalLvalue g => g.Global,
+            BoundMemberExpression m => m.Member,
+            _ => null,
+        };
     }
 }

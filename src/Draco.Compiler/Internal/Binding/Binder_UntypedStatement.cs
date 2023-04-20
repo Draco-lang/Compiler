@@ -19,7 +19,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped statement for <paramref name="syntax"/>.</returns>
-    protected UntypedStatement BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    protected virtual UntypedStatement BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => new UntypedUnexpectedStatement(syntax),
@@ -39,7 +39,7 @@ internal partial class Binder
     {
         var symbol = this.DeclaredSymbols
             .OfType<SourceFunctionSymbol>()
-            .First(s => s.DeclarationSyntax == syntax);
+            .First(s => s.DeclaringSyntax == syntax);
         return new UntypedLocalFunction(syntax, symbol);
     }
 
@@ -55,23 +55,22 @@ internal partial class Binder
         var locals = binder.DeclaredSymbols
             .OfType<UntypedLocalSymbol>()
             .ToImmutableArray();
-        var statements = syntax.Statements
-            .Select(s => binder.BindStatement(s, constraints, diagnostics));
+        var statements = ImmutableArray.CreateBuilder<UntypedStatement>();
+        statements.AddRange(syntax.Statements.Select(s => binder.BindStatement(s, constraints, diagnostics)));
         // TODO: Do we want to handle this here, or during DFA?
         // If this function returns unit, we implicitly append a return expression
         var function = (FunctionSymbol)this.ContainingSymbol!;
         if (ReferenceEquals(function.ReturnType, IntrinsicSymbols.Unit))
         {
-            statements = statements
-                .Append(new UntypedExpressionStatement(
+            statements.Add(new UntypedExpressionStatement(
+                syntax: null,
+                expression: new UntypedReturnExpression(
                     syntax: null,
-                    expression: new UntypedReturnExpression(
-                        syntax: null,
-                        value: UntypedUnitExpression.Default)));
+                    value: UntypedUnitExpression.Default)));
         }
         return new UntypedExpressionStatement(
             syntax,
-            new UntypedBlockExpression(syntax, locals, statements.ToImmutableArray(), UntypedUnitExpression.Default));
+            new UntypedBlockExpression(syntax, locals, statements.ToImmutable(), UntypedUnitExpression.Default));
     }
 
     private UntypedStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -89,7 +88,7 @@ internal partial class Binder
         // Look up the corresponding symbol defined
         var labelSymbol = this.DeclaredSymbols
             .OfType<LabelSymbol>()
-            .First(sym => sym.DeclarationSyntax == syntax);
+            .First(sym => sym.DeclaringSyntax == syntax);
 
         return new UntypedLabelStatement(syntax, labelSymbol);
     }
@@ -99,7 +98,7 @@ internal partial class Binder
         // Look up the corresponding symbol defined
         var localSymbol = this.DeclaredSymbols
             .OfType<UntypedLocalSymbol>()
-            .First(sym => sym.DeclarationSyntax == syntax);
+            .First(sym => sym.DeclaringSyntax == syntax);
 
         var type = syntax.Type is null ? null : this.BindType(syntax.Type.Type, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);

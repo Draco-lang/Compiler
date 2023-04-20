@@ -132,11 +132,11 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
         .ElementAt(index);
 
     /// <summary>
-    /// Enumerates this subtree, yielding all descendant nodes containing the given position.
+    /// Enumerates this subtree, yielding all descendant nodes containing the given index.
     /// </summary>
-    /// <param name="position">The position that has to be contained.</param>
-    /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(SyntaxPosition position)
+    /// <param name="index">The 0-based index that has to be contained.</param>
+    /// <returns>All subtree nodes containing <paramref name="index"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtIndex(int index)
     {
         var root = this;
         while (true)
@@ -144,7 +144,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
             yield return root;
             foreach (var child in root.Children)
             {
-                if (child.Range.Contains(position))
+                if (child.Span.Contains(index))
                 {
                     root = child;
                     goto found;
@@ -157,13 +157,13 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     }
 
     /// <summary>
-    /// Enumerates this subtree, yielding all descendant nodes intersecting the given range.
+    /// Enumerates this subtree, yielding all descendant nodes intersecting the given span.
     /// </summary>
-    /// <param name="range">The range to check for intersection with the nodes.</param>
-    /// <returns>All subtrees in intersecting <paramref name="range"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range)
+    /// <param name="span">The span to check for intersection with the nodes.</param>
+    /// <returns>All subtrees in intersecting <paramref name="span"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingSpan(SourceSpan span)
     {
-        if (range.Contains(this.Range))
+        if (span.Contains(this.Span))
         {
             yield return this;
             foreach (var child in this.PreOrderTraverse())
@@ -171,18 +171,34 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
                 yield return child;
             }
         }
-        else if (range.Intersects(this.Range))
+        else if (span.Intersects(this.Span))
         {
             yield return this;
             foreach (var child in this.Children)
             {
-                foreach (var node in child.TraverseSubtreesIntersectingRange(range))
+                foreach (var node in child.TraverseSubtreesIntersectingSpan(span))
                 {
                     yield return node;
                 }
             }
         }
     }
+
+    /// <summary>
+    /// Enumerates this subtree, yielding all descendant nodes containing the given position.
+    /// </summary>
+    /// <param name="position">The position that has to be contained.</param>
+    /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(SyntaxPosition position) =>
+        this.TraverseSubtreesAtIndex(this.Tree.SourceText.SyntaxPositionToIndex(position));
+
+    /// <summary>
+    /// Enumerates this subtree, yielding all descendant nodes intersecting the given range.
+    /// </summary>
+    /// <param name="range">The range to check for intersection with the nodes.</param>
+    /// <returns>All subtrees in intersecting <paramref name="range"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range) =>
+        this.TraverseSubtreesIntersectingSpan(this.Tree.SourceText.SyntaxRangeToSourceSpan(range));
 
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);

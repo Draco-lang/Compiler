@@ -32,6 +32,23 @@ internal sealed class MemorySourceText : Api.Syntax.SourceText
         return new(Line: lineIndex, Column: index - this.lineStarts[lineIndex]);
     }
 
+    internal override int SyntaxPositionToIndex(Api.Syntax.SyntaxPosition position)
+    {
+        this.lineStarts ??= this.BuildLineStarts();
+
+        // Avoid over-indexing
+        if (position.Line >= this.lineStarts.Count) return this.content.Length;
+
+        var lineOffset = this.lineStarts[position.Line];
+        var nextLineOffset = position.Line + 1 >= this.lineStarts.Count
+            ? this.content.Length
+            : this.lineStarts[position.Line + 1];
+        var lineLength = nextLineOffset - lineOffset;
+        var columnOffset = Math.Min(lineLength, position.Column);
+
+        return lineOffset + columnOffset;
+    }
+
     private List<int> BuildLineStarts()
     {
         var result = new List<int>

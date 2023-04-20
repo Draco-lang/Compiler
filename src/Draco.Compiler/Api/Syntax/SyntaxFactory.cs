@@ -191,6 +191,9 @@ public static partial class SyntaxFactory
     public static MemberExpressionSyntax MemberExpression(
         ExpressionSyntax accessed,
         string member) => MemberExpression(accessed, Dot, Name(member));
+    public static MemberTypeSyntax MemberType(
+        TypeSyntax accessed,
+        string member) => MemberType(accessed, Dot, Name(member));
 
     public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(Return, value);
     public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(Name(label)));

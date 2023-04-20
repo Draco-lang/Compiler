@@ -81,6 +81,20 @@ public sealed class SyntaxTree
         where TNode : SyntaxNode => this.Root.FindInChildren<TNode>(index);
 
     /// <summary>
+    /// Enumerates this tree, yielding all descendant nodes containing the given index.
+    /// </summary>
+    /// <param name="index">The 0-based index that has to be contained.</param>
+    /// <returns>All subtree nodes containing <paramref name="index"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtIndex(int index) => this.Root.TraverseSubtreesAtIndex(index);
+
+    /// <summary>
+    /// Enumerates this subtree, yielding all descendant nodes intersecting the given span.
+    /// </summary>
+    /// <param name="span">The span to check for intersection with the nodes.</param>
+    /// <returns>All subtrees in intersecting <paramref name="span"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingSpan(SourceSpan span) => this.Root.TraverseSubtreesIntersectingSpan(span);
+
+    /// <summary>
     /// Enumerates this tree, yielding all descendant nodes containing the given position.
     /// </summary>
     /// <param name="position">The position that has to be contained.</param>

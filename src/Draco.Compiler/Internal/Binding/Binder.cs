@@ -68,9 +68,9 @@ internal abstract partial class Binder
 
     public BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
-        var functionName = function.DeclarationSyntax.Name.Text;
-        var constraints = new ConstraintSolver(function.DeclarationSyntax, $"function {functionName}");
-        var untypedStatement = this.BindStatement(function.DeclarationSyntax.Body, constraints, diagnostics);
+        var functionName = function.DeclaringSyntax.Name.Text;
+        var constraints = new ConstraintSolver(function.DeclaringSyntax, $"function {functionName}");
+        var untypedStatement = this.BindStatement(function.DeclaringSyntax.Body, constraints, diagnostics);
         constraints.Solve(diagnostics);
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
         return boundStatement;
@@ -78,11 +78,11 @@ internal abstract partial class Binder
 
     public (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
-        var globalName = global.DeclarationSyntax.Name.Text;
-        var constraints = new ConstraintSolver(global.DeclarationSyntax, $"global {globalName}");
+        var globalName = global.DeclaringSyntax.Name.Text;
+        var constraints = new ConstraintSolver(global.DeclaringSyntax, $"global {globalName}");
 
-        var typeSyntax = global.DeclarationSyntax.Type;
-        var valueSyntax = global.DeclarationSyntax.Value;
+        var typeSyntax = global.DeclaringSyntax.Type;
+        var valueSyntax = global.DeclaringSyntax.Value;
 
         // Bind type and value
         var type = typeSyntax is null ? null : this.BindType(typeSyntax.Type, diagnostics);
@@ -97,7 +97,7 @@ internal abstract partial class Binder
             constraints
                 .Assignable(declaredType, untypedValue.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
-                    .WithLocation(global.DeclarationSyntax.Value!.Value.Location));
+                    .WithLocation(global.DeclaringSyntax.Value!.Value.Location));
         }
 
         // Solve
@@ -114,7 +114,7 @@ internal abstract partial class Binder
             // We could not infer the type
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.CouldNotInferType,
-                location: global.DeclarationSyntax.Location,
+                location: global.DeclaringSyntax.Location,
                 formatArgs: global.Name));
             // We use an error type
             declaredType = IntrinsicSymbols.ErrorType;

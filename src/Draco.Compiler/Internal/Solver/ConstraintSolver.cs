@@ -122,7 +122,7 @@ internal sealed partial class ConstraintSolver
                 // We could not infer the type
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
-                    location: local.DeclarationSyntax.Location,
+                    location: local.DeclaringSyntax.Location,
                     formatArgs: local.Name));
                 // We use an error type
                 localType = IntrinsicSymbols.ErrorType;

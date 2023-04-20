@@ -20,7 +20,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped expression for <paramref name="syntax"/>.</returns>
-    protected UntypedExpression BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    protected virtual UntypedExpression BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedExpressionSyntax => new UntypedUnexpectedExpression(syntax),
@@ -344,12 +344,18 @@ internal partial class Binder
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
-        if (left is UntypedModuleExpression moduleExpr)
+        if (left is UntypedReferenceErrorExpression err)
+        {
+            // Error, don't cascade
+            return new UntypedReferenceErrorExpression(syntax, err.Symbol);
+        }
+        else if (left is UntypedModuleExpression moduleExpr)
         {
             // Module member access
             var module = moduleExpr.Module;
             var members = module.Members
                 .Where(m => m.Name == memberName)
+                .Where(BinderFacts.IsValueSymbol)
                 .ToImmutableArray();
             // Reuse logic from LookupResult
             var result = LookupResult.FromResultSet(members);

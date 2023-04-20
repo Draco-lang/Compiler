@@ -27,7 +27,7 @@ internal partial class Binder
     /// <param name="reference">The syntax referencing the symbol.</param>
     /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
     /// <returns>The looked up symbol, which might represent an error.</returns>
-    internal TypeSymbol LookupTypeSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
+    internal Symbol LookupTypeSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
     {
         var result = this.LookupInternal(name, BinderFacts.IsTypeSymbol, reference);
         return result.GetType(name, reference, diagnostics);

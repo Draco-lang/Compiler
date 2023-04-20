@@ -18,7 +18,7 @@ internal sealed class ValAssignment : BoundTreeVisitor
             // Not initialized
             diagnostics.Add(Diagnostic.Create(
                 template: FlowAnalysisErrors.ImmutableVariableMustBeInitialized,
-                location: global.DeclarationSyntax.Location,
+                location: global.DeclaringSyntax.Location,
                 formatArgs: global.Name));
         }
 

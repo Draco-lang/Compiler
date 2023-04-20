@@ -172,6 +172,11 @@ public sealed class Issue139Tests
             System
         }
         """")]
+    [InlineData(""""
+        func main(){
+            while(x < s)
+            func something();
+        """")]
     [Theory]
     public void DoesNotCrash(string source)
     {

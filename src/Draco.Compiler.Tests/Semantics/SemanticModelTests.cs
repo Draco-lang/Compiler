@@ -34,7 +34,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -65,7 +65,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -94,9 +94,9 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
-        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
-        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDefinedSymbol(xDecl));
+        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var diags = semanticModel.Diagnostics;
 
         // Assert
@@ -127,7 +127,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        _ = GetInternalSymbol<SourceFunctionSymbol>(semanticModel.GetDefinedSymbol(mainDecl));
+        _ = GetInternalSymbol<SourceFunctionSymbol>(semanticModel.GetDeclaredSymbol(mainDecl));
         _ = mainDecl.Body;
 
         var diags = semanticModel.Diagnostics;
@@ -220,6 +220,51 @@ public sealed class SemanticModelTests : SemanticTestsBase
         Assert.NotNull(systemSymbol);
         Assert.Contains(writeLineSymbol, consoleSymbol.Members);
         Assert.Contains(consoleSymbol, systemSymbol.Members);
+    }
+
+    [Fact]
+    public void GetReferencedSymbolFromFullyQualifiedType()
+    {
+        // func make(): System.Text.StringBuilder = System.Text.StringBuilder();
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "make",
+            ParameterList(),
+            MemberType(
+                MemberType(NameType("System"), "Text"),
+                "StringBuilder"),
+            InlineFunctionBody(
+                CallExpression(
+                    MemberExpression(
+                        MemberExpression(NameExpression("System"), "Text"),
+                        "StringBuilder"))))));
+
+        var memberTypeSyntax = tree.FindInChildren<MemberTypeSyntax>(0);
+        var memberSubtypeSyntax = tree.FindInChildren<MemberTypeSyntax>(1);
+        var systemSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var sbSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(memberTypeSyntax));
+        var textSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubtypeSyntax));
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(sbSymbol);
+        Assert.NotNull(textSymbol);
+        Assert.NotNull(systemSymbol);
+        Assert.Contains(sbSymbol, textSymbol.Members);
+        Assert.Contains(textSymbol, systemSymbol.Members);
     }
 
     [Fact]

@@ -1,11 +1,12 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -13,28 +14,30 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// An in-source function-definition.
 /// </summary>
-internal sealed class SourceFunctionSymbol : FunctionSymbol
+internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
-    public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
+    public override ImmutableArray<ParameterSymbol> Parameters =>
+        this.parameters ??= this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private ImmutableArray<ParameterSymbol>? parameters;
 
-    public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
+    public override TypeSymbol ReturnType =>
+        this.returnType ??= this.BindReturnType(this.DeclaringCompilation!);
     private TypeSymbol? returnType;
 
     public override Symbol? ContainingSymbol { get; }
-    public override string Name => this.DeclarationSyntax.Name.Text;
+    public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override FunctionDeclarationSyntax DeclarationSyntax { get; }
+    public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 
-    public BoundStatement Body => this.body ??= this.BuildBody();
+    public BoundStatement Body => this.body ??= this.BindBody(this.DeclaringCompilation!);
     private BoundStatement? body;
 
-    public override string Documentation => this.DeclarationSyntax.Documentation;
+    public override string Documentation => this.DeclaringSyntax.Documentation;
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.DeclarationSyntax = syntax;
+        this.DeclaringSyntax = syntax;
     }
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclaration declaration)
@@ -42,12 +45,21 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
     {
     }
 
-    private ImmutableArray<ParameterSymbol> BuildParameters()
+    public void Bind(IBinderProvider binderProvider)
     {
-        Debug.Assert(this.DeclaringCompilation is not null);
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
+        this.BindParameters(binderProvider.DiagnosticBag);
+        this.BindReturnType(binderProvider);
+        this.BindBody(binderProvider);
 
-        var parameterSyntaxes = this.DeclarationSyntax.ParameterList.Values.ToList();
+        // Flow analysis
+        ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
+        DefiniteAssignment.Analyze(this.Body, binderProvider.DiagnosticBag);
+        ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+    }
+
+    private ImmutableArray<ParameterSymbol> BindParameters(DiagnosticBag diagnostics)
+    {
+        var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
         for (var i = 0; i < parameterSyntaxes.Count; ++i)
@@ -73,25 +85,19 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol
         return parameters.ToImmutable();
     }
 
-    private TypeSymbol BuildReturnType()
+    private TypeSymbol BindReturnType(IBinderProvider binderProvider)
     {
         // If the return type is unspecified, it's assumed to be unit
-        if (this.DeclarationSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
+        if (this.DeclaringSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
 
         // Otherwise, we need to resolve
-        Debug.Assert(this.DeclaringCompilation is not null);
-
-        // NOTE: We are using the global diagnostic bag, maybe that's not a good idea here?
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax);
-        return (TypeSymbol)binder.BindType(this.DeclarationSyntax.ReturnType.Type, diagnostics);
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
+        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.ReturnType.Type, binderProvider.DiagnosticBag);
     }
 
-    private BoundStatement BuildBody()
+    private BoundStatement BindBody(IBinderProvider binderProvider)
     {
-        Debug.Assert(this.DeclaringCompilation is not null);
-        var binder = this.DeclaringCompilation.GetBinder(this.DeclarationSyntax.Body);
-        var diagnostics = this.DeclaringCompilation.GlobalDiagnosticBag;
-        return binder.BindFunction(this, diagnostics);
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax.Body);
+        return binder.BindFunction(this, binderProvider.DiagnosticBag);
     }
 }

@@ -7,6 +7,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -15,12 +16,20 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class ImportBinder : Binder
 {
-    public override IEnumerable<Symbol> DeclaredSymbols =>
-        this.importedSymbols ??= this.BuildImportedSymbols(this.Compilation.GlobalDiagnosticBag);
+    /// <summary>
+    /// The diagnostics produced during import resolution.
+    /// </summary>
+    public DiagnosticBag ImportDiagnostics { get; } = new();
+
+    /// <summary>
+    /// The import items this binder brings in.
+    /// </summary>
+    public ImmutableArray<ImportItem> ImportItems => this.importItems ??= this.BindImportItems(this.ImportDiagnostics);
+    private ImmutableArray<ImportItem>? importItems;
+
+    public override IEnumerable<Symbol> DeclaredSymbols => this.ImportItems.SelectMany(i => i.ImportedSymbols);
 
     public override SyntaxNode DeclaringSyntax { get; }
-
-    private ImmutableArray<Symbol>? importedSymbols;
 
     public ImportBinder(Binder parent, SyntaxNode declaringSyntax)
         : base(parent)
@@ -38,10 +47,120 @@ internal sealed class ImportBinder : Binder
         }
     }
 
-    private ImmutableArray<Symbol> BuildImportedSymbols(DiagnosticBag diagnostics)
+    private ImmutableArray<ImportItem> BindImportItems(DiagnosticBag diagnostics)
     {
-        // Collect import syntaxes
-        var importSyntaxes = new List<ImportDeclarationSyntax>();
+        var importSyntaxes = this.CollectImportDeclarations(diagnostics);
+        var importItems = ImmutableArray.CreateBuilder<ImportItem>();
+        foreach (var syntax in importSyntaxes)
+        {
+            var importItem = this.BindImport(syntax, diagnostics);
+            importItems.Add(importItem);
+        }
+        return importItems.ToImmutable();
+    }
+
+    private ImportItem BindImport(ImportDeclarationSyntax syntax, DiagnosticBag diagnostics)
+    {
+        var parts = ImmutableArray.CreateBuilder<KeyValuePair<ImportPathSyntax, Symbol>>();
+
+        // Fill out paths
+        var importedSymbol = BindImportPath(syntax.Path);
+
+        // From the last member find out what we import
+        if (importedSymbol.IsError)
+        {
+            // No-op, don't cascade
+            return new(syntax, parts.ToImmutable(), Enumerable.Empty<Symbol>());
+        }
+        else if (importedSymbol is not ModuleSymbol)
+        {
+            // Error
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalImport,
+                location: syntax.Path.Location,
+                formatArgs: syntax.Path));
+            return new(syntax, parts.ToImmutable(), Enumerable.Empty<Symbol>());
+        }
+        else
+        {
+            return new(syntax, parts.ToImmutable(), importedSymbol.Members);
+        }
+
+        Symbol BindImportPath(ImportPathSyntax syntax)
+        {
+            switch (syntax)
+            {
+            case RootImportPathSyntax root:
+            {
+                // This must be the first resolved element
+                Debug.Assert(parts!.Count == 0);
+                // Simple lookup from parent
+                // NOTE: We will ask the parent to look up import paths, because the current binder is under construction
+                // If we called the binding of import paths on this, we'd hit infinite recursion
+                var symbol = this.Parent!.LookupValueSymbol(root.Name.Text, syntax, diagnostics);
+                parts.Add(new(root, symbol));
+                return symbol;
+            }
+            case MemberImportPathSyntax mem:
+            {
+                var parent = BindImportPath(mem.Accessed);
+                // Don't cascade errors
+                if (parent.IsError)
+                {
+                    var symbol = new UndefinedMemberSymbol();
+                    parts!.Add(new(mem, symbol));
+                    return parent;
+                }
+                // Look up in parent
+                var membersWithName = parent.Members
+                    .Where(m => m.Name == mem.Member.Text)
+                    .ToList();
+                if (membersWithName.Count == 1)
+                {
+                    // It's simply this element
+                    var symbol = membersWithName[0];
+                    parts!.Add(new(mem, symbol));
+                    return symbol;
+                }
+                else if (membersWithName.Count == 0)
+                {
+                    // Not found
+                    diagnostics.Add(Diagnostic.Create(
+                        template: SymbolResolutionErrors.MemberNotFound,
+                        location: mem.Member.Location,
+                        formatArgs: new[] { mem.Member.Text, parent.Name }));
+                    var symbol = new UndefinedMemberSymbol();
+                    parts!.Add(new(mem, symbol));
+                    return symbol;
+                }
+                else
+                {
+                    // Multiple
+                    diagnostics.Add(Diagnostic.Create(
+                        template: SymbolResolutionErrors.IllegalImport,
+                        location: mem.Location,
+                        formatArgs: mem.Member.Text));
+                    // NOTE: For now this result is fine
+                    var symbol = new UndefinedMemberSymbol();
+                    parts!.Add(new(mem, symbol));
+                    return symbol;
+                }
+            }
+            default:
+                throw new ArgumentOutOfRangeException(nameof(syntax));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Collects import declarations from the <see cref="DeclaringSyntax"/> and reports diagnostics
+    /// for illegally placed imports.
+    /// </summary>
+    /// <param name="diagnostics">The bad to report diagnostics to.</param>
+    /// <returns>The collected declarations.</returns>
+    private ImmutableArray<ImportDeclarationSyntax> CollectImportDeclarations(DiagnosticBag diagnostics)
+    {
+        var importSyntaxes = ImmutableArray.CreateBuilder<ImportDeclarationSyntax>();
         var hasNonImport = false;
         foreach (var syntax in BinderFacts.EnumerateNodesInSameScope(this.DeclaringSyntax))
         {
@@ -65,34 +184,6 @@ internal sealed class ImportBinder : Binder
                     or ExpressionSyntax;
             }
         }
-        // Collect imported symbols
-        var result = ImmutableArray.CreateBuilder<Symbol>();
-        foreach (var importSyntax in importSyntaxes)
-        {
-            var importedSymbol = this.BindImportPath(importSyntax.Path, diagnostics);
-            if (importedSymbol.IsError)
-            {
-                // No-op, don't cascade
-            }
-            else if (importedSymbol is not ModuleSymbol)
-            {
-                diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.IllegalImport,
-                    location: importSyntax.Path.Location,
-                    formatArgs: ImportPathToString(importSyntax.Path)));
-            }
-            else
-            {
-                result.AddRange(importedSymbol.Members);
-            }
-        }
-        return result.ToImmutable();
+        return importSyntaxes.ToImmutable();
     }
-
-    private static string ImportPathToString(ImportPathSyntax syntax) => syntax switch
-    {
-        RootImportPathSyntax root => root.Name.Text,
-        MemberImportPathSyntax mem => $"{ImportPathToString(mem.Accessed)}.{mem.Member.Text}",
-        _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
-    };
 }

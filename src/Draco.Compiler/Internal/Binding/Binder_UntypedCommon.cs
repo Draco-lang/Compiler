@@ -13,7 +13,7 @@ internal partial class Binder
     {
         var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
         Debug.Assert(containingFunction is not null);
-        var returnTypeSyntax = (containingFunction as SourceFunctionSymbol)?.DeclarationSyntax?.ReturnType?.Type;
+        var returnTypeSyntax = (containingFunction as SourceFunctionSymbol)?.DeclaringSyntax?.ReturnType?.Type;
         constraints
             .Assignable(containingFunction.ReturnType, returnValue.TypeRequired)
             .ConfigureDiagnostic(diag => diag

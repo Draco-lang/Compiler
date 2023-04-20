@@ -38,8 +38,8 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
-        var x1SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x1Decl));
-        var x2SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDefinedSymbol(x2Decl));
+        var x1SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDeclaredSymbol(x1Decl));
+        var x2SymDecl = GetInternalSymbol<ParameterSymbol>(semanticModel.GetDeclaredSymbol(x2Decl));
 
         // Assert
         Assert.False(x1SymDecl.IsError);
@@ -217,8 +217,8 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = compilation.Diagnostics;
 
-        var fooInt32SymDecl = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(fooInt32Decl));
-        var fooStringSymDecl = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDefinedSymbol(fooStringDecl));
+        var fooInt32SymDecl = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooInt32Decl));
+        var fooStringSymDecl = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooStringDecl));
 
         var fooInt32SymRef = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooInt32Call.Function));
         var fooStringSymRef = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooStringCall.Function));

@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -19,9 +22,33 @@ internal partial class Binder
         // NOTE: The syntax error is already reported
         UnexpectedTypeSyntax => new UndefinedTypeSymbol("<error>"),
         NameTypeSyntax name => this.BindNameType(name, diagnostics),
+        MemberTypeSyntax member => this.BindMemberType(member, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
     private Symbol BindNameType(NameTypeSyntax syntax, DiagnosticBag diagnostics) =>
         this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
+
+    private Symbol BindMemberType(MemberTypeSyntax syntax, DiagnosticBag diagnostics)
+    {
+        var left = this.BindType(syntax.Accessed, diagnostics);
+        var memberName = syntax.Member.Text;
+        if (left.IsError)
+        {
+            // Error, don't cascade
+            return left;
+        }
+        else
+        {
+            // Module or type member access
+            var members = left.Members
+                .Where(m => m.Name == memberName)
+                .Where(BinderFacts.IsTypeSymbol)
+                .ToImmutableArray();
+            // Reuse logic from LookupResult
+            var result = LookupResult.FromResultSet(members);
+            var symbol = result.GetType(memberName, syntax, diagnostics);
+            return symbol;
+        }
+    }
 }

@@ -355,6 +355,7 @@ internal partial class Binder
             var module = moduleExpr.Module;
             var members = module.Members
                 .Where(m => m.Name == memberName)
+                .Where(BinderFacts.IsValueSymbol)
                 .ToImmutableArray();
             // Reuse logic from LookupResult
             var result = LookupResult.FromResultSet(members);

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -38,8 +40,16 @@ internal partial class Binder
         }
         else if (left is ModuleSymbol module)
         {
-            // TODO
-            throw new NotImplementedException();
+            // Module member access
+            var members = module.Members
+                .Where(m => m.Name == memberName)
+                .Where(BinderFacts.IsTypeSymbol)
+                .ToImmutableArray();
+            // Reuse logic from LookupResult
+            var result = LookupResult.FromResultSet(members);
+            // TODO: We are losing symbol info here, attach like in 'SymbolToExpression'
+            var symbol = result.GetType(memberName, syntax, diagnostics);
+            return symbol;
         }
         else
         {

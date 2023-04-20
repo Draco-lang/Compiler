@@ -119,7 +119,7 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.compilation.GetBinder(node);
         while (binder is not null)
         {
-            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDefinedSymbol(loc.DeclarationSyntax)! : x.ToApiSymbol()));
+            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol()));
             binder = binder.Parent;
         }
         return result.ToImmutable();
@@ -266,7 +266,7 @@ public sealed partial class SemanticModel : IBinderProvider
         var result = ImmutableArray.CreateBuilder<ISymbol>();
         while (binder is not null)
         {
-            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDefinedSymbol(loc.DeclarationSyntax)! : x.ToApiSymbol()).Where(x => x is FunctionSymbol && x.Name == syntax.ToString()));
+            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol()).Where(x => x is FunctionSymbol && x.Name == syntax.ToString()));
             binder = binder.Parent;
         }
         return result.ToImmutable();

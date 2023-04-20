@@ -38,10 +38,10 @@ internal partial class Binder
             // Error, don't cascade
             return left;
         }
-        else if (left is ModuleSymbol module)
+        else
         {
-            // Module member access
-            var members = module.Members
+            // Module or type member access
+            var members = left.Members
                 .Where(m => m.Name == memberName)
                 .Where(BinderFacts.IsTypeSymbol)
                 .ToImmutableArray();
@@ -49,11 +49,6 @@ internal partial class Binder
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetType(memberName, syntax, diagnostics);
             return symbol;
-        }
-        else
-        {
-            // TODO
-            throw new NotImplementedException();
         }
     }
 }

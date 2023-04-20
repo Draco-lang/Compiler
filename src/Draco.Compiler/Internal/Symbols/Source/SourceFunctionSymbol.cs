@@ -92,7 +92,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
         // Otherwise, we need to resolve
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        return (TypeSymbol)binder.BindType(this.DeclaringSyntax.ReturnType.Type, binderProvider.DiagnosticBag);
+        return binder.BindTypeToTypeSymbol(this.DeclaringSyntax.ReturnType.Type, binderProvider.DiagnosticBag);
     }
 
     private BoundStatement BindBody(IBinderProvider binderProvider)

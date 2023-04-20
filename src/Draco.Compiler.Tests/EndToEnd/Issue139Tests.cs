@@ -177,6 +177,9 @@ public sealed class Issue139Tests
             while(x < s)
             func something();
         """")]
+    [InlineData(""""
+        func foo(): System = 5;
+        """")]
     [Theory]
     public void DoesNotCrash(string source)
     {

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -12,11 +14,42 @@ namespace Draco.Compiler.Internal.Binding;
 internal partial class Binder
 {
     /// <summary>
-    /// Binds the given syntax node to a type symbol.
+    /// Binds the given syntax node to a type symbol. If the referenced symbol is not a type,
+    /// an error is reported.
     /// </summary>
     /// <param name="syntax">The type to bind.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The looked up type symbol for <paramref name="syntax"/>.</returns>
+    internal TypeSymbol BindTypeToTypeSymbol(TypeSyntax syntax, DiagnosticBag diagnostics)
+    {
+        var symbol = this.BindType(syntax, diagnostics);
+        if (symbol is TypeSymbol type)
+        {
+            // Ok
+            return type;
+        }
+        else if (symbol is ModuleSymbol)
+        {
+            // Module, report it
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalModuleType,
+                location: syntax.Location,
+                formatArgs: syntax));
+            return IntrinsicSymbols.ErrorType;
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Binds the given type syntax node to a symbol.
+    /// </summary>
+    /// <param name="syntax">The type to bind.</param>
+    /// <param name="diagnostics">The diagnostics produced during the process.</param>
+    /// <returns>The looked up symbol for <paramref name="syntax"/>.</returns>
     internal virtual Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported

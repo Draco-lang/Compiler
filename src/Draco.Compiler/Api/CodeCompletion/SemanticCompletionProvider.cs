@@ -66,7 +66,8 @@ public sealed class SemanticCompletionProvider : CompletionProvider
         IVariableSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent) =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Variable),
 
-        ModuleSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess || x == CompletionContext.ModuleImport) =>
+        // We need the type context here for qualified type references
+        ModuleSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess || x == CompletionContext.ModuleImport || x == CompletionContext.Type) =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Module),
 
         FunctionSymbol fun when !fun.IsSpecialName && currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess) =>

@@ -223,6 +223,51 @@ public sealed class SemanticModelTests : SemanticTestsBase
     }
 
     [Fact]
+    public void GetReferencedSymbolFromFullyQualifiedType()
+    {
+        // func make(): System.Text.StringBuilder = System.Text.StringBuilder();
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "make",
+            ParameterList(),
+            MemberType(
+                MemberType(NameType("System"), "Text"),
+                "StringBuilder"),
+            InlineFunctionBody(
+                CallExpression(
+                    MemberExpression(
+                        MemberExpression(NameExpression("System"), "Text"),
+                        "StringBuilder"))))));
+
+        var memberTypeSyntax = tree.FindInChildren<MemberTypeSyntax>(0);
+        var memberSubtypeSyntax = tree.FindInChildren<MemberTypeSyntax>(1);
+        var systemSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var sbSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(memberTypeSyntax));
+        var textSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(memberSubtypeSyntax));
+        var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.NotNull(sbSymbol);
+        Assert.NotNull(textSymbol);
+        Assert.NotNull(systemSymbol);
+        Assert.Contains(sbSymbol, textSymbol.Members);
+        Assert.Contains(textSymbol, systemSymbol.Members);
+    }
+
+    [Fact]
     public void GetReferencedSymbolFromFullyQualifiedIncompleteName()
     {
         // func main() {

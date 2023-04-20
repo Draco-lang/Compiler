@@ -47,7 +47,6 @@ internal partial class Binder
                 .ToImmutableArray();
             // Reuse logic from LookupResult
             var result = LookupResult.FromResultSet(members);
-            // TODO: We are losing symbol info here, attach like in 'SymbolToExpression'
             var symbol = result.GetType(memberName, syntax, diagnostics);
             return symbol;
         }

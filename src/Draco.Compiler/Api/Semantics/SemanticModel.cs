@@ -48,7 +48,7 @@ public sealed partial class SemanticModel : IBinderProvider
     }
 
     /// <summary>
-    /// Retrieves all <see cref="Diagnostic"/>s.
+    /// Retrieves all <see cref="Diagnostic"/>s on <see cref="Tree"/>.
     /// </summary>
     /// <param name="span">The span to retrieve the diagnostics in. If null, it retrieves all diagnostics
     /// regardless of the location.</param>

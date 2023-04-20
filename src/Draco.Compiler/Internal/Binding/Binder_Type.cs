@@ -19,9 +19,13 @@ internal partial class Binder
         // NOTE: The syntax error is already reported
         UnexpectedTypeSyntax => new UndefinedTypeSymbol("<error>"),
         NameTypeSyntax name => this.BindNameType(name, diagnostics),
+        MemberTypeSyntax member => this.BindMemberType(member, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
     private Symbol BindNameType(NameTypeSyntax syntax, DiagnosticBag diagnostics) =>
         this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
+
+    private Symbol BindMemberType(MemberTypeSyntax syntax, DiagnosticBag diagnostics) =>
+        throw new NotImplementedException();
 }

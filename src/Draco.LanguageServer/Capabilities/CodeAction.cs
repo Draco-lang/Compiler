@@ -20,8 +20,8 @@ internal sealed partial class DracoLanguageServer : ICodeAction
     public Task<CodeAction[]?> CompleteAsync(CodeActionParams param, CancellationToken cancellationToken)
     {
         var service = new CodeFixService();
-        service.AddProvider(new ImportCodeFixProvider(this.syntaxTree, Translator.ToCompiler(param.Range)));
-        var fixes = service.GetCodeFixes(this.syntaxTree, this.semanticModel);
+        service.AddProvider(new ImportCodeFixProvider());
+        var fixes = service.GetCodeFixes(this.syntaxTree, this.semanticModel, Translator.ToCompiler(param.Range));
         var actions = new CodeAction[fixes.Length];
 
         for (int i = 0; i < fixes.Length; i++)

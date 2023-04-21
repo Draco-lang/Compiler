@@ -67,8 +67,31 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     private ImmutableArray<TypeParameterSymbol> BindGenericParameters(DiagnosticBag diagnostics)
     {
-        // TODO
-        throw new NotImplementedException();
+        // Simplest case if the function is not generic
+        if (this.DeclaringSyntax.Generics is null) return ImmutableArray<TypeParameterSymbol>.Empty;
+
+        var genericParamSyntaxes = this.DeclaringSyntax.Generics.Parameters.Values.ToList();
+        var genericParams = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
+
+        foreach (var genericParamSyntax in genericParamSyntaxes)
+        {
+            var paramName = genericParamSyntax.Name.Text;
+
+            var usedBefore = genericParams.Any(p => p.Name == paramName);
+            if (usedBefore)
+            {
+                // NOTE: We only report later duplicates, no need to report the first instance
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.IllegalShadowing,
+                    location: genericParamSyntax.Location,
+                    formatArgs: paramName));
+            }
+
+            var genericParam = new SourceTypeParameterSymbol(this, genericParamSyntax);
+            genericParams.Add(genericParam);
+        }
+
+        return genericParams.ToImmutable();
     }
 
     private ImmutableArray<ParameterSymbol> BindParameters(DiagnosticBag diagnostics)
@@ -76,13 +99,11 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
-        for (var i = 0; i < parameterSyntaxes.Count; ++i)
+        foreach (var parameterSyntax in parameterSyntaxes)
         {
-            var parameterSyntax = parameterSyntaxes[i];
             var parameterName = parameterSyntax.Name.Text;
 
             var usedBefore = parameters.Any(p => p.Name == parameterName);
-
             if (usedBefore)
             {
                 // NOTE: We only report later duplicates, no need to report the first instance

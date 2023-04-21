@@ -820,7 +820,9 @@ internal sealed class Parser
                 var closeBracket = this.Expect(TokenKind.BracketClose);
                 result = new IndexExpressionSyntax(result, openBracket, args, closeBracket);
             }
-            else if (peek == TokenKind.LessThan && this.DisambiguateLessThan() == LessThanDisambiguation.Generics)
+            else if (peek == TokenKind.LessThan
+                  && CanBeGenericInstantiated(result)
+                  && this.DisambiguateLessThan() == LessThanDisambiguation.Generics)
             {
                 // Generic instantiation
                 // TODO
@@ -1034,6 +1036,17 @@ internal sealed class Parser
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
     }
+
+    /// <summary>
+    /// Checks, if a given syntax can be followed by a generic argument list.
+    /// </summary>
+    /// <param name="syntaxNode">The node to check.</param>
+    /// <returns>True, if <paramref name="syntaxNode"/> can be followed by a generic argument list.</returns>
+    private static bool CanBeGenericInstantiated(SyntaxNode syntaxNode) => syntaxNode
+        is NameExpressionSyntax
+        or NameTypeSyntax
+        or MemberExpressionSyntax
+        or MemberTypeSyntax;
 
     /// <summary>
     /// Attempts to disambiguate the upcoming less-than token.

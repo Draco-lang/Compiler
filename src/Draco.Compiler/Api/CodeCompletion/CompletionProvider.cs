@@ -12,16 +12,16 @@ namespace Draco.Compiler.Api.CodeCompletion;
 public abstract class CompletionProvider
 {
     /// <summary>
+    /// Flag enum of completion contexts this <see cref="CompletionProvider"/> is applicable in.
+    /// </summary>
+    public abstract CompletionContext ValidContexts { get; }
+
+    /// <summary>
     /// Gets all <see cref="CompletionItem"/>s from this <see cref="CompletionProvider"/>.
     /// </summary>
     /// <param name="tree">The <see cref="SyntaxTree"/> for which this service will create suggestions.</param>
     /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
     /// <param name="cursor">Position of cursor in the <paramref name="tree"/>.</param>
     /// <returns>All the <see cref="CompletionItem"/>s this <see cref="CompletionProvider"/> created.</returns>
-    public abstract ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts);
-
-    /// <summary>
-    /// Array of completion contexts this <see cref="CompletionProvider"/> is applicable in.
-    /// </summary>
-    public abstract CompletionContext[] ValidContexts { get; }
+    public abstract ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts);
 }

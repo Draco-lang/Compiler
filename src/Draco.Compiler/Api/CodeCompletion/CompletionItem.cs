@@ -7,7 +7,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// <summary>
 /// Represents a code completion item.
 /// </summary>
-/// <param name="Change">The <see cref="TextChange"/> this item provides.</param>
+/// <param name="Edit">The <see cref="TextEdit"/> this item provides.</param>
 /// <param name="Symbols">All <see cref="ISymbol"/>s representing this completion (usually symbol representing type etc. or multiple <see cref="FunctionSymbol"/>s representing an overload).</param>
 /// <param name="Kind">The <see cref="CompletionKind"/> of this completion.</param>
 public sealed record class CompletionItem(TextEdit Edit, ImmutableArray<ISymbol> Symbols, CompletionKind Kind)

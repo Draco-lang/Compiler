@@ -11,11 +11,9 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class KeywordCompletionProvider : CompletionProvider
 {
-    public override CompletionContext[] ValidContexts { get; } = new[]
-    {
-        CompletionContext.DeclarationKeyword,
-        CompletionContext.ExpressionContent,
-    };
+    public override CompletionContext ValidContexts { get; } =
+        CompletionContext.DeclarationKeyword |
+        CompletionContext.Expression;
 
     private readonly CompletionItem[] declarationKeywords = new[]
     {
@@ -38,11 +36,11 @@ public sealed class KeywordCompletionProvider : CompletionProvider
         CompletionItem.Create("rem", CompletionKind.Keyword)
     };
 
-    public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts)
+    public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        if (currentContexts.Contains(CompletionContext.ExpressionContent)) result.AddRange(this.expressionKeywords);
-        if (currentContexts.Contains(CompletionContext.DeclarationKeyword)) result.AddRange(this.declarationKeywords);
+        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(this.expressionKeywords);
+        if (contexts.HasFlag(CompletionContext.DeclarationKeyword)) result.AddRange(this.declarationKeywords);
         return result.ToImmutable();
     }
 }

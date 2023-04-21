@@ -10,21 +10,19 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class SemanticCompletionProvider : CompletionProvider
 {
-    public override CompletionContext[] ValidContexts { get; } = new[]
-    {
-        CompletionContext.ExpressionContent,
-        CompletionContext.MemberAccess,
-        CompletionContext.Type,
-        CompletionContext.ModuleImport
-    };
+    public override CompletionContext ValidContexts { get; } =
+        CompletionContext.Expression |
+        CompletionContext.MemberAccess |
+        CompletionContext.Type |
+        CompletionContext.ModuleImport;
 
-    public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext[] currentContexts)
+    public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols))
         {
             symbols = semanticModel.GetAllDefinedSymbols(tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last());
         }
-        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), currentContexts));
+        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts));
 
         // If the current valid contexts intersect with contexts of given completion, we add it to the result
         return completions.Where(x => x is not null).ToImmutableArray()!;
@@ -58,19 +56,19 @@ public sealed class SemanticCompletionProvider : CompletionProvider
     /// <param name="symbol">The <see cref="ISymbol"/> to construct the <see cref="CompletionItem"/> from.</param>
     /// <param name="type">Optional type, used only for specifying overloads.</param>
     /// <returns>The constructed <see cref="CompletionItem"/>.</returns>
-    private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext[] currentContexts) => symbols.First() switch
+    private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts) => symbols.First() switch
     {
-        TypeSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess || x == CompletionContext.Type) =>
+        TypeSymbol when (currentContexts & (CompletionContext.Expression | CompletionContext.MemberAccess | CompletionContext.Type)) != CompletionContext.None =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Class),
 
-        IVariableSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent) =>
+        IVariableSymbol when (currentContexts & CompletionContext.Expression) != CompletionContext.None =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Variable),
 
         // We need the type context here for qualified type references
-        ModuleSymbol when currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess || x == CompletionContext.ModuleImport || x == CompletionContext.Type) =>
+        ModuleSymbol when (currentContexts & (CompletionContext.Expression | CompletionContext.MemberAccess | CompletionContext.ModuleImport | CompletionContext.Type)) != CompletionContext.None =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Module),
 
-        FunctionSymbol fun when !fun.IsSpecialName && currentContexts.Any(x => x == CompletionContext.ExpressionContent || x == CompletionContext.MemberAccess) =>
+        FunctionSymbol fun when !fun.IsSpecialName && (currentContexts & (CompletionContext.Expression | CompletionContext.MemberAccess)) != CompletionContext.None =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Function),
         _ => null
     };

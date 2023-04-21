@@ -8,7 +8,7 @@ using Draco.Compiler.Api.Syntax;
 namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
-/// Allows to get <see cref="CompletionItem"/>s from multiple <see cref="CompletionProvider"/>s.
+/// Manages <see cref="CompletionProvider"/>s and allows to get <see cref="CompletionItem"/>s correctly based on context.
 /// </summary>
 public sealed class CompletionService
 {
@@ -21,7 +21,7 @@ public sealed class CompletionService
     public void AddProvider(CompletionProvider provider) => this.providers.Add(provider);
 
     /// <summary>
-    /// Gets <see cref="CompletionItem"/>s from all registered <see cref="CompletionProvider"/>s.
+    /// Gets <see cref="CompletionItem"/>s from all applicable <see cref="CompletionProvider"/>s.
     /// </summary>
     /// <param name="tree">The <see cref="SyntaxTree"/> for which this service will create suggestions.</param>
     /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
@@ -30,10 +30,10 @@ public sealed class CompletionService
     public ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
+        var currentContexts = this.GetCurrentContexts(tree, cursor);
         foreach (var provider in this.providers)
         {
-            var currentContexts = this.GetCurrentContexts(tree, cursor);
-            if (provider.ValidContexts.Intersect(currentContexts).Count() > 0)
+            if ((provider.ValidContexts & currentContexts) != CompletionContext.None)
             {
                 result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursor, currentContexts));
             }
@@ -47,29 +47,27 @@ public sealed class CompletionService
     /// <param name="syntaxTree">The <see cref="SyntaxTree"/> in which to find contexts.</param>
     /// <param name="cursor">The location in the <paramref name="syntaxTree"/>.</param>
     /// <returns>Array of the currently valid <see cref="CompletionContext"/>s.</returns>
-    private CompletionContext[] GetCurrentContexts(SyntaxTree syntaxTree, SyntaxPosition cursor)
+    private CompletionContext GetCurrentContexts(SyntaxTree syntaxTree, SyntaxPosition cursor)
     {
         var token = syntaxTree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
         // Type expression
-        if (token.Parent is NameTypeSyntax) return new[] { CompletionContext.Type };
+        if (token.Parent is NameTypeSyntax) return CompletionContext.Type;
         // Parameter name declaration
-        else if (token.Parent is ParameterSyntax) return Array.Empty<CompletionContext>();
+        else if (token.Parent is ParameterSyntax) return CompletionContext.None;
         // Global declaration
-        else if (token.Parent is UnexpectedDeclarationSyntax declaration) return new[] { CompletionContext.DeclarationKeyword };
+        else if (token.Parent is UnexpectedDeclarationSyntax declaration) return CompletionContext.DeclarationKeyword;
         // Declaring identifier
-        else if (token.Parent is DeclarationSyntax) return Array.Empty<CompletionContext>();
+        else if (token.Parent is DeclarationSyntax) return CompletionContext.None;
         // Member access
-        else if (token.Parent is MemberExpressionSyntax) return new[] { CompletionContext.MemberAccess };
+        else if (token.Parent is MemberExpressionSyntax) return CompletionContext.MemberAccess;
         // Import start
-        else if (token.Parent is ImportPathSyntax) return new[] { CompletionContext.ModuleImport }; // TODO: when aliasing this should be just MemberAccess
+        else if (token.Parent is ImportPathSyntax) return CompletionContext.ModuleImport; // TODO: when aliasing this should be just MemberAccess
         // Start of statement inside function
         else if (token.Parent?.Parent is ExpressionStatementSyntax)
         {
-            var result = new List<CompletionContext>() { CompletionContext.ExpressionContent };
             // Only one token (second is expected semicolon), we can suggest declaration start
-            if (token.Parent.Parent.Children.Count() == 2) result.Add(CompletionContext.DeclarationKeyword);
-            return result.ToArray();
+            if (token.Parent.Parent.Children.Count() == 2) return CompletionContext.Expression | CompletionContext.DeclarationKeyword;
         }
-        return new[] { CompletionContext.ExpressionContent };
+        return CompletionContext.Expression;
     }
 }

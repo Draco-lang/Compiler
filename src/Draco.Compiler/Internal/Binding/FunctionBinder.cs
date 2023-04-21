@@ -27,6 +27,15 @@ internal sealed class FunctionBinder : Binder
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {
+        // Check type parameters
+        foreach (var typeParam in this.symbol.GenericParameters)
+        {
+            if (typeParam.Name != name) continue;
+            if (!allowSymbol(typeParam)) continue;
+            result.Add(typeParam);
+            break;
+        }
+
         if (flags.HasFlag(LookupFlags.DisallowLocals)) return;
 
         // Check parameters

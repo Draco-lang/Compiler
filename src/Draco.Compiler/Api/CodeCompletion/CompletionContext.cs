@@ -12,6 +12,7 @@ public enum CompletionContext
     /// No context.
     /// </summary>
     None = 0,
+
     /// <summary>
     /// Part of an expression (can be also keyword if its usable in expressions, for example 'or').
     /// </summary>

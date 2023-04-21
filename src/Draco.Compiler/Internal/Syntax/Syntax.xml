@@ -27,6 +27,48 @@
     </Field>
   </Node>
 
+  <Node Name="GenericParameterListSyntax" Base="SyntaxNode">
+    <Documentation>
+      A generic parameter list in a declaration.
+    </Documentation>
+
+    <Field Name="OpenBracket" Type="SyntaxToken">
+      <Documentation>
+        The &lt; token starting the generic parameter list.
+      </Documentation>
+
+      <Token Kind="LessThan" />
+    </Field>
+
+    <Field Name="Parameters" Type="SeparatedSyntaxList&lt;GenericParameterSyntax&gt;">
+      <Documentation>
+        The list of generic parameters defined.
+      </Documentation>
+    </Field>
+
+    <Field Name="CloseBracket" Type="SyntaxToken">
+      <Documentation>
+        The &gt; token ending the generic parameter list.
+      </Documentation>
+
+      <Token Kind="GreaterThan" />
+    </Field>
+  </Node>
+
+  <Node Name="GenericParameterSyntax" Base="SyntaxNode">
+    <Documentation>
+      Represents a generic parameter declaration in a generic parameter list.
+    </Documentation>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The generic parameter name.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
   <AbstractNode Name="DeclarationSyntax" Base="SyntaxNode">
     <Documentation>
       Any declaration.

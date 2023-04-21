@@ -10,7 +10,7 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
 {
     public override TypeSymbol Type { get; }
 
-    public override Symbol? ContainingSymbol => this.untypedSymbol.ContainingSymbol;
+    public override Symbol ContainingSymbol => this.untypedSymbol.ContainingSymbol;
     public override string Name => this.untypedSymbol.Name;
 
     public override VariableDeclarationSyntax DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;

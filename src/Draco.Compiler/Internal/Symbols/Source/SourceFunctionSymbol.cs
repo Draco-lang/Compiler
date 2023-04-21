@@ -24,7 +24,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         this.returnType ??= this.BindReturnType(this.DeclaringCompilation!);
     private TypeSymbol? returnType;
 
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;
 
     public override FunctionDeclarationSyntax DeclaringSyntax { get; }
@@ -36,6 +36,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
+        if (containingSymbol is null) throw new System.ArgumentNullException(nameof(containingSymbol));
+
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = syntax;
     }

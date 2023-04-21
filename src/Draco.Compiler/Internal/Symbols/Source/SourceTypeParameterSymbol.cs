@@ -13,12 +13,12 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal class SourceTypeParameterSymbol : TypeParameterSymbol, ISourceSymbol
 {
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;
 
     public override GenericParameterSyntax DeclaringSyntax { get; }
 
-    public SourceTypeParameterSymbol(Symbol? containingSymbol, GenericParameterSyntax syntax)
+    public SourceTypeParameterSymbol(Symbol containingSymbol, GenericParameterSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = syntax;

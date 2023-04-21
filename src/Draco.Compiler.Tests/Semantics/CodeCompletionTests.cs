@@ -23,7 +23,8 @@ public sealed class CodeCompletionTests
     {
         var service = new CompletionService();
         service.AddProvider(new KeywordCompletionProvider());
-        service.AddProvider(new SemanticCompletionProvider());
+        service.AddProvider(new ExpressionCompletionProvider());
+        service.AddProvider(new MemberAccessCompletionProvider());
         return service.GetCompletions(tree, model, cursor);
     }
 

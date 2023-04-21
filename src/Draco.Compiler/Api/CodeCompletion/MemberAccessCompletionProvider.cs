@@ -1,0 +1,58 @@
+using System;
+using System.Collections.Immutable;
+using System.Linq;
+using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Syntax;
+
+namespace Draco.Compiler.Api.CodeCompletion;
+
+/// <summary>
+/// Provides completions for member access.
+/// </summary>
+public sealed class MemberAccessCompletionProvider : CompletionProvider
+{
+    public override CompletionContext ValidContexts { get; } =
+        CompletionContext.MemberExpressionAccess |
+        CompletionContext.MemberTypeAccess |
+        CompletionContext.ModuleImport;
+
+    public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
+    {
+        var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
+        // If we can't get the accessed propery, we just return empty array
+        if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return ImmutableArray<CompletionItem>.Empty;
+        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts));
+
+        // If the current valid contexts intersect with contexts of given completion, we add it to the result
+        return completions.Where(x => x is not null).ToImmutableArray()!;
+    }
+
+    private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<ISymbol> result)
+    {
+        var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
+        result = ImmutableArray<ISymbol>.Empty;
+        if (SyntaxFacts.TryDeconstructMemberAccess(expr, out var accessed))
+        {
+            var symbol = semanticModel.GetReferencedSymbol(accessed);
+            if (symbol is null) return false;
+            if (symbol is ITypedSymbol typed) result = typed.Type.Members.ToImmutableArray();
+            else result = symbol.Members.ToImmutableArray();
+            return true;
+        }
+        return false;
+    }
+
+    private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts) => symbols.First() switch
+    {
+        TypeSymbol when (currentContexts & (CompletionContext.MemberExpressionAccess | CompletionContext.MemberTypeAccess)) != CompletionContext.None =>
+            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Class),
+
+        // We need the type context here for qualified type references
+        ModuleSymbol when (currentContexts & (CompletionContext.MemberExpressionAccess | CompletionContext.MemberTypeAccess | CompletionContext.ModuleImport)) != CompletionContext.None =>
+            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Module),
+
+        FunctionSymbol fun when !fun.IsSpecialName && (currentContexts & CompletionContext.MemberExpressionAccess) != CompletionContext.None =>
+            CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Function),
+        _ => null
+    };
+}

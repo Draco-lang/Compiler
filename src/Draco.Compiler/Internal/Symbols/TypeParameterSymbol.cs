@@ -12,4 +12,7 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract class TypeParameterSymbol : TypeSymbol
 {
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeParameterSymbol(this);
+
+    public override void Accept(SymbolVisitor visitor) => visitor.VisitTypeParameter(this);
+    public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitTypeParameter(this);
 }

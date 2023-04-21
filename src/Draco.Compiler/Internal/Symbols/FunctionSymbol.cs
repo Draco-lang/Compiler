@@ -55,6 +55,11 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     };
 
     /// <summary>
+    /// The generic parameters of this function.
+    /// </summary>
+    public abstract ImmutableArray<TypeParameterSymbol> GenericParameters { get; }
+
+    /// <summary>
     /// The parameters of this function.
     /// </summary>
     public abstract ImmutableArray<ParameterSymbol> Parameters { get; }

@@ -9,6 +9,9 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class LazySynthetizedFunctionSymbol : SynthetizedFunctionSymbol
 {
+    // TODO
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => throw new NotImplementedException();
+
     public override ImmutableArray<ParameterSymbol> Parameters
     {
         get

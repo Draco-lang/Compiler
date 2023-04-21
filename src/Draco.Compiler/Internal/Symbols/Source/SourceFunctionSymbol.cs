@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -16,6 +17,10 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
+        this.genericParameters ??= this.BindGenericParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
+    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+
     public override ImmutableArray<ParameterSymbol> Parameters =>
         this.parameters ??= this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private ImmutableArray<ParameterSymbol>? parameters;
@@ -49,6 +54,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public void Bind(IBinderProvider binderProvider)
     {
+        this.BindGenericParameters(binderProvider.DiagnosticBag);
         this.BindParameters(binderProvider.DiagnosticBag);
         this.BindReturnType(binderProvider);
         this.BindBody(binderProvider);
@@ -57,6 +63,12 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
         DefiniteAssignment.Analyze(this.Body, binderProvider.DiagnosticBag);
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+    }
+
+    private ImmutableArray<TypeParameterSymbol> BindGenericParameters(DiagnosticBag diagnostics)
+    {
+        // TODO
+        throw new NotImplementedException();
     }
 
     private ImmutableArray<ParameterSymbol> BindParameters(DiagnosticBag diagnostics)

@@ -12,6 +12,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal class MetadataMethodSymbol : FunctionSymbol
 {
+    // TODO
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
+        throw new System.NotImplementedException();
     public override ImmutableArray<ParameterSymbol> Parameters
     {
         get

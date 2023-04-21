@@ -32,6 +32,22 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// The result of trying to disambiguate '<'.
+    /// </summary>
+    private enum LessThanDisambiguation
+    {
+        /// <summary>
+        /// Must be an operator for comparison.
+        /// </summary>
+        Operator,
+
+        /// <summary>
+        /// Must be a generic parameter list.
+        /// </summary>
+        Generics,
+    }
+
+    /// <summary>
     /// Represents a parsed block.
     /// This is factored out because we parse blocks differently, and instantiating an AST node could be wasteful.
     /// </summary>
@@ -974,6 +990,65 @@ internal sealed class Parser
             this.AddDiagnostic(closeQuote, diag);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
+    }
+
+    /// <summary>
+    /// Attempts to disambiguate the upcoming less-than token.
+    /// </summary>
+    /// <param name="offset">The offset to start disambiguation from. The value will be updated to the farthest
+    /// offset that was peeked to disambiguate. If the token turns out to be a generic argument list, it is set
+    /// to the offset after the matching '>'.</param>
+    /// <returns>The result of the disambiguation.</returns>
+    private LessThanDisambiguation DisambiguateLessThan(ref int offset)
+    {
+        Debug.Assert(this.Peek(offset) == TokenKind.LessThan);
+
+        // Skip '<'
+        ++offset;
+        while (true)
+        {
+            var peek = this.Peek(offset);
+
+            switch (peek)
+            {
+            case TokenKind.Dot:
+            case TokenKind.Comma:
+            {
+                // Just skip, legal here
+                ++offset;
+                break;
+            }
+            case TokenKind.Identifier:
+            {
+                ++offset;
+                // We can have a nested generic here
+                if (this.Peek(offset) == TokenKind.LessThan)
+                {
+                    // Judge this list then
+                    var judgement = this.DisambiguateLessThan(ref offset);
+                    // If a nested thing is not a generic list, we are not either
+                    if (judgement == LessThanDisambiguation.Operator) return LessThanDisambiguation.Operator;
+                    // Otherwise, it's still fair game to be both
+                }
+                break;
+            }
+            case TokenKind.GreaterThan:
+            {
+                // We could not decide, we peek one ahead to determine
+                ++offset;
+                var next = this.Peek(offset);
+                return next switch
+                {
+                    TokenKind.ParenOpen => LessThanDisambiguation.Generics,
+                    _ when this.IsExpressionStarter(next) => LessThanDisambiguation.Operator,
+                    _ => LessThanDisambiguation.Generics,
+                };
+            }
+            default:
+                // Illegal in generics
+                return LessThanDisambiguation.Operator;
+            }
+        }
     }
 
     // General utilities

@@ -825,8 +825,13 @@ internal sealed class Parser
                   && this.DisambiguateLessThan() == LessThanDisambiguation.Generics)
             {
                 // Generic instantiation
-                // TODO
-                throw new NotImplementedException();
+                var openBracket = this.Expect(TokenKind.LessThan);
+                var args = this.ParseSeparatedSyntaxList(
+                    elementParser: this.ParseType,
+                    separatorKind: TokenKind.Comma,
+                    stopKind: TokenKind.GreaterThan);
+                var closeBracket = this.Expect(TokenKind.GreaterThan);
+                result = new GenericExpressionSyntax(result, openBracket, args, closeBracket);
             }
             else if (this.Matches(TokenKind.Dot, out var dot))
             {

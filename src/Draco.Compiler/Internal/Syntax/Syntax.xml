@@ -777,6 +777,37 @@
     </Field>
   </Node>
 
+  <Node Name="GenericExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      Represents a generic instantiation in expression context.
+    </Documentation>
+
+    <Field Name="Instantiated" Type="ExpressionSyntax">
+      <Documentation>
+        The instantiated expression.
+      </Documentation>
+    </Field>
+    <Field Name="OpenBracket" Type="SyntaxToken">
+      <Documentation>
+        The &lt; before the generic arguments.
+      </Documentation>
+
+      <Token Kind="LessThan" />
+    </Field>
+    <Field Name="Arguments" Type="SeparatedSyntaxList&lt;TypeSyntax&gt;">
+      <Documentation>
+        The list of generic arguments.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBracket" Type="SyntaxToken">
+      <Documentation>
+        The &gt; after the generic arguments.
+      </Documentation>
+
+      <Token Kind="GreaterThan" />
+    </Field>
+  </Node>
+
   <Node Name="NameExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
       A single identifier referencing a value.

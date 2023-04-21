@@ -348,6 +348,10 @@ internal sealed class Parser
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
         var name = this.Expect(TokenKind.Identifier);
 
+        // Optional generics
+        var generics = null as GenericParameterListSyntax;
+        if (this.Peek() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
+
         // Parameters
         var openParen = this.Expect(TokenKind.ParenOpen);
         var funcParameters = this.ParseSeparatedSyntaxList(
@@ -362,7 +366,15 @@ internal sealed class Parser
 
         var body = this.ParseFunctionBody();
 
-        return new FunctionDeclarationSyntax(funcKeyword, name, openParen, funcParameters, closeParen, returnType, body);
+        return new FunctionDeclarationSyntax(
+            funcKeyword,
+            name,
+            generics,
+            openParen,
+            funcParameters,
+            closeParen,
+            returnType,
+            body);
     }
 
     /// <summary>
@@ -386,6 +398,31 @@ internal sealed class Parser
         var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
         return new(name, colon, type);
+    }
+
+    /// <summary>
+    /// Parses a generic parameter list.
+    /// </summary>
+    /// <returns>The parsed <see cref="GenericParameterListSyntax"/>.</returns>
+    private GenericParameterListSyntax ParseGenericParameterList()
+    {
+        var openBracket = this.Expect(TokenKind.LessThan);
+        var parameters = this.ParseSeparatedSyntaxList(
+            elementParser: this.ParseGenericParameter,
+            separatorKind: TokenKind.Comma,
+            stopKind: TokenKind.GreaterThan);
+        var closeBracket = this.Expect(TokenKind.GreaterThan);
+        return new(openBracket, parameters, closeBracket);
+    }
+
+    /// <summary>
+    /// Parses a single generic parameter in a generic parameter list.
+    /// </summary>
+    /// <returns>The parsed <see cref="GenericParameterSyntax"/>.</returns>
+    private GenericParameterSyntax ParseGenericParameter()
+    {
+        var name = this.Expect(TokenKind.Identifier);
+        return new(name);
     }
 
     /// <summary>

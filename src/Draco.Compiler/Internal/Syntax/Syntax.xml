@@ -180,6 +180,11 @@
 
       <Token Kind="Identifier" />
     </Field>
+    <Field Name="Generics" Type="GenericParameterListSyntax?">
+      <Documentation>
+        The list of generic parameters, in case the function introduces generics.
+      </Documentation>
+    </Field>
     <Field Name="OpenParen" Type="SyntaxToken">
       <Documentation>
         The open parenthesis before the parameter list.

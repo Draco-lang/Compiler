@@ -110,6 +110,7 @@ public static partial class SyntaxFactory
         FunctionBodySyntax body) => FunctionDeclaration(
             Func,
             Name(name),
+            null,
             OpenParen,
             parameters,
             CloseParen,

@@ -783,6 +783,12 @@ internal sealed class Parser
                 var closeBracket = this.Expect(TokenKind.BracketClose);
                 result = new IndexExpressionSyntax(result, openBracket, args, closeBracket);
             }
+            else if (peek == TokenKind.LessThan && this.DisambiguateLessThan() == LessThanDisambiguation.Generics)
+            {
+                // Generic instantiation
+                // TODO
+                throw new NotImplementedException();
+            }
             else if (this.Matches(TokenKind.Dot, out var dot))
             {
                 var name = this.Expect(TokenKind.Identifier);
@@ -990,6 +996,16 @@ internal sealed class Parser
             this.AddDiagnostic(closeQuote, diag);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
+    }
+
+    /// <summary>
+    /// Attempts to disambiguate the upcoming less-than token.
+    /// </summary>
+    /// <returns>The result of the disambiguation.</returns>
+    private LessThanDisambiguation DisambiguateLessThan()
+    {
+        var offset = 0;
+        return this.DisambiguateLessThan(ref offset);
     }
 
     /// <summary>

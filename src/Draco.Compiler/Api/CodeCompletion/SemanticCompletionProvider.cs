@@ -12,7 +12,8 @@ public sealed class SemanticCompletionProvider : CompletionProvider
 {
     public override CompletionContext ValidContexts { get; } =
         CompletionContext.Expression |
-        CompletionContext.MemberAccess |
+        CompletionContext.MemberExpressionAccess |
+        CompletionContext.MemberTypeAccess |
         CompletionContext.Type |
         CompletionContext.ModuleImport;
 
@@ -40,6 +41,13 @@ public sealed class SemanticCompletionProvider : CompletionProvider
             else result = symbol.Members.ToImmutableArray();
             return true;
         }
+        else if (expr is MemberTypeSyntax type)
+        {
+            var symbol = semanticModel.GetReferencedSymbol(type.Accessed);
+            if (symbol is null) return false;
+            result = symbol.Members.ToImmutableArray();
+            return true;
+        }
         else if (expr is MemberImportPathSyntax import)
         {
             var symbol = semanticModel.GetReferencedSymbol(import.Accessed);
@@ -58,17 +66,17 @@ public sealed class SemanticCompletionProvider : CompletionProvider
     /// <returns>The constructed <see cref="CompletionItem"/>.</returns>
     private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts) => symbols.First() switch
     {
-        TypeSymbol when (currentContexts & (CompletionContext.Expression | CompletionContext.MemberAccess | CompletionContext.Type)) != CompletionContext.None =>
+        TypeSymbol when (currentContexts & (CompletionContext.Expression | CompletionContext.MemberExpressionAccess | CompletionContext.MemberTypeAccess | CompletionContext.Type)) != CompletionContext.None =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Class),
 
         IVariableSymbol when (currentContexts & CompletionContext.Expression) != CompletionContext.None =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Variable),
 
         // We need the type context here for qualified type references
-        ModuleSymbol when (currentContexts & (CompletionContext.Expression | CompletionContext.MemberAccess | CompletionContext.ModuleImport | CompletionContext.Type)) != CompletionContext.None =>
+        ModuleSymbol when (currentContexts & (CompletionContext.Expression | CompletionContext.MemberExpressionAccess | CompletionContext.MemberTypeAccess | CompletionContext.ModuleImport | CompletionContext.Type)) != CompletionContext.None =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Module),
 
-        FunctionSymbol fun when !fun.IsSpecialName && (currentContexts & (CompletionContext.Expression | CompletionContext.MemberAccess)) != CompletionContext.None =>
+        FunctionSymbol fun when !fun.IsSpecialName && (currentContexts & (CompletionContext.Expression | CompletionContext.MemberExpressionAccess)) != CompletionContext.None =>
             CompletionItem.Create(symbols.First().Name, symbols, CompletionKind.Function),
         _ => null
     };

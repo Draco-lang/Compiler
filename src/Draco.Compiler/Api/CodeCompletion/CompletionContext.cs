@@ -23,17 +23,22 @@ public enum CompletionContext
     Type = 2,
 
     /// <summary>
-    /// Inside some kind of member access syntax.
+    /// Inside expression member access syntax.
     /// </summary>
-    MemberAccess = 4,
+    MemberExpressionAccess = 4,
+
+    /// <summary>
+    /// Inside type member access syntax.
+    /// </summary>
+    MemberTypeAccess = 8,
 
     /// <summary>
     /// Import statement, where only modules are valid suggestions.
     /// </summary>
-    ModuleImport = 8,
+    ModuleImport = 16,
 
     /// <summary>
     /// Keyword that starts a declaration.
     /// </summary>
-    DeclarationKeyword = 16,
+    DeclarationKeyword = 32,
 }

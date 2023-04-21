@@ -59,7 +59,9 @@ public sealed class CompletionService
         // Declaring identifier
         else if (token.Parent is DeclarationSyntax) return CompletionContext.None;
         // Member access
-        else if (token.Parent is MemberExpressionSyntax) return CompletionContext.MemberAccess;
+        else if (token.Parent is MemberExpressionSyntax) return CompletionContext.MemberExpressionAccess;
+        // Member type access
+        else if (token.Parent is MemberTypeSyntax) return CompletionContext.MemberTypeAccess;
         // Import start
         else if (token.Parent is ImportPathSyntax) return CompletionContext.ModuleImport; // TODO: when aliasing this should be just MemberAccess
         // Start of statement inside function

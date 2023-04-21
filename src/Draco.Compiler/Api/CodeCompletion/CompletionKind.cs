@@ -1,7 +1,7 @@
 namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
-/// The kind of symbol that will be inserted into code if this completion is applied.
+/// The kind of completion that will be inserted into code if this <see cref="CompletionItem"/> is applied.
 /// </summary>
 public enum CompletionKind
 {

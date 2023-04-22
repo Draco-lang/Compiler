@@ -5,7 +5,7 @@ using Draco.Compiler.Api.Syntax;
 namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
-/// Represents a code completion item.
+/// Represents a suggestion for completing the code.
 /// </summary>
 /// <param name="Edits">The <see cref="TextEdit"/>s this item provides.</param>
 /// <param name="Symbols">All <see cref="ISymbol"/>s representing this completion (usually symbol representing type etc. or multiple <see cref="FunctionSymbol"/>s representing an overload).</param>

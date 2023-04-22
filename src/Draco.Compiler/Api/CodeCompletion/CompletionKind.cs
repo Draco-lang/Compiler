@@ -1,7 +1,7 @@
 namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
-/// The kind of completion that will be inserted into code if this <see cref="CompletionItem"/> is applied.
+/// Categories for <see cref="CompletionItem"/>s that can be used to categorize the completions.
 /// </summary>
 public enum CompletionKind
 {

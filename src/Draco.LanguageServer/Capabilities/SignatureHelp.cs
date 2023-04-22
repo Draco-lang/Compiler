@@ -18,6 +18,7 @@ internal sealed partial class DracoLanguageServer : ISignatureHelp
     public Task<SignatureHelp?> FormatTextDocumentAsync(SignatureHelpParams param, CancellationToken cancellationToken)
     {
         var cursorPosition = Translator.ToCompiler(param.Position);
-        return Task.FromResult(Translator.ToLsp(SignatureService.GetSignature(this.syntaxTree, this.semanticModel, cursorPosition)));
+        var service = new SignatureService();
+        return Task.FromResult(Translator.ToLsp(service.GetSignature(this.syntaxTree, this.semanticModel, cursorPosition)));
     }
 }

@@ -50,26 +50,30 @@ public sealed class CompletionService
     private CompletionContext GetCurrentContexts(SyntaxTree syntaxTree, SyntaxPosition cursor)
     {
         var token = syntaxTree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
-        // Type expression
-        if (token.Parent is NameTypeSyntax) return CompletionContext.Type;
-        // Parameter name declaration
-        else if (token.Parent is ParameterSyntax) return CompletionContext.None;
-        // Global declaration
-        else if (token.Parent is UnexpectedDeclarationSyntax declaration) return CompletionContext.DeclarationKeyword;
-        // Declaring identifier
-        else if (token.Parent is DeclarationSyntax) return CompletionContext.None;
-        // Member access
-        else if (token.Parent is MemberExpressionSyntax) return CompletionContext.MemberExpressionAccess;
-        // Member type access
-        else if (token.Parent is MemberTypeSyntax) return CompletionContext.MemberTypeAccess;
-        // Import start
-        else if (token.Parent is ImportPathSyntax) return CompletionContext.ModuleImport; // TODO: when aliasing this should be just MemberAccess
-        // Start of statement inside function
-        else if (token.Parent?.Parent is ExpressionStatementSyntax)
+        return token.Parent switch
         {
-            // Only one token (second is expected semicolon), we can suggest declaration start
-            if (token.Parent.Parent.Children.Count() == 2) return CompletionContext.Expression | CompletionContext.DeclarationKeyword;
-        }
-        return CompletionContext.Expression;
+            // Type expression
+            NameTypeSyntax => CompletionContext.Type,
+            // Parameter name declaration
+            ParameterSyntax => CompletionContext.None,
+            // Global declaration
+            UnexpectedDeclarationSyntax => CompletionContext.DeclarationKeyword,
+            // Declaring identifier
+            DeclarationSyntax => CompletionContext.None,
+            // Member access
+            MemberExpressionSyntax => CompletionContext.MemberExpressionAccess,
+            // Member type access
+            MemberTypeSyntax => CompletionContext.MemberTypeAccess,
+            // Import member
+            MemberImportPathSyntax => CompletionContext.MemberModuleImport, // TODO: when aliasing this should be just MemberAccess
+            // Import start
+            RootImportPathSyntax => CompletionContext.RootModuleImport,
+            // Start of statement inside function
+            _ when token.Parent?.Parent is ExpressionStatementSyntax =>
+                token.Parent.Parent.Children.Count() == 2
+                ? CompletionContext.Expression | CompletionContext.DeclarationKeyword
+                : CompletionContext.Expression,
+            _ => CompletionContext.Expression,
+        };
     }
 }

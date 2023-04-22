@@ -16,30 +16,35 @@ public enum CompletionContext
     /// <summary>
     /// Part of an expression (can be also keyword if its usable in expressions, for example 'or').
     /// </summary>
-    Expression = 1,
+    Expression = 1 << 0,
 
     /// <summary>
     /// Expression where only valid suggestions are types.
     /// </summary>
-    Type = 2,
+    Type = 1 << 1,
 
     /// <summary>
     /// Inside expression member access syntax.
     /// </summary>
-    MemberExpressionAccess = 4,
+    MemberExpressionAccess = 1 << 2,
 
     /// <summary>
     /// Inside type member access syntax.
     /// </summary>
-    MemberTypeAccess = 8,
+    MemberTypeAccess = 1 << 3,
 
     /// <summary>
-    /// Import statement, where only modules are valid suggestions.
+    /// Member import statement, where only modules are valid suggestions.
     /// </summary>
-    ModuleImport = 16,
+    MemberModuleImport = 1 << 4,
+
+    /// <summary>
+    /// Root module import statement, where only modules are valid suggestions.
+    /// </summary>
+    RootModuleImport = 1 << 5,
 
     /// <summary>
     /// Keyword that starts a declaration.
     /// </summary>
-    DeclarationKeyword = 32,
+    DeclarationKeyword = 1 << 6,
 }

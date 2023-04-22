@@ -123,23 +123,4 @@ public static class SyntaxFacts
         or TokenKind.LessThan
         or TokenKind.GreaterEqual
         or TokenKind.LessEqual;
-
-    public static bool TryDeconstructMemberAccess(SyntaxNode? node, [MaybeNullWhen(false)] out SyntaxNode accessed)
-    {
-        switch (node)
-        {
-        case MemberExpressionSyntax expr:
-            accessed = expr.Accessed;
-            return true;
-        case MemberTypeSyntax type:
-            accessed = type.Accessed;
-            return true;
-        case MemberImportPathSyntax import:
-            accessed = import.Accessed;
-            return true;
-        default:
-            accessed = null;
-            return false;
-        }
-    }
 }

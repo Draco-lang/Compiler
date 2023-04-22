@@ -8,7 +8,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// <summary>
 /// Provides <see cref="SignatureItem"/>s.
 /// </summary>
-public static class SignatureService
+public sealed class SignatureService
 {
     /// <summary>
     /// Gets <see cref="SignatureItem"/> for the current context.
@@ -17,7 +17,7 @@ public static class SignatureService
     /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
     /// <param name="cursor">The cursors <see cref="SyntaxPosition"/> in the <paramref name="tree"/>.</param>
     /// <returns><see cref="SignatureItem"/> created based on the current context or null, if the context doesn't have any signature information to display.</returns>
-    public static SignatureItem? GetSignature(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
+    public SignatureItem? GetSignature(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
         // Check if this is a call expression
         var call = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault(x => x is CallExpressionSyntax) as CallExpressionSyntax;

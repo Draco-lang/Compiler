@@ -9,6 +9,9 @@ namespace Draco.Compiler.Api.CodeFixes;
 /// </summary>
 public abstract class CodeFixProvider
 {
+    /// <summary>
+    /// The <see cref="Diagnostic"/> codes this <see cref="CodeFixProvider"/> can fix.
+    /// </summary>
     public abstract ImmutableArray<string> DiagnosticCodes { get; }
 
     /// <summary>

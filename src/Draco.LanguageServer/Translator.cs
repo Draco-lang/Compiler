@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using CompilerApi = Draco.Compiler.Api;
@@ -68,10 +69,17 @@ internal static class Translator
     {
         var result = new LspModels.CompletionItem()
         {
-            // TODO: Maybe we will have completions that don't just append text
-            Label = item.Edit.Text,
+            // TODO: Maybe we will have completions that don't just append text or that have multiple edits
+            Label = item.DisplayText,
             Kind = ToLsp(item.Kind),
         };
+        if (item.Edits.Length > 0) result.TextEdit = ToLsp(item.Edits[0]);
+        var aditionalEdits = new List<LspModels.TextEdit>();
+        for (int i = 1; i < item.Edits.Length; i++)
+        {
+            aditionalEdits.Add(ToLsp(item.Edits[i]));
+        }
+        result.AdditionalTextEdits = aditionalEdits;
         if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
         {
             result.Detail = item.Symbols.Count() == 1 ? typed.Type.ToString() : $"{item.Symbols.Count()} overloads";

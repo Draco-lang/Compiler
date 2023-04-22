@@ -15,32 +15,32 @@ public sealed class KeywordCompletionProvider : CompletionProvider
           CompletionContext.DeclarationKeyword
         | CompletionContext.Expression;
 
-    private readonly CompletionItem[] declarationKeywords = new[]
-    {
-        CompletionItem.Create("import", CompletionKind.Keyword),
-        CompletionItem.Create("var", CompletionKind.Keyword),
-        CompletionItem.Create("val", CompletionKind.Keyword),
-        CompletionItem.Create("func", CompletionKind.Keyword)
-    };
+    private ImmutableArray<CompletionItem> GetDeclarationKeywords(SyntaxRange range) => ImmutableArray.Create(
+        CompletionItem.Create("import", range, CompletionKind.Keyword),
+        CompletionItem.Create("var", range, CompletionKind.Keyword),
+        CompletionItem.Create("val", range, CompletionKind.Keyword),
+        CompletionItem.Create("func", range, CompletionKind.Keyword)
+    );
 
-    private readonly CompletionItem[] expressionKeywords = new[]
-    {
-        CompletionItem.Create("if", CompletionKind.Keyword),
-        CompletionItem.Create("while", CompletionKind.Keyword),
-        CompletionItem.Create("return", CompletionKind.Keyword),
-        CompletionItem.Create("goto", CompletionKind.Keyword),
-        CompletionItem.Create("and", CompletionKind.Keyword),
-        CompletionItem.Create("or", CompletionKind.Keyword),
-        CompletionItem.Create("not", CompletionKind.Keyword),
-        CompletionItem.Create("mod", CompletionKind.Keyword),
-        CompletionItem.Create("rem", CompletionKind.Keyword)
-    };
+    private ImmutableArray<CompletionItem> GetExpressionKeywords(SyntaxRange range) => ImmutableArray.Create(
+        CompletionItem.Create("if", range, CompletionKind.Keyword),
+        CompletionItem.Create("while", range, CompletionKind.Keyword),
+        CompletionItem.Create("return", range, CompletionKind.Keyword),
+        CompletionItem.Create("goto", range, CompletionKind.Keyword),
+        CompletionItem.Create("and", range, CompletionKind.Keyword),
+        CompletionItem.Create("or", range, CompletionKind.Keyword),
+        CompletionItem.Create("not", range, CompletionKind.Keyword),
+        CompletionItem.Create("mod", range, CompletionKind.Keyword),
+        CompletionItem.Create("rem", range, CompletionKind.Keyword)
+    );
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(this.expressionKeywords);
-        if (contexts.HasFlag(CompletionContext.DeclarationKeyword)) result.AddRange(this.declarationKeywords);
+        var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
+        if (token is null) return ImmutableArray<CompletionItem>.Empty;
+        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(this.GetExpressionKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.DeclarationKeyword)) result.AddRange(this.GetDeclarationKeywords(token.Range));
         return result.ToImmutable();
     }
 }

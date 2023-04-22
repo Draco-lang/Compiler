@@ -4,7 +4,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
 /// Represents a code context of a completion. For example, if the completion is part of expression/module import/...
-/// Contexts can be combined. For example when there is Member access expression, the context will be MemberAccess | Expression.
+/// Contexts can be combined. For example, when the cursor points at a member access expression the context will be MemberAccess | Expression.
 /// </summary>
 [Flags]
 public enum CompletionContext

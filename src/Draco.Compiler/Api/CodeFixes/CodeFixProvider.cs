@@ -10,6 +10,7 @@ namespace Draco.Compiler.Api.CodeFixes;
 public abstract class CodeFixProvider
 {
     public abstract ImmutableArray<string> DiagnosticCodes { get; }
+
     /// <summary>
     /// Gets all <see cref="CodeFix"/>es from this <see cref="CodeFixProvider"/>.
     /// </summary>

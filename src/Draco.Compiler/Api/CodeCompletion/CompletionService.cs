@@ -33,10 +33,7 @@ public sealed class CompletionService
         var currentContexts = this.GetCurrentContexts(tree, cursor);
         foreach (var provider in this.providers)
         {
-            if (provider.ValidContexts.Any(ctx => currentContexts.HasFlag(ctx)))
-            {
-                result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursor, currentContexts));
-            }
+            result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursor, currentContexts));
         }
         return result.ToImmutable();
     }
@@ -46,7 +43,7 @@ public sealed class CompletionService
     /// </summary>
     /// <param name="syntaxTree">The <see cref="SyntaxTree"/> in which to find contexts.</param>
     /// <param name="cursor">The location in the <paramref name="syntaxTree"/>.</param>
-    /// <returns>Array of the currently valid <see cref="CompletionContext"/>s.</returns>
+    /// <returns>Flag enum of the currently valid <see cref="CompletionContext"/>s.</returns>
     private CompletionContext GetCurrentContexts(SyntaxTree syntaxTree, SyntaxPosition cursor)
     {
         var token = syntaxTree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();

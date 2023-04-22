@@ -11,10 +11,6 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class KeywordCompletionProvider : CompletionProvider
 {
-    public override ImmutableArray<CompletionContext> ValidContexts { get; } = ImmutableArray.Create(
-        CompletionContext.Declaration,
-        CompletionContext.Expression);
-
     private ImmutableArray<CompletionItem> GetDeclarationKeywords(SyntaxRange range) => ImmutableArray.Create(
         CompletionItem.Create("import", range, CompletionKind.Keyword),
         CompletionItem.Create("var", range, CompletionKind.Keyword),
@@ -39,8 +35,8 @@ public sealed class KeywordCompletionProvider : CompletionProvider
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
         if (token is null) return ImmutableArray<CompletionItem>.Empty;
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(this.GetExpressionKeywords(token.Range));
-        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(this.GetDeclarationKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.Expression) && !contexts.HasFlag(CompletionContext.MemberAccess)) result.AddRange(this.GetExpressionKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.Declaration) && !contexts.HasFlag(CompletionContext.MemberAccess)) result.AddRange(this.GetDeclarationKeywords(token.Range));
         return result.ToImmutable();
     }
 }

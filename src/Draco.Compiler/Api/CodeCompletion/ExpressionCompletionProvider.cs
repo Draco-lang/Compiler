@@ -10,11 +10,6 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class ExpressionCompletionProvider : CompletionProvider
 {
-    public override ImmutableArray<CompletionContext> ValidContexts { get; } = ImmutableArray.Create(
-        CompletionContext.Expression,
-        CompletionContext.Type,
-        CompletionContext.Import);
-
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();

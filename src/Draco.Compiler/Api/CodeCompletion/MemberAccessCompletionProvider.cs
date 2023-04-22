@@ -12,9 +12,6 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class MemberAccessCompletionProvider : CompletionProvider
 {
-    public override ImmutableArray<CompletionContext> ValidContexts { get; } =
-        ImmutableArray.Create(CompletionContext.MemberAccess);
-
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault() as SyntaxToken;
@@ -65,11 +62,15 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
 
     private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SyntaxRange range) => symbols.First() switch
     {
-        TypeSymbol when currentContexts.HasFlag(CompletionContext.Type) =>
+        TypeSymbol when currentContexts.HasFlag(CompletionContext.Type)
+                    || currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Class),
+
         ModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
-                       || currentContexts.HasFlag(CompletionContext.Import) =>
+                        || currentContexts.HasFlag(CompletionContext.Expression)
+                        || currentContexts.HasFlag(CompletionContext.Import) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
+
         FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Function),
         _ => null,

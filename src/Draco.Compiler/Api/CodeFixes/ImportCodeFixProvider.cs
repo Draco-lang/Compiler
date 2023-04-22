@@ -21,7 +21,7 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
         {
             return ImmutableArray.Create(
                 new CodeFix("Move import statement to be at the top of a scope", this.TopOfScope(tree, range)),
-                new CodeFix("Move import statement  to be at the top of a file", this.TopOfFile(tree, range)));
+                new CodeFix("Move import statement to be at the top of the file", this.TopOfFile(tree, range)));
         }
         return ImmutableArray<CodeFix>.Empty;
     }

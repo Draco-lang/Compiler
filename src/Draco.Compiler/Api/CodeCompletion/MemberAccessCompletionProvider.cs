@@ -19,12 +19,13 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
-        var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
+        var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault() as SyntaxToken;
         if (token is null) return ImmutableArray<CompletionItem>.Empty;
         var expr = token.Parent;
+        var range = token.Kind == TokenKind.Dot ? new SyntaxRange(token.Range.End, 0) : token.Range;
         // If we can't get the accessed propery, we just return empty array
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return ImmutableArray<CompletionItem>.Empty;
-        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, token.Range));
+        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
 
         // If the current valid contexts intersect with contexts of given completion, we add it to the result
         return completions.Where(x => x is not null).ToImmutableArray()!;

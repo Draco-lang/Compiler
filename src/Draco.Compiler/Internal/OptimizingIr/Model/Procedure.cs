@@ -18,6 +18,7 @@ internal sealed class Procedure : IProcedure
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
+    public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
     public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters => this.parameters;
     public IEnumerable<Parameter> ParametersInDefinitionOrder => this.parameters.Values.OrderBy(p => p.Index);
     public TypeSymbol ReturnType => this.Symbol.ReturnType;
@@ -83,7 +84,14 @@ internal sealed class Procedure : IProcedure
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.Append($"proc {this.ToOperandString()}(");
+        result.Append($"proc {this.ToOperandString()}");
+        if (this.Generics.Count > 0)
+        {
+            result.Append('<');
+            result.AppendJoin(", ", this.Generics);
+            result.Append('>');
+        }
+        result.Append('(');
         result.AppendJoin(", ", this.ParametersInDefinitionOrder);
         result.AppendLine($") {this.ReturnType}:");
         if (this.Locals.Count > 0)

@@ -29,6 +29,11 @@ internal interface IProcedure : IOperand
     public IBasicBlock Entry { get; }
 
     /// <summary>
+    /// The generic parameters on this procedure.
+    /// </summary>
+    public IReadOnlyList<TypeParameterSymbol> Generics { get; }
+
+    /// <summary>
     /// All parameters for this procedure.
     /// </summary>
     public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters { get; }

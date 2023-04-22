@@ -39,6 +39,7 @@ internal partial class Binder
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
         MemberExpressionSyntax maccess => this.BindMemberExpression(maccess, constraints, diagnostics),
+        GenericExpressionSyntax gen => this.BindGenericExpression(gen, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -369,6 +370,25 @@ internal partial class Binder
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
             return new UntypedMemberExpression(syntax, left, promise, type);
+        }
+    }
+
+    private UntypedExpression BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var instantiated = this.BindExpression(syntax.Instantiated, constraints, diagnostics);
+        var args = syntax.Arguments.Values
+            .Select(arg => this.BindType(arg, diagnostics))
+            .ToImmutableArray();
+        if (instantiated is UntypedFunctionExpression func)
+        {
+            // Generic function instantiation
+            // TODO
+            throw new NotImplementedException();
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
         }
     }
 

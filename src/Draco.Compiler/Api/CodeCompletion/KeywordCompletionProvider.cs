@@ -11,9 +11,9 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class KeywordCompletionProvider : CompletionProvider
 {
-    public override CompletionContext ValidContexts { get; } =
-        CompletionContext.DeclarationKeyword |
-        CompletionContext.Expression;
+    public override CompletionContext ValidContexts =>
+          CompletionContext.DeclarationKeyword
+        | CompletionContext.Expression;
 
     private readonly CompletionItem[] declarationKeywords = new[]
     {

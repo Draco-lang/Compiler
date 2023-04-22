@@ -20,7 +20,7 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
             && diagnostic.Location.Range!.Value.Intersects(range))
         {
             return ImmutableArray.Create(
-                new CodeFix("Move import statement to be at the top of a scope", this.TopOfScope(tree, range)),
+                new CodeFix("Move import statement to be at the top of the scope", this.TopOfScope(tree, range)),
                 new CodeFix("Move import statement to be at the top of the file", this.TopOfFile(tree, range)));
         }
         return ImmutableArray<CodeFix>.Empty;

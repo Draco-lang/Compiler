@@ -13,11 +13,11 @@ namespace Draco.Compiler.Api.CodeCompletion;
 public sealed record class CompletionItem(ImmutableArray<TextEdit> Edits, string DisplayText, ImmutableArray<ISymbol> Symbols, CompletionKind Kind)
 {
     public static CompletionItem Create(string text, SyntaxRange range, CompletionKind kind) =>
-        new CompletionItem(ImmutableArray.Create(new TextEdit(text, range)), text, ImmutableArray<ISymbol>.Empty, kind);
+        new CompletionItem(ImmutableArray.Create(new TextEdit(range, text)), text, ImmutableArray<ISymbol>.Empty, kind);
 
     public static CompletionItem Create(string text, SyntaxRange range, ISymbol symbol, CompletionKind kind) =>
-        new CompletionItem(ImmutableArray.Create(new TextEdit(text, range)), text, ImmutableArray.Create(symbol), kind);
+        new CompletionItem(ImmutableArray.Create(new TextEdit(range, text)), text, ImmutableArray.Create(symbol), kind);
 
     public static CompletionItem Create(string text, SyntaxRange range, ImmutableArray<ISymbol> symbols, CompletionKind kind) =>
-        new CompletionItem(ImmutableArray.Create(new TextEdit(text, range)), text, symbols, kind);
+        new CompletionItem(ImmutableArray.Create(new TextEdit(range, text)), text, symbols, kind);
 }

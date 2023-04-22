@@ -12,6 +12,13 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class MemberAccessCompletionProvider : CompletionProvider
 {
+    public override bool IsApplicableIn(CompletionContext context)
+    {
+        if (!context.HasFlag(CompletionContext.MemberAccess)) return false;
+        if (context.HasFlag(CompletionContext.Expression) || context.HasFlag(CompletionContext.Type) || context.HasFlag(CompletionContext.Import)) return true;
+        return false;
+    }
+
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault() as SyntaxToken;

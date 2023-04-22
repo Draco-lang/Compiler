@@ -10,6 +10,13 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class ExpressionCompletionProvider : CompletionProvider
 {
+    public override bool IsApplicableIn(CompletionContext context)
+    {
+        if (context.HasFlag(CompletionContext.MemberAccess)) return false;
+        if (context.HasFlag(CompletionContext.Expression) || context.HasFlag(CompletionContext.Type) || context.HasFlag(CompletionContext.Import)) return true;
+        return false;
+    }
+
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
@@ -23,8 +30,6 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
 
     private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SyntaxRange range) => symbols.First() switch
     {
-        _ when currentContexts.HasFlag(CompletionContext.MemberAccess) => null,
-
         TypeSymbol when currentContexts.HasFlag(CompletionContext.Expression)
                      || currentContexts.HasFlag(CompletionContext.Type) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Class),

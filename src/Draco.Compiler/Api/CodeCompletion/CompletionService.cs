@@ -30,10 +30,13 @@ public sealed class CompletionService
     public ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        var currentContexts = this.GetCurrentContexts(tree, cursor);
+        var currentContext = this.GetCurrentContexts(tree, cursor);
         foreach (var provider in this.providers)
         {
-            result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursor, currentContexts));
+            if (provider.IsApplicableIn(currentContext))
+            {
+                result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursor, currentContext));
+            }
         }
         return result.ToImmutable();
     }

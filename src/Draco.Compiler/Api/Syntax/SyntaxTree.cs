@@ -145,7 +145,7 @@ public sealed class SyntaxTree
     /// <returns>Array of <see cref="TextEdit"/>s.</returns>
     public ImmutableArray<TextEdit> SyntaxTreeDiff(SyntaxTree other)
     {
-        return ImmutableArray.Create(new TextEdit(other.ToString(), this.Root.Range));
+        return ImmutableArray.Create(new TextEdit(this.Root.Range, other.ToString()));
     }
 
     /// <summary>

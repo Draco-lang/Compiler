@@ -30,13 +30,20 @@ public sealed class KeywordCompletionProvider : CompletionProvider
         CompletionItem.Create("rem", range, CompletionKind.Keyword)
     );
 
+    public override bool IsApplicableIn(CompletionContext context)
+    {
+        if (context.HasFlag(CompletionContext.MemberAccess)) return false;
+        if (context.HasFlag(CompletionContext.Declaration) || context.HasFlag(CompletionContext.Expression)) return true;
+        return false;
+    }
+
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
         if (token is null) return ImmutableArray<CompletionItem>.Empty;
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        if (contexts.HasFlag(CompletionContext.Expression) && !contexts.HasFlag(CompletionContext.MemberAccess)) result.AddRange(this.GetExpressionKeywords(token.Range));
-        if (contexts.HasFlag(CompletionContext.Declaration) && !contexts.HasFlag(CompletionContext.MemberAccess)) result.AddRange(this.GetDeclarationKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(this.GetExpressionKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(this.GetDeclarationKeywords(token.Range));
         return result.ToImmutable();
     }
 }

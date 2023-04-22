@@ -11,6 +11,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Codegen;
@@ -319,6 +320,17 @@ internal sealed class MetadataCodegen : MetadataWriter
             bodyOffset: methodBodyOffset,
             parameterList: parameterList);
 
+        // Add generic type parameters
+        var genericIndex = 0;
+        foreach (var typeParam in procedure.Generics)
+        {
+            this.MetadataBuilder.AddGenericParameter(
+                parent: definitionHandle,
+                attributes: GenericParameterAttributes.None,
+                name: this.GetOrAddString(typeParam.Name),
+                index: genericIndex++);
+        }
+
         // Write out any debug information
         this.PdbCodegen?.EncodeProcedureDebugInfo(procedure, definitionHandle);
 
@@ -330,7 +342,9 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {
-        e.MethodSignature().Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
+        e
+            .MethodSignature(genericParameterCount: procedure.Generics.Count)
+            .Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
         this.EncodeReturnType(retEncoder, procedure.ReturnType);
         foreach (var param in procedure.ParametersInDefinitionOrder)
         {
@@ -380,6 +394,15 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (type is ArrayTypeSymbol { Rank: 1 } arrayType)
         {
             this.EncodeSignatureType(encoder.SZArray(), arrayType.ElementType);
+            return;
+        }
+
+        if (type is TypeParameterSymbol typeParam
+         && typeParam.ContainingSymbol is SourceFunctionSymbol func)
+        {
+            var index = func.GenericParameters.IndexOf(typeParam);
+            Debug.Assert(index != -1);
+            encoder.GenericMethodTypeParameter(index);
             return;
         }
 

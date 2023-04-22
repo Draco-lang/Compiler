@@ -10,9 +10,9 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class ExpressionCompletionProvider : CompletionProvider
 {
-    public override CompletionContext ValidContexts { get; } =
-        CompletionContext.Expression |
-        CompletionContext.Type;
+    public override CompletionContext ValidContexts =>
+          CompletionContext.Expression
+        | CompletionContext.Type;
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {

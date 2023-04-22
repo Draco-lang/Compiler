@@ -40,9 +40,9 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
     {
         var import = tree.TraverseSubtreesIntersectingRange(range).LastOrDefault(x => x is ImportDeclarationSyntax);
         if (import is null) return ImmutableArray<TextEdit>.Empty;
-        SyntaxTree newTree;
-        if (import.Parent is DeclarationStatementSyntax) newTree = tree.Remove(import.Parent);
-        else newTree = tree.Remove(import);
+        var newTree = import.Parent is DeclarationStatementSyntax
+            ? tree.Remove(import.Parent)
+            : tree.Remove(import);
         newTree = newTree.Insert(import, newTree.Root, 0);
         return tree.SyntaxTreeDiff(newTree);
     }

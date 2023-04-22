@@ -67,7 +67,8 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
     {
         TypeSymbol when currentContexts.HasFlag(CompletionContext.Type) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Class),
-        ModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
+        ModuleSymbol when currentContexts.HasFlag(CompletionContext.Expression)
+                       || currentContexts.HasFlag(CompletionContext.Type)
                        || currentContexts.HasFlag(CompletionContext.Import) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
         FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>

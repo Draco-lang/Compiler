@@ -10,10 +10,10 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class ExpressionCompletionProvider : CompletionProvider
 {
-    public override CompletionContext ValidContexts =>
-          CompletionContext.Expression
-        | CompletionContext.Type
-        | CompletionContext.RootModuleImport;
+    public override ImmutableArray<CompletionContext> ValidContexts { get; } = ImmutableArray.Create(
+        CompletionContext.Expression,
+        CompletionContext.Type,
+        CompletionContext.Import);
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
@@ -28,18 +28,24 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
 
     private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SyntaxRange range) => symbols.First() switch
     {
-        TypeSymbol when (currentContexts & (CompletionContext.Expression | CompletionContext.Type)) != CompletionContext.None =>
+        _ when currentContexts.HasFlag(CompletionContext.MemberAccess) => null,
+
+        TypeSymbol when currentContexts.HasFlag(CompletionContext.Expression)
+                     || currentContexts.HasFlag(CompletionContext.Type) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Class),
 
-        IVariableSymbol when (currentContexts & CompletionContext.Expression) != CompletionContext.None =>
+        IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Variable),
 
         // We need the type context here for qualified type references
-        ModuleSymbol when (currentContexts & (CompletionContext.Expression | CompletionContext.Type | CompletionContext.RootModuleImport)) != CompletionContext.None =>
+        ModuleSymbol when currentContexts.HasFlag(CompletionContext.Expression)
+                       || currentContexts.HasFlag(CompletionContext.Type)
+                       || currentContexts.HasFlag(CompletionContext.Import) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
 
-        FunctionSymbol fun when !fun.IsSpecialName && (currentContexts & CompletionContext.Expression) != CompletionContext.None =>
+        FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Function),
-        _ => null
+
+        _ => null,
     };
 }

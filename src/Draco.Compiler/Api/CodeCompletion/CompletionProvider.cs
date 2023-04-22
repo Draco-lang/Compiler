@@ -14,7 +14,7 @@ public abstract class CompletionProvider
     /// <summary>
     /// Flag enum of completion contexts this <see cref="CompletionProvider"/> is applicable in.
     /// </summary>
-    public abstract CompletionContext ValidContexts { get; }
+    public abstract ImmutableArray<CompletionContext> ValidContexts { get; }
 
     /// <summary>
     /// Gets all <see cref="CompletionItem"/>s from this <see cref="CompletionProvider"/>.

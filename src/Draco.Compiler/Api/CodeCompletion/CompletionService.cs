@@ -33,7 +33,7 @@ public sealed class CompletionService
         var currentContexts = this.GetCurrentContexts(tree, cursor);
         foreach (var provider in this.providers)
         {
-            if ((provider.ValidContexts & currentContexts) != CompletionContext.None)
+            if (provider.ValidContexts.Any(ctx => currentContexts.HasFlag(ctx)))
             {
                 result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursor, currentContexts));
             }
@@ -57,21 +57,23 @@ public sealed class CompletionService
             // Parameter name declaration
             ParameterSyntax => CompletionContext.None,
             // Global declaration
-            UnexpectedDeclarationSyntax => CompletionContext.DeclarationKeyword,
+            UnexpectedDeclarationSyntax => CompletionContext.Declaration,
             // Declaring identifier
             DeclarationSyntax => CompletionContext.None,
             // Member access
-            MemberExpressionSyntax => CompletionContext.MemberExpressionAccess,
+            MemberExpressionSyntax => CompletionContext.Expression | CompletionContext.MemberAccess,
             // Member type access
-            MemberTypeSyntax => CompletionContext.MemberTypeAccess,
+            MemberTypeSyntax => CompletionContext.Type | CompletionContext.MemberAccess,
             // Import member
-            MemberImportPathSyntax => CompletionContext.MemberModuleImport, // TODO: when aliasing this should be just MemberAccess
+            MemberImportPathSyntax => CompletionContext.Import | CompletionContext.MemberAccess,
             // Import start
-            RootImportPathSyntax => CompletionContext.RootModuleImport,
+            RootImportPathSyntax => CompletionContext.Import,
+            // Global scope
+            null => CompletionContext.Declaration,
             // Start of statement inside function
             _ when token.Parent?.Parent is ExpressionStatementSyntax =>
                 token.Parent.Parent.Children.Count() == 2
-                ? CompletionContext.Expression | CompletionContext.DeclarationKeyword
+                ? CompletionContext.Expression | CompletionContext.Declaration
                 : CompletionContext.Expression,
             _ => CompletionContext.Expression,
         };

@@ -12,10 +12,8 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class MemberAccessCompletionProvider : CompletionProvider
 {
-    public override CompletionContext ValidContexts =>
-          CompletionContext.MemberExpressionAccess
-        | CompletionContext.MemberTypeAccess
-        | CompletionContext.MemberModuleImport;
+    public override ImmutableArray<CompletionContext> ValidContexts { get; } =
+        ImmutableArray.Create(CompletionContext.MemberAccess);
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
@@ -67,15 +65,13 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
 
     private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SyntaxRange range) => symbols.First() switch
     {
-        TypeSymbol when (currentContexts & (CompletionContext.MemberExpressionAccess | CompletionContext.MemberTypeAccess)) != CompletionContext.None =>
+        TypeSymbol when currentContexts.HasFlag(CompletionContext.Type) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Class),
-
-        // We need the type context here for qualified type references
-        ModuleSymbol when (currentContexts & (CompletionContext.MemberExpressionAccess | CompletionContext.MemberTypeAccess | CompletionContext.MemberModuleImport)) != CompletionContext.None =>
+        ModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
+                       || currentContexts.HasFlag(CompletionContext.Import) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
-
-        FunctionSymbol fun when !fun.IsSpecialName && (currentContexts & CompletionContext.MemberExpressionAccess) != CompletionContext.None =>
+        FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Function),
-        _ => null
+        _ => null,
     };
 }

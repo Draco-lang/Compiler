@@ -11,10 +11,10 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class MemberAccessCompletionProvider : CompletionProvider
 {
-    public override CompletionContext ValidContexts { get; } =
-        CompletionContext.MemberExpressionAccess |
-        CompletionContext.MemberTypeAccess |
-        CompletionContext.ModuleImport;
+    public override CompletionContext ValidContexts =>
+          CompletionContext.MemberExpressionAccess
+        | CompletionContext.MemberTypeAccess
+        | CompletionContext.ModuleImport;
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {

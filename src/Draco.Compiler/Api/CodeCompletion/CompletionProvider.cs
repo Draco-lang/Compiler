@@ -7,7 +7,7 @@ using Draco.Compiler.Api.Syntax;
 namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
-/// Base class for providing completions.
+/// Provides completions for certain applicable contexts.
 /// </summary>
 public abstract class CompletionProvider
 {

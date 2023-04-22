@@ -7,6 +7,8 @@ namespace Draco.Compiler.Api.Syntax;
 /// <param name="End">The exclusive end of the range.</param>
 public readonly record struct SyntaxRange(SyntaxPosition Start, SyntaxPosition End)
 {
+    public static readonly SyntaxRange Empty = default;
+
     /// <summary>
     /// Constructs a range from a starting position and length.
     /// </summary>
@@ -16,8 +18,6 @@ public readonly record struct SyntaxRange(SyntaxPosition Start, SyntaxPosition E
         : this(start, new SyntaxPosition(Line: start.Line, Column: start.Column + length))
     {
     }
-
-    public static readonly SyntaxRange Empty = default;
 
     /// <summary>
     /// Checks if this range contains the given position.

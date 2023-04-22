@@ -17,7 +17,7 @@ public readonly record struct SyntaxRange(SyntaxPosition Start, SyntaxPosition E
     {
     }
 
-    public static SyntaxRange Empty { get; } = new SyntaxRange();
+    public static readonly SyntaxRange Empty = default;
 
     /// <summary>
     /// Checks if this range contains the given position.

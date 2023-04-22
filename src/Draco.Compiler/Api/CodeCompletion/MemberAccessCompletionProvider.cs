@@ -63,12 +63,12 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
     private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SyntaxRange range) => symbols.First() switch
     {
         TypeSymbol when currentContexts.HasFlag(CompletionContext.Type)
-                    || currentContexts.HasFlag(CompletionContext.Expression) =>
+                     || currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Class),
 
         ModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
-                        || currentContexts.HasFlag(CompletionContext.Expression)
-                        || currentContexts.HasFlag(CompletionContext.Import) =>
+                       || currentContexts.HasFlag(CompletionContext.Expression)
+                       || currentContexts.HasFlag(CompletionContext.Import) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
 
         FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>

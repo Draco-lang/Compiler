@@ -20,7 +20,7 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
         var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts));
 
         // If the current valid contexts intersect with contexts of given completion, we add it to the result
-        return completions.Where(x => x is not null).ToImmutableArray()!;
+        return completions.OfType<CompletionItem>().ToImmutableArray()!;
     }
 
     private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts) => symbols.First() switch

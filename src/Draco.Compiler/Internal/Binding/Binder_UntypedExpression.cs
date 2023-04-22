@@ -377,12 +377,12 @@ internal partial class Binder
     {
         var instantiated = this.BindExpression(syntax.Instantiated, constraints, diagnostics);
         var args = syntax.Arguments.Values
-            .Select(arg => this.BindType(arg, diagnostics))
+            .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
             .ToImmutableArray();
         if (instantiated is UntypedFunctionExpression func)
         {
             // Generic function instantiation
-            // TODO
+            var (promise, type) = constraints.Instantiate(instantiated.TypeRequired, args);
             throw new NotImplementedException();
         }
         else

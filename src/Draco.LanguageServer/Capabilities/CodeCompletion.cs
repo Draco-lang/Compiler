@@ -26,6 +26,6 @@ internal sealed partial class DracoLanguageServer : ICodeCompletion
         service.AddProvider(new KeywordCompletionProvider());
         service.AddProvider(new ExpressionCompletionProvider());
         service.AddProvider(new MemberAccessCompletionProvider());
-        return Task.FromResult<IList<CompletionItem>>(service.GetCompletions(this.syntaxTree, this.semanticModel, cursorPosition).Select(x => Translator.ToLsp(x)).ToList());
+        return Task.FromResult<IList<CompletionItem>>(service.GetCompletions(this.syntaxTree, this.semanticModel, cursorPosition).Select(Translator.ToLsp).ToList());
     }
 }

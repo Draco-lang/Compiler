@@ -337,7 +337,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         if (expr is BoundLocalExpression
                  or BoundGlobalExpression
                  or BoundParameterExpression
-                 or BoundFunctionExpression
+                 or BoundFunctionGroupExpression
                  or BoundLiteralExpression)
         {
             return new(null, expr, BoundNoOpStatement.Default);

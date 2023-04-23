@@ -105,11 +105,6 @@ internal partial class BoundLocalExpression
     public override TypeSymbol Type => this.Local.Type;
 }
 
-internal partial class BoundFunctionExpression
-{
-    public override TypeSymbol Type => this.Function.Type;
-}
-
 internal partial class BoundReferenceErrorExpression
 {
     public override TypeSymbol Type => IntrinsicSymbols.ErrorType;

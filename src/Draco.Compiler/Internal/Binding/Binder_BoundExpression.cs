@@ -29,7 +29,6 @@ internal partial class Binder
         UntypedParameterExpression @param => this.TypeParameterExpression(param, constraints, diagnostics),
         UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
         UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
-        UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
         UntypedReferenceErrorExpression err => this.TypeReferenceErrorExpression(err, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
         UntypedBlockExpression block => this.TypeBlockExpression(block, constraints, diagnostics),
@@ -84,9 +83,6 @@ internal partial class Binder
 
     private BoundExpression TypeGlobalExpression(UntypedGlobalExpression global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalExpression(global.Syntax, global.Global);
-
-    private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundFunctionExpression(func.Syntax, func.Function.Result);
 
     private BoundExpression TypeReferenceErrorExpression(UntypedReferenceErrorExpression err, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundReferenceErrorExpression(err.Syntax, err.Symbol);
@@ -146,11 +142,14 @@ internal partial class Binder
             // Member function call
             return new BoundCallExpression(call.Syntax, memberExpr.Receiver, memberFunc, typedArgs, resultType);
         }
+        // TODO
+        /*
         else if (typedFunction is BoundFunctionExpression funcExpr)
         {
             // Free-function call
             return new BoundCallExpression(call.Syntax, null, funcExpr.Function, typedArgs, resultType);
         }
+        */
         else
         {
             // Indirect function call

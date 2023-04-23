@@ -176,8 +176,8 @@
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
 
-  <Node Name="BoundFunctionExpression" Base="BoundExpression">
-    <Field Name="Function" Type="FunctionSymbol" />
+  <Node Name="BoundFunctionGroupExpression" Base="BoundExpression">
+    <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
   </Node>
 
   <Node Name="BoundReferenceErrorExpression" Base="BoundExpression">

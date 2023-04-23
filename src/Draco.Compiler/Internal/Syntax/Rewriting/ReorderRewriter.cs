@@ -4,8 +4,8 @@ namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
 internal sealed class ReorderRewriter : SyntaxRewriter
 {
-    private SyntaxNode ToReorder { get; }
-    private int Position { get; }
+    private readonly SyntaxNode ToReorder;
+    private readonly int Position;
 
     /// <summary>
     ///  Reorders the <see cref="SyntaxList"/> where <paramref name="toReorder"/> <see cref="SyntaxNode"/> is and puts <paramref name="toReorder"/> at the <paramref name="position"/> in the original <see cref="SyntaxList"/>.

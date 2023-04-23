@@ -77,18 +77,20 @@ internal static class Translator
         }
 
         var documentation = new LspModels.MarkupContent();
-        if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation)) documentation = new LspModels.MarkupContent()
+        if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation))
         {
-            Kind = LspModels.MarkupKind.Markdown,
-            Value = item.Symbols.First().Documentation,
-        };
-
+            documentation = new LspModels.MarkupContent()
+            {
+                Kind = LspModels.MarkupKind.Markdown,
+                Value = item.Symbols.First().Documentation,
+            };
+        }
         return new LspModels.CompletionItem()
         {
             Label = item.DisplayText,
             Kind = ToLsp(item.Kind),
             TextEdit = textEdit,
-            AdditionalTextEdits = aditionalEdits,
+            AdditionalTextEdits = additionalEdits,
             Detail = detail,
             Documentation = documentation
         };
@@ -114,12 +116,14 @@ internal static class Translator
     public static LspModels.SignatureInformation ToLsp(CompilerApi.Semantics.IFunctionSymbol item)
     {
         var documentation = new LspModels.MarkupContent();
-        if (!string.IsNullOrEmpty(item.Documentation)) documentation = new LspModels.MarkupContent()
+        if (!string.IsNullOrEmpty(item.Documentation))
         {
-            Kind = LspModels.MarkupKind.Markdown,
-            Value = item.Documentation,
-        };
-
+            documentation = new LspModels.MarkupContent()
+            {
+                Kind = LspModels.MarkupKind.Markdown,
+                Value = item.Documentation,
+            };
+        }
         return new LspModels.SignatureInformation()
         {
             Label = $"func {item.Name}({string.Join(", ", item.Parameters.Select(x => $"{x.Name}: {x.Type}"))}): {item.ReturnType}",

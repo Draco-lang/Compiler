@@ -4,8 +4,8 @@ namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
 internal sealed class InsertRewriter : SyntaxRewriter
 {
-    private SyntaxNode ToInsert { get; }
-    private SyntaxNode InsertInto { get; }
+    private readonly SyntaxNode ToInsert;
+    private readonly SyntaxNode InsertInto;
     private int Position { get; }
 
     public InsertRewriter(SyntaxNode toInsert, SyntaxNode insertInto, int position)

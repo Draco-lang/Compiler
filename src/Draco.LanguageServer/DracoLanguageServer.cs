@@ -37,9 +37,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private SemanticModel semanticModel;
     private SyntaxTree syntaxTree;
 
-    private CompletionService completionService;
-    private SignatureService signatureService;
-    private CodeFixService codeFixService;
+    private readonly CompletionService completionService;
+    private readonly SignatureService signatureService;
+    private readonly CodeFixService codeFixService;
 
     public DracoLanguageServer(ILanguageClient client)
     {

@@ -4,7 +4,7 @@ namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
 internal sealed class RemoveRewriter : SyntaxRewriter
 {
-    private SyntaxNode ToRemove { get; }
+    private readonly SyntaxNode ToRemove;
 
     public RemoveRewriter(SyntaxNode toRemove)
     {

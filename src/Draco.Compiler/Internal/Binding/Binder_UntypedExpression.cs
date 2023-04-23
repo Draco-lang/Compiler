@@ -190,8 +190,7 @@ internal partial class Binder
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location))
             .Result;*/
-
-        return new UntypedCallExpression(syntax, method, args, returnType);
+        // return new UntypedCallExpression(syntax, method, args, returnType);
     }
 
     private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

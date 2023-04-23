@@ -15,8 +15,7 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
     public override bool IsApplicableIn(CompletionContext context)
     {
         if (!context.HasFlag(CompletionContext.MemberAccess)) return false;
-        if (context.HasFlag(CompletionContext.Expression) || context.HasFlag(CompletionContext.Type) || context.HasFlag(CompletionContext.Import)) return true;
-        return false;
+        return context.HasFlag(CompletionContext.Expression) || context.HasFlag(CompletionContext.Type) || context.HasFlag(CompletionContext.Import);
     }
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)

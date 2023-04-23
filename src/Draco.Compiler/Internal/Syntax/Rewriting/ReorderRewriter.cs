@@ -20,7 +20,7 @@ internal sealed class ReorderRewriter : SyntaxRewriter
 
     public override SyntaxList<TNode> VisitSyntaxList<TNode>(SyntaxList<TNode> node)
     {
-        for (int i = 0; i < node.Count; i++)
+        for (var i = 0; i < node.Count; i++)
         {
             if (node[i] == this.ToReorder)
             {

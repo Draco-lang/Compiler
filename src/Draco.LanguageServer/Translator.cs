@@ -68,11 +68,7 @@ internal static class Translator
     public static LspModels.CompletionItem ToLsp(CompilerApi.CodeCompletion.CompletionItem item)
     {
         var textEdit = ToLsp(item.Edits[0]);
-        var aditionalEdits = new List<LspModels.TextEdit>();
-        for (int i = 1; i < item.Edits.Length; i++)
-        {
-            aditionalEdits.Add(ToLsp(item.Edits[i]));
-        }
+        var additionalEdits = item.Edits.Skip(1).Select(ToLsp).ToList();
 
         var detail = string.Empty;
         if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)

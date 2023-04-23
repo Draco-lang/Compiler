@@ -27,8 +27,7 @@ public sealed class KeywordCompletionProvider : CompletionProvider
         CompletionItem.Create("or", range, CompletionKind.Keyword),
         CompletionItem.Create("not", range, CompletionKind.Keyword),
         CompletionItem.Create("mod", range, CompletionKind.Keyword),
-        CompletionItem.Create("rem", range, CompletionKind.Keyword)
-    );
+        CompletionItem.Create("rem", range, CompletionKind.Keyword));
 
     public override bool IsApplicableIn(CompletionContext context)
     {

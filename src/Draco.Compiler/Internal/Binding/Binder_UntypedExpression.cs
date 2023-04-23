@@ -179,18 +179,19 @@ internal partial class Binder
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
 
-        // TODO: We need a proper Call constraint here that actually handles overloads
-        // For that we need to extract the promise of method groups or something
-        // This could be a member expression, a simple function group expression, or something else
-        // which would be an indirect call
-        throw new NotImplementedException();
-
-        /*var returnType = constraints
-            .Call(method.TypeRequired, args.Select(arg => arg.TypeRequired))
-            .ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location))
-            .Result;*/
-        // return new UntypedCallExpression(syntax, method, args, returnType);
+        if (method is UntypedFunctionGroupExpression group)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+        else
+        {
+            // TODO: We need a proper Call constraint here that actually handles overloads
+            // For that we need to extract the promise of method groups or something
+            // This could be a member expression, a simple function group expression, or something else
+            // which would be an indirect call
+            throw new NotImplementedException();
+        }
     }
 
     private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

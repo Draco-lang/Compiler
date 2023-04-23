@@ -27,9 +27,7 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
         // If we can't get the accessed propery, we just return empty array
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return ImmutableArray<CompletionItem>.Empty;
         var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
-
-        // If the current valid contexts intersect with contexts of given completion, we add it to the result
-        return completions.Where(x => x is not null).ToImmutableArray()!;
+        return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 
     private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<ISymbol> result)

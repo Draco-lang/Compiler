@@ -22,10 +22,6 @@ internal sealed partial class DracoLanguageServer : ICodeCompletion
     public Task<IList<CompletionItem>> CompleteAsync(CompletionParams param, CancellationToken cancellationToken)
     {
         var cursorPosition = Translator.ToCompiler(param.Position);
-        var service = new CompletionService();
-        service.AddProvider(new KeywordCompletionProvider());
-        service.AddProvider(new ExpressionCompletionProvider());
-        service.AddProvider(new MemberAccessCompletionProvider());
-        return Task.FromResult<IList<CompletionItem>>(service.GetCompletions(this.syntaxTree, this.semanticModel, cursorPosition).Select(Translator.ToLsp).ToList());
+        return Task.FromResult<IList<CompletionItem>>(this.completionService.GetCompletions(this.syntaxTree, this.semanticModel, cursorPosition).Select(Translator.ToLsp).ToList());
     }
 }

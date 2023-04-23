@@ -15,10 +15,9 @@ internal sealed partial class DracoLanguageServer : ISignatureHelp
         RetriggerCharacters = new[] { "," },
     };
 
-    public Task<SignatureHelp?> FormatTextDocumentAsync(SignatureHelpParams param, CancellationToken cancellationToken)
+    public Task<SignatureHelp?> SignatureHelpAsync(SignatureHelpParams param, CancellationToken cancellationToken)
     {
         var cursorPosition = Translator.ToCompiler(param.Position);
-        var service = new SignatureService();
-        return Task.FromResult(Translator.ToLsp(service.GetSignature(this.syntaxTree, this.semanticModel, cursorPosition)));
+        return Task.FromResult(Translator.ToLsp(this.signatureService.GetSignature(this.syntaxTree, this.semanticModel, cursorPosition)));
     }
 }

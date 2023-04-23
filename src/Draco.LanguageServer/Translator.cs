@@ -67,29 +67,35 @@ internal static class Translator
 
     public static LspModels.CompletionItem ToLsp(CompilerApi.CodeCompletion.CompletionItem item)
     {
-        var result = new LspModels.CompletionItem()
-        {
-            // TODO: Maybe we will have completions that don't just append text or that have multiple edits
-            Label = item.DisplayText,
-            Kind = ToLsp(item.Kind),
-        };
-        if (item.Edits.Length > 0) result.TextEdit = ToLsp(item.Edits[0]);
+        var textEdit = ToLsp(item.Edits[0]);
         var aditionalEdits = new List<LspModels.TextEdit>();
         for (int i = 1; i < item.Edits.Length; i++)
         {
             aditionalEdits.Add(ToLsp(item.Edits[i]));
         }
-        result.AdditionalTextEdits = aditionalEdits;
+
+        var detail = string.Empty;
         if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
         {
-            result.Detail = item.Symbols.Count() == 1 ? typed.Type.ToString() : $"{item.Symbols.Count()} overloads";
+            detail = item.Symbols.Count() == 1 ? typed.Type.ToString() : $"{item.Symbols.Count()} overloads";
         }
-        if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation)) result.Documentation = new LspModels.MarkupContent()
+
+        var documentation = new LspModels.MarkupContent();
+        if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation)) documentation = new LspModels.MarkupContent()
         {
             Kind = LspModels.MarkupKind.Markdown,
             Value = item.Symbols.First().Documentation,
         };
-        return result;
+
+        return new LspModels.CompletionItem()
+        {
+            Label = item.DisplayText,
+            Kind = ToLsp(item.Kind),
+            TextEdit = textEdit,
+            AdditionalTextEdits = aditionalEdits,
+            Detail = detail,
+            Documentation = documentation
+        };
     }
 
     public static LspModels.CompletionItemKind ToLsp(CompilerApi.CodeCompletion.CompletionKind kind) => kind switch
@@ -111,20 +117,22 @@ internal static class Translator
 
     public static LspModels.SignatureInformation ToLsp(CompilerApi.Semantics.IFunctionSymbol item)
     {
-        var result = new LspModels.SignatureInformation()
+        var documentation = new LspModels.MarkupContent();
+        if (!string.IsNullOrEmpty(item.Documentation)) documentation = new LspModels.MarkupContent()
+        {
+            Kind = LspModels.MarkupKind.Markdown,
+            Value = item.Documentation,
+        };
+
+        return new LspModels.SignatureInformation()
         {
             Label = $"func {item.Name}({string.Join(", ", item.Parameters.Select(x => $"{x.Name}: {x.Type}"))}): {item.ReturnType}",
             Parameters = item.Parameters.Select(x => new LspModels.ParameterInformation()
             {
                 Label = x.Name,
             }).ToList(),
+            Documentation = documentation
         };
-        if (!string.IsNullOrEmpty(item.Documentation)) result.Documentation = new LspModels.MarkupContent()
-        {
-            Kind = LspModels.MarkupKind.Markdown,
-            Value = item.Documentation,
-        };
-        return result;
     }
 
     public static LspModels.TextEdit ToLsp(CompilerApi.TextEdit edit) => new()

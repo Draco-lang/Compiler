@@ -15,5 +15,5 @@ public interface ICodeAction
     public CodeActionRegistrationOptions CodeActionRegistrationOptions { get; }
 
     [Request("textDocument/codeAction")]
-    public Task<CodeAction[]?> CompleteAsync(CodeActionParams param, CancellationToken cancellationToken);
+    public Task<OneOf<Command, CodeAction>[]?> CodeActionAsync(CodeActionParams param, CancellationToken cancellationToken);
 }

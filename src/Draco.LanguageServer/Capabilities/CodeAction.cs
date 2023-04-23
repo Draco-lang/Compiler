@@ -17,12 +17,10 @@ internal sealed partial class DracoLanguageServer : ICodeAction
         ResolveProvider = false
     };
 
-    public Task<CodeAction[]?> CompleteAsync(CodeActionParams param, CancellationToken cancellationToken)
+    public Task<OneOf<Command, CodeAction>[]?> CodeActionAsync(CodeActionParams param, CancellationToken cancellationToken)
     {
-        var service = new CodeFixService();
-        service.AddProvider(new ImportCodeFixProvider());
-        var fixes = service.GetCodeFixes(this.syntaxTree, this.semanticModel, Translator.ToCompiler(param.Range));
-        var actions = new CodeAction[fixes.Length];
+        var fixes = this.codeFixService.GetCodeFixes(this.syntaxTree, this.semanticModel, Translator.ToCompiler(param.Range));
+        var actions = new OneOf<Command, CodeAction>[fixes.Length];
 
         for (int i = 0; i < fixes.Length; i++)
         {
@@ -40,6 +38,6 @@ internal sealed partial class DracoLanguageServer : ICodeAction
                 }
             };
         }
-        return Task.FromResult<CodeAction[]?>(actions);
+        return Task.FromResult<OneOf<Command, CodeAction>[]?>(actions);
     }
 }

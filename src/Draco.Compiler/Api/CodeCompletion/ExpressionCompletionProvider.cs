@@ -6,7 +6,7 @@ using Draco.Compiler.Api.Syntax;
 namespace Draco.Compiler.Api.CodeCompletion;
 
 /// <summary>
-/// Provides semantic completion.
+/// Provides completion for expressions excluding member access.
 /// </summary>
 public sealed class ExpressionCompletionProvider : CompletionProvider
 {
@@ -22,8 +22,6 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
         if (syntax is null) return ImmutableArray<CompletionItem>.Empty;
         var symbols = semanticModel.GetAllDefinedSymbols(syntax);
         var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, syntax.Range));
-
-        // If the current valid contexts intersect with contexts of given completion, we add it to the result
         return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 

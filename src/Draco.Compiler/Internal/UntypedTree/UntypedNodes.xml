@@ -133,9 +133,8 @@
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
 
-  <Node Name="UntypedFunctionExpression" Base="UntypedExpression">
-    <Field Name="Function" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  <Node Name="UntypedFunctionGroupExpression" Base="UntypedExpression">
+    <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
   </Node>
 
   <Node Name="UntypedReferenceErrorExpression" Base="UntypedExpression">

@@ -390,14 +390,9 @@ internal partial class Binder
         case GlobalSymbol global:
             return new UntypedGlobalExpression(syntax, global);
         case FunctionSymbol func:
-            return new UntypedFunctionExpression(syntax, ConstraintPromise.FromResult(func), func.Type);
+            return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
         case OverloadSymbol overload:
-        {
-            var (promise, callSite) = constraints.Overload(overload);
-            promise.ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location));
-            return new UntypedFunctionExpression(syntax, promise, callSite);
-        }
+            return new UntypedFunctionGroupExpression(syntax, overload.Functions);
         default:
             throw new InvalidOperationException();
         }

@@ -4,18 +4,18 @@ namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
 internal sealed class RemoveRewriter : SyntaxRewriter
 {
-    private readonly SyntaxNode ToRemove;
+    private readonly SyntaxNode toRemove;
 
     public RemoveRewriter(SyntaxNode toRemove)
     {
-        this.ToRemove = toRemove;
+        this.toRemove = toRemove;
     }
 
     public override SyntaxList<TNode> VisitSyntaxList<TNode>(SyntaxList<TNode> node)
     {
         for (var i = 0; i < node.Count; i++)
         {
-            if (node[i] == this.ToRemove)
+            if (node[i] == this.toRemove)
             {
                 var list = node.ToList();
                 list.RemoveAt(i);

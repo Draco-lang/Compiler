@@ -12,6 +12,9 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal static class ConstraintPromise
 {
+    public static IConstraintPromise<TResult> Create<TResult>(IConstraint constraint) =>
+        new ResolvableConstraintPromise<TResult>(constraint);
+
     /// <summary>
     /// Constructs a constraint promise that is already resolved.
     /// </summary>
@@ -67,5 +70,52 @@ internal static class ConstraintPromise
         public IConstraintPromise<TResult> ConfigureDiagnostics(Action<Diagnostic.Builder> configure) => this;
         IConstraintPromise IConstraintPromise.ConfigureDiagnostics(Action<Diagnostic.Builder> configure) =>
             this.ConfigureDiagnostics(configure);
+    }
+
+    private sealed class ResolvableConstraintPromise<TResult> : IConstraintPromise<TResult>
+    {
+        public bool IsResolved { get; private set; }
+
+        public TResult Result
+        {
+            get
+            {
+                if (!this.IsResolved) throw new InvalidOperationException("can not access the result of unresolved promise");
+                return this.result!;
+            }
+            private set
+            {
+                if (this.IsResolved) throw new InvalidOperationException("can not set the result of an already resolved promise");
+                this.result = value;
+                this.IsResolved = true;
+            }
+        }
+        private TResult? result;
+
+        private readonly IConstraint constraint;
+
+        public ResolvableConstraintPromise(IConstraint constraint)
+        {
+            this.constraint = constraint;
+        }
+
+        public IConstraintPromise<TResult> ConfigureDiagnostics(Action<Diagnostic.Builder> configure)
+        {
+            configure(this.constraint.Diagnostic);
+            return this;
+        }
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostics(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostics(configure);
+
+        public void Resolve(TResult result) => this.Result = result;
+        public void Fail(TResult result, DiagnosticBag? diagnostics)
+        {
+            this.Result = result;
+            if (diagnostics is not null)
+            {
+                var diag = this.constraint.Diagnostic.Build();
+                diagnostics.Add(diag);
+            }
+        }
     }
 }

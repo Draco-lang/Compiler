@@ -92,7 +92,7 @@ internal static class Translator
             TextEdit = textEdit,
             AdditionalTextEdits = additionalEdits,
             Detail = detail,
-            Documentation = documentation
+            Documentation = documentation,
         };
     }
 

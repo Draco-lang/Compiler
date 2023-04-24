@@ -4,8 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -49,6 +52,33 @@ internal sealed class ConstraintSolver
     /// </summary>
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics) =>
+        throw new NotImplementedException();
+
+    /// <summary>
+    /// Adds a local to the solver.
+    /// </summary>
+    /// <param name="local">The symbol of the untyped local.</param>
+    /// <param name="type">The optional declared type for the local.</param>
+    /// <returns>The type the local was declared with.</returns>
+    public TypeSymbol DeclareLocal(UntypedLocalSymbol local, TypeSymbol? type) =>
+        throw new NotImplementedException();
+
+    /// <summary>
+    /// Retrieves the declared/inferred type of a local.
+    /// </summary>
+    /// <param name="local">The local to get the type of.</param>
+    /// <returns>The type of the local inferred so far.</returns>
+    public TypeSymbol GetLocalType(UntypedLocalSymbol local) =>
+        throw new NotImplementedException();
+
+    /// <summary>
+    /// Retrieves the typed variant of an untyped local symbol. In case this is the first time the local is
+    /// retrieved and the variable type could not be inferred, an error is reported.
+    /// </summary>
+    /// <param name="local">The untyped local to get the typed equivalent of.</param>
+    /// <param name="diagnostics">The diagnostics to report errors to.</param>
+    /// <returns>The typed equivalent of <paramref name="local"/>.</returns>
+    public LocalSymbol GetTypedLocal(UntypedLocalSymbol local, DiagnosticBag diagnostics) =>
         throw new NotImplementedException();
 
     /// <summary>

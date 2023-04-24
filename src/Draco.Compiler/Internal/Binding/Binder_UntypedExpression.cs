@@ -392,7 +392,7 @@ internal partial class Binder
         case ParameterSymbol param:
             return new UntypedParameterExpression(syntax, param);
         case UntypedLocalSymbol local:
-            return new UntypedLocalExpression(syntax, local, constraints.GetLocal(local));
+            return new UntypedLocalExpression(syntax, local, constraints.GetLocalType(local));
         case GlobalSymbol global:
             return new UntypedGlobalExpression(syntax, global);
         case FunctionSymbol func:

@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
@@ -203,15 +205,15 @@ internal partial class Binder
         var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
 
         // Resolve symbol overload
-        var (symbolPromise, callSite) = constraints.Overload(operatorSymbol);
+        var symbolPromise = constraints.Overload(
+            GetFunctions(operatorSymbol),
+            ImmutableArray.Create(operand.TypeRequired));
         symbolPromise.ConfigureDiagnostic(diag => diag
             .WithLocation(syntax.Operator.Location));
-        // Call the operator
-        var resultType = constraints
-            .Call(callSite, new[] { operand.TypeRequired })
-            .ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location))
-            .Result;
+
+        // Return type
+        var resultType = constraints.AllocateTypeVariable();
+        symbolPromise.Bind(func => constraints.SameType(func.ReturnType, resultType));
 
         return new UntypedUnaryExpression(syntax, symbolPromise, operand, resultType);
     }
@@ -260,15 +262,14 @@ internal partial class Binder
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
             // Resolve symbol overload
-            var (symbolPromise, callSite) = constraints.Overload(operatorSymbol);
+            var symbolPromise = constraints.Overload(
+                GetFunctions(operatorSymbol),
+                ImmutableArray.Create(left.Type, right.TypeRequired));
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
-            // Call the operator
-            var resultType = constraints
-                .Call(callSite, new[] { left.Type, right.TypeRequired })
-                .ConfigureDiagnostic(diag => diag
-                    .WithLocation(syntax.Location))
-                .Result;
+            // Result type
+            var resultType = constraints.AllocateTypeVariable();
+            symbolPromise.Bind(func => constraints.SameType(func.ReturnType, resultType));
             // The result of the binary operator must be assignable to the left-hand side
             // For example, a + b in the form of a += b means that a + b has to result in a type
             // that is assignable to a, hence the extra constraint
@@ -288,15 +289,14 @@ internal partial class Binder
             var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
             // Resolve symbol overload
-            var (symbolPromise, callSite) = constraints.Overload(operatorSymbol);
+            var symbolPromise = constraints.Overload(
+                GetFunctions(operatorSymbol),
+                ImmutableArray.Create(left.TypeRequired, right.TypeRequired));
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
-            // Call the operator
-            var resultType = constraints
-                .Call(callSite, new[] { left.TypeRequired, right.TypeRequired })
-                .ConfigureDiagnostic(diag => diag
-                    .WithLocation(syntax.Location))
-                .Result;
+            // Result type
+            var resultType = constraints.AllocateTypeVariable();
+            symbolPromise.Bind(func => constraints.SameType(func.ReturnType, resultType));
 
             return new UntypedBinaryExpression(syntax, symbolPromise, left, right, resultType);
         }
@@ -329,15 +329,14 @@ internal partial class Binder
 
         // NOTE: We know it must be bool, no need to pass it on to comparison
         // Resolve symbol overload
-        var (symbolPromise, callSite) = constraints.Overload(operatorSymbol);
+        var symbolPromise = constraints.Overload(
+            GetFunctions(operatorSymbol),
+            ImmutableArray.Create(prev.TypeRequired, right.TypeRequired));
         symbolPromise.ConfigureDiagnostic(diag => diag
             .WithLocation(syntax.Operator.Location));
-        // Call the operator
-        var resultType = constraints
-            .Call(callSite, new[] { prev.TypeRequired, right.TypeRequired })
-            .ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location))
-            .Result;
+        // Result type
+        var resultType = constraints.AllocateTypeVariable();
+        symbolPromise.Bind(func => constraints.SameType(func.ReturnType, resultType));
         // For safety, we assume it has to be bool
         constraints
             .SameType(IntrinsicSymbols.Bool, resultType)
@@ -372,10 +371,10 @@ internal partial class Binder
         else
         {
             // Value, add constraint
-            var (promise, type) = constraints.Member(left.TypeRequired, memberName);
+            var promise = constraints.Member(left.TypeRequired, memberName);
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
-            return new UntypedMemberExpression(syntax, left, promise, type);
+            return new UntypedMemberExpression(syntax, left, promise);
         }
     }
 
@@ -404,6 +403,14 @@ internal partial class Binder
             throw new InvalidOperationException();
         }
     }
+
+    private static IEnumerable<FunctionSymbol> GetFunctions(Symbol symbol) => symbol switch
+    {
+        FunctionSymbol f => new[] { f },
+        OverloadSymbol o => o.Functions,
+        // TODO: Is this ok? No error?
+        _ => Enumerable.Empty<FunctionSymbol>(),
+    };
 
     private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch
     {

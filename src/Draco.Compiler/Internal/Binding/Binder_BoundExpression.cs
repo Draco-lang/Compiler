@@ -215,9 +215,11 @@ internal partial class Binder
     private BoundExpression TypeMemberExpression(UntypedMemberExpression mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
-        var member = mem.Member.Result;
-        var resultType = constraints.Unwrap(mem.TypeRequired);
+        var members = mem.Member.Result;
+        // TODO
+        throw new NotImplementedException();
+        // var resultType = constraints.Unwrap(mem.TypeRequired);
 
-        return new BoundMemberExpression(mem.Syntax, left, member, resultType);
+        // return new BoundMemberExpression(mem.Syntax, left, member, resultType);
     }
 }

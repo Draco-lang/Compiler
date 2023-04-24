@@ -161,8 +161,7 @@
 
   <Node Name="UntypedMemberExpression" Base="UntypedExpression">
     <Field Name="Accessed" Type="UntypedExpression" />
-    <Field Name="Member" Type="IConstraintPromise&lt;Symbol&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
+    <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
   </Node>
 
   <AbstractNode Name="UntypedStringPart" Base="UntypedNode" />

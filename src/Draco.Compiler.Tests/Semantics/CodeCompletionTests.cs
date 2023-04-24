@@ -26,11 +26,12 @@ public sealed class CodeCompletionTests
         var code = """
             val global = 5;
             func main(){
-                var local = gl
+                var local = gl|
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(2, 18);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("gl"))).ToImmutableArray();
@@ -43,11 +44,12 @@ public sealed class CodeCompletionTests
         var code = """
             func main(){
                 val local = 5;
-                var x = lo
+                var x = lo|
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(2, 14);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("lo"))).ToImmutableArray();
@@ -59,13 +61,14 @@ public sealed class CodeCompletionTests
     {
         var code = """
             func main(){
-                var x = so
+                var x = so|
             }
 
             func something(): int32 = 5;
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(1, 14);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("so"))).ToImmutableArray();
@@ -77,10 +80,11 @@ public sealed class CodeCompletionTests
     {
         var code = """
             val global = 5;
-            val x = gl
+            val x = gl|
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(1, 10);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("gl"))).ToImmutableArray();
@@ -91,12 +95,13 @@ public sealed class CodeCompletionTests
     public void TestGlobalCompletionFunction()
     {
         var code = """
-            var x = so
+            var x = so|
 
             func something(): int32 = 5;
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(0, 10);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
         var compilation = Compilation.Create(ImmutableArray.Create(tree));
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("so"))).ToImmutableArray();
@@ -109,11 +114,12 @@ public sealed class CodeCompletionTests
         var code = """
             import System;
             func main(){
-                Consol
+                Consol|
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(2, 10);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -145,11 +151,12 @@ public sealed class CodeCompletionTests
     {
         var code = """
             func main(){
-                System.Consol
+                System.Consol|
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(1, 17);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -180,10 +187,11 @@ public sealed class CodeCompletionTests
     public void TestCompletionImportMember()
     {
         var code = """
-            import System.Co
+            import System.Co|
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(0, 16);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -209,10 +217,11 @@ public sealed class CodeCompletionTests
     public void TestCompletionImportRoot()
     {
         var code = """
-            import S
+            import S|
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(0, 8);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -231,11 +240,12 @@ public sealed class CodeCompletionTests
         var code = """
             import System;
             func main(){
-                Console.Wr
+                Console.Wr|
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(2, 14);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -260,11 +270,12 @@ public sealed class CodeCompletionTests
             import System.Text;
             func main(){
                 var builder = StringBuilder();
-                builder.App
+                builder.App|
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(3, 15);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -290,11 +301,12 @@ public sealed class CodeCompletionTests
         var code = """
             import System;
             func main(){
-                Console.W
+                Console.W|
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(2, 13);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -324,13 +336,14 @@ public sealed class CodeCompletionTests
     {
         var code = """
             func main(){
-                var x = something()
+                var x = something(|)
             }
 
             func something(x: string): int32 = 5;
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(1, 22);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -355,11 +368,12 @@ public sealed class CodeCompletionTests
         var code = """
             import System;
             func main(){
-                Console.Write()
+                Console.Write(|)
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(2, 18);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -381,11 +395,12 @@ public sealed class CodeCompletionTests
             import System.Text;
             func main(){
                 var builder = StringBuilder();
-                builder.Append();
+                builder.Append(|);
             }
             """;
-        var tree = SyntaxTree.Parse(SourceText.FromText(code));
-        var cursor = new SyntaxPosition(3, 18);
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
@@ -398,5 +413,31 @@ public sealed class CodeCompletionTests
         var signatures = service.GetSignature(tree, semanticModel, cursor);
         Assert.NotNull(signatures);
         Assert.Equal(26, signatures.Overloads.Length);
+    }
+
+    [Fact]
+    public void TestSignatureHelpTypeConstructor()
+    {
+        var code = """
+            import System.Text;
+            func main(){
+                var builder = StringBuilder(|);
+            }
+            """;
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
+
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var service = new SignatureService();
+        var signatures = service.GetSignature(tree, semanticModel, cursor);
+        Assert.NotNull(signatures);
+        Assert.Equal(6, signatures.Overloads.Length);
     }
 }

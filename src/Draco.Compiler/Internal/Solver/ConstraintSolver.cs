@@ -73,6 +73,19 @@ internal sealed class ConstraintSolver
     }
 
     /// <summary>
+    /// Adds a member-constraint to the solver.
+    /// </summary>
+    /// <param name="accessedType">The accessed object type.</param>
+    /// <param name="memberName">The accessed member name.</param>
+    /// <returns>The promise of the accessed member symbol.</returns>
+    public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName)
+    {
+        var constraint = new MemberConstraint(this, accessedType, memberName);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
     /// Adds the given constraint to the solver.
     /// </summary>
     /// <param name="constraint">The constraint to add.</param>

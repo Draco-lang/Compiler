@@ -13,6 +13,20 @@ namespace Draco.Compiler.Internal.Solver;
 internal sealed class ConstraintSolver
 {
     /// <summary>
+    /// Adds the given constraint to the solver.
+    /// </summary>
+    /// <param name="constraint">The constraint to add.</param>
+    public void Add(IConstraint constraint) =>
+        throw new NotImplementedException();
+
+    /// <summary>
+    /// Removes the given constraint from the solver.
+    /// </summary>
+    /// <param name="constraint">The constraint to remove.</param>
+    public void Remove(IConstraint constraint) =>
+        throw new NotImplementedException();
+
+    /// <summary>
     /// Allocates a type-variable.
     /// </summary>
     /// <returns>A new, unique type-variable.</returns>
@@ -37,17 +51,12 @@ internal sealed class ConstraintSolver
         throw new NotImplementedException();
 
     /// <summary>
-    /// Adds the given constraint to the solver.
+    /// Attempts to unify two types.
     /// </summary>
-    /// <param name="constraint">The constraint to add.</param>
-    public void Add(IConstraint constraint) =>
-        throw new NotImplementedException();
-
-    /// <summary>
-    /// Removes the given constraint from the solver.
-    /// </summary>
-    /// <param name="constraint">The constraint to remove.</param>
-    public void Remove(IConstraint constraint) =>
+    /// <param name="first">The first type to unify.</param>
+    /// <param name="second">The second type to unify.</param>
+    /// <returns>True, if unification was successful, false otherwise.</returns>
+    public bool Unify(TypeSymbol first, TypeSymbol second) =>
         throw new NotImplementedException();
 
     /// <summary>

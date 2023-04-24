@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -47,4 +50,18 @@ internal static class ConstraintPromise
         Func<TOldResult, IConstraintPromise<TNewResult>> func) =>
         // TODO
         throw new NotImplementedException();
+
+    private sealed class SolvedConstraint : IConstraint
+    {
+        public ConstraintSolver Solver { get; }
+        public Diagnostic.Builder Diagnostic { get; } = new();
+        public IEnumerable<TypeVariable> TypeVariables => Enumerable.Empty<TypeVariable>();
+        public SolveState Solve() => SolveState.Solved;
+
+        public SolvedConstraint(ConstraintSolver solver, Diagnostic.Builder diagnostic)
+        {
+            this.Solver = solver;
+            this.Diagnostic = diagnostic;
+        }
+    }
 }

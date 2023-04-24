@@ -23,7 +23,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestLocalCompletionGlobalVariable()
     {
-        string code = """
+        var code = """
             val global = 5;
             func main(){
                 var local = gl
@@ -40,7 +40,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestLocalCompletionLocalVariable()
     {
-        string code = """
+        var code = """
             func main(){
                 val local = 5;
                 var x = lo
@@ -57,7 +57,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestLocalCompletionFunction()
     {
-        string code = """
+        var code = """
             func main(){
                 var x = so
             }
@@ -75,7 +75,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestGlobalCompletionGlobalVariable()
     {
-        string code = """
+        var code = """
             val global = 5;
             val x = gl
             """;
@@ -90,7 +90,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestGlobalCompletionFunction()
     {
-        string code = """
+        var code = """
             var x = so
 
             func something(): int32 = 5;
@@ -106,7 +106,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionImportedSystem()
     {
-        string code = """
+        var code = """
             import System;
             func main(){
                 Consol
@@ -143,7 +143,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionFullyQualifiedName()
     {
-        string code = """
+        var code = """
             func main(){
                 System.Consol
             }
@@ -179,7 +179,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionImportMember()
     {
-        string code = """
+        var code = """
             import System.Co
             """;
         var tree = SyntaxTree.Parse(SourceText.FromText(code));
@@ -208,7 +208,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionImportRoot()
     {
-        string code = """
+        var code = """
             import S
             """;
         var tree = SyntaxTree.Parse(SourceText.FromText(code));
@@ -228,7 +228,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionModuleMemberAccess()
     {
-        string code = """
+        var code = """
             import System;
             func main(){
                 Console.Wr
@@ -256,7 +256,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionLocalMemberAccess()
     {
-        string code = """
+        var code = """
             import System.Text;
             func main(){
                 var builder = StringBuilder();
@@ -287,7 +287,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionTypeSignature()
     {
-        string code = """
+        var code = """
             import System;
             func main(){
                 Console.W
@@ -322,7 +322,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestSignatureHelpLocalFunction()
     {
-        string code = """
+        var code = """
             func main(){
                 var x = something()
             }
@@ -352,7 +352,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestSignatureHelpModuleMemberAccess()
     {
-        string code = """
+        var code = """
             import System;
             func main(){
                 Console.Write()
@@ -377,7 +377,7 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestSignatureHelpTypeMemberAccess()
     {
-        string code = """
+        var code = """
             import System.Text;
             func main(){
                 var builder = StringBuilder();

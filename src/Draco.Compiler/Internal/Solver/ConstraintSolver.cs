@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,7 +43,7 @@ internal sealed class ConstraintSolver
     /// <returns>The promise for the constraint added.</returns>
     public IConstraintPromise<Unit> SameType(TypeSymbol first, TypeSymbol second)
     {
-        var constraint = new SameTypeConstraint(this, first, second);
+        var constraint = new SameTypeConstraint(this, ImmutableArray.Create(first, second));
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -56,6 +57,14 @@ internal sealed class ConstraintSolver
     public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType) =>
         // TODO: Hack, this is temporary until we have other constraints
         this.SameType(targetType, assignedType);
+
+    public IConstraintPromise<Unit> CommonType(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
+    {
+        // TODO: Hack, this is temporary until we have other constraints
+        var constraint = new SameTypeConstraint(this, alternativeTypes.Prepend(commonType).ToImmutableArray());
+        this.Add(constraint);
+        return constraint.Promise;
+    }
 
     /// <summary>
     /// Adds the given constraint to the solver.

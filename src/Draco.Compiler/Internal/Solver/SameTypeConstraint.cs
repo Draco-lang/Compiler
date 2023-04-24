@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
 using System.Text;
@@ -18,47 +19,38 @@ namespace Draco.Compiler.Internal.Solver;
 internal sealed class SameTypeConstraint : Constraint<Unit>
 {
     /// <summary>
-    /// The type that has to be the same as <see cref="Second"/>.
+    /// The types that all should be the same.
     /// </summary>
-    public TypeSymbol First { get; }
+    public ImmutableArray<TypeSymbol> Types { get; }
 
-    /// <summary>
-    /// The type that has to be the same as <see cref="First"/>.
-    /// </summary>
-    public TypeSymbol Second { get; }
+    public override IEnumerable<TypeVariable> TypeVariables =>
+        this.Types.OfType<TypeVariable>();
 
-    public override IEnumerable<TypeVariable> TypeVariables
-    {
-        get
-        {
-            if (this.First is TypeVariable tv1) yield return tv1;
-            if (this.Second is TypeVariable tv2) yield return tv2;
-        }
-    }
-
-    public SameTypeConstraint(ConstraintSolver solver, TypeSymbol first, TypeSymbol second)
+    public SameTypeConstraint(ConstraintSolver solver, ImmutableArray<TypeSymbol> types)
         : base(solver)
     {
-        this.First = first;
-        this.Second = second;
+        this.Types = types;
     }
 
-    public override string ToString() => $"SameType({this.First}, {this.Second})";
+    public override string ToString() => $"SameType({string.Join(", ", this.Types)})";
 
     public override SolveState Solve(DiagnosticBag diagnostics)
     {
-        // Successful unification
-        if (this.Solver.Unify(this.First, this.Second))
+        for (var i = 1; i < this.Types.Length; ++i)
         {
-            this.Promise.Resolve(default);
-            return SolveState.Solved;
+            if (!this.Solver.Unify(this.Types[0], this.Types[i]))
+            {
+                // Type-mismatch
+                this.Diagnostic
+                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                    .WithFormatArgs(this.Unwrap(this.Types[0]), this.Unwrap(this.Types[i]));
+                this.Promise.Fail(default, diagnostics);
+                return SolveState.Solved;
+            }
         }
 
-        // Type-mismatch
-        this.Diagnostic
-            .WithTemplate(TypeCheckingErrors.TypeMismatch)
-            .WithFormatArgs(this.Unwrap(this.First), this.Unwrap(this.Second));
-        this.Promise.Fail(default, diagnostics);
+        // Successful unification
+        this.Promise.Resolve(default);
         return SolveState.Solved;
     }
 }

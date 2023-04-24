@@ -123,8 +123,9 @@ internal partial class Binder
             : this.BindExpression(syntax.Else.Expression, constraints, diagnostics);
 
         // Then and else must be compatible types
-        var resultType = constraints
-            .CommonType(then.TypeRequired, @else.TypeRequired)
+        var resultType = constraints.AllocateTypeVariable();
+        constraints
+            .CommonType(resultType, ImmutableArray.Create(then.TypeRequired, @else.TypeRequired))
             .ConfigureDiagnostic(diag =>
             {
                 // The location will point at the else value, assuming that the latter expression is
@@ -138,7 +139,7 @@ internal partial class Binder
                     format: "the other branch is inferred to be {0}",
                     formatArgs: then.TypeRequired,
                     location: ExtractValueSyntax(syntax.Then).Location);
-            }).Result;
+            });
 
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
     }

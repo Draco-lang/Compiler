@@ -19,6 +19,11 @@ internal interface IConstraint
     public ConstraintSolver Solver { get; }
 
     /// <summary>
+    /// The promise of this constraint.
+    /// </summary>
+    public IConstraintPromise Promise { get; }
+
+    /// <summary>
     /// The builder for the <see cref="Api.Diagnostics.Diagnostic"/>.
     /// </summary>
     public Diagnostic.Builder Diagnostic { get; }

@@ -77,6 +77,7 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
 
         FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Function),
+
         _ => null,
     };
 }

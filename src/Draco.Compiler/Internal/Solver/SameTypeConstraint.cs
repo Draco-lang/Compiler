@@ -57,7 +57,7 @@ internal sealed class SameTypeConstraint : Constraint<Unit>
         // Type-mismatch
         this.Diagnostic
             .WithTemplate(TypeCheckingErrors.TypeMismatch)
-            .WithFormatArgs(this.Solver.Unwrap(this.First), this.Solver.Unwrap(this.Second));
+            .WithFormatArgs(this.Unwrap(this.First), this.Unwrap(this.Second));
         this.Promise.Fail(default, diagnostics);
         return SolveState.Solved;
     }

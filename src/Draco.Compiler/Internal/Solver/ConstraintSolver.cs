@@ -49,4 +49,11 @@ internal sealed class ConstraintSolver
     /// <param name="constraint">The constraint to remove.</param>
     public void Remove(IConstraint constraint) =>
         throw new NotImplementedException();
+
+    /// <summary>
+    /// Prints the constraint graph as a DOT graph.
+    /// </summary>
+    /// <returns>The DOT graph of the constraints within this solver.</returns>
+    public string ConstraintGraphToDot() =>
+        throw new NotImplementedException();
 }

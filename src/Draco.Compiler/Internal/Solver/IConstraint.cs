@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -36,8 +37,9 @@ internal interface IConstraint
     /// <summary>
     /// Attempts to solve this constraint.
     /// </summary>
+    /// <param name="diagnostics">The bag to report diagnostics to.</param>
     /// <returns>The state that corresponds to how the constraint has progressed.</returns>
-    public SolveState Solve();
+    public SolveState Solve(DiagnosticBag diagnostics);
 }
 
 /// <summary>

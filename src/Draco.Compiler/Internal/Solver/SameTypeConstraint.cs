@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
@@ -12,12 +15,8 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// A constraint asserting that two types have to be exactly the same.
 /// </summary>
-internal sealed class SameTypeConstraint : IConstraint
+internal sealed class SameTypeConstraint : Constraint<Unit>
 {
-    public ConstraintSolver Solver { get; }
-    public IConstraintPromise Promise { get; }
-    public Diagnostic.Builder Diagnostic { get; } = new();
-
     /// <summary>
     /// The type that has to be the same as <see cref="Second"/>.
     /// </summary>
@@ -28,7 +27,7 @@ internal sealed class SameTypeConstraint : IConstraint
     /// </summary>
     public TypeSymbol Second { get; }
 
-    public IEnumerable<TypeVariable> TypeVariables
+    public override IEnumerable<TypeVariable> TypeVariables
     {
         get
         {
@@ -38,14 +37,28 @@ internal sealed class SameTypeConstraint : IConstraint
     }
 
     public SameTypeConstraint(ConstraintSolver solver, TypeSymbol first, TypeSymbol second)
+        : base(solver)
     {
-        this.Solver = solver;
         this.First = first;
         this.Second = second;
-        this.Promise = ConstraintPromise.Create<Unit>(this);
     }
 
     public override string ToString() => $"SameType({this.First}, {this.Second})";
 
-    public SolveState Solve() => throw new NotImplementedException();
+    public override SolveState Solve(DiagnosticBag diagnostics)
+    {
+        // Successful unification
+        if (this.Solver.Unify(this.First, this.Second))
+        {
+            this.Promise.Resolve(default);
+            return SolveState.Solved;
+        }
+
+        // Type-mismatch
+        this.Diagnostic
+            .WithTemplate(TypeCheckingErrors.TypeMismatch)
+            .WithFormatArgs(this.Solver.Unwrap(this.First), this.Solver.Unwrap(this.Second));
+        this.Promise.Fail(default, diagnostics);
+        return SolveState.Solved;
+    }
 }

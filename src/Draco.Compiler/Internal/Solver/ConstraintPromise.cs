@@ -16,14 +16,10 @@ internal static class ConstraintPromise
     /// Constructs a constraint promise that is already resolved.
     /// </summary>
     /// <typeparam name="TResult">The result type of the promise.</typeparam>
-    /// <param name="solver">The solver the result is constructed for.</param>
     /// <param name="result">The resolved value.</param>
     /// <returns>The constructed promise, containing <paramref name="result"/> as the result value.</returns>
-    public static IConstraintPromise<TResult> FromResult<TResult>(ConstraintSolver solver, TResult result)
-    {
-        var constraint = new SolvedConstraint(solver);
-        return new ResolvedConstraintPromise<TResult>(constraint, result);
-    }
+    public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
+        new ResolvedConstraintPromise<TResult>(result);
 
     /// <summary>
     /// Maps the result of the given constraint promise using a mapping function.
@@ -53,28 +49,13 @@ internal static class ConstraintPromise
         // TODO
         throw new NotImplementedException();
 
-    private sealed class SolvedConstraint : IConstraint
-    {
-        public ConstraintSolver Solver { get; }
-        public Diagnostic.Builder Diagnostic { get; } = new();
-        public IEnumerable<TypeVariable> TypeVariables => Enumerable.Empty<TypeVariable>();
-        public SolveState Solve() => SolveState.Solved;
-
-        public SolvedConstraint(ConstraintSolver solver)
-        {
-            this.Solver = solver;
-        }
-    }
-
     private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
         public bool IsResolved => true;
-        public IConstraint Constraint { get; }
         public TResult Result { get; }
 
-        public ResolvedConstraintPromise(IConstraint constraint, TResult result)
+        public ResolvedConstraintPromise(TResult result)
         {
-            this.Constraint = constraint;
             this.Result = result;
         }
 
@@ -83,11 +64,7 @@ internal static class ConstraintPromise
         public void Fail(TResult result, DiagnosticBag? diagnostics) =>
             throw new InvalidOperationException("can not resolve an already solved constraint");
 
-        public IConstraintPromise<TResult> ConfigureDiagnostics(Action<Diagnostic.Builder> configure)
-        {
-            configure(this.Constraint.Diagnostic);
-            return this;
-        }
+        public IConstraintPromise<TResult> ConfigureDiagnostics(Action<Diagnostic.Builder> configure) => this;
         IConstraintPromise IConstraintPromise.ConfigureDiagnostics(Action<Diagnostic.Builder> configure) =>
             this.ConfigureDiagnostics(configure);
     }

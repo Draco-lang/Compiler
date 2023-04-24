@@ -32,5 +32,5 @@ internal interface IConstraint
     /// Attempts to solve this constraint.
     /// </summary>
     /// <returns>The state that corresponds to how the constraint has progressed.</returns>
-    SolveState Solve();
+    public SolveState Solve();
 }

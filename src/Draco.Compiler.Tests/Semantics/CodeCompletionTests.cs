@@ -162,7 +162,7 @@ public sealed class CodeCompletionTests
         var expected = new[]
         {
             "Console",
-            "ConsoleCancelEventArgs", // The actuall type
+            "ConsoleCancelEventArgs", // The actual type
             "ConsoleCancelEventArgs", // Its ctor
             "ConsoleCancelEventHandler", // The actuall type
             "ConsoleCancelEventHandler", // Its ctor

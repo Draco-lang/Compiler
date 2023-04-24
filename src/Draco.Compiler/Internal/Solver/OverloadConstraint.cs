@@ -34,6 +34,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         this.Arguments.OfType<TypeVariable>();
 
     private List<int?[]>? scoreVectors;
+    private bool allWellDefined;
 
     public OverloadConstraint(
         ConstraintSolver solver,
@@ -41,7 +42,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         ImmutableArray<TypeSymbol> arguments)
         : base(solver)
     {
-        this.Candidates = candidates;
+        this.Candidates = candidates.ToList();
         this.Arguments = arguments;
         this.FunctionName = this.Candidates.First().Name;
     }
@@ -60,14 +61,86 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
         // The score vectors are already initialized
         Debug.Assert(this.Candidates.Count == this.scoreVectors.Count);
+
+        if (!this.allWellDefined)
+        {
+            // We don't have all candidates well-defined, reiterate
+            var changed = this.RefineScores();
+            return changed ? SolveState.Advanced : SolveState.Stale;
+        }
+
+        // We have all candidates well-defined, find the absolute dominator
+        if (this.Candidates.Count == 0)
+        {
+            // TODO: No remaining overloads
+            throw new NotImplementedException();
+        }
+
+        // We have one or more, find the max dominator
+        // NOTE: This might not be the actual dominator in case of mutual non-dominance
+        var bestScore = this.FindDominatorScoreVector();
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    private int?[] FindDominatorScoreVector()
+    {
+        Debug.Assert(this.scoreVectors is not null);
+
+        var bestScore = this.scoreVectors[0];
+        for (var i = 1; i < this.Candidates.Count; ++i)
+        {
+            var score = this.scoreVectors[i];
+
+            if (Dominates(score, bestScore))
+            {
+                // Better, or equivalent
+                bestScore = score;
+            }
+        }
+        return bestScore;
+    }
+
+    private bool RefineScores()
+    {
+        Debug.Assert(this.scoreVectors is not null);
+        Debug.Assert(this.Candidates.Count == this.scoreVectors.Count);
+
+        var wellDefined = true;
+        var changed = false;
+        // Iterate through all candidates
         for (var i = 0; i < this.Candidates.Count;)
         {
             var candidate = this.Candidates[i];
             var scoreVector = this.scoreVectors[i];
 
-            // TODO
-            throw new NotImplementedException();
+            // Compute any undefined arguments
+            changed = this.AdjustScore(candidate, scoreVector) || changed;
+            // We consider having a 0-element well-defined, since we are throwing it away
+            var hasZero = HasZero(scoreVector);
+            wellDefined = wellDefined && (IsWellDefined(scoreVector) || hasZero);
+
+            // If any of the score vector components reached 0, we exclude the candidate
+            if (hasZero)
+            {
+                this.Candidates.RemoveAt(i);
+                this.scoreVectors.RemoveAt(i);
+            }
+            else
+            {
+                // Otherwise it stays
+                ++i;
+            }
         }
+        // Change
+        changed = changed || (this.allWellDefined != wellDefined);
+        this.allWellDefined = wellDefined;
+        return changed;
+    }
+
+    private bool AdjustScore(FunctionSymbol candidate, int?[] scoreVector)
+    {
+        Debug.Assert(candidate.Parameters.Length == scoreVector.Length);
 
         // TODO
         throw new NotImplementedException();
@@ -99,7 +172,11 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         return scoreVectors;
     }
 
+    private static bool HasZero(int?[] vector) => vector.Any(x => x == 0);
+
     private static bool IsWellDefined(int?[] vector) => vector.All(x => x is not null);
+
+    private static bool AbsoluteDominates(int?[] a, int?[] b) => Dominates(a, b) && !Dominates(b, a);
 
     private static bool Dominates(int?[] a, int?[] b)
     {

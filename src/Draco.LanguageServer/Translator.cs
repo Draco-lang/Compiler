@@ -110,7 +110,7 @@ internal static class Translator
     {
         Signatures = item.Overloads.Select(x => ToLsp(x)).ToArray(),
         ActiveParameter = item.CurrentParameter is null ? null : (uint)item.CurrentOverload.Parameters.IndexOf(item.CurrentParameter),
-        ActiveSignature = (uint)item.Overloads.IndexOf(item.CurrentOverload)
+        ActiveSignature = (uint)item.Overloads.IndexOf(item.CurrentOverload),
     };
 
     public static LspModels.SignatureInformation ToLsp(CompilerApi.Semantics.IFunctionSymbol item)

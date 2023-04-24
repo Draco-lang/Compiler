@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -21,4 +22,9 @@ internal interface IConstraint
     /// The builder for the <see cref="Api.Diagnostics.Diagnostic"/>.
     /// </summary>
     public Diagnostic.Builder Diagnostic { get; }
+
+    /// <summary>
+    /// The type-variables involved in this constraint.
+    /// </summary>
+    public IEnumerable<TypeVariable> TypeVariables { get; }
 }

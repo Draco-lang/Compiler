@@ -27,4 +27,10 @@ internal interface IConstraint
     /// The type-variables involved in this constraint.
     /// </summary>
     public IEnumerable<TypeVariable> TypeVariables { get; }
+
+    /// <summary>
+    /// Attempts to solve this constraint.
+    /// </summary>
+    /// <returns>The state that corresponds to how the constraint has progressed.</returns>
+    SolveState Solve();
 }

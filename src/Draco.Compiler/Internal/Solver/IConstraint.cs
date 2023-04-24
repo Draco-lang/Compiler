@@ -39,3 +39,15 @@ internal interface IConstraint
     /// <returns>The state that corresponds to how the constraint has progressed.</returns>
     public SolveState Solve();
 }
+
+/// <summary>
+/// An <see cref="IConstraint"/> with known resolution type.
+/// </summary>
+/// <typeparam name="TResult">The result type of this constraint.</typeparam>
+internal interface IConstraint<TResult> : IConstraint
+{
+    /// <summary>
+    /// The promise of this constraint.
+    /// </summary>
+    public new IConstraintPromise<TResult> Promise { get; }
+}

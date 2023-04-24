@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
@@ -28,6 +29,15 @@ internal sealed class ConstraintSolver
     /// The user-friendly name of the context the solver is in.
     /// </summary>
     public string ContextName { get; }
+
+    // Number of type variables allocated
+    private int typeVariableCounter = 0;
+    // Type variable substitutions
+    private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new(ReferenceEqualityComparer.Instance);
+    // The declared/inferred types of locals
+    private readonly Dictionary<UntypedLocalSymbol, TypeSymbol> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
+    // All locals that have a typed variant constructed
+    private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
 
     public ConstraintSolver(SyntaxNode context, string contextName)
     {
@@ -125,16 +135,19 @@ internal sealed class ConstraintSolver
     /// <param name="local">The symbol of the untyped local.</param>
     /// <param name="type">The optional declared type for the local.</param>
     /// <returns>The type the local was declared with.</returns>
-    public TypeSymbol DeclareLocal(UntypedLocalSymbol local, TypeSymbol? type) =>
-        throw new NotImplementedException();
+    public TypeSymbol DeclareLocal(UntypedLocalSymbol local, TypeSymbol? type)
+    {
+        var inferredType = type ?? this.AllocateTypeVariable();
+        this.inferredLocalTypes.Add(local, inferredType);
+        return inferredType;
+    }
 
     /// <summary>
     /// Retrieves the declared/inferred type of a local.
     /// </summary>
     /// <param name="local">The local to get the type of.</param>
     /// <returns>The type of the local inferred so far.</returns>
-    public TypeSymbol GetLocalType(UntypedLocalSymbol local) =>
-        throw new NotImplementedException();
+    public TypeSymbol GetLocalType(UntypedLocalSymbol local) => this.Unwrap(this.inferredLocalTypes[local]);
 
     /// <summary>
     /// Retrieves the typed variant of an untyped local symbol. In case this is the first time the local is
@@ -143,15 +156,32 @@ internal sealed class ConstraintSolver
     /// <param name="local">The untyped local to get the typed equivalent of.</param>
     /// <param name="diagnostics">The diagnostics to report errors to.</param>
     /// <returns>The typed equivalent of <paramref name="local"/>.</returns>
-    public LocalSymbol GetTypedLocal(UntypedLocalSymbol local, DiagnosticBag diagnostics) =>
-        throw new NotImplementedException();
+    public LocalSymbol GetTypedLocal(UntypedLocalSymbol local, DiagnosticBag diagnostics)
+    {
+        if (!this.typedLocals.TryGetValue(local, out var typedLocal))
+        {
+            var localType = this.GetLocalType(local);
+            if (localType.IsTypeVariable)
+            {
+                // We could not infer the type
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.CouldNotInferType,
+                    location: local.DeclaringSyntax.Location,
+                    formatArgs: local.Name));
+                // We use an error type
+                localType = IntrinsicSymbols.ErrorType;
+            }
+            typedLocal = new SourceLocalSymbol(local, localType);
+            this.typedLocals.Add(local, typedLocal);
+        }
+        return typedLocal;
+    }
 
     /// <summary>
     /// Allocates a type-variable.
     /// </summary>
     /// <returns>A new, unique type-variable.</returns>
-    public TypeVariable AllocateTypeVariable() =>
-        throw new NotImplementedException();
+    public TypeVariable AllocateTypeVariable() => new(this.typeVariableCounter++);
 
     /// <summary>
     /// Unwraps the given type from potential variable substitutions.
@@ -159,8 +189,20 @@ internal sealed class ConstraintSolver
     /// <param name="type">The type to unwrap.</param>
     /// <returns>The unwrapped type, which might be <paramref name="type"/> itself, or the substitution, if it was
     /// a type variable that already got substituted.</returns>
-    public TypeSymbol Unwrap(TypeSymbol type) =>
-        throw new NotImplementedException();
+    public TypeSymbol Unwrap(TypeSymbol type)
+    {
+        // If not a type-variable, we consider it substituted
+        if (type is not TypeVariable typeVar) return type;
+        // If it is, but has no substitutions, just return it as-is
+        if (!this.substitutions.TryGetValue(typeVar, out var substitution)) return typeVar;
+        // If the substitution is also a type-variable, we prune
+        if (substitution is TypeVariable)
+        {
+            substitution = this.Unwrap(substitution);
+            this.substitutions[typeVar] = substitution;
+        }
+        return substitution;
+    }
 
     /// <summary>
     /// Substitutes the given type variable for a type symbol.
@@ -168,7 +210,7 @@ internal sealed class ConstraintSolver
     /// <param name="var">The type variable to substitute.</param>
     /// <param name="type">The substitution.</param>
     public void Substitute(TypeVariable var, TypeSymbol type) =>
-        throw new NotImplementedException();
+        this.substitutions.Add(var, type);
 
     /// <summary>
     /// Attempts to unify two types.

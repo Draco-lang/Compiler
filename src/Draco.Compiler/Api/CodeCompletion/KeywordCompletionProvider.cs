@@ -11,13 +11,13 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class KeywordCompletionProvider : CompletionProvider
 {
-    private ImmutableArray<CompletionItem> GetDeclarationKeywords(SyntaxRange range) => ImmutableArray.Create(
+    private static ImmutableArray<CompletionItem> GetDeclarationKeywords(SyntaxRange range) => ImmutableArray.Create(
         CompletionItem.Create("import", range, CompletionKind.Keyword),
         CompletionItem.Create("var", range, CompletionKind.Keyword),
         CompletionItem.Create("val", range, CompletionKind.Keyword),
         CompletionItem.Create("func", range, CompletionKind.Keyword));
 
-    private ImmutableArray<CompletionItem> GetExpressionKeywords(SyntaxRange range) => ImmutableArray.Create(
+    private static ImmutableArray<CompletionItem> GetExpressionKeywords(SyntaxRange range) => ImmutableArray.Create(
         CompletionItem.Create("if", range, CompletionKind.Keyword),
         CompletionItem.Create("while", range, CompletionKind.Keyword),
         CompletionItem.Create("return", range, CompletionKind.Keyword),
@@ -39,8 +39,8 @@ public sealed class KeywordCompletionProvider : CompletionProvider
         var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
         if (token is null) return ImmutableArray<CompletionItem>.Empty;
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(this.GetExpressionKeywords(token.Range));
-        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(this.GetDeclarationKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(GetExpressionKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(GetDeclarationKeywords(token.Range));
         return result.ToImmutable();
     }
 }

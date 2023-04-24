@@ -58,6 +58,12 @@ internal sealed class ConstraintSolver
         // TODO: Hack, this is temporary until we have other constraints
         this.SameType(targetType, assignedType);
 
+    /// <summary>
+    /// Adds a common-type constraint to the solver.
+    /// </summary>
+    /// <param name="commonType">The common type of the provided alternative types.</param>
+    /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
+    /// <returns>The promise of the constraint added.</returns>
     public IConstraintPromise<Unit> CommonType(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
     {
         // TODO: Hack, this is temporary until we have other constraints

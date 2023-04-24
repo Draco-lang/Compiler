@@ -25,7 +25,7 @@ internal interface IConstraintPromise
     /// </summary>
     /// <param name="configure">The configuration function.</param>
     /// <returns>The promise instance.</returns>
-    public IConstraintPromise ConfigureDiagnostics(Action<Diagnostic.Builder> configure);
+    public IConstraintPromise ConfigureDiagnostic(Action<Diagnostic.Builder> configure);
 }
 
 /// <summary>
@@ -53,7 +53,7 @@ internal interface IConstraintPromise<TResult> : IConstraintPromise
     public void Fail(TResult result, DiagnosticBag? diagnostics);
 
     /// <summary>
-    /// <see cref="IConstraintPromise.ConfigureDiagnostics(Action{Diagnostic.Builder})"/>.
+    /// <see cref="IConstraintPromise.ConfigureDiagnostic(Action{Diagnostic.Builder})"/>.
     /// </summary>
-    public new IConstraintPromise<TResult> ConfigureDiagnostics(Action<Diagnostic.Builder> configure);
+    public new IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure);
 }

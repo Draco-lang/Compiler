@@ -73,9 +73,9 @@ internal static class ConstraintPromise
         public void Fail(TResult result, DiagnosticBag? diagnostics) =>
             throw new InvalidOperationException("can not resolve an already solved constraint");
 
-        public IConstraintPromise<TResult> ConfigureDiagnostics(Action<Diagnostic.Builder> configure) => this;
-        IConstraintPromise IConstraintPromise.ConfigureDiagnostics(Action<Diagnostic.Builder> configure) =>
-            this.ConfigureDiagnostics(configure);
+        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => this;
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostic(configure);
     }
 
     private sealed class ResolvableConstraintPromise<TResult> : IConstraintPromise<TResult>
@@ -105,13 +105,13 @@ internal static class ConstraintPromise
             this.constraint = constraint;
         }
 
-        public IConstraintPromise<TResult> ConfigureDiagnostics(Action<Diagnostic.Builder> configure)
+        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
         {
             configure(this.constraint.Diagnostic);
             return this;
         }
-        IConstraintPromise IConstraintPromise.ConfigureDiagnostics(Action<Diagnostic.Builder> configure) =>
-            this.ConfigureDiagnostics(configure);
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostic(configure);
 
         public void Resolve(TResult result) => this.Result = result;
         public void Fail(TResult result, DiagnosticBag? diagnostics)

@@ -9,6 +9,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -32,6 +33,29 @@ internal sealed class ConstraintSolver
         this.Context = context;
         this.ContextName = contextName;
     }
+
+    /// <summary>
+    /// Adds a same-type constraint to the solver.
+    /// </summary>
+    /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
+    /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
+    /// <returns>The promise for the constraint added.</returns>
+    public IConstraintPromise<Unit> SameType(TypeSymbol first, TypeSymbol second)
+    {
+        var constraint = new SameTypeConstraint(this, first, second);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
+    /// Adds an assignable constraint to the solver.
+    /// </summary>
+    /// <param name="targetType">The type being assigned to.</param>
+    /// <param name="assignedType">The type assigned.</param>
+    /// <returns>The promise for the constraint added.</returns>
+    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType) =>
+        // TODO: Hack, this is temporary until we have other constraints
+        this.SameType(targetType, assignedType);
 
     /// <summary>
     /// Adds the given constraint to the solver.

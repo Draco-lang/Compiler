@@ -131,7 +131,7 @@ internal static class Translator
             {
                 Label = x.Name,
             }).ToList(),
-            Documentation = documentation
+            Documentation = documentation,
         };
     }
 

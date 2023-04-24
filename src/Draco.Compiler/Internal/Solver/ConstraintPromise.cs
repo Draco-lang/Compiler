@@ -13,9 +13,10 @@ internal static class ConstraintPromise
     /// Constructs a constraint promise that is already resolved.
     /// </summary>
     /// <typeparam name="TResult">The result type of the promise.</typeparam>
+    /// <param name="solver">The solver the result is constructed for.</param>
     /// <param name="result">The resolved value.</param>
     /// <returns>The constructed promise, containing <paramref name="result"/> as the result value.</returns>
-    public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
+    public static IConstraintPromise<TResult> FromResult<TResult>(ConstraintSolver solver, TResult result) =>
         // TODO
         throw new NotImplementedException();
 

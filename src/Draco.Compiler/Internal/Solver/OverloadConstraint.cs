@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -72,15 +75,42 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         // We have all candidates well-defined, find the absolute dominator
         if (this.Candidates.Count == 0)
         {
-            // TODO: No remaining overloads
-            throw new NotImplementedException();
+            // Best-effort shape approximation
+            var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
+            this.Diagnostic
+                .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
+                .WithFormatArgs(this.FunctionName);
+            this.Promise.Fail(errorSymbol, diagnostics);
+            return SolveState.Solved;
         }
 
         // We have one or more, find the max dominator
         // NOTE: This might not be the actual dominator in case of mutual non-dominance
         var bestScore = this.FindDominatorScoreVector();
-        // TODO
-        throw new NotImplementedException();
+        // We keep every candidate that dominates this score, or there is mutual non-dominance
+        var candidates = this.Candidates
+            .Zip(this.scoreVectors)
+            .Where(pair => Dominates(pair.Second, bestScore) || !Dominates(bestScore, pair.Second))
+            .Select(pair => pair.First)
+            .ToImmutableArray();
+        Debug.Assert(candidates.Length > 0);
+
+        if (candidates.Length == 1)
+        {
+            // Resolved fine
+            this.Promise.Resolve(candidates[0]);
+            return SolveState.Solved;
+        }
+        else
+        {
+            // Best-effort shape approximation
+            var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
+            this.Diagnostic
+                .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
+                .WithFormatArgs(this.FunctionName, string.Join(", ", candidates));
+            this.Promise.Fail(errorSymbol, diagnostics);
+            return SolveState.Solved;
+        }
     }
 
     private int?[] FindDominatorScoreVector()
@@ -175,8 +205,6 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     private static bool HasZero(int?[] vector) => vector.Any(x => x == 0);
 
     private static bool IsWellDefined(int?[] vector) => vector.All(x => x is not null);
-
-    private static bool AbsoluteDominates(int?[] a, int?[] b) => Dominates(a, b) && !Dominates(b, a);
 
     private static bool Dominates(int?[] a, int?[] b)
     {

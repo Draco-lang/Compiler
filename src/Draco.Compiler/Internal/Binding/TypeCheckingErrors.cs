@@ -38,12 +38,21 @@ internal static class TypeCheckingErrors
         code: Code(3));
 
     /// <summary>
+    /// More than one overload matches the call.
+    /// </summary>
+    public static readonly DiagnosticTemplate AmbiguousOverloadedCall = DiagnosticTemplate.Create(
+        title: "ambiguous overload",
+        severity: DiagnosticSeverity.Error,
+        format: "ambiguous overloads found for {0}, candidates are {1}",
+        code: Code(4));
+
+    /// <summary>
     /// The inference was incomplete.
     /// </summary>
     public static readonly DiagnosticTemplate InferenceIncomplete = DiagnosticTemplate.Create(
         title: "inference incomplete",
         severity: DiagnosticSeverity.Error,
         format: "type inference could not complete in {0}",
-        code: Code(4));
+        code: Code(5));
 }
 

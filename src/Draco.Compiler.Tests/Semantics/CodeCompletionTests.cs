@@ -164,7 +164,7 @@ public sealed class CodeCompletionTests
             "Console",
             "ConsoleCancelEventArgs", // The actual type
             "ConsoleCancelEventArgs", // Its ctor
-            "ConsoleCancelEventHandler", // The actuall type
+            "ConsoleCancelEventHandler", // The actual type
             "ConsoleCancelEventHandler", // Its ctor
             "ConsoleColor",
             "ConsoleKey",

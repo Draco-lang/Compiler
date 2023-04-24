@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -12,6 +14,22 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal sealed class ConstraintSolver
 {
+    /// <summary>
+    /// The context being inferred.
+    /// </summary>
+    public SyntaxNode Context { get; }
+
+    /// <summary>
+    /// The user-friendly name of the context the solver is in.
+    /// </summary>
+    public string ContextName { get; }
+
+    public ConstraintSolver(SyntaxNode context, string contextName)
+    {
+        this.Context = context;
+        this.ContextName = contextName;
+    }
+
     /// <summary>
     /// Adds the given constraint to the solver.
     /// </summary>
@@ -24,6 +42,13 @@ internal sealed class ConstraintSolver
     /// </summary>
     /// <param name="constraint">The constraint to remove.</param>
     public void Remove(IConstraint constraint) =>
+        throw new NotImplementedException();
+
+    /// <summary>
+    /// Solves all diagnostics added to this solver.
+    /// </summary>
+    /// <param name="diagnostics">The bag to report diagnostics to.</param>
+    public void Solve(DiagnosticBag diagnostics) =>
         throw new NotImplementedException();
 
     /// <summary>

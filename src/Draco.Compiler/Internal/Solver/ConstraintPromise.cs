@@ -12,6 +12,12 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal static class ConstraintPromise
 {
+    /// <summary>
+    /// Creates an unresolved constraint promise.
+    /// </summary>
+    /// <typeparam name="TResult">The type the promise resolves to.</typeparam>
+    /// <param name="constraint">The constraint the promise will belong to.</param>
+    /// <returns>A new, unresolved <see cref="IConstraintPromise{TResult}"/>.</returns>
     public static IConstraintPromise<TResult> Create<TResult>(IConstraint constraint) =>
         new ResolvableConstraintPromise<TResult>(constraint);
 

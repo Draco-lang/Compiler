@@ -64,4 +64,30 @@ internal static class ConstraintPromise
             this.Diagnostic = diagnostic;
         }
     }
+
+    private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
+    {
+        public bool IsResolved => true;
+        public IConstraint Constraint { get; }
+        public TResult Result { get; }
+
+        public ResolvedConstraintPromise(IConstraint constraint, TResult result)
+        {
+            this.Constraint = constraint;
+            this.Result = result;
+        }
+
+        public void Resolve(TResult result) =>
+            throw new InvalidOperationException("can not resolve an already solved constraint");
+        public void Fail(TResult result, DiagnosticBag? diagnostics) =>
+            throw new InvalidOperationException("can not resolve an already solved constraint");
+
+        public IConstraintPromise<TResult> ConfigureDiagnostics(Action<Diagnostic.Builder> configure)
+        {
+            configure(this.Constraint.Diagnostic);
+            return this;
+        }
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostics(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostics(configure);
+    }
 }

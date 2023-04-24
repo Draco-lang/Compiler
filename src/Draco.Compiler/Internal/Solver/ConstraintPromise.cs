@@ -19,9 +19,11 @@ internal static class ConstraintPromise
     /// <param name="solver">The solver the result is constructed for.</param>
     /// <param name="result">The resolved value.</param>
     /// <returns>The constructed promise, containing <paramref name="result"/> as the result value.</returns>
-    public static IConstraintPromise<TResult> FromResult<TResult>(ConstraintSolver solver, TResult result) =>
-        // TODO
-        throw new NotImplementedException();
+    public static IConstraintPromise<TResult> FromResult<TResult>(ConstraintSolver solver, TResult result)
+    {
+        var constraint = new SolvedConstraint(solver);
+        return new ResolvedConstraintPromise<TResult>(constraint, result);
+    }
 
     /// <summary>
     /// Maps the result of the given constraint promise using a mapping function.
@@ -58,10 +60,9 @@ internal static class ConstraintPromise
         public IEnumerable<TypeVariable> TypeVariables => Enumerable.Empty<TypeVariable>();
         public SolveState Solve() => SolveState.Solved;
 
-        public SolvedConstraint(ConstraintSolver solver, Diagnostic.Builder diagnostic)
+        public SolvedConstraint(ConstraintSolver solver)
         {
             this.Solver = solver;
-            this.Diagnostic = diagnostic;
         }
     }
 

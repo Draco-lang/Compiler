@@ -73,7 +73,7 @@ internal static class Translator
         var detail = string.Empty;
         if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
         {
-            detail = item.Symbols.Count() == 1 ? typed.Type.ToString() : $"{item.Symbols.Count()} overloads";
+            detail = item.Symbols.Length == 1 ? typed.Type.ToString() : $"{item.Symbols.Length} overloads";
         }
 
         var documentation = new LspModels.MarkupContent();

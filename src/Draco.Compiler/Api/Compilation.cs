@@ -72,6 +72,9 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     public ImmutableArray<MetadataReference> MetadataReferences { get; }
 
+    /// <summary>
+    /// The path to the root module of this compilation.
+    /// </summary>
     public string RootModulePath { get; }
 
     /// <summary>

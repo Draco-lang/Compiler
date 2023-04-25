@@ -319,4 +319,20 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<string>(assembly, "foo");
         Assert.Equal("Hello 3 World!", x);
     }
+
+    [Fact]
+    public void MultiLineStringLineContinuation()
+    {
+        var assembly = Compile(""""
+            func foo(): string{
+                return """
+                Hello\
+                    World!
+                """;
+            }
+            """");
+
+        var x = Invoke<string>(assembly, "foo");
+        Assert.Equal("Hello    World!", x);
+    }
 }

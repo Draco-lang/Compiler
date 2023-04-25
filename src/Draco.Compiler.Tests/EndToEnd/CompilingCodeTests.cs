@@ -285,4 +285,38 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "foo");
         Assert.Equal(42, x);
     }
+
+    [Fact]
+    public void MultiLineStringCutoff()
+    {
+        var assembly = Compile(""""
+            func foo(): string{
+                return """
+                Hello
+                    World!
+                """;
+            }
+            """");
+
+        var x = Invoke<string>(assembly, "foo");
+        Assert.Equal("""
+            Hello
+                World!
+            """, x);
+    }
+
+    [Fact]
+    public void MultiLineStringInterpolation()
+    {
+        var assembly = Compile(""""
+            func foo(): string{
+                return """
+                Hello \{1 + 2} World!
+                """;
+            }
+            """");
+
+        var x = Invoke<string>(assembly, "foo");
+        Assert.Equal("Hello 3 World!", x);
+    }
 }

@@ -213,7 +213,7 @@ internal partial class Binder
 
         // Return type
         var resultType = constraints.AllocateTypeVariable();
-        symbolPromise.Bind(func => constraints.SameType(func.ReturnType, resultType));
+        symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
         return new UntypedUnaryExpression(syntax, symbolPromise, operand, resultType);
     }
@@ -269,7 +269,7 @@ internal partial class Binder
                 .WithLocation(syntax.Operator.Location));
             // Result type
             var resultType = constraints.AllocateTypeVariable();
-            symbolPromise.Bind(func => constraints.SameType(func.ReturnType, resultType));
+            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
             // The result of the binary operator must be assignable to the left-hand side
             // For example, a + b in the form of a += b means that a + b has to result in a type
             // that is assignable to a, hence the extra constraint
@@ -296,7 +296,7 @@ internal partial class Binder
                 .WithLocation(syntax.Operator.Location));
             // Result type
             var resultType = constraints.AllocateTypeVariable();
-            symbolPromise.Bind(func => constraints.SameType(func.ReturnType, resultType));
+            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
             return new UntypedBinaryExpression(syntax, symbolPromise, left, right, resultType);
         }
@@ -336,7 +336,7 @@ internal partial class Binder
             .WithLocation(syntax.Operator.Location));
         // Result type
         var resultType = constraints.AllocateTypeVariable();
-        symbolPromise.Bind(func => constraints.SameType(func.ReturnType, resultType));
+        symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
         // For safety, we assume it has to be bool
         constraints
             .SameType(IntrinsicSymbols.Bool, resultType)

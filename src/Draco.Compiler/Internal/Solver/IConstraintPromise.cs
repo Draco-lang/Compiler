@@ -53,6 +53,13 @@ internal interface IConstraintPromise<TResult> : IConstraintPromise
     public void Fail(TResult result, DiagnosticBag? diagnostics);
 
     /// <summary>
+    /// Attaches a continuation to this promise that will be ran, when this promise gets resolved.
+    /// </summary>
+    /// <param name="continuation">The continuation to attach.</param>
+    /// <returns>This constraint promise instance.</returns>
+    public IConstraintPromise<TResult> ContinueWith(Action<TResult> continuation);
+
+    /// <summary>
     /// <see cref="IConstraintPromise.ConfigureDiagnostic(Action{Diagnostic.Builder})"/>.
     /// </summary>
     public new IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure);

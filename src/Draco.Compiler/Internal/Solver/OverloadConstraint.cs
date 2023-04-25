@@ -170,10 +170,42 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     private bool AdjustScore(FunctionSymbol candidate, int?[] scoreVector)
     {
+        Debug.Assert(candidate.Parameters.Length == this.Arguments.Length);
         Debug.Assert(candidate.Parameters.Length == scoreVector.Length);
 
-        // TODO
-        throw new NotImplementedException();
+        var changed = false;
+        for (var i = 0; i < scoreVector.Length; ++i)
+        {
+            var param = candidate.Parameters[i];
+            var arg = this.Arguments[i];
+            var score = scoreVector[i];
+
+            // If the argument is not null, it means we have already scored it
+            if (score is not null) continue;
+
+            score = this.AdjustScore(param, arg);
+            changed = changed || score is not null;
+            scoreVector[i] = score;
+
+            // If the score hit 0, terminate early, this overload got eliminated
+            if (score == 0) return changed;
+        }
+        return changed;
+    }
+
+    private int? AdjustScore(ParameterSymbol param, TypeSymbol argType)
+    {
+        var paramType = this.Unwrap(param.Type);
+        argType = this.Unwrap(argType);
+
+        // If the argument is still a type parameter, we can't score it
+        if (argType.IsTypeVariable) return null;
+
+        // Exact equality is max score
+        if (ReferenceEquals(paramType, argType)) return 16;
+
+        // Otherwise, no match
+        return 0;
     }
 
     private List<int?[]> InitializeScoreVectors()

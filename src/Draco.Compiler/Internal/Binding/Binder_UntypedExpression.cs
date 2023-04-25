@@ -85,7 +85,7 @@ internal partial class Binder
             {
                 var text = content.Content.ValueText;
                 if (text is null) throw new InvalidOperationException();
-                // Single line string or string newline
+                // Single line string or string newline or malformed input
                 if (!lastNewline || !text.StartsWith(cutoff)) parts.Add(new UntypedStringText(syntax, text));
                 else parts.Add(new UntypedStringText(syntax, text[cutoff.Length..]));
                 lastNewline = content.Content.Kind == TokenKind.StringNewline;

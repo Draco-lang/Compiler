@@ -134,7 +134,7 @@ public sealed class Compilation : IBinderProvider
     {
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
-        this.RootModulePath = rootModule ?? ".";
+        this.RootModulePath = rootModule ?? string.Empty;
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
         this.WellKnownTypes = new(this);
@@ -232,7 +232,7 @@ public sealed class Compilation : IBinderProvider
     Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);
     Binder IBinderProvider.GetBinder(Symbol symbol) => this.GetBinder(symbol);
 
-    private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees);
+    private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees, this.RootModulePath);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
     private MetadataReferencesModuleSymbol BuildRootModule() => new(this);
 }

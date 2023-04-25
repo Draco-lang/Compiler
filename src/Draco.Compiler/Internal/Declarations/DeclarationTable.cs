@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
@@ -15,13 +16,14 @@ internal sealed class DeclarationTable
     /// Constructs a new declaration table from the given syntax trees.
     /// </summary>
     /// <param name="syntaxTrees">The syntax trees to construct the declarations from.</param>
+    /// <param name="rootPath">The path to the root module.</param>
     /// <returns>The declaration table containing <paramref name="syntaxTrees"/>.</returns>
-    public static DeclarationTable From(ImmutableArray<SyntaxTree> syntaxTrees) => new(syntaxTrees);
+    public static DeclarationTable From(ImmutableArray<SyntaxTree> syntaxTrees, string rootPath) => new(syntaxTrees, rootPath);
 
     /// <summary>
     /// An empty declaration table.
     /// </summary>
-    public static DeclarationTable Empty { get; } = new(ImmutableArray<SyntaxTree>.Empty);
+    public static DeclarationTable Empty { get; } = new(ImmutableArray<SyntaxTree>.Empty, string.Empty);
 
     /// <summary>
     /// The merged root module.
@@ -30,15 +32,28 @@ internal sealed class DeclarationTable
     private MergedModuleDeclaration? mergedRoot;
 
     private readonly ImmutableArray<SyntaxTree> syntaxTrees;
+    private readonly string rootPath;
 
-    private DeclarationTable(ImmutableArray<SyntaxTree> syntaxTrees)
+    private DeclarationTable(ImmutableArray<SyntaxTree> syntaxTrees, string rootPath)
     {
         this.syntaxTrees = syntaxTrees;
+        this.rootPath = rootPath;
     }
 
-    // NOTE: We don't have modules specified yet, so all added syntaxes are assumed to be in a global module with empty name
-    private MergedModuleDeclaration BuildMergedRoot() =>
-        new(this.syntaxTrees.Select(s => new SingleModuleDeclaration(string.Empty, (CompilationUnitSyntax)s.Root)).ToImmutableArray());
+    private MergedModuleDeclaration BuildMergedRoot()
+    {
+        var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
+        foreach (var tree in this.syntaxTrees)
+        {
+            if (tree.SourceText.Path?.AbsolutePath is null) throw new System.NotImplementedException();
+            if (!tree.SourceText.Path.AbsolutePath.StartsWith(this.rootPath)) throw new System.NotImplementedException();
+            var subPath = tree.SourceText.Path.AbsolutePath[this.rootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
+            var name = Path.GetDirectoryName(subPath)?.TrimEnd(Path.DirectorySeparatorChar).Replace(Path.DirectorySeparatorChar, '.');
+            if (name is null) throw new System.NotImplementedException();
+            modules.Add(new SingleModuleDeclaration(name, (CompilationUnitSyntax)tree.Root));
+        }
+        return new(Path.GetFileName(this.rootPath.TrimEnd(Path.DirectorySeparatorChar)), modules.ToImmutable());
+    }
 
     /// <summary>
     /// Adds a syntax-tree to this table.
@@ -46,7 +61,7 @@ internal sealed class DeclarationTable
     /// <param name="syntaxTree">The syntax tree to add.</param>
     /// <returns>The new table, containing declarations in <paramref name="syntaxTree"/>.</returns>
     public DeclarationTable AddCompilationUnit(SyntaxTree syntaxTree) =>
-        new(this.syntaxTrees.Add(syntaxTree));
+        new(this.syntaxTrees.Add(syntaxTree), this.rootPath);
 
     /// <summary>
     /// Adds a syntax-trees to this table.
@@ -54,7 +69,7 @@ internal sealed class DeclarationTable
     /// <param name="syntaxTrees">The syntax trees to add.</param>
     /// <returns>The new table, containing <paramref name="syntaxTrees"/>.</returns>
     public DeclarationTable AddCompilationUnits(IEnumerable<SyntaxTree> syntaxTrees) =>
-        new(this.syntaxTrees.AddRange(syntaxTrees));
+        new(this.syntaxTrees.AddRange(syntaxTrees), this.rootPath);
 
     /// <summary>
     /// Retrieves the DOT graph of the declaration tree for debugging purposes.

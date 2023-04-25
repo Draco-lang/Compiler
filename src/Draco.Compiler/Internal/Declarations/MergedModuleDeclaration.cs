@@ -14,8 +14,8 @@ internal sealed class MergedModuleDeclaration : Declaration
 
     private readonly ImmutableArray<SingleModuleDeclaration> declarations;
 
-    public MergedModuleDeclaration(ImmutableArray<SingleModuleDeclaration> declarations)
-        : base(declarations.FirstOrDefault()?.Name ?? string.Empty)
+    public MergedModuleDeclaration(string name, ImmutableArray<SingleModuleDeclaration> declarations)
+        : base(name)
     {
         this.declarations = declarations;
     }

@@ -132,26 +132,30 @@ internal partial class Binder
         //  - called is a function symbol -> direct call without receiver
         //  - anything else -> indirect call
 
+        var receiver = call.Receiver is null ? null : this.TypeExpression(call.Receiver, constraints, diagnostics);
         var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
         var typedArgs = call.Arguments
             .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
-        var resultType = constraints.Unwrap(call.TypeRequired);
 
-        if (typedFunction is BoundMemberExpression memberExpr && memberExpr.Member is FunctionSymbol memberFunc)
+        if (typedFunction is BoundFunctionExpression funcExpr)
         {
-            // Member function call
-            return new BoundCallExpression(call.Syntax, memberExpr.Receiver, memberFunc, typedArgs, resultType);
-        }
-        else if (typedFunction is BoundFunctionExpression funcExpr)
-        {
-            // Free-function call
-            return new BoundCallExpression(call.Syntax, null, funcExpr.Function, typedArgs, resultType);
+            // Direct call
+            return new BoundCallExpression(call.Syntax, receiver, funcExpr.Function, typedArgs);
         }
         else
         {
-            // Indirect function call
-            return new BoundIndirectCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
+            if (receiver is not null)
+            {
+                // Indirect call to member
+                // TODO
+                throw new NotImplementedException();
+            }
+            else
+            {
+                // Indirect free-function call
+                return new BoundIndirectCallExpression(call.Syntax, typedFunction, typedArgs);
+            }
         }
     }
 

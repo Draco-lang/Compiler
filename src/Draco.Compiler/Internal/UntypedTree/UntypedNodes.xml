@@ -74,6 +74,7 @@
   </Node>
 
   <Node Name="UntypedCallExpression" Base="UntypedExpression">
+    <Field Name="Receiver" Type="UntypedExpression?" />
     <Field Name="Method" Type="UntypedExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />

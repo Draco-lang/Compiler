@@ -323,8 +323,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 receiver: null,
                 arguments: ImmutableArray.Create<BoundExpression>(
                     LiteralExpression(formatString.ToString()),
-                    LocalExpression(arrayLocal)),
-                type: IntrinsicSymbols.String));
+                    LocalExpression(arrayLocal))));
 
         return result.Accept(this);
     }

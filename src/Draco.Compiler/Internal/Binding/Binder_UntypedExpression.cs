@@ -198,7 +198,7 @@ internal partial class Binder
             symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
             var function = new UntypedFunctionExpression(syntax, symbolPromise);
-            return new UntypedCallExpression(syntax, function, args, resultType);
+            return new UntypedCallExpression(syntax, null, function, args, resultType);
         }
         else if (method is UntypedMemberExpression mem)
         {
@@ -215,7 +215,7 @@ internal partial class Binder
             symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
             var function = new UntypedFunctionExpression(syntax, symbolPromise);
-            return new UntypedCallExpression(syntax, function, args, resultType);
+            return new UntypedCallExpression(syntax, mem.Accessed, function, args, resultType);
         }
         else
         {

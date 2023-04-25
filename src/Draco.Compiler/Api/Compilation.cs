@@ -44,10 +44,12 @@ public sealed class Compilation : IBinderProvider
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences = null,
+        string? rootModule = null,
         string? outputPath = null,
         string? assemblyName = null) => new(
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
+        rootModule: rootModule,
         outputPath: outputPath,
         assemblyName: assemblyName);
 
@@ -69,6 +71,8 @@ public sealed class Compilation : IBinderProvider
     /// The metadata references this compilation can reference from.
     /// </summary>
     public ImmutableArray<MetadataReference> MetadataReferences { get; }
+
+    public string RootModulePath { get; }
 
     /// <summary>
     /// The output path.
@@ -121,11 +125,13 @@ public sealed class Compilation : IBinderProvider
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences,
+        string? rootModule,
         string? outputPath,
         string? assemblyName)
     {
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
+        this.RootModulePath = rootModule ?? ".";
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
         this.WellKnownTypes = new(this);

@@ -22,6 +22,8 @@ internal class Program
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
         var optionalOutputOption = new Option<FileInfo?>(new string[] { "-o", "--output" }, () => null, "Specifies the (optional) output file");
         var referencesOption = new Option<FileInfo[]>(new string[] { "-r", "--reference" }, Array.Empty<FileInfo>, "Specifies assembly references to use when compiling");
+        var filesOption = new Option<FileInfo[]>(new string[] { "-f", "--files" }, Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
+        var rootModuleOption = new Option<DirectoryInfo?>(new string[] { "-m", "--root-module" }, () => null, "Specifies the root module folder of the compiled files");
         var pdbOption = new Option<bool>("--pdb", () => false, "Specifies that a PDB should be generated for debugging");
         var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
 
@@ -29,43 +31,47 @@ internal class Program
 
         var compileCommand = new Command("compile", "Compiles the Draco program")
         {
-            fileArgument,
+            filesOption,
             outputOption,
+            rootModuleOption,
             referencesOption,
             pdbOption,
             msbuildDiagOption,
         };
-        compileCommand.SetHandler(CompileCommand, fileArgument, outputOption, referencesOption, pdbOption, msbuildDiagOption);
+        compileCommand.SetHandler(CompileCommand, filesOption, outputOption, rootModuleOption, referencesOption, pdbOption, msbuildDiagOption);
 
         // Run
 
         var runCommand = new Command("run", "Runs the Draco program")
         {
-            fileArgument,
+            filesOption,
+            rootModuleOption,
             referencesOption,
             msbuildDiagOption,
         };
-        runCommand.SetHandler(RunCommand, fileArgument, referencesOption, msbuildDiagOption);
+        runCommand.SetHandler(RunCommand, filesOption, rootModuleOption, referencesOption, msbuildDiagOption);
 
         // IR code
 
         var irCommand = new Command("ir", "Generates the intermediate-representation of the Draco program")
         {
-            fileArgument,
+            filesOption,
+            rootModuleOption,
             optionalOutputOption,
             msbuildDiagOption,
         };
-        irCommand.SetHandler(IrCommand, fileArgument, optionalOutputOption, msbuildDiagOption);
+        irCommand.SetHandler(IrCommand, filesOption, rootModuleOption, optionalOutputOption, msbuildDiagOption);
 
         // Symbol tree
 
         var symbolsCommand = new Command("symbols", "Prints the symbol-tree of the program")
         {
-            fileArgument,
+            filesOption,
+            rootModuleOption,
             optionalOutputOption,
             msbuildDiagOption,
         };
-        symbolsCommand.SetHandler(SymbolsCommand, fileArgument, optionalOutputOption, msbuildDiagOption);
+        symbolsCommand.SetHandler(SymbolsCommand, filesOption, rootModuleOption, optionalOutputOption, msbuildDiagOption);
 
         // Formatting
 
@@ -86,15 +92,16 @@ internal class Program
         };
     }
 
-    private static void CompileCommand(FileInfo input, FileInfo output, FileInfo[] references, bool emitPdb, bool msbuildDiags)
+    private static void CompileCommand(FileInfo[] input, FileInfo output, DirectoryInfo? rootModule, FileInfo[] references, bool emitPdb, bool msbuildDiags)
     {
-        var syntaxTree = GetSyntaxTree(input);
+        var syntaxTrees = GetSyntaxTrees(input);
         var (path, name) = ExtractOutputPathAndName(output);
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            syntaxTrees: syntaxTrees,
             metadataReferences: references
                 .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
                 .ToImmutableArray(),
+            rootModule: rootModule?.FullName,
             outputPath: path,
             assemblyName: name);
         using var peStream = new FileStream(Path.ChangeExtension(output.FullName, ".dll"), FileMode.OpenOrCreate);
@@ -107,14 +114,15 @@ internal class Program
         EmitDiagnostics(emitResult, msbuildDiags);
     }
 
-    private static void RunCommand(FileInfo input, FileInfo[] references, bool msbuildDiags)
+    private static void RunCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo[] references, bool msbuildDiags)
     {
-        var syntaxTree = GetSyntaxTree(input);
+        var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            syntaxTrees: syntaxTrees,
             metadataReferences: references
                 .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
-                .ToImmutableArray());
+                .ToImmutableArray(),
+            rootModule: rootModule?.FullName);
         var execResult = ScriptingEngine.Execute(compilation);
         if (!EmitDiagnostics(execResult, msbuildDiags))
         {
@@ -122,21 +130,23 @@ internal class Program
         }
     }
 
-    private static void IrCommand(FileInfo input, FileInfo? output, bool msbuildDiags)
+    private static void IrCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output, bool msbuildDiags)
     {
-        var syntaxTree = GetSyntaxTree(input);
+        var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree));
+            syntaxTrees: syntaxTrees,
+            rootModule: rootModule?.FullName);
         using var irStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(irStream: irStream);
         EmitDiagnostics(emitResult, msbuildDiags);
     }
 
-    private static void SymbolsCommand(FileInfo input, FileInfo? output, bool msbuildDiags)
+    private static void SymbolsCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output, bool msbuildDiags)
     {
-        var syntaxTree = GetSyntaxTree(input);
+        var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree));
+            syntaxTrees: syntaxTrees,
+            rootModule: rootModule?.FullName);
         using var symbolsStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(symbolTreeStream: symbolsStream);
         EmitDiagnostics(emitResult, msbuildDiags);
@@ -144,15 +154,20 @@ internal class Program
 
     private static void FormatCommand(FileInfo input, FileInfo? output)
     {
-        var syntaxTree = GetSyntaxTree(input);
+        var syntaxTree = GetSyntaxTrees(input).First();
         using var outputStream = OpenOutputOrStdout(output);
         new StreamWriter(outputStream).Write(syntaxTree.Format().ToString());
     }
 
-    private static SyntaxTree GetSyntaxTree(FileInfo input)
+    private static ImmutableArray<SyntaxTree> GetSyntaxTrees(params FileInfo[] input)
     {
-        var sourceText = SourceText.FromFile(input.FullName);
-        return SyntaxTree.Parse(sourceText);
+        var result = ImmutableArray.CreateBuilder<SyntaxTree>();
+        foreach (var file in input)
+        {
+            var sourceText = SourceText.FromFile(file.FullName);
+            result.Add(SyntaxTree.Parse(sourceText));
+        }
+        return result.ToImmutable();
     }
 
     private static bool EmitDiagnostics(EmitResult result, bool msbuildDiags)

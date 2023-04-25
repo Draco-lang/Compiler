@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,6 +31,12 @@ internal sealed class ConstraintSolver
     /// </summary>
     public string ContextName { get; }
 
+    // The set of raw constraints
+    private readonly HashSet<IConstraint> constraints = new();
+    // The constraints that were marked for removal
+    private readonly List<IConstraint> constraintsToRemove = new();
+    // The constraints that were queued for insertion
+    private readonly List<IConstraint> constraintsToAdd = new();
     // Number of type variables allocated
     private int typeVariableCounter = 0;
     // Type variable substitutions
@@ -113,21 +120,54 @@ internal sealed class ConstraintSolver
     /// </summary>
     /// <param name="constraint">The constraint to add.</param>
     public void Add(IConstraint constraint) =>
-        throw new NotImplementedException();
+        this.constraintsToAdd.Add(constraint);
 
     /// <summary>
     /// Removes the given constraint from the solver.
     /// </summary>
     /// <param name="constraint">The constraint to remove.</param>
     public void Remove(IConstraint constraint) =>
-        throw new NotImplementedException();
+        this.constraintsToRemove.Add(constraint);
 
     /// <summary>
     /// Solves all diagnostics added to this solver.
     /// </summary>
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
-    public void Solve(DiagnosticBag diagnostics) =>
-        throw new NotImplementedException();
+    public void Solve(DiagnosticBag diagnostics)
+    {
+        while (true)
+        {
+            // Add and removal
+            foreach (var r in this.constraintsToRemove) this.constraints.Remove(r);
+            foreach (var a in this.constraintsToAdd) this.constraints.Add(a);
+            this.constraintsToRemove.Clear();
+            this.constraintsToAdd.Clear();
+
+            var advanced = false;
+            foreach (var constraint in this.constraints)
+            {
+                var state = constraint.Solve(diagnostics);
+                advanced = advanced || state != SolveState.Stale;
+
+                // Queue for removal, if solved
+                if (state == SolveState.Solved) this.Remove(constraint);
+            }
+            if (!advanced) break;
+        }
+
+        if (this.constraints.Count > 0)
+        {
+            // Couldn't solve all constraints
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.InferenceIncomplete,
+                location: this.Context.Location,
+                formatArgs: this.ContextName));
+
+            // To avoid major trip-ups later, we resolve all constraints to some sentinel value
+            // TODO
+            // foreach (var constraint in this.constraints) this.FailSilently(constraint);
+        }
+    }
 
     /// <summary>
     /// Adds a local to the solver.
@@ -218,8 +258,59 @@ internal sealed class ConstraintSolver
     /// <param name="first">The first type to unify.</param>
     /// <param name="second">The second type to unify.</param>
     /// <returns>True, if unification was successful, false otherwise.</returns>
-    public bool Unify(TypeSymbol first, TypeSymbol second) =>
-        throw new NotImplementedException();
+    public bool Unify(TypeSymbol first, TypeSymbol second)
+    {
+        first = this.Unwrap(first);
+        second = this.Unwrap(second);
+
+        if (ReferenceEquals(first, second)) return true;
+
+        switch (first, second)
+        {
+        // Type variable substitution takes priority
+        // so it can unify with never type and error type to stop type errors from cascading
+        case (TypeVariable v1, TypeVariable v2):
+        {
+            // Check for circularity
+            if (ReferenceEquals(v1, v2)) return true;
+            this.Substitute(v1, v2);
+            return true;
+        }
+        case (TypeVariable v, TypeSymbol other):
+        {
+            this.Substitute(v, other);
+            return true;
+        }
+        case (TypeSymbol other, TypeVariable v):
+        {
+            this.Substitute(v, other);
+            return true;
+        }
+
+        // Never type is never reached, unifies with everything
+        case (NeverTypeSymbol, _):
+        case (_, NeverTypeSymbol):
+        // Error type unifies with everything to avoid cascading type errors
+        case (ErrorTypeSymbol, _):
+        case (_, ErrorTypeSymbol):
+            return true;
+
+        // NOTE: Primitives are filtered out already, along with metadata types
+
+        case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
+        {
+            if (f1.Parameters.Length != f2.Parameters.Length) return false;
+            for (var i = 0; i < f1.Parameters.Length; ++i)
+            {
+                if (!this.Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
+            }
+            return this.Unify(f1.ReturnType, f2.ReturnType);
+        }
+
+        default:
+            return false;
+        }
+    }
 
     /// <summary>
     /// Prints the constraint graph as a DOT graph.

@@ -108,7 +108,20 @@ internal sealed class ConstraintSolver
     /// <param name="functions">The list of functions to choose an overload from.</param>
     /// <param name="args">The passed in arguments.</param>
     /// <returns>The promise for the resolved overload.</returns>
-    public IConstraintPromise<FunctionSymbol> Overload(IEnumerable<FunctionSymbol> functions, ImmutableArray<TypeSymbol> args)
+    public IConstraintPromise<FunctionSymbol> Overload(
+        IEnumerable<FunctionSymbol> functions,
+        ImmutableArray<TypeSymbol> args) =>
+        this.Overload(ConstraintPromise.FromResult(functions.Cast<Symbol>().ToImmutableArray()), args);
+
+    /// <summary>
+    /// Adds an overload constraint to the solver.
+    /// </summary>
+    /// <param name="functions">The promise of functions to choose an overload from.</param>
+    /// <param name="args">The passed in arguments.</param>
+    /// <returns>The promise for the resolved overload.</returns>
+    public IConstraintPromise<FunctionSymbol> Overload(
+        IConstraintPromise<ImmutableArray<Symbol>> functions,
+        ImmutableArray<TypeSymbol> args)
     {
         var constraint = new OverloadConstraint(this, functions, args);
         this.Add(constraint);

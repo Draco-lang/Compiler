@@ -200,6 +200,23 @@ internal partial class Binder
             var function = new UntypedFunctionExpression(syntax, symbolPromise);
             return new UntypedCallExpression(syntax, function, args, resultType);
         }
+        else if (method is UntypedMemberExpression mem)
+        {
+            // Simple overload
+            // Resolve symbol overload
+            var symbolPromise = constraints.Overload(
+                mem.Member,
+                args.Select(arg => arg.TypeRequired).ToImmutableArray());
+            symbolPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Function.Location));
+
+            // Return type
+            var resultType = constraints.AllocateTypeVariable();
+            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
+
+            var function = new UntypedFunctionExpression(syntax, symbolPromise);
+            return new UntypedCallExpression(syntax, function, args, resultType);
+        }
         else
         {
             // TODO: We need a proper Call constraint here that actually handles overloads

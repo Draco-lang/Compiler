@@ -21,33 +21,29 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     /// <summary>
     /// The candidate functions to search among.
     /// </summary>
-    public IList<FunctionSymbol> Candidates { get; }
+    public IConstraintPromise<ImmutableArray<Symbol>> Candidates { get; }
 
     /// <summary>
     /// The arguments the function was called with.
     /// </summary>
     public ImmutableArray<TypeSymbol> Arguments { get; }
 
-    /// <summary>
-    /// The name of the called function, kept for diagnostics.
-    /// </summary>
-    public string FunctionName { get; }
-
     public override IEnumerable<TypeVariable> TypeVariables =>
         this.Arguments.OfType<TypeVariable>();
 
+    private List<FunctionSymbol>? candidates;
+    private string? functionName;
     private List<int?[]>? scoreVectors;
     private bool allWellDefined;
 
     public OverloadConstraint(
         ConstraintSolver solver,
-        IEnumerable<FunctionSymbol> candidates,
+        IConstraintPromise<ImmutableArray<Symbol>> candidates,
         ImmutableArray<TypeSymbol> arguments)
         : base(solver)
     {
-        this.Candidates = candidates.ToList();
+        this.Candidates = candidates;
         this.Arguments = arguments;
-        this.FunctionName = this.Candidates.First().Name;
     }
 
     public override string ToString() =>
@@ -55,6 +51,18 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     public override SolveState Solve(DiagnosticBag diagnostics)
     {
+        if (this.candidates is null)
+        {
+            // Promise is not resolved yet
+            if (!this.Candidates.IsResolved) return SolveState.Stale;
+
+            // Able to resolve
+            // TODO: Cast...
+            this.candidates = this.Candidates.Result.Cast<FunctionSymbol>().ToList();
+            this.functionName = this.candidates.FirstOrDefault()?.Name;
+            return SolveState.Advanced;
+        }
+
         if (this.scoreVectors is null)
         {
             // Score vectors have not been calculated yet
@@ -63,7 +71,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         }
 
         // The score vectors are already initialized
-        Debug.Assert(this.Candidates.Count == this.scoreVectors.Count);
+        Debug.Assert(this.candidates.Count == this.scoreVectors.Count);
 
         if (!this.allWellDefined)
         {
@@ -73,13 +81,13 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         }
 
         // We have all candidates well-defined, find the absolute dominator
-        if (this.Candidates.Count == 0)
+        if (this.candidates.Count == 0)
         {
             // Best-effort shape approximation
             var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
             this.Diagnostic
                 .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
-                .WithFormatArgs(this.FunctionName);
+                .WithFormatArgs(this.functionName);
             this.Promise.Fail(errorSymbol, diagnostics);
             return SolveState.Solved;
         }
@@ -88,7 +96,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         // NOTE: This might not be the actual dominator in case of mutual non-dominance
         var bestScore = this.FindDominatorScoreVector();
         // We keep every candidate that dominates this score, or there is mutual non-dominance
-        var candidates = this.Candidates
+        var candidates = this.candidates
             .Zip(this.scoreVectors)
             .Where(pair => Dominates(pair.Second, bestScore) || !Dominates(bestScore, pair.Second))
             .Select(pair => pair.First)
@@ -107,7 +115,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
             this.Diagnostic
                 .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
-                .WithFormatArgs(this.FunctionName, string.Join(", ", candidates));
+                .WithFormatArgs(this.functionName, string.Join(", ", candidates));
             this.Promise.Fail(errorSymbol, diagnostics);
             return SolveState.Solved;
         }
@@ -115,10 +123,11 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     private int?[] FindDominatorScoreVector()
     {
+        Debug.Assert(this.candidates is not null);
         Debug.Assert(this.scoreVectors is not null);
 
         var bestScore = this.scoreVectors[0];
-        for (var i = 1; i < this.Candidates.Count; ++i)
+        for (var i = 1; i < this.candidates.Count; ++i)
         {
             var score = this.scoreVectors[i];
 
@@ -133,15 +142,16 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     private bool RefineScores()
     {
+        Debug.Assert(this.candidates is not null);
         Debug.Assert(this.scoreVectors is not null);
-        Debug.Assert(this.Candidates.Count == this.scoreVectors.Count);
+        Debug.Assert(this.candidates.Count == this.scoreVectors.Count);
 
         var wellDefined = true;
         var changed = false;
         // Iterate through all candidates
-        for (var i = 0; i < this.Candidates.Count;)
+        for (var i = 0; i < this.candidates.Count;)
         {
-            var candidate = this.Candidates[i];
+            var candidate = this.candidates[i];
             var scoreVector = this.scoreVectors[i];
 
             // Compute any undefined arguments
@@ -153,7 +163,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             // If any of the score vector components reached 0, we exclude the candidate
             if (hasZero)
             {
-                this.Candidates.RemoveAt(i);
+                this.candidates.RemoveAt(i);
                 this.scoreVectors.RemoveAt(i);
             }
             else
@@ -210,16 +220,18 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     private List<int?[]> InitializeScoreVectors()
     {
+        Debug.Assert(this.candidates is not null);
+
         var scoreVectors = new List<int?[]>();
 
-        for (var i = 0; i < this.Candidates.Count;)
+        for (var i = 0; i < this.candidates.Count;)
         {
-            var candidate = this.Candidates[i];
+            var candidate = this.candidates[i];
 
             // Broad filtering, skip candidates that have the wrong no. parameters
             if (candidate.Parameters.Length != this.Arguments.Length)
             {
-                this.Candidates.RemoveAt(i);
+                this.candidates.RemoveAt(i);
             }
             else
             {

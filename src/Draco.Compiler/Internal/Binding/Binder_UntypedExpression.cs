@@ -183,7 +183,24 @@ internal partial class Binder
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
 
-        if (method is UntypedFunctionGroupExpression group)
+        // TODO: Tons of duplication...
+        if (method is UntypedFunctionExpression func)
+        {
+            // TODO: We should not have an overload constraint for it, but we don't have any better...
+            var symbolPromise = constraints.Overload(
+                func.Function.Map(f => ImmutableArray.Create<Symbol>(f)),
+                args.Select(arg => arg.TypeRequired).ToImmutableArray());
+            symbolPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Function.Location));
+
+            // Return type
+            var resultType = constraints.AllocateTypeVariable();
+            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
+
+            var function = new UntypedFunctionExpression(syntax, symbolPromise);
+            return new UntypedCallExpression(syntax, null, function, args, resultType);
+        }
+        else if (method is UntypedFunctionGroupExpression group)
         {
             // Simple overload
             // Resolve symbol overload

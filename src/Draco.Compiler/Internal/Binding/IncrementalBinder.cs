@@ -126,7 +126,7 @@ public sealed partial class SemanticModel
 
         private static Symbol? ExtractSymbol(BoundNode node) => node switch
         {
-            BoundFunctionGroupExpression f when f.Functions.Length == 1 => f.Functions[0],
+            BoundFunctionExpression f => f.Function,
             BoundLocalDeclaration l => l.Local,
             BoundLabelStatement l => l.Label,
             BoundParameterExpression p => p.Parameter,

@@ -30,6 +30,12 @@ internal static class ConstraintPromise
     public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
         new ResolvedConstraintPromise<TResult>(result);
 
+    // TODO: Doc
+    public static IConstraintPromise<TNewResult> Map<TOldResult, TNewResult>(
+        this IConstraintPromise<TOldResult> promise,
+        Func<TOldResult, TNewResult> map) =>
+        new MappedConstraintPromise<TOldResult, TNewResult>(promise, map);
+
     private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
         public bool IsResolved => true;
@@ -121,5 +127,26 @@ internal static class ConstraintPromise
                 diagnostics.Add(diag);
             }
         }
+    }
+
+    private sealed class MappedConstraintPromise<TOldResult, TNewResult> : IConstraintPromise<TNewResult>
+    {
+        public bool IsResolved => this.promise.IsResolved;
+        public TNewResult Result => this.map(this.promise.Result);
+
+        private readonly IConstraintPromise<TOldResult> promise;
+        private readonly Func<TOldResult, TNewResult> map;
+
+        public MappedConstraintPromise(IConstraintPromise<TOldResult> promise, Func<TOldResult, TNewResult> map)
+        {
+            this.promise = promise;
+            this.map = map;
+        }
+
+        public IConstraintPromise<TNewResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => throw new NotImplementedException();
+        public void Fail(TNewResult result, DiagnosticBag? diagnostics) => throw new NotImplementedException();
+        public void Resolve(TNewResult result) => throw new NotImplementedException();
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => throw new NotImplementedException();
+        public IConstraintPromise<TNewResult> ContinueWith(Action<TNewResult> continuation) => throw new NotImplementedException();
     }
 }

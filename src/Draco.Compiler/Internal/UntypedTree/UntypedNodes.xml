@@ -137,6 +137,10 @@
     <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
   </Node>
 
+  <Node Name="UntypedFunctionExpression" Base="UntypedExpression">
+    <Field Name="Function" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
+  </Node>
+
   <Node Name="UntypedReferenceErrorExpression" Base="UntypedExpression">
     <Field Name="Symbol" Type="Symbol" />
   </Node>

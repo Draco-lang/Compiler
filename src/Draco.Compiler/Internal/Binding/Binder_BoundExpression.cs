@@ -43,6 +43,7 @@ internal partial class Binder
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
+        UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
 
@@ -142,14 +143,11 @@ internal partial class Binder
             // Member function call
             return new BoundCallExpression(call.Syntax, memberExpr.Receiver, memberFunc, typedArgs, resultType);
         }
-        // TODO
-        /*
         else if (typedFunction is BoundFunctionExpression funcExpr)
         {
             // Free-function call
             return new BoundCallExpression(call.Syntax, null, funcExpr.Function, typedArgs, resultType);
         }
-        */
         else
         {
             // Indirect function call
@@ -221,5 +219,11 @@ internal partial class Binder
         // var resultType = constraints.Unwrap(mem.TypeRequired);
 
         // return new BoundMemberExpression(mem.Syntax, left, member, resultType);
+    }
+
+    private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var funcSymbol = func.Function.Result;
+        return new BoundFunctionExpression(func.Syntax, funcSymbol);
     }
 }

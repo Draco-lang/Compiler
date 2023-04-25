@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -184,8 +185,20 @@ internal partial class Binder
 
         if (method is UntypedFunctionGroupExpression group)
         {
-            // TODO
-            throw new NotImplementedException();
+            // Simple overload
+            // Resolve symbol overload
+            var symbolPromise = constraints.Overload(
+                group.Functions,
+                args.Select(arg => arg.TypeRequired).ToImmutableArray());
+            symbolPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Function.Location));
+
+            // Return type
+            var resultType = constraints.AllocateTypeVariable();
+            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
+
+            var function = new UntypedFunctionExpression(syntax, symbolPromise);
+            return new UntypedCallExpression(syntax, function, args, resultType);
         }
         else
         {

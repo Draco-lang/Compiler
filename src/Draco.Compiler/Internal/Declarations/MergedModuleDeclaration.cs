@@ -46,7 +46,7 @@ internal sealed class MergedModuleDeclaration : Declaration
         {
             var groupArray = group.ToImmutableArray();
             if (groupArray.Length == 1) children.Add(groupArray[0]);
-            else children.Add(new MergedModuleDeclaration(groupArray));
+            else children.Add(new MergedModuleDeclaration(groupArray[0].Name, groupArray));
         }
         return children.ToImmutable();
     }

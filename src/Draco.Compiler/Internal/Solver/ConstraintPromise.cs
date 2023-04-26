@@ -30,6 +30,20 @@ internal static class ConstraintPromise
     public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
         new ResolvedConstraintPromise<TResult>(result);
 
+    /// <summary>
+    /// Constructs a constraint promise that maps the result type.
+    /// </summary>
+    /// <typeparam name="TOldResult">The old result type to map.</typeparam>
+    /// <typeparam name="TNewResult">The mapped result type.</typeparam>
+    /// <param name="promise">The promise to map the result of.</param>
+    /// <param name="map">The mapping function for the result value.</param>
+    /// <returns>A new <see cref="IConstraint{TResult}"/> that takes the result of <paramref name="promise"/>
+    /// and maps it using <paramref name="map"/>.</returns>
+    public static IConstraintPromise<TNewResult> Map<TOldResult, TNewResult>(
+        this IConstraintPromise<TOldResult> promise,
+        Func<TOldResult, TNewResult> map) =>
+        new MapConstraintPromise<TOldResult, TNewResult>(promise, map);
+
     private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
         public bool IsResolved => true;
@@ -95,5 +109,33 @@ internal static class ConstraintPromise
                 diagnostics.Add(diag);
             }
         }
+    }
+
+    private sealed class MapConstraintPromise<TOldResult, TNewResult> : IConstraintPromise<TNewResult>
+    {
+        public bool IsResolved => this.underlying.IsResolved;
+        public TNewResult Result => this.map(this.underlying.Result);
+
+        private readonly IConstraintPromise<TOldResult> underlying;
+        private readonly Func<TOldResult, TNewResult> map;
+
+        public MapConstraintPromise(IConstraintPromise<TOldResult> underlying, Func<TOldResult, TNewResult> map)
+        {
+            this.underlying = underlying;
+            this.map = map;
+        }
+
+        public IConstraintPromise<TNewResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
+        {
+            this.underlying.ConfigureDiagnostic(configure);
+            return this;
+        }
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostic(configure);
+
+        public void Fail(TNewResult result, DiagnosticBag? diagnostics) =>
+            throw new NotSupportedException("a mapped constraint can not be failed directly");
+        public void Resolve(TNewResult result) =>
+            throw new NotSupportedException("a mapped constraint can not be resolved directly");
     }
 }

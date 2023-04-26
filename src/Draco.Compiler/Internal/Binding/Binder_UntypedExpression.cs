@@ -189,13 +189,10 @@ internal partial class Binder
             // TODO: We should not have an overload constraint for it, but we don't have any better...
             var symbolPromise = constraints.Overload(
                 func.Function.Map(f => ImmutableArray.Create<Symbol>(f)),
-                args.Select(arg => arg.TypeRequired).ToImmutableArray());
+                args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                out var resultType);
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Function.Location));
-
-            // Return type
-            var resultType = constraints.AllocateTypeVariable();
-            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
             var function = new UntypedFunctionExpression(syntax, symbolPromise);
             return new UntypedCallExpression(syntax, null, function, args, resultType);
@@ -206,13 +203,10 @@ internal partial class Binder
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 group.Functions,
-                args.Select(arg => arg.TypeRequired).ToImmutableArray());
+                args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                out var resultType);
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Function.Location));
-
-            // Return type
-            var resultType = constraints.AllocateTypeVariable();
-            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
             var function = new UntypedFunctionExpression(syntax, symbolPromise);
             return new UntypedCallExpression(syntax, null, function, args, resultType);
@@ -223,13 +217,10 @@ internal partial class Binder
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 mem.Member,
-                args.Select(arg => arg.TypeRequired).ToImmutableArray());
+                args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                out var resultType);
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Function.Location));
-
-            // Return type
-            var resultType = constraints.AllocateTypeVariable();
-            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
             var function = new UntypedFunctionExpression(syntax, symbolPromise);
             return new UntypedCallExpression(syntax, mem.Accessed, function, args, resultType);
@@ -254,13 +245,10 @@ internal partial class Binder
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
             GetFunctions(operatorSymbol),
-            ImmutableArray.Create(operand.TypeRequired));
+            ImmutableArray.Create(operand.TypeRequired),
+            out var resultType);
         symbolPromise.ConfigureDiagnostic(diag => diag
             .WithLocation(syntax.Operator.Location));
-
-        // Return type
-        var resultType = constraints.AllocateTypeVariable();
-        symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
         return new UntypedUnaryExpression(syntax, symbolPromise, operand, resultType);
     }
@@ -311,12 +299,10 @@ internal partial class Binder
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 GetFunctions(operatorSymbol),
-                ImmutableArray.Create(left.Type, right.TypeRequired));
+                ImmutableArray.Create(left.Type, right.TypeRequired),
+                out var resultType);
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
-            // Result type
-            var resultType = constraints.AllocateTypeVariable();
-            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
             // The result of the binary operator must be assignable to the left-hand side
             // For example, a + b in the form of a += b means that a + b has to result in a type
             // that is assignable to a, hence the extra constraint
@@ -338,12 +324,10 @@ internal partial class Binder
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 GetFunctions(operatorSymbol),
-                ImmutableArray.Create(left.TypeRequired, right.TypeRequired));
+                ImmutableArray.Create(left.TypeRequired, right.TypeRequired),
+                out var resultType);
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
-            // Result type
-            var resultType = constraints.AllocateTypeVariable();
-            symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
 
             return new UntypedBinaryExpression(syntax, symbolPromise, left, right, resultType);
         }
@@ -378,12 +362,10 @@ internal partial class Binder
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
             GetFunctions(operatorSymbol),
-            ImmutableArray.Create(prev.TypeRequired, right.TypeRequired));
+            ImmutableArray.Create(prev.TypeRequired, right.TypeRequired),
+            out var resultType);
         symbolPromise.ConfigureDiagnostic(diag => diag
             .WithLocation(syntax.Operator.Location));
-        // Result type
-        var resultType = constraints.AllocateTypeVariable();
-        symbolPromise.ContinueWith(func => constraints.SameType(func.ReturnType, resultType));
         // For safety, we assume it has to be bool
         constraints
             .SameType(IntrinsicSymbols.Bool, resultType)

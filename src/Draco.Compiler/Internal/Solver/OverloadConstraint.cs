@@ -28,14 +28,21 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     /// </summary>
     public ImmutableArray<TypeSymbol> Arguments { get; }
 
+    /// <summary>
+    /// The return type of the call.
+    /// </summary>
+    public TypeSymbol ReturnType { get; }
+
     public OverloadConstraint(
         ConstraintSolver solver,
         IConstraintPromise<ImmutableArray<Symbol>> candidates,
-        ImmutableArray<TypeSymbol> arguments)
+        ImmutableArray<TypeSymbol> arguments,
+        TypeSymbol returnType)
         : base(solver)
     {
         this.Candidates = candidates;
         this.Arguments = arguments;
+        this.ReturnType = returnType;
     }
 
     public override string ToString() => this.Candidates.IsResolved
@@ -86,7 +93,8 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         if (dominatingCandidates.Length == 1)
         {
             // Resolved fine
-            this.Promise.Resolve(candidates[0]);
+            this.Solver.Unify(this.ReturnType, dominatingCandidates[0].ReturnType);
+            this.Promise.Resolve(dominatingCandidates[0]);
             yield return SolveState.Solved;
         }
         else
@@ -95,7 +103,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
             this.Diagnostic
                 .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
-                .WithFormatArgs(functionName, string.Join(", ", candidates));
+                .WithFormatArgs(functionName, string.Join(", ", dominatingCandidates));
             this.Promise.Fail(errorSymbol, diagnostics);
             yield return SolveState.Solved;
         }

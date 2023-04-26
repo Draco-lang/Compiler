@@ -49,6 +49,12 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         ? $"Overload(candidates: [{string.Join(", ", this.Candidates.Result)}], args: [{string.Join(", ", this.Arguments)}])"
         : $"Overload(candidates: ?, args: [{string.Join(", ", this.Arguments)}])";
 
+    public override void FailSilently()
+    {
+        var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
+        this.Promise.Fail(errorSymbol, null);
+    }
+
     public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
         while (!this.Candidates.IsResolved) yield return SolveState.Stale;

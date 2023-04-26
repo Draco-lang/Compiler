@@ -29,6 +29,8 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
     public abstract override string ToString();
     public abstract IEnumerable<SolveState> Solve(DiagnosticBag diagnostics);
 
+    public virtual void FailSilently() { }
+
     // Utils
 
     protected TypeSymbol Unwrap(TypeSymbol type) => this.Solver.Unwrap(type);

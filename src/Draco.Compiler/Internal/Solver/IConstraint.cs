@@ -35,6 +35,11 @@ internal interface IConstraint
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     /// <returns>The state progression.</returns>
     public IEnumerable<SolveState> Solve(DiagnosticBag diagnostics);
+
+    /// <summary>
+    /// Fails this constraint silently to avoid cascading errors.
+    /// </summary>
+    public void FailSilently();
 }
 
 /// <summary>

@@ -191,8 +191,7 @@ internal sealed class ConstraintSolver
                 formatArgs: this.ContextName));
 
             // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-            // TODO
-            // foreach (var constraint in this.constraints) this.FailSilently(constraint);
+            foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
         }
     }
 

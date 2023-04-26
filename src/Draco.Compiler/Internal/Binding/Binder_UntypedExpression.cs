@@ -220,6 +220,10 @@ internal partial class Binder
         }
         else if (method is UntypedMemberExpression mem)
         {
+            // TODO: We might not even want to create an overload here?
+            // It's essentially what ruins the Overload constraint with the casting BS
+            // Maybe add a MemberCall constraint that MIGHT desugar into an overload?
+
             // Simple overload
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(

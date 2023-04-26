@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -67,10 +69,47 @@ internal sealed class BinderCache
 
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
+        var aboveRootPath = Directory.GetParent(this.compilation.DeclarationTable.RootPath)?.FullName;
+        var filePath = syntax.Tree.SourceText.Path?.OriginalString;
+
+        if (filePath is null || aboveRootPath is null) throw new NotImplementedException();
+        if (!filePath.StartsWith(aboveRootPath)) throw new NotImplementedException();
+
+        var moduleName = Path.GetDirectoryName(filePath[aboveRootPath.Length..].TrimStart(Path.DirectorySeparatorChar))?.Replace(Path.DirectorySeparatorChar, '.');
+        if (moduleName is null) throw new InvalidOperationException();
+
+
         // We simply take the source module binder and wrap it up in imports
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
+        binder = new ModuleBinder(binder, this.compilation.RootModule);
+        binder = new ModuleBinder(binder, new SourceModuleSymbol(this.compilation, null, this.GetModuleDeclaration(moduleName)));
         binder = WrapInImportBinder(binder, syntax);
         return binder;
+    }
+
+    private MergedModuleDeclaration GetModuleDeclaration(string fullName)
+    {
+        MergedModuleDeclaration? Recurse(MergedModuleDeclaration parent)
+        {
+            foreach (var child in parent.Children)
+            {
+                if (child is MergedModuleDeclaration module)
+                {
+                    if (module.FullName == fullName)
+                    {
+                        return module;
+                    }
+                    var recursed = Recurse(module);
+                    if (recursed is not null) return recursed;
+                }
+            }
+            return null;
+        }
+
+        if (this.compilation.DeclarationTable.MergedRoot.FullName == fullName) return this.compilation.DeclarationTable.MergedRoot;
+        var recursed = Recurse(this.compilation.DeclarationTable.MergedRoot);
+        if (recursed is null) throw new InvalidOperationException();
+        return recursed;
     }
 
     private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)

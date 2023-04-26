@@ -31,13 +31,14 @@ internal sealed class DeclarationTable
     public MergedModuleDeclaration MergedRoot => this.mergedRoot ??= this.BuildMergedRoot();
     private MergedModuleDeclaration? mergedRoot;
 
+    public string RootPath { get; }
+
     private readonly ImmutableArray<SyntaxTree> syntaxTrees;
-    private readonly string rootPath;
 
     private DeclarationTable(ImmutableArray<SyntaxTree> syntaxTrees, string rootPath)
     {
         this.syntaxTrees = syntaxTrees;
-        this.rootPath = rootPath;
+        this.RootPath = rootPath;
     }
 
     private MergedModuleDeclaration BuildMergedRoot()
@@ -46,7 +47,7 @@ internal sealed class DeclarationTable
         foreach (var tree in this.syntaxTrees)
         {
             var path = tree.SourceText.Path?.OriginalString;
-            var aboveRoot = Directory.GetParent(this.rootPath)?.FullName;
+            var aboveRoot = Directory.GetParent(this.RootPath)?.FullName;
             if (path is null || aboveRoot is null) throw new System.NotImplementedException();
             if (!path.StartsWith(aboveRoot)) throw new System.NotImplementedException();
             var subPath = path[aboveRoot.Length..].TrimStart(Path.DirectorySeparatorChar);
@@ -54,7 +55,7 @@ internal sealed class DeclarationTable
             if (fullName is null) throw new System.NotImplementedException();
             modules.Add(new SingleModuleDeclaration(fullName.Split('.').Last(), fullName,(CompilationUnitSyntax)tree.Root));
         }
-        var rootName = Path.GetFileName(this.rootPath.TrimEnd(Path.DirectorySeparatorChar));
+        var rootName = Path.GetFileName(this.RootPath.TrimEnd(Path.DirectorySeparatorChar));
         return new(rootName, rootName, modules.ToImmutable());
     }
 
@@ -64,7 +65,7 @@ internal sealed class DeclarationTable
     /// <param name="syntaxTree">The syntax tree to add.</param>
     /// <returns>The new table, containing declarations in <paramref name="syntaxTree"/>.</returns>
     public DeclarationTable AddCompilationUnit(SyntaxTree syntaxTree) =>
-        new(this.syntaxTrees.Add(syntaxTree), this.rootPath);
+        new(this.syntaxTrees.Add(syntaxTree), this.RootPath);
 
     /// <summary>
     /// Adds a syntax-trees to this table.
@@ -72,7 +73,7 @@ internal sealed class DeclarationTable
     /// <param name="syntaxTrees">The syntax trees to add.</param>
     /// <returns>The new table, containing <paramref name="syntaxTrees"/>.</returns>
     public DeclarationTable AddCompilationUnits(IEnumerable<SyntaxTree> syntaxTrees) =>
-        new(this.syntaxTrees.AddRange(syntaxTrees), this.rootPath);
+        new(this.syntaxTrees.AddRange(syntaxTrees), this.RootPath);
 
     /// <summary>
     /// Retrieves the DOT graph of the declaration tree for debugging purposes.

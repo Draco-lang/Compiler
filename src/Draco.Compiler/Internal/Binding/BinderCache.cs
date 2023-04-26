@@ -68,7 +68,7 @@ internal sealed class BinderCache
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
         // We simply take the source module binder and wrap it up in imports
-        var binder = this.ModuleBinder;
+        var binder = new IntrinsicsBinder(this.compilation) as Binder;
         binder = WrapInImportBinder(binder, syntax);
         return binder;
     }

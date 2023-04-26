@@ -45,14 +45,17 @@ internal sealed class DeclarationTable
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
         {
-            if (tree.SourceText.Path?.AbsolutePath is null) throw new System.NotImplementedException();
-            if (!tree.SourceText.Path.AbsolutePath.StartsWith(this.rootPath)) throw new System.NotImplementedException();
-            var subPath = tree.SourceText.Path.AbsolutePath[this.rootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
-            var name = Path.GetDirectoryName(subPath)?.TrimEnd(Path.DirectorySeparatorChar).Replace(Path.DirectorySeparatorChar, '.');
-            if (name is null) throw new System.NotImplementedException();
-            modules.Add(new SingleModuleDeclaration(name, (CompilationUnitSyntax)tree.Root));
+            var path = tree.SourceText.Path?.OriginalString;
+            var aboveRoot = Directory.GetParent(this.rootPath)?.FullName;
+            if (path is null || aboveRoot is null) throw new System.NotImplementedException();
+            if (!path.StartsWith(aboveRoot)) throw new System.NotImplementedException();
+            var subPath = path[aboveRoot.Length..].TrimStart(Path.DirectorySeparatorChar);
+            var fullName = Path.GetDirectoryName(subPath)?.TrimEnd(Path.DirectorySeparatorChar).Replace(Path.DirectorySeparatorChar, '.');
+            if (fullName is null) throw new System.NotImplementedException();
+            modules.Add(new SingleModuleDeclaration(fullName.Split('.').Last(), fullName,(CompilationUnitSyntax)tree.Root));
         }
-        return new(Path.GetFileName(this.rootPath.TrimEnd(Path.DirectorySeparatorChar)), modules.ToImmutable());
+        var rootName = Path.GetFileName(this.rootPath.TrimEnd(Path.DirectorySeparatorChar));
+        return new(rootName, rootName, modules.ToImmutable());
     }
 
     /// <summary>

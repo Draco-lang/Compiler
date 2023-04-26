@@ -73,6 +73,17 @@ internal class Program
         };
         symbolsCommand.SetHandler(SymbolsCommand, filesOption, rootModuleOption, optionalOutputOption, msbuildDiagOption);
 
+        // Symbol tree
+
+        var declarationsCommand = new Command("declarations", "Prints the declarations-tree of the program")
+        {
+            filesOption,
+            rootModuleOption,
+            optionalOutputOption,
+            msbuildDiagOption,
+        };
+        declarationsCommand.SetHandler(DeclarationsCommand, filesOption, rootModuleOption, optionalOutputOption, msbuildDiagOption);
+
         // Formatting
 
         var formatCommand = new Command("format", "Formats contents of the specified Draco file")
@@ -88,6 +99,7 @@ internal class Program
             runCommand,
             irCommand,
             symbolsCommand,
+            declarationsCommand,
             formatCommand
         };
     }
@@ -149,6 +161,17 @@ internal class Program
             rootModule: rootModule?.FullName);
         using var symbolsStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(symbolTreeStream: symbolsStream);
+        EmitDiagnostics(emitResult, msbuildDiags);
+    }
+
+    private static void DeclarationsCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output, bool msbuildDiags)
+    {
+        var syntaxTrees = GetSyntaxTrees(input);
+        var compilation = Compilation.Create(
+            syntaxTrees: syntaxTrees,
+            rootModule: rootModule?.FullName);
+        using var declarationStream = OpenOutputOrStdout(output);
+        var emitResult = compilation.Emit(declarationTreeStream: declarationStream);
         EmitDiagnostics(emitResult, msbuildDiags);
     }
 

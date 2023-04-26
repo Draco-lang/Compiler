@@ -27,14 +27,6 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
     /// </summary>
     public string MemberName { get; }
 
-    public override IEnumerable<TypeVariable> TypeVariables
-    {
-        get
-        {
-            if (this.Accessed is TypeVariable tv) yield return tv;
-        }
-    }
-
     public MemberConstraint(ConstraintSolver solver, TypeSymbol accessed, string memberName)
         : base(solver)
     {
@@ -44,11 +36,16 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
 
     public override string ToString() => $"Member({this.Accessed}, {this.MemberName})";
 
-    public override SolveState Solve(DiagnosticBag diagnostics)
+    public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
+    start:
         var accessed = this.Unwrap(this.Accessed);
         // We can't advance on type variables
-        if (accessed.IsTypeVariable) return SolveState.Stale;
+        if (accessed.IsTypeVariable)
+        {
+            yield return SolveState.Stale;
+            goto start;
+        }
 
         // Not a type variable, we can look into members
         var membersWithName = accessed.Members
@@ -62,13 +59,13 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
                 .WithTemplate(SymbolResolutionErrors.MemberNotFound)
                 .WithFormatArgs(this.MemberName, this.Unwrap(this.Accessed));
             this.Promise.Fail(membersWithName, diagnostics);
-            return SolveState.Solved;
+            yield return SolveState.Solved;
         }
         else
         {
             // One or more, the member constraint is fine with multiple members
             this.Promise.Resolve(membersWithName);
-            return SolveState.Solved;
+            yield return SolveState.Solved;
         }
     }
 }

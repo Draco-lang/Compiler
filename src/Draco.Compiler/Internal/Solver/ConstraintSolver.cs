@@ -31,8 +31,8 @@ internal sealed class ConstraintSolver
     /// </summary>
     public string ContextName { get; }
 
-    // The set of raw constraints
-    private readonly HashSet<IConstraint> constraints = new();
+    // The raw constraints and their states
+    private readonly Dictionary<IConstraint, IEnumerator<SolveState>> constraints = new();
     // The constraints that were marked for removal
     private readonly List<IConstraint> constraintsToRemove = new();
     // The constraints that were queued for insertion
@@ -152,18 +152,25 @@ internal sealed class ConstraintSolver
         {
             // Add and removal
             foreach (var r in this.constraintsToRemove) this.constraints.Remove(r);
-            foreach (var a in this.constraintsToAdd) this.constraints.Add(a);
+            foreach (var a in this.constraintsToAdd) this.constraints.Add(a, a.Solve(diagnostics).GetEnumerator());
             this.constraintsToRemove.Clear();
             this.constraintsToAdd.Clear();
 
             var advanced = false;
-            foreach (var constraint in this.constraints)
+            foreach (var (constraint, solve) in this.constraints)
             {
-                var state = constraint.Solve(diagnostics);
-                advanced = advanced || state != SolveState.Stale;
-
-                // Queue for removal, if solved
-                if (state == SolveState.Solved) this.Remove(constraint);
+                while (true)
+                {
+                    solve.MoveNext();
+                    var state = solve.Current;
+                    advanced = advanced || state != SolveState.Stale;
+                    if (state is SolveState.AdvancedBreak or SolveState.Stale) break;
+                    if (state == SolveState.Solved)
+                    {
+                        this.Remove(constraint);
+                        break;
+                    }
+                }
             }
             if (!advanced) break;
         }
@@ -324,11 +331,4 @@ internal sealed class ConstraintSolver
             return false;
         }
     }
-
-    /// <summary>
-    /// Prints the constraint graph as a DOT graph.
-    /// </summary>
-    /// <returns>The DOT graph of the constraints within this solver.</returns>
-    public string ConstraintGraphToDot() =>
-        throw new NotImplementedException();
 }

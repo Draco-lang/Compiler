@@ -30,12 +30,6 @@ internal static class ConstraintPromise
     public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
         new ResolvedConstraintPromise<TResult>(result);
 
-    // TODO: Doc
-    public static IConstraintPromise<TNewResult> Map<TOldResult, TNewResult>(
-        this IConstraintPromise<TOldResult> promise,
-        Func<TOldResult, TNewResult> map) =>
-        new MappedConstraintPromise<TOldResult, TNewResult>(promise, map);
-
     private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
         public bool IsResolved => true;
@@ -50,13 +44,6 @@ internal static class ConstraintPromise
             throw new InvalidOperationException("can not resolve an already solved constraint");
         public void Fail(TResult result, DiagnosticBag? diagnostics) =>
             throw new InvalidOperationException("can not resolve an already solved constraint");
-
-        public IConstraintPromise<TResult> ContinueWith(Action<TResult> continuation)
-        {
-            // Resolved constraint, just run
-            continuation(this.Result);
-            return this;
-        }
 
         public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => this;
         IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
@@ -79,14 +66,11 @@ internal static class ConstraintPromise
                 if (this.IsResolved) throw new InvalidOperationException("can not set the result of an already resolved promise");
                 this.result = value;
                 this.IsResolved = true;
-                this.continuation?.Invoke(value);
             }
         }
         private TResult? result;
 
         private readonly IConstraint constraint;
-
-        private Action<TResult>? continuation;
 
         public ResolvableConstraintPromise(IConstraint constraint)
         {
@@ -101,22 +85,6 @@ internal static class ConstraintPromise
         IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
             this.ConfigureDiagnostic(configure);
 
-        public IConstraintPromise<TResult> ContinueWith(Action<TResult> continuation)
-        {
-            // If resolve, invoke immediately
-            if (this.IsResolved)
-            {
-                continuation(this.Result);
-                return this;
-            }
-
-            // Otherwise, stash
-            if (this.continuation is not null) throw new InvalidOperationException("promises can only have one continuation");
-            this.continuation = continuation;
-
-            return this;
-        }
-
         public void Resolve(TResult result) => this.Result = result;
         public void Fail(TResult result, DiagnosticBag? diagnostics)
         {
@@ -127,26 +95,5 @@ internal static class ConstraintPromise
                 diagnostics.Add(diag);
             }
         }
-    }
-
-    private sealed class MappedConstraintPromise<TOldResult, TNewResult> : IConstraintPromise<TNewResult>
-    {
-        public bool IsResolved => this.promise.IsResolved;
-        public TNewResult Result => this.map(this.promise.Result);
-
-        private readonly IConstraintPromise<TOldResult> promise;
-        private readonly Func<TOldResult, TNewResult> map;
-
-        public MappedConstraintPromise(IConstraintPromise<TOldResult> promise, Func<TOldResult, TNewResult> map)
-        {
-            this.promise = promise;
-            this.map = map;
-        }
-
-        public IConstraintPromise<TNewResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => throw new NotImplementedException();
-        public void Fail(TNewResult result, DiagnosticBag? diagnostics) => throw new NotImplementedException();
-        public void Resolve(TNewResult result) => throw new NotImplementedException();
-        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => throw new NotImplementedException();
-        public IConstraintPromise<TNewResult> ContinueWith(Action<TNewResult> continuation) => throw new NotImplementedException();
     }
 }

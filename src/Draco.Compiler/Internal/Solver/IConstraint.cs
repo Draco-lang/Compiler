@@ -30,16 +30,11 @@ internal interface IConstraint
     public Diagnostic.Builder Diagnostic { get; }
 
     /// <summary>
-    /// The type-variables involved in this constraint.
-    /// </summary>
-    public IEnumerable<TypeVariable> TypeVariables { get; }
-
-    /// <summary>
     /// Attempts to solve this constraint.
     /// </summary>
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
-    /// <returns>The state that corresponds to how the constraint has progressed.</returns>
-    public SolveState Solve(DiagnosticBag diagnostics);
+    /// <returns>The state progression.</returns>
+    public IEnumerable<SolveState> Solve(DiagnosticBag diagnostics);
 }
 
 /// <summary>

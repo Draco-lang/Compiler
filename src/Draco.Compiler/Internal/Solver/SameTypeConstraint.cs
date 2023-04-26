@@ -23,9 +23,6 @@ internal sealed class SameTypeConstraint : Constraint<Unit>
     /// </summary>
     public ImmutableArray<TypeSymbol> Types { get; }
 
-    public override IEnumerable<TypeVariable> TypeVariables =>
-        this.Types.OfType<TypeVariable>();
-
     public SameTypeConstraint(ConstraintSolver solver, ImmutableArray<TypeSymbol> types)
         : base(solver)
     {
@@ -34,7 +31,7 @@ internal sealed class SameTypeConstraint : Constraint<Unit>
 
     public override string ToString() => $"SameType({string.Join(", ", this.Types)})";
 
-    public override SolveState Solve(DiagnosticBag diagnostics)
+    public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
         for (var i = 1; i < this.Types.Length; ++i)
         {
@@ -45,12 +42,12 @@ internal sealed class SameTypeConstraint : Constraint<Unit>
                     .WithTemplate(TypeCheckingErrors.TypeMismatch)
                     .WithFormatArgs(this.Unwrap(this.Types[0]), this.Unwrap(this.Types[i]));
                 this.Promise.Fail(default, diagnostics);
-                return SolveState.Solved;
+                yield return SolveState.Solved;
             }
         }
 
         // Successful unification
         this.Promise.Resolve(default);
-        return SolveState.Solved;
+        yield return SolveState.Solved;
     }
 }

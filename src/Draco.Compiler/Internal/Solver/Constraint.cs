@@ -19,7 +19,6 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
     public IConstraintPromise<TResult> Promise { get; }
     IConstraintPromise IConstraint.Promise => this.Promise;
     public Diagnostic.Builder Diagnostic { get; } = new();
-    public abstract IEnumerable<TypeVariable> TypeVariables { get; }
 
     protected Constraint(ConstraintSolver solver)
     {
@@ -28,7 +27,7 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
     }
 
     public abstract override string ToString();
-    public abstract SolveState Solve(DiagnosticBag diagnostics);
+    public abstract IEnumerable<SolveState> Solve(DiagnosticBag diagnostics);
 
     // Utils
 

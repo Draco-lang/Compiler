@@ -18,8 +18,16 @@ internal enum SolveState
 
     /// <summary>
     /// The constraint advanced, but did not fully solve.
+    /// The solver should reattempt solving the constraint immediately.
     /// </summary>
-    Advanced,
+    AdvancedContinue,
+
+    /// <summary>
+    /// The constraint advanced, but did not fully solve.
+    /// The solver should not reattempt solving the constraint immeditely, as there
+    /// is likely no advancements until other constraints are solved.
+    /// </summary>
+    AdvancedBreak,
 
     /// <summary>
     /// The constraint got solved.

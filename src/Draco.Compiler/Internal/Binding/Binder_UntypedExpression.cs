@@ -184,7 +184,14 @@ internal partial class Binder
             .ToImmutableArray();
 
         // TODO: Tons of duplication...
-        if (method is UntypedFunctionExpression func)
+        if (method is UntypedReferenceErrorExpression err)
+        {
+            // TODO: Maybe stop caring about UntypedReferenceErrorExpression?
+            // Look at how we can totally eliminate checking for it instead...
+            // Not just here, everywhere
+            return err;
+        }
+        else if (method is UntypedFunctionExpression func)
         {
             // TODO: We should not have an overload constraint for it, but we don't have any better...
             var symbolPromise = constraints.Overload(

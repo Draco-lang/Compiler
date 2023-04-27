@@ -13,6 +13,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -116,6 +117,24 @@ internal sealed class ConstraintSolver
     {
         returnType = this.AllocateTypeVariable();
         var constraint = new OverloadConstraint(this, functions, args, returnType);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
+    /// Adds a constraint that waits before another one finishes.
+    /// </summary>
+    /// <typeparam name="TAwaitedResult">The awaited constraint result.</typeparam>
+    /// <typeparam name="TResult">The mapped result.</typeparam>
+    /// <param name="awaited">The awaited constraint.</param>
+    /// <param name="map">The function that maps the result to the next constraint promise.</param>
+    /// <returns>The promise that is resolved, when <paramref name="awaited"/> is resolved and
+    /// the mapped constraint is resolved as well.</returns>
+    public IConstraintPromise<TResult> Await<TAwaitedResult, TResult>(
+        IConstraintPromise<TAwaitedResult> awaited,
+        Func<TAwaitedResult, IConstraintPromise<TResult>> map)
+    {
+        var constraint = new AwaitConstraint<TAwaitedResult, TResult>(this, awaited.Constraint, map);
         this.Add(constraint);
         return constraint.Promise;
     }

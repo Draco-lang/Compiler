@@ -80,6 +80,11 @@
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
+  <Node Name="UntypedDelayedExpression" Base="UntypedExpression">
+    <Field Name="Promise" Type="IConstraintPromise&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
   <Node Name="UntypedIndexExpression" Base="UntypedExpression">
     <Field Name="Collection" Type="UntypedExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />

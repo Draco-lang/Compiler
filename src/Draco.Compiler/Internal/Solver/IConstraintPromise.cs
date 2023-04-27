@@ -16,6 +16,11 @@ namespace Draco.Compiler.Internal.Solver;
 internal interface IConstraintPromise
 {
     /// <summary>
+    /// The constraint this promise belongs to.
+    /// </summary>
+    public IConstraint Constraint { get; }
+
+    /// <summary>
     /// True, if this promise is resolved, either ba succeeding or failing.
     /// </summary>
     public bool IsResolved { get; }
@@ -34,6 +39,11 @@ internal interface IConstraintPromise
 /// <typeparam name="TResult">The result type of the promise.</typeparam>
 internal interface IConstraintPromise<TResult> : IConstraintPromise
 {
+    /// <summary>
+    /// See <see cref="IConstraintPromise.Constraint"/>.
+    /// </summary>
+    public new IConstraint<TResult> Constraint { get; }
+
     /// <summary>
     /// The result of the promise.
     /// </summary>

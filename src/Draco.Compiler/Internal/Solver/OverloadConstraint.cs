@@ -47,10 +47,11 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     }
 
     public override string ToString() =>
-        $"Overload(candidates: [{string.Join(", ", this.Candidates)}], args: [{string.Join(", ", this.Arguments)}])";
+        $"Overload(candidates: [{string.Join(", ", this.Candidates)}], args: [{string.Join(", ", this.Arguments)}]) => {this.ReturnType}";
 
     public override void FailSilently()
     {
+        this.Unify(this.ReturnType, IntrinsicSymbols.ErrorType);
         var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
         this.Promise.Fail(errorSymbol, null);
     }
@@ -159,7 +160,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             // If the argument is not null, it means we have already scored it
             if (score is not null) continue;
 
-            score = this.AdjustScore(param, arg);
+            score = this.Solver.ScoreArgument(param, arg);
             changed = changed || score is not null;
             scoreVector[i] = score;
 
@@ -167,21 +168,6 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             if (score == 0) return changed;
         }
         return changed;
-    }
-
-    private int? AdjustScore(ParameterSymbol param, TypeSymbol argType)
-    {
-        var paramType = this.Unwrap(param.Type);
-        argType = this.Unwrap(argType);
-
-        // If the argument is still a type parameter, we can't score it
-        if (argType.IsTypeVariable) return null;
-
-        // Exact equality is max score
-        if (ReferenceEquals(paramType, argType)) return 16;
-
-        // Otherwise, no match
-        return 0;
     }
 
     private List<CallScore> InitializeScoreVectors(List<FunctionSymbol> candidates)

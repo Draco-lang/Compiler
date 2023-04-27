@@ -274,8 +274,11 @@ internal partial class Binder
         }
         else
         {
-            // TODO: Indirect call
-            throw new NotImplementedException();
+            constraints.Call(
+                method.TypeRequired,
+                args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                out var resultType);
+            return new UntypedIndirectCallExpression(syntax, method, args, resultType);
         }
     }
 

@@ -104,6 +104,21 @@ internal sealed class ConstraintSolver
     }
 
     /// <summary>
+    /// Adds a callability constraint to the solver.
+    /// </summary>
+    /// <param name="calledType">The called function type.</param>
+    /// <param name="args">The calling argument types.</param>
+    /// <param name="returnType">The return type.</param>
+    /// <returns>The promise of the constraint.</returns>
+    public IConstraintPromise<Unit> Call(TypeSymbol calledType, ImmutableArray<TypeSymbol> args, out TypeSymbol returnType)
+    {
+        returnType = this.AllocateTypeVariable();
+        var constraint = new CallConstraint(this, calledType, args, returnType);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
     /// Adds an overload constraint to the solver.
     /// </summary>
     /// <param name="functions">The functions to choose an overload from.</param>
@@ -348,5 +363,26 @@ internal sealed class ConstraintSolver
         default:
             return false;
         }
+    }
+
+    /// <summary>
+    /// Scores a function call argument.
+    /// </summary>
+    /// <param name="param">The function parameter.</param>
+    /// <param name="argType">The passed in argument type.</param>
+    /// <returns>The score of the match.</returns>
+    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
+    {
+        var paramType = this.Unwrap(param.Type);
+        argType = this.Unwrap(argType);
+
+        // If the argument is still a type parameter, we can't score it
+        if (argType.IsTypeVariable) return null;
+
+        // Exact equality is max score
+        if (ReferenceEquals(paramType, argType)) return 16;
+
+        // Otherwise, no match
+        return 0;
     }
 }

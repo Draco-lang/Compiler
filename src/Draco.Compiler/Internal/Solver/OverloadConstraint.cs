@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -70,6 +71,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         // We have all candidates well-defined, find the absolute dominator
         if (candidates.Count == 0)
         {
+            this.Unify(this.ReturnType, IntrinsicSymbols.ErrorType);
             // Best-effort shape approximation
             var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
             this.Diagnostic
@@ -93,13 +95,14 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         if (dominatingCandidates.Length == 1)
         {
             // Resolved fine
-            this.Solver.Unify(this.ReturnType, dominatingCandidates[0].ReturnType);
+            this.Unify(this.ReturnType, dominatingCandidates[0].ReturnType);
             this.Promise.Resolve(dominatingCandidates[0]);
             yield return SolveState.Solved;
         }
         else
         {
             // Best-effort shape approximation
+            this.Unify(this.ReturnType, IntrinsicSymbols.ErrorType);
             var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
             this.Diagnostic
                 .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)

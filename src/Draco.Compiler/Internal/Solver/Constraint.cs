@@ -34,4 +34,5 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
     // Utils
 
     protected TypeSymbol Unwrap(TypeSymbol type) => this.Solver.Unwrap(type);
+    protected bool Unify(TypeSymbol first, TypeSymbol second) => this.Solver.Unify(first, second);
 }

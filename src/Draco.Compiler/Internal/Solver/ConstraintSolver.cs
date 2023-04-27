@@ -134,9 +134,18 @@ internal sealed class ConstraintSolver
         IConstraintPromise<TAwaitedResult> awaited,
         Func<TAwaitedResult, IConstraintPromise<TResult>> map)
     {
-        var constraint = new AwaitConstraint<TAwaitedResult, TResult>(this, awaited.Constraint, map);
-        this.Add(constraint);
-        return constraint.Promise;
+        if (awaited.IsResolved)
+        {
+            // If resolved, don't bother with indirections
+            var constraint = map(awaited.Result);
+            return constraint;
+        }
+        else
+        {
+            var constraint = new AwaitConstraint<TAwaitedResult, TResult>(this, awaited.Constraint, map);
+            this.Add(constraint);
+            return constraint.Promise;
+        }
     }
 
     /// <summary>

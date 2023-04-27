@@ -15,7 +15,7 @@
 {{func visitor_functions(nodes, return_type, return_value)}}
     {{for $node in nodes}}
         {{if $node.IsAbstract}}
-            public {{return_type}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
+            public virtual {{return_type}} Visit{{remove_suffix($node.Name, 'Syntax')}}({{$node.Name}} node)
             {
                 {{if return_value}}
                     return node.Accept(this);

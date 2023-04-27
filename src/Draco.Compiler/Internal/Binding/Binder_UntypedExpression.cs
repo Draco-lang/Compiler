@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -59,19 +60,59 @@ internal partial class Binder
     private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new UntypedLiteralExpression(syntax, syntax.Literal.Value);
 
-    private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new UntypedStringExpression(syntax, syntax.Parts.Select(p => this.BindStringPart(p, constraints, diagnostics)).ToImmutableArray());
-
-    private UntypedStringPart BindStringPart(StringPartSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        // NOTE: The syntax error is already reported
-        UnexpectedStringPartSyntax => new UntypedUnexpectedStringPart(syntax),
-        TextStringPartSyntax text => new UntypedStringText(syntax, text.Content.ValueText!),
-        InterpolationStringPartSyntax interpolation => new UntypedStringInterpolation(
-            syntax,
-            this.BindExpression(interpolation.Expression, constraints, diagnostics)),
-        _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
-    };
+        static string ComputeCutoff(StringExpressionSyntax str)
+        {
+            // Line strings have no cutoff
+            if (str.OpenQuotes.Kind == TokenKind.LineStringStart) return string.Empty;
+            // Multiline strings
+            Debug.Assert(str.CloseQuotes.LeadingTrivia.Count <= 2);
+            // If this is true, we have malformed input
+            if (str.CloseQuotes.LeadingTrivia.Count == 0) return string.Empty;
+            // If this is true, there's only newline, no spaces before
+            if (str.CloseQuotes.LeadingTrivia.Count == 1) return string.Empty;
+            // The first trivia was newline, the second must be spaces
+            Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Kind == TriviaKind.Whitespace);
+            return str.CloseQuotes.LeadingTrivia[1].Text;
+        }
+
+        var lastNewline = true;
+        var cutoff = ComputeCutoff(syntax);
+        var parts = ImmutableArray.CreateBuilder<UntypedStringPart>();
+        foreach (var part in syntax.Parts)
+        {
+            switch (part)
+            {
+            case TextStringPartSyntax content:
+            {
+                var text = content.Content.ValueText;
+                if (text is null) throw new InvalidOperationException();
+                // Single line string or string newline or malformed input
+                if (!lastNewline || !text.StartsWith(cutoff)) parts.Add(new UntypedStringText(syntax, text));
+                else parts.Add(new UntypedStringText(syntax, text[cutoff.Length..]));
+                lastNewline = content.Content.Kind == TokenKind.StringNewline;
+                break;
+            }
+            case InterpolationStringPartSyntax interpolation:
+            {
+                parts.Add(new UntypedStringInterpolation(
+                    syntax,
+                    this.BindExpression(interpolation.Expression, constraints, diagnostics)));
+                lastNewline = false;
+                break;
+            }
+            case UnexpectedStringPartSyntax unexpected:
+            {
+                parts.Add(new UntypedUnexpectedStringPart(syntax));
+                break;
+            }
+            default:
+                throw new ArgumentOutOfRangeException();
+            }
+        }
+        return new UntypedStringExpression(syntax, parts.ToImmutable());
+    }
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

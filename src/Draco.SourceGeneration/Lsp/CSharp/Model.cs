@@ -146,7 +146,18 @@ public sealed record class Property(
     string Name,
     string SerializedName,
     bool OmitIfNull,
-    bool IsExtensionData);
+    bool IsExtensionData,
+    object? ConstantValue)
+{
+    /// <summary>
+    /// A discriminator string for the value.
+    /// </summary>
+    public string ValueDiscriminator => this.ConstantValue switch
+    {
+        string => "String",
+        _ => throw new ArgumentOutOfRangeException(),
+    };
+}
 
 /// <summary>
 /// A C# type.
@@ -210,3 +221,10 @@ public sealed record class NullableType(
 public sealed record class DictionaryType(
     Type KeyType,
     Type ValueType) : Type;
+
+/// <summary>
+/// A C# tuple type.
+/// </summary>
+/// <param name="Elements">The types of the tuple elements.</param>
+public sealed record class TupleType(
+    ImmutableArray<Type> Elements) : Type;

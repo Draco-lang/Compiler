@@ -41,17 +41,42 @@ internal enum CallScoreComparison
 /// Represents the score-vector for a single call.
 /// </summary>
 /// <param name="Scores">The array of scores for the arguments.</param>
-internal readonly record struct CallScore(int?[] Scores)
+internal readonly struct CallScore
 {
     /// <summary>
     /// True, if the score vector has a zero element.
     /// </summary>
-    public bool HasZero => this.Scores.Contains(0);
+    public bool HasZero => this.scores.Contains(0);
 
     /// <summary>
     /// True, if the score vector is well-defined, meaning that there as no null scores.
     /// </summary>
-    public bool IsWellDefined => !this.Scores.Contains(null);
+    public bool IsWellDefined => !this.scores.Contains(null);
+
+    /// <summary>
+    /// The length of this vector.
+    /// </summary>
+    public int Length => this.scores.Length;
+
+    /// <summary>
+    /// The scores in this score vector.
+    /// </summary>
+    public int? this[int index]
+    {
+        get => this.scores.Length;
+        set
+        {
+            if (this.scores[index] is not null) throw new InvalidOperationException("can not modify non-null score");
+            this.scores[index] = value;
+        }
+    }
+
+    private readonly int?[] scores;
+
+    public CallScore(int length)
+    {
+        this.scores = new int?[length];
+    }
 
     /// <summary>
     /// Compares two call-scores.
@@ -61,16 +86,16 @@ internal readonly record struct CallScore(int?[] Scores)
     /// <returns>The relationship between <paramref name="first"/> and <paramref name="second"/>.</returns>
     public static CallScoreComparison Compare(CallScore first, CallScore second)
     {
-        if (first.Scores.Length != second.Scores.Length)
+        if (first.Length != second.Length)
         {
             throw new InvalidOperationException("Can not compare call scores of different length");
         }
 
         var relation = CallScoreComparison.Equal;
-        for (var i = 0; i < first.Scores.Length; ++i)
+        for (var i = 0; i < first.Length; ++i)
         {
-            var firstScore = first.Scores[i];
-            var secondScore = second.Scores[i];
+            var firstScore = first[i];
+            var secondScore = second[i];
 
             if (firstScore is null || secondScore is null) return CallScoreComparison.Undetermined;
 

@@ -63,7 +63,7 @@ internal readonly struct CallScore
     /// </summary>
     public int? this[int index]
     {
-        get => this.scores.Length;
+        get => this.scores[index];
         set
         {
             if (this.scores[index] is not null) throw new InvalidOperationException("can not modify non-null score");

@@ -43,6 +43,7 @@ internal partial class Binder
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
+        UntypedDelayedExpression delay => this.TypeDelayedExpression(delay, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
 
@@ -199,5 +200,12 @@ internal partial class Binder
         // var resultType = constraints.Unwrap(mem.TypeRequired);
 
         // return new BoundMemberExpression(mem.Syntax, left, member, resultType);
+    }
+
+    private BoundExpression TypeDelayedExpression(UntypedDelayedExpression delay, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // Just take result and type that
+        var result = delay.Promise.Result;
+        return this.TypeExpression(result, constraints, diagnostics);
     }
 }

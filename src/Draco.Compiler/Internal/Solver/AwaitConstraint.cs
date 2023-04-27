@@ -20,14 +20,14 @@ internal sealed class AwaitConstraint<TAwaitedResult, TResult> : Constraint<TRes
     public IConstraint<TAwaitedResult> Awaited { get; }
 
     /// <summary>
-    /// The mapping function that transforms the result of <see cref="Awaited"/> to the new promise.
+    /// The mapping function that transforms the result of <see cref="Awaited"/>.
     /// </summary>
-    public Func<TAwaitedResult, IConstraintPromise<TResult>> Map { get; }
+    public Func<TAwaitedResult, TResult> Map { get; }
 
     public AwaitConstraint(
         ConstraintSolver solver,
         IConstraint<TAwaitedResult> awaited,
-        Func<TAwaitedResult, IConstraintPromise<TResult>> map)
+        Func<TAwaitedResult, TResult> map)
         : base(solver)
     {
         this.Awaited = awaited;
@@ -43,13 +43,10 @@ internal sealed class AwaitConstraint<TAwaitedResult, TResult> : Constraint<TRes
 
         // We can resolve the awaited promise
         var awaitedResult = this.Awaited.Promise.Result;
-        var mappedPromise = this.Map(awaitedResult);
+        var mappedValue = this.Map(awaitedResult);
 
-        // Now we can wait for the new promise
-        while (!mappedPromise.IsResolved) yield return SolveState.Stale;
-
-        // Solved
-        this.Promise.Resolve(mappedPromise.Result);
+        // Resolve this promise
+        this.Promise.Resolve(mappedValue);
         yield return SolveState.Solved;
     }
 }

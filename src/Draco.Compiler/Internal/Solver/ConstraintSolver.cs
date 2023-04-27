@@ -127,18 +127,17 @@ internal sealed class ConstraintSolver
     /// <typeparam name="TAwaitedResult">The awaited constraint result.</typeparam>
     /// <typeparam name="TResult">The mapped result.</typeparam>
     /// <param name="awaited">The awaited constraint.</param>
-    /// <param name="map">The function that maps the result to the next constraint promise.</param>
-    /// <returns>The promise that is resolved, when <paramref name="awaited"/> is resolved and
-    /// the mapped constraint is resolved as well.</returns>
+    /// <param name="map">The function that maps the result of <paramref name="awaited"/>.</param>
+    /// <returns>The promise that is resolved, when <paramref name="awaited"/>.</returns>
     public IConstraintPromise<TResult> Await<TAwaitedResult, TResult>(
         IConstraintPromise<TAwaitedResult> awaited,
-        Func<TAwaitedResult, IConstraintPromise<TResult>> map)
+        Func<TAwaitedResult, TResult> map)
     {
         if (awaited.IsResolved)
         {
             // If resolved, don't bother with indirections
             var constraint = map(awaited.Result);
-            return constraint;
+            return ConstraintPromise.FromResult(constraint);
         }
         else
         {

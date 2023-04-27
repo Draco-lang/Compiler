@@ -203,8 +203,33 @@ internal partial class Binder
             // If the resolved members are a statically bound function symbols, this becomes an overloaded call,
             // otherwise this becomes an indirect call
 
-            // TODO
-            throw new NotImplementedException();
+            var promisedType = constraints.AllocateTypeVariable();
+            var promise = constraints.Await(mem.Member, UntypedExpression (members) =>
+            {
+                if (members.All(m => m is FunctionSymbol))
+                {
+                    // Overloaded member call
+                    var funcMembers = members
+                        .Cast<FunctionSymbol>()
+                        .ToImmutableArray();
+
+                    var symbolPromise = constraints.Overload(
+                        funcMembers,
+                        args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                        out var resultType);
+                    symbolPromise.ConfigureDiagnostic(diag => diag
+                        .WithLocation(syntax.Function.Location));
+
+                    constraints.Unify(resultType, promisedType);
+                    return new UntypedCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
+                }
+                else
+                {
+                    // TODO: Indirect call
+                    throw new NotImplementedException();
+                }
+            });
+            return new UntypedDelayedExpression(syntax, promise, promisedType);
         }
         else
         {

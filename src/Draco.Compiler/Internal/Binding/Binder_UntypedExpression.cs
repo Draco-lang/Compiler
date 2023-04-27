@@ -183,15 +183,7 @@ internal partial class Binder
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
 
-        // TODO: Tons of duplication...
-        if (method is UntypedReferenceErrorExpression err)
-        {
-            // TODO: Maybe stop caring about UntypedReferenceErrorExpression?
-            // Look at how we can totally eliminate checking for it instead...
-            // Not just here, everywhere
-            return err;
-        }
-        else if (method is UntypedFunctionGroupExpression group)
+        if (method is UntypedFunctionGroupExpression group)
         {
             // Simple overload
             // Resolve symbol overload
@@ -204,33 +196,19 @@ internal partial class Binder
 
             return new UntypedCallExpression(syntax, null, symbolPromise, args, resultType);
         }
-        // TODO
-#if false
         else if (method is UntypedMemberExpression mem)
         {
-            // TODO: We might not even want to create an overload here?
-            // It's essentially what ruins the Overload constraint with the casting BS
-            // Maybe add a MemberCall constraint that MIGHT desugar into an overload?
+            // We are in a bit of a pickle here, the member expression might not be resolved yet,
+            // and based on it this can be a direct, or indirect call
+            // If the resolved members are a statically bound function symbols, this becomes an overloaded call,
+            // otherwise this becomes an indirect call
 
-            // Simple overload
-            // Resolve symbol overload
-            var symbolPromise = constraints.Overload(
-                mem.Member,
-                args.Select(arg => arg.TypeRequired).ToImmutableArray(),
-                out var resultType);
-            symbolPromise.ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Function.Location));
-
-            var function = new UntypedFunctionExpression(syntax, symbolPromise);
-            return new UntypedCallExpression(syntax, mem.Accessed, function, args, resultType);
+            // TODO
+            throw new NotImplementedException();
         }
-#endif
         else
         {
-            // TODO: We need a proper Call constraint here that actually handles overloads
-            // For that we need to extract the promise of method groups or something
-            // This could be a member expression, a simple function group expression, or something else
-            // which would be an indirect call
+            // TODO: Indirect call
             throw new NotImplementedException();
         }
     }

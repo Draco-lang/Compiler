@@ -58,7 +58,9 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
             this.Diagnostic
                 .WithTemplate(SymbolResolutionErrors.MemberNotFound)
                 .WithFormatArgs(this.MemberName, this.Unwrap(this.Accessed));
-            this.Promise.Fail(membersWithName, diagnostics);
+            // We still provide a single error symbol
+            var errorSymbol = new UndefinedMemberSymbol();
+            this.Promise.Fail(ImmutableArray.Create<Symbol>(errorSymbol), diagnostics);
             yield return SolveState.Solved;
         }
         else

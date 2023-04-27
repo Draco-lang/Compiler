@@ -36,6 +36,7 @@ internal partial class Binder
         UntypedIfExpression @if => this.TypeIfExpression(@if, constraints, diagnostics),
         UntypedWhileExpression @while => this.TypeWhileExpression(@while, constraints, diagnostics),
         UntypedCallExpression call => this.TypeCallExpression(call, constraints, diagnostics),
+        UntypedIndirectCallExpression call => this.TypeIndirectCallExpression(call, constraints, diagnostics),
         UntypedAssignmentExpression assignment => this.TypeAssignmentExpression(assignment, constraints, diagnostics),
         UntypedUnaryExpression ury => this.TypeUnaryExpression(ury, constraints, diagnostics),
         UntypedBinaryExpression bin => this.TypeBinaryExpression(bin, constraints, diagnostics),
@@ -134,6 +135,16 @@ internal partial class Binder
             .ToImmutableArray();
 
         return new BoundCallExpression(call.Syntax, receiver, function, typedArgs);
+    }
+
+    private BoundExpression TypeIndirectCallExpression(UntypedIndirectCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var function = this.TypeExpression(call.Method, constraints, diagnostics);
+        var typedArgs = call.Arguments
+            .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+            .ToImmutableArray();
+
+        return new BoundIndirectCallExpression(call.Syntax, function, typedArgs);
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)

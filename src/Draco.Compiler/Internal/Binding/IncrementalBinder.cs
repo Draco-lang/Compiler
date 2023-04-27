@@ -112,7 +112,7 @@ public sealed partial class SemanticModel
                     {
                         foreach (var syntax in EnumerateSyntaxesWithSameSymbol(untyped.Syntax))
                         {
-                            this.semanticModel.symbolMap.Add(syntax, symbol);
+                            this.semanticModel.symbolMap[syntax] = symbol;
                         }
                     }
                 }

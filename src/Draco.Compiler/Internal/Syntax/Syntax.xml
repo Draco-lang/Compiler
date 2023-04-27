@@ -124,9 +124,18 @@
       A function declaration.
     </Documentation>
 
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        The visibility modifier keyword possibly starting the declaration.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
+
     <Field Name="FunctionKeyword" Type="SyntaxToken">
       <Documentation>
-        The 'func' keyword starting the declaration.
+        The 'func' keyword.
       </Documentation>
 
       <Token Kind="KeywordFunc" />
@@ -290,6 +299,15 @@
     <Documentation>
       A variable declaration.
     </Documentation>
+
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        The visibility modifier keyword possibly starting the declaration.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
 
     <Field Name="Keyword" Type="SyntaxToken">
       <Documentation>

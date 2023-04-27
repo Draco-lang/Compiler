@@ -120,6 +120,9 @@ internal sealed class Parser
     /// </summary>
     private static readonly TokenKind[] declarationStarters = new[]
     {
+        // TODO
+        //TokenKind.KeywordInternal,
+        //TokenKind.KeywordPublic,
         TokenKind.KeywordImport,
         TokenKind.KeywordFunc,
         TokenKind.KeywordVar,
@@ -198,7 +201,8 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     internal DeclarationSyntax ParseDeclaration()
     {
-        switch (this.Peek())
+        var peekAmount = this.Peek() == TokenKind.KeywordInternal || this.Peek() == TokenKind.KeywordPublic ? 1 : 0;
+        switch (this.Peek(peekAmount))
         {
         case TokenKind.KeywordImport:
             return this.ParseImportDeclaration();
@@ -303,6 +307,8 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
     private VariableDeclarationSyntax ParseVariableDeclaration()
     {
+        SyntaxToken? visibility = null;
+        if (this.Peek() == TokenKind.KeywordInternal || this.Peek() == TokenKind.KeywordPublic) visibility = this.Advance();
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
         Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);
@@ -319,7 +325,7 @@ internal sealed class Parser
         }
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(visibility, keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
@@ -328,6 +334,8 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
     private FunctionDeclarationSyntax ParseFunctionDeclaration()
     {
+        SyntaxToken? visibility = null;
+        if (this.Peek() == TokenKind.KeywordInternal || this.Peek() == TokenKind.KeywordPublic) visibility = this.Advance();
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
         var name = this.Expect(TokenKind.Identifier);
@@ -346,7 +354,7 @@ internal sealed class Parser
 
         var body = this.ParseFunctionBody();
 
-        return new FunctionDeclarationSyntax(funcKeyword, name, openParen, funcParameters, closeParen, returnType, body);
+        return new FunctionDeclarationSyntax(visibility, funcKeyword, name, openParen, funcParameters, closeParen, returnType, body);
     }
 
     /// <summary>

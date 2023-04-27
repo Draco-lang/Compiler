@@ -178,10 +178,6 @@
     <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
   </Node>
 
-  <Node Name="BoundFunctionExpression" Base="BoundExpression">
-    <Field Name="Function" Type="FunctionSymbol" />
-  </Node>
-
   <Node Name="BoundReferenceErrorExpression" Base="BoundExpression">
     <Field Name="Symbol" Type="Symbol" />
   </Node>

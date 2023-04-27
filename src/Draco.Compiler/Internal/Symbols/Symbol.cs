@@ -82,6 +82,11 @@ internal abstract partial class Symbol
     public virtual string Documentation => string.Empty;
 
     /// <summary>
+    /// The visibility of this symbol.
+    /// </summary>
+    public virtual Api.Semantics.VisibilityType Visibility => Api.Semantics.VisibilityType.Public;
+
+    /// <summary>
     /// The syntax declaring this symbol.
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => null;

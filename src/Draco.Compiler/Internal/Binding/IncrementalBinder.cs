@@ -147,6 +147,7 @@ public sealed partial class SemanticModel
             BoundLocalLvalue l => l.Local,
             BoundGlobalLvalue g => g.Global,
             BoundMemberExpression m => m.Member,
+            BoundCallExpression c => c.Method,
             _ => null,
         };
     }

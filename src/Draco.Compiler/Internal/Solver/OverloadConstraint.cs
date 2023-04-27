@@ -85,10 +85,10 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         // NOTE: This might not be the actual dominator in case of mutual non-dominance
         var bestScore = CallScore.FindBest(scoreVectors);
         // We keep every candidate that dominates this score, or there is mutual non-dominance
-        // TODO
         var dominatingCandidates = candidates
             .Zip(scoreVectors)
-            .Where(pair => Dominates(pair.Second, bestScore) || !Dominates(bestScore, pair.Second))
+            .Where(pair => bestScore is null
+                        || CallScore.Compare(bestScore.Value, pair.Second) is CallScoreComparison.Equal or CallScoreComparison.NoDominance)
             .Select(pair => pair.First)
             .ToImmutableArray();
         Debug.Assert(dominatingCandidates.Length > 0);

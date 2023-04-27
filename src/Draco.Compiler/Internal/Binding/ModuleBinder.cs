@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
@@ -35,11 +37,18 @@ internal sealed class ModuleBinder : Binder
     {
         foreach (var symbol in this.symbol.Members)
         {
-            if (symbol.Visibility == Api.Semantics.VisibilityType.Private) continue;
+            if (!this.isVisible(symbol, name)) continue;
             if (symbol.Name != name) continue;
             if (!allowSymbol(symbol)) continue;
             if (symbol is GlobalSymbol && !flags.HasFlag(LookupFlags.AllowGlobals)) continue;
             result.Add(symbol);
         }
+    }
+
+    private bool isVisible(Symbol symbol, string name)
+    {
+        if (symbol.Visibility != Api.Semantics.VisibilityType.Private) return true;
+        if (this.symbol.Members.Any(x => x.DeclaringSyntax is not null && x.DeclaringSyntax.PreOrderTraverse().OfType<NameExpressionSyntax>().Count() != 0 && x.DeclaringSyntax.FindInChildren<NameExpressionSyntax>().Name.Text == name)) return true;
+        return false;
     }
 }

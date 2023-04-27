@@ -65,6 +65,13 @@ internal sealed class CallConstraint : Constraint<Unit>
             goto start;
         }
 
+        if (called.IsError)
+        {
+            // Don't propagate errors
+            this.FailSilently();
+            yield return SolveState.Solved;
+        }
+
         // We can now check if it's a function
         if (called is not FunctionTypeSymbol functionType)
         {

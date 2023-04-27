@@ -83,8 +83,9 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
         // We have one or more, find the max dominator
         // NOTE: This might not be the actual dominator in case of mutual non-dominance
-        var bestScore = this.FindDominatorScoreVector(candidates, scoreVectors);
+        var bestScore = CallScore.FindBest(scoreVectors);
         // We keep every candidate that dominates this score, or there is mutual non-dominance
+        // TODO
         var dominatingCandidates = candidates
             .Zip(scoreVectors)
             .Where(pair => Dominates(pair.Second, bestScore) || !Dominates(bestScore, pair.Second))
@@ -112,23 +113,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         }
     }
 
-    private int?[] FindDominatorScoreVector(List<FunctionSymbol> candidates, List<int?[]> scoreVectors)
-    {
-        var bestScore = scoreVectors[0];
-        for (var i = 1; i < candidates.Count; ++i)
-        {
-            var score = scoreVectors[i];
-
-            if (Dominates(score, bestScore))
-            {
-                // Better, or equivalent
-                bestScore = score;
-            }
-        }
-        return bestScore;
-    }
-
-    private bool RefineScores(List<FunctionSymbol> candidates, List<int?[]> scoreVectors, out bool wellDefined)
+    private bool RefineScores(List<FunctionSymbol> candidates, List<CallScore> scoreVectors, out bool wellDefined)
     {
         var changed = false;
         wellDefined = true;
@@ -141,8 +126,8 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             // Compute any undefined arguments
             changed = this.AdjustScore(candidate, scoreVector) || changed;
             // We consider having a 0-element well-defined, since we are throwing it away
-            var hasZero = HasZero(scoreVector);
-            wellDefined = wellDefined && (IsWellDefined(scoreVector) || hasZero);
+            var hasZero = scoreVector.HasZero;
+            wellDefined = wellDefined && (scoreVector.IsWellDefined || hasZero);
 
             // If any of the score vector components reached 0, we exclude the candidate
             if (hasZero)
@@ -159,7 +144,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         return changed;
     }
 
-    private bool AdjustScore(FunctionSymbol candidate, int?[] scoreVector)
+    private bool AdjustScore(FunctionSymbol candidate, CallScore scoreVector)
     {
         Debug.Assert(candidate.Parameters.Length == this.Arguments.Length);
         Debug.Assert(candidate.Parameters.Length == scoreVector.Length);
@@ -199,9 +184,9 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         return 0;
     }
 
-    private List<int?[]> InitializeScoreVectors(List<FunctionSymbol> candidates)
+    private List<CallScore> InitializeScoreVectors(List<FunctionSymbol> candidates)
     {
-        var scoreVectors = new List<int?[]>();
+        var scoreVectors = new List<CallScore>();
 
         for (var i = 0; i < candidates.Count;)
         {
@@ -215,29 +200,12 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             else
             {
                 // Initialize score vector
-                var scoreVector = new int?[this.Arguments.Length];
+                var scoreVector = new CallScore(this.Arguments.Length);
                 scoreVectors.Add(scoreVector);
                 ++i;
             }
         }
 
         return scoreVectors;
-    }
-
-    private static bool HasZero(int?[] vector) => vector.Any(x => x == 0);
-
-    private static bool IsWellDefined(int?[] vector) => vector.All(x => x is not null);
-
-    private static bool Dominates(int?[] a, int?[] b)
-    {
-        Debug.Assert(a.Length == b.Length);
-
-        for (var i = 0; i < a.Length; ++i)
-        {
-            if (a[i] is null || b[i] is null) return false;
-            if (a[i] < b[i]) return false;
-        }
-
-        return true;
     }
 }

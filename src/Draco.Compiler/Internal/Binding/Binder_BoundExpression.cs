@@ -43,7 +43,6 @@ internal partial class Binder
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
-        UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
 
@@ -127,36 +126,13 @@ internal partial class Binder
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        // We have 3 cases:
-        //  - called is a member access -> direct call with receiver
-        //  - called is a function symbol -> direct call without receiver
-        //  - anything else -> indirect call
-
         var receiver = call.Receiver is null ? null : this.TypeExpression(call.Receiver, constraints, diagnostics);
-        var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
+        var function = call.Method.Result;
         var typedArgs = call.Arguments
             .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
 
-        if (typedFunction is BoundFunctionExpression funcExpr)
-        {
-            // Direct call
-            return new BoundCallExpression(call.Syntax, receiver, funcExpr.Function, typedArgs);
-        }
-        else
-        {
-            if (receiver is not null)
-            {
-                // Indirect call to member
-                // TODO
-                throw new NotImplementedException();
-            }
-            else
-            {
-                // Indirect free-function call
-                return new BoundIndirectCallExpression(call.Syntax, typedFunction, typedArgs);
-            }
-        }
+        return new BoundCallExpression(call.Syntax, receiver, function, typedArgs);
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -223,11 +199,5 @@ internal partial class Binder
         // var resultType = constraints.Unwrap(mem.TypeRequired);
 
         // return new BoundMemberExpression(mem.Syntax, left, member, resultType);
-    }
-
-    private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintSolver constraints, DiagnosticBag diagnostics)
-    {
-        var funcSymbol = func.Function.Result;
-        return new BoundFunctionExpression(func.Syntax, funcSymbol);
     }
 }

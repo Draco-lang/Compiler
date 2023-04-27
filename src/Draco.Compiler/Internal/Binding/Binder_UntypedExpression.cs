@@ -191,19 +191,6 @@ internal partial class Binder
             // Not just here, everywhere
             return err;
         }
-        else if (method is UntypedFunctionExpression func)
-        {
-            // TODO: We should not have an overload constraint for it, but we don't have any better...
-            var symbolPromise = constraints.Overload(
-                func.Function.Map(f => ImmutableArray.Create<Symbol>(f)),
-                args.Select(arg => arg.TypeRequired).ToImmutableArray(),
-                out var resultType);
-            symbolPromise.ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Function.Location));
-
-            var function = new UntypedFunctionExpression(syntax, symbolPromise);
-            return new UntypedCallExpression(syntax, null, function, args, resultType);
-        }
         else if (method is UntypedFunctionGroupExpression group)
         {
             // Simple overload
@@ -215,9 +202,10 @@ internal partial class Binder
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Function.Location));
 
-            var function = new UntypedFunctionExpression(syntax, symbolPromise);
-            return new UntypedCallExpression(syntax, null, function, args, resultType);
+            return new UntypedCallExpression(syntax, null, symbolPromise, args, resultType);
         }
+        // TODO
+#if false
         else if (method is UntypedMemberExpression mem)
         {
             // TODO: We might not even want to create an overload here?
@@ -236,6 +224,7 @@ internal partial class Binder
             var function = new UntypedFunctionExpression(syntax, symbolPromise);
             return new UntypedCallExpression(syntax, mem.Accessed, function, args, resultType);
         }
+#endif
         else
         {
             // TODO: We need a proper Call constraint here that actually handles overloads
@@ -444,12 +433,12 @@ internal partial class Binder
         }
     }
 
-    private static IEnumerable<FunctionSymbol> GetFunctions(Symbol symbol) => symbol switch
+    private static ImmutableArray<FunctionSymbol> GetFunctions(Symbol symbol) => symbol switch
     {
-        FunctionSymbol f => new[] { f },
+        FunctionSymbol f => ImmutableArray.Create(f),
         OverloadSymbol o => o.Functions,
         // TODO: Is this ok? No error?
-        _ => Enumerable.Empty<FunctionSymbol>(),
+        _ => ImmutableArray<FunctionSymbol>.Empty,
     };
 
     private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch

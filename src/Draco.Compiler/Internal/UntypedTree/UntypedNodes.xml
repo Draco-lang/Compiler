@@ -75,7 +75,7 @@
 
   <Node Name="UntypedCallExpression" Base="UntypedExpression">
     <Field Name="Receiver" Type="UntypedExpression?" />
-    <Field Name="Method" Type="UntypedExpression" />
+    <Field Name="Method" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
@@ -136,10 +136,6 @@
 
   <Node Name="UntypedFunctionGroupExpression" Base="UntypedExpression">
     <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
-  </Node>
-
-  <Node Name="UntypedFunctionExpression" Base="UntypedExpression">
-    <Field Name="Function" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
   </Node>
 
   <Node Name="UntypedReferenceErrorExpression" Base="UntypedExpression">

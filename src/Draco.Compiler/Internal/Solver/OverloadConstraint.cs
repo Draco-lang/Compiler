@@ -21,7 +21,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     /// <summary>
     /// The candidate functions to search among.
     /// </summary>
-    public IConstraintPromise<ImmutableArray<Symbol>> Candidates { get; }
+    public ImmutableArray<FunctionSymbol> Candidates { get; }
 
     /// <summary>
     /// The arguments the function was called with.
@@ -35,7 +35,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     public OverloadConstraint(
         ConstraintSolver solver,
-        IConstraintPromise<ImmutableArray<Symbol>> candidates,
+        ImmutableArray<FunctionSymbol> candidates,
         ImmutableArray<TypeSymbol> arguments,
         TypeSymbol returnType)
         : base(solver)
@@ -45,9 +45,8 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         this.ReturnType = returnType;
     }
 
-    public override string ToString() => this.Candidates.IsResolved
-        ? $"Overload(candidates: [{string.Join(", ", this.Candidates.Result)}], args: [{string.Join(", ", this.Arguments)}])"
-        : $"Overload(candidates: ?, args: [{string.Join(", ", this.Arguments)}])";
+    public override string ToString() =>
+        $"Overload(candidates: [{string.Join(", ", this.Candidates)}], args: [{string.Join(", ", this.Arguments)}])";
 
     public override void FailSilently()
     {
@@ -57,12 +56,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
-        while (!this.Candidates.IsResolved) yield return SolveState.Stale;
-
-        // TODO: Cast...
-        var candidates = this.Candidates.Result
-            .Cast<FunctionSymbol>()
-            .ToList();
+        var candidates = this.Candidates.ToList();
         var functionName = candidates[0].Name;
         var scoreVectors = this.InitializeScoreVectors(candidates);
 

@@ -395,7 +395,7 @@ internal partial class Binder
             // Module member access
             var module = moduleExpr.Module;
             var members = module.Members
-                .Where(m => m.Name == memberName)
+                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.VisibilityType.Private)
                 .Where(BinderFacts.IsValueSymbol)
                 .ToImmutableArray();
             // Reuse logic from LookupResult

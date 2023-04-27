@@ -35,6 +35,7 @@ internal sealed class ModuleBinder : Binder
     {
         foreach (var symbol in this.symbol.Members)
         {
+            if (symbol.Visibility == Api.Semantics.VisibilityType.Private) continue;
             if (symbol.Name != name) continue;
             if (!allowSymbol(symbol)) continue;
             if (symbol is GlobalSymbol && !flags.HasFlag(LookupFlags.AllowGlobals)) continue;

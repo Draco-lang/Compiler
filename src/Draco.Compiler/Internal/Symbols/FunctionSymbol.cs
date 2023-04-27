@@ -78,7 +78,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     {
         get
         {
-            var syntax = this.DeclaringSyntax as VariableDeclarationSyntax;
+            var syntax = this.DeclaringSyntax as FunctionDeclarationSyntax;
             if (syntax is null) return Api.Semantics.VisibilityType.Public; // Default
             if (syntax.VisibilityModifier is null) return Api.Semantics.VisibilityType.Private;
             return syntax.VisibilityModifier.Kind == TokenKind.KeywordInternal ? Api.Semantics.VisibilityType.Internal : Api.Semantics.VisibilityType.Public;

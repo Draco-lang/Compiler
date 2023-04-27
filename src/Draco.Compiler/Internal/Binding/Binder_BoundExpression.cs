@@ -206,11 +206,16 @@ internal partial class Binder
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var members = mem.Member.Result;
-        // TODO
-        throw new NotImplementedException();
-        // var resultType = constraints.Unwrap(mem.TypeRequired);
-
-        // return new BoundMemberExpression(mem.Syntax, left, member, resultType);
+        if (members.Length == 1)
+        {
+            var member = (ITypedSymbol)members[0];
+            return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
     }
 
     private BoundExpression TypeDelayedExpression(UntypedDelayedExpression delay, ConstraintSolver constraints, DiagnosticBag diagnostics)

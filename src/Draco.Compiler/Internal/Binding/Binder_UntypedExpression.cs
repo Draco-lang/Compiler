@@ -264,9 +264,19 @@ internal partial class Binder
                     constraints.Unify(resultType, promisedType);
                     return new UntypedCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
                 }
+                else if (members.Length == 1)
+                {
+                    var callPromise = constraints.Call(
+                        method.TypeRequired,
+                        args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                        out var resultType);
+                    callPromise.ConfigureDiagnostic(diag => diag
+                        .WithLocation(syntax.Location));
+                    return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
+                }
                 else
                 {
-                    // TODO: Indirect call
+                    // TODO
                     throw new NotImplementedException();
                 }
             });
@@ -274,10 +284,12 @@ internal partial class Binder
         }
         else
         {
-            constraints.Call(
+            var callPromise = constraints.Call(
                 method.TypeRequired,
                 args.Select(arg => arg.TypeRequired).ToImmutableArray(),
                 out var resultType);
+            callPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
             return new UntypedIndirectCallExpression(syntax, method, args, resultType);
         }
     }

@@ -787,7 +787,28 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // func foo(x: int32) { }
         // func foo(x: int32) { }
 
-        // TODO
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(Parameter("x", NameType("int32"))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(Parameter("x", NameType("int32"))),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
     }
 
     [Fact]
@@ -797,7 +818,28 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         //     func foo(x: int32) { }
         // }
 
-        // TODO
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(Parameter("x", NameType("int32"))),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(FunctionDeclaration(
+                        "foo",
+                        ParameterList(Parameter("x", NameType("int32"))),
+                        null,
+                        BlockFunctionBody()))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
     }
 
     [Fact]
@@ -817,6 +859,60 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         //     foo(true);
         // }
 
-        // TODO
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(Parameter("x", NameType("int32"))),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(FunctionDeclaration(
+                        "foo",
+                        ParameterList(Parameter("x", NameType("bool"))),
+                        null,
+                        BlockFunctionBody(
+                            ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
+                            ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true)))))))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(FunctionDeclaration(
+                        "foo",
+                        ParameterList(Parameter("x", NameType("bool"))),
+                        null,
+                        BlockFunctionBody(
+                            ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
+                            ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true))))))))));
+
+        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooBoolInFooDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
+        var fooBoolInMainDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(3);
+        var fooInt32Ref1Syntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooBoolInFooRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
+        var fooInt32Ref2Syntax = tree.FindInChildren<CallExpressionSyntax>(2).Function;
+        var fooBoolInMainRefSyntax = tree.FindInChildren<CallExpressionSyntax>(3).Function;
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+        var fooInt32DeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooInt32DeclSyntax));
+        var fooBoolInFooDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooBoolInFooDeclSyntax));
+        var fooBoolInMainDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooBoolInMainDeclSyntax));
+        var fooInt32Ref1Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooInt32Ref1Syntax));
+        var fooInt32Ref2Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooInt32Ref2Syntax));
+        var fooBoolInFooRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooBoolInFooRefSyntax));
+        var fooBoolInMainRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooBoolInMainRefSyntax));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Same(fooInt32DeclSym, fooInt32Ref1Sym);
+        Assert.Same(fooInt32DeclSym, fooInt32Ref2Sym);
+        Assert.Same(fooBoolInFooDeclSym, fooBoolInFooRefSym);
+        Assert.Same(fooBoolInMainDeclSym, fooBoolInMainRefSym);
+        Assert.NotSame(fooBoolInFooDeclSym, fooBoolInMainDeclSym);
     }
 }

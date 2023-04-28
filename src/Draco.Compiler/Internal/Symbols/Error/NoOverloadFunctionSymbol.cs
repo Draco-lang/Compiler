@@ -13,6 +13,7 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
     public override TypeSymbol ReturnType => IntrinsicSymbols.ErrorType;
 
     public override Symbol? ContainingSymbol => null;
+    public override bool IsError => true;
 
     public NoOverloadFunctionSymbol(int parameterCount)
     {

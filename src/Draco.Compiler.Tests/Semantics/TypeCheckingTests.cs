@@ -736,7 +736,49 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         //     foo(true);
         // }
 
-        // TODO
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(Parameter("x", NameType("int32"))),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(FunctionDeclaration(
+                        "foo",
+                        ParameterList(Parameter("x", NameType("bool"))),
+                        null,
+                        BlockFunctionBody())))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
+                    ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true)))))));
+
+        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooBoolDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
+        var fooInt32RefSyntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+        var fooInt32DeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooInt32DeclSyntax));
+        var fooBoolDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooBoolDeclSyntax));
+        var fooInt32RefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooInt32RefSyntax));
+        var fooBoolRefSym = semanticModel.GetDeclaredSymbol(fooBoolRefSyntax);
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        Assert.NotSame(fooInt32DeclSym, fooBoolDeclSym);
+        Assert.Same(fooInt32DeclSym, fooInt32RefSym);
+        Assert.NotSame(fooBoolDeclSym, fooBoolRefSym);
+        Assert.NotNull(fooBoolRefSym);
+        Assert.True(fooBoolRefSym.IsError);
     }
 
     [Fact]
@@ -759,7 +801,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void NestedMatchingLovalOverloads()
+    public void NestedMatchingLocalOverloads()
     {
         // func foo(x: int32) {
         //     func foo(x: bool) { }

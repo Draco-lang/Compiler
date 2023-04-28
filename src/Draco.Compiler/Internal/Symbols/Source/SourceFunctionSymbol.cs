@@ -78,9 +78,17 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
             if (ReferenceEquals(func, this)) continue;
             if (!HasSameParameterTypes(func, this)) continue;
 
-            // Same parameters, report it
-            // TODO
-            throw new NotImplementedException();
+            // Report
+            binderProvider.DiagnosticBag.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.IllegalOverloadDefinition,
+                location: this.DeclaringSyntax.Location,
+                formatArgs: this.Name,
+                relatedInformation: func.DeclaringSyntax is null
+                    ? ImmutableArray<DiagnosticRelatedInformation>.Empty
+                    : ImmutableArray.Create(DiagnosticRelatedInformation.Create(
+                        location: func.DeclaringSyntax.Location,
+                        format: "matching definition of {0}",
+                        formatArgs: func.Name))));
         }
     }
 

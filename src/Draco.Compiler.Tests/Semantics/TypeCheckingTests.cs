@@ -623,4 +623,85 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
     }
+
+    [Fact]
+    public void OkOverloading()
+    {
+        // func foo(x: int32) { }
+        // func foo(x: bool) { }
+        //
+        // func main() {
+        //     foo(0);
+        //     foo(true);
+        // }
+
+        // TODO
+    }
+
+    [Fact]
+    public void OkNestedOverloading()
+    {
+        // func foo(x: int32) {
+        //     func foo(x: bool) { }
+        //
+        //     foo(0);
+        //     foo(true);
+        // }
+
+        // TODO
+    }
+
+    [Fact]
+    public void NestedOverloadNotVisibleFromOutside()
+    {
+        // func foo(x: int32) {
+        //     func foo(x: bool) { }
+        // }
+        //
+        // func main() {
+        //     foo(0);
+        //     foo(true);
+        // }
+
+        // TODO
+    }
+
+    [Fact]
+    public void IllegalOverloading()
+    {
+        // func foo(x: int32) { }
+        // func foo(x: int32) { }
+
+        // TODO
+    }
+
+    [Fact]
+    public void IllegalNestedOverloading()
+    {
+        // func foo(x: int32) {
+        //     func foo(x: int32) { }
+        // }
+
+        // TODO
+    }
+
+    [Fact]
+    public void NestedMatchingLovalOverloads()
+    {
+        // func foo(x: int32) {
+        //     func foo(x: bool) { }
+        //
+        //     foo(0);
+        //     foo(true);
+        // }
+        //
+        // func main() {
+        //     func foo(x: bool) {}
+        //
+        //     foo(0);
+        //     foo(true);
+        // }
+
+        // TODO
+    }
 }

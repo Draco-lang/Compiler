@@ -43,6 +43,7 @@ internal sealed class DeclarationTable
 
     private MergedModuleDeclaration BuildMergedRoot()
     {
+        if (string.IsNullOrEmpty(this.RootPath)) return new("", "", this.syntaxTrees.Select(s => new SingleModuleDeclaration(string.Empty, string.Empty, (CompilationUnitSyntax)s.Root)).ToImmutableArray());
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
         {
@@ -53,7 +54,7 @@ internal sealed class DeclarationTable
             var subPath = path[aboveRoot.Length..].TrimStart(Path.DirectorySeparatorChar);
             var fullName = Path.GetDirectoryName(subPath)?.TrimEnd(Path.DirectorySeparatorChar).Replace(Path.DirectorySeparatorChar, '.');
             if (fullName is null) throw new System.NotImplementedException();
-            modules.Add(new SingleModuleDeclaration(fullName.Split('.').Last(), fullName,(CompilationUnitSyntax)tree.Root));
+            modules.Add(new SingleModuleDeclaration(fullName.Split('.').Last(), fullName, (CompilationUnitSyntax)tree.Root));
         }
         var rootName = Path.GetFileName(this.RootPath.TrimEnd(Path.DirectorySeparatorChar));
         return new(rootName, rootName, modules.ToImmutable());

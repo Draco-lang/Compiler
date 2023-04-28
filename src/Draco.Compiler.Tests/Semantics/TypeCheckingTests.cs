@@ -5,6 +5,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using static Draco.Compiler.Tests.ModuleTestsUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -622,5 +623,68 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Equal(IntrinsicSymbols.ErrorType, xSym.Type);
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+    }
+
+    [Fact]
+    public void OneVisibleAndOnenotVisibleOverloadImported()
+    {
+        var main = CreateSyntaxTree(""""
+            import FooModule;
+            func main(){
+               foo();
+            }
+            """", @"C:\Tests\main.draco");
+
+        var foo = CreateSyntaxTree(""""
+            func foo(): int32 = 0;
+            internal func foo(x: string): int32 = 0;
+            """", @"C:\Tests\FooModule\foo.draco");
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModule: @"C:\Tests");
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+    }
+
+    [Fact]
+    public void OneVisibleAndOnenotVisibleOverloadFullyQualified()
+    {
+        var main = CreateSyntaxTree(""""
+            func main(){
+               FooModule.foo();
+            }
+            """", @"C:\Tests\main.draco");
+
+        var foo = CreateSyntaxTree(""""
+            func foo(): int32 = 0;
+            internal func foo(x: string): int32 = 0;
+            """", @"C:\Tests\FooModule\foo.draco");
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModule: @"C:\Tests");
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 }

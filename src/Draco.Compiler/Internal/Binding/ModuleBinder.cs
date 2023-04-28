@@ -37,7 +37,7 @@ internal sealed class ModuleBinder : Binder
     {
         foreach (var symbol in this.symbol.Members)
         {
-            if (!this.isVisible(symbol, name)) continue;
+            if (!this.isVisible(symbol, currentReference?.Tree)) continue;
             if (symbol.Name != name) continue;
             if (!allowSymbol(symbol)) continue;
             if (symbol is GlobalSymbol && !flags.HasFlag(LookupFlags.AllowGlobals)) continue;
@@ -45,10 +45,10 @@ internal sealed class ModuleBinder : Binder
         }
     }
 
-    private bool isVisible(Symbol symbol, string name)
+    private bool isVisible(Symbol symbol, SyntaxTree? reference)
     {
         if (symbol.Visibility != Api.Semantics.VisibilityType.Private) return true;
-        if (this.symbol.Members.Any(x => x.DeclaringSyntax is not null && x.DeclaringSyntax.PreOrderTraverse().OfType<NameExpressionSyntax>().Count() != 0 && x.DeclaringSyntax.FindInChildren<NameExpressionSyntax>().Name.Text == name)) return true;
+        if (this.symbol.Members.Any(x => x.DeclaringSyntax is not null && x.DeclaringSyntax.Tree == reference)) return true;
         return false;
     }
 }

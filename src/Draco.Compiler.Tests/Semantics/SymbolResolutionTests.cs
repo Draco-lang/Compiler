@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
+using static Draco.Compiler.Tests.ModuleTestsUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -1019,5 +1020,126 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(varTypeSymbol.IsError);
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+    }
+
+    [Fact]
+    public void VisibleElementFullyQualified()
+    {
+        var main = CreateSyntaxTree(""""
+            func main(){
+               FooModule.foo();
+            }
+            """", @"C:\Tests\main.draco");
+
+        var foo = CreateSyntaxTree(""""
+            internal func foo(): int32 = 0;
+            """", @"C:\Tests\FooModule\foo.draco");
+
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModule: @"C:\Tests");
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void NotVisibleElementFullyQualified()
+    {
+        var main = CreateSyntaxTree(""""
+            func main(){
+               FooModule.foo();
+            }
+            """", @"C:\Tests\main.draco");
+
+        var foo = CreateSyntaxTree(""""
+            func foo(): int32 = 0;
+            """", @"C:\Tests\FooModule\foo.draco");
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModule: @"C:\Tests");
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void VisibleElementImported()
+    {
+        var main = CreateSyntaxTree(""""
+            import FooModule;
+            func main(){
+               foo();
+            }
+            """", @"C:\Tests\main.draco");
+
+        var foo = CreateSyntaxTree(""""
+            internal func foo(): int32 = 0;
+            """", @"C:\Tests\FooModule\foo.draco");
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModule: @"C:\Tests");
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void NotVisibleElementImported()
+    {
+        var main = CreateSyntaxTree(""""
+            import FooModule;
+            func main(){
+               foo();
+            }
+            """", @"C:\Tests\main.draco");
+
+        var foo = CreateSyntaxTree(""""
+            func foo(): int32 = 0;
+            """", @"C:\Tests\FooModule\foo.draco");
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModule: @"C:\Tests");
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 }

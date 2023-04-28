@@ -111,4 +111,11 @@ internal static class BinderFacts
         or NameLabelSyntax
         or MemberExpressionSyntax
         or ImportPathSyntax;
+
+    public static bool IsVisible(Symbol symbol, SyntaxTree currentTree)
+    {
+        if (symbol.Visibility != Api.Semantics.VisibilityType.Private) return true;
+        else if (symbol.DeclaringSyntax is not null && symbol.DeclaringSyntax.Tree == currentTree) return true;
+        return false;
+    }
 }

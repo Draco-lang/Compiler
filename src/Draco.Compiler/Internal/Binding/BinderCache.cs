@@ -70,7 +70,7 @@ internal sealed class BinderCache
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
         // If we don't have root path, there is no root module
-        if (string.IsNullOrEmpty(this.compilation.DeclarationTable.RootPath)) return this.ModuleBinder;
+        if (string.IsNullOrEmpty(this.compilation.DeclarationTable.RootPath)) return WrapInImportBinder(this.ModuleBinder, syntax);
 
         var aboveRootPath = Directory.GetParent(this.compilation.DeclarationTable.RootPath)?.FullName;
         var filePath = syntax.Tree.SourceText.Path?.OriginalString;

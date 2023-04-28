@@ -1,3 +1,5 @@
+using static Draco.Compiler.Tests.ModuleTestsUtilities;
+
 namespace Draco.Compiler.Tests.EndToEnd;
 
 public sealed class CompilingCodeTests : EndToEndTestsBase
@@ -334,5 +336,25 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var x = Invoke<string>(assembly, "foo");
         Assert.Equal("Hello    World!", x);
+    }
+
+    [Fact]
+    public void SimpleModuleExample()
+    {
+        var bar = CreateSyntaxTree("""
+            func bar(): int32{
+                return FooTest.foo();
+            }
+            """, @"C:\Tests\foo.draco");
+
+        var foo = CreateSyntaxTree("""
+            internal func foo(): int32 = x;
+            val x = 5;
+            """, @"C:\Tests\FooTest\foo.draco");
+
+        var assembly = Compile(@"C:\Tests", bar, foo);
+
+        var x = Invoke<int>(assembly, "bar");
+        Assert.Equal(5, x);
     }
 }

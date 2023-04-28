@@ -14,8 +14,10 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
 {
     public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken)
     {
-        this.documentRepository.AddOrUpdateDocument(param.TextDocument.Uri, param.TextDocument.Text);
-        this.UpdateCompilation(param.TextDocument.Text);
+        var uri = param.TextDocument.Uri;
+        var content = param.TextDocument.Text;
+        var sourceText = this.documentRepository.AddOrUpdateDocument(uri, content);
+        this.UpdateCompilation(sourceText);
         await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
     }
 
@@ -26,16 +28,16 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
     {
         var uri = param.TextDocument.Uri;
         var change = param.ContentChanges.First();
-        var sourceText = change.Text;
-        this.documentRepository.AddOrUpdateDocument(uri, sourceText);
+        var content = change.Text;
+        var sourceText = this.documentRepository.AddOrUpdateDocument(uri, content);
         this.UpdateCompilation(sourceText);
         await this.PublishDiagnosticsAsync(uri);
     }
 
     // NOTE: This needs to be more sophisticated, once we have multiple files and such
-    private void UpdateCompilation(string text)
+    private void UpdateCompilation(SourceText sourceText)
     {
-        this.syntaxTree = SyntaxTree.Parse(text);
+        this.syntaxTree = SyntaxTree.Parse(sourceText);
         this.compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(this.syntaxTree),
             // NOTE: Temporary until we solve MSBuild communication

@@ -49,6 +49,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     public void Bind(IBinderProvider binderProvider)
     {
         this.BindParameters(binderProvider.DiagnosticBag);
+        foreach (var param in this.Parameters.Cast<SourceParameterSymbol>()) param.Bind(binderProvider);
         this.BindReturnType(binderProvider);
         this.BindBody(binderProvider);
 

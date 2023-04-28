@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api.CodeFixes;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 

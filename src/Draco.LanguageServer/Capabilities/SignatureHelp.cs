@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api.CodeCompletion;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 

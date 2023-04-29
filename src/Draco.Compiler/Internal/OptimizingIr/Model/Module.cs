@@ -22,7 +22,8 @@ internal sealed class Module : IModule
 
     public IReadOnlyDictionary<GlobalSymbol, Global> Globals => this.globals;
 
-    public IProcedure GlobalInitializer { get; }
+    public Procedure GlobalInitializer { get; }
+    IProcedure IModule.GlobalInitializer => this.GlobalInitializer;
 
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
 
@@ -58,6 +59,16 @@ internal sealed class Module : IModule
             this.procedures.Add(functionSymbol, result);
         }
         return (Procedure)result;
+    }
+
+    public Module DefineModule(ModuleSymbol moduleSymbol)
+    {
+        if (!this.subModules.TryGetValue(moduleSymbol, out var result))
+        {
+            result = new Module(moduleSymbol, this.Assembly);
+            this.subModules.Add(moduleSymbol, result);
+        }
+        return (Module)result;
     }
 
     public override string ToString()

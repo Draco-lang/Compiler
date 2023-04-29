@@ -14,28 +14,16 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed class ModuleCodegen : SymbolVisitor
 {
-    public static Assembly Generate(
-        Compilation compilation,
-        ModuleSymbol symbol,
-        bool emitSequencePoints)
-    {
-        var codegen = new ModuleCodegen(compilation, symbol, emitSequencePoints);
-        symbol.Accept(codegen);
-        codegen.Complete();
-        return codegen.assembly;
-    }
-
+    private readonly FunctionBodyCodegen globalInitializer;
+    private readonly Module module;
     private readonly Compilation compilation;
-    private readonly Assembly assembly;
     private readonly bool emitSequencePoints;
 
-    private ModuleCodegen(Compilation compilation, ModuleSymbol module, bool emitSequencePoints)
+    public ModuleCodegen(Module module, Compilation compilation, bool emitSequencePoints)
     {
+        this.module = module;
+        this.globalInitializer = new(module.GlobalInitializer);
         this.compilation = compilation;
-        this.assembly = new(module)
-        {
-            Name = compilation.AssemblyName,
-        };
         this.emitSequencePoints = emitSequencePoints;
     }
 
@@ -44,18 +32,13 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // Complete anything that needs completion
         // The global initializer for example is missing a return
         this.globalInitializer.Write(Ret(default(Void)));
-
-        // We can also set the entry point, in case we have one
-        var mainProcedure = (Procedure?)this.assembly.RootModule.Procedures.Values
-            .FirstOrDefault(p => p.Name == "main");
-        this.assembly.EntryPoint = mainProcedure;
     }
 
     public override void VisitGlobal(GlobalSymbol globalSymbol)
     {
         if (globalSymbol is not SourceGlobalSymbol sourceGlobal) return;
 
-        var global = this.assembly.DefineGlobal(sourceGlobal);
+        var global = this.module.DefineGlobal(sourceGlobal);
 
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)
@@ -78,7 +61,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
         // Add procedure, define parameters
-        var procedure = this.assembly.DefineProcedure(functionSymbol);
+        var procedure = this.module.DefineProcedure(functionSymbol);
         foreach (var param in functionSymbol.Parameters) procedure.DefineParameter(param);
 
         // Create the body
@@ -91,6 +74,15 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
         // Compile the local functions
         foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
+    }
+
+    public override void VisitModule(ModuleSymbol moduleSymbol)
+    {
+        if (moduleSymbol is not SourceModuleSymbol sourceModule) return;
+        var module = this.module.DefineModule(moduleSymbol);
+        var moduleCodegen = new ModuleCodegen(module, this.compilation, this.emitSequencePoints);
+        moduleSymbol.Accept(moduleCodegen);
+        moduleCodegen.Complete();
     }
 
     private BoundNode RewriteBody(BoundNode body)

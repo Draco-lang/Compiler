@@ -16,6 +16,8 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 {
+    private readonly record struct Candidate(FunctionSymbol Symbol, CallScore Score);
+
     /// <summary>
     /// The candidate functions to search among.
     /// </summary>
@@ -55,13 +57,15 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
-        var candidates = this.Candidates.ToList();
-        var functionName = candidates[0].Name;
-        var scoreVectors = this.InitializeScoreVectors(candidates);
+        var functionName = this.Candidates[0].Name;
+        var candidates = this.Candidates
+            .Where(f => f.Parameters.Length == this.Arguments.Length)
+            .Select(f => new Candidate(f, new CallScore(f.Parameters.Length)))
+            .ToList();
 
         while (true)
         {
-            var changed = this.RefineScores(candidates, scoreVectors, out var wellDefined);
+            var changed = this.RefineScores(candidates, out var wellDefined);
             if (wellDefined) break;
             yield return changed ? SolveState.AdvancedContinue : SolveState.Stale;
         }
@@ -81,13 +85,14 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
         // We have one or more, find the max dominator
         // NOTE: This might not be the actual dominator in case of mutual non-dominance
-        var bestScore = CallScore.FindBest(scoreVectors);
+        var bestScore = CallScore.FindBest(candidates.Select(c => c.Score));
         // We keep every candidate that dominates this score, or there is mutual non-dominance
         var dominatingCandidates = candidates
-            .Zip(scoreVectors)
             .Where(pair => bestScore is null
-                        || CallScore.Compare(bestScore.Value, pair.Second) is CallScoreComparison.Equal or CallScoreComparison.NoDominance)
-            .Select(pair => pair.First)
+                        || CallScore.Compare(bestScore.Value, pair.Score)
+                               is CallScoreComparison.Equal
+                               or CallScoreComparison.NoDominance)
+            .Select(pair => pair.Symbol)
             .ToImmutableArray();
         Debug.Assert(dominatingCandidates.Length > 0);
 
@@ -111,18 +116,17 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         }
     }
 
-    private bool RefineScores(List<FunctionSymbol> candidates, List<CallScore> scoreVectors, out bool wellDefined)
+    private bool RefineScores(List<Candidate> candidates, out bool wellDefined)
     {
         var changed = false;
         wellDefined = true;
         // Iterate through all candidates
         for (var i = 0; i < candidates.Count;)
         {
-            var candidate = candidates[i];
-            var scoreVector = scoreVectors[i];
+            var (symbol, scoreVector) = candidates[i];
 
             // Compute any undefined arguments
-            changed = this.AdjustScore(candidate, scoreVector) || changed;
+            changed = this.AdjustScore(candidates[i]) || changed;
             // We consider having a 0-element well-defined, since we are throwing it away
             var hasZero = scoreVector.HasZero;
             wellDefined = wellDefined && (scoreVector.IsWellDefined || hasZero);
@@ -131,7 +135,6 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             if (hasZero)
             {
                 candidates.RemoveAt(i);
-                scoreVectors.RemoveAt(i);
             }
             else
             {
@@ -142,15 +145,14 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         return changed;
     }
 
-    private bool AdjustScore(FunctionSymbol candidate, CallScore scoreVector)
+    private bool AdjustScore(Candidate candidate)
     {
-        Debug.Assert(candidate.Parameters.Length == this.Arguments.Length);
-        Debug.Assert(candidate.Parameters.Length == scoreVector.Length);
-
         var changed = false;
-        for (var i = 0; i < scoreVector.Length; ++i)
+        for (var i = 0; i < candidate.Score.Length; ++i)
         {
-            var param = candidate.Parameters[i];
+            var (func, scoreVector) = candidate;
+
+            var param = func.Parameters[i];
             var arg = this.Arguments[i];
             var score = scoreVector[i];
 
@@ -165,30 +167,5 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             if (score == 0) return changed;
         }
         return changed;
-    }
-
-    private List<CallScore> InitializeScoreVectors(List<FunctionSymbol> candidates)
-    {
-        var scoreVectors = new List<CallScore>();
-
-        for (var i = 0; i < candidates.Count;)
-        {
-            var candidate = candidates[i];
-
-            // Broad filtering, skip candidates that have the wrong no. parameters
-            if (candidate.Parameters.Length != this.Arguments.Length)
-            {
-                candidates.RemoveAt(i);
-            }
-            else
-            {
-                // Initialize score vector
-                var scoreVector = new CallScore(this.Arguments.Length);
-                scoreVectors.Add(scoreVector);
-                ++i;
-            }
-        }
-
-        return scoreVectors;
     }
 }

@@ -151,12 +151,6 @@ internal partial class BoundCallExpression
     public override TypeSymbol Type => this.Method.ReturnType;
 }
 
-internal partial class BoundIndirectCallExpression
-{
-    // TODO: Cast...
-    public override TypeSymbol Type => ((FunctionTypeSymbol)this.Method.TypeRequired).ReturnType;
-}
-
 // Lvalues
 
 internal partial class BoundLvalue

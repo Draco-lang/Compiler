@@ -143,8 +143,8 @@ internal partial class Binder
         var typedArgs = call.Arguments
             .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
-
-        return new BoundIndirectCallExpression(call.Syntax, function, typedArgs);
+        var resultType = constraints.Unwrap(call.TypeRequired);
+        return new BoundIndirectCallExpression(call.Syntax, function, typedArgs, resultType);
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)

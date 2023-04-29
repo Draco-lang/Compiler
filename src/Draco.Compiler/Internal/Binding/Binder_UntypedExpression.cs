@@ -275,6 +275,7 @@ internal partial class Binder
                 {
                     // NOTE: Can this happen?
                     // Maybe it can on cascaded errors, like duplicate member definitions
+                    // TODO: Verify
                     throw new NotImplementedException();
                 }
             });

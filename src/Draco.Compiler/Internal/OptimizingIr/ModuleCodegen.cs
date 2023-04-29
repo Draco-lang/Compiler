@@ -27,7 +27,6 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     private readonly Compilation compilation;
     private readonly Assembly assembly;
-    private readonly FunctionBodyCodegen globalInitializer;
     private readonly bool emitSequencePoints;
 
     private ModuleCodegen(Compilation compilation, ModuleSymbol module, bool emitSequencePoints)
@@ -37,7 +36,6 @@ internal sealed class ModuleCodegen : SymbolVisitor
         {
             Name = compilation.AssemblyName,
         };
-        this.globalInitializer = new(this.assembly.GlobalInitializer);
         this.emitSequencePoints = emitSequencePoints;
     }
 
@@ -48,7 +46,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         this.globalInitializer.Write(Ret(default(Void)));
 
         // We can also set the entry point, in case we have one
-        var mainProcedure = (Procedure?)this.assembly.Procedures.Values
+        var mainProcedure = (Procedure?)this.assembly.RootModule.Procedures.Values
             .FirstOrDefault(p => p.Name == "main");
         this.assembly.EntryPoint = mainProcedure;
     }

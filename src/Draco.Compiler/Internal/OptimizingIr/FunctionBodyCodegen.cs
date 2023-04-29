@@ -53,10 +53,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
-    private Procedure DefineProcedure(FunctionSymbol function) => this.procedure.Assembly.DefineProcedure(function);
+    private Procedure DefineProcedure(FunctionSymbol function) => this.procedure.Module.DefineProcedure(function);
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
-    private Global DefineGlobal(GlobalSymbol global) => this.procedure.Assembly.DefineGlobal(global);
+    private Global DefineGlobal(GlobalSymbol global) => this.procedure.Module.DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
     private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
@@ -64,7 +64,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         // We handle synthetized functions a bit specially, as they are not part of our symbol
         // tree, so we compile them, in case they have not been yet
-        var compiledAlready = this.procedure.Assembly.Procedures.ContainsKey(func);
+        var compiledAlready = this.procedure.Module.Procedures.ContainsKey(func);
         var proc = this.DefineProcedure(func);
         if (!compiledAlready)
         {

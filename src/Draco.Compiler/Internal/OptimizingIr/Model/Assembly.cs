@@ -36,9 +36,9 @@ internal sealed class Assembly : IAssembly
 
     public IModule RootModule => this.rootModule;
 
-    public Assembly(Module root)
+    public Assembly(ModuleSymbol root)
     {
-        this.rootModule = root;
+        this.rootModule = new Module(root, this);
     }
 
     public override string ToString()

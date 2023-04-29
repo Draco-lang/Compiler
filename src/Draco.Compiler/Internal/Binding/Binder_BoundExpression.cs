@@ -206,14 +206,16 @@ internal partial class Binder
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var members = mem.Member.Result;
-        if (members.Length == 1)
+        if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
-            var member = (ITypedSymbol)members[0];
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }
         else
         {
-            // TODO
+            // NOTE: I'm not sure this can happen
+            // Multiple members can maybe happen, in case there are duplicates, in which case this would be a cascaded
+            // error
+            // TODO: Verify
             throw new NotImplementedException();
         }
     }

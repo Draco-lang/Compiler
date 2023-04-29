@@ -273,7 +273,8 @@ internal partial class Binder
                 }
                 else
                 {
-                    // TODO
+                    // NOTE: Can this happen?
+                    // Maybe it can on cascaded errors, like duplicate member definitions
                     throw new NotImplementedException();
                 }
             });

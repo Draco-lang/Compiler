@@ -3,6 +3,7 @@ using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
@@ -1019,5 +1020,66 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(varTypeSymbol.IsError);
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+    }
+
+    [Fact]
+    public void UndefinedTypeInReturnType()
+    {
+        // func foo(): unknown { }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("unknown"),
+            BlockFunctionBody())));
+
+        var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var returnTypeSymbol = semanticModel.GetReferencedSymbol(returnTypeSyntax);
+
+        // Assert
+        Assert.NotNull(returnTypeSymbol);
+        Assert.True(returnTypeSymbol.IsError);
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostic(diags, FlowAnalysisErrors.DoesNotReturn);
+    }
+
+    [Fact]
+    public void UndefinedTypeInParameterType()
+    {
+        // func foo(x: unknown) { }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("x", NameType("unknown"))),
+            null,
+            BlockFunctionBody())));
+
+        var paramTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var paramTypeSymbol = semanticModel.GetReferencedSymbol(paramTypeSyntax);
+
+        // Assert
+        Assert.NotNull(paramTypeSymbol);
+        Assert.True(paramTypeSymbol.IsError);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 }

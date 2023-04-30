@@ -62,4 +62,80 @@ internal static class Translator
         Line = (uint)position.Line,
         Character = (uint)position.Column,
     };
+
+    public static LspModels.CompletionItem ToLsp(CompilerApi.CodeCompletion.CompletionItem item)
+    {
+        var textEdit = ToLsp(item.Edits[0]);
+        var additionalEdits = item.Edits.Skip(1).Select(ToLsp).ToList();
+
+        var detail = string.Empty;
+        if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
+        {
+            detail = item.Symbols.Length == 1 ? typed.Type.ToString() : $"{item.Symbols.Length} overloads";
+        }
+
+        var documentation = new LspModels.MarkupContent();
+        if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation))
+        {
+            documentation = new LspModels.MarkupContent()
+            {
+                Kind = LspModels.MarkupKind.Markdown,
+                Value = item.Symbols.First().Documentation,
+            };
+        }
+        return new LspModels.CompletionItem()
+        {
+            Label = item.DisplayText,
+            Kind = ToLsp(item.Kind),
+            TextEdit = textEdit,
+            AdditionalTextEdits = additionalEdits,
+            Detail = detail,
+            Documentation = documentation,
+        };
+    }
+
+    public static LspModels.CompletionItemKind ToLsp(CompilerApi.CodeCompletion.CompletionKind kind) => kind switch
+    {
+        CompilerApi.CodeCompletion.CompletionKind.Variable => LspModels.CompletionItemKind.Variable,
+        CompilerApi.CodeCompletion.CompletionKind.Function => LspModels.CompletionItemKind.Function,
+        CompilerApi.CodeCompletion.CompletionKind.Keyword => LspModels.CompletionItemKind.Keyword,
+        CompilerApi.CodeCompletion.CompletionKind.Class => LspModels.CompletionItemKind.Class,
+        CompilerApi.CodeCompletion.CompletionKind.Module => LspModels.CompletionItemKind.Module,
+        _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
+    };
+
+    public static LspModels.SignatureHelp? ToLsp(CompilerApi.CodeCompletion.SignatureItem? item) => item is null ? null : new()
+    {
+        Signatures = item.Overloads.Select(x => ToLsp(x)).ToArray(),
+        ActiveParameter = item.CurrentParameter is null ? null : (uint)item.CurrentOverload.Parameters.IndexOf(item.CurrentParameter),
+        ActiveSignature = (uint)item.Overloads.IndexOf(item.CurrentOverload),
+    };
+
+    public static LspModels.SignatureInformation ToLsp(CompilerApi.Semantics.IFunctionSymbol item)
+    {
+        var documentation = new LspModels.MarkupContent();
+        if (!string.IsNullOrEmpty(item.Documentation))
+        {
+            documentation = new LspModels.MarkupContent()
+            {
+                Kind = LspModels.MarkupKind.Markdown,
+                Value = item.Documentation,
+            };
+        }
+        return new LspModels.SignatureInformation()
+        {
+            Label = $"func {item.Name}({string.Join(", ", item.Parameters.Select(x => $"{x.Name}: {x.Type}"))}): {item.ReturnType}",
+            Parameters = item.Parameters.Select(x => new LspModels.ParameterInformation()
+            {
+                Label = x.Name,
+            }).ToList(),
+            Documentation = documentation,
+        };
+    }
+
+    public static LspModels.TextEdit ToLsp(CompilerApi.TextEdit edit) => new()
+    {
+        NewText = edit.Text,
+        Range = ToLsp(edit.Range),
+    };
 }

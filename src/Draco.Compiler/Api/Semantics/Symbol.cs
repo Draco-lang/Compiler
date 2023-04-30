@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -24,6 +25,11 @@ public interface ISymbol : IEquatable<ISymbol>
     public bool IsError { get; }
 
     /// <summary>
+    /// True, if this symbol represents special symbol.
+    /// </summary>
+    public bool IsSpecialName { get; }
+
+    /// <summary>
     /// The location where this symbol was defined.
     /// </summary>
     public Location? Definition { get; }
@@ -32,6 +38,22 @@ public interface ISymbol : IEquatable<ISymbol>
     /// Documentation attached to this symbol.
     /// </summary>
     public string Documentation { get; }
+
+    /// <summary>
+    /// All the members within this symbol.
+    /// </summary>
+    public IEnumerable<ISymbol> Members { get; }
+}
+
+/// <summary>
+/// Represents a symbol that has type.
+/// </summary>
+public interface ITypedSymbol
+{
+    /// <summary>
+    /// The type of this symbol.
+    /// </summary>
+    public ITypeSymbol Type { get; }
 }
 
 /// <summary>
@@ -44,17 +66,12 @@ public interface IModuleSymbol : ISymbol
 /// <summary>
 /// Represents a variable symbol.
 /// </summary>
-public interface IVariableSymbol : ISymbol
+public interface IVariableSymbol : ISymbol, ITypedSymbol
 {
     /// <summary>
     /// True, if this is a mutable variable.
     /// </summary>
     public bool IsMutable { get; }
-
-    /// <summary>
-    /// The type of this variable.
-    /// </summary>
-    public ITypeSymbol Type { get; }
 }
 
 /// <summary>
@@ -81,12 +98,14 @@ public interface IParameterSymbol : IVariableSymbol
 /// <summary>
 /// Represents a parameter symbol.
 /// </summary>
-public interface IFunctionSymbol : ISymbol
+public interface IFunctionSymbol : ISymbol, ITypedSymbol
 {
     /// <summary>
     /// The parameters this function defines.
     /// </summary>
     public ImmutableArray<IParameterSymbol> Parameters { get; }
+
+    public ITypeSymbol ReturnType { get; }
 }
 
 /// <summary>
@@ -118,8 +137,10 @@ internal abstract class SymbolBase : ISymbol
 
     public string Name => this.Symbol.Name;
     public bool IsError => this.Symbol.IsError;
+    public bool IsSpecialName => this.Symbol.IsSpecialName;
     public Location? Definition => this.Symbol.DeclaringSyntax?.Location;
     public string Documentation => this.Symbol.Documentation;
+    public IEnumerable<ISymbol> Members => this.Symbol.Members.Select(x => x.ToApiSymbol());
 
     public SymbolBase(Symbol symbol)
     {
@@ -190,6 +211,9 @@ internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSym
 
 internal sealed class FunctionSymbol : SymbolBase<Internal.Symbols.FunctionSymbol>, IFunctionSymbol
 {
+    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+    public ITypeSymbol ReturnType => (ITypeSymbol)this.Symbol.ReturnType.ToApiSymbol();
+
     public ImmutableArray<IParameterSymbol> Parameters => this.Symbol.Parameters
         .Select(s => s.ToApiSymbol())
         .ToImmutableArray();

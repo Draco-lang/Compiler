@@ -38,15 +38,24 @@
   <Generate Name="InlayHintParams" />
   <Generate Name="PublishDiagnosticsParams" />
   <Generate Name="DocumentFormattingParams" />
+  <Generate Name="CompletionParams"/>
+  <Generate Name="SignatureHelpParams"/>
+  <Generate Name="CodeActionParams"/>
   
   <Generate Name="Hover" />
   <Generate Name="InlayHint" />
+  <Generate Name="CompletionItem"/>
+  <Generate Name="SignatureHelp"/>
+  <Generate Name="CodeAction"/>
 
   <Generate Name="DefinitionRegistrationOptions" />
   <Generate Name="ReferenceRegistrationOptions" />
   <Generate Name="HoverRegistrationOptions" />
   <Generate Name="InlayHintRegistrationOptions" />
   <Generate Name="DocumentFormattingRegistrationOptions" />
+  <Generate Name="CompletionRegistrationOptions"/>
+  <Generate Name="SignatureHelpRegistrationOptions"/>
+  <Generate Name="CodeActionRegistrationOptions"/>
 
   <!-- Workspace -->
   <Generate Name="ConfigurationParams" />

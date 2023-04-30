@@ -1,14 +1,34 @@
+using System.Collections.Generic;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
-/// Represents a constraint that the solver uses.
+/// Utility base-class for constraints.
 /// </summary>
-internal abstract class Constraint
+/// <typeparam name="TResult">The result type.</typeparam>
+internal abstract class Constraint<TResult> : IConstraint<TResult>
 {
-    /// <summary>
-    /// The builder for the <see cref="Api.Diagnostics.Diagnostic"/>.
-    /// </summary>
+    public ConstraintSolver Solver { get; }
+    public IConstraintPromise<TResult> Promise { get; }
+    IConstraintPromise IConstraint.Promise => this.Promise;
     public Diagnostic.Builder Diagnostic { get; } = new();
+
+    protected Constraint(ConstraintSolver solver)
+    {
+        this.Solver = solver;
+        this.Promise = ConstraintPromise.Create<TResult>(this);
+    }
+
+    public abstract override string ToString();
+    public abstract IEnumerable<SolveState> Solve(DiagnosticBag diagnostics);
+
+    public virtual void FailSilently() { }
+
+    // Utils
+
+    protected TypeSymbol Unwrap(TypeSymbol type) => this.Solver.Unwrap(type);
+    protected bool Unify(TypeSymbol first, TypeSymbol second) => this.Solver.Unify(first, second);
 }

@@ -329,6 +329,29 @@ internal sealed class Translator
     {
         switch (field)
         {
+        // A field with constant value
+        case Ts.SimpleField simpleField when simpleField.Type is Ts.StringExpression strValue:
+        {
+            // Translate type
+            var propType = this.TranslateTypeByDeclarationName("string");
+            if (simpleField.Nullable)
+            {
+                // If the type is not nullable, we make it one
+                if (propType is not Cs.NullableType) propType = new Cs.NullableType(propType);
+            }
+            // We infer a name, sometimes there are collisions
+            var name = Capitalize(simpleField.Name);
+            if (name == containingClass?.Name) name = $"{name}_";
+            // Finally we can create the property
+            return new(
+                Documentation: ExtractDocumentation(simpleField.Documentation),
+                Name: name,
+                Type: propType,
+                SerializedName: simpleField.Name,
+                OmitIfNull: simpleField.Nullable,
+                IsExtensionData: false,
+                ConstantValue: strValue.Value);
+        }
         case Ts.SimpleField simpleField:
         {
             // Translate type
@@ -351,7 +374,8 @@ internal sealed class Translator
                 Type: propType,
                 SerializedName: simpleField.Name,
                 OmitIfNull: simpleField.Nullable,
-                IsExtensionData: false);
+                IsExtensionData: false,
+                ConstantValue: null);
         }
         case Ts.IndexSignature indexSignature:
         {
@@ -367,7 +391,8 @@ internal sealed class Translator
                 // Serialized name does not matter
                 SerializedName: string.Empty,
                 OmitIfNull: true,
-                IsExtensionData: true);
+                IsExtensionData: true,
+                ConstantValue: null);
         }
         default:
             throw new ArgumentOutOfRangeException(nameof(field));
@@ -413,6 +438,13 @@ internal sealed class Translator
         {
             var element = this.TranslateType(array.ElementType, nameHint: Singular(nameHint), containingClass: containingClass);
             return new Cs.ArrayType(element);
+        }
+        case Ts.ArrayExpression array:
+        {
+            var elements = array.Elements
+                .Select(e => this.TranslateType(e, nameHint: null, containingClass: containingClass))
+                .ToImmutableArray();
+            return new Cs.TupleType(elements);
         }
         case Ts.UnionTypeExpression union:
         {

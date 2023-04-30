@@ -25,15 +25,39 @@ internal abstract class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqu
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
 
-        if (x is TypeVariable xTypeVar) x = this.UnwrapTypeVariable(xTypeVar);
-        if (y is TypeVariable yTypeVar) y = this.UnwrapTypeVariable(yTypeVar);
+        if (x is TypeVariable xTypeVar) x = this.Unwrap(xTypeVar);
+        if (y is TypeVariable yTypeVar) y = this.Unwrap(yTypeVar);
 
-        // TODO
-        throw new NotImplementedException();
+        return (x, y) switch
+        {
+            (FunctionTypeSymbol f1, FunctionTypeSymbol f2) =>
+                   f1.Parameters.SequenceEqual(f2.Parameters, this)
+                && this.Equals(f1.ReturnType, f2.ReturnType),
+            _ => false,
+        };
     }
 
-    public int GetHashCode([DisallowNull] Symbol obj) => throw new NotImplementedException();
-    public int GetHashCode([DisallowNull] TypeSymbol obj) => throw new NotImplementedException();
+    public int GetHashCode([DisallowNull] Symbol obj) => obj switch
+    {
+        TypeSymbol t => this.GetHashCode(t),
+        _ => throw new ArgumentOutOfRangeException(nameof(obj)),
+    };
 
-    protected abstract TypeSymbol UnwrapTypeVariable(TypeVariable type);
+    public int GetHashCode([DisallowNull] TypeSymbol obj)
+    {
+        if (obj is TypeVariable v) obj = this.Unwrap(v);
+
+        switch (obj)
+        {
+        default:
+            throw new ArgumentOutOfRangeException(nameof(obj));
+        }
+    }
+
+    /// <summary>
+    /// Unwraps the given type-variable.
+    /// </summary>
+    /// <param name="type">The type-variable to unwrap.</param>
+    /// <returns>The substitution of <paramref name="type"/>.</returns>
+    protected abstract TypeSymbol Unwrap(TypeVariable type);
 }

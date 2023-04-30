@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
@@ -14,6 +16,9 @@ internal abstract partial class TypeSymbol : Symbol
     /// True, if this type is a value-type.
     /// </summary>
     public virtual bool IsValueType => false;
+
+    public override TypeSymbol GenericInstantiate(ImmutableDictionary<TypeParameterSymbol, TypeSymbol> substitutions) =>
+        throw new System.NotImplementedException();
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 

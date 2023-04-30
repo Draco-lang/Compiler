@@ -97,12 +97,7 @@ internal sealed class CallConstraint : Constraint<Unit>
                 .WithTemplate(TypeCheckingErrors.TypeMismatch)
                 .WithFormatArgs(
                     functionType,
-                    new FunctionTypeSymbol(
-                        this.Arguments
-                            .Select(a => new SynthetizedParameterSymbol(a))
-                            .Cast<ParameterSymbol>()
-                            .ToImmutableArray(),
-                        functionType.ReturnType));
+                    this.MakeMismatchedType(functionType.ReturnType));
             this.Promise.Fail(default, diagnostics);
             yield return SolveState.Solved;
         }
@@ -120,12 +115,7 @@ internal sealed class CallConstraint : Constraint<Unit>
                     .WithTemplate(TypeCheckingErrors.TypeMismatch)
                     .WithFormatArgs(
                         functionType,
-                        new FunctionTypeSymbol(
-                            this.Arguments
-                                .Select(a => new SynthetizedParameterSymbol(a))
-                                .Cast<ParameterSymbol>()
-                                .ToImmutableArray(),
-                            functionType.ReturnType));
+                        this.MakeMismatchedType(functionType.ReturnType));
                 this.Promise.Fail(default, diagnostics);
                 yield return SolveState.Solved;
             }
@@ -160,4 +150,11 @@ internal sealed class CallConstraint : Constraint<Unit>
         }
         return changed;
     }
+
+    private FunctionTypeSymbol MakeMismatchedType(TypeSymbol returnType) => new(
+        this.Arguments
+            .Select(a => new SynthetizedParameterSymbol(a))
+            .Cast<ParameterSymbol>()
+            .ToImmutableArray(),
+        returnType)
 }

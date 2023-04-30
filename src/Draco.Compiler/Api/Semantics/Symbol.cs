@@ -9,6 +9,8 @@ namespace Draco.Compiler.Api.Semantics;
 
 // Interfaces //////////////////////////////////////////////////////////////////
 
+// TODO: Kill the "IEquatable" and expose a symbol equality comparer
+
 /// <summary>
 /// Represents a symbol in the language.
 /// </summary>

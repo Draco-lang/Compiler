@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -90,8 +91,19 @@ internal sealed class CallConstraint : Constraint<Unit>
         // Check if it has the same number of args
         if (functionType.Parameters.Length != this.Arguments.Length)
         {
-            // TODO
-            throw new NotImplementedException();
+            // Error
+            this.Unify(this.ReturnType, IntrinsicSymbols.ErrorType);
+            this.Diagnostic
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(
+                    functionType,
+                    new FunctionTypeSymbol(
+                        this.Arguments
+                            .Select(a => new SynthetizedParameterSymbol(a))
+                            .Cast<ParameterSymbol>()
+                            .ToImmutableArray(),
+                        functionType.ReturnType));
+            this.Promise.Fail(default, diagnostics);
             yield return SolveState.Solved;
         }
 
@@ -102,8 +114,19 @@ internal sealed class CallConstraint : Constraint<Unit>
             var changed = this.AdjustScore(functionType, score);
             if (score.HasZero)
             {
-                // TODO
-                throw new NotImplementedException();
+                // Error
+                this.Unify(this.ReturnType, IntrinsicSymbols.ErrorType);
+                this.Diagnostic
+                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                    .WithFormatArgs(
+                        functionType,
+                        new FunctionTypeSymbol(
+                            this.Arguments
+                                .Select(a => new SynthetizedParameterSymbol(a))
+                                .Cast<ParameterSymbol>()
+                                .ToImmutableArray(),
+                            functionType.ReturnType));
+                this.Promise.Fail(default, diagnostics);
                 yield return SolveState.Solved;
             }
             if (score.IsWellDefined) break;

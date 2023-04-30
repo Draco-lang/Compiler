@@ -84,7 +84,6 @@ internal sealed class ModuleCodegen : SymbolVisitor
             var moduleCodegen = new ModuleCodegen(module, this.compilation, this.emitSequencePoints);
             subModuleSymbol.Accept(moduleCodegen);
             moduleCodegen.Complete();
-            subModuleSymbol.Accept(this);
         }
 
         foreach (var member in moduleSymbol.Members.Where(x => x is not ModuleSymbol))

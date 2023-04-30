@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -72,9 +73,13 @@ internal sealed class CallConstraint : Constraint<Unit>
         if (called is not FunctionTypeSymbol functionType)
         {
             // Error
-            // TODO
-            throw new NotImplementedException();
+            this.Unify(this.ReturnType, IntrinsicSymbols.ErrorType);
+            this.Diagnostic
+                .WithTemplate(TypeCheckingErrors.CallNonFunction)
+                .WithFormatArgs(called);
+            this.Promise.Fail(default, diagnostics);
             yield return SolveState.Solved;
+            yield break;
         }
 
         // It's a function

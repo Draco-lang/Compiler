@@ -915,4 +915,33 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Same(fooBoolInMainDeclSym, fooBoolInMainRefSym);
         Assert.NotSame(fooBoolInFooDeclSym, fooBoolInMainDeclSym);
     }
+
+    [Fact]
+    public void IllegalCallToNonFunctionType()
+    {
+        // func foo() {
+        //     var a = 0;
+        //     a();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("a", null, LiteralExpression(0))),
+                    ExpressionStatement(CallExpression(NameExpression("a")))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.CallNonFunction);
+    }
 }

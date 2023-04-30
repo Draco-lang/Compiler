@@ -63,5 +63,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "parameters of function {0} match another definition",
         code: Code(6));
+
+    /// <summary>
+    /// A non-function type was called.
+    /// </summary>
+    public static readonly DiagnosticTemplate CallNonFunction = DiagnosticTemplate.Create(
+        title: "illegal call",
+        severity: DiagnosticSeverity.Error,
+        format: "the non-function type {0} can not be called",
+        code: Code(7));
 }
 

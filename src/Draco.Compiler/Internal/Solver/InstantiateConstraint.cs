@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -11,7 +12,7 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// Represents a generic type instantiation.
 /// </summary>
-internal sealed class InstantiateConstraint : Constraint
+internal sealed class InstantiateConstraint : Constraint<TypeSymbol>
 {
     /// <summary>
     /// The type to instantiate.
@@ -28,19 +29,19 @@ internal sealed class InstantiateConstraint : Constraint
     /// </summary>
     public ImmutableArray<TypeSymbol> Arguments { get; }
 
-    /// <summary>
-    /// The promise of this constraint.
-    /// </summary>
-    public ConstraintPromise<TypeSymbol> Promise { get; }
-
     public InstantiateConstraint(
+        ConstraintSolver solver,
         TypeSymbol toInstantiate,
         TypeSymbol instantiated,
         ImmutableArray<TypeSymbol> arguments)
+        : base(solver)
     {
         this.ToInstantiate = toInstantiate;
         this.Instantiated = instantiated;
         this.Arguments = arguments;
-        this.Promise = ConstraintPromise.Create<TypeSymbol>(this);
     }
+
+    public override string ToString() => throw new NotImplementedException();
+
+    public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics) => throw new NotImplementedException();
 }

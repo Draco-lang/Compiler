@@ -381,18 +381,4 @@ internal sealed class ConstraintSolver
         // Otherwise, no match
         return 0;
     }
-
-    /// <summary>
-    /// Adds an explicit generic instantiation constraint to the solver.
-    /// </summary>
-    /// <param name="toInstantiate">The generic instantiated type.</param>
-    /// <param name="args">The generic arguments to substitute.</param>
-    /// <returns>The promise of the instantiated type along with the inferred instantiated type.</returns>
-    public (ConstraintPromise<TypeSymbol> Type, TypeSymbol Instantiated) Instantiate(TypeSymbol toInstantiate, ImmutableArray<TypeSymbol> args)
-    {
-        var instantiatedType = this.NextTypeVariable;
-        var constraint = new InstantiateConstraint(toInstantiate, instantiatedType, args);
-        this.constraints.Add(constraint);
-        return (constraint.Promise, instantiatedType);
-    }
 }

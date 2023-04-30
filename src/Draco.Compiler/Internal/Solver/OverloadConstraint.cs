@@ -123,13 +123,13 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         // Iterate through all candidates
         for (var i = 0; i < candidates.Count;)
         {
-            var (symbol, scoreVector) = candidates[i];
+            var candidate = candidates[i];
 
             // Compute any undefined arguments
-            changed = this.AdjustScore(candidates[i]) || changed;
+            changed = this.AdjustScore(candidate) || changed;
             // We consider having a 0-element well-defined, since we are throwing it away
-            var hasZero = scoreVector.HasZero;
-            wellDefined = wellDefined && (scoreVector.IsWellDefined || hasZero);
+            var hasZero = candidate.Score.HasZero;
+            wellDefined = wellDefined && (candidate.Score.IsWellDefined || hasZero);
 
             // If any of the score vector components reached 0, we exclude the candidate
             if (hasZero)

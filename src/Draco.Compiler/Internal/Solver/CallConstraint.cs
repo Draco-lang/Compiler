@@ -156,5 +156,5 @@ internal sealed class CallConstraint : Constraint<Unit>
             .Select(a => new SynthetizedParameterSymbol(a))
             .Cast<ParameterSymbol>()
             .ToImmutableArray(),
-        returnType)
+        returnType);
 }

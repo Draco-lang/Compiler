@@ -495,8 +495,7 @@ internal partial class Binder
     {
         FunctionSymbol f => ImmutableArray.Create(f),
         OverloadSymbol o => o.Functions,
-        // TODO: Is this ok? No error?
-        _ => ImmutableArray<FunctionSymbol>.Empty,
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
     private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch

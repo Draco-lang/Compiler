@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
@@ -53,6 +54,11 @@ internal abstract partial class Symbol
     public virtual bool IsSpecialName => false;
 
     /// <summary>
+    /// True, if this is a generic definition.
+    /// </summary>
+    public bool IsGenericDefinition => this.GenericParameters.Length > 0;
+
+    /// <summary>
     /// The name of this symbol.
     /// </summary>
     public virtual string Name => string.Empty;
@@ -85,6 +91,29 @@ internal abstract partial class Symbol
     /// The syntax declaring this symbol.
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => null;
+
+    /// <summary>
+    /// The generic definition of this symbol, in case this is a generic instance.
+    /// </summary>
+    public virtual Symbol? GenericDefinition => null;
+
+    /// <summary>
+    /// The generic parameters of this symbol.
+    /// </summary>
+    public virtual ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray<TypeParameterSymbol>.Empty;
+
+    /// <summary>
+    /// The generic arguments that this symbol was instantiated with.
+    /// </summary>
+    public virtual ImmutableArray<TypeSymbol> GenericArguments => ImmutableArray<TypeSymbol>.Empty;
+
+    /// <summary>
+    /// Instantiates this generic symbol with the given substitutions.
+    /// </summary>
+    /// <param name="substitutions">The substitutions to perform.</param>
+    /// <returns>This symbol with all type parameters replaced according to <paramref name="substitutions"/>.</returns>
+    public virtual Symbol GenericInstantiate(ImmutableDictionary<TypeParameterSymbol, TypeSymbol> substitutions) =>
+        throw new System.NotSupportedException();
 
     /// <summary>
     /// Converts this symbol into an API symbol.

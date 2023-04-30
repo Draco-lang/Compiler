@@ -472,8 +472,16 @@ internal partial class Binder
         var args = syntax.Arguments.Values
             .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
             .ToImmutableArray();
-        // TODO
-        throw new NotImplementedException();
+        if (instantiated is UntypedFunctionGroupExpression group)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
     }
 
     private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)

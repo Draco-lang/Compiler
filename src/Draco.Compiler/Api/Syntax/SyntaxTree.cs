@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Draco.Compiler.Api.CodeFixes;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Syntax.Rewriting;

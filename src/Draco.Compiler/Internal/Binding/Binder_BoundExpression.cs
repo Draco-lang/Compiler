@@ -29,7 +29,7 @@ internal partial class Binder
         UntypedParameterExpression @param => this.TypeParameterExpression(param, constraints, diagnostics),
         UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
         UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
-        UntypedFunctionExpression func => this.TypeFunctionExpression(func, constraints, diagnostics),
+        UntypedFunctionGroupExpression group => this.TypeFunctionGroupExpression(group, constraints, diagnostics),
         UntypedReferenceErrorExpression err => this.TypeReferenceErrorExpression(err, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
         UntypedBlockExpression block => this.TypeBlockExpression(block, constraints, diagnostics),
@@ -37,6 +37,7 @@ internal partial class Binder
         UntypedIfExpression @if => this.TypeIfExpression(@if, constraints, diagnostics),
         UntypedWhileExpression @while => this.TypeWhileExpression(@while, constraints, diagnostics),
         UntypedCallExpression call => this.TypeCallExpression(call, constraints, diagnostics),
+        UntypedIndirectCallExpression call => this.TypeIndirectCallExpression(call, constraints, diagnostics),
         UntypedAssignmentExpression assignment => this.TypeAssignmentExpression(assignment, constraints, diagnostics),
         UntypedUnaryExpression ury => this.TypeUnaryExpression(ury, constraints, diagnostics),
         UntypedBinaryExpression bin => this.TypeBinaryExpression(bin, constraints, diagnostics),
@@ -44,6 +45,7 @@ internal partial class Binder
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
+        UntypedDelayedExpression delay => this.TypeDelayedExpression(delay, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
 
@@ -85,8 +87,11 @@ internal partial class Binder
     private BoundExpression TypeGlobalExpression(UntypedGlobalExpression global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalExpression(global.Syntax, global.Global);
 
-    private BoundExpression TypeFunctionExpression(UntypedFunctionExpression func, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundFunctionExpression(func.Syntax, func.Function.Result);
+    private BoundExpression TypeFunctionGroupExpression(UntypedFunctionGroupExpression group, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
 
     private BoundExpression TypeReferenceErrorExpression(UntypedReferenceErrorExpression err, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundReferenceErrorExpression(err.Syntax, err.Symbol);
@@ -130,32 +135,23 @@ internal partial class Binder
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        // We have 3 cases:
-        //  - called is a member access -> direct call with receiver
-        //  - called is a function symbol -> direct call without receiver
-        //  - anything else -> indirect call
+        var receiver = call.Receiver is null ? null : this.TypeExpression(call.Receiver, constraints, diagnostics);
+        var function = call.Method.Result;
+        var typedArgs = call.Arguments
+            .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
+            .ToImmutableArray();
 
-        var typedFunction = this.TypeExpression(call.Method, constraints, diagnostics);
+        return new BoundCallExpression(call.Syntax, receiver, function, typedArgs);
+    }
+
+    private BoundExpression TypeIndirectCallExpression(UntypedIndirectCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var function = this.TypeExpression(call.Method, constraints, diagnostics);
         var typedArgs = call.Arguments
             .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
         var resultType = constraints.Unwrap(call.TypeRequired);
-
-        if (typedFunction is BoundMemberExpression memberExpr && memberExpr.Member is FunctionSymbol memberFunc)
-        {
-            // Member function call
-            return new BoundCallExpression(call.Syntax, memberExpr.Receiver, memberFunc, typedArgs, resultType);
-        }
-        else if (typedFunction is BoundFunctionExpression funcExpr)
-        {
-            // Free-function call
-            return new BoundCallExpression(call.Syntax, null, funcExpr.Function, typedArgs, resultType);
-        }
-        else
-        {
-            // Indirect function call
-            return new BoundIndirectCallExpression(call.Syntax, typedFunction, typedArgs, resultType);
-        }
+        return new BoundIndirectCallExpression(call.Syntax, function, typedArgs, resultType);
     }
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -216,9 +212,25 @@ internal partial class Binder
     private BoundExpression TypeMemberExpression(UntypedMemberExpression mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
-        var member = mem.Member.Result;
-        var resultType = constraints.Unwrap(mem.TypeRequired);
+        var members = mem.Member.Result;
+        if (members.Length == 1 && members[0] is ITypedSymbol member)
+        {
+            return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
+        }
+        else
+        {
+            // NOTE: I'm not sure this can happen
+            // Multiple members can maybe happen, in case there are duplicates, in which case this would be a cascaded
+            // error
+            // TODO: Verify
+            throw new NotImplementedException();
+        }
+    }
 
-        return new BoundMemberExpression(mem.Syntax, left, member, resultType);
+    private BoundExpression TypeDelayedExpression(UntypedDelayedExpression delay, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // Just take result and type that
+        var result = delay.Promise.Result;
+        return this.TypeExpression(result, constraints, diagnostics);
     }
 }

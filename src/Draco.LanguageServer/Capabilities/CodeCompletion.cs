@@ -2,10 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CompletionService = Draco.Compiler.Api.CodeCompletion.CompletionService;
-using KeywordCompletionProvider = Draco.Compiler.Api.CodeCompletion.KeywordCompletionProvider;
-using ExpressionCompletionProvider = Draco.Compiler.Api.CodeCompletion.ExpressionCompletionProvider;
-using MemberAccessCompletionProvider = Draco.Compiler.Api.CodeCompletion.MemberAccessCompletionProvider;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 

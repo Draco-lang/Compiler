@@ -105,11 +105,6 @@ internal partial class BoundLocalExpression
     public override TypeSymbol Type => this.Local.Type;
 }
 
-internal partial class BoundFunctionExpression
-{
-    public override TypeSymbol Type => this.Function.Type;
-}
-
 internal partial class BoundReferenceErrorExpression
 {
     public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
@@ -149,6 +144,11 @@ internal partial class BoundObjectCreationExpression
 internal partial class BoundArrayCreationExpression
 {
     public override TypeSymbol Type => new ArrayTypeSymbol(this.ElementType, this.Sizes.Length);
+}
+
+internal partial class BoundCallExpression
+{
+    public override TypeSymbol Type => this.Method.ReturnType;
 }
 
 // Lvalues

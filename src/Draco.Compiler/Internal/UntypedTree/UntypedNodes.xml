@@ -74,8 +74,20 @@
   </Node>
 
   <Node Name="UntypedCallExpression" Base="UntypedExpression">
+    <Field Name="Receiver" Type="UntypedExpression?" />
+    <Field Name="Method" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="UntypedIndirectCallExpression" Base="UntypedExpression">
     <Field Name="Method" Type="UntypedExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="UntypedDelayedExpression" Base="UntypedExpression">
+    <Field Name="Promise" Type="IConstraintPromise&lt;UntypedExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
@@ -86,13 +98,13 @@
   </Node>
 
   <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
-    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Operator" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Operand" Type="UntypedExpression" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedBinaryExpression" Base="UntypedExpression">
-    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Operator" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
@@ -109,7 +121,7 @@
   </Node>
 
   <Node Name="UntypedAssignmentExpression" Base="UntypedExpression">
-    <Field Name="CompoundOperator" Type="ConstraintPromise&lt;FunctionSymbol&gt;?" />
+    <Field Name="CompoundOperator" Type="IConstraintPromise&lt;FunctionSymbol&gt;?" />
     <Field Name="Left" Type="UntypedLvalue" />
     <Field Name="Right" Type="UntypedExpression" />
   </Node>
@@ -133,9 +145,8 @@
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
 
-  <Node Name="UntypedFunctionExpression" Base="UntypedExpression">
-    <Field Name="Function" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  <Node Name="UntypedFunctionGroupExpression" Base="UntypedExpression">
+    <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
   </Node>
 
   <Node Name="UntypedReferenceErrorExpression" Base="UntypedExpression">
@@ -156,14 +167,13 @@
   </Node>
 
   <Node Name="UntypedComparison" Base="UntypedNode">
-    <Field Name="Operator" Type="ConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Operator" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Next" Type="UntypedExpression" />
   </Node>
 
   <Node Name="UntypedMemberExpression" Base="UntypedExpression">
     <Field Name="Accessed" Type="UntypedExpression" />
-    <Field Name="Member" Type="ConstraintPromise&lt;Symbol&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
+    <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
   </Node>
 
   <AbstractNode Name="UntypedStringPart" Base="UntypedNode" />

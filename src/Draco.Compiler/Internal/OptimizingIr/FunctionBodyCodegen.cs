@@ -374,8 +374,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitFunctionExpression(BoundFunctionExpression node) =>
-        this.TranslateFunctionSymbol(node.Function);
+    public override IOperand VisitFunctionGroupExpression(BoundFunctionGroupExpression node) =>
+        // TODO
+        throw new System.NotImplementedException();
 
     private IOperand TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
     {

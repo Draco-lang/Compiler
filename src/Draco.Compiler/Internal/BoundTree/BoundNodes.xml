@@ -109,7 +109,6 @@
     <Field Name="Receiver" Type="BoundExpression?" />
     <Field Name="Method" Type="FunctionSymbol" />
     <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundIndirectCallExpression" Base="BoundExpression">
@@ -176,8 +175,8 @@
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
 
-  <Node Name="BoundFunctionExpression" Base="BoundExpression">
-    <Field Name="Function" Type="FunctionSymbol" />
+  <Node Name="BoundFunctionGroupExpression" Base="BoundExpression">
+    <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
   </Node>
 
   <Node Name="BoundReferenceErrorExpression" Base="BoundExpression">

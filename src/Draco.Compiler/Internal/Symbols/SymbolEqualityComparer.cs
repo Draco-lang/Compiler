@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -12,6 +13,19 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqualityComparer<TypeSymbol>
 {
+    /// <summary>
+    /// A symbol equality comparer that only compares ground-types, type-variables are illegal.
+    /// </summary>
+    public static SymbolEqualityComparer Ground { get; } = new GroundSymbolEqualityComparer();
+
+    /// <summary>
+    /// Constructs a symbol-equality comparer that can compare types with substituted type variables.
+    /// </summary>
+    /// <param name="solver">The solver to use for resolving substitutions.</param>
+    /// <returns>A symbol equality comparer using <paramref name="solver"/> to resolve substitutions.</returns>
+    public static SymbolEqualityComparer Unwrapping(ConstraintSolver solver) =>
+        new UnwrappingSymbolEqualityComparer(solver);
+
     public bool Equals(Symbol? x, Symbol? y)
     {
         if (ReferenceEquals(x, y)) return true;
@@ -60,4 +74,27 @@ internal abstract class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqu
     /// <param name="type">The type-variable to unwrap.</param>
     /// <returns>The substitution of <paramref name="type"/>.</returns>
     protected abstract TypeSymbol Unwrap(TypeVariable type);
+
+    private sealed class GroundSymbolEqualityComparer : SymbolEqualityComparer
+    {
+        protected override TypeSymbol Unwrap(TypeVariable type) =>
+            throw new InvalidOperationException("cannot compare type variables");
+    }
+
+    private sealed class UnwrappingSymbolEqualityComparer : SymbolEqualityComparer
+    {
+        private readonly ConstraintSolver solver;
+
+        public UnwrappingSymbolEqualityComparer(ConstraintSolver solver)
+        {
+            this.solver = solver;
+        }
+
+        protected override TypeSymbol Unwrap(TypeVariable type)
+        {
+            var unwrappedType = this.solver.Unwrap(type);
+            if (unwrappedType.IsTypeVariable) throw new InvalidOperationException("could not unwrap type variable");
+            return unwrappedType;
+        }
+    }
 }

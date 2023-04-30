@@ -82,6 +82,9 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     public override string ToString() =>
         $"{this.Name}({string.Join(", ", this.Parameters)}): {this.ReturnType}";
 
+    public override FunctionSymbol GenericInstantiate(ImmutableDictionary<TypeParameterSymbol, TypeSymbol> substitutions) =>
+        throw new System.NotImplementedException();
+
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitFunction(this);

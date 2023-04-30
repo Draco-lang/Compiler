@@ -509,7 +509,7 @@ internal sealed class Translator
             if (ch == char.ToUpper(ch)) break;
         }
         // Cut it off
-        return name.Substring(startIndex);
+        return name[startIndex..];
     }
 
     /// <summary>

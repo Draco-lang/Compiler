@@ -1,6 +1,6 @@
 using System;
-using Draco.Lsp.Serialization;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using Draco.Lsp.Protocol.Serialization;
 
 namespace Draco.Lsp.Model;
 

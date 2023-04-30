@@ -181,9 +181,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
             var p1 = f1.Parameters[i];
             var p2 = f2.Parameters[i];
 
-            // TODO: Solve type-equality across the compiler
-            // We need a proper symbol equality comparison thing
-            if (!ReferenceEquals(p1.Type, p2.Type)) return false;
+            if (!SymbolEqualityComparer.Ground.Equals(p1.Type, p2.Type)) return false;
         }
 
         return true;

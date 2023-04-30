@@ -58,7 +58,7 @@ internal sealed class CilCodegen
 
     private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
-        if (ReferenceEquals(operand.Type, IntrinsicSymbols.Unit)) return null;
+        if (SymbolEqualityComparer.Ground.Equals(operand.Type, IntrinsicSymbols.Unit)) return null;
         if (!this.allocatedLocals.TryGetValue(operand, out var local))
         {
             local = new(operand, this.allocatedLocals.Count);

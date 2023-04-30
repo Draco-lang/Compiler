@@ -370,18 +370,18 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     public void EncodeReturnType(ReturnTypeEncoder encoder, TypeSymbol type)
     {
-        if (ReferenceEquals(type, IntrinsicSymbols.Unit)) { encoder.Void(); return; }
+        if (SymbolEqualityComparer.Ground.Equals(type, IntrinsicSymbols.Unit)) { encoder.Void(); return; }
 
         this.EncodeSignatureType(encoder.Type(), type);
     }
 
     public void EncodeSignatureType(SignatureTypeEncoder encoder, TypeSymbol type)
     {
-        if (ReferenceEquals(type, IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
-        if (ReferenceEquals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
-        if (ReferenceEquals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
-        if (ReferenceEquals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
-        if (ReferenceEquals(type, IntrinsicSymbols.Object)) { encoder.Object(); return; }
+        if (SymbolEqualityComparer.Ground.Equals(type, IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
+        if (SymbolEqualityComparer.Ground.Equals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
+        if (SymbolEqualityComparer.Ground.Equals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
+        if (SymbolEqualityComparer.Ground.Equals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
+        if (SymbolEqualityComparer.Ground.Equals(type, IntrinsicSymbols.Object)) { encoder.Object(); return; }
 
         if (type is MetadataTypeSymbol metadataType)
         {

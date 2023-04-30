@@ -43,10 +43,13 @@ internal sealed class ConstraintSolver
     // All locals that have a typed variant constructed
     private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
 
+    private readonly SymbolEqualityComparer typeEqualityComparer;
+
     public ConstraintSolver(SyntaxNode context, string contextName)
     {
         this.Context = context;
         this.ContextName = contextName;
+        this.typeEqualityComparer = SymbolEqualityComparer.Unwrapping(this);
     }
 
     /// <summary>
@@ -312,6 +315,7 @@ internal sealed class ConstraintSolver
         first = this.Unwrap(first);
         second = this.Unwrap(second);
 
+        // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComprer, this is unification
         if (ReferenceEquals(first, second)) return true;
 
         switch (first, second)
@@ -321,6 +325,8 @@ internal sealed class ConstraintSolver
         case (TypeVariable v1, TypeVariable v2):
         {
             // Check for circularity
+            // NOTE: Referential equality is OK here, we are checking for CIRCULARITY
+            // which is  referential check
             if (ReferenceEquals(v1, v2)) return true;
             this.Substitute(v1, v2);
             return true;
@@ -376,7 +382,7 @@ internal sealed class ConstraintSolver
         if (argType.IsTypeVariable) return null;
 
         // Exact equality is max score
-        if (ReferenceEquals(paramType, argType)) return 16;
+        if (this.typeEqualityComparer.Equals(paramType, argType)) return 16;
 
         // Otherwise, no match
         return 0;

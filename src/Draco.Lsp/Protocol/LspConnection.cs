@@ -3,8 +3,6 @@ using System.Buffers;
 using System.Buffers.Text;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -14,8 +12,6 @@ using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-
 using Draco.Lsp.Model;
 
 using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RequestMessage, Draco.Lsp.Model.NotificationMessage, Draco.Lsp.Model.ResponseMessage>;
@@ -28,13 +24,14 @@ public sealed class LspConnection : IAsyncDisposable
     private readonly JsonSerializerOptions options;
     private readonly Dictionary<string, JsonRpcMethodHandler> methodHandlers = new();
 
-    // These channels are bounded to prevent infinite memory growth in case of a bug in the language server.
+    // These channels are bounded to prevent infinite memory growth in case a bug causes
+    // the language server to get stuck in an infinite loop.
     private readonly Channel<LspMessage> outgoingMessages = Channel.CreateBounded<LspMessage>(new BoundedChannelOptions(128));
     private readonly Channel<LspMessage> incomingMessages = Channel.CreateBounded<LspMessage>(new BoundedChannelOptions(128));
 
-
     private int lastMessageId = 0;
-    private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> inFlightRequests = new();
+    private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> pendingOutgoingRequests = new();
+    private readonly ConcurrentDictionary<OneOf<int, string>, CancellationTokenSource> pendingIncomingRequests = new();
 
     public LspConnection(IDuplexPipe pipeTransport)
     {
@@ -89,18 +86,15 @@ public sealed class LspConnection : IAsyncDisposable
     public void AddRpcMethod(JsonRpcMethodHandler handler)
     {
         var @params = handler.MethodInfo.GetParameters();
-        if (@params is [.., { ParameterType: Type t }] && t == typeof(CancellationToken))
+
+        if (@params.Length > 2)
         {
-            @params = @params[..^1];
+            throw new ArgumentException("Handling method has too many parameters.", nameof(handler));
         }
 
-        // TODO-LSP: We need to actually flow the cancellation token throughout this entire system.
-        // We haven't done that yet.
-        // TODO-LSP: It also needs to be integrated with the LSP cancellation request.
-
-        if (@params.Length > 1)
+        if (@params.Count(p => p.ParameterType == typeof(CancellationToken)) > 1)
         {
-            throw new ArgumentException("Handling method must have at most one parameter.", nameof(handler));
+            throw new ArgumentException("Handling method can have at most one CancellationToken parameter.", nameof(handler));
         }
 
         this.methodHandlers.Add(handler.MethodName, handler);
@@ -141,21 +135,21 @@ public sealed class LspConnection : IAsyncDisposable
                     {
                         // We've just scanned past the final header, and we're now ready to
                         // read the JSON payload.
-                        if (reader.TryReadExact(contentLength, out var jsonBuf))
+                        if (reader.TryReadExact(contentLength, out var utf8Json))
                         {
                             consumed = reader.Position;
                             examined = consumed;
 
-                            // We might want to build up the Utf8JsonReader as we scan through the JSON,
+                            // TODO-LSP: We might want to build up the Utf8JsonReader as we scan through the JSON,
                             // instead of all at once.
-                            var jsonReader = new Utf8JsonReader(jsonBuf);
+                            var jsonReader = new Utf8JsonReader(utf8Json);
                             message = JsonSerializer.Deserialize<LspMessage>(ref jsonReader, this.options);
                             return true;
                         }
                         else
                         {
-                            // Make sure we keep the \r\n right before the JSON payload.
-                            // Otherwise, this loop will immediately exit the next time we return.
+                            // Keep the \r\n right before the JSON payload.
+                            // Otherwise, we'll never enter this loop again.
                             reader.Rewind(2);
                             consumed = reader.Position;
                             break;
@@ -215,8 +209,6 @@ public sealed class LspConnection : IAsyncDisposable
             while (true)
             {
                 var message = await this.ReadLspMessage();
-                Debug.WriteLine($"INCOMING: {JsonSerializer.Serialize(((IOneOf)message).Value)}");
-
                 await this.incomingMessages.Writer.WriteAsync(message);
             }
         }
@@ -241,7 +233,6 @@ public sealed class LspConnection : IAsyncDisposable
 
             await foreach (var message in this.outgoingMessages.Reader.ReadAllAsync())
             {
-                Debug.WriteLine($"OUTGOING: {JsonSerializer.Serialize(((IOneOf)message).Value)}");
                 var response = JsonSerializer.SerializeToUtf8Bytes(message, this.options);
                 await stream.WriteAsync(ContentLengthHeader);
 
@@ -284,7 +275,7 @@ public sealed class LspConnection : IAsyncDisposable
                 }
                 else if (message.Is<ResponseMessage>(out var responseMessage))
                 {
-                    this.ProcessResponseMessage(responseMessage);
+                    this.ProcessResponse(responseMessage);
                 }
                 else
                 {
@@ -302,83 +293,213 @@ public sealed class LspConnection : IAsyncDisposable
 
     private async Task ProcessRequestOrNotification(string method, JsonElement? @params, OneOf<int, string>? id)
     {
-        var methodHandler = this.methodHandlers[method];
-        // TODO-LSP: Do we need IsRequest for anything?
+        if (method.StartsWith("$/"))
+        {
+            this.ProcessImplementationDefinedMethod(method, @params, id);
+            return;
+        }
+
+        if (!this.methodHandlers.TryGetValue(method, out var methodHandler))
+        {
+            if (id != null)
+            {
+                await this.PostResponse(id.Value, new ResponseError
+                {
+                    Code = -32601, // MethodNotFound
+                    Message = $"A handler for the method {method} was not registered."
+                });
+            }
+
+            return;
+        }
+
+        if (@params is JsonElement { ValueKind: not (JsonValueKind.Object or JsonValueKind.Array) })
+        {
+            if (id != null)
+            {
+                await this.PostResponse(id.Value, new ResponseError
+                {
+                    Code = -32600, // InvalidRequest
+                    Message = "Invalid request."
+                });
+            }
+
+            return;
+        }
+
         var (_, methodInfo, target, isRequest) = methodHandler;
 
-        var index = methodHandler.CancellationTokenParameterIndex;
-        var builder = ImmutableArray.CreateBuilder<object?>();
+        if (isRequest && id == null)
+        {
+            throw null;
+        }
+        else if (id != null && !isRequest)
+        {
+            throw null;
+        }
+
+        var args = new List<object?>();
 
         if (@params.HasValue)
         {
-            var element = @params.Value;
-            builder.Add(JsonSerializer.Deserialize(element, methodHandler.ParameterType!, this.options));
+            try
+            {
+                var element = @params.Value;
+                args.Add(JsonSerializer.Deserialize(element, methodHandler.ParameterType!, this.options));
+            }
+            catch (JsonException ex)
+            {
+                if (isRequest)
+                {
+                    var responseError = new ResponseError
+                    {
+                        Message = ex.Message,
+                        Data = JsonSerializer.SerializeToElement(ex.ToString())
+                    };
+
+                    if (ex.BytePositionInLine.HasValue)
+                    {
+                        // Typically, only exceptions from Utf8JsonReader have the position info set.
+                        // So, we assume this is a parse error, and other errors are serialization errors.
+                        responseError.Code = -32700; // ParseError
+                    }
+                    else
+                    {
+                        responseError.Code = -32602; // InvalidParams
+                    }
+
+                    await this.PostResponse(id!.Value, responseError);
+                }
+
+                return;
+            }
         }
 
+        var cancellationToken = CancellationToken.None;
+
+        if (isRequest)
+        {
+            var cts = new CancellationTokenSource();
+            this.pendingIncomingRequests.TryAdd(id!.Value, cts);
+            cancellationToken = cts.Token;
+        }
+
+        var index = methodHandler.CancellationTokenParameterIndex;
         if (index != -1)
         {
-            builder.Insert(index, CancellationToken.None);
+            args.Insert(index, cancellationToken);
         }
 
-
-        object? result = null;
-        Exception? error = null;
+        OneOf<object?, Exception> response;
         try
         {
-            var returnValue = methodInfo.Invoke(target, builder.ToArray());
-
-            // TODO-LSP We might want to support more types of return types here.
-            if (returnValue is Task task)
-            {
-                await task;
-
-                if (task.GetType().GetGenericTypeDefinition() == typeof(Task<>))
-                {
-                    var getResult = (MethodInfo)task.GetType().GetMemberWithSameMetadataDefinitionAs(taskGetResult);
-                    result = getResult.Invoke(task, null);
-                }
-            }
-            else
-            {
-                result = returnValue;
-            }
+            var returnValue = methodInfo.Invoke(target, args.ToArray());
+            response = await GetValueToSerialize(returnValue);
         }
         catch (Exception ex)
         {
-            error = ex;
+            response = ex;
         }
 
         if (id != null)
         {
-            var response = new ResponseMessage
+            OneOf<object?, ResponseError> serializableResponse;
+            if (response.Is<Exception>(out var error))
             {
-                Jsonrpc = "2.0",
-                Id = id
-            };
-
-            if (error is not null)
-            {
-                response.Error = new ResponseError()
+                if (error is TargetInvocationException)
                 {
-                    Message = error is TargetInvocationException ? error.InnerException!.Message : error.Message,
-                    // TODO-RPC: This obviously needs to be a different
-                    Code = error.HResult,
-                    Data = JsonSerializer.SerializeToElement(error.ToString())
+                    error = error.InnerException;
+                }
+
+                var errorCode = error switch
+                {
+                    OperationCanceledException => -32800, // RequestCancelled
+                    _ => -32603 // InternalError
+                };
+
+                serializableResponse = new ResponseError
+                {
+                    Message = error?.Message ?? "",
+                    Code = errorCode,
+                    Data = JsonSerializer.SerializeToElement(error?.ToString())
                 };
             }
             else
             {
-                response.Result = JsonSerializer.SerializeToElement(result, this.options);
+                serializableResponse = response.As<object?>();
             }
 
-            await this.outgoingMessages.Writer.WriteAsync(response);
+            await this.PostResponse(id.Value, serializableResponse);
         }
     }
 
-    private void ProcessResponseMessage(ResponseMessage responseMessage)
+    private async Task PostResponse(OneOf<int, string> id, OneOf<object?, ResponseError> response)
+    {
+        var responseMessage = new ResponseMessage
+        {
+            Jsonrpc = "2.0",
+            Id = id
+        };
+
+        if (response.Is<ResponseError>(out var error))
+        {
+            responseMessage.Error = error;
+        }
+        else
+        {
+            responseMessage.Result = JsonSerializer.SerializeToElement(response.As<object>(), this.options);
+        }
+
+        this.pendingIncomingRequests.TryRemove(id, out var cts);
+        cts?.Dispose();
+
+        await this.outgoingMessages.Writer.WriteAsync(responseMessage);
+    }
+
+    private void ProcessImplementationDefinedMethod(string method, JsonElement? @params, OneOf<int, string>? id)
+    {
+        if (id != null)
+        {
+            if (method == "$/cancelRequest")
+            {
+                if (this.pendingIncomingRequests.TryGetValue(id.Value, out var cts))
+                {
+                    cts.Cancel();
+                }
+            }
+        }
+        else
+        {
+            // If we supported progress notifications, we would handle them here.
+            return;
+        }
+    }
+
+    private static async Task<object?> GetValueToSerialize(object? returnValue)
+    {
+        object? result = null;
+        if (returnValue is Task task)
+        {
+            await task;
+
+            if (task.GetType().GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                var getResult = (MethodInfo)task.GetType().GetMemberWithSameMetadataDefinitionAs(taskGetResult);
+                result = getResult.Invoke(task, null);
+            }
+        }
+        else
+        {
+            result = returnValue;
+        }
+
+        return result;
+    }
+
+    private void ProcessResponse(ResponseMessage responseMessage)
     {
         var id = responseMessage.Id!.Value.As<int>();
-        if (this.inFlightRequests.TryRemove(id, out var tcs))
+        if (this.pendingOutgoingRequests.TryRemove(id, out var tcs))
         {
             if (responseMessage.Error is not null)
             {
@@ -407,9 +528,8 @@ public sealed class LspConnection : IAsyncDisposable
     {
         var id = Interlocked.Increment(ref this.lastMessageId);
         var tcs = new TaskCompletionSource<JsonElement>();
-        this.inFlightRequests.TryAdd(id, tcs);
+        this.pendingOutgoingRequests.TryAdd(id, tcs);
 
-        // TODO-LSP: This is probably not as efficient as it could be
         var serializedParams = JsonSerializer.SerializeToElement(@params, this.options);
         await this.outgoingMessages.Writer.WriteAsync(new RequestMessage
         {

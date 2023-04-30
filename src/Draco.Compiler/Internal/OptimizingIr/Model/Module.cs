@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
@@ -40,6 +41,16 @@ internal sealed class Module : IModule
         this.Assembly = assembly;
     }
 
+    public ImmutableArray<IProcedure> GetProcedures()
+    {
+        var result = ImmutableArray.CreateBuilder<IProcedure>();
+        result.AddRange(this.procedures.Values.ToImmutableArray());
+        foreach (var submodule in this.subModules.Values)
+        {
+            result.AddRange(((Module)submodule).GetProcedures());
+        }
+        return result.ToImmutable();
+    }
 
     public Global DefineGlobal(GlobalSymbol globalSymbol)
     {

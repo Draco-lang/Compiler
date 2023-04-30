@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
@@ -40,6 +41,8 @@ internal sealed class Assembly : IAssembly
     {
         this.rootModule = new Module(root, this);
     }
+
+    public ImmutableArray<IProcedure> GetAllProcedures() => this.rootModule.GetProcedures();
 
     public override string ToString()
     {

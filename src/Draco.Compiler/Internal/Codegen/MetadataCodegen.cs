@@ -195,25 +195,6 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private void EncodeAssembly()
     {
-        // Go through globals
-        foreach (var global in this.assembly.Globals.Values) this.EncodeGlobal(global);
-
-        // Go through procedures
-        foreach (var procedure in this.assembly.Procedures.Values)
-        {
-            // Global initializer will get special treatment
-            if (ReferenceEquals(this.assembly.GlobalInitializer, procedure)) continue;
-
-            // Encode the procedure
-            var handle = this.EncodeProcedure(procedure);
-
-            // If this is the entry point, save it
-            if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
-        }
-
-        // Compile global initializer too
-        this.EncodeProcedure(this.assembly.GlobalInitializer, specialName: ".cctor");
-
         // Reference System.Object from System.Runtime
         var systemRuntime = this.GetOrAddAssemblyReference(
             name: "System.Runtime",
@@ -224,17 +205,7 @@ internal sealed class MetadataCodegen : MetadataWriter
            @namespace: "System",
            name: "Object");
 
-        // Create the free-functions type
-        this.AddTypeDefinition(
-            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
-            @namespace: default,
-            name: "FreeFunctions",
-            baseType: systemObject,
-            // TODO: Again, this should be read up from an index
-            fieldList: MetadataTokens.FieldDefinitionHandle(1),
-            // TODO: This depends on the order of types
-            // we likely want to read this up from an index
-            methodList: MetadataTokens.MethodDefinitionHandle(1));
+        this.EncodeModule((OptimizingIr.Model.Module)this.assembly.RootModule, systemRuntime, systemObject);
 
         // If we write a PDB, we add the debuggable attribute to the assembly
         if (this.PdbCodegen is not null)
@@ -260,6 +231,47 @@ internal sealed class MetadataCodegen : MetadataWriter
                 target: this.AssemblyDefinitionHandle,
                 ctor: debuggableAttributeCtor,
                 value: this.GetOrAddBlob(new byte[] { 01, 00, 07, 01, 00, 00, 00, 00 }));
+        }
+    }
+
+    private void EncodeModule(OptimizingIr.Model.Module module, AssemblyReferenceHandle systemRuntime, TypeReferenceHandle systemObject, TypeDefinitionHandle? parentModule = null)
+    {
+        // Go through globals
+        foreach (var global in module.Globals.Values) this.EncodeGlobal(global);
+
+        // Go through procedures
+        foreach (var procedure in module.Procedures.Values)
+        {
+            // Global initializer will get special treatment
+            if (ReferenceEquals(module.GlobalInitializer, procedure)) continue;
+
+            // Encode the procedure
+            var handle = this.EncodeProcedure(procedure);
+
+            // If this is the entry point, save it
+            if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
+        }
+
+        // Compile global initializer too
+        this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
+
+        // Create the free-functions type
+        var createdModule = this.AddTypeDefinition(
+            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
+            @namespace: default,
+            name: module.Name,
+            baseType: systemObject,
+            // TODO: Again, this should be read up from an index
+            fieldList: MetadataTokens.FieldDefinitionHandle(1),
+            // TODO: This depends on the order of types
+            // we likely want to read this up from an index
+            methodList: MetadataTokens.MethodDefinitionHandle(1));
+
+        if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
+
+        foreach (var subModule in module.SubModules)
+        {
+            this.EncodeModule((OptimizingIr.Model.Module)subModule.Value, systemRuntime, systemObject, createdModule);
         }
     }
 

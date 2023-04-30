@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal sealed class Assembly : IAssembly
 {
     private Procedure? entryPoint;
-    private Module rootModule;
+    private Module? rootModule;
 
     public string Name { get; set; } = "output";
     public Procedure? EntryPoint
@@ -35,14 +35,11 @@ internal sealed class Assembly : IAssembly
     }
     IProcedure? IAssembly.EntryPoint => this.EntryPoint;
 
-    public IModule RootModule => this.rootModule;
+    public IModule RootModule => this.rootModule ?? throw new System.InvalidOperationException();
 
-    public Assembly(ModuleSymbol root)
-    {
-        this.rootModule = new Module(root, this);
-    }
+    public ImmutableArray<IProcedure> GetAllProcedures() => (this.rootModule ?? throw new System.InvalidOperationException()).GetProcedures();
 
-    public ImmutableArray<IProcedure> GetAllProcedures() => this.rootModule.GetProcedures();
+    public void AddRootModule(Module module) => this.rootModule = module;
 
     public override string ToString()
     {

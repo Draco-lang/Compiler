@@ -53,7 +53,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
-    private Procedure DefineProcedure(FunctionSymbol function) => this.procedure.Module.DefineProcedure(function);
+    private Procedure DefineProcedure(FunctionSymbol function)
+    {
+        // TODO: if the function is in this module, call this.procedure.Module.DefineProcedure(function)
+        // else call DefineProcedure on the module the function is declared in
+    }
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     private Global DefineGlobal(GlobalSymbol global) => this.procedure.Module.DefineGlobal(global);

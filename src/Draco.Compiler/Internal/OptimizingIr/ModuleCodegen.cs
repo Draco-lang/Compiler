@@ -78,11 +78,19 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     public override void VisitModule(ModuleSymbol moduleSymbol)
     {
-        if (moduleSymbol is not SourceModuleSymbol sourceModule) return;
-        var module = this.module.DefineModule(moduleSymbol);
-        var moduleCodegen = new ModuleCodegen(module, this.compilation, this.emitSequencePoints);
-        moduleSymbol.Accept(moduleCodegen);
-        moduleCodegen.Complete();
+        foreach (var subModuleSymbol in moduleSymbol.Members.OfType<ModuleSymbol>())
+        {
+            var module = this.module.DefineModule(subModuleSymbol);
+            var moduleCodegen = new ModuleCodegen(module, this.compilation, this.emitSequencePoints);
+            subModuleSymbol.Accept(moduleCodegen);
+            moduleCodegen.Complete();
+            subModuleSymbol.Accept(this);
+        }
+
+        foreach (var member in moduleSymbol.Members.Where(x => x is not ModuleSymbol))
+        {
+            member.Accept(this);
+        }
     }
 
     private BoundNode RewriteBody(BoundNode body)

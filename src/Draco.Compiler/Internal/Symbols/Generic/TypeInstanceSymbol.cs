@@ -54,9 +54,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
     }
 
     // TODO: One-to-one copy from FunctionInstanceSymbol...
-    public override string ToString() => this.IsGenericDefinition
-        ? this.GenericDefinition.ToString()
-        : $"{this.GenericDefinition.Name}<{string.Join(", ", this.GenericArguments)}>";
+    public override string ToString() => throw new NotImplementedException();
 
     // TODO: One-to-one copy from FunctionInstanceSymbol...
     private void BuildGenerics()

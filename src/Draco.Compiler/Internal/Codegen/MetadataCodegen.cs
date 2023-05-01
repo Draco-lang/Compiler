@@ -73,10 +73,6 @@ internal sealed class MetadataCodegen : MetadataWriter
         this.Compilation = compilation;
         if (writePdb) this.PdbCodegen = new(this);
         this.assembly = assembly;
-        //this.freeFunctionsTypeReferenceHandle = this.GetOrAddTypeReference(
-        //    module: this.ModuleDefinitionHandle,
-        //    @namespace: null,
-        //    name: "FreeFunctions");
         this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
     }

@@ -42,6 +42,9 @@
           "include": "#comments"
         },
         {
+          "include": "#visibility-keywords"
+        },
+        {
           "include": "#import-declaration"
         },
         {
@@ -51,6 +54,14 @@
           "include": "#function-declaration"
         }
       ]
+    },
+    "visibility-keywords": {
+      "match": "\\b(internal|public)",
+      "captures": {
+        "1": {
+          "name": "keyword.other.draco"
+        }
+      }
     },
     "import-declaration": {
       "match": "\\b(import)\\b\\s*(?:([A-Za-z_][A-Za-z0-9_]*)(?:\\.([A-Za-z_][A-Za-z0-9_]*))*)?;?",

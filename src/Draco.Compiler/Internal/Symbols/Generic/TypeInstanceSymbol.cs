@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,12 +8,13 @@ using System.Threading.Tasks;
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
 /// <summary>
-/// Represents a generic instantiated function.
-/// It does not necessarily mean that the function itself was generic, it might have been within another generic
-/// context (like a generic type definition).
+/// Represents a generic instantiated type.
+/// It does not necessarily mean that the type itself was generic, it might have been within another generic
+/// context.
 /// </summary>
-internal sealed class FunctionInstanceSymbol : FunctionSymbol
+internal sealed class TypeInstanceSymbol : TypeSymbol
 {
+    // TODO: One-to-one copy from FunctionInstanceSymbol...
     public override ImmutableArray<TypeParameterSymbol> GenericParameters
     {
         get
@@ -35,34 +35,30 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
     private ImmutableArray<TypeSymbol>? genericArguments;
     private ImmutableArray<TypeParameterSymbol>? genericParameters;
 
-    public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
-    private ImmutableArray<ParameterSymbol>? parameters;
-
-    public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
-    private TypeSymbol? returnType;
-
+    public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
+    public override bool IsValueType => this.GenericDefinition.IsValueType;
     public override string Name => this.GenericDefinition.Name;
-    public override bool IsMember => this.GenericDefinition.IsMember;
-    public override bool IsVirtual => this.GenericDefinition.IsVirtual;
 
     public override Symbol? ContainingSymbol => this.GenericDefinition.ContainingSymbol;
-    public override FunctionSymbol GenericDefinition { get; }
+
+    public override TypeSymbol GenericDefinition { get; }
 
     private bool NeedsGenericsBuild => this.genericParameters is null;
 
     private readonly GenericContext context;
 
-    public FunctionInstanceSymbol(FunctionSymbol genericDefinition, GenericContext context)
+    public TypeInstanceSymbol(TypeSymbol genericDefinition, GenericContext context)
     {
         this.GenericDefinition = genericDefinition;
         this.context = context;
     }
 
-    public override FunctionSymbol GenericInstantiate(GenericContext context) =>
-        throw new NotImplementedException();
+    // TODO: One-to-one copy from FunctionInstanceSymbol...
+    public override string ToString() => this.IsGenericDefinition
+        ? this.GenericDefinition.ToString()
+        : $"{this.GenericDefinition.Name}<{string.Join(", ", this.GenericArguments)}>";
 
-    public override string ToString() => throw new NotImplementedException();
-
+    // TODO: One-to-one copy from FunctionInstanceSymbol...
     private void BuildGenerics()
     {
         // If the definition wasn't generic, we just carry over the context
@@ -90,10 +86,4 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
             .Select(param => this.context[param])
             .ToImmutableArray();
     }
-
-    private ImmutableArray<ParameterSymbol> BuildParameters() => this.GenericDefinition.Parameters
-        .Select(p => p.GenericInstantiate(this.context))
-        .ToImmutableArray();
-
-    private TypeSymbol BuildReturnType() => this.GenericDefinition.ReturnType.GenericInstantiate(this.context);
 }

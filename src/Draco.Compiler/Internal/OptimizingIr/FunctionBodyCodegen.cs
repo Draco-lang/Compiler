@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
@@ -54,17 +53,17 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
-    private Procedure DefineProcedure(FunctionSymbol function)
+    private Module GetDefiningModule(Symbol symbol)
     {
-        var parentModules = function.AncestorChain.OfType<ModuleSymbol>().Reverse().Select(x => x.FullName).ToList();
+        var parentModules = symbol.AncestorChain.OfType<ModuleSymbol>().Reverse().Select(x => x.FullName).ToList();
         var last = parentModules.LastOrDefault();
         if (last is null) throw new System.InvalidOperationException();
         var currentModule = this.procedure.Module.Symbol;
 
-        // If the full name of the last of parent modules is the same as the full name of the module we are currently in, we can add procedure to this module
-        if (last == currentModule.FullName) return this.procedure.Module.DefineProcedure(function);
+        // If the full name of the last of parent modules is the same as the full name of the module we are currently in we can return this module
+        if (last == currentModule.FullName) return this.procedure.Module;
         if (!currentModule.FullName.StartsWith(parentModules.First())) throw new System.InvalidOperationException();
-        return Recurse((Module)this.procedure.Assembly.RootModule).DefineProcedure(function);
+        return Recurse((Module)this.procedure.Assembly.RootModule);
 
         Module Recurse(Module parent)
         {
@@ -77,14 +76,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             }
             throw new System.InvalidOperationException();
         }
-
-        // TODO: if the function is in this module, call this.procedure.Module.DefineProcedure(function)
-        // else call DefineProcedure on the module the function is declared in
     }
 
+    private Procedure DefineProcedure(FunctionSymbol function) => this.GetDefiningModule(function).DefineProcedure(function);
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
-    private Global DefineGlobal(GlobalSymbol global) => this.procedure.Module.DefineGlobal(global);
+    private Global DefineGlobal(GlobalSymbol global) => this.GetDefiningModule(global).DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
     private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
@@ -93,7 +90,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // We handle synthetized functions a bit specially, as they are not part of our symbol
         // tree, so we compile them, in case they have not been yet
         var compiledAlready = this.procedure.Module.Procedures.ContainsKey(func);
-        var proc = this.DefineProcedure(func);
+        var proc = this.procedure.Module.DefineProcedure(func);
         if (!compiledAlready)
         {
             var codegen = new FunctionBodyCodegen(proc);

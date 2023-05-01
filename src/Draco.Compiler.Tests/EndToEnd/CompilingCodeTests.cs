@@ -362,7 +362,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void SimpleModuleGlobalAccessExample()
     {
         var bar = CreateSyntaxTree("""
-            func bar(): int32{
+            public func bar(): int32{
                 return FooTest.x;
             }
             """, @"C:\Tests\foo.draco");

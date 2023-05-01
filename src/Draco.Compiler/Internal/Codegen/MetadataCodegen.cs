@@ -302,6 +302,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private FieldDefinitionHandle EncodeGlobal(Global global)
     {
+        // TODO: visibility???
         // Definition
         return this.AddFieldDefinition(
             attributes: FieldAttributes.Public | FieldAttributes.Static,

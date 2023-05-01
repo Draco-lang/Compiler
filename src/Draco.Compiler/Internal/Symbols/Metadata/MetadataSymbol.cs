@@ -60,28 +60,27 @@ internal static class MetadataSymbol
     {
         var ctorSymbol = new MetadataMethodSymbol(type, ctorMethod);
 
-        return new LazySynthetizedFunctionSymbol(type.Name, () =>
-        {
-            // Parameters
-            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-            foreach (var param in ctorSymbol.Parameters)
+        return new LazySynthetizedFunctionSymbol(
+            name: type.Name,
+            parametersBuilder: _ =>
             {
-                var paramSym = new SynthetizedParameterSymbol(param.Name, param.Type);
-                parameters.Add(paramSym);
-            }
-
-            // Build body
-            var body = ExpressionStatement(ReturnExpression(
+                // Parameters
+                var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+                foreach (var param in ctorSymbol.Parameters)
+                {
+                    var paramSym = new SynthetizedParameterSymbol(param.Name, param.Type);
+                    parameters.Add(paramSym);
+                }
+                return parameters.ToImmutableArray();
+            },
+            returnTypeBuilder: _ => type,
+            bodyBuilder: f => ExpressionStatement(ReturnExpression(
                 value: ObjectCreationExpression(
                     objectType: type,
                     constructor: ctorSymbol,
-                    arguments: parameters
+                    arguments: f.Parameters
                         .Select(ParameterExpression)
                         .Cast<BoundExpression>()
-                        .ToImmutableArray())));
-
-            // Done
-            return (parameters.ToImmutable(), type, body);
-        });
+                        .ToImmutableArray()))));
     }
 }

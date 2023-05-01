@@ -8,7 +8,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Max()
     {
         var assembly = Compile("""
-            func max(a: int32, b: int32): int32 = if (a > b) a else b;
+            public func max(a: int32, b: int32): int32 = if (a > b) a else b;
             """);
 
         var inputs = new[] { (0, 0), (1, 0), (0, 1), (5, 0), (5, 4), (4, 5) };
@@ -23,7 +23,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Abs()
     {
         var assembly = Compile("""
-            func abs(n: int32): int32 = if (n > 0) n else -n;
+            public func abs(n: int32): int32 = if (n > 0) n else -n;
             """);
 
         var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };
@@ -38,7 +38,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Between()
     {
         var assembly = Compile("""
-            func between(n: int32, a: int32, b: int32): bool = a <= n <= b;
+            public func between(n: int32, a: int32, b: int32): bool = a <= n <= b;
             """);
 
         var trueInputs = new[] { (0, 0, 0), (0, 0, 1), (0, -1, 0), (0, 0, 5), (1, 0, 5), (4, 0, 5), (5, 0, 5) };
@@ -60,7 +60,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Negate()
     {
         var assembly = Compile("""
-            func negate(n: int32): int32 = if (n < 0) n else -n;
+            public func negate(n: int32): int32 = if (n < 0) n else -n;
             """);
 
         var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };
@@ -75,7 +75,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void Power()
     {
         var assembly = Compile("""
-            func power(n: int32, exponent: int32): int32 = {
+            public func power(n: int32, exponent: int32): int32 = {
                 var i = 1;
                 var result = n;
                 while (i < exponent){
@@ -98,7 +98,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void PowerWithFloat64()
     {
         var assembly = Compile("""
-            func power(n: float64, exponent: int32): float64 = {
+            public func power(n: float64, exponent: int32): float64 = {
                 var i = 1;
                 var result = n;
                 while (i < exponent){
@@ -121,7 +121,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void LazyAnd()
     {
         var assembly = Compile("""
-            func foo(nx2: bool, nx3: bool): int32 = {
+            public func foo(nx2: bool, nx3: bool): int32 = {
                 var result = 1;
                 nx2 and { result *= 2; nx3 } and { result *= 3; false };
                 result
@@ -143,7 +143,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void LazyOr()
     {
         var assembly = Compile("""
-            func foo(nx2: bool, nx3: bool): int32 = {
+            public func foo(nx2: bool, nx3: bool): int32 = {
                 var result = 1;
                 nx2 or { result *= 2; nx3 } or { result *= 3; false };
                 result
@@ -165,7 +165,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void RecursiveFactorial()
     {
         var assembly = Compile("""
-            func fact(n: int32): int32 =
+            public func fact(n: int32): int32 =
                 if (n == 0) 1
                 else n * fact(n - 1);
             """);
@@ -182,7 +182,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void RecursiveFibonacci()
     {
         var assembly = Compile("""
-            func fib(n: int32): int32 =
+            public func fib(n: int32): int32 =
                 if (n < 2) 1
                 else fib(n - 1) + fib(n - 2);
             """);
@@ -199,7 +199,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void IterativeSum()
     {
         var assembly = Compile("""
-            func sum(start: int32, end: int32): int32 {
+            public func sum(start: int32, end: int32): int32 {
                 var i = start;
                 var s = 0;
                 while (i < end) {
@@ -224,7 +224,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var assembly = Compile("""
             var x = 0;
             func bar() { x += 1; }
-            func foo(): int32 {
+            public func foo(): int32 {
                 bar();
                 bar();
                 bar();
@@ -242,7 +242,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var assembly = Compile("""
             var x = 123;
             func bar() { x += 1; }
-            func foo(): int32 {
+            public func foo(): int32 {
                 bar();
                 bar();
                 bar();
@@ -258,7 +258,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void ComplexInitializerGlobals()
     {
         var assembly = Compile("""
-            func foo(): int32 = x;
+            public func foo(): int32 = x;
             var x = add(1, 2) + 1 + 2 + 3;
             func add(x: int32, y: int32): int32 = 2 * (x + y);
             """);
@@ -271,7 +271,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void BreakAndContinue()
     {
         var assembly = Compile("""
-            func foo(): int32 {
+            public func foo(): int32 {
                 var s = 0;
                 var i = 0;
                 while (true) {
@@ -292,7 +292,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void MultiLineStringCutoff()
     {
         var assembly = Compile(""""
-            func foo(): string{
+            public func foo(): string{
                 return """
                 Hello
                     World!
@@ -311,7 +311,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void MultiLineStringInterpolation()
     {
         var assembly = Compile(""""
-            func foo(): string{
+            public func foo(): string{
                 return """
                 Hello \{1 + 2} World!
                 """;
@@ -326,7 +326,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void MultiLineStringLineContinuation()
     {
         var assembly = Compile(""""
-            func foo(): string{
+            public func foo(): string{
                 return """
                 Hello\
                     World!

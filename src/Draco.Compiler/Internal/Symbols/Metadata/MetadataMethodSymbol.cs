@@ -14,7 +14,8 @@ internal class MetadataMethodSymbol : FunctionSymbol
 {
     // TODO
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
-        throw new System.NotImplementedException();
+        ImmutableArray<TypeParameterSymbol>.Empty;
+
     public override ImmutableArray<ParameterSymbol> Parameters
     {
         get

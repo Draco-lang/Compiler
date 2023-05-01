@@ -59,8 +59,12 @@ internal static class MetadataSymbol
         MetadataTypeSymbol type,
         MethodDefinition ctorMethod)
     {
+        var ctorSymbol = new MetadataMethodSymbol(type, ctorMethod);
         if (type.IsGenericDefinition)
         {
+            // NOTE: Maybe this could be lazier
+            // For now I went for correctness
+
             // Create a new set of generic parameters
             var genericParams = type.GenericParameters
                 .Select(p => new KeyValuePair<TypeParameterSymbol, TypeSymbol>(
@@ -69,18 +73,42 @@ internal static class MetadataSymbol
                 .ToImmutableDictionary();
             var genericCtx = new GenericContext(genericParams);
 
-            // Instantiate the type with these
+            // Instantiate the type and ctor with these
             var instantiatedType = type.GenericInstantiate(genericCtx);
+            var instantiatedCtor = ctorSymbol.GenericInstantiate(genericCtx);
 
-            // TODO
-            throw new System.NotImplementedException();
+            // TODO: This is very likely incorrect
+            return new LazySynthetizedFunctionSymbol(
+                name: type.Name,
+                genericParametersBuilder: _ => genericParams.Values
+                    .Cast<TypeParameterSymbol>()
+                    .ToImmutableArray(),
+                parametersBuilder: _ =>
+                {
+                    // Parameters
+                    var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+                    foreach (var param in instantiatedCtor.Parameters)
+                    {
+                        var paramSym = new SynthetizedParameterSymbol(param.Name, param.Type);
+                        parameters.Add(paramSym);
+                    }
+                    return parameters.ToImmutableArray();
+                },
+                returnTypeBuilder: _ => instantiatedType,
+                bodyBuilder: f => ExpressionStatement(ReturnExpression(
+                    value: ObjectCreationExpression(
+                        objectType: instantiatedType,
+                        constructor: instantiatedCtor,
+                        arguments: f.Parameters
+                            .Select(ParameterExpression)
+                            .Cast<BoundExpression>()
+                            .ToImmutableArray()))));
         }
         else
         {
-            var ctorSymbol = new MetadataMethodSymbol(type, ctorMethod);
             return new LazySynthetizedFunctionSymbol(
                 name: type.Name,
-                genericParametersBuilder: _ => throw new System.NotImplementedException(),
+                genericParametersBuilder: _ => ImmutableArray<TypeParameterSymbol>.Empty,
                 parametersBuilder: _ =>
                 {
                     // Parameters

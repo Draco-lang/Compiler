@@ -35,6 +35,9 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
     private ImmutableArray<TypeSymbol>? genericArguments;
     private ImmutableArray<TypeParameterSymbol>? genericParameters;
 
+    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
+    private ImmutableArray<Symbol>? members;
+
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;
     public override string Name => this.GenericDefinition.Name;
@@ -53,8 +56,23 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
         this.context = context;
     }
 
-    // TODO: One-to-one copy from FunctionInstanceSymbol...
-    public override string ToString() => throw new NotImplementedException();
+    public override string ToString()
+    {
+        // We have generic args, add those
+        if (this.GenericArguments.Length > 0)
+        {
+            var result = new StringBuilder();
+            result.Append($"{this.Name}<");
+            result.AppendJoin(", ", this.GenericArguments);
+            result.Append('>');
+            return result.ToString();
+        }
+        // Either way:
+        //  - We have generic parameters, this is still a generic definition
+        //  - Non-generic
+        // 
+        return this.GenericDefinition.ToString();
+    }
 
     // TODO: One-to-one copy from FunctionInstanceSymbol...
     private void BuildGenerics()
@@ -84,4 +102,8 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
             .Select(param => this.context[param])
             .ToImmutableArray();
     }
+
+    private ImmutableArray<Symbol> BuildMembers() => this.GenericDefinition.Members
+        .Select(m => m.GenericInstantiate(this.context))
+        .ToImmutableArray();
 }

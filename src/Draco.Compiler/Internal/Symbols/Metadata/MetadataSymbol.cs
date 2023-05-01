@@ -59,7 +59,6 @@ internal static class MetadataSymbol
         MetadataTypeSymbol type,
         MethodDefinition ctorMethod)
     {
-        var ctorSymbol = new MetadataMethodSymbol(type, ctorMethod);
         if (type.IsGenericDefinition)
         {
             // NOTE: Maybe this could be lazier
@@ -75,7 +74,9 @@ internal static class MetadataSymbol
 
             // Instantiate the type and ctor with these
             var instantiatedType = type.GenericInstantiate(genericCtx);
-            var instantiatedCtor = ctorSymbol.GenericInstantiate(genericCtx);
+            // NOTE: This is really janky...
+            var ctorSymbol = new MetadataMethodSymbol(instantiatedType, ctorMethod) as FunctionSymbol;
+            ctorSymbol = ctorSymbol.GenericInstantiate(genericCtx);
 
             // TODO: This is very likely incorrect
             return new LazySynthetizedFunctionSymbol(
@@ -87,7 +88,7 @@ internal static class MetadataSymbol
                 {
                     // Parameters
                     var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-                    foreach (var param in instantiatedCtor.Parameters)
+                    foreach (var param in ctorSymbol.Parameters)
                     {
                         var paramSym = new SynthetizedParameterSymbol(param.Name, param.Type);
                         parameters.Add(paramSym);
@@ -98,7 +99,7 @@ internal static class MetadataSymbol
                 bodyBuilder: f => ExpressionStatement(ReturnExpression(
                     value: ObjectCreationExpression(
                         objectType: instantiatedType,
-                        constructor: instantiatedCtor,
+                        constructor: ctorSymbol,
                         arguments: f.Parameters
                             .Select(ParameterExpression)
                             .Cast<BoundExpression>()
@@ -106,6 +107,7 @@ internal static class MetadataSymbol
         }
         else
         {
+            var ctorSymbol = new MetadataMethodSymbol(type, ctorMethod);
             return new LazySynthetizedFunctionSymbol(
                 name: type.Name,
                 genericParametersBuilder: _ => ImmutableArray<TypeParameterSymbol>.Empty,

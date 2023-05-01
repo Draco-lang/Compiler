@@ -41,6 +41,7 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
     public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
     private TypeSymbol? returnType;
 
+    public override string Name => this.GenericDefinition.Name;
     public override bool IsMember => this.GenericDefinition.IsMember;
     public override bool IsVirtual => this.GenericDefinition.IsVirtual;
 
@@ -59,6 +60,10 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
 
     public override FunctionSymbol GenericInstantiate(GenericContext context) =>
         throw new NotImplementedException();
+
+    public override string ToString() => this.IsGenericDefinition
+        ? this.GenericDefinition.ToString()
+        : base.ToString();
 
     private void BuildGenerics()
     {

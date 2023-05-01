@@ -15,6 +15,7 @@ internal sealed class ParameterInstanceSymbol : ParameterSymbol
     public override TypeSymbol Type => this.type ??= this.BuildType();
     private TypeSymbol? type;
 
+    public override string Name => this.GenericDefinition.Name;
     public override Symbol? ContainingSymbol => this.GenericDefinition.ContainingSymbol;
     public override ParameterSymbol GenericDefinition { get; }
 

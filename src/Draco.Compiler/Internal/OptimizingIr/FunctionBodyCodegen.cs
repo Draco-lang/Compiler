@@ -3,6 +3,7 @@ using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -383,6 +384,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         SourceFunctionSymbol func => this.DefineProcedure(func),
         SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
         MetadataMethodSymbol m => new SymbolReference(m),
+        // The function just holds generic context
+        FunctionInstanceSymbol i when i.IsGenericDefinition => this.TranslateFunctionSymbol(i.GenericDefinition),
+        // Actual generic instantiation
+        FunctionInstanceSymbol i => new ProcedureInstance(
+            Symbol: i,
+            Procedure: this.TranslateFunctionSymbol(i.GenericDefinition)),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 

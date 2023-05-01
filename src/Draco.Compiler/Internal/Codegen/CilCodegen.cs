@@ -53,6 +53,12 @@ internal sealed class CilCodegen
     private TypeReferenceHandle GetTypeReferenceHandle(Symbol symbol) => this.metadataCodegen.GetTypeReferenceHandle(symbol);
     private MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => this.metadataCodegen.GetMemberReferenceHandle(symbol);
 
+    private EntityHandle GetHandle(IOperand operand) => operand switch
+    {
+        IProcedure proc => this.GetProcedureDefinitionHandle(proc),
+        _ => throw new ArgumentOutOfRangeException(nameof(operand)),
+    };
+
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
 
@@ -299,6 +305,23 @@ internal sealed class CilCodegen
             // Regular procedure call
             var handle = this.GetProcedureDefinitionHandle(proc);
             this.InstructionEncoder.Token(handle);
+            break;
+        }
+        case ProcedureInstance procInstance:
+        {
+            var args = this.metadataCodegen.EncodeBlob(e =>
+            {
+                var encoder = e.MethodSpecificationSignature(procInstance.Arguments.Length);
+                foreach (var arg in procInstance.Arguments)
+                {
+                    var argEncoder = encoder.AddArgument();
+                    this.metadataCodegen.EncodeSignatureType(argEncoder, arg);
+                }
+            });
+            var methodSpec = this.metadataCodegen.MetadataBuilder.AddMethodSpecification(
+                method: this.GetHandle(procInstance.Procedure),
+                instantiation: args);
+            this.InstructionEncoder.Token(methodSpec);
             break;
         }
         case SymbolReference symbolRef when symbolRef.Symbol is TypeSymbol type:

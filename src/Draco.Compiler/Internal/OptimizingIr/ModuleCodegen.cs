@@ -83,13 +83,13 @@ internal sealed class ModuleCodegen : SymbolVisitor
             var module = this.module.DefineModule(subModuleSymbol);
             var moduleCodegen = new ModuleCodegen(module, this.compilation, this.emitSequencePoints);
             subModuleSymbol.Accept(moduleCodegen);
-            moduleCodegen.Complete();
         }
 
         foreach (var member in moduleSymbol.Members.Where(x => x is not ModuleSymbol))
         {
             member.Accept(this);
         }
+        this.Complete();
     }
 
     private BoundNode RewriteBody(BoundNode body)

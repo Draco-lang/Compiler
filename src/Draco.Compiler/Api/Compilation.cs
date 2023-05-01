@@ -193,8 +193,7 @@ public sealed class Compilation : IBinderProvider
             compilation: this,
             rootModule: this.SourceModule,
             emitSequencePoints: pdbStream is not null);
-        assembly.ToString()
-;        // Optimize the IR
+        // Optimize the IR
         // TODO: Options for optimization
         OptimizationPipeline.Instance.Apply(assembly);
 

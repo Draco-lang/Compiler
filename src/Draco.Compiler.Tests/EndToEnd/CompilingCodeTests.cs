@@ -339,7 +339,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleModuleExample()
+    public void SimpleModuleFunctionCallExample()
     {
         var bar = CreateSyntaxTree("""
             func bar(): int32{
@@ -350,6 +350,25 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var foo = CreateSyntaxTree("""
             internal func foo(): int32 = x;
             val x = 5;
+            """, @"C:\Tests\FooTest\foo.draco");
+
+        var assembly = Compile(@"C:\Tests", bar, foo);
+
+        var x = Invoke<int>(assembly, "bar");
+        Assert.Equal(5, x);
+    }
+
+    [Fact]
+    public void SimpleModuleGlobalAccessExample()
+    {
+        var bar = CreateSyntaxTree("""
+            func bar(): int32{
+                return FooTest.x;
+            }
+            """, @"C:\Tests\foo.draco");
+
+        var foo = CreateSyntaxTree("""
+            public val x = 5;
             """, @"C:\Tests\FooTest\foo.draco");
 
         var assembly = Compile(@"C:\Tests", bar, foo);

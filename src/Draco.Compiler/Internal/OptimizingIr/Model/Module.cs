@@ -85,11 +85,11 @@ internal sealed class Module : IModule
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.AppendLine(this.Symbol.Name);
+        result.AppendLine($"module {this.Symbol.Name}");
         result.AppendJoin(Environment.NewLine, this.globals.Values);
         if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.procedures.Values);
-        if (this.procedures.Count > 0 && this.subModules.Count > 1) result.Append(doubleNewline);
+        if (this.procedures.Count > 0 && this.subModules.Count > 0) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.subModules.Values);
         return result.ToString();
     }

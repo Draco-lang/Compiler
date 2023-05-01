@@ -354,7 +354,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(@"C:\Tests", bar, foo);
 
-        var x = Invoke<int>(assembly, "bar");
+        var x = Invoke<int>(assembly, "Tests", "bar");
         Assert.Equal(5, x);
     }
 
@@ -373,7 +373,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(@"C:\Tests", bar, foo);
 
-        var x = Invoke<int>(assembly, "bar");
+        var x = Invoke<int>(assembly, "Tests", "bar");
         Assert.Equal(5, x);
     }
 }

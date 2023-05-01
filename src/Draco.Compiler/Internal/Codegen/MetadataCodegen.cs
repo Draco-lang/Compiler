@@ -284,10 +284,12 @@ internal sealed class MetadataCodegen : MetadataWriter
         this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
 
         var visibility = module.Symbol.Visibility == Api.Semantics.VisibilityType.Public ? TypeAttributes.Public : TypeAttributes.NotPublic;
+        var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed;
+        if (parentModule is not null) attributes |= visibility == TypeAttributes.Public ? TypeAttributes.NestedPublic : TypeAttributes.NestedAssembly;
 
         // Create the free-functions type
         var createdModule = this.AddTypeDefinition(
-            attributes: visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
+            attributes: attributes,
             @namespace: default,
             name: module.Name,
             baseType: systemObject,

@@ -40,13 +40,14 @@ public abstract class EndToEndTestsBase
         string methodName,
         TextReader? stdin,
         TextWriter? stdout,
+        string moduleName = "FreeFunctions",
         params object[] args)
     {
         Console.SetIn(stdin ?? Console.In);
         Console.SetOut(stdout ?? Console.Out);
 
         var method = assembly
-            .GetType("FreeFunctions")?
+            .GetType(moduleName)?
             .GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
         Assert.NotNull(method);
 
@@ -54,8 +55,17 @@ public abstract class EndToEndTestsBase
         return result!;
     }
 
+    protected static TResult Invoke<TResult>(Assembly assembly, string moduleName, string methodName, params object[] args) => Invoke<TResult>(
+        assembly: assembly,
+        moduleName: moduleName,
+        methodName: methodName,
+        stdin: null,
+        stdout: null,
+        args: args);
+
     protected static TResult Invoke<TResult>(Assembly assembly, string methodName, params object[] args) => Invoke<TResult>(
         assembly: assembly,
+        moduleName: "FreeFunctions",
         methodName: methodName,
         stdin: null,
         stdout: null,

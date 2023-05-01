@@ -10,7 +10,8 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 internal sealed class LazySynthetizedFunctionSymbol : SynthetizedFunctionSymbol
 {
     // TODO
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => throw new NotImplementedException();
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.genericParametersBuilder(this);
+    private ImmutableArray<TypeParameterSymbol>? genericParameters;
 
     public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.parametersBuilder(this);
     private ImmutableArray<ParameterSymbol>? parameters;
@@ -21,17 +22,20 @@ internal sealed class LazySynthetizedFunctionSymbol : SynthetizedFunctionSymbol
     public override BoundStatement Body => this.body ??= this.bodyBuilder(this);
     private BoundStatement? body;
 
+    private readonly Func<FunctionSymbol, ImmutableArray<TypeParameterSymbol>> genericParametersBuilder;
     private readonly Func<FunctionSymbol, ImmutableArray<ParameterSymbol>> parametersBuilder;
     private readonly Func<FunctionSymbol, TypeSymbol> returnTypeBuilder;
     private readonly Func<FunctionSymbol, BoundStatement> bodyBuilder;
 
     public LazySynthetizedFunctionSymbol(
         string name,
+        Func<FunctionSymbol, ImmutableArray<TypeParameterSymbol>> genericParametersBuilder,
         Func<FunctionSymbol, ImmutableArray<ParameterSymbol>> parametersBuilder,
         Func<FunctionSymbol, TypeSymbol> returnTypeBuilder,
         Func<FunctionSymbol, BoundStatement> bodyBuilder)
         : base(name)
     {
+        this.genericParametersBuilder = genericParametersBuilder;
         this.parametersBuilder = parametersBuilder;
         this.returnTypeBuilder = returnTypeBuilder;
         this.bodyBuilder = bodyBuilder;

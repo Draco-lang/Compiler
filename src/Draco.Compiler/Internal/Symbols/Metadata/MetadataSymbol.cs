@@ -62,6 +62,7 @@ internal static class MetadataSymbol
 
         return new LazySynthetizedFunctionSymbol(
             name: type.Name,
+            genericParametersBuilder: _ => throw new System.NotImplementedException(),
             parametersBuilder: _ =>
             {
                 // Parameters

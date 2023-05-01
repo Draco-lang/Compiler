@@ -286,6 +286,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
+        // TODO: visibility???
         // Encode instructions
         var cilCodegen = new CilCodegen(this, procedure);
         cilCodegen.EncodeProcedure();

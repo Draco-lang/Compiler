@@ -342,7 +342,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void SimpleModuleFunctionCallExample()
     {
         var bar = CreateSyntaxTree("""
-            func bar(): int32{
+            public func bar(): int32{
                 return FooTest.foo();
             }
             """, @"C:\Tests\foo.draco");

@@ -22,7 +22,13 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
     public override Symbol? ContainingSymbol => this.GenericDefinition.ContainingSymbol;
     public override FunctionSymbol GenericDefinition { get; }
 
+    private readonly GenericContext context;
 
+    public FunctionInstanceSymbol(FunctionSymbol genericDefinition, GenericContext context)
+    {
+        this.GenericDefinition = genericDefinition;
+        this.context = context;
+    }
 
     public override FunctionSymbol GenericInstantiate(GenericContext context) =>
         throw new NotImplementedException();

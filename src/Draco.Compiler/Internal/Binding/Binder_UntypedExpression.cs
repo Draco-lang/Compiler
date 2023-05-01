@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
@@ -474,8 +475,36 @@ internal partial class Binder
             .ToImmutableArray();
         if (instantiated is UntypedFunctionGroupExpression group)
         {
-            // TODO
-            throw new NotImplementedException();
+            // Filter for same number of generic parameters
+            var withSameNoParams = group.Functions
+                .Where(f => f.GenericParameters.Length == args.Length)
+                .ToImmutableArray();
+            if (withSameNoParams.Length == 0)
+            {
+                // No generic functions with this number of parameters
+                // TODO
+                throw new NotImplementedException();
+            }
+            else
+            {
+                // There are functions with this same number of parameters
+                FunctionSymbol Instantiate(FunctionSymbol f)
+                {
+                    var substitutions = f.GenericParameters
+                        .Zip(args)
+                        .ToImmutableDictionary(pair => pair.First, pair => pair.Second);
+                    var context = new GenericContext(substitutions);
+                    return f.GenericInstantiate(context);
+                }
+
+                // Instantiate each possibility
+                var instantiatedFuncs = withSameNoParams
+                    .Select(Instantiate)
+                    .ToImmutableArray();
+
+                // Wrap them back up in a function group
+                return new UntypedFunctionGroupExpression(syntax, instantiatedFuncs);
+            }
         }
         else
         {

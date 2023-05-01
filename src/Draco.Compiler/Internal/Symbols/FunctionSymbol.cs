@@ -98,7 +98,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     }
 
     public override FunctionSymbol GenericInstantiate(GenericContext context) =>
-        throw new System.NotImplementedException();
+        new FunctionInstanceSymbol(this, context);
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -96,7 +97,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
         return result.ToString();
     }
 
-    public override FunctionSymbol GenericInstantiate(ImmutableDictionary<TypeParameterSymbol, TypeSymbol> substitutions) =>
+    public override FunctionSymbol GenericInstantiate(GenericContext context) =>
         throw new System.NotImplementedException();
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);

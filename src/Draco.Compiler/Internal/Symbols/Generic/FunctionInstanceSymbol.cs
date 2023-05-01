@@ -22,6 +22,8 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
     public override Symbol? ContainingSymbol => this.GenericDefinition.ContainingSymbol;
     public override FunctionSymbol GenericDefinition { get; }
 
-    public override FunctionSymbol GenericInstantiate(ImmutableDictionary<TypeParameterSymbol, TypeSymbol> substitutions) =>
+
+
+    public override FunctionSymbol GenericInstantiate(GenericContext context) =>
         throw new NotImplementedException();
 }

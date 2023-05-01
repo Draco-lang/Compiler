@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -110,9 +111,9 @@ internal abstract partial class Symbol
     /// <summary>
     /// Instantiates this generic symbol with the given substitutions.
     /// </summary>
-    /// <param name="substitutions">The substitutions to perform.</param>
-    /// <returns>This symbol with all type parameters replaced according to <paramref name="substitutions"/>.</returns>
-    public virtual Symbol GenericInstantiate(ImmutableDictionary<TypeParameterSymbol, TypeSymbol> substitutions) =>
+    /// <param name="context">The generic context.</param>
+    /// <returns>This symbol with all type parameters replaced according to <paramref name="context"/>.</returns>
+    public virtual Symbol GenericInstantiate(GenericContext context) =>
         throw new System.NotSupportedException();
 
     /// <summary>

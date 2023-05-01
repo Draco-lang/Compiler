@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -11,6 +12,10 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract class TypeParameterSymbol : TypeSymbol
 {
+    public override TypeSymbol GenericInstantiate(GenericContext context) => context.TryGetValue(this, out var type)
+        ? type
+        : this;
+
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeParameterSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitTypeParameter(this);

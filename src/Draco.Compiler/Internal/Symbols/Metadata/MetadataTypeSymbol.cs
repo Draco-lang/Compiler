@@ -18,6 +18,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     public override string Name => this.name ??= this.BuildName();
     private string? name;
 
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
+    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+
     public override Symbol ContainingSymbol { get; }
     // TODO: Is this correct?
     public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
@@ -41,7 +44,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         this.typeDefinition = typeDefinition;
     }
 
-    public override string ToString() => this.Name;
+    public override string ToString() => this.GenericParameters.Length == 0
+        ? this.Name
+        : $"{this.Name}<{string.Join(", ", this.GenericParameters)}>";
 
     private string BuildName()
     {
@@ -50,6 +55,21 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         return backtickIndex == -1
             ? name
             : name[..backtickIndex];
+    }
+
+    private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
+    {
+        var genericParamsHandle = this.typeDefinition.GetGenericParameters();
+        if (genericParamsHandle.Count == 0) return ImmutableArray<TypeParameterSymbol>.Empty;
+
+        var result = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
+        foreach (var genericParamHandle in genericParamsHandle)
+        {
+            var genericParam = this.MetadataReader.GetGenericParameter(genericParamHandle);
+            var symbol = new MetadataTypeParameterSymbol(this, genericParam);
+            result.Add(symbol);
+        }
+        return result.ToImmutableArray();
     }
 
     private ImmutableArray<Symbol> BuildMembers()

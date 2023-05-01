@@ -24,7 +24,5 @@ internal class SourceTypeParameterSymbol : TypeParameterSymbol, ISourceSymbol
         this.DeclaringSyntax = syntax;
     }
 
-    public override string ToString() => this.Name;
-
     public void Bind(IBinderProvider binderProvider) { }
 }

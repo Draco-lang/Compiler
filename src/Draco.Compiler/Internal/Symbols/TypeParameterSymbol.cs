@@ -18,6 +18,8 @@ internal abstract class TypeParameterSymbol : TypeSymbol
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeParameterSymbol(this);
 
+    public override string ToString() => this.Name;
+
     public override void Accept(SymbolVisitor visitor) => visitor.VisitTypeParameter(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitTypeParameter(this);
 }

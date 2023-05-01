@@ -384,6 +384,9 @@ internal sealed class ConstraintSolver
         // Exact equality is max score
         if (this.typeEqualityComparer.Equals(paramType, argType)) return 16;
 
+        // Type parameter match is half score
+        if (paramType is TypeParameterSymbol) return 8;
+
         // Otherwise, no match
         return 0;
     }

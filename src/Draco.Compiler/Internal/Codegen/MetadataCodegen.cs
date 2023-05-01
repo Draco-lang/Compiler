@@ -283,9 +283,11 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Compile global initializer too
         this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
 
+        var visibility = module.Symbol.Visibility == Api.Semantics.VisibilityType.Public ? TypeAttributes.Public : TypeAttributes.NotPublic;
+
         // Create the free-functions type
         var createdModule = this.AddTypeDefinition(
-            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
+            attributes: visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
             @namespace: default,
             name: module.Name,
             baseType: systemObject,
@@ -302,17 +304,31 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private FieldDefinitionHandle EncodeGlobal(Global global)
     {
-        // TODO: visibility???
+        var visibility = global.Symbol.Visibility switch
+        {
+            Api.Semantics.VisibilityType.Public => FieldAttributes.Public,
+            Api.Semantics.VisibilityType.Internal => FieldAttributes.Assembly,
+            Api.Semantics.VisibilityType.Private => FieldAttributes.Private,
+            _ => throw new ArgumentOutOfRangeException(nameof(global.Symbol.Visibility)),
+        };
+
         // Definition
         return this.AddFieldDefinition(
-            attributes: FieldAttributes.Public | FieldAttributes.Static,
+            attributes: visibility | FieldAttributes.Static,
             name: global.Name,
             signature: this.EncodeGlobalSignature(global));
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
-        // TODO: visibility???
+        var visibility = procedure.Symbol.Visibility switch
+        {
+            Api.Semantics.VisibilityType.Public => MethodAttributes.Public,
+            Api.Semantics.VisibilityType.Internal => MethodAttributes.Assembly,
+            Api.Semantics.VisibilityType.Private => MethodAttributes.Private,
+            _ => throw new ArgumentOutOfRangeException(nameof(procedure.Symbol.Visibility)),
+        };
+
         // Encode instructions
         var cilCodegen = new CilCodegen(this, procedure);
         cilCodegen.EncodeProcedure();
@@ -336,7 +352,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Determine attributes
         var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
         attributes |= specialName is null
-            ? MethodAttributes.Public
+            ? visibility
             : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
         // Parameters

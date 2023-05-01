@@ -24,6 +24,11 @@ internal interface IModule
     public IAssembly Assembly { get; }
 
     /// <summary>
+    /// The parent module of this module.
+    /// </summary>
+    public IModule? Parent { get; }
+
+    /// <summary>
     /// The submodules of this module.
     /// </summary>
     public IReadOnlyDictionary<ModuleSymbol, IModule> SubModules { get; }

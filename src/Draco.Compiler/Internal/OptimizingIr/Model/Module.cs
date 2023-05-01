@@ -31,7 +31,10 @@ internal sealed class Module : IModule
     public Assembly Assembly { get; }
     IAssembly IModule.Assembly => this.Assembly;
 
-    public Module(ModuleSymbol symbol, Assembly assembly)
+    public Module? Parent { get; }
+    IModule? IModule.Parent => this.Parent;
+
+    public Module(ModuleSymbol symbol, Assembly assembly, Module? Parent)
     {
         this.Symbol = symbol;
         this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
@@ -39,6 +42,7 @@ internal sealed class Module : IModule
             paramTypes: Enumerable.Empty<TypeSymbol>(),
             returnType: IntrinsicSymbols.Unit));
         this.Assembly = assembly;
+        this.Parent = Parent;
     }
 
     public ImmutableArray<IProcedure> GetProcedures()
@@ -56,7 +60,7 @@ internal sealed class Module : IModule
     {
         if (!this.globals.TryGetValue(globalSymbol, out var result))
         {
-            result = new Global(globalSymbol);
+            result = new Global(globalSymbol, this);
             this.globals.Add(globalSymbol, result);
         }
         return result;
@@ -76,7 +80,7 @@ internal sealed class Module : IModule
     {
         if (!this.subModules.TryGetValue(moduleSymbol, out var result))
         {
-            result = new Module(moduleSymbol, this.Assembly);
+            result = new Module(moduleSymbol, this.Assembly, this);
             this.subModules.Add(moduleSymbol, result);
         }
         return (Module)result;

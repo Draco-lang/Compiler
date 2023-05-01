@@ -64,18 +64,19 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
+    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandlers = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
-    private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
+    //private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
     {
         this.Compilation = compilation;
         if (writePdb) this.PdbCodegen = new(this);
         this.assembly = assembly;
-        this.freeFunctionsTypeReferenceHandle = this.GetOrAddTypeReference(
-            module: this.ModuleDefinitionHandle,
-            @namespace: null,
-            name: "FreeFunctions");
+        //this.freeFunctionsTypeReferenceHandle = this.GetOrAddTypeReference(
+        //    module: this.ModuleDefinitionHandle,
+        //    @namespace: null,
+        //    name: "FreeFunctions");
         this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
     }
@@ -115,7 +116,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             // Add the field reference
             handle = this.AddMemberReference(
-                type: this.freeFunctionsTypeReferenceHandle,
+                type: this.GetModuleReferenceHandle(global.DeclaringModule),
                 name: global.Name,
                 signature: this.EncodeGlobalSignature(global));
             // Cache
@@ -130,10 +131,30 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             var signature = this.EncodeProcedureSignature(procedure);
             handle = this.AddMemberReference(
-                type: this.freeFunctionsTypeReferenceHandle,
+                type: this.GetModuleReferenceHandle(procedure.Module),
                 name: procedure.Name,
                 signature: signature);
             this.procedureReferenceHandles.Add(procedure, handle);
+        }
+        return handle;
+    }
+
+    public TypeReferenceHandle GetModuleReferenceHandle(IModule module)
+    {
+        if (!this.moduleReferenceHandlers.TryGetValue(module, out var handle))
+        {
+            EntityHandle resolutionScope;
+            if (module.Parent is null) resolutionScope = this.ModuleDefinitionHandle;
+
+            else if (this.moduleReferenceHandlers.TryGetValue(module.Parent, out var result))
+            {
+                resolutionScope = result;
+            }
+            else resolutionScope = this.GetModuleReferenceHandle(module.Parent);
+
+            handle = this.GetOrAddTypeReference(resolutionScope, null, module.Name);
+
+            this.moduleReferenceHandlers.Add(module, handle);
         }
         return handle;
     }
@@ -234,14 +255,21 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
-    private void EncodeModule(OptimizingIr.Model.Module module, AssemblyReferenceHandle systemRuntime, TypeReferenceHandle systemObject, TypeDefinitionHandle? parentModule = null)
+    private void EncodeModule(OptimizingIr.Model.Module module, AssemblyReferenceHandle systemRuntime, TypeReferenceHandle systemObject, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
     {
+        var currentFieldIndex = fieldIndex;
+        var currentProcIndex = procIndex;
         // Go through globals
-        foreach (var global in module.Globals.Values) this.EncodeGlobal(global);
+        foreach (var global in module.Globals.Values)
+        {
+            this.EncodeGlobal(global);
+            currentFieldIndex++;
+        }
 
         // Go through procedures
         foreach (var procedure in module.Procedures.Values)
         {
+            currentProcIndex++;
             // Global initializer will get special treatment
             if (ReferenceEquals(module.GlobalInitializer, procedure)) continue;
 
@@ -261,17 +289,14 @@ internal sealed class MetadataCodegen : MetadataWriter
             @namespace: default,
             name: module.Name,
             baseType: systemObject,
-            // TODO: Again, this should be read up from an index
-            fieldList: MetadataTokens.FieldDefinitionHandle(1),
-            // TODO: This depends on the order of types
-            // we likely want to read this up from an index
-            methodList: MetadataTokens.MethodDefinitionHandle(1));
+            fieldList: MetadataTokens.FieldDefinitionHandle(fieldIndex),
+            methodList: MetadataTokens.MethodDefinitionHandle(procIndex));
 
         if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
 
         foreach (var subModule in module.SubModules)
         {
-            this.EncodeModule((OptimizingIr.Model.Module)subModule.Value, systemRuntime, systemObject, createdModule);
+            this.EncodeModule((OptimizingIr.Model.Module)subModule.Value, systemRuntime, systemObject, createdModule, currentFieldIndex, currentProcIndex);
         }
     }
 

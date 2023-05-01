@@ -61,7 +61,9 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
     public override FunctionSymbol GenericInstantiate(GenericContext context) =>
         throw new NotImplementedException();
 
-    public override string ToString() => throw new NotImplementedException();
+    public override string ToString() => this.IsGenericDefinition
+        ? this.GenericDefinition.ToString()
+        : base.ToString();
 
     private void BuildGenerics()
     {

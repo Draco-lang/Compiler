@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
@@ -58,30 +59,48 @@ internal static class MetadataSymbol
         MetadataTypeSymbol type,
         MethodDefinition ctorMethod)
     {
-        var ctorSymbol = new MetadataMethodSymbol(type, ctorMethod);
+        if (type.IsGenericDefinition)
+        {
+            // Create a new set of generic parameters
+            var genericParams = type.GenericParameters
+                .Select(p => new KeyValuePair<TypeParameterSymbol, TypeSymbol>(
+                    p,
+                    new SynthetizedTypeParameterSymbol(p.Name)))
+                .ToImmutableDictionary();
+            var genericCtx = new GenericContext(genericParams);
 
-        return new LazySynthetizedFunctionSymbol(
-            name: type.Name,
-            genericParametersBuilder: _ => throw new System.NotImplementedException(),
-            parametersBuilder: _ =>
-            {
-                // Parameters
-                var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-                foreach (var param in ctorSymbol.Parameters)
+            // Instantiate the type with these
+            var instantiatedType = type.GenericInstantiate(genericCtx);
+
+            // TODO
+            throw new System.NotImplementedException();
+        }
+        else
+        {
+            var ctorSymbol = new MetadataMethodSymbol(type, ctorMethod);
+            return new LazySynthetizedFunctionSymbol(
+                name: type.Name,
+                genericParametersBuilder: _ => throw new System.NotImplementedException(),
+                parametersBuilder: _ =>
                 {
-                    var paramSym = new SynthetizedParameterSymbol(param.Name, param.Type);
-                    parameters.Add(paramSym);
-                }
-                return parameters.ToImmutableArray();
-            },
-            returnTypeBuilder: _ => type,
-            bodyBuilder: f => ExpressionStatement(ReturnExpression(
-                value: ObjectCreationExpression(
-                    objectType: type,
-                    constructor: ctorSymbol,
-                    arguments: f.Parameters
-                        .Select(ParameterExpression)
-                        .Cast<BoundExpression>()
-                        .ToImmutableArray()))));
+                    // Parameters
+                    var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+                    foreach (var param in ctorSymbol.Parameters)
+                    {
+                        var paramSym = new SynthetizedParameterSymbol(param.Name, param.Type);
+                        parameters.Add(paramSym);
+                    }
+                    return parameters.ToImmutableArray();
+                },
+                returnTypeBuilder: _ => type,
+                bodyBuilder: f => ExpressionStatement(ReturnExpression(
+                    value: ObjectCreationExpression(
+                        objectType: type,
+                        constructor: ctorSymbol,
+                        arguments: f.Parameters
+                            .Select(ParameterExpression)
+                            .Cast<BoundExpression>()
+                            .ToImmutableArray()))));
+        }
     }
 }

@@ -99,9 +99,20 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         if (dominatingCandidates.Length == 1)
         {
             // Resolved fine
-            this.Unify(this.ReturnType, dominatingCandidates[0].ReturnType);
-            this.Promise.Resolve(dominatingCandidates[0]);
-            yield return SolveState.Solved;
+            var chosen = dominatingCandidates[0];
+            if (chosen.IsGenericDefinition)
+            {
+                // Implicit generic instantiation
+                // TODO
+                throw new System.NotImplementedException();
+            }
+            else
+            {
+                // Nothing special
+                this.Unify(this.ReturnType, chosen.ReturnType);
+                this.Promise.Resolve(chosen);
+                yield return SolveState.Solved;
+            }
         }
         else
         {

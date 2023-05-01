@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -14,7 +15,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
-    public override string Name => this.MetadataReader.GetString(this.typeDefinition.Name);
+    public override string Name => this.name ??= this.BuildName();
+    private string? name;
+
     public override Symbol ContainingSymbol { get; }
     // TODO: Is this correct?
     public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
@@ -39,6 +42,15 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     }
 
     public override string ToString() => this.Name;
+
+    private string BuildName()
+    {
+        var name = this.MetadataReader.GetString(this.typeDefinition.Name);
+        var backtickIndex = name.IndexOf('`');
+        return backtickIndex == -1
+            ? name
+            : name[..backtickIndex];
+    }
 
     private ImmutableArray<Symbol> BuildMembers()
     {

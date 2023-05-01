@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -79,8 +80,21 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     public TypeSymbol Type => this.type ??= this.BuildType();
     private TypeSymbol? type;
 
-    public override string ToString() =>
-        $"{this.Name}({string.Join(", ", this.Parameters)}): {this.ReturnType}";
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        result.Append(this.Name);
+        if (this.GenericParameters.Length > 0)
+        {
+            result.Append('<');
+            result.AppendJoin(", ", this.GenericParameters);
+            result.Append('>');
+        }
+        result.Append('(');
+        result.AppendJoin(", ", this.Parameters);
+        result.Append($"): {this.ReturnType}");
+        return result.ToString();
+    }
 
     public override FunctionSymbol GenericInstantiate(ImmutableDictionary<TypeParameterSymbol, TypeSymbol> substitutions) =>
         throw new System.NotImplementedException();

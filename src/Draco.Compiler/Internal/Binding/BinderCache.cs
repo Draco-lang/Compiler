@@ -85,34 +85,31 @@ internal sealed class BinderCache
         // We simply take the source module binder and wrap it up in imports
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         binder = new ModuleBinder(binder, this.compilation.RootModule);
-        binder = new ModuleBinder(binder, new SourceModuleSymbol(this.compilation, null, this.GetModuleDeclaration(moduleName)));
+        binder = new ModuleBinder(binder, this.GetModuleSymbol(moduleName));
         binder = WrapInImportBinder(binder, syntax);
         return binder;
     }
 
-    private MergedModuleDeclaration GetModuleDeclaration(string fullName)
+    private Symbols.ModuleSymbol GetModuleSymbol(string fullName)
     {
-        MergedModuleDeclaration? Recurse(MergedModuleDeclaration parent)
+        Symbols.ModuleSymbol Recurse(Symbols.ModuleSymbol parent)
         {
-            foreach (var child in parent.Children)
+            foreach (var member in parent.Members)
             {
-                if (child is MergedModuleDeclaration module)
+                if (member is Symbols.ModuleSymbol module)
                 {
                     if (module.FullName == fullName)
                     {
                         return module;
                     }
-                    var recursed = Recurse(module);
-                    if (recursed is not null) return recursed;
+                    return Recurse(module);
                 }
             }
-            return null;
+            throw new InvalidOperationException();
         }
 
-        if (this.compilation.DeclarationTable.MergedRoot.FullName == fullName) return this.compilation.DeclarationTable.MergedRoot;
-        var recursed = Recurse(this.compilation.DeclarationTable.MergedRoot);
-        if (recursed is null) throw new InvalidOperationException();
-        return recursed;
+        if (this.compilation.SourceModule.FullName == fullName) return this.compilation.SourceModule;
+        return Recurse(this.compilation.SourceModule);
     }
 
     private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)

@@ -56,6 +56,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
         this.context = context;
     }
 
+    // TODO: Almost one-to-one copy from FunctionInstanceSymbol...
     public override string ToString()
     {
         // We have generic args, add those

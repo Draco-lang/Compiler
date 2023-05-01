@@ -61,9 +61,25 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
     public override FunctionSymbol GenericInstantiate(GenericContext context) =>
         throw new NotImplementedException();
 
-    public override string ToString() => this.IsGenericDefinition
-        ? this.GenericDefinition.ToString()
-        : base.ToString();
+    public override string ToString()
+    {
+        // We have generic args, add those
+        if (this.GenericArguments.Length > 0)
+        {
+            var result = new StringBuilder();
+            result.Append($"{this.Name}<");
+            result.AppendJoin(", ", this.GenericArguments);
+            result.Append(">(");
+            result.AppendJoin(", ", this.Parameters);
+            result.Append($"): {this.ReturnType}");
+            return result.ToString();
+        }
+        // Either way:
+        //  - We have generic parameters, this is still a generic definition
+        //  - Non-generic
+        // 
+        return this.GenericDefinition.ToString();
+    }
 
     private void BuildGenerics()
     {

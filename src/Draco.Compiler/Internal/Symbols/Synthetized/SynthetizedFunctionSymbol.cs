@@ -9,15 +9,10 @@ internal abstract class SynthetizedFunctionSymbol : FunctionSymbol
 {
     public override Symbol? ContainingSymbol => null;
 
-    public override string Name { get; }
+    public abstract override string Name { get; }
 
     /// <summary>
     /// The body of this synthetized function.
     /// </summary>
     public abstract BoundStatement Body { get; }
-
-    protected SynthetizedFunctionSymbol(string name)
-    {
-        this.Name = name;
-    }
 }

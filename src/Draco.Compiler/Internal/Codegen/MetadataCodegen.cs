@@ -411,8 +411,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             return;
         }
 
-        if (type is TypeParameterSymbol typeParam
-         && typeParam.ContainingSymbol is SourceFunctionSymbol func)
+        if (type is TypeParameterSymbol typeParam && typeParam.ContainingSymbol is FunctionSymbol func)
         {
             var index = func.GenericParameters.IndexOf(typeParam);
             Debug.Assert(index != -1);

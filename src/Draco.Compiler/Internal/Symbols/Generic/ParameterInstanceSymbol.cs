@@ -29,5 +29,6 @@ internal sealed class ParameterInstanceSymbol : ParameterSymbol, IGenericInstanc
         this.Context = context;
     }
 
-    private TypeSymbol BuildType() => this.GenericDefinition.Type.GenericInstantiate(this, this.Context);
+    private TypeSymbol BuildType() =>
+        this.GenericDefinition.Type.GenericInstantiate(this.GenericDefinition.Type.ContainingSymbol, this.Context);
 }

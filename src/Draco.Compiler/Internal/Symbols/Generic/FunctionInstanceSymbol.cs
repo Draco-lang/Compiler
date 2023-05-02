@@ -114,5 +114,6 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceS
         .Select(p => p.GenericInstantiate(this, this.Context))
         .ToImmutableArray();
 
-    private TypeSymbol BuildReturnType() => this.GenericDefinition.ReturnType.GenericInstantiate(this, this.Context);
+    private TypeSymbol BuildReturnType() =>
+        this.GenericDefinition.ReturnType.GenericInstantiate(this.GenericDefinition.ReturnType.ContainingSymbol, this.Context);
 }

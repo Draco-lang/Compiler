@@ -297,6 +297,13 @@ internal sealed class CilCodegen
             this.InstructionEncoder.Token(handle);
             break;
         }
+        case ProcedureInstance procInstance when procInstance.Arguments.Length == 0:
+        {
+            // Just instantiated in generic context
+            var handle = this.GetMemberReferenceHandle(procInstance.Symbol);
+            this.InstructionEncoder.Token(handle);
+            break;
+        }
         case ProcedureInstance procInstance:
         {
             var args = this.metadataCodegen.EncodeBlob(e =>

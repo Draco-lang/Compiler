@@ -42,7 +42,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
 
     private async Task PublishDiagnosticsAsync(DocumentUri uri)
     {
-        var diags = this.compilation.Diagnostics;
+        var diags = this.semanticModel.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
         await this.client.PublishDiagnosticsAsync(new()
         {

@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

@@ -20,7 +20,7 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
     public NoOverloadFunctionSymbol(int parameterCount)
     {
         this.Parameters = Enumerable.Repeat(IntrinsicSymbols.ErrorType, parameterCount)
-            .Select(t => new SynthetizedParameterSymbol(t))
+            .Select(t => new SynthetizedParameterSymbol(this, t))
             .Cast<ParameterSymbol>()
             .ToImmutableArray();
     }

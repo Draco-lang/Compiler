@@ -9,7 +9,7 @@ internal abstract class SynthetizedFunctionSymbol : FunctionSymbol
 {
     public override Symbol? ContainingSymbol => null;
 
-    public abstract override string Name { get; }
+    public override abstract string Name { get; }
 
     /// <summary>
     /// The body of this synthetized function.

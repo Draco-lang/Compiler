@@ -153,7 +153,7 @@ internal sealed class CallConstraint : Constraint<Unit>
 
     private FunctionTypeSymbol MakeMismatchedType(TypeSymbol returnType) => new(
         this.Arguments
-            .Select(a => new SynthetizedParameterSymbol(a))
+            .Select(a => new SynthetizedParameterSymbol(null, a))
             .Cast<ParameterSymbol>()
             .ToImmutableArray(),
         returnType);

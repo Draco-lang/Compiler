@@ -20,5 +20,5 @@ internal readonly record struct ProcedureInstance(FunctionSymbol Symbol, IOperan
     public ImmutableArray<TypeSymbol> Arguments => this.Symbol.GenericArguments;
 
     public override string ToString() => this.ToOperandString();
-    public string ToOperandString() => this.Symbol.FullName;
+    public string ToOperandString() => $"[{this.Symbol.FullName}]";
 }

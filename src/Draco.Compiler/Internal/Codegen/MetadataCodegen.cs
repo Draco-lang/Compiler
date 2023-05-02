@@ -383,6 +383,20 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (SymbolEqualityComparer.Ground.Equals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
         if (SymbolEqualityComparer.Ground.Equals(type, IntrinsicSymbols.Object)) { encoder.Object(); return; }
 
+        if (type.GenericArguments.Length > 0)
+        {
+            // Generic instantiation
+            var genericsEncoder = encoder.GenericInstantiation(
+                genericType: this.GetTypeReferenceHandle(type.GenericDefinition),
+                genericArgumentCount: type.GenericArguments.Length,
+                isValueType: type.IsValueType);
+            foreach (var arg in type.GenericArguments)
+            {
+                this.EncodeSignatureType(genericsEncoder.AddArgument(), arg);
+            }
+            return;
+        }
+
         if (type is MetadataTypeSymbol metadataType)
         {
             var reference = this.GetTypeReferenceHandle(metadataType);

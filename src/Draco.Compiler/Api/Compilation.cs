@@ -141,6 +141,15 @@ public sealed class Compilation : IBinderProvider
         this.binderCache = new(this);
     }
 
+    public Compilation UpdateSyntaxTree(Uri path, SyntaxTree newTree)
+    {
+        var oldTrees = this.SyntaxTrees.ToBuilder();
+        var oldTree = oldTrees.FirstOrDefault(x => x.SourceText.Path == path);
+        if (oldTree is null) throw new InvalidOperationException();
+        oldTrees[oldTrees.IndexOf(oldTree)] = newTree;
+        return new Compilation(oldTrees.ToImmutable(), this.MetadataReferences, this.RootModulePath, this.OutputPath, this.AssemblyName);
+    }
+
     /// <summary>
     ///  Retrieves the <see cref="SemanticModel"/> for for a <see cref="SyntaxTree"/> within this compilation.
     /// </summary>

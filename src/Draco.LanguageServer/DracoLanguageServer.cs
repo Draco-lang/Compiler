@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.CodeCompletion;
@@ -8,6 +11,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Draco.LanguageServer;
 
@@ -33,6 +37,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private readonly DracoConfigurationRepository configurationRepository;
     private readonly DracoDocumentRepository documentRepository = new();
 
+    private DocumentUri rootUri;
     private Compilation compilation;
     private SemanticModel semanticModel;
     private SyntaxTree syntaxTree;
@@ -63,7 +68,28 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.codeFixService.AddProvider(new ImportCodeFixProvider());
     }
 
+    private void CreateCompilation()
+    {
+        var rootPath = this.rootUri.ToUri().LocalPath;
+        var syntaxTrees = ImmutableArray.Create(Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories).Select(x => SyntaxTree.Parse(SourceText.FromFile(x))).ToArray());
+
+        this.compilation = Compilation.Create(
+            syntaxTrees: syntaxTrees,
+            // NOTE: Temporary until we solve MSBuild communication
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModule: rootPath);
+    }
+
     public void Dispose() { }
+
+    public async Task InitializeAsync(InitializeParams param)
+    {
+        if (param.RootUri is null) throw new System.InvalidOperationException();
+        this.rootUri = param.RootUri.Value;
+        this.CreateCompilation();
+    }
 
     public async Task InitializedAsync(InitializedParams param)
     {

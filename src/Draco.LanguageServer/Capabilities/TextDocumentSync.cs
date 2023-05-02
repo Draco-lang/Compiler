@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -15,7 +16,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
     public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken)
     {
         this.documentRepository.AddOrUpdateDocument(param.TextDocument.Uri, param.TextDocument.Text);
-        this.UpdateCompilation(param.TextDocument.Text);
+        this.UpdateCompilation(param.TextDocument.Uri);
         await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
     }
 
@@ -28,20 +29,14 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var change = param.ContentChanges.First();
         var sourceText = change.Text;
         this.documentRepository.AddOrUpdateDocument(uri, sourceText);
-        this.UpdateCompilation(sourceText);
+        this.UpdateCompilation(uri);
         await this.PublishDiagnosticsAsync(uri);
     }
 
-    // NOTE: This needs to be more sophisticated, once we have multiple files and such
-    private void UpdateCompilation(string text)
+    private void UpdateCompilation(DocumentUri uri)
     {
-        this.syntaxTree = SyntaxTree.Parse(text);
-        this.compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(this.syntaxTree),
-            // NOTE: Temporary until we solve MSBuild communication
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        this.syntaxTree = SyntaxTree.Parse(this.documentRepository.GetDocument(uri));
+        this.compilation = this.compilation.UpdateSyntaxTree(uri.ToUri(), this.syntaxTree);
         this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
     }
 

@@ -47,7 +47,7 @@ internal sealed class DeclarationTable
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
         {
-            var path = tree.SourceText.Path?.OriginalString;
+            var path = tree.SourceText.Path?.LocalPath;
             var aboveRoot = Directory.GetParent(this.RootPath)?.FullName;
             if (path is null || aboveRoot is null) throw new System.NotImplementedException();
             if (!path.StartsWith(aboveRoot)) throw new System.NotImplementedException();

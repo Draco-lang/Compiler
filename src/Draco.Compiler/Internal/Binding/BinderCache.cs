@@ -73,7 +73,7 @@ internal sealed class BinderCache
         if (string.IsNullOrEmpty(this.compilation.DeclarationTable.RootPath)) return WrapInImportBinder(this.ModuleBinder, syntax);
 
         var aboveRootPath = Directory.GetParent(this.compilation.DeclarationTable.RootPath)?.FullName;
-        var filePath = syntax.Tree.SourceText.Path?.OriginalString;
+        var filePath = syntax.Tree.SourceText.Path?.LocalPath;
 
         if (filePath is null || aboveRootPath is null) throw new NotImplementedException();
         if (!filePath.StartsWith(aboveRootPath)) throw new NotImplementedException();

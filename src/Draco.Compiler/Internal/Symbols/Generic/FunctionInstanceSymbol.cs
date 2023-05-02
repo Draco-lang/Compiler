@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// It does not necessarily mean that the function itself was generic, it might have been within another generic
 /// context (like a generic type definition).
 /// </summary>
-internal sealed class FunctionInstanceSymbol : FunctionSymbol
+internal sealed class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
 {
     public override ImmutableArray<TypeParameterSymbol> GenericParameters
     {
@@ -50,12 +50,12 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
 
     private bool NeedsGenericsBuild => this.genericParameters is null;
 
-    private readonly GenericContext context;
+    public GenericContext Context { get; }
 
     public FunctionInstanceSymbol(FunctionSymbol genericDefinition, GenericContext context)
     {
         this.GenericDefinition = genericDefinition;
-        this.context = context;
+        this.Context = context;
     }
 
     public override FunctionSymbol GenericInstantiate(GenericContext context) =>
@@ -92,7 +92,7 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
         }
 
         // Check, if we have parameters in there
-        var hasParametersSpecified = this.GenericDefinition.GenericParameters.Any(this.context.ContainsKey);
+        var hasParametersSpecified = this.GenericDefinition.GenericParameters.Any(this.Context.ContainsKey);
 
         // If the parameters are not specified, we have the same old generic params
         if (!hasParametersSpecified)
@@ -105,13 +105,13 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol
         // Otherwise, this must have been substituted
         this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
         this.genericArguments = this.GenericDefinition.GenericParameters
-            .Select(param => this.context[param])
+            .Select(param => this.Context[param])
             .ToImmutableArray();
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.GenericDefinition.Parameters
-        .Select(p => p.GenericInstantiate(this.context))
+        .Select(p => p.GenericInstantiate(this.Context))
         .ToImmutableArray();
 
-    private TypeSymbol BuildReturnType() => this.GenericDefinition.ReturnType.GenericInstantiate(this.context);
+    private TypeSymbol BuildReturnType() => this.GenericDefinition.ReturnType.GenericInstantiate(this.Context);
 }

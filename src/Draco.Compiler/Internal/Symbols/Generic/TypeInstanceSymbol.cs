@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// It does not necessarily mean that the type itself was generic, it might have been within another generic
 /// context.
 /// </summary>
-internal sealed class TypeInstanceSymbol : TypeSymbol
+internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
 {
     // TODO: One-to-one copy from FunctionInstanceSymbol...
     public override ImmutableArray<TypeParameterSymbol> GenericParameters
@@ -48,22 +48,22 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
 
     private bool NeedsGenericsBuild => this.genericParameters is null;
 
-    private readonly GenericContext context;
+    public GenericContext Context { get; }
 
     public TypeInstanceSymbol(TypeSymbol genericDefinition, GenericContext context)
     {
         this.GenericDefinition = genericDefinition;
-        this.context = context;
+        this.Context = context;
     }
 
     public override TypeSymbol GenericInstantiate(GenericContext context)
     {
         // We need to merge contexts
         var substitutions = ImmutableDictionary.CreateBuilder<TypeParameterSymbol, TypeSymbol>();
-        substitutions.AddRange(this.context);
+        substitutions.AddRange(this.Context);
         // Go through existing substitutions and where we have X -> Y in the old, Y -> Z in the new,
         // replace with X -> Z
-        foreach (var (typeParam, typeSubst) in this.context)
+        foreach (var (typeParam, typeSubst) in this.Context)
         {
             if (typeSubst is not TypeParameterSymbol paramSubst) continue;
             if (context.TryGetValue(paramSubst, out var prunedSubst))
@@ -109,7 +109,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
         }
 
         // Check, if we have parameters in there
-        var hasParametersSpecified = this.GenericDefinition.GenericParameters.Any(this.context.ContainsKey);
+        var hasParametersSpecified = this.GenericDefinition.GenericParameters.Any(this.Context.ContainsKey);
 
         // If the parameters are not specified, we have the same old generic params
         if (!hasParametersSpecified)
@@ -122,11 +122,11 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
         // Otherwise, this must have been substituted
         this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
         this.genericArguments = this.GenericDefinition.GenericParameters
-            .Select(param => this.context[param])
+            .Select(param => this.Context[param])
             .ToImmutableArray();
     }
 
     private ImmutableArray<Symbol> BuildMembers() => this.GenericDefinition.Members
-        .Select(m => m.GenericInstantiate(this.context))
+        .Select(m => m.GenericInstantiate(this.Context))
         .ToImmutableArray();
 }

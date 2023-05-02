@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// Represents a generic instantiated parameter.
 /// The parameter definition itself is not generic, but the parameter was within a generic context.
 /// </summary>
-internal sealed class ParameterInstanceSymbol : ParameterSymbol
+internal sealed class ParameterInstanceSymbol : ParameterSymbol, IGenericInstanceSymbol
 {
     public override TypeSymbol Type => this.type ??= this.BuildType();
     private TypeSymbol? type;
@@ -19,13 +19,13 @@ internal sealed class ParameterInstanceSymbol : ParameterSymbol
     public override Symbol? ContainingSymbol => this.GenericDefinition.ContainingSymbol;
     public override ParameterSymbol GenericDefinition { get; }
 
-    private readonly GenericContext context;
+    public GenericContext Context { get; }
 
     public ParameterInstanceSymbol(ParameterSymbol genericDefinition, GenericContext context)
     {
         this.GenericDefinition = genericDefinition;
-        this.context = context;
+        this.Context = context;
     }
 
-    private TypeSymbol BuildType() => this.GenericDefinition.Type.GenericInstantiate(this.context);
+    private TypeSymbol BuildType() => this.GenericDefinition.Type.GenericInstantiate(this.Context);
 }

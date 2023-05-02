@@ -419,6 +419,14 @@ internal sealed class MetadataCodegen : MetadataWriter
             return;
         }
 
+        if (type is TypeParameterSymbol typeParam2 && typeParam2.ContainingSymbol is TypeSymbol containingType)
+        {
+            var index = containingType.GenericParameters.IndexOf(typeParam2);
+            Debug.Assert(index != -1);
+            encoder.GenericTypeParameter(index);
+            return;
+        }
+
         // TODO
         throw new NotImplementedException();
     }

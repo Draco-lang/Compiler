@@ -56,6 +56,7 @@ internal sealed class CilCodegen
     private EntityHandle GetHandle(IOperand operand) => operand switch
     {
         IProcedure proc => this.GetProcedureDefinitionHandle(proc),
+        SymbolReference symbolRef => this.GetMemberReferenceHandle(symbolRef.Symbol),
         _ => throw new ArgumentOutOfRangeException(nameof(operand)),
     };
 
@@ -238,20 +239,9 @@ internal sealed class CilCodegen
             this.EncodePush(mcall.Receiver);
             // Arguments
             foreach (var arg in mcall.Arguments) this.EncodePush(arg);
-            // TODO: If IOperand could tell by itself if it's virtual, we could reuse our token encoding
-            // Determine what we are calling
-            if (mcall.Procedure is SymbolReference metadataRef)
-            {
-                var symbol = (FunctionSymbol)metadataRef.Symbol;
-                var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
-                this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
-                this.InstructionEncoder.Token(handle);
-            }
-            else
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
+            // Call
+            this.InstructionEncoder.OpCode(IsVirtual(mcall.Procedure) ? ILOpCode.Callvirt : ILOpCode.Call);
+            this.EncodeToken(mcall.Procedure);
             // Store result
             this.StoreLocal(mcall.Target);
             break;
@@ -402,4 +392,11 @@ internal sealed class CilCodegen
         if (index is null) return;
         this.InstructionEncoder.StoreLocal(index.Value);
     }
+
+    private static bool IsVirtual(IOperand operand) => operand switch
+    {
+        ProcedureInstance instance => IsVirtual(instance.Procedure),
+        SymbolReference reference => (reference.Symbol as FunctionSymbol)?.IsVirtual ?? false,
+        _ => throw new ArgumentOutOfRangeException(nameof(operand)),
+    };
 }

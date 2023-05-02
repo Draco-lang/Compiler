@@ -22,7 +22,7 @@ public sealed class LspConnection : IAsyncDisposable
 {
     private readonly IDuplexPipe transport;
     private readonly JsonSerializerOptions options;
-    private readonly Dictionary<string, JsonRpcMethodHandler> methodHandlers = new();
+    private readonly Dictionary<string, RpcMethodHandler> methodHandlers = new();
 
     // These channels are bounded to prevent infinite memory growth in case a bug causes
     // the language server to get stuck in an infinite loop.
@@ -65,13 +65,10 @@ public sealed class LspConnection : IAsyncDisposable
     {
     }
 
-    private sealed class StreamDuplexPipe : IDuplexPipe, IAsyncDisposable
+    private sealed class StreamDuplexPipe : IDuplexPipe
     {
-        private readonly Stream transport;
-
         public StreamDuplexPipe(Stream transport)
         {
-            this.transport = transport;
             this.Input = PipeReader.Create(transport);
             this.Output = PipeWriter.Create(transport);
         }
@@ -79,11 +76,9 @@ public sealed class LspConnection : IAsyncDisposable
         public PipeReader Input { get; }
 
         public PipeWriter Output { get; }
-
-        public ValueTask DisposeAsync() => this.transport.DisposeAsync();
     }
 
-    public void AddRpcMethod(JsonRpcMethodHandler handler)
+    public void AddRpcMethod(RpcMethodHandler handler)
     {
         var @params = handler.MethodInfo.GetParameters();
 
@@ -92,9 +87,22 @@ public sealed class LspConnection : IAsyncDisposable
             throw new ArgumentException("Handling method has too many parameters.", nameof(handler));
         }
 
-        if (@params.Count(p => p.ParameterType == typeof(CancellationToken)) > 1)
+        var cancellationCount = @params.Count(p => p.ParameterType == typeof(CancellationToken));
+        if (cancellationCount > 1)
         {
             throw new ArgumentException("Handling method can have at most one CancellationToken parameter.", nameof(handler));
+        }
+
+        var hasCancellation = cancellationCount > 0;
+        if (@params.Length > 1 && !hasCancellation)
+        {
+            throw new ArgumentException("Handling method can have at most one non-CancellationToken parameter.", nameof(handler));
+        }
+
+        if (!handler.IsRequestHandler && hasCancellation)
+        {
+            // A handler cannot be cancelled.
+            // TODO-LSP: Should we do something?
         }
 
         this.methodHandlers.Add(handler.MethodName, handler);
@@ -107,10 +115,13 @@ public sealed class LspConnection : IAsyncDisposable
 
         var incoming = this.ProcessIncomingMessages();
 
-        return Task.WhenAny(Task.WhenAll(reader, writer), incoming);
+        // TODO-LSP: We don't actually get the exception back here.
+        // We probably want it so the server actually crashes with an unhandled
+        // exception.
+        return Task.WhenAll(reader, writer, incoming);
     }
 
-    private async Task<LspMessage> ReadLspMessage()
+    private async Task<LspMessage?> ReadLspMessage()
     {
         var contentLength = -1;
         var reader = this.transport.Input;
@@ -140,8 +151,6 @@ public sealed class LspConnection : IAsyncDisposable
                             consumed = reader.Position;
                             examined = consumed;
 
-                            // TODO-LSP: We might want to build up the Utf8JsonReader as we scan through the JSON,
-                            // instead of all at once.
                             var jsonReader = new Utf8JsonReader(utf8Json);
                             message = JsonSerializer.Deserialize<LspMessage>(ref jsonReader, this.options);
                             return true;
@@ -199,31 +208,42 @@ public sealed class LspConnection : IAsyncDisposable
             }
         }
 
-        return default;
+        return null;
     }
 
     private async Task ReadIncomingMessages()
     {
+        Exception? error = null;
         try
         {
             while (true)
             {
                 var message = await this.ReadLspMessage();
-                await this.incomingMessages.Writer.WriteAsync(message);
+                if (message != null)
+                {
+                    await this.incomingMessages.Writer.WriteAsync(message.Value);
+                }
+                else
+                {
+                    break;
+                }
             }
         }
         catch (Exception ex)
         {
-            this.transport.Input.Complete(ex);
-            this.incomingMessages.Writer.Complete(ex);
-            // TODO-LSP: Is this the right place to do this?
-            this.outgoingMessages.Writer.Complete(ex);
+            error = ex;
+        }
+        finally
+        {
+            await this.transport.Input.CompleteAsync(error);
+            this.incomingMessages.Writer.Complete(error);
         }
     }
 
 
     private async Task WriteOutgoingMessages()
     {
+        Exception? error = null;
         try
         {
             using var stream = this.transport.Output.AsStream();
@@ -246,14 +266,20 @@ public sealed class LspConnection : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            // TODO-LSP: Is this the right place for this?
-            // TODO-LSP: All of the exception handling in this file needs to be cleaned up
-            this.transport.Output.Complete(ex);
+            error = ex;
+        }
+        finally
+        {
+            await this.transport.Output.CompleteAsync(error);
+            // If we're not going to write back to the LSP,
+            // we need to kill the reader as well.
+            await this.transport.Input.CompleteAsync(error);
         }
     }
 
     private async Task ProcessIncomingMessages()
     {
+        Exception? error = null;
         try
         {
             // TODO-LSP: If this method throws, the exception is hidden by WhenAll
@@ -275,6 +301,7 @@ public sealed class LspConnection : IAsyncDisposable
                 }
                 else if (message.Is<ResponseMessage>(out var responseMessage))
                 {
+                    throw null;
                     this.ProcessResponse(responseMessage);
                 }
                 else
@@ -285,7 +312,12 @@ public sealed class LspConnection : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            ;
+            error = ex;
+        }
+        finally
+        {
+            // TODO: This isn't correct. We don't know if there are operations happening in parallel that can still write outgoing messages.
+            this.outgoingMessages.Writer.Complete(error);
         }
     }
 
@@ -331,11 +363,13 @@ public sealed class LspConnection : IAsyncDisposable
 
         if (isRequest && id == null)
         {
-            throw null;
+            // The client sent a message without an id, but the method was marked as a request
+            // in the managed metadata. Something isn't right.
+            return;
         }
         else if (id != null && !isRequest)
         {
-            throw null;
+            // The client sent a message with an id, but the method was marked 
         }
 
         var args = new List<object?>();
@@ -550,7 +584,7 @@ public sealed class LspConnection : IAsyncDisposable
     }
 }
 
-public sealed record JsonRpcMethodHandler(string MethodName, MethodInfo MethodInfo, object Target, bool IsRequestHandler)
+public sealed record RpcMethodHandler(string MethodName, MethodInfo MethodInfo, object Target, bool IsRequestHandler)
 {
     internal Type? ParameterType { get; } = MethodInfo.GetParameters().FirstOrDefault()?.ParameterType;
 

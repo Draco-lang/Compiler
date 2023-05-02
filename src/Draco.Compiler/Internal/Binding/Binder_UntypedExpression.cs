@@ -494,7 +494,7 @@ internal partial class Binder
                         .Zip(args)
                         .ToImmutableDictionary(pair => pair.First, pair => pair.Second);
                     var context = new GenericContext(substitutions);
-                    return f.GenericInstantiate(context);
+                    return f.GenericInstantiate(f.ContainingSymbol, context);
                 }
 
                 // Instantiate each possibility

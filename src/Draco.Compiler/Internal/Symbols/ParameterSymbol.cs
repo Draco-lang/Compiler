@@ -10,8 +10,8 @@ internal abstract partial class ParameterSymbol : LocalSymbol
 {
     public override bool IsMutable => false;
 
-    public override ParameterSymbol GenericInstantiate(GenericContext context) =>
-        new ParameterInstanceSymbol(this, context);
+    public override ParameterSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
+        new ParameterInstanceSymbol(containingSymbol, this, context);
 
     public override IParameterSymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
 

@@ -40,7 +40,7 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Symb
 
         return typeAncestor.IsGenericDefinition
             ? typeAncestor.GenericParameters[index]
-            : typeAncestor.GenericArguments[index];
+            : typeAncestor.GenericDefinition!.GenericParameters[index];
     }
     public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => UnknownType;
     public TypeSymbol GetPinnedType(TypeSymbol elementType) => UnknownType;

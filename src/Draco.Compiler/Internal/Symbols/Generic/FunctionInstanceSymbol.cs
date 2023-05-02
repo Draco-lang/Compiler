@@ -45,20 +45,21 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceS
     public override bool IsMember => this.GenericDefinition.IsMember;
     public override bool IsVirtual => this.GenericDefinition.IsVirtual;
 
-    public override Symbol? ContainingSymbol => this.GenericDefinition.ContainingSymbol;
+    public override Symbol? ContainingSymbol { get; }
     public override FunctionSymbol GenericDefinition { get; }
 
     private bool NeedsGenericsBuild => this.genericParameters is null;
 
     public GenericContext Context { get; }
 
-    public FunctionInstanceSymbol(FunctionSymbol genericDefinition, GenericContext context)
+    public FunctionInstanceSymbol(Symbol? containingSymbol, FunctionSymbol genericDefinition, GenericContext context)
     {
+        this.ContainingSymbol = containingSymbol;
         this.GenericDefinition = genericDefinition;
         this.Context = context;
     }
 
-    public override FunctionSymbol GenericInstantiate(GenericContext context) =>
+    public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         throw new NotImplementedException();
 
     public override string ToString()
@@ -78,7 +79,7 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceS
         //  - We have generic parameters, this is still a generic definition
         //  - Non-generic
         // 
-        return this.GenericDefinition.ToString();
+        return base.ToString();
     }
 
     private void BuildGenerics()
@@ -110,8 +111,8 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceS
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.GenericDefinition.Parameters
-        .Select(p => p.GenericInstantiate(this.Context))
+        .Select(p => p.GenericInstantiate(this, this.Context))
         .ToImmutableArray();
 
-    private TypeSymbol BuildReturnType() => this.GenericDefinition.ReturnType.GenericInstantiate(this.Context);
+    private TypeSymbol BuildReturnType() => this.GenericDefinition.ReturnType.GenericInstantiate(this, this.Context);
 }

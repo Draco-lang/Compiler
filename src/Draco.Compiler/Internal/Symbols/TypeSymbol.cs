@@ -18,8 +18,8 @@ internal abstract partial class TypeSymbol : Symbol
     /// </summary>
     public virtual bool IsValueType => false;
 
-    public override TypeSymbol GenericInstantiate(GenericContext context) =>
-        new TypeInstanceSymbol(this, context);
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
+        new TypeInstanceSymbol(containingSymbol, this, context);
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 

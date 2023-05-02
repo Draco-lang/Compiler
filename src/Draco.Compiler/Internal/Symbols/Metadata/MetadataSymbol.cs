@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -73,10 +74,10 @@ internal static class MetadataSymbol
             var genericCtx = new GenericContext(genericParams);
 
             // Instantiate the type and ctor with these
-            var instantiatedType = type.GenericInstantiate(genericCtx);
+            var instantiatedType = type.GenericInstantiate(type.ContainingSymbol, genericCtx);
             // NOTE: This is really janky...
             var ctorSymbol = new MetadataMethodSymbol(instantiatedType, ctorMethod) as FunctionSymbol;
-            ctorSymbol = ctorSymbol.GenericInstantiate(genericCtx);
+            ctorSymbol = ctorSymbol.GenericInstantiate(instantiatedType, genericCtx);
 
             // TODO: This is very likely incorrect
             return new LazySynthetizedFunctionSymbol(

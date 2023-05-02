@@ -72,9 +72,12 @@ internal abstract partial class Symbol
         get
         {
             var parentFullName = this.ContainingSymbol?.FullName;
-            return string.IsNullOrWhiteSpace(parentFullName)
+            var thisFullName = string.IsNullOrWhiteSpace(parentFullName)
                 ? this.Name
                 : $"{parentFullName}.{this.Name}";
+            if (this.GenericParameters.Length > 0) return $"{thisFullName}<{string.Join(", ", this.GenericParameters)}>";
+            if (this.GenericArguments.Length > 0) return $"{thisFullName}<{string.Join(", ", this.GenericArguments)}>";
+            return thisFullName;
         }
     }
 
@@ -111,9 +114,10 @@ internal abstract partial class Symbol
     /// <summary>
     /// Instantiates this generic symbol with the given substitutions.
     /// </summary>
+    /// <param name="containingSymbol">The symbol that should be considered the containing symbol.</param>
     /// <param name="context">The generic context.</param>
     /// <returns>This symbol with all type parameters replaced according to <paramref name="context"/>.</returns>
-    public virtual Symbol GenericInstantiate(GenericContext context) =>
+    public virtual Symbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         throw new System.NotSupportedException();
 
     /// <summary>

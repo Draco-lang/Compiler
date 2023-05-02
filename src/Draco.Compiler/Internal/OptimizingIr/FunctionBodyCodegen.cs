@@ -384,9 +384,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         SourceFunctionSymbol func => this.DefineProcedure(func),
         SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
         MetadataMethodSymbol m => new SymbolReference(m),
-        // The function just holds generic context
-        FunctionInstanceSymbol i when i.IsGenericDefinition => this.TranslateFunctionSymbol(i.GenericDefinition),
-        // Actual generic instantiation
         FunctionInstanceSymbol i => new ProcedureInstance(
             Symbol: i,
             Procedure: this.TranslateFunctionSymbol(i.GenericDefinition)),

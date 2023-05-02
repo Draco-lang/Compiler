@@ -16,16 +16,18 @@ internal sealed class ParameterInstanceSymbol : ParameterSymbol, IGenericInstanc
     private TypeSymbol? type;
 
     public override string Name => this.GenericDefinition.Name;
-    public override Symbol? ContainingSymbol => this.GenericDefinition.ContainingSymbol;
+
+    public override Symbol? ContainingSymbol { get; }
     public override ParameterSymbol GenericDefinition { get; }
 
     public GenericContext Context { get; }
 
-    public ParameterInstanceSymbol(ParameterSymbol genericDefinition, GenericContext context)
+    public ParameterInstanceSymbol(Symbol? containingSymbol, ParameterSymbol genericDefinition, GenericContext context)
     {
+        this.ContainingSymbol = containingSymbol;
         this.GenericDefinition = genericDefinition;
         this.Context = context;
     }
 
-    private TypeSymbol BuildType() => this.GenericDefinition.Type.GenericInstantiate(this.Context);
+    private TypeSymbol BuildType() => this.GenericDefinition.Type.GenericInstantiate(this, this.Context);
 }

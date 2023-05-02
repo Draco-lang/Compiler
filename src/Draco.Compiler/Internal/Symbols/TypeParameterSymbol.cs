@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract class TypeParameterSymbol : TypeSymbol
 {
-    public override TypeSymbol GenericInstantiate(GenericContext context) => context.TryGetValue(this, out var type)
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) => context.TryGetValue(this, out var type)
         ? type
         : this;
 

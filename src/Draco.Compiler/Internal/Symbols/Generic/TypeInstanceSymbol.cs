@@ -42,7 +42,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     public override bool IsValueType => this.GenericDefinition.IsValueType;
     public override string Name => this.GenericDefinition.Name;
 
-    public override Symbol? ContainingSymbol => this.GenericDefinition.ContainingSymbol;
+    public override Symbol? ContainingSymbol { get; }
 
     public override TypeSymbol GenericDefinition { get; }
 
@@ -50,13 +50,14 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
 
     public GenericContext Context { get; }
 
-    public TypeInstanceSymbol(TypeSymbol genericDefinition, GenericContext context)
+    public TypeInstanceSymbol(Symbol? containingSymbol, TypeSymbol genericDefinition, GenericContext context)
     {
+        this.ContainingSymbol = containingSymbol;
         this.GenericDefinition = genericDefinition;
         this.Context = context;
     }
 
-    public override TypeSymbol GenericInstantiate(GenericContext context)
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context)
     {
         // We need to merge contexts
         var substitutions = ImmutableDictionary.CreateBuilder<TypeParameterSymbol, TypeSymbol>();
@@ -75,7 +76,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         substitutions.AddRange(context);
         // Done merging
         var newContext = new GenericContext(substitutions.ToImmutable());
-        return new TypeInstanceSymbol(this.GenericDefinition, newContext);
+        return new TypeInstanceSymbol(containingSymbol, this.GenericDefinition, newContext);
     }
 
     // TODO: Almost one-to-one copy from FunctionInstanceSymbol...
@@ -127,6 +128,6 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     }
 
     private ImmutableArray<Symbol> BuildMembers() => this.GenericDefinition.Members
-        .Select(m => m.GenericInstantiate(this.Context))
+        .Select(m => m.GenericInstantiate(this, this.Context))
         .ToImmutableArray();
 }

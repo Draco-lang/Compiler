@@ -34,13 +34,13 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Symb
     public TypeSymbol GetGenericMethodParameter(Symbol genericContext, int index) => UnknownType;
     public TypeSymbol GetGenericTypeParameter(Symbol genericContext, int index)
     {
-
         var typeAncestor = genericContext.AncestorChain
             .OfType<TypeSymbol>()
             .First();
 
-        // TODO
-        throw new System.NotImplementedException();
+        return typeAncestor.IsGenericDefinition
+            ? typeAncestor.GenericParameters[index]
+            : typeAncestor.GenericArguments[index];
     }
     public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => UnknownType;
     public TypeSymbol GetPinnedType(TypeSymbol elementType) => UnknownType;

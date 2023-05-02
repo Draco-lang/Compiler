@@ -56,6 +56,9 @@ internal sealed class TypeInstanceSymbol : TypeSymbol
         this.context = context;
     }
 
+    public override TypeSymbol GenericInstantiate(GenericContext context) =>
+        throw new NotImplementedException();
+
     // TODO: Almost one-to-one copy from FunctionInstanceSymbol...
     public override string ToString()
     {

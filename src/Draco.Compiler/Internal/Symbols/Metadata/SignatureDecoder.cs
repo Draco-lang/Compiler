@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -9,7 +10,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// Helper for decoding signature types.
 /// </summary>
-internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit>
+internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Symbol>
 {
     // TODO: We return a special error type for now to swallow errors
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
@@ -30,8 +31,17 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
     public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => UnknownType;
-    public TypeSymbol GetGenericMethodParameter(Unit genericContext, int index) => UnknownType;
-    public TypeSymbol GetGenericTypeParameter(Unit genericContext, int index) => UnknownType;
+    public TypeSymbol GetGenericMethodParameter(Symbol genericContext, int index) => UnknownType;
+    public TypeSymbol GetGenericTypeParameter(Symbol genericContext, int index)
+    {
+
+        var typeAncestor = genericContext.AncestorChain
+            .OfType<TypeSymbol>()
+            .First();
+
+        // TODO
+        throw new System.NotImplementedException();
+    }
     public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => UnknownType;
     public TypeSymbol GetPinnedType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
@@ -73,5 +83,5 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
         // TODO: Based on resolution scope, do the lookup
         return UnknownType;
     }
-    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Unit genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => UnknownType;
+    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => UnknownType;
 }

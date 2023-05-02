@@ -10,6 +10,7 @@ using System.Reflection.PortableExecutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -116,7 +117,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             // Add the field reference
             handle = this.AddMemberReference(
-                type: this.freeFunctionsTypeReferenceHandle,
+                parent: this.freeFunctionsTypeReferenceHandle,
                 name: global.Name,
                 signature: this.EncodeGlobalSignature(global));
             // Cache
@@ -131,7 +132,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             var signature = this.EncodeProcedureSignature(procedure);
             handle = this.AddMemberReference(
-                type: this.freeFunctionsTypeReferenceHandle,
+                parent: this.freeFunctionsTypeReferenceHandle,
                 name: procedure.Name,
                 signature: signature);
             this.procedureReferenceHandles.Add(procedure, handle);
@@ -147,7 +148,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     public MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => symbol switch
     {
         FunctionSymbol func => this.AddMemberReference(
-            type: this.GetTypeReferenceHandle(func.ContainingSymbol),
+            parent: this.GetTypeReferenceHandle(func.ContainingSymbol),
             name: func.Name,
             signature: this.EncodeBlob(e =>
             {
@@ -161,20 +162,36 @@ internal sealed class MetadataCodegen : MetadataWriter
     };
 
     // TODO: Cache?
-    public TypeReferenceHandle GetTypeReferenceHandle(Symbol? symbol) => symbol switch
+    public EntityHandle GetTypeReferenceHandle(Symbol? symbol) => symbol switch
     {
         Symbol s when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(s, out var metadataSymbol) =>
             this.GetTypeReferenceHandle(metadataSymbol),
         MetadataStaticClassSymbol staticClass => this.GetOrAddTypeReference(
             parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
             @namespace: GetNamespaceForSymbol(symbol),
-            name: staticClass.Name),
+            name: staticClass.MetadataName),
         MetadataTypeSymbol metadataType => this.GetOrAddTypeReference(
             parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
             @namespace: GetNamespaceForSymbol(symbol),
-            name: metadataType.Name),
+            name: metadataType.MetadataName),
+        TypeInstanceSymbol instance => this.GetTypeInstanceReferenceHandle(instance),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
+
+    private EntityHandle GetTypeInstanceReferenceHandle(TypeInstanceSymbol instance)
+    {
+        var blob = this.EncodeBlob(e =>
+        {
+            var encoder = e.TypeSpecificationSignature();
+            var typeRef = this.GetTypeReferenceHandle(instance.GenericDefinition);
+            var argsEncoder = encoder.GenericInstantiation(typeRef, instance.GenericArguments.Length, instance.IsValueType);
+            foreach (var arg in instance.GenericArguments)
+            {
+                this.EncodeSignatureType(argsEncoder.AddArgument(), arg);
+            }
+        });
+        return this.MetadataBuilder.AddTypeSpecification(blob);
+    }
 
     private EntityHandle GetContainingTypeOrModuleHandle(Symbol? symbol) => symbol switch
     {
@@ -249,7 +266,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 @namespace: "System.Diagnostics",
                 name: "DebuggingModes");
             var debuggableAttributeCtor = this.AddMemberReference(
-                type: debuggableAttribute,
+                parent: debuggableAttribute,
                 name: ".ctor",
                 signature: this.EncodeBlob(e =>
                 {

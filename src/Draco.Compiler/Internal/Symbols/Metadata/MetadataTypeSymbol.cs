@@ -15,6 +15,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
+    public string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
+
     public override string Name => this.name ??= this.BuildName();
     private string? name;
 
@@ -50,7 +52,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
 
     private string BuildName()
     {
-        var name = this.MetadataReader.GetString(this.typeDefinition.Name);
+        var name = this.MetadataName;
         var backtickIndex = name.IndexOf('`');
         return backtickIndex == -1
             ? name

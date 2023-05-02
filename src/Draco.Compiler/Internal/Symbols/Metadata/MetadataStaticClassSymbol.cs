@@ -14,7 +14,9 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
-    public override string Name => this.MetadataReader.GetString(this.typeDefinition.Name);
+    public string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
+
+    public override string Name => this.MetadataName;
 
     public override Symbol ContainingSymbol { get; }
 

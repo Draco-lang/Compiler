@@ -108,17 +108,29 @@ public sealed class LspConnection : IAsyncDisposable
         this.methodHandlers.Add(handler.MethodName, handler);
     }
 
-    public Task ListenAsync()
+    public async Task ListenAsync()
     {
-        var reader = this.ReadIncomingMessages();
-        var writer = this.WriteOutgoingMessages();
+        // System.Diagnostics.Debugger.Launch();
+        _ = this.ReadIncomingMessages();
+        _ = this.WriteOutgoingMessages();
 
-        var incoming = this.ProcessIncomingMessages();
+        _ = this.ProcessIncomingMessages();
 
-        // TODO-LSP: We don't actually get the exception back here.
-        // We probably want it so the server actually crashes with an unhandled
-        // exception.
-        return Task.WhenAll(reader, writer, incoming);
+        var reader = this.incomingMessages.Reader.Completion;
+        var writer = this.outgoingMessages.Reader.Completion;
+
+        // TODO-LSP: We might want to simplify the exception handling
+        // now that we've given up on a totally clean exit
+        var completed = await Task.WhenAny(reader, writer);
+        if (completed.IsFaulted)
+        {
+            // Rethrow the exception.
+            await completed;
+        }
+        else
+        {
+            await Task.WhenAll(reader, writer);
+        }
     }
 
     private async Task<LspMessage?> ReadLspMessage()
@@ -131,65 +143,9 @@ public sealed class LspConnection : IAsyncDisposable
             var result = await reader.ReadAsync();
             var buffer = result.Buffer;
 
-            var consumed = buffer.Start;
-            var examined = buffer.End;
+            var foundJson = this.TryParseMessage(ref buffer, ref contentLength, out var message);
 
-            bool ExamineBuffer(out LspMessage message)
-            {
-                var reader = new SequenceReader<byte>(buffer);
-
-                while (reader.TryReadTo(sequence: out var header, "\r\n"u8))
-                {
-                    consumed = reader.Position;
-
-                    if (header.IsEmpty)
-                    {
-                        // We've just scanned past the final header, and we're now ready to
-                        // read the JSON payload.
-                        if (reader.TryReadExact(contentLength, out var utf8Json))
-                        {
-                            consumed = reader.Position;
-                            examined = consumed;
-
-                            var jsonReader = new Utf8JsonReader(utf8Json);
-                            message = JsonSerializer.Deserialize<LspMessage>(ref jsonReader, this.options);
-                            return true;
-                        }
-                        else
-                        {
-                            // Keep the \r\n right before the JSON payload.
-                            // Otherwise, we'll never enter this loop again.
-                            reader.Rewind(2);
-                            consumed = reader.Position;
-                            break;
-                        }
-                    }
-
-                    var headerText = header.IsSingleSegment ? header.FirstSpan : header.ToArray();
-
-                    var ContentLengthHeader = "Content-Length: "u8;
-                    var ContentTypeHeader = "Content-Type: "u8;
-
-                    if (headerText.StartsWith(ContentLengthHeader))
-                    {
-                        if (!Utf8Parser.TryParse(headerText[ContentLengthHeader.Length..], out contentLength, out _))
-                        {
-                            // TODO-LSP: Handle failure
-                        }
-                    }
-                    else if (headerText.StartsWith(ContentTypeHeader))
-                    {
-                        // TODO-LSP: In theory, we are supposed to ensure that the requested encoding is UTF-8.
-                    }
-                }
-
-                message = default;
-                return false;
-            }
-
-            var foundJson = ExamineBuffer(out var message);
-
-            if (result.IsCompleted)
+            if (result.IsCompleted || result.IsCanceled)
             {
                 if (buffer.Length > 0)
                 {
@@ -200,7 +156,7 @@ public sealed class LspConnection : IAsyncDisposable
                 break;
             }
 
-            reader.AdvanceTo(consumed, examined);
+            reader.AdvanceTo(buffer.Start, buffer.End);
 
             if (foundJson)
             {
@@ -209,6 +165,58 @@ public sealed class LspConnection : IAsyncDisposable
         }
 
         return null;
+    }
+
+    private bool TryParseMessage(ref ReadOnlySequence<byte> buffer, ref int contentLength, out LspMessage message)
+    {
+        var reader = new SequenceReader<byte>(buffer);
+
+        while (reader.TryReadTo(sequence: out var header, "\r\n"u8))
+        {
+            if (header.IsEmpty)
+            {
+                // We've just scanned past the final header, and we're now ready to
+                // read the JSON payload.
+                if (reader.TryReadExact(contentLength, out var utf8Json))
+                {
+                    buffer = buffer.Slice(reader.Position, reader.Position);
+
+                    var jsonReader = new Utf8JsonReader(utf8Json);
+                    message = JsonSerializer.Deserialize<LspMessage>(ref jsonReader, this.options);
+                    return true;
+                }
+                else
+                {
+                    // Keep the \r\n right before the JSON payload.
+                    // Otherwise, we'll never enter this loop again.
+                    reader.Rewind(2);
+                    buffer = buffer.Slice(reader.Position);
+                    break;
+                }
+            }
+
+            buffer = buffer.Slice(reader.Position);
+
+            var headerText = header.IsSingleSegment ? header.FirstSpan : header.ToArray();
+
+            var ContentLengthHeader = "Content-Length: "u8;
+            var ContentTypeHeader = "Content-Type: "u8;
+
+            if (headerText.StartsWith(ContentLengthHeader))
+            {
+                if (!Utf8Parser.TryParse(headerText[ContentLengthHeader.Length..], out contentLength, out _))
+                {
+                    // TODO-LSP: Handle failure
+                }
+            }
+            else if (headerText.StartsWith(ContentTypeHeader))
+            {
+                // TODO-LSP: In theory, we are supposed to ensure that the requested encoding is UTF-8.
+            }
+        }
+
+        message = default;
+        return false;
     }
 
     private async Task ReadIncomingMessages()
@@ -274,6 +282,7 @@ public sealed class LspConnection : IAsyncDisposable
             // If we're not going to write back to the LSP,
             // we need to kill the reader as well.
             await this.transport.Input.CompleteAsync(error);
+            this.transport.Input.CancelPendingRead();
         }
     }
 
@@ -301,7 +310,6 @@ public sealed class LspConnection : IAsyncDisposable
                 }
                 else if (message.Is<ResponseMessage>(out var responseMessage))
                 {
-                    throw null;
                     this.ProcessResponse(responseMessage);
                 }
                 else

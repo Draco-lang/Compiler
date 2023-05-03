@@ -25,7 +25,6 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         this.connection = connection;
     }
 
-    [Request("initialize")]
     public Task<InitializeResult> InitializeAsync(InitializedParams param) =>
         Task.FromResult(new InitializeResult()
         {
@@ -33,7 +32,6 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
             Capabilities = this.BuildServerCapabilities(),
         });
 
-    [Notification("initialized")]
     public async Task InitializedAsync(InitializedParams param)
     {
         // First, we collect dynamic registration options
@@ -49,7 +47,6 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         await this.server.InitializedAsync(param);
     }
 
-    [Notification("exit")]
     public async Task ExitAsync()
     {
         await this.connection.DisposeAsync();

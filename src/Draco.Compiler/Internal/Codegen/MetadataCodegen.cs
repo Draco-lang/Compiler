@@ -160,10 +160,10 @@ internal sealed class MetadataCodegen : MetadataWriter
         TypeInstanceSymbol instance => this.GetTypeInstanceReferenceHandle(instance),
         // NOTE: Temporary while we only have one module
         SourceModuleSymbol => this.freeFunctionsTypeReferenceHandle,
-        // TODO: Fix this
-        FunctionSymbol func when func.ContainingSymbol is null => throw new NotImplementedException(),
         FunctionSymbol func => this.AddMemberReference(
-            parent: this.GetHandle(func.ContainingSymbol!),
+            parent: func.ContainingSymbol is null
+                ? this.freeFunctionsTypeReferenceHandle
+                : this.GetHandle(func.ContainingSymbol),
             name: func.Name,
             signature: this.EncodeBlob(e =>
             {

@@ -60,6 +60,11 @@ internal abstract partial class Symbol
     public bool IsGenericDefinition => this.GenericParameters.Length > 0;
 
     /// <summary>
+    /// True, if this is a generic instantiated symbol.
+    /// </summary>
+    public bool IsGenericInstance => this.GenericArguments.Length > 0;
+
+    /// <summary>
     /// The name of this symbol.
     /// </summary>
     public virtual string Name => string.Empty;
@@ -75,8 +80,8 @@ internal abstract partial class Symbol
             var thisFullName = string.IsNullOrWhiteSpace(parentFullName)
                 ? this.Name
                 : $"{parentFullName}.{this.Name}";
-            if (this.GenericParameters.Length > 0) return $"{thisFullName}<{string.Join(", ", this.GenericParameters)}>";
-            if (this.GenericArguments.Length > 0) return $"{thisFullName}<{string.Join(", ", this.GenericArguments)}>";
+            if (this.IsGenericDefinition) return $"{thisFullName}<{string.Join(", ", this.GenericParameters)}>";
+            if (this.IsGenericInstance) return $"{thisFullName}<{string.Join(", ", this.GenericArguments)}>";
             return thisFullName;
         }
     }

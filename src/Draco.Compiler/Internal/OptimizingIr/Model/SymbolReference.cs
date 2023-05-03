@@ -12,22 +12,6 @@ internal readonly record struct SymbolReference(Symbol Symbol) : IOperand
     public TypeSymbol? Type => (this.Symbol as ITypedSymbol)?.Type;
 
     public override string ToString() => this.ToOperandString();
-    public string ToOperandString()
-    {
-        var result = new StringBuilder();
-        result.Append(this.Symbol.FullName);
-        if (this.Symbol.GenericParameters.Length > 0)
-        {
-            result.Append('<');
-            result.AppendJoin(", ", this.Symbol.GenericParameters);
-            result.Append('>');
-        }
-        if (this.Symbol.GenericArguments.Length > 0)
-        {
-            result.Append('<');
-            result.AppendJoin(", ", this.Symbol.GenericArguments);
-            result.Append('>');
-        }
-        return result.ToString();
-    }
+    public string ToOperandString() =>
+        $"{this.Symbol.FullName}{this.Symbol.GenericsToString()}";
 }

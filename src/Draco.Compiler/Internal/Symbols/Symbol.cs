@@ -167,7 +167,7 @@ internal abstract partial class Symbol
     /// </summary>
     /// <returns>The generic parameters or arguments between angle brackets, or an empty string,
     /// if this symbol is not a generic definition or instantiation.</returns>
-    protected string GenericsToString()
+    public string GenericsToString()
     {
         if (this.IsGenericDefinition) return $"<{string.Join(", ", this.GenericParameters)}>";
         if (this.IsGenericInstance) return $"<{string.Join(", ", this.GenericArguments)}>";

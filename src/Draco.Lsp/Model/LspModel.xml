@@ -41,12 +41,15 @@
   <Generate Name="CompletionParams"/>
   <Generate Name="SignatureHelpParams"/>
   <Generate Name="CodeActionParams"/>
+  <Generate Name="DocumentDiagnosticParams"/>
+  <Generate Name="WorkspaceDiagnosticParams"/>
   
   <Generate Name="Hover" />
   <Generate Name="InlayHint" />
   <Generate Name="CompletionItem"/>
   <Generate Name="SignatureHelp"/>
   <Generate Name="CodeAction"/>
+  <Generate Name="DocumentDiagnosticReport"/>
 
   <Generate Name="DefinitionRegistrationOptions" />
   <Generate Name="ReferenceRegistrationOptions" />

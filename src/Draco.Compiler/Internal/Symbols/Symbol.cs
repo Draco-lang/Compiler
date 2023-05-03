@@ -80,9 +80,7 @@ internal abstract partial class Symbol
             var thisFullName = string.IsNullOrWhiteSpace(parentFullName)
                 ? this.Name
                 : $"{parentFullName}.{this.Name}";
-            if (this.IsGenericDefinition) return $"{thisFullName}<{string.Join(", ", this.GenericParameters)}>";
-            if (this.IsGenericInstance) return $"{thisFullName}<{string.Join(", ", this.GenericArguments)}>";
-            return thisFullName;
+            return $"{thisFullName}{this.GenericsToString()}";
         }
     }
 
@@ -163,4 +161,16 @@ internal abstract partial class Symbol
     public override string ToString() => this is ITypedSymbol typed
         ? $"{this.Name}: {typed.Type}"
         : this.Name;
+
+    /// <summary>
+    /// Turns the generic list of this symbol into a string representation.
+    /// </summary>
+    /// <returns>The generic parameters or arguments between angle brackets, or an empty string,
+    /// if this symbol is not a generic definition or instantiation.</returns>
+    protected string GenericsToString()
+    {
+        if (this.IsGenericDefinition) return $"<{string.Join(", ", this.GenericParameters)}>";
+        if (this.IsGenericInstance) return $"<{string.Join(", ", this.GenericArguments)}>";
+        return string.Empty;
+    }
 }

@@ -428,20 +428,22 @@ internal sealed class MetadataCodegen : MetadataWriter
             return;
         }
 
-        if (type is TypeParameterSymbol typeParam && typeParam.ContainingSymbol is FunctionSymbol func)
+        if (type is TypeParameterSymbol typeParam)
         {
-            var index = func.GenericParameters.IndexOf(typeParam);
-            Debug.Assert(index != -1);
-            encoder.GenericMethodTypeParameter(index);
-            return;
-        }
-
-        if (type is TypeParameterSymbol typeParam2 && typeParam2.ContainingSymbol is TypeSymbol containingType)
-        {
-            var index = containingType.GenericParameters.IndexOf(typeParam2);
-            Debug.Assert(index != -1);
-            encoder.GenericTypeParameter(index);
-            return;
+            if (typeParam.ContainingSymbol is FunctionSymbol func)
+            {
+                var index = func.GenericParameters.IndexOf(typeParam);
+                Debug.Assert(index != -1);
+                encoder.GenericMethodTypeParameter(index);
+                return;
+            }
+            if (typeParam.ContainingSymbol is TypeSymbol containingType)
+            {
+                var index = containingType.GenericParameters.IndexOf(typeParam);
+                Debug.Assert(index != -1);
+                encoder.GenericTypeParameter(index);
+                return;
+            }
         }
 
         // TODO

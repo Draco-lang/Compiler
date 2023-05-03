@@ -50,13 +50,12 @@ internal sealed class CilCodegen
     private MemberReferenceHandle GetGlobalReferenceHandle(Global global) => this.metadataCodegen.GetGlobalReferenceHandle(global);
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
-    private EntityHandle GetTypeReferenceHandle(Symbol symbol) => this.metadataCodegen.GetTypeReferenceHandle(symbol);
-    private MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => this.metadataCodegen.GetMemberReferenceHandle(symbol);
 
+    private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetHandle(symbol);
     private EntityHandle GetHandle(IOperand operand) => operand switch
     {
         IProcedure proc => this.GetProcedureDefinitionHandle(proc),
-        SymbolReference symbolRef => this.GetMemberReferenceHandle(symbolRef.Symbol),
+        SymbolReference symbolRef => this.GetHandle(symbolRef.Symbol),
         _ => throw new ArgumentOutOfRangeException(nameof(operand)),
     };
 
@@ -282,7 +281,7 @@ internal sealed class CilCodegen
 
     private void EncodeToken(TypeSymbol symbol)
     {
-        var handle = this.GetTypeReferenceHandle(symbol);
+        var handle = this.GetHandle(symbol);
         this.InstructionEncoder.Token(handle);
     }
 
@@ -297,30 +296,6 @@ internal sealed class CilCodegen
             this.InstructionEncoder.Token(handle);
             break;
         }
-        case ProcedureInstance procInstance when procInstance.Arguments.Length == 0:
-        {
-            // Just instantiated in generic context
-            var handle = this.GetMemberReferenceHandle(procInstance.Symbol);
-            this.InstructionEncoder.Token(handle);
-            break;
-        }
-        case ProcedureInstance procInstance:
-        {
-            var args = this.metadataCodegen.EncodeBlob(e =>
-            {
-                var encoder = e.MethodSpecificationSignature(procInstance.Arguments.Length);
-                foreach (var arg in procInstance.Arguments)
-                {
-                    var argEncoder = encoder.AddArgument();
-                    this.metadataCodegen.EncodeSignatureType(argEncoder, arg);
-                }
-            });
-            var methodSpec = this.metadataCodegen.MetadataBuilder.AddMethodSpecification(
-                method: this.GetHandle(procInstance.Procedure),
-                instantiation: args);
-            this.InstructionEncoder.Token(methodSpec);
-            break;
-        }
         case SymbolReference symbolRef when symbolRef.Symbol is TypeSymbol type:
         {
             this.EncodeToken(type);
@@ -329,7 +304,7 @@ internal sealed class CilCodegen
         case SymbolReference symbolRef:
         {
             // Regular lookup
-            var handle = this.GetMemberReferenceHandle(symbolRef.Symbol);
+            var handle = this.GetHandle(symbolRef.Symbol);
             this.InstructionEncoder.Token(handle);
             break;
         }
@@ -402,7 +377,6 @@ internal sealed class CilCodegen
 
     private static bool IsVirtual(IOperand operand) => operand switch
     {
-        ProcedureInstance instance => IsVirtual(instance.Procedure),
         SymbolReference reference => (reference.Symbol as FunctionSymbol)?.IsVirtual ?? false,
         _ => throw new ArgumentOutOfRangeException(nameof(operand)),
     };

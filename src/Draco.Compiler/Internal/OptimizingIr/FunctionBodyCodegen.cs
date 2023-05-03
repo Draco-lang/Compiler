@@ -384,9 +384,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         SourceFunctionSymbol func => this.DefineProcedure(func),
         SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
         MetadataMethodSymbol m => new SymbolReference(m),
-        FunctionInstanceSymbol i => new ProcedureInstance(
-            Symbol: i,
-            Procedure: this.TranslateFunctionSymbol(i.GenericDefinition)),
+        FunctionInstanceSymbol i => new SymbolReference(i),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 

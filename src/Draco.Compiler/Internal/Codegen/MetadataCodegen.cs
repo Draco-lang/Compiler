@@ -145,10 +145,23 @@ internal sealed class MetadataCodegen : MetadataWriter
     public MemberReferenceHandle GetIntrinsicReferenceHandle(Symbol symbol) => this.intrinsicReferenceHandles[symbol];
 
     // TODO: This can be cached by symbol to avoid double reference instertion
-    public MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => symbol switch
+    public EntityHandle GetHandle(Symbol symbol) => symbol switch
     {
+        Symbol s when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(s, out var metadataSymbol) =>
+            this.GetHandle(metadataSymbol),
+        MetadataStaticClassSymbol staticClass => this.GetOrAddTypeReference(
+            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
+            @namespace: GetNamespaceForSymbol(symbol),
+            name: staticClass.MetadataName),
+        MetadataTypeSymbol metadataType => this.GetOrAddTypeReference(
+            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
+            @namespace: GetNamespaceForSymbol(symbol),
+            name: metadataType.MetadataName),
+        TypeInstanceSymbol instance => this.GetTypeInstanceReferenceHandle(instance),
+        // NOTE: Temporary while we only have one module
+        SourceModuleSymbol => this.ModuleDefinitionHandle,
         FunctionSymbol func => this.AddMemberReference(
-            parent: this.GetTypeReferenceHandle(func.ContainingSymbol),
+            parent: this.GetHandle(func.ContainingSymbol ?? throw new InvalidOperationException()),
             name: func.Name,
             signature: this.EncodeBlob(e =>
             {
@@ -161,29 +174,12 @@ internal sealed class MetadataCodegen : MetadataWriter
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
-    // TODO: Cache?
-    public EntityHandle GetTypeReferenceHandle(Symbol? symbol) => symbol switch
-    {
-        Symbol s when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(s, out var metadataSymbol) =>
-            this.GetTypeReferenceHandle(metadataSymbol),
-        MetadataStaticClassSymbol staticClass => this.GetOrAddTypeReference(
-            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
-            @namespace: GetNamespaceForSymbol(symbol),
-            name: staticClass.MetadataName),
-        MetadataTypeSymbol metadataType => this.GetOrAddTypeReference(
-            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
-            @namespace: GetNamespaceForSymbol(symbol),
-            name: metadataType.MetadataName),
-        TypeInstanceSymbol instance => this.GetTypeInstanceReferenceHandle(instance),
-        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
-    };
-
     private EntityHandle GetTypeInstanceReferenceHandle(TypeInstanceSymbol instance)
     {
         var blob = this.EncodeBlob(e =>
         {
             var encoder = e.TypeSpecificationSignature();
-            var typeRef = this.GetTypeReferenceHandle(instance.GenericDefinition);
+            var typeRef = this.GetHandle(instance.GenericDefinition);
             var argsEncoder = encoder.GenericInstantiation(typeRef, instance.GenericArguments.Length, instance.IsValueType);
             foreach (var arg in instance.GenericArguments)
             {
@@ -403,8 +399,9 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (type.GenericArguments.Length > 0)
         {
             // Generic instantiation
+            Debug.Assert(type.GenericDefinition is not null);
             var genericsEncoder = encoder.GenericInstantiation(
-                genericType: this.GetTypeReferenceHandle(type.GenericDefinition),
+                genericType: this.GetHandle(type.GenericDefinition),
                 genericArgumentCount: type.GenericArguments.Length,
                 isValueType: type.IsValueType);
             foreach (var arg in type.GenericArguments)
@@ -416,7 +413,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         if (type is MetadataTypeSymbol metadataType)
         {
-            var reference = this.GetTypeReferenceHandle(metadataType);
+            var reference = this.GetHandle(metadataType);
             encoder.Type(reference, metadataType.IsValueType);
             return;
         }

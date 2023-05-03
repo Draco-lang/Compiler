@@ -157,9 +157,10 @@ internal sealed class MetadataCodegen : MetadataWriter
             parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
             @namespace: GetNamespaceForSymbol(symbol),
             name: metadataType.MetadataName),
-        TypeInstanceSymbol instance => this.GetTypeInstanceReferenceHandle(instance),
+        TypeSymbol typeSymbol when typeSymbol.IsGenericInstance => this.GetTypeInstanceReferenceHandle(typeSymbol),
         // NOTE: Temporary while we only have one module
         SourceModuleSymbol => this.freeFunctionsTypeReferenceHandle,
+        FunctionSymbol func when func.IsGenericInstance => this.GetFunctionInstanceReferenceHandle(func),
         FunctionSymbol func => this.AddMemberReference(
             parent: func.ContainingSymbol is null
                 ? this.freeFunctionsTypeReferenceHandle
@@ -176,8 +177,11 @@ internal sealed class MetadataCodegen : MetadataWriter
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
-    private EntityHandle GetTypeInstanceReferenceHandle(TypeInstanceSymbol instance)
+    private EntityHandle GetTypeInstanceReferenceHandle(TypeSymbol instance)
     {
+        Debug.Assert(instance.IsGenericInstance);
+        Debug.Assert(instance.GenericDefinition is not null);
+
         var blob = this.EncodeBlob(e =>
         {
             var encoder = e.TypeSpecificationSignature();
@@ -189,6 +193,24 @@ internal sealed class MetadataCodegen : MetadataWriter
             }
         });
         return this.MetadataBuilder.AddTypeSpecification(blob);
+    }
+
+    private EntityHandle GetFunctionInstanceReferenceHandle(FunctionSymbol func)
+    {
+        Debug.Assert(func.IsGenericInstance);
+        Debug.Assert(func.GenericDefinition is not null);
+
+        var blob = this.EncodeBlob(e =>
+        {
+            var encoder = e.MethodSpecificationSignature(func.GenericArguments.Length);
+            foreach (var arg in func.GenericArguments)
+            {
+                this.EncodeSignatureType(encoder.AddArgument(), arg);
+            }
+        });
+
+        var genericDef = this.GetHandle(func.GenericDefinition);
+        return this.MetadataBuilder.AddMethodSpecification(genericDef, blob);
     }
 
     private EntityHandle GetContainingTypeOrModuleHandle(Symbol? symbol) => symbol switch

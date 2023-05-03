@@ -46,8 +46,9 @@ public abstract class EndToEndTestsBase
         Console.SetIn(stdin ?? Console.In);
         Console.SetOut(stdout ?? Console.Out);
 
+        // NOTE: nested typed are not separated by . but by + in assembly, thats the reason for the replace
         var method = assembly
-            .GetType(moduleName)?
+            .GetType(moduleName.Replace('.', '+'))?
             .GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
         Assert.NotNull(method);
 

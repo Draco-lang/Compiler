@@ -376,4 +376,17 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "Tests", "bar");
         Assert.Equal(5, x);
     }
+
+    [Fact]
+    public void SimpleNestedModuleAccessExample()
+    {
+        var foo = CreateSyntaxTree("""
+            public func foo(): int32 = 5;
+            """, @"C:\Tests\FooTest\foo.draco");
+
+        var assembly = Compile(@"C:\Tests", foo);
+
+        var x = Invoke<int>(assembly, "Tests.FooTest", "foo");
+        Assert.Equal(5, x);
+    }
 }

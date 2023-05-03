@@ -345,14 +345,14 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             public func bar(): int32{
                 return FooTest.foo();
             }
-            """, @"C:\Tests\foo.draco");
+            """, ToPath("C:", "Tests", "bar.draco"));
 
         var foo = CreateSyntaxTree("""
             internal func foo(): int32 = x;
             val x = 5;
-            """, @"C:\Tests\FooTest\foo.draco");
+            """, ToPath("C:", "Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(@"C:\Tests", bar, foo);
+        var assembly = Compile(ToPath("C:", "Tests"), bar, foo);
 
         var x = Invoke<int>(assembly, "Tests", "bar");
         Assert.Equal(5, x);
@@ -365,13 +365,13 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             public func bar(): int32{
                 return FooTest.x;
             }
-            """, @"C:\Tests\foo.draco");
+            """, ToPath("C:", "Tests", "bar.draco"));
 
         var foo = CreateSyntaxTree("""
             public val x = 5;
-            """, @"C:\Tests\FooTest\foo.draco");
+            """, ToPath("C:", "Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(@"C:\Tests", bar, foo);
+        var assembly = Compile(ToPath("C:", "Tests"), bar, foo);
 
         var x = Invoke<int>(assembly, "Tests", "bar");
         Assert.Equal(5, x);
@@ -382,9 +382,9 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     {
         var foo = CreateSyntaxTree("""
             public func foo(): int32 = 5;
-            """, @"C:\Tests\FooTest\foo.draco");
+            """, ToPath("C:", "Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(@"C:\Tests", foo);
+        var assembly = Compile(ToPath("C:", "Tests"), foo);
 
         var x = Invoke<int>(assembly, "Tests.FooTest", "foo");
         Assert.Equal(5, x);

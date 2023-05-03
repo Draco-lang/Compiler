@@ -1029,11 +1029,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             func main(){
                FooModule.foo();
             }
-            """", @"C:\Tests\main.draco");
+            """", ToPath("C:", "Tests", "main.draco"));
 
         var foo = CreateSyntaxTree(""""
             internal func foo(): int32 = 0;
-            """", @"C:\Tests\FooModule\foo.draco");
+            """", ToPath("C:", "Tests", "FooModule", "foo.draco"));
 
 
         // Act
@@ -1042,7 +1042,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: @"C:\Tests");
+            rootModule: ToPath("C:", "Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1059,11 +1059,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             func main(){
                FooModule.foo();
             }
-            """", @"C:\Tests\main.draco");
+            """", ToPath("C:", "Tests", "main.draco"));
 
         var foo = CreateSyntaxTree(""""
             func foo(): int32 = 0;
-            """", @"C:\Tests\FooModule\foo.draco");
+            """", ToPath("C:", "Tests", "FooModule", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -1071,7 +1071,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: @"C:\Tests");
+            rootModule: ToPath("C:", "Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1090,11 +1090,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             func main(){
                foo();
             }
-            """", @"C:\Tests\main.draco");
+            """", ToPath("C:", "Tests", "main.draco"));
 
         var foo = CreateSyntaxTree(""""
             internal func foo(): int32 = 0;
-            """", @"C:\Tests\FooModule\foo.draco");
+            """", ToPath("C:", "Tests", "FooModule", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -1102,7 +1102,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: @"C:\Tests");
+            rootModule: ToPath("C:", "Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1120,11 +1120,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             func main(){
                foo();
             }
-            """", @"C:\Tests\main.draco");
+            """", ToPath("C:", "Tests", "main.draco"));
 
         var foo = CreateSyntaxTree(""""
             func foo(): int32 = 0;
-            """", @"C:\Tests\FooModule\foo.draco");
+            """", ToPath("C:", "Tests", "FooModule", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -1132,7 +1132,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: @"C:\Tests");
+            rootModule: ToPath("C:", "Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1150,11 +1150,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             func main(){
                foo();
             }
-            """", @"C:\Tests\main.draco");
+            """", ToPath("C:", "Tests", "main.draco"));
 
         var foo = CreateSyntaxTree(""""
             func foo(): int32 = 0;
-            """", @"C:\Tests\foo.draco");
+            """", ToPath("C:", "Tests", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -1162,7 +1162,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: @"C:\Tests");
+            rootModule: ToPath("C:", "Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 

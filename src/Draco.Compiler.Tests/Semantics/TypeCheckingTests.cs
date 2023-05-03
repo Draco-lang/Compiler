@@ -633,12 +633,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             func main(){
                foo();
             }
-            """", @"C:\Tests\main.draco");
+            """", ToPath("Tests", "main.draco"));
 
         var foo = CreateSyntaxTree(""""
             func foo(): int32 = 0;
             internal func foo(x: string): int32 = 0;
-            """", @"C:\Tests\FooModule\foo.draco");
+            """", ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -646,7 +646,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: @"C:\Tests");
+            rootModule: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -664,12 +664,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             func main(){
                FooModule.foo();
             }
-            """", @"C:\Tests\main.draco");
+            """", ToPath("Tests", "main.draco"));
 
         var foo = CreateSyntaxTree(""""
             func foo(): int32 = 0;
             internal func foo(x: string): int32 = 0;
-            """", @"C:\Tests\FooModule\foo.draco");
+            """", ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -677,7 +677,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: @"C:\Tests");
+            rootModule: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 

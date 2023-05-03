@@ -4,3 +4,4 @@ obj
 *.nupkg
 *.user
 **/Properties/launchSettings.json
+/src/testenvironments.json

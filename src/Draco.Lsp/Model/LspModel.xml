@@ -49,7 +49,6 @@
   <Generate Name="CompletionItem"/>
   <Generate Name="SignatureHelp"/>
   <Generate Name="CodeAction"/>
-  <Generate Name="DocumentDiagnosticReport"/>
 
   <Generate Name="DefinitionRegistrationOptions" />
   <Generate Name="ReferenceRegistrationOptions" />

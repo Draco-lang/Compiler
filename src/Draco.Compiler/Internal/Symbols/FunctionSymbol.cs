@@ -85,12 +85,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     {
         var result = new StringBuilder();
         result.Append(this.Name);
-        if (this.GenericParameters.Length > 0)
-        {
-            result.Append('<');
-            result.AppendJoin(", ", this.GenericParameters);
-            result.Append('>');
-        }
+        result.Append(this.GenericsToString());
         result.Append('(');
         result.AppendJoin(", ", this.Parameters);
         result.Append($"): {this.ReturnType}");

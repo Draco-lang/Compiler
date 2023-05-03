@@ -159,7 +159,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             name: metadataType.MetadataName),
         TypeInstanceSymbol instance => this.GetTypeInstanceReferenceHandle(instance),
         // NOTE: Temporary while we only have one module
-        SourceModuleSymbol => this.ModuleDefinitionHandle,
+        SourceModuleSymbol => this.freeFunctionsTypeReferenceHandle,
         // TODO: Fix this
         FunctionSymbol func => this.AddMemberReference(
             parent: this.GetHandle(func.ContainingSymbol ?? throw new InvalidOperationException()),

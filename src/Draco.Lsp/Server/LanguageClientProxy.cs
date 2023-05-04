@@ -32,7 +32,7 @@ internal class LanguageClientProxy : DispatchProxy
         }
     }
 
-    private static readonly MethodInfo SendRequestMethod = typeof(LspConnection).GetMethod(nameof(LspConnection.InvokeRequest))!;
+    private static readonly MethodInfo SendRequestMethod = typeof(LspConnection).GetMethod(nameof(LspConnection.SendRequestAsync))!;
 
     private object? ProxyRpc(MethodInfo method, object?[] arguments)
     {
@@ -68,7 +68,8 @@ internal class LanguageClientProxy : DispatchProxy
         {
             // It's a notification
             var args = arguments.FirstOrDefault();
-            return this.Connection.InvokeNotification(notificationAttr.Method, args);
+            this.Connection.PostNotification(notificationAttr.Method, args);
+            return Task.CompletedTask;
         }
 
         return null;

@@ -38,7 +38,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         var registrations = this.BuildDynamicRegistrations();
 
         // Then we register the collected capabilities
-        await this.connection.InvokeRequest<object>("client/registerCapability", new RegistrationParams()
+        await this.connection.SendRequestAsync<object>("client/registerCapability", new RegistrationParams()
         {
             Registrations = registrations,
         });

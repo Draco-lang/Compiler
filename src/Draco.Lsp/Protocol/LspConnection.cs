@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Buffers.Text;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -10,8 +11,8 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Draco.Lsp.Model;
 
 using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RequestMessage, Draco.Lsp.Model.NotificationMessage, Draco.Lsp.Model.ResponseMessage>;
@@ -21,44 +22,62 @@ namespace Draco.Lsp.Protocol;
 public sealed class LspConnection : IAsyncDisposable
 {
     private readonly IDuplexPipe transport;
-    private readonly JsonSerializerOptions options;
     private readonly Dictionary<string, RpcMethodHandler> methodHandlers = new();
 
-    // These channels are bounded to prevent infinite memory growth in case a bug causes
-    // the language server to get stuck in an infinite loop.
-    private readonly Channel<LspMessage> outgoingMessages = Channel.CreateBounded<LspMessage>(new BoundedChannelOptions(128));
-    private readonly Channel<LspMessage> incomingMessages = Channel.CreateBounded<LspMessage>(new BoundedChannelOptions(128));
+    private readonly TransformManyBlock<IAsyncEnumerable<LspMessage>, LspMessage> messageParser;
+    private readonly ActionBlock<LspMessage> outgoingMessages;
 
     private int lastMessageId = 0;
-    private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> pendingOutgoingRequests = new();
     private readonly ConcurrentDictionary<OneOf<int, string>, CancellationTokenSource> pendingIncomingRequests = new();
+
+    private static readonly JsonSerializerOptions jsonOptions = new()
+    {
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver
+        {
+            Modifiers = { AddResponseMessageContract }
+        }
+    };
 
     public LspConnection(IDuplexPipe pipeTransport)
     {
         this.transport = pipeTransport;
-        // TODO-LSP: Do we want to take the options as a parameter?
-        this.options = new JsonSerializerOptions();
 
-        this.options.TypeInfoResolver = new DefaultJsonTypeInfoResolver
+        this.messageParser = new TransformManyBlock<IAsyncEnumerable<LspMessage>, LspMessage>(ae => ae, new()
         {
-            Modifiers = { this.AddResponseMessageContract }
-        };
-    }
+            // MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
+        });
 
-    private void AddResponseMessageContract(JsonTypeInfo typeInfo)
-    {
-        if (typeInfo.Type == typeof(ResponseMessage))
-        {
-            var resultProperty = typeInfo.Properties.Single(p => p.Name == "result");
+        var scheduler = new ConcurrentExclusiveSchedulerPair();
 
-            resultProperty.ShouldSerialize = (responseObject, _) =>
+        var concurrentMessageHandler = new TransformBlock<LspMessage, LspMessage?>(
+            this.ProcessRequestOrNotification,
+            new()
             {
-                var response = (ResponseMessage)responseObject;
-                // The result property MUST only appear on the object if the request was successful
-                // (in which case, the error property MUST be null).
-                return response.Error == null;
-            };
-        }
+                // TaskScheduler = scheduler.ConcurrentScheduler,
+                // MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded,
+                EnsureOrdered = false
+            });
+
+        var exclusiveMessageHandler = new TransformBlock<LspMessage, LspMessage?>(
+            this.ProcessRequestOrNotification,
+            new()
+            {
+                // TaskScheduler = scheduler.ExclusiveScheduler
+            });
+
+        var filterNullResponses = new TransformManyBlock<LspMessage?, LspMessage>(m => m.HasValue ? new[] { m.Value } : Enumerable.Empty<LspMessage>());
+
+        this.outgoingMessages = new ActionBlock<LspMessage>(this.SerializeObject!);
+
+        static bool IsRequestOrNotification(LspMessage message) => message.Is<RequestMessage>() || message.Is<NotificationMessage>();
+
+        var propCompletion = new DataflowLinkOptions { PropagateCompletion = true };
+        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, IsRequestOrNotification);
+
+        concurrentMessageHandler.LinkTo(filterNullResponses, propCompletion);
+        exclusiveMessageHandler.LinkTo(filterNullResponses, propCompletion);
+
+        filterNullResponses.LinkTo(this.outgoingMessages, propCompletion);
     }
 
     public LspConnection(Stream streamTransport) : this(new StreamDuplexPipe(streamTransport))
@@ -76,6 +95,22 @@ public sealed class LspConnection : IAsyncDisposable
         public PipeReader Input { get; }
 
         public PipeWriter Output { get; }
+    }
+
+    private static void AddResponseMessageContract(JsonTypeInfo typeInfo)
+    {
+        if (typeInfo.Type == typeof(ResponseMessage))
+        {
+            var resultProperty = typeInfo.Properties.Single(p => p.Name == "result");
+
+            resultProperty.ShouldSerialize = (responseObject, _) =>
+            {
+                var response = (ResponseMessage)responseObject;
+                // The result property MUST only appear on the object if the request was successful
+                // (in which case, the error property MUST be null).
+                return response.Error == null;
+            };
+        }
     }
 
     public void AddRpcMethod(RpcMethodHandler handler)
@@ -108,28 +143,19 @@ public sealed class LspConnection : IAsyncDisposable
         this.methodHandlers.Add(handler.MethodName, handler);
     }
 
-    public async Task ListenAsync()
+    public Task ListenAsync()
     {
-        // System.Diagnostics.Debugger.Launch();
-        _ = this.ReadIncomingMessages();
-        _ = this.WriteOutgoingMessages();
+        System.Diagnostics.Debugger.Launch();
+        this.messageParser.Post(this.ReadLspMessages());
+        this.messageParser.Complete();
+        return this.outgoingMessages.Completion;
+    }
 
-        _ = this.ProcessIncomingMessages();
-
-        var reader = this.incomingMessages.Reader.Completion;
-        var writer = this.outgoingMessages.Reader.Completion;
-
-        // TODO-LSP: We might want to simplify the exception handling
-        // now that we've given up on a totally clean exit
-        var completed = await Task.WhenAny(reader, writer);
-        if (completed.IsFaulted)
+    private async IAsyncEnumerable<LspMessage> ReadLspMessages()
+    {
+        while (await this.ReadLspMessage() is LspMessage message)
         {
-            // Rethrow the exception.
-            await completed;
-        }
-        else
-        {
-            await Task.WhenAll(reader, writer);
+            yield return message;
         }
     }
 
@@ -182,7 +208,7 @@ public sealed class LspConnection : IAsyncDisposable
                     buffer = buffer.Slice(reader.Position, reader.Position);
 
                     var jsonReader = new Utf8JsonReader(utf8Json);
-                    message = JsonSerializer.Deserialize<LspMessage>(ref jsonReader, this.options);
+                    message = JsonSerializer.Deserialize<LspMessage>(ref jsonReader, jsonOptions);
                     return true;
                 }
                 else
@@ -219,152 +245,97 @@ public sealed class LspConnection : IAsyncDisposable
         return false;
     }
 
-    private async Task ReadIncomingMessages()
+    private async Task SerializeObject(LspMessage message)
     {
-        Exception? error = null;
-        try
+        var writer = this.transport.Output;
+
+        void WriteData()
         {
-            while (true)
-            {
-                var message = await this.ReadLspMessage();
-                if (message != null)
-                {
-                    await this.incomingMessages.Writer.WriteAsync(message.Value);
-                }
-                else
-                {
-                    break;
-                }
-            }
+            var response = JsonSerializer.SerializeToUtf8Bytes(message, jsonOptions);
+
+            var ContentLengthHeader = "Content-Length: "u8;
+            var TwoNewLines = "\r\n\r\n"u8;
+
+            var written = 0;
+            var responseBuffer = writer.GetSpan(response.Length + ContentLengthHeader.Length + 16);
+
+            ContentLengthHeader.CopyTo(responseBuffer);
+            written += ContentLengthHeader.Length;
+
+            Utf8Formatter.TryFormat(response.Length, responseBuffer[written..], out var contentLengthLength);
+            written += contentLengthLength;
+
+            TwoNewLines.CopyTo(responseBuffer[written..]);
+            written += TwoNewLines.Length;
+
+            response.CopyTo(responseBuffer[written..]);
+            written += response.Length;
+
+            writer.Advance(written);
         }
-        catch (Exception ex)
+
+        WriteData();
+        var result = await writer.FlushAsync();
+        if (result.IsCompleted)
         {
-            error = ex;
-        }
-        finally
-        {
-            await this.transport.Input.CompleteAsync(error);
-            this.incomingMessages.Writer.Complete(error);
+            // ?
         }
     }
 
-
-    private async Task WriteOutgoingMessages()
+    private async Task<LspMessage?> ProcessRequestOrNotification(LspMessage message)
     {
-        Exception? error = null;
-        try
+        string method;
+        JsonElement? @params;
+        OneOf<int, string>? id;
+
+        if (message.Is<RequestMessage>(out var requestMessage))
         {
-            using var stream = this.transport.Output.AsStream();
-
-            var ContentLengthHeader = "Content-Length: "u8.ToArray();
-            var TwoNewLines = "\r\n\r\n"u8.ToArray();
-
-            await foreach (var message in this.outgoingMessages.Reader.ReadAllAsync())
-            {
-                var response = JsonSerializer.SerializeToUtf8Bytes(message, this.options);
-                await stream.WriteAsync(ContentLengthHeader);
-
-                var contentLength = ArrayPool<byte>.Shared.Rent(128);
-                Utf8Formatter.TryFormat(response.Length, contentLength, out var contentLengthLength);
-                await stream.WriteAsync(contentLength.AsMemory(0, contentLengthLength));
-
-                await stream.WriteAsync(TwoNewLines);
-                await stream.WriteAsync(response);
-            }
+            method = requestMessage.Method;
+            @params = requestMessage.Params;
+            id = requestMessage.Id;
         }
-        catch (Exception ex)
+        else if (message.Is<NotificationMessage>(out var notificationMessage))
         {
-            error = ex;
+            method = notificationMessage.Method;
+            @params = notificationMessage.Params;
+            id = null;
         }
-        finally
+        else
         {
-            await this.transport.Output.CompleteAsync(error);
-            // If we're not going to write back to the LSP,
-            // we need to kill the reader as well.
-            await this.transport.Input.CompleteAsync(error);
-            this.transport.Input.CancelPendingRead();
+            throw new UnreachableException();
         }
-    }
 
-    private async Task ProcessIncomingMessages()
-    {
-        Exception? error = null;
-        try
-        {
-            // TODO-LSP: If this method throws, the exception is hidden by WhenAll
-            // and the server hangs forever. We need to figure out what we should do in response
-            // to an exception in this method.
-            await foreach (var message in this.incomingMessages.Reader.ReadAllAsync())
-            {
-                // TODO-LSP: The lack of awaits here means that request processing can happen in parallel.
-                // Is this what we want? Do we want some way to configure this?
-                // Using await here causes deadlocks (if processing a request invokes another request and
-                // waits for its response).
-                if (message.Is<RequestMessage>(out var requestMessage))
-                {
-                    _ = this.ProcessRequestOrNotification(requestMessage.Method, requestMessage.Params, requestMessage.Id);
-                }
-                else if (message.Is<NotificationMessage>(out var notificationMessage))
-                {
-                    _ = this.ProcessRequestOrNotification(notificationMessage.Method, notificationMessage.Params, null);
-                }
-                else if (message.Is<ResponseMessage>(out var responseMessage))
-                {
-                    this.ProcessResponse(responseMessage);
-                }
-                else
-                {
-                    throw new InvalidDataException();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            error = ex;
-        }
-        finally
-        {
-            // TODO: This isn't correct. We don't know if there are operations happening in parallel that can still write outgoing messages.
-            this.outgoingMessages.Writer.Complete(error);
-        }
-    }
-
-    private static readonly MethodInfo taskGetResult = typeof(Task<>).GetMethod("get_Result")!;
-
-    private async Task ProcessRequestOrNotification(string method, JsonElement? @params, OneOf<int, string>? id)
-    {
         if (method.StartsWith("$/"))
         {
-            this.ProcessImplementationDefinedMethod(method, @params, id);
-            return;
+            return this.ProcessImplementationDefinedMethod(method, @params, id);
+        }
+
+        LspMessage? Error(ResponseError error)
+        {
+            if (id != null)
+            {
+                return CreateResponseMessage(id.Value, error);
+            }
+
+            return null;
         }
 
         if (!this.methodHandlers.TryGetValue(method, out var methodHandler))
         {
-            if (id != null)
+            return Error(new()
             {
-                await this.PostResponse(id.Value, new ResponseError
-                {
-                    Code = -32601, // MethodNotFound
-                    Message = $"A handler for the method {method} was not registered."
-                });
-            }
-
-            return;
+                Code = -32601, // MethodNotFound
+                Message = $"A handler for the method '{method}' was not registered."
+            });
         }
 
         if (@params is JsonElement { ValueKind: not (JsonValueKind.Object or JsonValueKind.Array) })
         {
-            if (id != null)
+            return Error(new()
             {
-                await this.PostResponse(id.Value, new ResponseError
-                {
-                    Code = -32600, // InvalidRequest
-                    Message = "Invalid request."
-                });
-            }
-
-            return;
+                Code = -32600, // InvalidRequest
+                Message = "Invalid request."
+            });
         }
 
         var (_, methodInfo, target, isRequest) = methodHandler;
@@ -373,11 +344,17 @@ public sealed class LspConnection : IAsyncDisposable
         {
             // The client sent a message without an id, but the method was marked as a request
             // in the managed metadata. Something isn't right.
-            return;
+            return null;
         }
         else if (id != null && !isRequest)
         {
-            // The client sent a message with an id, but the method was marked 
+            // The client sent a message with an id, but the method was marked as a notification
+            // in the managed metadata. We need to respond with something.
+            return Error(new()
+            {
+                Code = -32603, // InternalError
+                Message = $"A handler for the method '{method}' was registered as a notification handler."
+            });
         }
 
         var args = new List<object?>();
@@ -387,33 +364,28 @@ public sealed class LspConnection : IAsyncDisposable
             try
             {
                 var element = @params.Value;
-                args.Add(JsonSerializer.Deserialize(element, methodHandler.ParameterType!, this.options));
+                args.Add(JsonSerializer.Deserialize(element, methodHandler.ParameterType!, jsonOptions));
             }
             catch (JsonException ex)
             {
-                if (isRequest)
+                var responseError = new ResponseError
                 {
-                    var responseError = new ResponseError
-                    {
-                        Message = ex.Message,
-                        Data = JsonSerializer.SerializeToElement(ex.ToString())
-                    };
+                    Message = ex.Message,
+                    Data = JsonSerializer.SerializeToElement(ex.ToString())
+                };
 
-                    if (ex.BytePositionInLine.HasValue)
-                    {
-                        // Typically, only exceptions from Utf8JsonReader have the position info set.
-                        // So, we assume this is a parse error, and other errors are serialization errors.
-                        responseError.Code = -32700; // ParseError
-                    }
-                    else
-                    {
-                        responseError.Code = -32602; // InvalidParams
-                    }
-
-                    await this.PostResponse(id!.Value, responseError);
+                if (ex.BytePositionInLine.HasValue)
+                {
+                    // Typically, only exceptions from Utf8JsonReader have the position info set.
+                    // So, we assume this is a parse error, and other errors are serialization errors.
+                    responseError.Code = -32700; // ParseError
+                }
+                else
+                {
+                    responseError.Code = -32602; // InvalidParams
                 }
 
-                return;
+                return Error(responseError);
             }
         }
 
@@ -436,7 +408,7 @@ public sealed class LspConnection : IAsyncDisposable
         try
         {
             var returnValue = methodInfo.Invoke(target, args.ToArray());
-            response = await GetValueToSerialize(returnValue);
+            response = await GetReturnValueToSerialize(returnValue);
         }
         catch (Exception ex)
         {
@@ -471,11 +443,13 @@ public sealed class LspConnection : IAsyncDisposable
                 serializableResponse = response.As<object?>();
             }
 
-            await this.PostResponse(id.Value, serializableResponse);
+            return CreateResponseMessage(id.Value, serializableResponse);
         }
+
+        return null;
     }
 
-    private async Task PostResponse(OneOf<int, string> id, OneOf<object?, ResponseError> response)
+    private static ResponseMessage CreateResponseMessage(OneOf<int, string> id, OneOf<object?, ResponseError> response)
     {
         var responseMessage = new ResponseMessage
         {
@@ -489,16 +463,13 @@ public sealed class LspConnection : IAsyncDisposable
         }
         else
         {
-            responseMessage.Result = JsonSerializer.SerializeToElement(response.As<object>(), this.options);
+            responseMessage.Result = JsonSerializer.SerializeToElement(response.As<object>(), jsonOptions);
         }
 
-        this.pendingIncomingRequests.TryRemove(id, out var cts);
-        cts?.Dispose();
-
-        await this.outgoingMessages.Writer.WriteAsync(responseMessage);
+        return responseMessage;
     }
 
-    private void ProcessImplementationDefinedMethod(string method, JsonElement? @params, OneOf<int, string>? id)
+    private LspMessage? ProcessImplementationDefinedMethod(string method, JsonElement? @params, OneOf<int, string>? id)
     {
         if (id != null)
         {
@@ -513,11 +484,14 @@ public sealed class LspConnection : IAsyncDisposable
         else
         {
             // If we supported progress notifications, we would handle them here.
-            return;
         }
+
+        return null;
     }
 
-    private static async Task<object?> GetValueToSerialize(object? returnValue)
+    private static readonly MethodInfo taskGetResult = typeof(Task<>).GetMethod("get_Result")!;
+
+    private static async Task<object?> GetReturnValueToSerialize(object? returnValue)
     {
         object? result = null;
         if (returnValue is Task task)
@@ -538,27 +512,10 @@ public sealed class LspConnection : IAsyncDisposable
         return result;
     }
 
-    private void ProcessResponse(ResponseMessage responseMessage)
+    public void PostNotification(string method, object? @params)
     {
-        var id = responseMessage.Id!.Value.As<int>();
-        if (this.pendingOutgoingRequests.TryRemove(id, out var tcs))
-        {
-            if (responseMessage.Error is not null)
-            {
-                var error = responseMessage.Error;
-                tcs.TrySetException(new LspResponseException(error!));
-            }
-            else
-            {
-                tcs.TrySetResult(responseMessage.Result.GetValueOrDefault());
-            }
-        }
-    }
-
-    public async Task InvokeNotification(string method, object? @params)
-    {
-        var serializedParams = JsonSerializer.SerializeToElement(@params, this.options);
-        await this.outgoingMessages.Writer.WriteAsync(new NotificationMessage
+        var serializedParams = JsonSerializer.SerializeToElement(@params, jsonOptions);
+        this.outgoingMessages.Post(new NotificationMessage
         {
             Jsonrpc = "2.0",
             Method = method,
@@ -566,14 +523,12 @@ public sealed class LspConnection : IAsyncDisposable
         });
     }
 
-    public async Task<TResponse?> InvokeRequest<TResponse>(string method, object? @params)
+    public async Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params)
     {
         var id = Interlocked.Increment(ref this.lastMessageId);
-        var tcs = new TaskCompletionSource<JsonElement>();
-        this.pendingOutgoingRequests.TryAdd(id, tcs);
 
-        var serializedParams = JsonSerializer.SerializeToElement(@params, this.options);
-        await this.outgoingMessages.Writer.WriteAsync(new RequestMessage
+        var serializedParams = JsonSerializer.SerializeToElement(@params, jsonOptions);
+        this.outgoingMessages.Post(new RequestMessage
         {
             Jsonrpc = "2.0",
             Method = method,
@@ -581,14 +536,38 @@ public sealed class LspConnection : IAsyncDisposable
             Params = serializedParams
         });
 
-        return (await tcs.Task).Deserialize<TResponse>(this.options);
+        JsonElement response;
+        var block = new WriteOnceBlock<LspMessage>(null);
+
+        bool IsThisResponse(LspMessage m) => m.Is<ResponseMessage>(out var r) && r.Id?.As<int>() == id;
+        using (this.messageParser.LinkTo(block, new() { MaxMessages = 1 }, IsThisResponse))
+        {
+            var responseMessage = (await block.ReceiveAsync()).As<ResponseMessage>();
+            if (responseMessage.Error is { } error)
+            {
+                throw new LspResponseException(error);
+            }
+            else
+            {
+                response = responseMessage.Result!.GetValueOrDefault();
+            }
+
+        };
+
+        if (response.ValueKind == JsonValueKind.Undefined)
+        {
+            return default;
+        }
+        else
+        {
+            return response.Deserialize<TResponse>(jsonOptions);
+        }
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        // TODO-LSP: We want to post "poison" messages to our queues that will tell them to shut down,
-        // and then wait for the pipes to complete from here.
-        return default;
+        this.messageParser.Complete();
+        await this.outgoingMessages.Completion;
     }
 }
 

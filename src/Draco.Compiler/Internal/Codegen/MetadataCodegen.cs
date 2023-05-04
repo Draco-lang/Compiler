@@ -220,6 +220,10 @@ internal sealed class MetadataCodegen : MetadataWriter
                     foreach (var param in func.Parameters) this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
                 }));
 
+        // NOTE: Temporary while we only have one module
+        case SourceModuleSymbol:
+            return this.freeFunctionsTypeReferenceHandle;
+
         default:
             throw new ArgumentOutOfRangeException(nameof(symbol));
         }

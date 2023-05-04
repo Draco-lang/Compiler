@@ -164,7 +164,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         case IMetadataSymbol metadataSymbol:
             Debug.Assert(symbol.ContainingSymbol is not null);
             return this.GetOrAddTypeReference(
-                parent: this.GetEntityHandle(symbol.ContainingSymbol),
+                parent: this.GetContainerEntityHandle(symbol.ContainingSymbol),
                 @namespace: GetNamespaceForSymbol(symbol),
                 name: metadataSymbol.MetadataName);
 
@@ -228,6 +228,16 @@ internal sealed class MetadataCodegen : MetadataWriter
             throw new ArgumentOutOfRangeException(nameof(symbol));
         }
     }
+
+    private EntityHandle GetContainerEntityHandle(Symbol symbol) => symbol switch
+    {
+        MetadataNamespaceSymbol ns => this.GetContainerEntityHandle(ns.ContainingSymbol),
+        MetadataAssemblySymbol module => this.GetOrAddAssemblyReference(
+            name: module.Name,
+            // TODO: What version
+            version: new(1, 0)),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+    };
 
     private static string? GetNamespaceForSymbol(Symbol symbol) => symbol switch
     {

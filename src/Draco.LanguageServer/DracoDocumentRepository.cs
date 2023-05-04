@@ -9,15 +9,14 @@ internal sealed class DracoDocumentRepository
 {
     private readonly Dictionary<DocumentUri, SourceText> documents = new();
 
-    public void AddOrUpdateDocument(DocumentUri uri, string contents) =>
-        this.documents[uri] = SourceText.FromText(uri.ToUri(), contents.AsMemory());
-
-    public SourceText GetDocument(DocumentUri uri)
+    public SourceText AddOrUpdateDocument(DocumentUri uri, string contents)
     {
-        if (this.documents.TryGetValue(uri, out var contents))
-        {
-            return contents;
-        }
-        return SourceText.None;
+        var sourceText = SourceText.FromText(uri.ToUri(), contents.AsMemory());
+        this.documents[uri] = sourceText;
+        return sourceText;
     }
+
+    public SourceText GetDocument(DocumentUri uri) => this.documents.TryGetValue(uri, out var contents)
+        ? contents
+        : SourceText.None;
 }

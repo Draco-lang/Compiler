@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -8,27 +9,15 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
-/// Solves type-constraint problems for the binder.
+/// Solves sets of <see cref="IConstraint"/>s for the type-system.
 /// </summary>
-internal sealed partial class ConstraintSolver
+internal sealed class ConstraintSolver
 {
-    private enum SolveState
-    {
-        Stale,
-        Progressing,
-        Finished,
-    }
-
-    /// <summary>
-    /// Allocates a type-variable.
-    /// </summary>
-    public TypeVariable NextTypeVariable => new(this.typeVariableCounter++);
-    private int typeVariableCounter = 0;
-
     /// <summary>
     /// The context being inferred.
     /// </summary>
@@ -39,8 +28,14 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     public string ContextName { get; }
 
-    // The list of raw constraints
-    private readonly List<Constraint> constraints = new();
+    // The raw constraints and their states
+    private readonly Dictionary<IConstraint, IEnumerator<SolveState>> constraints = new();
+    // The constraints that were marked for removal
+    private readonly List<IConstraint> constraintsToRemove = new();
+    // The constraints that were queued for insertion
+    private readonly List<IConstraint> constraintsToAdd = new();
+    // Number of type variables allocated
+    private int typeVariableCounter = 0;
     // Type variable substitutions
     private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new(ReferenceEqualityComparer.Instance);
     // The declared/inferred types of locals
@@ -55,23 +50,161 @@ internal sealed partial class ConstraintSolver
     }
 
     /// <summary>
-    /// Solves all constraints within the solver.
+    /// Adds a same-type constraint to the solver.
     /// </summary>
+    /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
+    /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
+    /// <returns>The promise for the constraint added.</returns>
+    public IConstraintPromise<Unit> SameType(TypeSymbol first, TypeSymbol second)
+    {
+        var constraint = new SameTypeConstraint(this, ImmutableArray.Create(first, second));
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
+    /// Adds an assignable constraint to the solver.
+    /// </summary>
+    /// <param name="targetType">The type being assigned to.</param>
+    /// <param name="assignedType">The type assigned.</param>
+    /// <returns>The promise for the constraint added.</returns>
+    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType) =>
+        // TODO: Hack, this is temporary until we have other constraints
+        this.SameType(targetType, assignedType);
+
+    /// <summary>
+    /// Adds a common-type constraint to the solver.
+    /// </summary>
+    /// <param name="commonType">The common type of the provided alternative types.</param>
+    /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
+    /// <returns>The promise of the constraint added.</returns>
+    public IConstraintPromise<Unit> CommonType(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
+    {
+        // TODO: Hack, this is temporary until we have other constraints
+        var constraint = new SameTypeConstraint(this, alternativeTypes.Prepend(commonType).ToImmutableArray());
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
+    /// Adds a member-constraint to the solver.
+    /// </summary>
+    /// <param name="accessedType">The accessed object type.</param>
+    /// <param name="memberName">The accessed member name.</param>
+    /// <returns>The promise of the accessed member symbol.</returns>
+    public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName)
+    {
+        var constraint = new MemberConstraint(this, accessedType, memberName);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
+    /// Adds a callability constraint to the solver.
+    /// </summary>
+    /// <param name="calledType">The called function type.</param>
+    /// <param name="args">The calling argument types.</param>
+    /// <param name="returnType">The return type.</param>
+    /// <returns>The promise of the constraint.</returns>
+    public IConstraintPromise<Unit> Call(TypeSymbol calledType, ImmutableArray<TypeSymbol> args, out TypeSymbol returnType)
+    {
+        returnType = this.AllocateTypeVariable();
+        var constraint = new CallConstraint(this, calledType, args, returnType);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
+    /// Adds an overload constraint to the solver.
+    /// </summary>
+    /// <param name="functions">The functions to choose an overload from.</param>
+    /// <param name="args">The passed in arguments.</param>
+    /// <param name="returnType">The return type of the call.</param>
+    /// <returns>The promise for the resolved overload.</returns>
+    public IConstraintPromise<FunctionSymbol> Overload(
+        ImmutableArray<FunctionSymbol> functions,
+        ImmutableArray<TypeSymbol> args,
+        out TypeSymbol returnType)
+    {
+        returnType = this.AllocateTypeVariable();
+        var constraint = new OverloadConstraint(this, functions, args, returnType);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
+    /// Adds a constraint that waits before another one finishes.
+    /// </summary>
+    /// <typeparam name="TAwaitedResult">The awaited constraint result.</typeparam>
+    /// <typeparam name="TResult">The mapped result.</typeparam>
+    /// <param name="awaited">The awaited constraint.</param>
+    /// <param name="map">The function that maps the result of <paramref name="awaited"/>.</param>
+    /// <returns>The promise that is resolved, when <paramref name="awaited"/>.</returns>
+    public IConstraintPromise<TResult> Await<TAwaitedResult, TResult>(
+        IConstraintPromise<TAwaitedResult> awaited,
+        Func<TAwaitedResult, TResult> map)
+    {
+        if (awaited.IsResolved)
+        {
+            // If resolved, don't bother with indirections
+            var constraint = map(awaited.Result);
+            return ConstraintPromise.FromResult(constraint);
+        }
+        else
+        {
+            var constraint = new AwaitConstraint<TAwaitedResult, TResult>(this, awaited.Constraint, map);
+            this.Add(constraint);
+            return constraint.Promise;
+        }
+    }
+
+    /// <summary>
+    /// Adds the given constraint to the solver.
+    /// </summary>
+    /// <param name="constraint">The constraint to add.</param>
+    public void Add(IConstraint constraint) =>
+        this.constraintsToAdd.Add(constraint);
+
+    /// <summary>
+    /// Removes the given constraint from the solver.
+    /// </summary>
+    /// <param name="constraint">The constraint to remove.</param>
+    public void Remove(IConstraint constraint) =>
+        this.constraintsToRemove.Add(constraint);
+
+    /// <summary>
+    /// Solves all diagnostics added to this solver.
+    /// </summary>
+    /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
         while (true)
         {
-            var advanced = false;
-            for (var i = 0; i < this.constraints.Count;)
-            {
-                var state = this.Solve(diagnostics, this.constraints[i]);
-                advanced = advanced || state != SolveState.Stale;
+            // Add and removal
+            foreach (var r in this.constraintsToRemove) this.constraints.Remove(r);
+            foreach (var a in this.constraintsToAdd) this.constraints.Add(a, a.Solve(diagnostics).GetEnumerator());
+            this.constraintsToRemove.Clear();
+            this.constraintsToAdd.Clear();
 
-                if (state == SolveState.Finished) this.constraints.RemoveAt(i);
-                else ++i;
+            var advanced = false;
+            foreach (var (constraint, solve) in this.constraints)
+            {
+                while (true)
+                {
+                    solve.MoveNext();
+                    var state = solve.Current;
+                    advanced = advanced || state != SolveState.Stale;
+                    if (state is SolveState.AdvancedBreak or SolveState.Stale) break;
+                    if (state == SolveState.Solved)
+                    {
+                        this.Remove(constraint);
+                        break;
+                    }
+                }
             }
             if (!advanced) break;
         }
+
         if (this.constraints.Count > 0)
         {
             // Couldn't solve all constraints
@@ -81,7 +214,7 @@ internal sealed partial class ConstraintSolver
                 formatArgs: this.ContextName));
 
             // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-            foreach (var constraint in this.constraints) this.FailSilently(constraint);
+            foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
         }
     }
 
@@ -91,9 +224,9 @@ internal sealed partial class ConstraintSolver
     /// <param name="local">The symbol of the untyped local.</param>
     /// <param name="type">The optional declared type for the local.</param>
     /// <returns>The type the local was declared with.</returns>
-    public TypeSymbol AddLocal(UntypedLocalSymbol local, TypeSymbol? type)
+    public TypeSymbol DeclareLocal(UntypedLocalSymbol local, TypeSymbol? type)
     {
-        var inferredType = type ?? this.NextTypeVariable;
+        var inferredType = type ?? this.AllocateTypeVariable();
         this.inferredLocalTypes.Add(local, inferredType);
         return inferredType;
     }
@@ -103,10 +236,10 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="local">The local to get the type of.</param>
     /// <returns>The type of the local inferred so far.</returns>
-    public TypeSymbol GetLocal(UntypedLocalSymbol local) => this.Unwrap(this.inferredLocalTypes[local]);
+    public TypeSymbol GetLocalType(UntypedLocalSymbol local) => this.Unwrap(this.inferredLocalTypes[local]);
 
     /// <summary>
-    /// Retrieves the typed variant of an untyped local. In case this is the first time the local is
+    /// Retrieves the typed variant of an untyped local symbol. In case this is the first time the local is
     /// retrieved and the variable type could not be inferred, an error is reported.
     /// </summary>
     /// <param name="local">The untyped local to get the typed equivalent of.</param>
@@ -116,7 +249,7 @@ internal sealed partial class ConstraintSolver
     {
         if (!this.typedLocals.TryGetValue(local, out var typedLocal))
         {
-            var localType = this.GetLocal(local);
+            var localType = this.GetLocalType(local);
             if (localType.IsTypeVariable)
             {
                 // We could not infer the type
@@ -134,10 +267,17 @@ internal sealed partial class ConstraintSolver
     }
 
     /// <summary>
-    /// Unwraps a potential type-variable into the inferred type.
+    /// Allocates a type-variable.
+    /// </summary>
+    /// <returns>A new, unique type-variable.</returns>
+    public TypeVariable AllocateTypeVariable() => new(this.typeVariableCounter++);
+
+    /// <summary>
+    /// Unwraps the given type from potential variable substitutions.
     /// </summary>
     /// <param name="type">The type to unwrap.</param>
-    /// <returns>The inferred type.</returns>
+    /// <returns>The unwrapped type, which might be <paramref name="type"/> itself, or the substitution, if it was
+    /// a type variable that already got substituted.</returns>
     public TypeSymbol Unwrap(TypeSymbol type)
     {
         // If not a type-variable, we consider it substituted
@@ -154,107 +294,91 @@ internal sealed partial class ConstraintSolver
     }
 
     /// <summary>
-    /// Substitutes the given type-variable for another type.
+    /// Substitutes the given type variable for a type symbol.
     /// </summary>
-    /// <param name="typeVar">The type-variable to substitute.</param>
-    /// <param name="type">The type to subsitute <paramref name="typeVar"/> for.</param>
-    private void Substitute(TypeVariable typeVar, TypeSymbol type) =>
-        this.substitutions.Add(typeVar, type);
+    /// <param name="var">The type variable to substitute.</param>
+    /// <param name="type">The substitution.</param>
+    public void Substitute(TypeVariable var, TypeSymbol type) =>
+        this.substitutions.Add(var, type);
 
     /// <summary>
-    /// Adds a same-type constraint to the solver.
+    /// Attempts to unify two types.
     /// </summary>
-    /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
-    /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
-    /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<TypeSymbol> SameType(TypeSymbol first, TypeSymbol second)
+    /// <param name="first">The first type to unify.</param>
+    /// <param name="second">The second type to unify.</param>
+    /// <returns>True, if unification was successful, false otherwise.</returns>
+    public bool Unify(TypeSymbol first, TypeSymbol second)
     {
-        var constraint = new SameTypeConstraint(first, second);
-        this.constraints.Add(constraint);
-        return constraint.Promise;
+        first = this.Unwrap(first);
+        second = this.Unwrap(second);
+
+        if (ReferenceEquals(first, second)) return true;
+
+        switch (first, second)
+        {
+        // Type variable substitution takes priority
+        // so it can unify with never type and error type to stop type errors from cascading
+        case (TypeVariable v1, TypeVariable v2):
+        {
+            // Check for circularity
+            if (ReferenceEquals(v1, v2)) return true;
+            this.Substitute(v1, v2);
+            return true;
+        }
+        case (TypeVariable v, TypeSymbol other):
+        {
+            this.Substitute(v, other);
+            return true;
+        }
+        case (TypeSymbol other, TypeVariable v):
+        {
+            this.Substitute(v, other);
+            return true;
+        }
+
+        // Never type is never reached, unifies with everything
+        case (NeverTypeSymbol, _):
+        case (_, NeverTypeSymbol):
+        // Error type unifies with everything to avoid cascading type errors
+        case (ErrorTypeSymbol, _):
+        case (_, ErrorTypeSymbol):
+            return true;
+
+        // NOTE: Primitives are filtered out already, along with metadata types
+
+        case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):
+        {
+            if (f1.Parameters.Length != f2.Parameters.Length) return false;
+            for (var i = 0; i < f1.Parameters.Length; ++i)
+            {
+                if (!this.Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
+            }
+            return this.Unify(f1.ReturnType, f2.ReturnType);
+        }
+
+        default:
+            return false;
+        }
     }
 
     /// <summary>
-    /// Adds an assignable constraint to the solver.
+    /// Scores a function call argument.
     /// </summary>
-    /// <param name="targetType">The type being assigned to.</param>
-    /// <param name="assignedType">The type assigned.</param>
-    /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<TypeSymbol> Assignable(TypeSymbol targetType, TypeSymbol assignedType) =>
-        // TODO: Hack, this is temporary until we have other constraints
-        this.SameType(targetType, assignedType);
-
-    /// <summary>
-    /// Adds a common-type constraint to the solver.
-    /// </summary>
-    /// <param name="first">The first type to search a common type for.</param>
-    /// <param name="second">The second type to search a common type for.</param>
-    /// <returns>The promise for the constraint added.</returns>
-    public ConstraintPromise<TypeSymbol> CommonType(TypeSymbol first, TypeSymbol second) =>
-        // TODO: Hack, this is temporary until we have other constraints
-        this.SameType(first, second);
-
-    /// <summary>
-    /// Adds a call constraint to the solver.
-    /// </summary>
-    /// <param name="functionType">The function type being called.</param>
-    /// <param name="argTypes">The argument types that the function is called with.</param>
-    /// <returns>The promise for the constraint added, containing the return type.</returns>
-    public ConstraintPromise<TypeSymbol> Call(TypeSymbol functionType, IEnumerable<TypeSymbol> argTypes)
+    /// <param name="param">The function parameter.</param>
+    /// <param name="argType">The passed in argument type.</param>
+    /// <returns>The score of the match.</returns>
+    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
     {
-        // We can save on type variables here
-        var returnType = functionType is FunctionTypeSymbol f ? f.ReturnType : this.NextTypeVariable;
-        // TODO: Hack, this is temporary until we have other constraints
-        // Construct a type for the call-site
-        // TODO: Hack: we erase argument names
-        var callSiteType = new FunctionTypeSymbol(
-            argTypes
-                .Select(t => new SynthetizedParameterSymbol(t))
-                .Cast<ParameterSymbol>()
-                .ToImmutableArray(),
-            returnType);
-        var constraint = new SameTypeConstraint(functionType, callSiteType);
-        this.constraints.Add(constraint);
-        // We map the call-site to the return-type
-        return constraint.Promise.Map(_ => returnType);
-    }
+        var paramType = this.Unwrap(param.Type);
+        argType = this.Unwrap(argType);
 
-    /// <summary>
-    /// Adds an overload constraint to the solver.
-    /// </summary>
-    /// <param name="functions">The list of functions to choose an overload from.</param>
-    /// <returns>The promise for the constraint added along with the call-site type.</returns>
-    public (ConstraintPromise<FunctionSymbol> Symbol, TypeSymbol CallSite) Overload(IEnumerable<FunctionSymbol> functions)
-    {
-        var callSite = this.NextTypeVariable;
-        var constraint = new OverloadConstraint(functions, callSite);
-        this.constraints.Add(constraint);
-        return (constraint.Promise, constraint.CallSite);
-    }
+        // If the argument is still a type parameter, we can't score it
+        if (argType.IsTypeVariable) return null;
 
-    /// <summary>
-    /// Utility to construct an overload constraint from a symbol.
-    /// </summary>
-    /// <param name="symbol">The symbol that is either a function declaration or an overload.</param>
-    /// <returns>The promise for the constraint added along with the call-site type.</returns>
-    public (ConstraintPromise<FunctionSymbol> Symbol, TypeSymbol CallSite) Overload(Symbol symbol) => symbol switch
-    {
-        FunctionSymbol function => (ConstraintPromise.FromResult(function), function.Type),
-        OverloadSymbol overload => this.Overload(overload.Functions),
-        _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
-    };
+        // Exact equality is max score
+        if (ReferenceEquals(paramType, argType)) return 16;
 
-    /// <summary>
-    /// Adds a member-constraint to the solver.
-    /// </summary>
-    /// <param name="accessedType">The accessed object type.</param>
-    /// <param name="memberName">The accessed member name.</param>
-    /// <returns>The promise of the accessed member symbol along with the inferred member type.</returns>
-    public (ConstraintPromise<Symbol> Symbol, TypeSymbol MemberType) Member(TypeSymbol accessedType, string memberName)
-    {
-        var memberType = this.NextTypeVariable;
-        var constraint = new MemberConstraint(accessedType, memberName, memberType);
-        this.constraints.Add(constraint);
-        return (constraint.Promise, memberType);
+        // Otherwise, no match
+        return 0;
     }
 }

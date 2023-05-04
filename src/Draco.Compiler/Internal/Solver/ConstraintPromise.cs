@@ -5,210 +5,95 @@ using Draco.Compiler.Internal.Diagnostics;
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
-/// Factory methods for <see cref="ConstraintPromise{TResult}"/>.
+/// Factory methods for <see cref="IConstraintPromise"/>s.
 /// </summary>
 internal static class ConstraintPromise
 {
-    public static ConstraintPromise<TResult> Create<TResult>(Constraint constraint) =>
-        new ResolvableConstraintPromise<TResult>(constraint.Diagnostic);
+    /// <summary>
+    /// Creates an unresolved constraint promise.
+    /// </summary>
+    /// <typeparam name="TResult">The type the promise resolves to.</typeparam>
+    /// <param name="constraint">The constraint the promise will belong to.</param>
+    /// <returns>A new, unresolved <see cref="IConstraintPromise{TResult}"/>.</returns>
+    public static IConstraintPromise<TResult> Create<TResult>(IConstraint<TResult> constraint) =>
+        new ResolvableConstraintPromise<TResult>(constraint);
 
-    public static ConstraintPromise<TResult> FromResult<TResult>(Constraint constraint, TResult result)
-    {
-        var promise = Create<TResult>(constraint);
-        promise.Resolve(result);
-        return promise;
-    }
-
-    public static ConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
+    /// <summary>
+    /// Constructs a constraint promise that is already resolved.
+    /// </summary>
+    /// <typeparam name="TResult">The result type of the promise.</typeparam>
+    /// <param name="result">The resolved value.</param>
+    /// <returns>The constructed promise, containing <paramref name="result"/> as the result value.</returns>
+    public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
         new ResolvedConstraintPromise<TResult>(result);
 
-    public static ConstraintPromise<TNewResult> Map<TOldResult, TNewResult>(
-        this ConstraintPromise<TOldResult> promise,
-        Func<TOldResult, TNewResult> mapFunc) =>
-        new MappedConstraintPromise<TOldResult, TNewResult>(promise, mapFunc);
-
-    public static ConstraintPromise<TNewResult> Cast<TOldResult, TNewResult>(
-        this ConstraintPromise<TOldResult> promise) =>
-        new CastConstraintPromise<TOldResult, TNewResult>(promise);
-}
-
-/// <summary>
-/// Represents a promise to a <see cref="Solver.Constraint"/> being solved.
-/// </summary>
-/// <typeparam name="TResult">The result type of the promise.</typeparam>
-internal abstract class ConstraintPromise<TResult>
-{
-    /// <summary>
-    /// True, if this promise is resolved.
-    /// </summary>
-    public abstract bool IsResolved { get; }
-
-    /// <summary>
-    /// The result of the promise.
-    /// </summary>
-    public abstract TResult Result { get; }
-
-    /// <summary>
-    /// Resolves this promise with the given result.
-    /// </summary>
-    /// <param name="result">The result value to resolve with.</param>
-    public abstract void Resolve(TResult result);
-
-    /// <summary>
-    /// Fails this constraint, reporting the error.
-    /// </summary>
-    /// <param name="result">The result for the failure.</param>
-    /// <param name="diagnostics">The diagnostics to report to.</param>
-    public abstract void Fail(TResult result, DiagnosticBag diagnostics);
-
-    /// <summary>
-    /// Fails this constraint without reporting the error.
-    /// </summary>
-    /// <param name="result">The result for the failure.</param>
-    public abstract void FailSilently(TResult result);
-
-    /// <summary>
-    /// Configures the diagnostic messages for the constraint of this promise in case it fails.
-    /// </summary>
-    /// <param name="configure">The configuration function.</param>
-    /// <returns>The promise instance.</returns>
-    public abstract ConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure);
-}
-
-/// <summary>
-/// A <see cref="ConstraintPromise{TResult}"/> implementation that's already resolved.
-/// </summary>
-/// <typeparam name="TResult">The result type of the promise.</typeparam>
-internal sealed class ResolvedConstraintPromise<TResult> : ConstraintPromise<TResult>
-{
-    public override bool IsResolved => true;
-    public override TResult Result { get; }
-
-    public ResolvedConstraintPromise(TResult result)
+    private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
-        this.Result = result;
-    }
+        public bool IsResolved => true;
+        public TResult Result { get; }
+        public IConstraint<TResult> Constraint => throw new NotSupportedException();
+        IConstraint IConstraintPromise.Constraint => this.Constraint;
 
-    public override void Resolve(TResult result) =>
-        throw new NotSupportedException("the promise is already resolved");
-    public override void Fail(TResult result, DiagnosticBag diagnostics) =>
-        throw new NotSupportedException("the promise is already resolved");
-    public override void FailSilently(TResult result) =>
-        throw new NotSupportedException("the promise is already resolved");
-    public override ConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => this;
-}
-
-/// <summary>
-/// A <see cref="ConstraintPromise{TResult}"/> implementation that can be resolved externally.
-/// </summary>
-/// <typeparam name="TResult">The result type of the promise.</typeparam>
-internal sealed class ResolvableConstraintPromise<TResult> : ConstraintPromise<TResult>
-{
-    public override bool IsResolved => this.isResolved;
-    public override TResult Result => this.isResolved
-        ? this.result!
-        : throw new InvalidOperationException("tried to access unresolved constraint result");
-
-    private readonly Diagnostic.Builder diagnostic;
-
-    private bool isResolved;
-    private TResult? result;
-
-    public ResolvableConstraintPromise(Diagnostic.Builder diagnosticBuilder)
-    {
-        this.diagnostic = diagnosticBuilder;
-    }
-
-    public override void Resolve(TResult result)
-    {
-        if (this.isResolved) throw new InvalidOperationException("tried to resolve already resolved promise");
-        this.result = result;
-        this.isResolved = true;
-    }
-
-    public override void Fail(TResult result, DiagnosticBag diagnostics)
-    {
-        this.FailSilently(result);
-
-        if (!this.diagnostic.TryBuild(out var diag))
+        public ResolvedConstraintPromise(TResult result)
         {
-            throw new InvalidOperationException("the diagnostic was not sufficiently filled");
+            this.Result = result;
         }
-        diagnostics.Add(diag);
+
+        public void Resolve(TResult result) =>
+            throw new InvalidOperationException("can not resolve an already solved constraint");
+        public void Fail(TResult result, DiagnosticBag? diagnostics) =>
+            throw new InvalidOperationException("can not resolve an already solved constraint");
+
+        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => this;
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostic(configure);
     }
 
-    public override void FailSilently(TResult result)
+    private sealed class ResolvableConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
-        if (this.isResolved) throw new InvalidOperationException("tried to fail already resolved promise");
-        this.result = result;
-        this.isResolved = true;
-    }
+        public bool IsResolved { get; private set; }
 
-    public override ConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
-    {
-        configure(this.diagnostic);
-        return this;
-    }
-}
+        public TResult Result
+        {
+            get
+            {
+                if (!this.IsResolved) throw new InvalidOperationException("can not access the result of unresolved promise");
+                return this.result!;
+            }
+            private set
+            {
+                if (this.IsResolved) throw new InvalidOperationException("can not set the result of an already resolved promise");
+                this.result = value;
+                this.IsResolved = true;
+            }
+        }
+        private TResult? result;
 
-/// <summary>
-/// A <see cref="ConstraintPromise{TNewResult}"/> that maps a <see cref="ConstraintPromise{TOldResult}"/>.
-/// </summary>
-/// <typeparam name="TOldResult">The original constraint promise result type.</typeparam>
-/// <typeparam name="TOldResult">The mapped result type.</typeparam>
-internal sealed class MappedConstraintPromise<TOldResult, TNewResult> : ConstraintPromise<TNewResult>
-{
-    public override bool IsResolved => this.underlying.IsResolved;
-    public override TNewResult Result => this.mapFunc(this.underlying.Result);
+        public IConstraint<TResult> Constraint { get; }
+        IConstraint IConstraintPromise.Constraint => this.Constraint;
 
-    private readonly ConstraintPromise<TOldResult> underlying;
-    private readonly Func<TOldResult, TNewResult> mapFunc;
+        public ResolvableConstraintPromise(IConstraint<TResult> constraint)
+        {
+            this.Constraint = constraint;
+        }
 
-    public MappedConstraintPromise(ConstraintPromise<TOldResult> underlying, Func<TOldResult, TNewResult> mapFunc)
-    {
-        this.underlying = underlying;
-        this.mapFunc = mapFunc;
-    }
+        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
+        {
+            configure(this.Constraint.Diagnostic);
+            return this;
+        }
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostic(configure);
 
-    public override void Resolve(TNewResult result) =>
-        throw new NotSupportedException("can not resolve a mapped constraint");
-    public override void Fail(TNewResult result, DiagnosticBag diagnostics) =>
-        throw new NotSupportedException("can not fail a mapped constraint");
-    public override void FailSilently(TNewResult result) =>
-        throw new NotSupportedException("can not fail a mapped constraint");
-    public override ConstraintPromise<TNewResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
-    {
-        this.underlying.ConfigureDiagnostic(configure);
-        return this;
-    }
-}
-
-/// <summary>
-/// A <see cref="ConstraintPromise{TNewResult}"/> that casts the result of an <see cref="ConstraintPromise{TOldResult}"/>.
-/// </summary>
-/// <typeparam name="TOldResult">The original constraint promise result type.</typeparam>
-/// <typeparam name="TOldResult">The casted result type.</typeparam>
-internal sealed class CastConstraintPromise<TOldResult, TNewResult> : ConstraintPromise<TNewResult>
-{
-    public override bool IsResolved => this.underlying.IsResolved;
-    public override TNewResult Result => (TNewResult)(object)this.underlying.Result!;
-
-    private readonly ConstraintPromise<TOldResult> underlying;
-
-    public CastConstraintPromise(ConstraintPromise<TOldResult> underlying)
-    {
-        this.underlying = underlying;
-    }
-
-    public override void Resolve(TNewResult result) =>
-        this.underlying.Resolve((TOldResult)(object)result!);
-    public override void Fail(TNewResult result, DiagnosticBag diagnostics) =>
-        this.underlying.Fail((TOldResult)(object)result!, diagnostics);
-    public override void FailSilently(TNewResult result) =>
-        this.underlying.FailSilently((TOldResult)(object)result!);
-    public override ConstraintPromise<TNewResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
-    {
-        this.underlying.ConfigureDiagnostic(configure);
-        return this;
+        public void Resolve(TResult result) => this.Result = result;
+        public void Fail(TResult result, DiagnosticBag? diagnostics)
+        {
+            this.Result = result;
+            if (diagnostics is not null)
+            {
+                var diag = this.Constraint.Diagnostic.Build();
+                diagnostics.Add(diag);
+            }
+        }
     }
 }

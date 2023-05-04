@@ -108,7 +108,13 @@ public sealed partial class SemanticModel
                 if (untyped.Syntax is not null)
                 {
                     var symbol = ExtractSymbol(node);
-                    if (symbol is not null) this.semanticModel.symbolMap.Add(untyped.Syntax, symbol);
+                    if (symbol is not null)
+                    {
+                        foreach (var syntax in EnumerateSyntaxesWithSameSymbol(untyped.Syntax))
+                        {
+                            this.semanticModel.symbolMap[syntax] = symbol;
+                        }
+                    }
                 }
             }
             return (TBoundNode)node;
@@ -124,11 +130,16 @@ public sealed partial class SemanticModel
             return symbol;
         }
 
+        private static IEnumerable<SyntaxNode> EnumerateSyntaxesWithSameSymbol(SyntaxNode node)
+        {
+            yield return node;
+            if (node is CallExpressionSyntax call) yield return call.Function;
+        }
+
         private static Symbol? ExtractSymbol(BoundNode node) => node switch
         {
             BoundLocalDeclaration l => l.Local,
             BoundLabelStatement l => l.Label,
-            BoundFunctionExpression f => f.Function,
             BoundParameterExpression p => p.Parameter,
             BoundLocalExpression l => l.Local,
             BoundGlobalExpression g => g.Global,
@@ -136,6 +147,7 @@ public sealed partial class SemanticModel
             BoundLocalLvalue l => l.Local,
             BoundGlobalLvalue g => g.Global,
             BoundMemberExpression m => m.Member,
+            BoundCallExpression c => c.Method,
             _ => null,
         };
     }

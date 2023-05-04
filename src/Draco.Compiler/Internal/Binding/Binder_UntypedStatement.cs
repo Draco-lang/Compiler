@@ -103,7 +103,7 @@ internal partial class Binder
         var type = syntax.Type is null ? null : this.BindTypeToTypeSymbol(syntax.Type.Type, diagnostics);
         var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);
 
-        var declaredType = constraints.AddLocal(localSymbol, type);
+        var declaredType = constraints.DeclareLocal(localSymbol, type);
         if (value is not null)
         {
             // It has to be assignable

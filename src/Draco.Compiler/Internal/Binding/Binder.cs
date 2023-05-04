@@ -89,7 +89,7 @@ internal abstract partial class Binder
         var untypedValue = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
 
         // Infer declared type
-        var declaredType = type ?? constraints.NextTypeVariable;
+        var declaredType = type ?? constraints.AllocateTypeVariable();
 
         // Add assignability constraint, if needed
         if (untypedValue is not null)

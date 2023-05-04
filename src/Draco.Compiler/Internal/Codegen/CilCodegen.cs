@@ -51,7 +51,7 @@ internal sealed class CilCodegen
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
 
-    private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetHandle(symbol);
+    private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetEntityHandle(symbol);
     private EntityHandle GetHandle(IOperand operand) => operand switch
     {
         IProcedure proc => this.GetProcedureDefinitionHandle(proc),

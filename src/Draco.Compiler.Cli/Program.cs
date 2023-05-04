@@ -73,7 +73,7 @@ internal class Program
         };
         symbolsCommand.SetHandler(SymbolsCommand, filesOption, rootModuleOption, optionalOutputOption, msbuildDiagOption);
 
-        // Symbol tree
+        // Declaration tree
 
         var declarationsCommand = new Command("declarations", "Prints the declarations-tree of the program")
         {

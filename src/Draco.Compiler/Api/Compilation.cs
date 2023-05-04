@@ -141,6 +141,13 @@ public sealed class Compilation : IBinderProvider
         this.binderCache = new(this);
     }
 
+    /// <summary>
+    /// Replaces <see cref="SyntaxTree"/> that was created from file with <paramref name="path"/> with the <paramref name="newTree"/>.
+    /// </summary>
+    /// <param name="path">The path to the file the <see cref="SyntaxTree"/> was created from.</param>
+    /// <param name="newTree">The <see cref="SyntaxTree"/> that will replace the original <see cref="SyntaxTree"/>.</param>
+    /// <returns>New <see cref="Compilation"/> with the <see cref="SyntaxTree"/> updated.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public Compilation UpdateSyntaxTree(Uri path, SyntaxTree newTree)
     {
         var oldTrees = this.SyntaxTrees.ToBuilder();

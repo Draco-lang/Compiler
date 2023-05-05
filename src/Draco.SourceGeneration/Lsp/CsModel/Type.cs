@@ -7,7 +7,7 @@ namespace Draco.SourceGeneration.Lsp.CsModel;
 /// <summary>
 /// A C# type.
 /// </summary>
-public abstract class Type
+public abstract record class Type
 {
     /// <summary>
     /// A discriminator string for Scriban.

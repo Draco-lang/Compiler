@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Draco.SourceGeneration.Lsp.Metamodel;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 
@@ -21,12 +23,33 @@ internal sealed class Translator
 
     private void Translate()
     {
+        // Translate
         foreach (var structure in this.sourceModel.Structures) this.TranslateStructure(structure);
         foreach (var enumeration in this.sourceModel.Enumerations) this.TranslateEnumeration(enumeration);
         foreach (var typeAlias in this.sourceModel.TypeAliases) this.TranslateTypeAlias(typeAlias);
+
+        // Connect up hierarchy
+        foreach (var @class in this.targetModel.Declarations.OfType<Cs.Class>()) @class.InitializeParents();
     }
 
-    private void TranslateStructure(Ts.Structure structure) => throw new NotImplementedException();
-    private void TranslateEnumeration(Ts.Enumeration enumeration) => throw new NotImplementedException();
-    private void TranslateTypeAlias(Ts.TypeAlias typeAlias) => throw new NotImplementedException();
+    private void TranslateStructure(Ts.Structure structure)
+    {
+        var result = new Cs.Class
+        {
+            Name = structure.Name,
+            Documentation = structure.Documentation,
+            Deprecated = structure.Deprecated,
+        };
+        // TODO
+    }
+
+    private void TranslateEnumeration(Ts.Enumeration enumeration)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void TranslateTypeAlias(Ts.TypeAlias typeAlias)
+    {
+        throw new NotImplementedException();
+    }
 }

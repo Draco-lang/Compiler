@@ -17,7 +17,12 @@ public abstract class Declaration
     /// <summary>
     /// The docs of this declaration.
     /// </summary>
-    public string? Documentation { get; set; } = null;
+    public string? Documentation { get; set; }
+
+    /// <summary>
+    /// The deprecation message, if any.
+    /// </summary>
+    public string? Deprecated { get; set; }
 
     /// <summary>
     /// The name of this declaration.

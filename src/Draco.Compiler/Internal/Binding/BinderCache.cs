@@ -69,17 +69,19 @@ internal sealed class BinderCache
 
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
-        // If we don't have root path, there is no root module
-        if (string.IsNullOrEmpty(this.compilation.DeclarationTable.RootPath)) return WrapInImportBinder(this.ModuleBinder, syntax);
+        var filePath = Path.TrimEndingDirectorySeparator(syntax.Tree.SourceText.Path?.LocalPath ?? string.Empty);
+        var rootPath = this.compilation.DeclarationTable.RootPath;
+        var rootName = this.compilation.SourceModule.FullName;
 
-        var aboveRootPath = Directory.GetParent(this.compilation.DeclarationTable.RootPath)?.FullName;
-        var filePath = syntax.Tree.SourceText.Path?.LocalPath;
+        // If we don't have root path or this tree is in memory only or the tree is outside of the root, return the root module
+        if (string.IsNullOrEmpty(rootPath)
+            || string.IsNullOrEmpty(filePath)
+            || !filePath.StartsWith(rootPath)) return WrapInImportBinder(this.ModuleBinder, syntax);
 
-        if (filePath is null || aboveRootPath is null) throw new NotImplementedException();
-        if (!filePath.StartsWith(aboveRootPath)) throw new NotImplementedException();
-
-        var moduleName = Path.GetDirectoryName(filePath[aboveRootPath.Length..].TrimStart(Path.DirectorySeparatorChar))?.Replace(Path.DirectorySeparatorChar, '.');
-        if (moduleName is null) throw new InvalidOperationException();
+        var subPath = filePath[rootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
+        var moduleName = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(subPath) ?? string.Empty).Replace(Path.DirectorySeparatorChar, '.');
+        if (moduleName == string.Empty) moduleName = rootName;
+        else moduleName = $"{rootName}.{moduleName}";
 
 
         // We simply take the source module binder and wrap it up in imports

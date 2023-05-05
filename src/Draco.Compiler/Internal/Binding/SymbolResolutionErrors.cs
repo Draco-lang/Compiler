@@ -92,4 +92,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "import directives must appear at the top of the scope",
         code: Code(9));
+
+    /// <summary>
+    /// File path is outside of root path.
+    /// </summary>
+    public static readonly DiagnosticTemplate FilePathOutsideOfRootPath = DiagnosticTemplate.Create(
+        title: "file path is outside of root path",
+        severity: DiagnosticSeverity.Error,
+        format: "the file path {0} is outside of the root path {1}",
+        code: Code(10));
 }

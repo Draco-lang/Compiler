@@ -60,6 +60,7 @@ public sealed class Compilation : IBinderProvider
     public ImmutableArray<Diagnostic> Diagnostics => this.SyntaxTrees
         .Select(this.GetSemanticModel)
         .SelectMany(model => model.Diagnostics)
+        .Concat(this.GlobalDiagnosticBag)
         .ToImmutableArray();
 
     /// <summary>
@@ -248,7 +249,7 @@ public sealed class Compilation : IBinderProvider
     Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);
     Binder IBinderProvider.GetBinder(Symbol symbol) => this.GetBinder(symbol);
 
-    private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees, this.RootModulePath);
+    private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees, this.RootModulePath, this);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
     private MetadataReferencesModuleSymbol BuildRootModule() => new(this);
 }

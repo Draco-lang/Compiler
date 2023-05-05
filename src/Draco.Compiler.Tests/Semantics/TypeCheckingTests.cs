@@ -654,7 +654,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]
@@ -685,7 +685,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]

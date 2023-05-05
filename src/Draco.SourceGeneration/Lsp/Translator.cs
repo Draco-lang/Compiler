@@ -21,5 +21,12 @@ internal sealed class Translator
 
     private void Translate()
     {
+        foreach (var structure in this.sourceModel.Structures) this.TranslateStructure(structure);
+        foreach (var enumeration in this.sourceModel.Enumerations) this.TranslateEnumeration(enumeration);
+        foreach (var typeAlias in this.sourceModel.TypeAliases) this.TranslateTypeAlias(typeAlias);
     }
+
+    private void TranslateStructure(Ts.Structure structure) => throw new NotImplementedException();
+    private void TranslateEnumeration(Ts.Enumeration enumeration) => throw new NotImplementedException();
+    private void TranslateTypeAlias(Ts.TypeAlias typeAlias) => throw new NotImplementedException();
 }

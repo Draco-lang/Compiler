@@ -87,9 +87,9 @@ namespace Draco.Lsp.Model;
     {{summary(decl.Documentation)}}
     {{case decl.ValueDiscriminator}}
     {{when 'Int'}}
-        {{decl.Name}} = {{decl.SerializedValue}}
+        {{decl.Name}} = {{decl.Value}}
     {{when 'String'}}
-        [EnumMember(Value = {{string.literal(decl.SerializedValue)}})]
+        [EnumMember(Value = {{string.literal(decl.Value)}})]
         {{decl.Name}}
     {{end}}
 {{end}}

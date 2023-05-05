@@ -46,11 +46,17 @@ internal sealed class Translator
 
     private void TranslateEnumeration(Ts.Enumeration enumeration)
     {
-        throw new NotImplementedException();
+        var result = new Cs.Enum
+        {
+            Name = enumeration.Name,
+            Documentation = enumeration.Documentation,
+            Deprecated = enumeration.Deprecated,
+        };
+        // TODO
     }
 
     private void TranslateTypeAlias(Ts.TypeAlias typeAlias)
     {
-        throw new NotImplementedException();
+        // TODO
     }
 }

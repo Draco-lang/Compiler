@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Draco.SourceGeneration.Lsp.Metamodel;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 
@@ -13,6 +12,18 @@ namespace Draco.SourceGeneration.Lsp;
 /// </summary>
 internal sealed class Translator
 {
+    /// <summary>
+    /// Translates the given TS meta-model to a C# model.
+    /// </summary>
+    /// <param name="model">The TS model to translate.</param>
+    /// <returns>The C# translation of <paramref name="model"/>.</returns>
+    public static Cs.Model Translate(Ts.MetaModel model)
+    {
+        var translator = new Translator(model);
+        translator.Translate();
+        return translator.targetModel;
+    }
+
     private readonly Ts.MetaModel sourceModel;
     private readonly Cs.Model targetModel = new();
 

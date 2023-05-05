@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace Draco.SourceGeneration.Lsp.Metamodel;
@@ -18,4 +19,33 @@ internal sealed class Property
     /// The type of the property.
     /// </summary>
     public Type Type { get; set; } = null!;
+
+    /// <summary>
+    /// Whether the property is optional. If
+	/// omitted, the property is mandatory.
+    /// </summary>
+    public bool? Optional { get; set; }
+
+    /// <summary>
+    /// An optional documentation.
+    /// </summary>
+    public string? Documentation { get; set; }
+
+    /// <summary>
+    /// Since when (release number) this property is
+	/// available.Is undefined if not known.
+    /// </summary>
+    public string? Since { get; set; }
+
+    /// <summary>
+    /// Whether this is a proposed property. If omitted,
+	/// the structure is final.
+    /// </summary>
+    public bool? Proposed { get; set; }
+
+    /// <summary>
+    /// Whether the property is deprecated or not. If deprecated
+	/// the property contains the deprecation message.
+    /// </summary>
+    public string? Deprecated { get; set; }
 }

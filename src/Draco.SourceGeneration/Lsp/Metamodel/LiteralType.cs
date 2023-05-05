@@ -5,11 +5,11 @@ using System.Text;
 namespace Draco.SourceGeneration.Lsp.Metamodel;
 
 /// <summary>
-/// Represents an array type (e.g. `TextDocument[]`).
+/// Includes StructureLiteralType, StringLiteralType, IntegerLiteralType, BooleanLiteralType.
 /// </summary>
-internal sealed class ArrayType : Type
+internal sealed class LiteralType : Type
 {
     public override string Kind { get; set; } = string.Empty;
 
-    public Type Element { get; set; } = null!;
+    public object Value { get; set; } = null!;
 }

@@ -10,7 +10,7 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// </summary>
 internal sealed class MapType : Type
 {
-    public string Kind => "map";
+    public override string Kind { get; set; } = string.Empty;
 
     public NamedType Key { get; set; } = null!;
 

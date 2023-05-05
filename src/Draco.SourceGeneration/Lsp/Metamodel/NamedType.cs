@@ -9,7 +9,7 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// </summary>
 internal sealed class NamedType : Type
 {
-    public string Kind { get; set; } = string.Empty;
+    public override string Kind { get; set; } = string.Empty;
 
     /// <summary>
     /// The name of the type.

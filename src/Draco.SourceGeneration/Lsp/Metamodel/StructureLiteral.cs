@@ -6,19 +6,14 @@ using System.Text;
 namespace Draco.SourceGeneration.Lsp.Metamodel;
 
 /// <summary>
-/// Defines an enumeration entry.
+/// Defines an unnamed structure of an object literal.
 /// </summary>
-internal sealed class EnumerationEntry
+internal sealed class StructureLiteral
 {
     /// <summary>
-    /// The name of the enum item.
+    /// The properties.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The value.
-    /// </summary>
-    public object Value { get; set; } = null!;
+    public IList<Property> Properties { get; set; } = Array.Empty<Property>();
 
     /// <summary>
     /// An optional documentation.
@@ -26,20 +21,20 @@ internal sealed class EnumerationEntry
     public string? Documentation { get; set; }
 
     /// <summary>
-    /// Since when (release number) this enumeration is
+    /// Since when (release number) this structure is
 	/// available.Is undefined if not known.
     /// </summary>
     public string? Since { get; set; }
 
     /// <summary>
-    /// Whether this is a proposed enumeration entry. If omitted,
-	/// the enumeration entry is final.
+    /// Whether this is a proposed structure. If omitted,
+	/// the structure is final.
     /// </summary>
     public bool? Proposed { get; set; }
 
     /// <summary>
-    /// Whether the enum entry is deprecated or not. If deprecated
-	/// the property contains the deprecation message.
+    /// Whether the literal is deprecated or not. If deprecated
+    /// the property contains the deprecation message.
     /// </summary>
     public string? Deprecated { get; set; }
 }

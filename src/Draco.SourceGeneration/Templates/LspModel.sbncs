@@ -71,11 +71,11 @@ namespace Draco.Lsp.Model;
             NullValueHandling = NullValueHandling.{{if decl.OmitIfNull}}Ignore{{else}}Include{{end}})]
     {{end}}
     public {{type(decl.Type)}} {{decl.Name}}
-    {{if decl.ConstantValue}}
+    {{if decl.Value}}
         =>
         {{case decl.ValueDiscriminator}}
         {{when 'String'}}
-            {{string.literal(decl.ConstantValue)}}
+            {{string.literal(decl.Value)}}
         {{end}}
         ;
     {{else}}

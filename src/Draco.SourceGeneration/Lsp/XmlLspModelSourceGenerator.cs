@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 
@@ -15,25 +17,25 @@ public sealed class XmlLspModelSourceGenerator : XmlSourceGenerator
     {
         var domainConfig = Config.FromXml((XmlConfig)xmlModel);
 
-        // Read up markdown
-        var md = EmbeddedResourceLoader.GetManifestResourceStreamReader("Lsp", "specification.md").ReadToEnd();
-        // Merge them by includes
-        md = MarkdownProcessor.ResolveRelativeIncludes(md, string.Empty);
-        // Merge TS snippets
-        var tsMerged = string.Join("\n", MarkdownProcessor.ExtractCodeSnippets(md, "ts", "typescript"));
-        // Parse TS code
-        var tokens = TypeScript.Lexer.Lex(tsMerged);
-        var tsModel = TypeScript.Parser.Parse(tokens);
+        // Read up the meta-model
+        var metaModelJson = EmbeddedResourceLoader.GetManifestResourceStreamReader("Lsp", "MetaModel.json").ReadToEnd();
+
+        // Deserialize it
+        var jsonOptions = new JsonSerializerOptions();
+        jsonOptions.Converters.Add(new Metamodel.TypeConverter());
+        jsonOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        jsonOptions.PropertyNameCaseInsensitive = true;
+        var metaModel = JsonSerializer.Deserialize<Metamodel.MetaModel>(metaModelJson, jsonOptions)!;
 
         // Create translator
-        var translator = new Translator(tsModel);
+        var translator = new Translator(metaModel);
 
         // Configure translator
-        foreach (var (name, fullName) in domainConfig.BuiltinTypes) translator.AddBuiltinType(name, fullName);
-        foreach (var gen in domainConfig.GeneratedTypes) translator.GenerateByName(gen.DeclaredName);
+        // foreach (var (name, fullName) in domainConfig.BuiltinTypes) translator.AddBuiltinType(name, fullName);
+        // foreach (var gen in domainConfig.GeneratedTypes) translator.GenerateByName(gen.DeclaredName);
 
         // Translate
-        var csModel = translator.Generate();
+        var csModel = translator.Translate();
 
         // Finally generate by template
         var lspModelCode = CodeGenerator.GenerateLspModel(csModel, cancellationToken);

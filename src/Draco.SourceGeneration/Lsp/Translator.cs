@@ -12,27 +12,15 @@ namespace Draco.SourceGeneration.Lsp;
 /// </summary>
 internal sealed class Translator
 {
-    /// <summary>
-    /// Translates the given TS meta-model to a C# model.
-    /// </summary>
-    /// <param name="model">The TS model to translate.</param>
-    /// <returns>The C# translation of <paramref name="model"/>.</returns>
-    public static Cs.Model Translate(Ts.MetaModel model)
-    {
-        var translator = new Translator(model);
-        translator.Translate();
-        return translator.targetModel;
-    }
-
     private readonly Ts.MetaModel sourceModel;
     private readonly Cs.Model targetModel = new();
 
-    private Translator(Ts.MetaModel sourceModel)
+    public Translator(Ts.MetaModel sourceModel)
     {
         this.sourceModel = sourceModel;
     }
 
-    private void Translate()
+    public Cs.Model Translate()
     {
         // Translate
         foreach (var structure in this.sourceModel.Structures) this.TranslateStructure(structure);
@@ -41,6 +29,8 @@ internal sealed class Translator
 
         // Connect up hierarchy
         foreach (var @class in this.targetModel.Declarations.OfType<Cs.Class>()) @class.InitializeParents();
+
+        return this.targetModel;
     }
 
     private void TranslateStructure(Ts.Structure structure)

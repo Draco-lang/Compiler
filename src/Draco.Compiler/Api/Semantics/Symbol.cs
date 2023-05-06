@@ -75,16 +75,26 @@ public interface IVariableSymbol : ISymbol, ITypedSymbol
 }
 
 /// <summary>
-/// Represents a local variable symbol.
+/// Represents a field symbol.
 /// </summary>
-public interface ILocalSymbol : IVariableSymbol
+public interface IFieldSymbol : IVariableSymbol
 {
+    public bool IsStatic { get; }
 }
+
 
 /// <summary>
 /// Represents a global variable symbol.
 /// </summary>
 public interface IGlobalSymbol : IVariableSymbol
+{
+}
+
+
+/// <summary>
+/// Represents a local variable symbol.
+/// </summary>
+public interface ILocalSymbol : IVariableSymbol
 {
 }
 
@@ -165,6 +175,18 @@ internal sealed class ModuleSymbol : SymbolBase<Internal.Symbols.ModuleSymbol>, 
 {
     public ModuleSymbol(Internal.Symbols.ModuleSymbol module)
         : base(module)
+    {
+    }
+}
+
+internal sealed class FieldSymbol : SymbolBase<Internal.Symbols.FieldSymbol>, IFieldSymbol
+{
+    public bool IsMutable => this.Symbol.IsMutable;
+    public bool IsStatic => this.Symbol.IsStatic;
+    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+
+    public FieldSymbol(Internal.Symbols.FieldSymbol field)
+        : base(field)
     {
     }
 }

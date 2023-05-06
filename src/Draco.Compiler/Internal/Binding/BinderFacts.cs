@@ -19,6 +19,7 @@ internal static class BinderFacts
         is LocalSymbol
         or UntypedLocalSymbol
         or GlobalSymbol
+        or FieldSymbol
         or FunctionSymbol
         or ModuleSymbol;
 

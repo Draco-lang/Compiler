@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -24,11 +25,17 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
     /// </summary>
     public string MemberName { get; }
 
-    public MemberConstraint(ConstraintSolver solver, TypeSymbol accessed, string memberName)
+    /// <summary>
+    /// The type of the member.
+    /// </summary>
+    public TypeSymbol MemberType { get; }
+
+    public MemberConstraint(ConstraintSolver solver, TypeSymbol accessed, string memberName, TypeSymbol memberType)
         : base(solver)
     {
         this.Accessed = accessed;
         this.MemberName = memberName;
+        this.MemberType = memberType;
     }
 
     public override string ToString() => $"Member({this.Accessed}, {this.MemberName})";
@@ -60,9 +67,17 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
             this.Promise.Fail(ImmutableArray.Create<Symbol>(errorSymbol), diagnostics);
             yield return SolveState.Solved;
         }
+        else if (membersWithName.Length == 1)
+        {
+            // One member, we know what type the member type is
+            this.Unify(((ITypedSymbol)membersWithName[0]).Type, this.MemberType);
+            this.Promise.Resolve(membersWithName);
+            yield return SolveState.Solved;
+        }
         else
         {
-            // One or more, the member constraint is fine with multiple members
+            // More than one, the member constraint is fine with multiple members but we don't know the member type
+            this.Unify(ErrorTypeSymbol.Instance, this.MemberType);
             this.Promise.Resolve(membersWithName);
             yield return SolveState.Solved;
         }

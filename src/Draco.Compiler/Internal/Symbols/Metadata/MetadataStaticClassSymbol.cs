@@ -71,7 +71,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Skip non-static fields
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
-            var fieldSym = new MetadataFieldSymbol(
+            var fieldSym = new MetadataGlobalSymbol(
                 containingSymbol: this,
                 fieldDefinition: fieldDef);
             result.Add(fieldSym);

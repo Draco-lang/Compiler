@@ -92,9 +92,10 @@ internal sealed class ConstraintSolver
     /// <param name="accessedType">The accessed object type.</param>
     /// <param name="memberName">The accessed member name.</param>
     /// <returns>The promise of the accessed member symbol.</returns>
-    public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName)
+    public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName, out TypeSymbol memberType)
     {
-        var constraint = new MemberConstraint(this, accessedType, memberName);
+        memberType = this.AllocateTypeVariable();
+        var constraint = new MemberConstraint(this, accessedType, memberName, memberType);
         this.Add(constraint);
         return constraint.Promise;
     }

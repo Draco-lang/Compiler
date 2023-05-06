@@ -458,10 +458,10 @@ internal partial class Binder
         else
         {
             // Value, add constraint
-            var promise = constraints.Member(left.TypeRequired, memberName);
+            var promise = constraints.Member(left.TypeRequired, memberName, out var memberType);
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
-            return new UntypedMemberExpression(syntax, left, promise);
+            return new UntypedMemberExpression(syntax, left, memberType, promise);
         }
     }
 
@@ -482,6 +482,8 @@ internal partial class Binder
             return new UntypedLocalExpression(syntax, local, constraints.GetLocalType(local));
         case GlobalSymbol global:
             return new UntypedGlobalExpression(syntax, global);
+        case FieldSymbol field:
+            return new UntypedFieldExpression(syntax, field);
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
         case OverloadSymbol overload:

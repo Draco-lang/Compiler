@@ -21,6 +21,10 @@ internal abstract class SymbolVisitor
     {
     }
 
+    public virtual void VisitField(FieldSymbol fieldSymbol)
+    {
+    }
+
     public virtual void VisitGlobal(GlobalSymbol globalSymbol)
     {
     }
@@ -55,6 +59,8 @@ internal abstract class SymbolVisitor<TResult>
     }
 
     public virtual TResult VisitParameter(ParameterSymbol parameterSymbol) => default!;
+
+    public virtual TResult VisitField(FieldSymbol fieldSymbol) => default!;
 
     public virtual TResult VisitGlobal(GlobalSymbol globalSymbol) => default!;
 

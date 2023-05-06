@@ -29,6 +29,7 @@ internal partial class Binder
         UntypedParameterExpression @param => this.TypeParameterExpression(param, constraints, diagnostics),
         UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
         UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
+        UntypedFieldExpression field => this.TypeFieldExpression(field, constraints, diagnostics),
         UntypedFunctionGroupExpression group => this.TypeFunctionGroupExpression(group, constraints, diagnostics),
         UntypedReferenceErrorExpression err => this.TypeReferenceErrorExpression(err, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
@@ -86,6 +87,9 @@ internal partial class Binder
 
     private BoundExpression TypeGlobalExpression(UntypedGlobalExpression global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalExpression(global.Syntax, global.Global);
+
+    private BoundExpression TypeFieldExpression(UntypedFieldExpression field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        new BoundFieldExpression(field.Syntax, field.Field);
 
     private BoundExpression TypeFunctionGroupExpression(UntypedFunctionGroupExpression group, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

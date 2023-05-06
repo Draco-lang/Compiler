@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Tree
   xmlns="http://draco-lang.com/untyped-tree/untyped-nodes"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -141,6 +141,10 @@
     <Field Name="Global" Type="GlobalSymbol" />
   </Node>
 
+  <Node Name="UntypedFieldExpression" Base="UntypedExpression">
+    <Field Name="Field" Type="FieldSymbol" />
+  </Node>
+
   <Node Name="UntypedParameterExpression" Base="UntypedExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
@@ -173,6 +177,7 @@
 
   <Node Name="UntypedMemberExpression" Base="UntypedExpression">
     <Field Name="Accessed" Type="UntypedExpression" />
+    <Field Name="MemberType" Type="TypeSymbol" />
     <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
   </Node>
 

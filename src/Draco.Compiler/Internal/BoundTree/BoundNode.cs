@@ -100,6 +100,11 @@ internal partial class BoundGlobalExpression
     public override TypeSymbol Type => this.Global.Type;
 }
 
+internal partial class BoundFieldExpression
+{
+    public override TypeSymbol Type => this.Field.Type;
+}
+
 internal partial class BoundLocalExpression
 {
     public override TypeSymbol Type => this.Local.Type;

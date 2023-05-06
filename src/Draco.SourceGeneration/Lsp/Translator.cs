@@ -284,11 +284,11 @@ internal sealed class Translator
             {
                 if (t.Kind != "base" && t.Kind != "reference") return t;
                 var namedType = (Ts.NamedType)t;
-                return this.sourceModel.TypeAliases.FirstOrDefault(t => t.Name == namedType.Name)?.Type
-                    ?? t;
+                return this.sourceModel.TypeAliases.FirstOrDefault(t => t.Name == namedType.Name)?.Type ?? t;
             }
             static bool IsNull(Ts.Type t) => t is Ts.NamedType { Kind: "base", Name: "null" };
             static bool IsOr(Ts.Type t) => t is Ts.AggregateType { Kind: "or" };
+            static bool IsStructureLiteral(Ts.Type t) => t is Ts.StructureLiteralType;
 
             var aggregateType = (Ts.AggregateType)type;
             var items = aggregateType.Items
@@ -331,6 +331,27 @@ internal sealed class Translator
                 };
                 var subtype = this.TranslateType(tsSubtype);
                 return new Cs.NullableType(subtype);
+            }
+
+            // If we have multiple literal types, merge them
+            if (items.Count(IsStructureLiteral) > 1)
+            {
+                var literals = items
+                    .Where(IsStructureLiteral)
+                    .Cast<Ts.StructureLiteralType>()
+                    .Select(l => l.Value);
+                var mergedLiteral = MergeStructureLiterals(literals);
+
+                items = items
+                    .Where(i => !IsStructureLiteral(i))
+                    .Append(mergedLiteral)
+                    .ToImmutableArray();
+                var tsSubtype = new Ts.AggregateType
+                {
+                    Items = items,
+                    Kind = "or",
+                };
+                return this.TranslateType(tsSubtype);
             }
 
             // Just a general DU
@@ -383,6 +404,46 @@ internal sealed class Translator
         },
         _ => value,
     };
+
+    /// <summary>
+    /// Merges multiple structure literal types into one.
+    /// </summary>
+    /// <param name="literals">The literal types to merge.</param>
+    /// <returns>A single type, containing all fields of <paramref name="literals"/>.</returns>
+    private static Ts.Type MergeStructureLiterals(IEnumerable<Ts.StructureLiteral> literals)
+    {
+        var newFields = new Dictionary<string, Ts.Property>();
+        foreach (var alt in literals)
+        {
+            foreach (var field in alt.Properties)
+            {
+                newFields[field.Name] = field;
+                if (!newFields.TryGetValue(field.Name, out var existing))
+                {
+                    // New, add it
+                    newFields.Add(field.Name, field);
+                }
+                else
+                {
+                    // We need to compare
+                    // Types must equal
+                    if (!Equals(field.Type, existing.Type)) throw new InvalidOperationException();
+                    // Check, if nullability is looser
+                    // If so, replace
+                    if (field.IsOptional && !existing.IsOptional) newFields[field.Name] = field;
+                }
+            }
+        }
+        var mergedLiteral = new Ts.StructureLiteral
+        {
+            Properties = newFields.Values.ToImmutableArray(),
+        };
+        return new Ts.LiteralType
+        {
+            Kind = "literal",
+            Value = mergedLiteral,
+        };
+    }
 
     /// <summary>
     /// Capitalizes a word.

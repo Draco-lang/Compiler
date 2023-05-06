@@ -5,11 +5,12 @@ using System.Text;
 namespace Draco.SourceGeneration.Lsp.Metamodel;
 
 /// <summary>
-/// Includes StringLiteralType, IntegerLiteralType, BooleanLiteralType.
+/// Represents a literal structure
+/// (e.g. `property: { start: uinteger; end: uinteger; }`).
 /// </summary>
-internal sealed class LiteralType : Type
+internal sealed class StructureLiteralType : Type
 {
     public override string Kind { get; set; } = string.Empty;
 
-    public object Value { get; set; } = null!;
+    public StructureLiteral Value { get; set; } = null!;
 }

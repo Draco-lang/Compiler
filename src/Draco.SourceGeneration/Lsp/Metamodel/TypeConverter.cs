@@ -18,7 +18,8 @@ internal sealed class TypeConverter : JsonConverter<Type>
             "array" => obj.Deserialize<ArrayType>(options),
             "map" => obj.Deserialize<MapType>(options),
             "or" or "and" or "tuple" => obj.Deserialize<AggregateType>(options),
-            "literal" or "stringLiteral" => obj.Deserialize<LiteralType>(options),
+            "literal" => obj.Deserialize<StructureLiteralType>(options),
+            "stringLiteral" => obj.Deserialize<LiteralType>(options),
             _ => throw new NotSupportedException($"the type kind '{typeKind}' is not supported"),
         };
     }

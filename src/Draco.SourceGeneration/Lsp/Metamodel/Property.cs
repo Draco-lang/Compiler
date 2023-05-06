@@ -48,4 +48,6 @@ internal sealed class Property : IDeclaration
 	/// the property contains the deprecation message.
     /// </summary>
     public string? Deprecated { get; set; }
+
+    public bool IsOptional => this.Optional ?? false;
 }

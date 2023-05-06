@@ -246,6 +246,7 @@ internal sealed class Translator
 
         if (property.IsOptional)
         {
+            result.OmitIfNull = true;
             // If the type is not nullable, we make it one
             if (result.Type is not Cs.NullableType) result.Type = new Cs.NullableType(result.Type);
         }

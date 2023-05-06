@@ -13,7 +13,7 @@ public sealed class Enum : Declaration
     /// <summary>
     /// True, if this is a string enum.
     /// </summary>
-    public bool IsStringEnum => this.Members.OfType<string>().Any();
+    public bool IsStringEnum => this.Members.Any(m => m.Value is string);
 
     /// <summary>
     /// The members within this enum.

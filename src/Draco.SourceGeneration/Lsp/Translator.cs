@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
-using Draco.SourceGeneration.Lsp.Metamodel;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 
@@ -19,8 +20,6 @@ internal sealed class Translator
     private readonly Cs.Model targetModel = new();
 
     private readonly Dictionary<string, Cs.Type> translatedTypes = new();
-
-    private readonly Dictionary<Ts.Structure, Cs.Class> structureClasses = new();
     private readonly Dictionary<Ts.Structure, Cs.Interface> structureInterfaces = new();
 
     public Translator(Ts.MetaModel sourceModel)
@@ -44,6 +43,36 @@ internal sealed class Translator
     public void AddBuiltinType(string name, string fullName) =>
         this.translatedTypes.Add(name, new Cs.BuiltinType(fullName));
 
+    // TODO: If we are referencing a structure that could have an interface, return that instead
+    public Cs.Type TranslateTypeByName(string name)
+    {
+        if (this.translatedTypes.TryGetValue(name, out var translated)) return translated;
+
+        var structure = this.sourceModel.Structures.FirstOrDefault(s => s.Name == name);
+        if (structure is not null)
+        {
+            this.TranslateStructure(structure);
+            return this.translatedTypes[name];
+        }
+
+        var enumeration = this.sourceModel.Enumerations.FirstOrDefault(s => s.Name == name);
+        if (enumeration is not null)
+        {
+            this.TranslateEnumeration(enumeration);
+            // TODO
+            // return this.translatedTypes[name];
+        }
+
+        var alias = this.sourceModel.TypeAliases.FirstOrDefault(s => s.Name == name);
+        if (alias is not null)
+        {
+            // TODO
+        }
+
+        // TODO
+        return new Cs.BuiltinType($"NOT_FOUND<{name}>");
+    }
+
     public Cs.Model Translate()
     {
         // Translate
@@ -51,15 +80,13 @@ internal sealed class Translator
         {
             // Check if a builtin has overriden it already
             if (this.translatedTypes.ContainsKey(structure.Name)) continue;
-            var @class = this.TranslateStructure(structure);
-            this.targetModel.Declarations.Add(@class);
+            this.TranslateStructure(structure);
         }
         foreach (var enumeration in this.sourceModel.Enumerations)
         {
             // Check if a builtin has overriden it already
             if (this.translatedTypes.ContainsKey(enumeration.Name)) continue;
-            var @enum = this.TranslateEnumeration(enumeration);
-            this.targetModel.Declarations.Add(@enum);
+            this.TranslateEnumeration(enumeration);
         }
         foreach (var typeAlias in this.sourceModel.TypeAliases)
         {
@@ -68,25 +95,20 @@ internal sealed class Translator
             this.TranslateTypeAlias(typeAlias);
         }
 
-        // Add translated interfaces
-        foreach (var @interface in this.structureInterfaces.Values)
-        {
-            this.targetModel.Declarations.Add(@interface);
-        }
-
         // Connect up hierarchy
         foreach (var @class in this.targetModel.Declarations.OfType<Cs.Class>()) @class.InitializeParents();
 
         return this.targetModel;
     }
 
-    private Cs.Class TranslateStructure(Ts.Structure structure)
+    private Cs.Type TranslateStructure(Ts.Structure structure)
     {
-        if (this.structureClasses.TryGetValue(structure, out var existing)) return existing;
+        if (this.translatedTypes.TryGetValue(structure.Name, out var existing)) return existing;
 
         var result = TranslateDeclaration<Cs.Class>(structure);
-        this.structureClasses.Add(structure, result);
-        this.translatedTypes.Add(structure.Name, new Cs.DeclarationType(result));
+        var resultRef = new Cs.DeclarationType(result);
+        this.translatedTypes.Add(structure.Name, resultRef);
+        this.targetModel.Declarations.Add(result);
 
         foreach (var @base in structure.Extends)
         {
@@ -126,7 +148,7 @@ internal sealed class Translator
             result.Properties.Add(csProp);
         }
 
-        return result;
+        return resultRef;
     }
 
     private Cs.Interface TranslateStructureAsInterface(Ts.Structure structure)
@@ -135,6 +157,7 @@ internal sealed class Translator
 
         var result = TranslateDeclaration<Cs.Interface>(structure);
         this.structureInterfaces.Add(structure, result);
+        this.targetModel.Declarations.Add(result);
 
         foreach (var @base in structure.Extends)
         {
@@ -198,10 +221,53 @@ internal sealed class Translator
         if (result.Name == parent.Name) result.Name = $"{result.Name}_";
 
         result.SerializedName = property.Name;
-        // TODO: Temporary
-        result.Type = new Cs.BuiltinType("System.Int32");
+        result.Type = this.TranslateType(property.Type);
 
         return result;
+    }
+
+    private Cs.Type TranslateType(Ts.Type type)
+    {
+        switch (type.Kind)
+        {
+        case "base":
+        case "reference":
+        {
+            var namedType = (Ts.NamedType)type;
+            return this.TranslateTypeByName(namedType.Name);
+        }
+        case "array":
+        {
+            var arrayType = (Ts.ArrayType)type;
+            var elementType = this.TranslateType(arrayType.Element);
+            return new Cs.ArrayType(elementType);
+        }
+        case "map":
+        {
+            var mapType = (Ts.MapType)type;
+            var keyType = this.TranslateType(mapType.Key);
+            var valueType = this.TranslateType(mapType.Value);
+            return new Cs.DictionaryType(keyType, valueType);
+        }
+        case "or":
+        {
+            var aggregateType = (Ts.AggregateType)type;
+            var alternatives = aggregateType.Items
+                .Select(this.TranslateType)
+                .ToImmutableArray();
+            return new Cs.DiscriminatedUnionType(alternatives);
+        }
+        case "tuple":
+        {
+            var aggregateType = (Ts.AggregateType)type;
+            var items = aggregateType.Items
+                .Select(this.TranslateType)
+                .ToImmutableArray();
+            return new Cs.TupleType(items);
+        }
+        default:
+            return new Cs.BuiltinType($"UNKNOWN<{type.Kind}>");
+        }
     }
 
     private static TDeclaration TranslateDeclaration<TDeclaration>(Ts.IDocumented source)

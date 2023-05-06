@@ -30,6 +30,11 @@ public abstract class Declaration
     public string? SinceVersion { get; set; }
 
     /// <summary>
+    /// True, if this declaration is only proposed, not necessarily final.
+    /// </summary>
+    public bool IsProposed { get; set; }
+
+    /// <summary>
     /// The name of this declaration.
     /// </summary>
     public string Name { get; set; } = string.Empty;

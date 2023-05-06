@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Draco.SourceGeneration.Lsp.Metamodel;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 
@@ -35,12 +36,7 @@ internal sealed class Translator
 
     private void TranslateStructure(Ts.Structure structure)
     {
-        var result = new Cs.Class
-        {
-            Name = structure.Name,
-            Documentation = structure.Documentation,
-            Deprecated = structure.Deprecated,
-        };
+        var result = TranslateDeclaration<Cs.Class>(structure);
         this.targetModel.Declarations.Add(result);
 
         // TODO
@@ -48,12 +44,7 @@ internal sealed class Translator
 
     private void TranslateStructureAsInterface(Ts.Structure structure)
     {
-        var result = new Cs.Interface
-        {
-            Name = structure.Name,
-            Documentation = structure.Documentation,
-            Deprecated = structure.Deprecated,
-        };
+        var result = TranslateDeclaration<Cs.Interface>(structure);
         this.targetModel.Declarations.Add(result);
 
         // TODO
@@ -61,17 +52,29 @@ internal sealed class Translator
 
     private void TranslateEnumeration(Ts.Enumeration enumeration)
     {
-        var result = new Cs.Enum
-        {
-            Name = enumeration.Name,
-            Documentation = enumeration.Documentation,
-            Deprecated = enumeration.Deprecated,
-        };
+        var result = TranslateDeclaration<Cs.Enum>(enumeration);
+        this.targetModel.Declarations.Add(result);
+
         // TODO
     }
 
     private void TranslateTypeAlias(Ts.TypeAlias typeAlias)
     {
         // TODO
+    }
+
+    private static TDeclaration TranslateDeclaration<TDeclaration>(Ts.IDocumented source)
+        where TDeclaration : Cs.Declaration, new()
+    {
+        var target = new TDeclaration();
+
+        if (source is Ts.IDeclaration declSource) target.Name = declSource.Name;
+
+        target.Documentation = source.Documentation;
+        target.Deprecated = source.Deprecated;
+        target.SinceVersion = source.Since;
+        target.IsProposed = source.Proposed ?? false;
+
+        return target;
     }
 }

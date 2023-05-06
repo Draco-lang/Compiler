@@ -42,7 +42,7 @@ namespace Draco.Lsp.Model;
         {{end}}
 
         {{for $prop in decl.Properties}}
-            {{property($prop)}}
+            {{property($prop, true)}}
         {{end}}
     }
 {{end}}
@@ -51,7 +51,7 @@ namespace Draco.Lsp.Model;
     public interface {{decl.Name}} {{bases(decl.Interfaces)}}
     {
         {{for $prop in decl.Properties}}
-            {{property($prop)}}
+            {{property($prop, false)}}
         {{end}}
     }
 {{end}}
@@ -68,7 +68,7 @@ namespace Draco.Lsp.Model;
     }
 {{end}}
 
-{{func property(decl)}}
+{{func property(decl, settable)}}
     {{summary(decl.Documentation)}}
     {{obsolete(decl.Deprecated)}}
     {{if decl.IsExtensionData}}
@@ -87,7 +87,10 @@ namespace Draco.Lsp.Model;
         {{end}}
         ;
     {{else}}
-        { get; set; }
+        {
+            get;
+            {{if settable}}set;{{end}}
+        }
     {{end}}
 {{end}}
 

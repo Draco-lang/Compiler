@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Xml.Linq;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
@@ -59,8 +60,7 @@ internal sealed class Translator
         if (enumeration is not null)
         {
             this.TranslateEnumeration(enumeration);
-            // TODO
-            // return this.translatedTypes[name];
+            return this.translatedTypes[name];
         }
 
         var alias = this.sourceModel.TypeAliases.FirstOrDefault(s => s.Name == name);
@@ -181,13 +181,28 @@ internal sealed class Translator
         return result;
     }
 
-    private Cs.Enum TranslateEnumeration(Ts.Enumeration enumeration)
+    private Cs.Type TranslateEnumeration(Ts.Enumeration enumeration)
     {
+        if (this.translatedTypes.TryGetValue(enumeration.Name, out var existing)) return existing;
+
         var result = TranslateDeclaration<Cs.Enum>(enumeration);
+        var resultRef = new Cs.DeclarationType(result);
+        this.translatedTypes.Add(enumeration.Name, resultRef);
+        this.targetModel.Declarations.Add(result);
 
-        // TODO
+        foreach (var member in enumeration.Values)
+        {
+            this.TranslateEnumerationEntry(result, member);
+        }
 
-        return result;
+        return resultRef;
+    }
+
+    private void TranslateEnumerationEntry(Cs.Enum @enum, Ts.EnumerationEntry member)
+    {
+        var result = TranslateDeclaration<Cs.EnumMember>(member);
+        @enum.Members.Add(result);
+        result.Value = TranslateValue(member.Value);
     }
 
     private void TranslateTypeAlias(Ts.TypeAlias typeAlias)
@@ -347,6 +362,17 @@ internal sealed class Translator
         yield return element;
         foreach (var n in neighbors(element)) yield return n;
     }
+
+    private static object? TranslateValue(object? value) => value switch
+    {
+        JsonElement element => element.ValueKind switch
+        {
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number => element.GetInt32(),
+            _ => value,
+        },
+        _ => value,
+    };
 
     /// <summary>
     /// Capitalizes a word.

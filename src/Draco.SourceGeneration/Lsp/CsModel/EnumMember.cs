@@ -7,14 +7,13 @@ namespace Draco.SourceGeneration.Lsp.CsModel;
 /// <summary>
 /// A single enum member.
 /// </summary>
-/// <param name="Documentation">The documentation of this member.</param>
-/// <param name="Name">The name of the enum member.</param>
-/// <param name="Value">The serialized enum member value.</param>
-public sealed record class EnumMember(
-    string? Documentation,
-    string Name,
-    object? Value)
+public sealed class EnumMember : Declaration
 {
+    /// <summary>
+    /// The value of this enum member.
+    /// </summary>
+    public object? Value { get; set; }
+
     /// <summary>
     /// A discriminator string for the value.
     /// </summary>

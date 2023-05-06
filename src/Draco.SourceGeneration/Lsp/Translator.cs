@@ -244,6 +244,12 @@ internal sealed class Translator
         result.SerializedName = property.Name;
         result.Type = this.TranslateType(property.Type, parent: parent, hintName: result.Name);
 
+        if (property.IsOptional)
+        {
+            // If the type is not nullable, we make it one
+            if (result.Type is not Cs.NullableType) result.Type = new Cs.NullableType(result.Type);
+        }
+
         if (property.Type.Kind == "stringLiteral")
         {
             // It has a constant value

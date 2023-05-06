@@ -192,7 +192,7 @@ internal sealed class Translator
 
     private void TranslateTypeAlias(Ts.TypeAlias typeAlias)
     {
-        if (this.translatedTypes.TryGetValue(typeAlias.Name, out var existing)) return;
+        if (this.translatedTypes.ContainsKey(typeAlias.Name)) return;
 
         var aliasedType = this.TranslateType(typeAlias.Type);
         this.translatedTypes.Add(typeAlias.Name, aliasedType);
@@ -255,8 +255,61 @@ internal sealed class Translator
         }
         case "or":
         {
+            Ts.Type UnwrapAlias(Ts.Type t)
+            {
+                if (t.Kind != "base" && t.Kind != "reference") return t;
+                var namedType = (Ts.NamedType)t;
+                return this.sourceModel.TypeAliases.FirstOrDefault(t => t.Name == namedType.Name)?.Type
+                    ?? t;
+            }
+            static bool IsNull(Ts.Type t) => t is Ts.NamedType { Kind: "base", Name: "null" };
+            static bool IsOr(Ts.Type t) => t is Ts.AggregateType { Kind: "or" };
+
             var aggregateType = (Ts.AggregateType)type;
-            var alternatives = aggregateType.Items
+            var items = aggregateType.Items
+                .Select(UnwrapAlias)
+                .ToImmutableArray();
+
+            // If it's a singular type, just translate that
+            if (items.Length == 1) return this.TranslateType(items[0]);
+
+            // We have nested OR types, flatten
+            if (items.Any(IsOr))
+            {
+                // Keep non-or types and merge in OR'd types
+                items = items
+                    .Where(i => !IsOr(i))
+                    .Concat(items
+                        .Where(IsOr)
+                        .Cast<Ts.AggregateType>()
+                        .SelectMany(i => i.Items))
+                    .ToImmutableArray();
+                var tsSubtype = new Ts.AggregateType
+                {
+                    Items = items,
+                    Kind = "or",
+                };
+                return this.TranslateType(tsSubtype);
+            }
+
+            // We have a null OR'd into the type, for example number | string | null
+            if (items.Any(IsNull))
+            {
+                // We remove it and make the type nullable instead
+                items = items
+                    .Where(i => !IsNull(i))
+                    .ToImmutableArray();
+                var tsSubtype = new Ts.AggregateType
+                {
+                    Items = items,
+                    Kind = "or",
+                };
+                var subtype = this.TranslateType(tsSubtype);
+                return new Cs.NullableType(subtype);
+            }
+
+            // Just a general DU
+            var alternatives = items
                 .Select(this.TranslateType)
                 .ToImmutableArray();
             return new Cs.DiscriminatedUnionType(alternatives);

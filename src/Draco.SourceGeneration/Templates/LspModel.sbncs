@@ -1,3 +1,4 @@
+using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -18,8 +19,14 @@ namespace Draco.Lsp.Model;
     /// </summary>
 {{end}}
 
+{{func obsolete(msg)}}
+    {{if !msg}}{{ret}}{{end}}
+    [Obsolete("{{msg}}")]
+{{end}}
+
 {{func declaration(decl)}}
     {{summary(decl.Documentation)}}
+    {{obsolete(decl.Deprecated)}}
     {{case decl.Discriminator}}
     {{when 'Class'}} {{class(decl)}}
     {{when 'Interface'}} {{interface(decl)}}
@@ -35,7 +42,7 @@ namespace Draco.Lsp.Model;
         {{end}}
 
         {{for $prop in decl.Properties}}
-            {{property($prop)}}
+            {{property($prop, true)}}
         {{end}}
     }
 {{end}}
@@ -44,7 +51,7 @@ namespace Draco.Lsp.Model;
     public interface {{decl.Name}} {{bases(decl.Interfaces)}}
     {
         {{for $prop in decl.Properties}}
-            {{property($prop)}}
+            {{property($prop, false)}}
         {{end}}
     }
 {{end}}
@@ -61,8 +68,9 @@ namespace Draco.Lsp.Model;
     }
 {{end}}
 
-{{func property(decl)}}
+{{func property(decl, settable)}}
     {{summary(decl.Documentation)}}
+    {{obsolete(decl.Deprecated)}}
     {{if decl.IsExtensionData}}
         [JsonExtensionData]
     {{else}}
@@ -71,25 +79,29 @@ namespace Draco.Lsp.Model;
             NullValueHandling = NullValueHandling.{{if decl.OmitIfNull}}Ignore{{else}}Include{{end}})]
     {{end}}
     public {{type(decl.Type)}} {{decl.Name}}
-    {{if decl.ConstantValue}}
+    {{if decl.Value}}
         =>
         {{case decl.ValueDiscriminator}}
         {{when 'String'}}
-            {{string.literal(decl.ConstantValue)}}
+            {{string.literal(decl.Value)}}
         {{end}}
         ;
     {{else}}
-        { get; set; }
+        {
+            get;
+            {{if settable}}set;{{end}}
+        }
     {{end}}
 {{end}}
 
 {{func enum_member(decl)}}
     {{summary(decl.Documentation)}}
+    {{obsolete(decl.Deprecated)}}
     {{case decl.ValueDiscriminator}}
     {{when 'Int'}}
-        {{decl.Name}} = {{decl.SerializedValue}}
+        {{decl.Name}} = {{decl.Value}}
     {{when 'String'}}
-        [EnumMember(Value = {{string.literal(decl.SerializedValue)}})]
+        [EnumMember(Value = {{string.literal(decl.Value)}})]
         {{decl.Name}}
     {{end}}
 {{end}}

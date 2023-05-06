@@ -17,7 +17,7 @@ internal sealed class Property : IDeclaration
 
     /// <summary>
     /// Whether the property is optional. If
-	/// omitted, the property is mandatory.
+    /// omitted, the property is mandatory.
     /// </summary>
     public bool? Optional { get; set; }
 
@@ -28,19 +28,19 @@ internal sealed class Property : IDeclaration
 
     /// <summary>
     /// Since when (release number) this property is
-	/// available.Is undefined if not known.
+    /// available.Is undefined if not known.
     /// </summary>
     public string? Since { get; set; }
 
     /// <summary>
     /// Whether this is a proposed property. If omitted,
-	/// the structure is final.
+    /// the structure is final.
     /// </summary>
     public bool? Proposed { get; set; }
 
     /// <summary>
     /// Whether the property is deprecated or not. If deprecated
-	/// the property contains the deprecation message.
+    /// the property contains the deprecation message.
     /// </summary>
     public string? Deprecated { get; set; }
 

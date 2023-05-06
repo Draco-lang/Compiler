@@ -26,8 +26,8 @@ internal sealed class Enumeration : IDeclaration
 
     /// <summary>
     /// Whether the enumeration supports custom values (e.g. values which are not
-	/// part of the set defined in `values`). If omitted no custom values are
-	/// supported.
+    /// part of the set defined in `values`). If omitted no custom values are
+    /// supported.
     /// </summary>
     public bool? SupportsCustomValues { get; set; }
 }

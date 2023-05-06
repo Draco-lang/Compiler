@@ -16,15 +16,15 @@ internal sealed class Structure : IDeclaration
 
     /// <summary>
     /// Structures extended from. This structures form
-	/// a polymorphic type hierarchy.
+    /// a polymorphic type hierarchy.
     /// </summary>
     public IList<Type> Extends { get; set; } = Array.Empty<Type>();
 
     /// <summary>
     /// Structures to mix in. The properties of these
-	/// structures are `copied` into this structure.
+    /// structures are `copied` into this structure.
     /// Mixins don't form a polymorphic type hierarchy in
-	/// LSP.
+    /// LSP.
     /// </summary>
     public IList<Type> Mixins { get; set; } = Array.Empty<Type>();
 

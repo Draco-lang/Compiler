@@ -18,13 +18,13 @@ internal interface IDocumented
 
     /// <summary>
     /// Whether this is a proposed element. If omitted,
-	/// the declaration is final.
+    /// the declaration is final.
     /// </summary>
     public bool? Proposed { get; set; }
 
     /// <summary>
     /// Whether the element is deprecated or not. If deprecated
-	/// the property contains the deprecation message.
+    /// the property contains the deprecation message.
     /// </summary>
     public string? Deprecated { get; set; }
 }

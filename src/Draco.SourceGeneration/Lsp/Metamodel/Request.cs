@@ -23,7 +23,7 @@ internal sealed class Request
 
     /// <summary>
     /// Optional partial result type if the request
-	/// supports partial result reporting.
+    /// supports partial result reporting.
     /// </summary>
     public Type? PartialResult { get; set; }
 
@@ -34,19 +34,19 @@ internal sealed class Request
 
     /// <summary>
     /// Optional a dynamic registration method if it
-	/// different from the request's method.
+    /// different from the request's method.
     /// </summary>
     public string? RegistrationMethod { get; set; }
 
     /// <summary>
     /// Optional registration options if the request
-	/// supports dynamic registration.
+    /// supports dynamic registration.
     /// </summary>
     public Type? RegistrationOptions { get; set; }
 
     /// <summary>
     /// The direction in which this notification is sent
-	/// in the protocol.
+    /// in the protocol.
     /// </summary>
     public MessageDirection MessageDirection { get; set; }
 
@@ -57,19 +57,19 @@ internal sealed class Request
 
     /// <summary>
     /// Since when (release number) this request is
-	/// available.Is undefined if not known.
+    /// available.Is undefined if not known.
     /// </summary>
     public string? Since { get; set; }
 
     /// <summary>
     /// Whether this is a proposed feature. If omitted
-	/// the feature is final.
+    /// the feature is final.
     /// </summary>
     public bool? Proposed { get; set; }
 
     /// <summary>
     /// Whether the request is deprecated or not. If deprecated
-	/// the property contains the deprecation message.
+    /// the property contains the deprecation message.
     /// </summary>
     public string? Deprecated { get; set; }
 }

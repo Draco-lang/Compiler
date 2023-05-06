@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
@@ -242,6 +243,13 @@ internal sealed class Translator
         result.SerializedName = property.Name;
         result.Type = this.TranslateType(property.Type);
 
+        if (property.Type.Kind == "stringLiteral")
+        {
+            // It has a constant value
+            var literalType = (Ts.LiteralType)property.Type;
+            result.Value = TranslateValue(literalType.Value);
+        }
+
         return result;
     }
 
@@ -249,6 +257,8 @@ internal sealed class Translator
     {
         switch (type.Kind)
         {
+        case "stringLiteral":
+            return this.TranslateTypeByName("string");
         case "base":
         case "reference":
         {

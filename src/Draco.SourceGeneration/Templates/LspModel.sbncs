@@ -20,7 +20,7 @@ namespace Draco.Lsp.Model;
 {{end}}
 
 {{func obsolete(msg)}}
-    {{if !message}}{{ret}}{{end}}
+    {{if !msg}}{{ret}}{{end}}
     [Obsolete("{{msg}}")]
 {{end}}
 

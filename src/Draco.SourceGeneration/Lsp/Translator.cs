@@ -66,7 +66,8 @@ internal sealed class Translator
         var alias = this.sourceModel.TypeAliases.FirstOrDefault(s => s.Name == name);
         if (alias is not null)
         {
-            // TODO
+            this.TranslateTypeAlias(alias);
+            return this.translatedTypes[name];
         }
 
         // TODO
@@ -191,7 +192,10 @@ internal sealed class Translator
 
     private void TranslateTypeAlias(Ts.TypeAlias typeAlias)
     {
-        // TODO
+        if (this.translatedTypes.TryGetValue(typeAlias.Name, out var existing)) return;
+
+        var aliasedType = this.TranslateType(typeAlias.Type);
+        this.translatedTypes.Add(typeAlias.Name, aliasedType);
     }
 
     private Cs.Interface TranslateBaseType(Ts.Type type)

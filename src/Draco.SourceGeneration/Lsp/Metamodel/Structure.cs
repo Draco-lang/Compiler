@@ -20,7 +20,7 @@ internal sealed class Structure : IDeclaration
     /// Structures extended from. This structures form
 	/// a polymorphic type hierarchy.
     /// </summary>
-    public IList<Type>? Extends { get; set; }
+    public IList<Type> Extends { get; set; } = Array.Empty<Type>();
 
     /// <summary>
     /// Structures to mix in. The properties of these
@@ -28,7 +28,7 @@ internal sealed class Structure : IDeclaration
     /// Mixins don't form a polymorphic type hierarchy in
 	/// LSP.
     /// </summary>
-    public IList<Type>? Mixins { get; set; }
+    public IList<Type> Mixins { get; set; } = Array.Empty<Type>();
 
     /// <summary>
     /// The properties.

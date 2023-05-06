@@ -17,6 +17,7 @@ internal sealed class Translator
     private readonly Ts.MetaModel sourceModel;
     private readonly Cs.Model targetModel = new();
 
+    private readonly Dictionary<Ts.Structure, Cs.Class> structureClasses = new();
     private readonly Dictionary<Ts.Structure, Cs.Interface> structureInterfaces = new();
 
     public Translator(Ts.MetaModel sourceModel)
@@ -53,13 +54,38 @@ internal sealed class Translator
 
     private Cs.Class TranslateStructure(Ts.Structure structure)
     {
-        var result = TranslateDeclaration<Cs.Class>(structure);
+        if (this.structureClasses.TryGetValue(structure, out var existing)) return existing;
 
-        // TODO: Bases
-        // TODO: Mixins
+        var result = TranslateDeclaration<Cs.Class>(structure);
+        this.structureClasses.Add(structure, result);
+
+        foreach (var @base in structure.Extends)
+        {
+            var @interface = this.TranslateBaseType(@base);
+            result.Interfaces.Add(@interface);
+        }
+
         // TODO: Nested types
 
-        foreach (var prop in structure.Properties)
+        // The properties will be an aggregation of
+        //  - implemented interface properties (transitive closure)
+        //  - mixin properties (transitive closure)
+        //  - properties from the structure
+
+        var allInterfaceProps = structure.Extends
+            .Select(this.FindStructureByType)
+            .SelectMany(s => TransitiveClosure(s, s => s.Extends.Select(this.FindStructureByType)))
+            .SelectMany(i => i.Properties);
+        var allMixinProps = structure.Mixins
+            .Select(this.FindStructureByType)
+            .SelectMany(s => TransitiveClosure(s, s => s.Mixins.Select(this.FindStructureByType)))
+            .SelectMany(s => s.Properties);
+
+        var allProps = allInterfaceProps
+            .Concat(allMixinProps)
+            .Concat(structure.Properties);
+
+        foreach (var prop in allProps)
         {
             var csProp = this.TranslateProperty(result, prop);
             result.Properties.Add(csProp);
@@ -75,7 +101,12 @@ internal sealed class Translator
         var result = TranslateDeclaration<Cs.Interface>(structure);
         this.structureInterfaces.Add(structure, result);
 
-        // TODO: Bases
+        foreach (var @base in structure.Extends)
+        {
+            var @interface = this.TranslateBaseType(@base);
+            result.Interfaces.Add(@interface);
+        }
+
         // TODO: Nested types
 
         foreach (var prop in structure.Properties)
@@ -105,6 +136,25 @@ internal sealed class Translator
         // TODO
     }
 
+    private Cs.Interface TranslateBaseType(Ts.Type type)
+    {
+        var structure = this.FindStructureByType(type);
+        return this.TranslateStructureAsInterface(structure);
+    }
+
+    private Ts.Structure FindStructureByType(Ts.Type type)
+    {
+        if (type is not Ts.NamedType namedType)
+        {
+            throw new ArgumentException($"can not reference type of kind {type.GetType().Name}", nameof(type));
+        }
+
+        var structure = this.sourceModel.Structures.FirstOrDefault(s => s.Name == namedType.Name)
+                     ?? throw new ArgumentException($"can not find type {namedType.Name} among the structures", nameof(type));
+
+        return structure;
+    }
+
     private Cs.Property TranslateProperty(Cs.Declaration parent, Ts.Property property)
     {
         var result = TranslateDeclaration<Cs.Property>(property);
@@ -132,6 +182,12 @@ internal sealed class Translator
         target.IsProposed = source.Proposed ?? false;
 
         return target;
+    }
+
+    private static IEnumerable<T> TransitiveClosure<T>(T element, Func<T, IEnumerable<T>> neighbors)
+    {
+        yield return element;
+        foreach (var n in neighbors(element)) yield return n;
     }
 
     /// <summary>

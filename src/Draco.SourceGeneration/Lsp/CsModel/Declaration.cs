@@ -25,6 +25,11 @@ public abstract class Declaration
     public string? Deprecated { get; set; }
 
     /// <summary>
+    /// The version since this declaration was introduced.
+    /// </summary>
+    public string? SinceVersion { get; set; }
+
+    /// <summary>
     /// The name of this declaration.
     /// </summary>
     public string Name { get; set; } = string.Empty;

@@ -46,6 +46,19 @@ internal sealed class Translator
         // TODO
     }
 
+    private void TranslateStructureAsInterface(Ts.Structure structure)
+    {
+        var result = new Cs.Interface
+        {
+            Name = structure.Name,
+            Documentation = structure.Documentation,
+            Deprecated = structure.Deprecated,
+        };
+        this.targetModel.Declarations.Add(result);
+
+        // TODO
+    }
+
     private void TranslateEnumeration(Ts.Enumeration enumeration)
     {
         var result = new Cs.Enum

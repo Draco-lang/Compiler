@@ -8,12 +8,13 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Defines the structure of an object literal.
 /// </summary>
-internal sealed class Structure
+internal sealed class Structure : IDeclaration
 {
-    /// <summary>
-    /// The name of the structure.
-    /// </summary>
     public string Name { get; set; } = string.Empty;
+    public string? Documentation { get; set; }
+    public string? Since { get; set; }
+    public bool? Proposed { get; set; }
+    public string? Deprecated { get; set; }
 
     /// <summary>
     /// Structures extended from. This structures form
@@ -33,27 +34,4 @@ internal sealed class Structure
     /// The properties.
     /// </summary>
     public IList<Property> Properties { get; set; } = Array.Empty<Property>();
-
-    /// <summary>
-    /// An optional documentation.
-    /// </summary>
-    public string? Documentation { get; set; }
-
-    /// <summary>
-    /// Since when (release number) this structure is
-    /// available.Is undefined if not known.
-    /// </summary>
-    public string? Since { get; set; }
-
-    /// <summary>
-    /// Whether this is a proposed structure. If omitted,
-	/// the structure is final.
-    /// </summary>
-    public bool? Proposed { get; set; }
-
-    /// <summary>
-    /// Whether the structure is deprecated or not. If deprecated
-	/// the property contains the deprecation message.
-    /// </summary>
-    public string? Deprecated { get; set; }
 }

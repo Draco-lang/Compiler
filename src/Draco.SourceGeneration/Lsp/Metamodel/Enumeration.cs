@@ -8,12 +8,13 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Defines an enumeration.
 /// </summary>
-internal sealed class Enumeration
+internal sealed class Enumeration : IDeclaration
 {
-    /// <summary>
-    /// The name of the enumeration.
-    /// </summary>
     public string Name { get; set; } = string.Empty;
+    public string? Documentation { get; set; }
+    public string? Since { get; set; }
+    public bool? Proposed { get; set; }
+    public string? Deprecated { get; set; }
 
     /// <summary>
     /// The type of the elements.
@@ -31,27 +32,4 @@ internal sealed class Enumeration
 	/// supported.
     /// </summary>
     public bool? SupportsCustomValues { get; set; }
-
-    /// <summary>
-    /// An optional documentation.
-    /// </summary>
-    public string? Documentation { get; set; }
-
-    /// <summary>
-    /// Since when (release number) this enumeration is
-	/// available.Is undefined if not known.
-    /// </summary>
-    public string? Since { get; set; }
-
-    /// <summary>
-    /// Whether this is a proposed enumeration. If omitted,
-	/// the enumeration is final.
-    /// </summary>
-    public bool? Proposed { get; set; }
-
-    /// <summary>
-    /// Whether the enumeration is deprecated or not. If deprecated
-	/// the property contains the deprecation message.
-    /// </summary>
-    public string? Deprecated { get; set; }
 }

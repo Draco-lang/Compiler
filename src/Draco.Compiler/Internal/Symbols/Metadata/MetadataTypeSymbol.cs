@@ -47,6 +47,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         // TODO: nested-types
         // TODO: static fields
         // TODO: static properties
+        // TODO: static functions
         // TODO: nonstatic fields
         // TODO: nonstatic properties
 

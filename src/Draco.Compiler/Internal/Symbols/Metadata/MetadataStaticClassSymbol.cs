@@ -62,6 +62,22 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             result.Add(methodSym);
         }
 
+        // fields
+        foreach (var fieldHandle in this.typeDefinition.GetFields())
+        {
+            var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
+            // Skip fields with special name
+            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
+            // Skip non-public fields
+            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
+            // Skip non-static fields
+            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
+            var methodSym = new MetadataFieldSymbol(
+                containingSymbol: this,
+                fieldDefinition: fieldDef);
+            result.Add(methodSym);
+        }
+
         // Done
         return result.ToImmutable();
     }

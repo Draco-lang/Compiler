@@ -92,8 +92,11 @@ internal class Program
         var (path, name) = ExtractOutputPathAndName(output);
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(syntaxTree),
-            metadataReferences: references
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+            metadataReferences: //references
+                                //.Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                                //.ToImmutableArray(),
+                Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
             outputPath: path,
             assemblyName: name);

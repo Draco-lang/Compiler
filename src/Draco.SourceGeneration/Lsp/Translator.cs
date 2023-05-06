@@ -125,25 +125,26 @@ internal sealed class Translator
         var allInterfaceProps = structure.Extends
             .Select(this.FindStructureByType)
             .SelectMany(s => TransitiveClosure(s, s => s.Extends.Select(this.FindStructureByType)))
-            .SelectMany(i => i.Properties);
+            .SelectMany(i => i.Properties.Select(prop => (Parent: i, Property: prop)));
         var allMixinProps = structure.Mixins
             .Select(this.FindStructureByType)
             .SelectMany(s => TransitiveClosure(s, s => s.Mixins.Select(this.FindStructureByType)))
-            .SelectMany(s => s.Properties);
+            .SelectMany(s => s.Properties.Select(prop => (Parent: s, Property: prop)));
 
         var allProps = allInterfaceProps
             .Concat(allMixinProps)
-            .Concat(structure.Properties);
+            .Concat(structure.Properties.Select(prop => (Parent: structure, Property: prop)));
 
         // We deduplicate the properties, only keeping the last occurrence, so
         // mixin takes priority over interface ans structure takes priority over mixin
         allProps = allProps
-            .GroupBy(p => p.Name)
+            .GroupBy(p => p.Property.Name)
             .Select(g => g.Last());
 
-        foreach (var prop in allProps)
+        foreach (var (parent, prop) in allProps)
         {
-            var csProp = this.TranslateProperty(result, prop);
+            var csParent = (Cs.Class)((Cs.DeclarationType)this.TranslateStructure(parent)).Declaration;
+            var csProp = this.TranslateProperty(csParent, prop);
             result.Properties.Add(csProp);
         }
 

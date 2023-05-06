@@ -41,6 +41,8 @@ internal sealed class Translator
             Documentation = structure.Documentation,
             Deprecated = structure.Deprecated,
         };
+        this.targetModel.Declarations.Add(result);
+
         // TODO
     }
 

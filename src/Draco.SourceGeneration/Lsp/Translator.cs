@@ -97,9 +97,6 @@ internal sealed class Translator
             this.TranslateTypeAlias(typeAlias);
         }
 
-        // Connect up hierarchy
-        foreach (var @class in this.targetModel.Declarations.OfType<Cs.Class>()) @class.InitializeParents();
-
         return this.targetModel;
     }
 
@@ -157,7 +154,10 @@ internal sealed class Translator
     {
         if (this.structureInterfaces.TryGetValue(structure, out var existing)) return existing;
 
+        var csClass = (Cs.Class)((Cs.DeclarationType)this.TranslateStructure(structure)).Declaration;
+        // Prefix the interface name to follow C# conventions
         var result = TranslateDeclaration<Cs.Interface>(structure);
+        result.Name = $"I{result.Name}";
         this.structureInterfaces.Add(structure, result);
         this.targetModel.Declarations.Add(result);
 
@@ -167,17 +167,12 @@ internal sealed class Translator
             result.Interfaces.Add(@interface);
         }
 
-        // TODO: Nested types
-
         foreach (var prop in structure.Properties)
         {
-            var csProp = this.TranslateProperty(result, prop);
+            // NOTE: We pass in the class on purose
+            var csProp = this.TranslateProperty(csClass, prop);
             result.Properties.Add(csProp);
         }
-
-        // Prefix the interface name to follow C# conventions
-        // NOTE: We do it here on purpose, to not to affect property name resolution
-        result.Name = $"I{result.Name}";
 
         return result;
     }
@@ -210,8 +205,13 @@ internal sealed class Translator
     {
         if (this.translatedTypes.ContainsKey(typeAlias.Name)) return;
 
-        var aliasedType = this.TranslateType(typeAlias.Type);
-        this.translatedTypes.Add(typeAlias.Name, aliasedType);
+        var aliasedType = this.TranslateType(typeAlias.Type, parent: null, hintName: typeAlias.Name);
+
+        // We can cause a duplicate key in case this is an alias for an anonymous type
+        if (!this.translatedTypes.ContainsKey(typeAlias.Name))
+        {
+            this.translatedTypes.Add(typeAlias.Name, aliasedType);
+        }
     }
 
     private Cs.Interface TranslateBaseType(Ts.Type type)
@@ -233,7 +233,7 @@ internal sealed class Translator
         return structure;
     }
 
-    private Cs.Property TranslateProperty(Cs.Declaration parent, Ts.Property property)
+    private Cs.Property TranslateProperty(Cs.Class parent, Ts.Property property)
     {
         var result = TranslateDeclaration<Cs.Property>(property);
 
@@ -241,7 +241,7 @@ internal sealed class Translator
         if (result.Name == parent.Name) result.Name = $"{result.Name}_";
 
         result.SerializedName = property.Name;
-        result.Type = this.TranslateType(property.Type);
+        result.Type = this.TranslateType(property.Type, parent: parent, hintName: result.Name);
 
         if (property.Type.Kind == "stringLiteral")
         {
@@ -253,7 +253,7 @@ internal sealed class Translator
         return result;
     }
 
-    private Cs.Type TranslateType(Ts.Type type)
+    private Cs.Type TranslateType(Ts.Type type, Cs.Class? parent, string? hintName)
     {
         switch (type.Kind)
         {
@@ -268,14 +268,14 @@ internal sealed class Translator
         case "array":
         {
             var arrayType = (Ts.ArrayType)type;
-            var elementType = this.TranslateType(arrayType.Element);
+            var elementType = this.TranslateType(arrayType.Element, parent: parent, hintName: hintName);
             return new Cs.ArrayType(elementType);
         }
         case "map":
         {
             var mapType = (Ts.MapType)type;
-            var keyType = this.TranslateType(mapType.Key);
-            var valueType = this.TranslateType(mapType.Value);
+            var keyType = this.TranslateType(mapType.Key, parent: parent, hintName: hintName);
+            var valueType = this.TranslateType(mapType.Value, parent: parent, hintName: hintName);
             return new Cs.DictionaryType(keyType, valueType);
         }
         case "or":
@@ -296,7 +296,7 @@ internal sealed class Translator
                 .ToImmutableArray();
 
             // If it's a singular type, just translate that
-            if (items.Length == 1) return this.TranslateType(items[0]);
+            if (items.Length == 1) return this.TranslateType(items[0], parent: parent, hintName: hintName);
 
             // We have nested OR types, flatten
             if (items.Any(IsOr))
@@ -314,7 +314,7 @@ internal sealed class Translator
                     Items = items,
                     Kind = "or",
                 };
-                return this.TranslateType(tsSubtype);
+                return this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
             }
 
             // We have a null OR'd into the type, for example number | string | null
@@ -329,7 +329,7 @@ internal sealed class Translator
                     Items = items,
                     Kind = "or",
                 };
-                var subtype = this.TranslateType(tsSubtype);
+                var subtype = this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
                 return new Cs.NullableType(subtype);
             }
 
@@ -351,12 +351,12 @@ internal sealed class Translator
                     Items = items,
                     Kind = "or",
                 };
-                return this.TranslateType(tsSubtype);
+                return this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
             }
 
             // Just a general DU
             var alternatives = items
-                .Select(this.TranslateType)
+                .Select(i => this.TranslateType(i, parent: parent, hintName: hintName))
                 .ToImmutableArray();
             return new Cs.DiscriminatedUnionType(alternatives);
         }
@@ -364,9 +364,47 @@ internal sealed class Translator
         {
             var aggregateType = (Ts.AggregateType)type;
             var items = aggregateType.Items
-                .Select(this.TranslateType)
+                .Select(i => this.TranslateType(i, parent: parent, hintName: hintName))
                 .ToImmutableArray();
             return new Cs.TupleType(items);
+        }
+        case "literal":
+        {
+            var structLiteral = (Ts.StructureLiteralType)type;
+            if (hintName is null) throw new InvalidOperationException("no hint name for anonymous type");
+
+            // Translate the literal
+            var result = TranslateDeclaration<Cs.Class>(structLiteral.Value);
+            result.Parent = parent;
+            result.Name = parent is null
+                ? hintName
+                : $"{hintName}{ExtractNameSuffix(parent.Name)}";
+
+            // Add to parent type or global decls
+            if (parent is null)
+            {
+                // Check if already exists
+                if (this.translatedTypes.TryGetValue(result.Name, out var existing)) return existing;
+
+                this.targetModel.Declarations.Add(result);
+                this.translatedTypes.Add(result.Name, new Cs.DeclarationType(result));
+            }
+            else
+            {
+                // Check if already exists
+                var nestedType = parent.NestedDeclarations.FirstOrDefault(d => d.Name == result.Name);
+                if (nestedType is not null) return new Cs.DeclarationType(nestedType);
+
+                parent.NestedDeclarations.Add(result);
+            }
+
+            foreach (var prop in structLiteral.Value.Properties)
+            {
+                var csProp = this.TranslateProperty(result, prop);
+                result.Properties.Add(csProp);
+            }
+
+            return new Cs.DeclarationType(result);
         }
         default:
             return new Cs.BuiltinType($"UNKNOWN<{type.Kind}>");
@@ -438,11 +476,29 @@ internal sealed class Translator
         {
             Properties = newFields.Values.ToImmutableArray(),
         };
-        return new Ts.LiteralType
+        return new Ts.StructureLiteralType
         {
             Kind = "literal",
             Value = mergedLiteral,
         };
+    }
+
+    /// <summary>
+    /// Extracts a suffix from a name, which is the last capitalized word in it.
+    /// </summary>
+    /// <param name="name">The name to extract the suffix from.</param>
+    /// <returns>The last capitalized word in <paramref name="name"/>.</returns>
+    private static string ExtractNameSuffix(string name)
+    {
+        // Search for the last uppercase letter
+        var startIndex = name.Length - 1;
+        for (; startIndex >= 0; --startIndex)
+        {
+            var ch = name[startIndex];
+            if (ch == char.ToUpper(ch)) break;
+        }
+        // Cut it off
+        return name.Substring(startIndex);
     }
 
     /// <summary>

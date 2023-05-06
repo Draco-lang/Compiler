@@ -8,7 +8,7 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Represents an object property.
 /// </summary>
-internal sealed class Property
+internal sealed class Property : IDeclaration
 {
     /// <summary>
     /// The property name.

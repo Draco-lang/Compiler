@@ -7,22 +7,12 @@ namespace Draco.SourceGeneration.Lsp.CsModel;
 /// <summary>
 /// A property definition.
 /// </summary>
-public sealed class Property
+public sealed class Property : Declaration
 {
-    /// <summary>
-    /// The docs of the property.
-    /// </summary>
-    public string? Documentation { get; set; }
-
     /// <summary>
     /// The property type.
     /// </summary>
     public Type Type { get; set; } = null!;
-
-    /// <summary>
-    /// The property name.
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// The property name when serialized.

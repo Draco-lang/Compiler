@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 
@@ -15,6 +17,8 @@ internal sealed class Translator
     private readonly Ts.MetaModel sourceModel;
     private readonly Cs.Model targetModel = new();
 
+    private readonly Dictionary<Ts.Structure, Cs.Interface> structureInterfaces = new();
+
     public Translator(Ts.MetaModel sourceModel)
     {
         this.sourceModel = sourceModel;
@@ -23,9 +27,23 @@ internal sealed class Translator
     public Cs.Model Translate()
     {
         // Translate
-        foreach (var structure in this.sourceModel.Structures) this.TranslateStructure(structure);
-        foreach (var enumeration in this.sourceModel.Enumerations) this.TranslateEnumeration(enumeration);
+        foreach (var structure in this.sourceModel.Structures)
+        {
+            var @class = this.TranslateStructure(structure);
+            this.targetModel.Declarations.Add(@class);
+        }
+        foreach (var enumeration in this.sourceModel.Enumerations)
+        {
+            var @enum = this.TranslateEnumeration(enumeration);
+            this.targetModel.Declarations.Add(@enum);
+        }
         foreach (var typeAlias in this.sourceModel.TypeAliases) this.TranslateTypeAlias(typeAlias);
+
+        // Add translated interfaces
+        foreach (var @interface in this.structureInterfaces.Values)
+        {
+            this.targetModel.Declarations.Add(@interface);
+        }
 
         // Connect up hierarchy
         foreach (var @class in this.targetModel.Declarations.OfType<Cs.Class>()) @class.InitializeParents();
@@ -33,28 +51,53 @@ internal sealed class Translator
         return this.targetModel;
     }
 
-    private void TranslateStructure(Ts.Structure structure)
+    private Cs.Class TranslateStructure(Ts.Structure structure)
     {
         var result = TranslateDeclaration<Cs.Class>(structure);
-        this.targetModel.Declarations.Add(result);
 
-        // TODO
+        // TODO: Bases
+        // TODO: Mixins
+        // TODO: Nested types
+
+        foreach (var prop in structure.Properties)
+        {
+            var csProp = this.TranslateProperty(result, prop);
+            result.Properties.Add(csProp);
+        }
+
+        return result;
     }
 
-    private void TranslateStructureAsInterface(Ts.Structure structure)
+    private Cs.Interface TranslateStructureAsInterface(Ts.Structure structure)
     {
-        var result = TranslateDeclaration<Cs.Interface>(structure);
-        this.targetModel.Declarations.Add(result);
+        if (this.structureInterfaces.TryGetValue(structure, out var existing)) return existing;
 
-        // TODO
+        var result = TranslateDeclaration<Cs.Interface>(structure);
+        this.structureInterfaces.Add(structure, result);
+
+        // TODO: Bases
+        // TODO: Nested types
+
+        foreach (var prop in structure.Properties)
+        {
+            var csProp = this.TranslateProperty(result, prop);
+            result.Properties.Add(csProp);
+        }
+
+        // Prefix the interface name to follow C# conventions
+        // NOTE: We do it here on purpose, to not to affect property name resolution
+        result.Name = $"I{result.Name}";
+
+        return result;
     }
 
-    private void TranslateEnumeration(Ts.Enumeration enumeration)
+    private Cs.Enum TranslateEnumeration(Ts.Enumeration enumeration)
     {
         var result = TranslateDeclaration<Cs.Enum>(enumeration);
-        this.targetModel.Declarations.Add(result);
 
         // TODO
+
+        return result;
     }
 
     private void TranslateTypeAlias(Ts.TypeAlias typeAlias)
@@ -62,12 +105,26 @@ internal sealed class Translator
         // TODO
     }
 
+    private Cs.Property TranslateProperty(Cs.Declaration parent, Ts.Property property)
+    {
+        var result = TranslateDeclaration<Cs.Property>(property);
+
+        // There can be name collisions, check for that
+        if (result.Name == parent.Name) result.Name = $"{result.Name}_";
+
+        result.SerializedName = property.Name;
+        // TODO: Temporary
+        result.Type = new Cs.BuiltinType("System.Int32");
+
+        return result;
+    }
+
     private static TDeclaration TranslateDeclaration<TDeclaration>(Ts.IDocumented source)
         where TDeclaration : Cs.Declaration, new()
     {
         var target = new TDeclaration();
 
-        if (source is Ts.IDeclaration declSource) target.Name = declSource.Name;
+        if (source is Ts.IDeclaration declSource) target.Name = Capitalize(declSource.Name);
 
         target.Documentation = source.Documentation;
         target.Deprecated = source.Deprecated;
@@ -76,4 +133,14 @@ internal sealed class Translator
 
         return target;
     }
+
+    /// <summary>
+    /// Capitalizes a word.
+    /// </summary>
+    /// <param name="word">The word to capitalize.</param>
+    /// <returns>The capitalized <paramref name="word"/>.</returns>
+    [return: NotNullIfNotNull(nameof(word))]
+    private static string? Capitalize(string? word) => word is null
+        ? null
+        : $"{char.ToUpper(word[0])}{word.Substring(1)}";
 }

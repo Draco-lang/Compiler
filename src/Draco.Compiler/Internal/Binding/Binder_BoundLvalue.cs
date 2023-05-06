@@ -21,6 +21,7 @@ internal partial class Binder
         UntypedIllegalLvalue illegal => new BoundIllegalLvalue(illegal.Syntax),
         UntypedLocalLvalue local => this.TypeLocalLvalue(local, constraints, diagnostics),
         UntypedGlobalLvalue global => this.TypeGlobalLvalue(global, constraints, diagnostics),
+        UntypedFieldLvalue field => this.TypeFieldLvalue(field, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };
 
@@ -29,4 +30,7 @@ internal partial class Binder
 
     private BoundLvalue TypeGlobalLvalue(UntypedGlobalLvalue global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalLvalue(global.Syntax, global.Global);
+
+    private BoundLvalue TypeFieldLvalue(UntypedFieldLvalue field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        new BoundFieldLvalue(field.Syntax, (BoundMemberExpression)this.TypeMemberExpression(field.MemberAccess, constraints, diagnostics));
 }

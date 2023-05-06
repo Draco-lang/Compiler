@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using static System.Formats.Asn1.AsnWriter;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;
@@ -190,11 +192,16 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
-            case ArrayAccess access:
-                this.EncodePush(access.Array);
-                foreach (var index in access.Indices) this.EncodePush(index);
+            case FieldAccess fieldAccess:
                 this.EncodePush(store.Source);
-                if (access.Indices.Length == 1)
+                this.InstructionEncoder.OpCode(ILOpCode.Stfld);
+                this.InstructionEncoder.Token(this.GetMemberReferenceHandle(fieldAccess.Member));
+                break;
+            case ArrayAccess arrayAccess:
+                this.EncodePush(arrayAccess.Array);
+                foreach (var index in arrayAccess.Indices) this.EncodePush(index);
+                this.EncodePush(store.Source);
+                if (arrayAccess.Indices.Length == 1)
                 {
                     if (store.Source.Type!.IsValueType)
                     {
@@ -329,6 +336,11 @@ internal sealed class CilCodegen
             break;
         case Parameter p:
             this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
+            break;
+        case FieldAccess f:
+            this.EncodePush(f.Reciever);
+            this.InstructionEncoder.OpCode(ILOpCode.Ldfld);
+            this.InstructionEncoder.Token(this.GetMemberReferenceHandle(f.Member));
             break;
         case Constant c:
             switch (c.Value)

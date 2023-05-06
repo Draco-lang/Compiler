@@ -214,4 +214,9 @@
   <Node Name="UntypedGlobalLvalue" Base="UntypedLvalue">
     <Field Name="Global" Type="GlobalSymbol" />
   </Node>
+
+  <Node Name="UntypedFieldLvalue" Base="UntypedLvalue">
+    <Field Name="MemberAccess" Type="UntypedMemberExpression" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
 </Tree>

@@ -183,6 +183,11 @@ internal partial class BoundGlobalLvalue
     public override TypeSymbol Type => this.Global.Type;
 }
 
+internal partial class BoundFieldLvalue
+{
+    public override TypeSymbol Type => this.MemberAccess.Type;
+}
+
 internal partial class BoundArrayAccessLvalue
 {
     public override TypeSymbol Type => ((ArrayTypeSymbol)this.Array.TypeRequired).ElementType;

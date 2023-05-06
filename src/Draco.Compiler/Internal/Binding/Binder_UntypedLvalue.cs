@@ -1,3 +1,4 @@
+using System;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -23,6 +24,7 @@ internal partial class Binder
         UnexpectedExpressionSyntax => new UntypedUnexpectedLvalue(syntax),
         GroupingExpressionSyntax group => this.BindLvalue(group.Expression, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameLvalue(name, constraints, diagnostics),
+        MemberExpressionSyntax member => this.BindMemberLvalue(member, constraints, diagnostics),
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
@@ -43,6 +45,13 @@ internal partial class Binder
             return new UntypedIllegalLvalue(syntax);
         }
         }
+    }
+
+    private UntypedLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var expr = this.BindMemberExpression(syntax, constraints, diagnostics);
+        if (expr is not UntypedMemberExpression member) throw new Exception();
+        return new UntypedFieldLvalue(syntax, member, member.MemberType);
     }
 
     private UntypedLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

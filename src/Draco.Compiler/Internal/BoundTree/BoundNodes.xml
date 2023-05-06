@@ -100,7 +100,7 @@
   </Node>
 
   <Node Name="BoundMemberExpression" Base="BoundExpression">
-    <Field Name="Receiver" Type="BoundExpression?" />
+    <Field Name="Receiver" Type="BoundExpression" />
     <Field Name="Member" Type="Symbol" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
@@ -234,6 +234,10 @@
 
   <Node Name="BoundGlobalLvalue" Base="BoundLvalue">
     <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="BoundFieldLvalue" Base="BoundLvalue">
+    <Field Name="MemberAccess" Type="BoundMemberExpression" />
   </Node>
 
   <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">

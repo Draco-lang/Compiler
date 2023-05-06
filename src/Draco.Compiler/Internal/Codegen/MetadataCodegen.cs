@@ -156,6 +156,10 @@ internal sealed class MetadataCodegen : MetadataWriter
                 this.EncodeReturnType(returnType, func.ReturnType);
                 foreach (var param in func.Parameters) this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
             })),
+        FieldSymbol field => this.AddMemberReference(
+            type: this.GetTypeReferenceHandle(field.ContainingSymbol),
+            name: field.Name,
+            signature: this.EncodeBlob(e => this.EncodeSignatureType(e.FieldSignature(), field.Type))),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 

@@ -8,8 +8,10 @@
   <BuiltinType Name="string" FullName="System.String" />
   <BuiltinType Name="integer" FullName="System.Int32" />
   <BuiltinType Name="uinteger" FullName="System.UInt32" />
+  <BuiltinType Name="decimal" FullName="System.Double" />
   <BuiltinType Name="LSPAny" FullName="Newtonsoft.Json.Linq.JToken" />
   <BuiltinType Name="unknown" FullName="Newtonsoft.Json.Linq.JToken" />
+  <BuiltinType Name="URI" FullName="System.Uri" />
   <BuiltinType Name="DocumentUri" FullName="Draco.Lsp.Model.DocumentUri" />
 
 </LspModel>

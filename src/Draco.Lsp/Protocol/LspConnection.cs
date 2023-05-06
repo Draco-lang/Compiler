@@ -50,23 +50,23 @@ public sealed class LspConnection
             ae => ae,
             new()
             {
-                // MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
+                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
             });
 
         var concurrentMessageHandler = new TransformBlock<LspMessage, LspMessage?>(
             this.ProcessRequestOrNotification,
             new()
             {
-                // TaskScheduler = scheduler.ConcurrentScheduler,
-                // MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded,
-                EnsureOrdered = false
+                TaskScheduler = scheduler.ConcurrentScheduler,
+                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded,
+                EnsureOrdered = false,
             });
 
         var exclusiveMessageHandler = new TransformBlock<LspMessage, LspMessage?>(
             this.ProcessRequestOrNotification,
             new()
             {
-                // TaskScheduler = scheduler.ExclusiveScheduler
+                TaskScheduler = scheduler.ExclusiveScheduler
             });
 
         var filterNullResponses = new TransformManyBlock<LspMessage?, LspMessage>(
@@ -74,10 +74,27 @@ public sealed class LspConnection
 
         this.outgoingMessages = new ActionBlock<LspMessage>(this.SerializeObject!);
 
-        static bool IsRequestOrNotification(LspMessage message) => message.Is<RequestMessage>() || message.Is<NotificationMessage>();
+        bool IsRequestOrNotification(LspMessage message, bool mutating)
+        {
+            if (message.Is<RequestMessage>(out var request))
+            {
+                return this.methodHandlers[request.Method].IsMutating == mutating;
+            }
+            else if (message.Is<NotificationMessage>(out var notification))
+            {
+                return this.methodHandlers[notification.Method].IsMutating == mutating;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         var propCompletion = new DataflowLinkOptions { PropagateCompletion = true };
 
-        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, IsRequestOrNotification);
+        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, m => IsRequestOrNotification(m, mutating: false));
+        this.messageParser.LinkTo(exclusiveMessageHandler, propCompletion, m => IsRequestOrNotification(m, mutating: true));
+
         concurrentMessageHandler.LinkTo(filterNullResponses, propCompletion);
         exclusiveMessageHandler.LinkTo(filterNullResponses, propCompletion);
         filterNullResponses.LinkTo(this.outgoingMessages, propCompletion);
@@ -363,7 +380,7 @@ public sealed class LspConnection
             });
         }
 
-        var (_, methodInfo, target, isRequest) = methodHandler;
+        var (_, methodInfo, target, isRequest, _) = methodHandler;
 
         if (isRequest && id == null)
         {
@@ -599,7 +616,7 @@ public sealed class LspConnection
     }
 }
 
-public sealed record RpcMethodHandler(string MethodName, MethodInfo MethodInfo, object Target, bool IsRequestHandler)
+public sealed record RpcMethodHandler(string MethodName, MethodInfo MethodInfo, object Target, bool IsRequestHandler, bool IsMutating)
 {
     internal Type? ParameterType { get; } = MethodInfo.GetParameters().FirstOrDefault()?.ParameterType;
 

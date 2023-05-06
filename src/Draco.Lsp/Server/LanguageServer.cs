@@ -82,16 +82,17 @@ public static class LanguageServer
             }
 
             var methodName = requestAttr?.Method ?? notificationAttr?.Method ?? "";
+            var mutating = requestAttr?.Mutating ?? notificationAttr?.Mutating ?? false;
 
             if (requestAttr is not null)
             {
                 // It's a request, register it
-                connection.AddRpcMethod(new(methodName, method, target, IsRequestHandler: true));
+                connection.AddRpcMethod(new(methodName, method, target, IsRequestHandler: true, mutating));
             }
             if (notificationAttr is not null)
             {
                 // It's a notification, register it
-                connection.AddRpcMethod(new(methodName, method, target, IsRequestHandler: false));
+                connection.AddRpcMethod(new(methodName, method, target, IsRequestHandler: false, mutating));
             }
         }
     }

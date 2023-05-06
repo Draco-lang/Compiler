@@ -66,6 +66,21 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
             result.Add(methodSymbol);
         }
 
+        // Fields
+        foreach (var fieldHandle in this.typeDefinition.GetFields())
+        {
+            var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
+            // Skip special name
+            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
+            // Skip non-public
+            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
+            // Add it
+            var fieldSym = new MetadataFieldSymbol(
+                containingSymbol: this,
+                fieldDefinition: fieldDef);
+            result.Add(fieldSym);
+        }
+
         // Done
         return result.ToImmutable();
     }

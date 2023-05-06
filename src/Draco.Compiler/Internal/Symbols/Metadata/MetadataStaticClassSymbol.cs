@@ -42,7 +42,6 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // TODO: nested-types
-        // TODO: static fields
         // TODO: static properties
 
         // Methods
@@ -62,7 +61,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             result.Add(methodSym);
         }
 
-        // fields
+        // Fields
         foreach (var fieldHandle in this.typeDefinition.GetFields())
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
@@ -72,10 +71,10 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Skip non-static fields
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
-            var methodSym = new MetadataFieldSymbol(
+            var fieldSym = new MetadataFieldSymbol(
                 containingSymbol: this,
                 fieldDefinition: fieldDef);
-            result.Add(methodSym);
+            result.Add(fieldSym);
         }
 
         // Done

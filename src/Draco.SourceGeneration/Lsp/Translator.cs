@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Draco.SourceGeneration.Lsp.Metamodel;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 

@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using Draco.SourceGeneration.Lsp.Metamodel;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 
@@ -48,15 +49,24 @@ internal sealed class Translator
         // Translate
         foreach (var structure in this.sourceModel.Structures)
         {
+            // Check if a builtin has overriden it already
+            if (this.translatedTypes.ContainsKey(structure.Name)) continue;
             var @class = this.TranslateStructure(structure);
             this.targetModel.Declarations.Add(@class);
         }
         foreach (var enumeration in this.sourceModel.Enumerations)
         {
+            // Check if a builtin has overriden it already
+            if (this.translatedTypes.ContainsKey(enumeration.Name)) continue;
             var @enum = this.TranslateEnumeration(enumeration);
             this.targetModel.Declarations.Add(@enum);
         }
-        foreach (var typeAlias in this.sourceModel.TypeAliases) this.TranslateTypeAlias(typeAlias);
+        foreach (var typeAlias in this.sourceModel.TypeAliases)
+        {
+            // Check if a builtin has overriden it already
+            if (this.translatedTypes.ContainsKey(typeAlias.Name)) continue;
+            this.TranslateTypeAlias(typeAlias);
+        }
 
         // Add translated interfaces
         foreach (var @interface in this.structureInterfaces.Values)

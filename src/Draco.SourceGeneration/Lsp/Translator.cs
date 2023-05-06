@@ -17,6 +17,8 @@ internal sealed class Translator
     private readonly Ts.MetaModel sourceModel;
     private readonly Cs.Model targetModel = new();
 
+    private readonly Dictionary<string, Cs.Type> translatedTypes = new();
+
     private readonly Dictionary<Ts.Structure, Cs.Class> structureClasses = new();
     private readonly Dictionary<Ts.Structure, Cs.Interface> structureInterfaces = new();
 
@@ -24,6 +26,22 @@ internal sealed class Translator
     {
         this.sourceModel = sourceModel;
     }
+
+    /// <summary>
+    /// Adds a builtin type that does not need translation anymore.
+    /// </summary>
+    /// <param name="name">The name of the type.</param>
+    /// <param name="type">The reflected type.</param>
+    public void AddBuiltinType(string name, System.Type type) =>
+        this.AddBuiltinType(name, type.FullName);
+
+    /// <summary>
+    /// Adds a builtin type that does not need translation anymore.
+    /// </summary>
+    /// <param name="name">The name of the type.</param>
+    /// <param name="fullName">The full name of the type.</param>
+    public void AddBuiltinType(string name, string fullName) =>
+        this.translatedTypes.Add(name, new Cs.BuiltinType(fullName));
 
     public Cs.Model Translate()
     {
@@ -58,6 +76,7 @@ internal sealed class Translator
 
         var result = TranslateDeclaration<Cs.Class>(structure);
         this.structureClasses.Add(structure, result);
+        this.translatedTypes.Add(structure.Name, new Cs.DeclarationType(result));
 
         foreach (var @base in structure.Extends)
         {

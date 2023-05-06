@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
-using Draco.Lsp.Protocol;
 
 namespace Draco.Lsp.Server;
 
@@ -21,7 +20,7 @@ public static class LanguageServer
     public static ILanguageClient Connect(IDuplexPipe stream)
     {
         // Create the connection
-        var jsonRpc = new LspConnection(stream);
+        var jsonRpc = new LanguageServerConnection(stream);
 
         // Generate client proxy
         var languageClient = GenerateClientProxy(jsonRpc);
@@ -57,47 +56,29 @@ public static class LanguageServer
         await connection.ListenAsync();
     }
 
-    private static void RegisterBuiltinRpcMethods(ILanguageServer server, LspConnection connection)
+    private static void RegisterBuiltinRpcMethods(ILanguageServer server, LanguageServerConnection connection)
     {
         var lifecycle = new LanguageServerLifecycle(server, connection);
         RegisterServerRpcMethods(lifecycle, connection);
     }
 
-    private static void RegisterServerRpcMethods(object target, LspConnection connection)
+    private static void RegisterServerRpcMethods(object target, LanguageServerConnection connection)
     {
         // Go through all methods of the server and register it
         // NOTE: We go through the interfaces, because interface attributes are not inherited
         var langserverMethods = target
             .GetType()
             .GetInterfaces()
-            .SelectMany(i => i.GetMethods(BindingFlags.Public | BindingFlags.Instance));
+            .SelectMany(i => i.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            .Where(m => Attribute.IsDefined(m, typeof(RequestAttribute)) || Attribute.IsDefined(m, typeof(NotificationAttribute)));
 
         foreach (var method in langserverMethods)
         {
-            var requestAttr = method.GetCustomAttribute<RequestAttribute>();
-            var notificationAttr = method.GetCustomAttribute<NotificationAttribute>();
-            if (requestAttr is not null && notificationAttr is not null)
-            {
-                throw new InvalidOperationException($"method {method.Name} can not be both a request and notification handler");
-            }
-
-            var methodName = requestAttr?.Method ?? notificationAttr?.Method ?? "";
-            var mutating = requestAttr?.Mutating ?? notificationAttr?.Mutating ?? false;
-
-            if (requestAttr is not null)
-            {
-                // It's a request, register it
-                connection.AddRpcMethod(new(methodName, method, target, IsRequestHandler: true, mutating));
-            }
-            if (notificationAttr is not null)
-            {
-                // It's a notification, register it
-                connection.AddRpcMethod(new(methodName, method, target, IsRequestHandler: false, mutating));
-            }
+            connection.AddRpcMethod(method, target);
         }
     }
 
-    private static ILanguageClient GenerateClientProxy(LspConnection connection)
+    private static ILanguageClient GenerateClientProxy(LanguageServerConnection connection)
     {
         var proxy = DispatchProxy.Create<ILanguageClient, LanguageClientProxy>();
         ((LanguageClientProxy)(object)proxy).Connection = connection;

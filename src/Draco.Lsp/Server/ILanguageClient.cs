@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
-using Draco.Lsp.Protocol;
 
 namespace Draco.Lsp.Server;
 
@@ -15,7 +14,7 @@ public interface ILanguageClient
     /// <summary>
     /// The RPC connection between the client and the server.
     /// </summary>
-    public LspConnection Connection { get; }
+    public LanguageServerConnection Connection { get; }
 
     // Language features
 

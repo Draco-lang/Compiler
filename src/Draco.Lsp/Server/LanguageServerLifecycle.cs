@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
-using Draco.Lsp.Protocol;
 
 namespace Draco.Lsp.Server;
 
@@ -17,9 +16,9 @@ namespace Draco.Lsp.Server;
 internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
 {
     private readonly ILanguageServer server;
-    private readonly LspConnection connection;
+    private readonly LanguageServerConnection connection;
 
-    public LanguageServerLifecycle(ILanguageServer server, LspConnection connection)
+    public LanguageServerLifecycle(ILanguageServer server, LanguageServerConnection connection)
     {
         this.server = server;
         this.connection = connection;
@@ -38,7 +37,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         var registrations = this.BuildDynamicRegistrations();
 
         // Then we register the collected capabilities
-        await this.connection.SendRequestAsync<object>("client/registerCapability", new RegistrationParams()
+        await this.connection.SendRequestAsync<object?>("client/registerCapability", new RegistrationParams()
         {
             Registrations = registrations,
         });

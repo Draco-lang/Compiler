@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 using Draco.Lsp.Model;
 
-namespace Draco.Lsp.Protocol.Serialization;
+namespace Draco.Lsp.Serialization;
 
 /// <summary>
 /// Converter for <see cref="DocumentUri"/>.

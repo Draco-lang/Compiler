@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Draco.Lsp.Attributes;
-using Draco.Lsp.Protocol;
 
 
 namespace Draco.Lsp.Server;
@@ -15,7 +15,8 @@ namespace Draco.Lsp.Server;
 /// </summary>
 internal class LanguageClientProxy : DispatchProxy
 {
-    internal LspConnection Connection { get; set; } = null!;
+    internal LanguageServerConnection Connection { get; set; } = null!;
+    private readonly ConcurrentDictionary<MethodInfo, LanguageServerMethodHandler> handlers = new();
 
     protected override object? Invoke(MethodInfo? method, object?[]? args)
     {
@@ -32,20 +33,13 @@ internal class LanguageClientProxy : DispatchProxy
         }
     }
 
-    private static readonly MethodInfo SendRequestMethod = typeof(LspConnection).GetMethod(nameof(LspConnection.SendRequestAsync))!;
+    private static readonly MethodInfo SendRequestMethod = typeof(LanguageServerConnection).GetMethod(nameof(LanguageServerConnection.SendRequestAsync))!;
 
     private object? ProxyRpc(MethodInfo method, object?[] arguments)
     {
-        // Check for attributes
-        var requestAttr = method.GetCustomAttribute<RequestAttribute>();
-        var notificationAttr = method.GetCustomAttribute<NotificationAttribute>();
-        if (requestAttr is not null && notificationAttr is not null)
-        {
-            throw new InvalidOperationException($"method {method.Name} can not be both a request and notification handler");
-        }
+        var handler = this.handlers.GetOrAdd(method, m => new(m, this));
 
-        // Call appropriate handler
-        if (requestAttr is not null)
+        if (handler.ProducesResponse)
         {
             // It's a request
             // Extract return type
@@ -56,22 +50,16 @@ internal class LanguageClientProxy : DispatchProxy
                 returnType = returnType.GetGenericArguments()[0];
             }
 
-            // Check for cancellation token and args
-            var (args, cancellationToken) = arguments[^1] is CancellationToken ct
-                ? (arguments.Length > 1 ? (arguments[0], ct) : (null, ct))
-                : (arguments.Length > 0 ? (arguments[0], default) : (null, default));
+            var args = handler.HasCancellation ? arguments[..^1] : arguments;
 
-            return SendRequestMethod.MakeGenericMethod(returnType).Invoke(this.Connection, new[] { requestAttr.Method, args });
+            return SendRequestMethod.MakeGenericMethod(returnType).Invoke(this.Connection, new[] { handler.MethodName, args.SingleOrDefault() });
         }
-
-        if (notificationAttr is not null)
+        else
         {
             // It's a notification
             var args = arguments.FirstOrDefault();
-            this.Connection.PostNotification(notificationAttr.Method, args);
+            this.Connection.PostNotification(handler.MethodName, args);
             return Task.CompletedTask;
         }
-
-        return null;
     }
 }

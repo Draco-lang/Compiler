@@ -1,6 +1,6 @@
 using System;
 using System.Text.Json.Serialization;
-using Draco.Lsp.Protocol.Serialization;
+using Draco.Lsp.Serialization;
 
 namespace Draco.Lsp.Model;
 

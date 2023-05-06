@@ -9,7 +9,7 @@ using System.Text.Json.Serialization.Metadata;
 
 using Draco.Lsp.Model;
 
-namespace Draco.Lsp.Protocol.Serialization;
+namespace Draco.Lsp.Serialization;
 
 /// <summary>
 /// Provides JSON serialization for the <see cref="IOneOf"/> types.
@@ -128,7 +128,7 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
             var tupleVariant = oneOfType
                 .GetGenericArguments()
                 .Single(t => t.IsAssignableTo(typeof(ITuple)));
-            return (TOneOf?)Activator.CreateInstance(oneOfType, JsonSerializer.Deserialize(array, tupleVariant, options));
+            return (TOneOf?)Activator.CreateInstance(oneOfType, array.Deserialize(tupleVariant, options));
         }
 
 
@@ -145,7 +145,7 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
             if (discriminate) continue;
 
             // This alternative matches, use it
-            var alt = JsonSerializer.Deserialize(obj, altType, options);
+            var alt = obj.Deserialize(altType, options);
 
             // Wrap it up in the one-of
             return (TOneOf?)Activator.CreateInstance(oneOfType, alt);

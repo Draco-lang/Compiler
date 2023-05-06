@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Draco.Lsp.Protocol.Serialization;
+using Draco.Lsp.Serialization;
 
 namespace Draco.Lsp.Model;
 

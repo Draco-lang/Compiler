@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Draco.Lsp.Protocol.Serialization;
+namespace Draco.Lsp.Serialization;
 
 /// <summary>
 /// Serializes tuples into JSON arrays and back.

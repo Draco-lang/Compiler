@@ -4,7 +4,6 @@ using System.Buffers.Text;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
@@ -14,15 +13,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Draco.Lsp.Model;
-
+using Draco.Lsp.Serialization;
 using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RequestMessage, Draco.Lsp.Model.NotificationMessage, Draco.Lsp.Model.ResponseMessage>;
 
-namespace Draco.Lsp.Protocol;
+namespace Draco.Lsp.Server;
 
-public sealed class LspConnection
+public sealed class LanguageServerConnection
 {
     private readonly IDuplexPipe transport;
-    private readonly Dictionary<string, RpcMethodHandler> methodHandlers = new();
+    private readonly Dictionary<string, LanguageServerMethodHandler> methodHandlers = new();
 
     private readonly TransformManyBlock<IAsyncEnumerable<LspMessage>, LspMessage> messageParser;
     private readonly ActionBlock<LspMessage> outgoingMessages;
@@ -37,10 +36,11 @@ public sealed class LspConnection
         TypeInfoResolver = new DefaultJsonTypeInfoResolver
         {
             Modifiers = { AddResponseMessageContract }
-        }
+        },
+        Converters = { new TupleConverter() }
     };
 
-    public LspConnection(IDuplexPipe pipeTransport)
+    public LanguageServerConnection(IDuplexPipe pipeTransport)
     {
         this.transport = pipeTransport;
 
@@ -74,26 +74,35 @@ public sealed class LspConnection
 
         this.outgoingMessages = new ActionBlock<LspMessage>(this.SerializeObject!);
 
-        bool IsRequestOrNotification(LspMessage message, bool mutating)
+        bool ShouldHandle(LspMessage message, bool mutating)
         {
+            string method;
             if (message.Is<RequestMessage>(out var request))
             {
-                return this.methodHandlers[request.Method].IsMutating == mutating;
+                method = request.Method;
             }
             else if (message.Is<NotificationMessage>(out var notification))
             {
-                return this.methodHandlers[notification.Method].IsMutating == mutating;
+                method = notification.Method;
             }
             else
             {
                 return false;
             }
+
+            if (this.methodHandlers.TryGetValue(method, out var handler))
+            {
+                return mutating == handler.Mutating;
+            }
+
+            // Handle in the concurrent block.
+            return mutating == false;
         }
 
         var propCompletion = new DataflowLinkOptions { PropagateCompletion = true };
 
-        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, m => IsRequestOrNotification(m, mutating: false));
-        this.messageParser.LinkTo(exclusiveMessageHandler, propCompletion, m => IsRequestOrNotification(m, mutating: true));
+        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, m => ShouldHandle(m, mutating: false));
+        this.messageParser.LinkTo(exclusiveMessageHandler, propCompletion, m => ShouldHandle(m, mutating: true));
 
         concurrentMessageHandler.LinkTo(filterNullResponses, propCompletion);
         exclusiveMessageHandler.LinkTo(filterNullResponses, propCompletion);
@@ -101,23 +110,6 @@ public sealed class LspConnection
 
         this.messageParser.Completion.ContinueWith(t => this.transport.Input.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
         this.outgoingMessages.Completion.ContinueWith(t => this.transport.Output.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
-    }
-
-    public LspConnection(Stream streamTransport) : this(new StreamDuplexPipe(streamTransport))
-    {
-    }
-
-    private sealed class StreamDuplexPipe : IDuplexPipe
-    {
-        public StreamDuplexPipe(Stream transport)
-        {
-            this.Input = PipeReader.Create(transport);
-            this.Output = PipeWriter.Create(transport);
-        }
-
-        public PipeReader Input { get; }
-
-        public PipeWriter Output { get; }
     }
 
     private static void AddResponseMessageContract(JsonTypeInfo typeInfo)
@@ -136,39 +128,15 @@ public sealed class LspConnection
         }
     }
 
-    public void AddRpcMethod(RpcMethodHandler handler)
+    public void AddRpcMethod(MethodInfo handlerMethod, object? target)
     {
-        var @params = handler.MethodInfo.GetParameters();
-
-        if (@params.Length > 2)
-        {
-            throw new ArgumentException("Handling method has too many parameters.", nameof(handler));
-        }
-
-        var cancellationCount = @params.Count(p => p.ParameterType == typeof(CancellationToken));
-        if (cancellationCount > 1)
-        {
-            throw new ArgumentException("Handling method can have at most one CancellationToken parameter.", nameof(handler));
-        }
-
-        var hasCancellation = cancellationCount > 0;
-        if (@params.Length > 1 && !hasCancellation)
-        {
-            throw new ArgumentException("Handling method can have at most one non-CancellationToken parameter.", nameof(handler));
-        }
-
-        if (!handler.IsRequestHandler && hasCancellation)
-        {
-            // A handler cannot be cancelled.
-            // TODO-LSP: Should we do something?
-        }
-
+        var handler = new LanguageServerMethodHandler(handlerMethod, target);
         this.methodHandlers.Add(handler.MethodName, handler);
     }
 
     public Task ListenAsync()
     {
-        System.Diagnostics.Debugger.Launch();
+        Debugger.Launch();
         this.messageParser.Post(this.ReadLspMessages());
         this.messageParser.Complete();
         return this.outgoingMessages.Completion;
@@ -320,9 +288,11 @@ public sealed class LspConnection
         var result = await writer.FlushAsync();
         if (result.IsCompleted)
         {
-            // ?
+            this.outgoingMessages.Complete();
         }
     }
+
+    private static readonly MethodInfo taskGetResult = typeof(Task<>).GetMethod("get_Result")!;
 
     private async Task<LspMessage?> ProcessRequestOrNotification(LspMessage message)
     {
@@ -362,7 +332,7 @@ public sealed class LspConnection
             return null;
         }
 
-        if (!this.methodHandlers.TryGetValue(method, out var methodHandler))
+        if (!this.methodHandlers.TryGetValue(method, out var handler))
         {
             return Error(new()
             {
@@ -380,18 +350,14 @@ public sealed class LspConnection
             });
         }
 
-        var (_, methodInfo, target, isRequest, _) = methodHandler;
-
-        if (isRequest && id == null)
+        if (handler.ProducesResponse && id == null)
         {
-            // The client sent a message without an id, but the method was marked as a request
-            // in the managed metadata. Something isn't right.
+            // The client sent a notification, but we have a request handler for this method.
             return null;
         }
-        else if (id != null && !isRequest)
+        else if (!handler.ProducesResponse && id != null)
         {
-            // The client sent a message with an id, but the method was marked as a notification
-            // in the managed metadata. We need to respond with something.
+            // The client sent a request, but we have a notification handler for this method.
             return Error(new()
             {
                 Code = -32603, // InternalError
@@ -401,63 +367,79 @@ public sealed class LspConnection
 
         var args = new List<object?>();
 
-        if (@params.HasValue)
+        if (handler.DeclaredParamsType != null)
         {
-            try
+            if (@params.HasValue)
             {
-                var element = @params.Value;
-                args.Add(JsonSerializer.Deserialize(element, methodHandler.ParameterType!, jsonOptions));
+                try
+                {
+                    args.Add(@params.Value.Deserialize(handler.DeclaredParamsType!, jsonOptions));
+                }
+                catch (JsonException ex)
+                {
+                    var responseError = new ResponseError
+                    {
+                        Message = ex.Message,
+                        Data = JsonSerializer.SerializeToElement(ex.ToString())
+                    };
+
+                    if (ex.BytePositionInLine.HasValue)
+                    {
+                        // Typically, only exceptions from Utf8JsonReader have the position info set.
+                        // So, we assume this is a parse error, and other errors are serialization errors.
+                        responseError.Code = -32700; // ParseError
+                    }
+                    else
+                    {
+                        responseError.Code = -32602; // InvalidParams
+                    }
+
+                    return Error(responseError);
+                }
             }
-            catch (JsonException ex)
+            else
             {
-                var responseError = new ResponseError
-                {
-                    Message = ex.Message,
-                    Data = JsonSerializer.SerializeToElement(ex.ToString())
-                };
-
-                if (ex.BytePositionInLine.HasValue)
-                {
-                    // Typically, only exceptions from Utf8JsonReader have the position info set.
-                    // So, we assume this is a parse error, and other errors are serialization errors.
-                    responseError.Code = -32700; // ParseError
-                }
-                else
-                {
-                    responseError.Code = -32602; // InvalidParams
-                }
-
-                return Error(responseError);
+                args.Add(null);
             }
         }
 
-        var cancellationToken = CancellationToken.None;
-
-        if (isRequest)
+        if (handler.HasCancellation)
         {
-            var cts = new CancellationTokenSource();
-            this.pendingIncomingRequests.TryAdd(id!.Value, cts);
-            cancellationToken = cts.Token;
-        }
+            var token = CancellationToken.None;
 
-        var index = methodHandler.CancellationTokenParameterIndex;
-        if (index != -1)
-        {
-            args.Insert(index, cancellationToken);
+            if (id != null)
+            {
+                var cts = new CancellationTokenSource();
+                this.pendingIncomingRequests.TryAdd(id.Value, cts);
+                token = cts.Token;
+            }
+
+            args.Add(token);
+
         }
 
         OneOf<object?, Exception> response;
         try
         {
-            var returnValue = methodInfo.Invoke(target, args.ToArray());
-            response = await GetReturnValueToSerialize(returnValue, methodInfo.ReturnType);
+            var returnValue = (Task?)handler.HandlerMethod.Invoke(handler.Target, args.ToArray());
+            await returnValue!;
+
+            if (handler.DeclaredReturnType == typeof(Task))
+            {
+                response = (object?)null;
+            }
+            else
+            {
+                var getResult = (MethodInfo)returnValue.GetType().GetMemberWithSameMetadataDefinitionAs(taskGetResult);
+                response = getResult.Invoke(returnValue, null);
+            }
         }
         catch (Exception ex)
         {
             response = ex;
         }
 
-        if (id != null)
+        if (handler.ProducesResponse)
         {
             OneOf<object?, ResponseError> serializableResponse;
             if (response.Is<Exception>(out var error))
@@ -485,7 +467,7 @@ public sealed class LspConnection
                 serializableResponse = response.As<object?>();
             }
 
-            return CreateResponseMessage(id.Value, serializableResponse);
+            return CreateResponseMessage(id!.Value, serializableResponse);
         }
 
         return null;
@@ -529,30 +511,6 @@ public sealed class LspConnection
         }
 
         return null;
-    }
-
-    private static readonly MethodInfo taskGetResult = typeof(Task<>).GetMethod("get_Result")!;
-
-    private static async Task<object?> GetReturnValueToSerialize(object? returnValue, Type declaredReturnType)
-    {
-        var result = returnValue;
-
-        if (returnValue is Task task)
-        {
-            await task;
-
-            if (declaredReturnType == typeof(Task))
-            {
-                result = null;
-            }
-            else if (declaredReturnType.GetGenericTypeDefinition() == typeof(Task<>))
-            {
-                var getResult = (MethodInfo)task.GetType().GetMemberWithSameMetadataDefinitionAs(taskGetResult);
-                result = getResult.Invoke(task, null);
-            }
-        }
-
-        return result;
     }
 
     public void PostNotification(string method, object? @params)
@@ -614,13 +572,6 @@ public sealed class LspConnection
     {
         this.shutdownTokenSource.Cancel();
     }
-}
-
-public sealed record RpcMethodHandler(string MethodName, MethodInfo MethodInfo, object Target, bool IsRequestHandler, bool IsMutating)
-{
-    internal Type? ParameterType { get; } = MethodInfo.GetParameters().FirstOrDefault()?.ParameterType;
-
-    internal int CancellationTokenParameterIndex { get; } = Array.FindIndex(MethodInfo.GetParameters(), a => a.ParameterType == typeof(CancellationToken));
 }
 
 public sealed class LspResponseException : Exception

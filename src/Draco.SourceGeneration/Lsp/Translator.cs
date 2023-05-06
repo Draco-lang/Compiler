@@ -85,6 +85,12 @@ internal sealed class Translator
             .Concat(allMixinProps)
             .Concat(structure.Properties);
 
+        // We deduplicate the properties, only keeping the last occurrence, so
+        // mixin takes priority over interface ans structure takes priority over mixin
+        allProps = allProps
+            .GroupBy(p => p.Name)
+            .Select(g => g.Last());
+
         foreach (var prop in allProps)
         {
             var csProp = this.TranslateProperty(result, prop);

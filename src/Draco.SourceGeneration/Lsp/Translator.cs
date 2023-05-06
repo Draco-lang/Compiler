@@ -41,7 +41,6 @@ internal sealed class Translator
     public void AddBuiltinType(string name, string fullName) =>
         this.translatedTypes.Add(name, new Cs.BuiltinType(fullName));
 
-    // TODO: If we are referencing a structure that could have an interface, return that instead
     public Cs.Type TranslateTypeByName(string name)
     {
         if (this.translatedTypes.TryGetValue(name, out var translated)) return translated;
@@ -49,15 +48,19 @@ internal sealed class Translator
         var structure = this.sourceModel.Structures.FirstOrDefault(s => s.Name == name);
         if (structure is not null)
         {
-            this.TranslateStructure(structure);
-            return this.translatedTypes[name];
+            // If the structure is used as a base type for other types, we return the interface to be referenced instead
+            var usedAsInterface = this.sourceModel.Structures
+                .Any(s => s.Extends.OfType<Ts.NamedType>().Any(t => t.Name == name));
+
+            return usedAsInterface
+                ? new Cs.DeclarationType(this.TranslateStructureAsInterface(structure))
+                : this.TranslateStructure(structure);
         }
 
         var enumeration = this.sourceModel.Enumerations.FirstOrDefault(s => s.Name == name);
         if (enumeration is not null)
         {
-            this.TranslateEnumeration(enumeration);
-            return this.translatedTypes[name];
+            return this.TranslateEnumeration(enumeration);
         }
 
         var alias = this.sourceModel.TypeAliases.FirstOrDefault(s => s.Name == name);
@@ -67,7 +70,7 @@ internal sealed class Translator
             return this.translatedTypes[name];
         }
 
-        // TODO
+        // Marker for unresolved types
         return new Cs.BuiltinType($"NOT_FOUND<{name}>");
     }
 
@@ -110,8 +113,6 @@ internal sealed class Translator
             var @interface = this.TranslateBaseType(@base);
             result.Interfaces.Add(@interface);
         }
-
-        // TODO: Nested types
 
         // The properties will be an aggregation of
         //  - implemented interface properties (transitive closure)

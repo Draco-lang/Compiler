@@ -470,9 +470,6 @@ internal sealed class Translator
                 }
                 else
                 {
-                    // We need to compare
-                    // Types must equal
-                    if (!Equals(field.Type, existing.Type)) throw new InvalidOperationException();
                     // Check, if nullability is looser
                     // If so, replace
                     if (field.IsOptional && !existing.IsOptional) newFields[field.Name] = field;

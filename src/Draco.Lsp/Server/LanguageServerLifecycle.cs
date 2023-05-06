@@ -47,9 +47,10 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         await this.server.InitializedAsync(param);
     }
 
-    public async Task ExitAsync()
+    public Task ExitAsync()
     {
-        await this.connection.DisposeAsync();
+        this.connection.Shutdown();
+        return Task.CompletedTask;
     }
 
     private ServerCapabilities BuildServerCapabilities()

@@ -19,13 +19,15 @@ using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RequestMessage, Draco.L
 
 namespace Draco.Lsp.Protocol;
 
-public sealed class LspConnection : IAsyncDisposable
+public sealed class LspConnection
 {
     private readonly IDuplexPipe transport;
     private readonly Dictionary<string, RpcMethodHandler> methodHandlers = new();
 
     private readonly TransformManyBlock<IAsyncEnumerable<LspMessage>, LspMessage> messageParser;
     private readonly ActionBlock<LspMessage> outgoingMessages;
+
+    private readonly CancellationTokenSource shutdownTokenSource = new();
 
     private int lastMessageId = 0;
     private readonly ConcurrentDictionary<OneOf<int, string>, CancellationTokenSource> pendingIncomingRequests = new();
@@ -42,12 +44,14 @@ public sealed class LspConnection : IAsyncDisposable
     {
         this.transport = pipeTransport;
 
-        this.messageParser = new TransformManyBlock<IAsyncEnumerable<LspMessage>, LspMessage>(ae => ae, new()
-        {
-            // MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
-        });
-
         var scheduler = new ConcurrentExclusiveSchedulerPair();
+
+        this.messageParser = new TransformManyBlock<IAsyncEnumerable<LspMessage>, LspMessage>(
+            ae => ae,
+            new()
+            {
+                // MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
+            });
 
         var concurrentMessageHandler = new TransformBlock<LspMessage, LspMessage?>(
             this.ProcessRequestOrNotification,
@@ -65,19 +69,21 @@ public sealed class LspConnection : IAsyncDisposable
                 // TaskScheduler = scheduler.ExclusiveScheduler
             });
 
-        var filterNullResponses = new TransformManyBlock<LspMessage?, LspMessage>(m => m.HasValue ? new[] { m.Value } : Enumerable.Empty<LspMessage>());
+        var filterNullResponses = new TransformManyBlock<LspMessage?, LspMessage>(
+            m => m.HasValue ? new[] { m.Value } : Enumerable.Empty<LspMessage>());
 
         this.outgoingMessages = new ActionBlock<LspMessage>(this.SerializeObject!);
 
         static bool IsRequestOrNotification(LspMessage message) => message.Is<RequestMessage>() || message.Is<NotificationMessage>();
-
         var propCompletion = new DataflowLinkOptions { PropagateCompletion = true };
-        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, IsRequestOrNotification);
 
+        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, IsRequestOrNotification);
         concurrentMessageHandler.LinkTo(filterNullResponses, propCompletion);
         exclusiveMessageHandler.LinkTo(filterNullResponses, propCompletion);
-
         filterNullResponses.LinkTo(this.outgoingMessages, propCompletion);
+
+        this.messageParser.Completion.ContinueWith(t => this.transport.Input.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
+        this.outgoingMessages.Completion.ContinueWith(t => this.transport.Output.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
     }
 
     public LspConnection(Stream streamTransport) : this(new StreamDuplexPipe(streamTransport))
@@ -153,9 +159,28 @@ public sealed class LspConnection : IAsyncDisposable
 
     private async IAsyncEnumerable<LspMessage> ReadLspMessages()
     {
-        while (await this.ReadLspMessage() is LspMessage message)
+        while (true)
         {
-            yield return message;
+            LspMessage? message;
+
+            try
+            {
+                message = await this.ReadLspMessage().WaitAsync(this.shutdownTokenSource.Token);
+            }
+            catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
+            {
+                // If Shutdown is called, we do not want the dataflow network to end in a faulted state.
+                break;
+            }
+
+            if (message != null)
+            {
+                yield return message.Value;
+            }
+            else
+            {
+                break;
+            }
         }
     }
 
@@ -408,7 +433,7 @@ public sealed class LspConnection : IAsyncDisposable
         try
         {
             var returnValue = methodInfo.Invoke(target, args.ToArray());
-            response = await GetReturnValueToSerialize(returnValue);
+            response = await GetReturnValueToSerialize(returnValue, methodInfo.ReturnType);
         }
         catch (Exception ex)
         {
@@ -491,22 +516,23 @@ public sealed class LspConnection : IAsyncDisposable
 
     private static readonly MethodInfo taskGetResult = typeof(Task<>).GetMethod("get_Result")!;
 
-    private static async Task<object?> GetReturnValueToSerialize(object? returnValue)
+    private static async Task<object?> GetReturnValueToSerialize(object? returnValue, Type declaredReturnType)
     {
-        object? result = null;
+        var result = returnValue;
+
         if (returnValue is Task task)
         {
             await task;
 
-            if (task.GetType().GetGenericTypeDefinition() == typeof(Task<>))
+            if (declaredReturnType == typeof(Task))
+            {
+                result = null;
+            }
+            else if (declaredReturnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
                 var getResult = (MethodInfo)task.GetType().GetMemberWithSameMetadataDefinitionAs(taskGetResult);
                 result = getResult.Invoke(task, null);
             }
-        }
-        else
-        {
-            result = returnValue;
         }
 
         return result;
@@ -543,15 +569,18 @@ public sealed class LspConnection : IAsyncDisposable
         using (this.messageParser.LinkTo(block, new() { MaxMessages = 1 }, IsThisResponse))
         {
             var responseMessage = (await block.ReceiveAsync()).As<ResponseMessage>();
+
+            if (this.pendingIncomingRequests.Remove(id, out var cts))
+            {
+                cts.Dispose();
+            }
+
             if (responseMessage.Error is { } error)
             {
                 throw new LspResponseException(error);
             }
-            else
-            {
-                response = responseMessage.Result!.GetValueOrDefault();
-            }
 
+            response = responseMessage.Result!.GetValueOrDefault();
         };
 
         if (response.ValueKind == JsonValueKind.Undefined)
@@ -564,10 +593,9 @@ public sealed class LspConnection : IAsyncDisposable
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public void Shutdown()
     {
-        this.messageParser.Complete();
-        await this.outgoingMessages.Completion;
+        this.shutdownTokenSource.Cancel();
     }
 }
 

@@ -41,6 +41,11 @@ internal sealed class Translator
     public void AddBuiltinType(string name, string fullName) =>
         this.translatedTypes.Add(name, new Cs.BuiltinType(fullName));
 
+    /// <summary>
+    /// Translates the given type by name.
+    /// </summary>
+    /// <param name="name">The name of the type to translate.</param>
+    /// <returns>The translated C# type reference.</returns>
     public Cs.Type TranslateTypeByName(string name)
     {
         if (this.translatedTypes.TryGetValue(name, out var translated)) return translated;
@@ -74,6 +79,10 @@ internal sealed class Translator
         return new Cs.BuiltinType($"NOT_FOUND<{name}>");
     }
 
+    /// <summary>
+    /// Translated the source model to a C# model.
+    /// </summary>
+    /// <returns>The translated C# model.</returns>
     public Cs.Model Translate()
     {
         // Translate

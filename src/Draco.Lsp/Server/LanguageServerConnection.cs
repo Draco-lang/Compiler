@@ -8,7 +8,6 @@ using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -34,10 +33,6 @@ public sealed class LanguageServerConnection
 
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
-        TypeInfoResolver = new DefaultJsonTypeInfoResolver
-        {
-            Modifiers = { AddResponseMessageContract }
-        },
         Converters = { new TupleConverter() }
     };
 
@@ -45,8 +40,12 @@ public sealed class LanguageServerConnection
     {
         this.transport = pipeTransport;
 
+        // We create a dataflow network to handle the processing of messages from the LSP client.
+
         var scheduler = new ConcurrentExclusiveSchedulerPair();
 
+        // When the server is started, we post DeserializeFromTransport() to this block.
+        // This will start deserializing messages from the client and pushing them through the dataflow network. 
         this.messageParser = new TransformManyBlock<IAsyncEnumerable<LspMessage>, LspMessage>(
             ae => ae,
             new()
@@ -54,6 +53,16 @@ public sealed class LanguageServerConnection
                 MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
             });
 
+        // Requests and notifications are sent to one of two blocks, the concurrent block or the exclusive block, based on whether the request processing
+        // is expected to mutate the state of the workspace. These blocks are configured using ConcurrentExclusiveSchedulerPair so that messages sent
+        // to the exclusive block are processed one at a time, in order, and never simultaneously with messages sent to the concurrent block. The concurrent block
+        // block will accept and process messages in parallel as long as no mutating messages are waiting to be processed.
+        // This allows us to use parallel processing for non-mutating ("query") requests while ensuring that mutating requests are processed in the order that the
+        // client sends them.
+        //
+        // (There are likely still race conditions that can lead to messages being processed in the wrong order, but someone would need
+        // to study the code in TPL Dataflow to work out all the edge cases. However, it's clear that the current situation is better than allowing all requests
+        // to execute in parallel, which corrupts the state of the language server very quickly.)
         var concurrentMessageHandler = new TransformBlock<LspMessage, LspMessage?>(
             this.ProcessRequestOrNotification,
             new()
@@ -68,8 +77,11 @@ public sealed class LanguageServerConnection
             new()
             {
                 TaskScheduler = scheduler.ExclusiveScheduler
+                // By default, blocks execute messages in order and with no parallelism.
             });
 
+        // ProcessRequestOrNotification returns a non-null result when a response message needs to be sent back to the client.
+        // We keep only non-null responses and forward them to SerializeToTransport, which will serialize each LspMessage object it consumes to the output stream.
         var filterNullResponses = new TransformManyBlock<LspMessage?, LspMessage>(
             m => m.HasValue ? new[] { m.Value } : Enumerable.Empty<LspMessage>());
 
@@ -109,24 +121,9 @@ public sealed class LanguageServerConnection
         exclusiveMessageHandler.LinkTo(filterNullResponses, propCompletion);
         filterNullResponses.LinkTo(this.outgoingMessages, propCompletion);
 
+        // Complete the transport streams when the dataflow networks are themselves completed.
         this.messageParser.Completion.ContinueWith(t => this.transport.Input.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
         this.outgoingMessages.Completion.ContinueWith(t => this.transport.Output.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
-    }
-
-    private static void AddResponseMessageContract(JsonTypeInfo typeInfo)
-    {
-        if (typeInfo.Type == typeof(ResponseMessage))
-        {
-            var resultProperty = typeInfo.Properties.Single(p => p.Name == "result");
-
-            resultProperty.ShouldSerialize = (responseObject, _) =>
-            {
-                var response = (ResponseMessage)responseObject;
-                // The result property MUST only appear on the object if the request was successful
-                // (in which case, the error property MUST be null).
-                return response.Error == null;
-            };
-        }
     }
 
     public void AddRpcMethod(MethodInfo handlerMethod, object? target)
@@ -150,6 +147,8 @@ public sealed class LanguageServerConnection
 
             try
             {
+                // We don't pass the CancellationToken all the way down to PipeReader because it has no effect
+                // on standard I/O (the I/O itself cannot be canceled).    
                 message = await this.ReadLspMessage().WaitAsync(this.shutdownTokenSource.Token);
             }
             catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
@@ -186,7 +185,7 @@ public sealed class LanguageServerConnection
             var result = await reader.ReadAsync();
             var buffer = result.Buffer;
 
-            var foundJson = this.TryParseMessage(ref buffer, ref contentLength, out var message);
+            var foundJson = TryParseMessage(ref buffer, ref contentLength, out var message);
 
             if (result.IsCompleted || result.IsCanceled)
             {
@@ -210,7 +209,7 @@ public sealed class LanguageServerConnection
         return null;
     }
 
-    private bool TryParseMessage(ref ReadOnlySequence<byte> buffer, ref int contentLength, out LspMessage message)
+    private static bool TryParseMessage(ref ReadOnlySequence<byte> buffer, ref int contentLength, out LspMessage message)
     {
         var reader = new SequenceReader<byte>(buffer);
 
@@ -218,8 +217,7 @@ public sealed class LanguageServerConnection
         {
             if (header.IsEmpty)
             {
-                // We've just scanned past the final header, and we're now ready to
-                // read the JSON payload.
+                // We've just scanned past the final header. We're now ready to read the JSON payload.
                 if (reader.TryReadExact(contentLength, out var utf8Json))
                 {
                     buffer = buffer.Slice(reader.Position, reader.Position);
@@ -230,8 +228,8 @@ public sealed class LanguageServerConnection
                 }
                 else
                 {
-                    // Keep the \r\n right before the JSON payload.
-                    // Otherwise, we'll never enter this loop again.
+                    // We couldn't read the full JSON payload, so we'll come back here when more data is available.
+                    // Keep the \r\n right before the JSON payload. Otherwise, we'll never enter this loop again.
                     reader.Rewind(2);
                     buffer = buffer.Slice(reader.Position);
                     break;
@@ -274,7 +272,7 @@ public sealed class LanguageServerConnection
             var TwoNewLines = "\r\n\r\n"u8;
 
             var written = 0;
-            var responseBuffer = writer.GetSpan(response.Length + ContentLengthHeader.Length + 16);
+            var responseBuffer = writer.GetSpan(response.Length + ContentLengthHeader.Length + 14); // 14 UTF-8 bytes can encode any integer and 4 newlines
 
             ContentLengthHeader.CopyTo(responseBuffer);
             written += ContentLengthHeader.Length;
@@ -331,6 +329,7 @@ public sealed class LanguageServerConnection
 
         LspMessage? Error(ResponseError error)
         {
+            // We can't respond to a notification, even if we hit an error.
             if (id != null)
             {
                 return CreateResponseMessage(id.Value, error);
@@ -348,6 +347,7 @@ public sealed class LanguageServerConnection
             });
         }
 
+        // If the params value exists, it must be an object or an array or the message is malformed JSON-RPC.
         if (@params is JsonElement { ValueKind: not (JsonValueKind.Object or JsonValueKind.Array) })
         {
             return Error(new()
@@ -372,14 +372,16 @@ public sealed class LanguageServerConnection
             });
         }
 
+        // Build the arguments we'll use when invoking the handler. The handler may take the deserialized params object
+        // and/or a CancellationToken as arguments.
         var args = new List<object?>();
-        if (handler.DeclaredParamsType != null)
+        if (handler.HasParams)
         {
             if (@params.HasValue)
             {
                 try
                 {
-                    args.Add(@params.Value.Deserialize(handler.DeclaredParamsType!, jsonOptions));
+                    args.Add(@params.Value.Deserialize(handler.DeclaredParamsType, jsonOptions));
                 }
                 catch (JsonException ex)
                 {
@@ -392,17 +394,20 @@ public sealed class LanguageServerConnection
             }
         }
 
+        CancellationTokenSource? cts = null;
         if (handler.HasCancellation)
         {
             var token = CancellationToken.None;
 
-            if (id != null)
+            if (handler.ProducesResponse)
             {
-                var cts = new CancellationTokenSource();
-                this.pendingIncomingRequests.TryAdd(id.Value, cts);
+                // Only requests can be canceled, so we don't need to create a CancellationTokenSource for a notification.
+                cts = new CancellationTokenSource();
+                this.pendingIncomingRequests.TryAdd(id!.Value, cts);
                 token = cts.Token;
             }
 
+            // If the handler takes a CancellationToken, it is always the last argument.
             args.Add(token);
 
         }
@@ -410,6 +415,8 @@ public sealed class LanguageServerConnection
         OneOf<object?, Exception> result;
         try
         {
+            // Invoke the handler. Handlers always return a Task or Task<T>, so we await the returned task and extract its result if there is one.
+            // We'll later serialize the result and send it back to the client as a response.
             var returnValue = (Task?)handler.HandlerMethod.Invoke(handler.Target, args.ToArray());
             await returnValue!;
 
@@ -428,11 +435,19 @@ public sealed class LanguageServerConnection
             result = ex;
         }
 
+        // If we created a CancellationTokenSource for this request, we need to remove it from the dictionary and dispose it
+        if (cts != null)
+        {
+            this.pendingIncomingRequests.Remove(id!.Value, out _);
+            cts.Dispose();
+        }
+
         if (handler.ProducesResponse)
         {
-            OneOf<object?, ResponseError> response;
+            OneOf<object?, ResponseError> serializableResponse;
             if (result.Is<Exception>(out var error))
             {
+                // Unwrap exceptions from the reflection invoke
                 if (error is TargetInvocationException)
                 {
                     error = error.InnerException;
@@ -444,21 +459,22 @@ public sealed class LanguageServerConnection
                     _ => -32603 // InternalError
                 };
 
-                response = new ResponseError
+                serializableResponse = new ResponseError
                 {
-                    Message = error?.Message ?? "",
+                    Message = error?.Message ?? "Internal error while processing request.",
                     Code = errorCode,
                     Data = JsonSerializer.SerializeToElement(error?.ToString())
                 };
             }
             else
             {
-                response = result.As<object?>();
+                serializableResponse = result.As<object?>();
             }
 
-            return CreateResponseMessage(id!.Value, response);
+            return CreateResponseMessage(id!.Value, serializableResponse);
         }
 
+        // No response
         return null;
     }
 
@@ -547,6 +563,9 @@ public sealed class LanguageServerConnection
         JsonElement response;
         var block = new WriteOnceBlock<LspMessage>(null);
 
+        // Response messages are not handled by the dataflow blocks built in LanguageServerConnection's constructor. Instead, when we send a request to the client,
+        // we create a new block that will only consume a response message with the same ID we used for the request. The block is removed from the network after
+        // the response is received.
         bool IsThisResponse(LspMessage m) => m.Is<ResponseMessage>(out var r) && r.Id?.As<int>() == id;
         using (this.messageParser.LinkTo(block, new() { MaxMessages = 1 }, IsThisResponse))
         {
@@ -562,17 +581,10 @@ public sealed class LanguageServerConnection
                 throw new LspResponseException(error);
             }
 
-            response = responseMessage.Result!.GetValueOrDefault();
+            response = responseMessage.Result;
         };
 
-        if (response.ValueKind == JsonValueKind.Undefined)
-        {
-            return default;
-        }
-        else
-        {
-            return response.Deserialize<TResponse>(jsonOptions);
-        }
+        return response.Deserialize<TResponse>(jsonOptions);
     }
 
     public void Shutdown()

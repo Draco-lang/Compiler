@@ -14,7 +14,8 @@ internal sealed class ResponseMessage
     public required OneOf<int, string>? Id { get; set; }
 
     [JsonPropertyName("result")]
-    public JsonElement? Result { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public JsonElement Result { get; set; }
 
     [JsonPropertyName("error")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

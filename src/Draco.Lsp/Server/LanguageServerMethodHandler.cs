@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,6 +92,8 @@ internal sealed class LanguageServerMethodHandler
     internal string MethodName { get; }
     internal bool ProducesResponse { get; }
     internal bool HasCancellation { get; }
+    [MemberNotNullWhen(true, nameof(DeclaredParamsType))]
+    internal bool HasParams => this.DeclaredParamsType != null;
     internal bool Mutating { get; }
 
     internal Type? DeclaredParamsType { get; }

@@ -15,7 +15,7 @@ using System.Threading.Tasks.Dataflow;
 using Draco.Lsp.Model;
 using Draco.Lsp.Serialization;
 
-using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Serialization.RequestMessage, Draco.Lsp.Serialization.NotificationMessage, Draco.Lsp.Serialization.ResponseMessage>;
+using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RequestMessage, Draco.Lsp.Model.NotificationMessage, Draco.Lsp.Model.ResponseMessage>;
 
 namespace Draco.Lsp.Server;
 

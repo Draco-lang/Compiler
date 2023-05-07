@@ -1,13 +1,17 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Draco.Lsp.Serialization;
+namespace Draco.Lsp.Model;
 
-internal sealed class NotificationMessage
+internal sealed class RequestMessage
 {
     [JsonPropertyName("jsonrpc")]
     [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public required string Jsonrpc { get; set; }
+
+    [JsonPropertyName("id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+    public required OneOf<int, string> Id { get; set; }
 
     [JsonPropertyName("method")]
     [JsonIgnore(Condition = JsonIgnoreCondition.Never)]

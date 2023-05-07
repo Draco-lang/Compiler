@@ -1,8 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Draco.Lsp.Model;
 
-namespace Draco.Lsp.Serialization;
+namespace Draco.Lsp.Model;
 
 internal sealed class ResponseMessage
 {

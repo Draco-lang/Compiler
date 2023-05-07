@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Draco.Lsp.Serialization;
+namespace Draco.Lsp.Model;
 
 internal sealed class ResponseError
 {

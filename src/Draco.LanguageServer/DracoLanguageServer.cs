@@ -84,11 +84,12 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     public void Dispose() { }
 
-    public async Task InitializeAsync(InitializeParams param)
+    public Task InitializeAsync(InitializeParams param)
     {
         if (param.RootUri is null) throw new System.InvalidOperationException();
         this.rootUri = param.RootUri.Value;
         this.CreateCompilation();
+        return Task.CompletedTask;
     }
 
     public async Task InitializedAsync(InitializedParams param)

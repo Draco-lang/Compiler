@@ -20,17 +20,24 @@ internal partial class DracoLanguageServer : IPullDiagnostics
         WorkspaceDiagnostics = true,
     };
 
-    public Task<DocumentDiagnosticReport> DocumentDiagnosticsAsync(DocumentDiagnosticParams param, CancellationToken cancellationToken)
+    public async Task<DocumentDiagnosticReport> DocumentDiagnosticsAsync(DocumentDiagnosticParams param, CancellationToken cancellationToken)
     {
+        await this.client.PublishDiagnosticsAsync(new()
+        {
+            Diagnostics = new List<Diagnostic>(),
+            Uri = param.TextDocument.Uri
+        });
         this.UpdateCompilation(param.TextDocument.Uri);
         var diags = this.semanticModel.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
-        return Task.FromResult<DocumentDiagnosticReport>(new RelatedFullDocumentDiagnosticReport()
+        return new RelatedFullDocumentDiagnosticReport()
         {
             Items = lspDiags,
             // TODO: related documents for future
-        });
+        };
     }
+
+    private int version = 0;
 
     public Task<WorkspaceDiagnosticReport> WorkSpaceDiagnosticsAsync(WorkspaceDiagnosticParams param, CancellationToken cancellationToken)
     {
@@ -44,10 +51,11 @@ internal partial class DracoLanguageServer : IPullDiagnostics
             {
                 Items = lspDiags,
                 Uri = DocumentUri.From(file.SourceText.Path!),
-                Version = 1, //TODO: what is this? is this required?
+                Version = this.version, //TODO: what is this? is this required?
             };
             fileDiags.Add(fileDiag);
         }
+        this.version++;
         return Task.FromResult(new WorkspaceDiagnosticReport()
         {
             Items = fileDiags,

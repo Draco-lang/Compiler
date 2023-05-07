@@ -135,7 +135,7 @@ public sealed class Compilation : IBinderProvider
     {
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
-        this.RootModulePath = rootModule ?? string.Empty;
+        this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModule ?? string.Empty);
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
         this.WellKnownTypes = new(this);

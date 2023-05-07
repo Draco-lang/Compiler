@@ -120,9 +120,6 @@ internal sealed class Parser
     /// </summary>
     private static readonly TokenKind[] declarationStarters = new[]
     {
-        // TODO
-        //TokenKind.KeywordInternal,
-        //TokenKind.KeywordPublic,
         TokenKind.KeywordImport,
         TokenKind.KeywordFunc,
         TokenKind.KeywordVar,

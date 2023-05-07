@@ -49,7 +49,9 @@ internal sealed class DeclarationTable
 
     private MergedModuleDeclaration BuildMergedRoot()
     {
+        // If we don't have root path, we put all file into top level module
         if (string.IsNullOrEmpty(this.RootPath)) return new("", "", this.syntaxTrees.Select(s => new SingleModuleDeclaration(string.Empty, string.Empty, (CompilationUnitSyntax)s.Root)).ToImmutableArray());
+
         var rootName = Path.GetFileName(this.RootPath.TrimEnd(Path.DirectorySeparatorChar));
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
@@ -79,6 +81,8 @@ internal sealed class DeclarationTable
 
             var subPath = path[this.RootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
             var fullName = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(subPath) ?? string.Empty).Replace(Path.DirectorySeparatorChar, '.');
+
+            // Root module
             if (fullName == string.Empty) fullName = rootName;
             else fullName = $"{rootName}.{fullName}";
             modules.Add(new SingleModuleDeclaration(fullName.Split('.').Last(), fullName, (CompilationUnitSyntax)tree.Root));

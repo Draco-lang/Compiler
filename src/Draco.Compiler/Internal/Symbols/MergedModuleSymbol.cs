@@ -27,7 +27,6 @@ internal sealed class MergedModuleSymbol : ModuleSymbol
         this.modules = modules;
     }
 
-    // TODO: Probably need to update this to corespond to MergedModuleDeclaration
     private ImmutableArray<Symbol> BuildMembers()
     {
         var members = ImmutableArray.CreateBuilder<Symbol>();

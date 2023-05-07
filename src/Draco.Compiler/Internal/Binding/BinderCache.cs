@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -83,8 +82,6 @@ internal sealed class BinderCache
         if (moduleName == string.Empty) moduleName = rootName;
         else moduleName = $"{rootName}.{moduleName}";
 
-
-        // We simply take the source module binder and wrap it up in imports
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         binder = new ModuleBinder(binder, this.compilation.RootModule);
         binder = new ModuleBinder(binder, this.GetModuleSymbol(moduleName));
@@ -110,6 +107,7 @@ internal sealed class BinderCache
             throw new InvalidOperationException();
         }
 
+        // Root module
         if (this.compilation.SourceModule.FullName == fullName) return this.compilation.SourceModule;
         return Recurse(this.compilation.SourceModule);
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -35,7 +36,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private readonly DracoConfigurationRepository configurationRepository;
     private readonly DracoDocumentRepository documentRepository = new();
 
-    private DocumentUri rootUri;
+    private Uri rootUri;
     private Compilation compilation;
     private SemanticModel semanticModel;
     private SyntaxTree syntaxTree;
@@ -48,6 +49,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     {
         this.client = client;
         this.configurationRepository = new(client);
+        this.rootUri = default!; // Default value, it will be given correct value on inicialization
 
         // Some empty defaults
         this.syntaxTree = SyntaxTree.Create(SyntaxFactory.CompilationUnit());
@@ -68,7 +70,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     private void CreateCompilation()
     {
-        var rootPath = this.rootUri.ToUri().LocalPath;
+        var rootPath = this.rootUri.LocalPath;
         var syntaxTrees = ImmutableArray.Create(Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories).Select(x => SyntaxTree.Parse(SourceText.FromFile(x))).ToArray());
 
         this.compilation = Compilation.Create(
@@ -84,8 +86,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     public Task InitializeAsync(InitializeParams param)
     {
-        if (param.RootUri is null) throw new System.InvalidOperationException();
-        this.rootUri = param.RootUri.Value;
+        if (param.WorkspaceFolders is null || param.WorkspaceFolders.Count == 0) throw new System.InvalidOperationException();
+        // TODO: Do this in serialization
+        this.rootUri = new Uri(Uri.UnescapeDataString(param.WorkspaceFolders[0].Uri.AbsoluteUri));
         this.CreateCompilation();
         return Task.CompletedTask;
     }

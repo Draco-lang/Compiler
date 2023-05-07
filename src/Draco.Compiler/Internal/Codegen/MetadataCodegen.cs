@@ -159,7 +159,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.AddAssemblyReference(assembly);
 
         // Metadata types
-        case IMetadataSymbol metadataSymbol when metadataSymbol is not FunctionSymbol:
+        case IMetadataSymbol metadataSymbol when metadataSymbol is TypeSymbol or MetadataStaticClassSymbol:
             Debug.Assert(symbol.ContainingSymbol is not null);
             return this.GetOrAddTypeReference(
                 parent: this.GetContainerEntityHandle(symbol.ContainingSymbol),

@@ -38,6 +38,7 @@ internal class LanguageClientProxy : DispatchProxy
     private object? ProxyRpc(MethodInfo method, object?[] arguments)
     {
         var handler = this.handlers.GetOrAdd(method, m => new(m, this));
+        var args = handler.HasCancellation ? arguments[..^1] : arguments;
 
         if (handler.ProducesResponse)
         {
@@ -50,15 +51,13 @@ internal class LanguageClientProxy : DispatchProxy
                 returnType = returnType.GetGenericArguments()[0];
             }
 
-            var args = handler.HasCancellation ? arguments[..^1] : arguments;
 
             return SendRequestMethod.MakeGenericMethod(returnType).Invoke(this.Connection, new[] { handler.MethodName, args.SingleOrDefault() });
         }
         else
         {
             // It's a notification
-            var args = arguments.FirstOrDefault();
-            this.Connection.PostNotification(handler.MethodName, args);
+            this.Connection.PostNotification(handler.MethodName, args.SingleOrDefault());
             return Task.CompletedTask;
         }
     }

@@ -12,7 +12,7 @@ internal sealed class ResponseMessage
 
     [JsonPropertyName("id")]
     [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
-    public required OneOf<int, string?> Id { get; set; }
+    public required OneOf<int, string>? Id { get; set; }
 
     [JsonPropertyName("result")]
     public JsonElement? Result { get; set; }

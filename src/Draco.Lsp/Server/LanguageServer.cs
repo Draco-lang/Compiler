@@ -42,24 +42,15 @@ public static class LanguageServer
         // Register server methods
         RegisterServerRpcMethods(server, connection);
 
-        // TODO-LSP: Is this extensibility point useful? The default implementation
-        // of ILanguageServerLifecycle registers the server capabilities, which doesn't
-        // seem like something a user would want to replace. We may need to factor some
-        // stuff out for this to make sense.
         if (server is not ILanguageServerLifecycle)
         {
             // Register builtin server methods
-            RegisterBuiltinRpcMethods(server, connection);
+            var lifecycle = new LanguageServerLifecycle(server, connection);
+            RegisterServerRpcMethods(lifecycle, connection);
         }
 
         // Done, now we can actually start
         await connection.ListenAsync();
-    }
-
-    private static void RegisterBuiltinRpcMethods(ILanguageServer server, LanguageServerConnection connection)
-    {
-        var lifecycle = new LanguageServerLifecycle(server, connection);
-        RegisterServerRpcMethods(lifecycle, connection);
     }
 
     private static void RegisterServerRpcMethods(object target, LanguageServerConnection connection)

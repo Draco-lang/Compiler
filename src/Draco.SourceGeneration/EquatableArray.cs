@@ -17,7 +17,6 @@ internal static class EquatableArray
 
     public static EquatableArray<T> ToEquatableArray<T>(this IEnumerable<T> soruce)
         where T : IEquatable<T> => new(soruce.ToImmutableArray());
-
 }
 
 [JsonConverter(typeof(EquatableArrayConverter))]
@@ -64,21 +63,13 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnu
 internal sealed class EquatableArrayConverter : JsonConverterFactory
 {
     public override bool CanConvert(Type typeToConvert)
-        => typeToConvert.IsGenericType
-        && typeToConvert.GetGenericTypeDefinition() == typeof(EquatableArray<>);
+        => typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(EquatableArray<>);
 
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var elementType = typeToConvert.GetGenericArguments()[0];
-
-        var arrayType = typeof(EquatableArrayJsonConverter<>);
-
-        var converter = (JsonConverter)Activator.CreateInstance(
-            arrayType.MakeGenericType(elementType),
-            BindingFlags.Instance | BindingFlags.Public,
-            binder: null,
-            args: null,
-            culture: null)!;
+        var converterType = typeof(EquatableArrayJsonConverter<>);
+        var converter = (JsonConverter)Activator.CreateInstance(converterType.MakeGenericType(elementType))!;
 
         return converter;
     }
@@ -95,21 +86,16 @@ internal sealed class EquatableArrayConverter : JsonConverterFactory
 
             reader.Read();
 
-            List<T> elements = new();
+            var elements = ImmutableArray.CreateBuilder<T>();
 
             while (reader.TokenType != JsonTokenType.EndArray)
             {
                 var value = JsonSerializer.Deserialize<T>(ref reader, options);
-
-                if (value is not null)
-                {
-                    elements.Add(value);
-                }
-
+                elements.Add(value!);
                 reader.Read();
             }
 
-            return elements.ToEquatableArray();
+            return elements.ToImmutable().ToEquatableArray();
         }
 
         public override void Write(Utf8JsonWriter writer, EquatableArray<T> value, JsonSerializerOptions options)

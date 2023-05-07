@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Buffers.Text;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
@@ -73,7 +73,7 @@ public sealed class LanguageServerConnection
         var filterNullResponses = new TransformManyBlock<LspMessage?, LspMessage>(
             m => m.HasValue ? new[] { m.Value } : Enumerable.Empty<LspMessage>());
 
-        this.outgoingMessages = new ActionBlock<LspMessage>(this.SerializeObject!);
+        this.outgoingMessages = new ActionBlock<LspMessage>(this.SerializeToTransport!);
 
         bool ShouldHandle(LspMessage message, bool mutating)
         {
@@ -137,13 +137,12 @@ public sealed class LanguageServerConnection
 
     public Task ListenAsync()
     {
-        Debugger.Launch();
-        this.messageParser.Post(this.ReadLspMessages());
+        this.messageParser.Post(this.DeserializeFromTransport());
         this.messageParser.Complete();
         return this.outgoingMessages.Completion;
     }
 
-    private async IAsyncEnumerable<LspMessage> ReadLspMessages()
+    private async IAsyncEnumerable<LspMessage> DeserializeFromTransport()
     {
         while (true)
         {
@@ -157,6 +156,13 @@ public sealed class LanguageServerConnection
             {
                 // If Shutdown is called, we do not want the dataflow network to end in a faulted state.
                 break;
+            }
+            catch (JsonException ex)
+            {
+                // If we're sent invalid JSON, we're not really sure what we're responding to.
+                // According to the spec, we should send an error response with a null id.
+                this.outgoingMessages.Post(CreateResponseMessage(id: null, FromJsonException(ex)));
+                continue;
             }
 
             if (message != null)
@@ -187,7 +193,7 @@ public sealed class LanguageServerConnection
                 if (buffer.Length > 0)
                 {
                     // The stream abruptly ended.
-                    // TODO-LSP: We should do something in response.
+                    throw new InvalidDataException();
                 }
 
                 break;
@@ -243,12 +249,12 @@ public sealed class LanguageServerConnection
             {
                 if (!Utf8Parser.TryParse(headerText[ContentLengthHeader.Length..], out contentLength, out _))
                 {
-                    // TODO-LSP: Handle failure
+                    throw new InvalidDataException();
                 }
             }
             else if (headerText.StartsWith(ContentTypeHeader))
             {
-                // TODO-LSP: In theory, we are supposed to ensure that the requested encoding is UTF-8.
+                // In theory, we are supposed to ensure that the requested encoding is UTF-8.
             }
         }
 
@@ -256,7 +262,7 @@ public sealed class LanguageServerConnection
         return false;
     }
 
-    private async Task SerializeObject(LspMessage message)
+    private async Task SerializeToTransport(LspMessage message)
     {
         var writer = this.transport.Output;
 
@@ -315,7 +321,7 @@ public sealed class LanguageServerConnection
         }
         else
         {
-            throw new UnreachableException();
+            throw new InvalidDataException();
         }
 
         if (method.StartsWith("$/"))
@@ -367,7 +373,6 @@ public sealed class LanguageServerConnection
         }
 
         var args = new List<object?>();
-
         if (handler.DeclaredParamsType != null)
         {
             if (@params.HasValue)
@@ -378,21 +383,7 @@ public sealed class LanguageServerConnection
                 }
                 catch (JsonException ex)
                 {
-
-                    // Typically, only exceptions from Utf8JsonReader have the position info set.
-                    // So, we assume this is a parse error, and other errors are serialization errors.
-                    var code = ex.BytePositionInLine.HasValue
-                        ? -32700  // ParseError
-                        : -32602; // InvalidParams
-
-                    var responseError = new ResponseError
-                    {
-                        Message = ex.Message,
-                        Data = JsonSerializer.SerializeToElement(ex.ToString()),
-                        Code = code
-                    };
-
-                    return Error(responseError);
+                    return Error(FromJsonException(ex));
                 }
             }
             else
@@ -416,7 +407,7 @@ public sealed class LanguageServerConnection
 
         }
 
-        OneOf<object?, Exception> response;
+        OneOf<object?, Exception> result;
         try
         {
             var returnValue = (Task?)handler.HandlerMethod.Invoke(handler.Target, args.ToArray());
@@ -424,23 +415,23 @@ public sealed class LanguageServerConnection
 
             if (handler.DeclaredReturnType == typeof(Task))
             {
-                response = (object?)null;
+                result = (object?)null;
             }
             else
             {
                 var getResult = (MethodInfo)returnValue.GetType().GetMemberWithSameMetadataDefinitionAs(taskGetResult);
-                response = getResult.Invoke(returnValue, null);
+                result = getResult.Invoke(returnValue, null);
             }
         }
         catch (Exception ex)
         {
-            response = ex;
+            result = ex;
         }
 
         if (handler.ProducesResponse)
         {
-            OneOf<object?, ResponseError> serializableResponse;
-            if (response.Is<Exception>(out var error))
+            OneOf<object?, ResponseError> response;
+            if (result.Is<Exception>(out var error))
             {
                 if (error is TargetInvocationException)
                 {
@@ -453,7 +444,7 @@ public sealed class LanguageServerConnection
                     _ => -32603 // InternalError
                 };
 
-                serializableResponse = new ResponseError
+                response = new ResponseError
                 {
                     Message = error?.Message ?? "",
                     Code = errorCode,
@@ -462,16 +453,16 @@ public sealed class LanguageServerConnection
             }
             else
             {
-                serializableResponse = response.As<object?>();
+                response = result.As<object?>();
             }
 
-            return CreateResponseMessage(id!.Value, serializableResponse);
+            return CreateResponseMessage(id!.Value, response);
         }
 
         return null;
     }
 
-    private static ResponseMessage CreateResponseMessage(OneOf<int, string> id, OneOf<object?, ResponseError> response)
+    private static ResponseMessage CreateResponseMessage(OneOf<int, string>? id, OneOf<object?, ResponseError> response)
     {
         var responseMessage = new ResponseMessage
         {
@@ -489,6 +480,24 @@ public sealed class LanguageServerConnection
         }
 
         return responseMessage;
+    }
+
+    private static ResponseError FromJsonException(JsonException ex)
+    {
+        // Typically, only exceptions from Utf8JsonReader have the position info set.
+        // So, we assume this is a parse error if it's there, and other errors are serialization errors.
+        var code = ex.BytePositionInLine.HasValue
+            ? -32700  // ParseError
+            : -32602; // InvalidParams
+
+        var responseError = new ResponseError
+        {
+            Message = ex.Message,
+            Data = JsonSerializer.SerializeToElement(ex.ToString()),
+            Code = code
+        };
+
+        return responseError;
     }
 
     private LspMessage? ProcessImplementationDefinedMethod(string method, JsonElement? @params, OneOf<int, string>? id)
@@ -538,7 +547,7 @@ public sealed class LanguageServerConnection
         JsonElement response;
         var block = new WriteOnceBlock<LspMessage>(null);
 
-        bool IsThisResponse(LspMessage m) => m.Is<ResponseMessage>(out var r) && r.Id.As<int>() == id;
+        bool IsThisResponse(LspMessage m) => m.Is<ResponseMessage>(out var r) && r.Id?.As<int>() == id;
         using (this.messageParser.LinkTo(block, new() { MaxMessages = 1 }, IsThisResponse))
         {
             var responseMessage = (await block.ReceiveAsync()).As<ResponseMessage>();

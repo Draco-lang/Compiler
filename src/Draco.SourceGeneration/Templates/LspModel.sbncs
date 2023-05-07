@@ -58,7 +58,7 @@ namespace Draco.Lsp.Model;
 
 {{func enum(decl)}}
     {{if decl.IsStringEnum}}
-        [JsonConverter(typeof(JsonEnumMemberConverter))]
+        [JsonConverter(typeof(EnumValueConverter))]
     {{end}}
     public enum {{decl.Name}}
     {
@@ -80,7 +80,7 @@ namespace Draco.Lsp.Model;
             [JsonRequired]
         {{end}}
     {{end}}
-    public {{if !decl.OmitIfNull && !decl.Value && settable && !decl.Deprecated}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
+    public {{if !decl.OmitIfNull && !decl.Value && settable}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
     {{if decl.Value}}
         =>
         {{case decl.ValueDiscriminator}}

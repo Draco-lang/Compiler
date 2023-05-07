@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 
@@ -19,4 +20,8 @@ internal sealed class DracoDocumentRepository
     public SourceText GetDocument(DocumentUri uri) => this.documents.TryGetValue(uri, out var contents)
         ? contents
         : SourceText.None;
+
+    public SourceText GetOrCreateDocument(DocumentUri uri) => this.documents.TryGetValue(uri, out var contents)
+        ? contents
+        : this.documents[uri] = SourceText.FromFile(uri.ToUri());
 }

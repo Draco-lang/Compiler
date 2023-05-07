@@ -17,7 +17,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
     {
         this.documentRepository.AddOrUpdateDocument(param.TextDocument.Uri, param.TextDocument.Text);
         this.UpdateCompilation(param.TextDocument.Uri);
-        await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
+        //await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
     }
 
     public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken) =>
@@ -30,24 +30,24 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var sourceText = change.Text;
         this.documentRepository.AddOrUpdateDocument(uri, sourceText);
         this.UpdateCompilation(uri);
-        await this.PublishDiagnosticsAsync(uri);
+        //await this.PublishDiagnosticsAsync(uri);
     }
 
     private void UpdateCompilation(DocumentUri uri)
     {
-        this.syntaxTree = SyntaxTree.Parse(this.documentRepository.GetDocument(uri));
+        this.syntaxTree = SyntaxTree.Parse(this.documentRepository.GetOrCreateDocument(uri));
         this.compilation = this.compilation.UpdateSyntaxTree(uri.ToUri(), this.syntaxTree);
         this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
     }
 
-    private async Task PublishDiagnosticsAsync(DocumentUri uri)
-    {
-        var diags = this.semanticModel.Diagnostics;
-        var lspDiags = diags.Select(Translator.ToLsp).ToList();
-        await this.client.PublishDiagnosticsAsync(new()
-        {
-            Uri = uri,
-            Diagnostics = lspDiags,
-        });
-    }
+    //private async Task PublishDiagnosticsAsync(DocumentUri uri)
+    //{
+    //    var diags = this.semanticModel.Diagnostics;
+    //    var lspDiags = diags.Select(Translator.ToLsp).ToList();
+    //    await this.client.PublishDiagnosticsAsync(new()
+    //    {
+    //        Uri = uri,
+    //        Diagnostics = lspDiags,
+    //    });
+    //}
 }

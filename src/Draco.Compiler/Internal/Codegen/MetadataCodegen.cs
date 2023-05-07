@@ -156,10 +156,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.GetEntityHandle(metadataSymbol);
 
         case MetadataAssemblySymbol assembly:
-            return this.GetOrAddAssemblyReference(
-                name: assembly.MetadataName,
-                // TODO: What version
-                version: new(1, 0));
+            return this.AddAssemblyReference(assembly);
 
         // Metadata types
         case IMetadataSymbol metadataSymbol when metadataSymbol is not FunctionSymbol:

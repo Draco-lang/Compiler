@@ -6,7 +6,7 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Defines an unnamed structure of an object literal.
 /// </summary>
-internal sealed class StructureLiteral : IDocumented
+internal sealed record StructureLiteral : IDocumented
 {
     public string? Documentation { get; set; }
     public string? Since { get; set; }
@@ -16,5 +16,5 @@ internal sealed class StructureLiteral : IDocumented
     /// <summary>
     /// The properties.
     /// </summary>
-    public IList<Property> Properties { get; set; } = Array.Empty<Property>();
+    public required EquatableArray<Property> Properties { get; set; }
 }

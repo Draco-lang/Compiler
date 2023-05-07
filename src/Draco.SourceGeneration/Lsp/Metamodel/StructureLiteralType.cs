@@ -4,9 +4,9 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// Represents a literal structure
 /// (e.g. `property: { start: uinteger; end: uinteger; }`).
 /// </summary>
-internal sealed class StructureLiteralType : Type
+internal sealed record StructureLiteralType : Type
 {
-    public override string Kind { get; set; } = string.Empty;
+    public override required string Kind { get; set; }
 
     public StructureLiteral Value { get; set; } = null!;
 }

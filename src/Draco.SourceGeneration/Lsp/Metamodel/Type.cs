@@ -1,6 +1,6 @@
 namespace Draco.SourceGeneration.Lsp.Metamodel;
 
-internal abstract class Type
+internal abstract record Type
 {
     /// <summary>
     /// The discriminating type kind.

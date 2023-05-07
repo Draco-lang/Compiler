@@ -8,7 +8,7 @@ internal sealed class Notification
     /// <summary>
     /// The notification's method name.
     /// </summary>
-    public string Method { get; set; } = string.Empty;
+    public required string Method { get; set; }
 
     // NOTE: The metamodel specifies Type | Type[], but an array is never used here.
     /// <summary>

@@ -76,8 +76,11 @@ namespace Draco.Lsp.Model;
     {{else}}
         [JsonPropertyName({{string.literal(decl.SerializedName)}})]
         [JsonIgnore(Condition = JsonIgnoreCondition.{{if decl.OmitIfNull}}WhenWritingDefault{{else}}Never{{end}})]
+        {{if !decl.OmitIfNull}}
+            [JsonRequired]
+        {{end}}
     {{end}}
-    public {{type(decl.Type)}} {{decl.Name}}
+    public {{if !decl.OmitIfNull && !decl.Value && settable && !decl.Deprecated}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
     {{if decl.Value}}
         =>
         {{case decl.ValueDiscriminator}}
@@ -141,9 +144,8 @@ namespace Draco.Lsp.Model;
 {{end}}
 
 #nullable enable
-#pragma warning disable CS8618
+#pragma warning disable CS9042
 {{for $decl in Declarations}}
     {{declaration($decl)}}
 {{end}}
-#pragma warning restore CS8618
-#nullable restore
+#pragma warning restore CS9042

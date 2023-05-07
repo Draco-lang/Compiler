@@ -3,9 +3,9 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Includes StringLiteralType, IntegerLiteralType, BooleanLiteralType.
 /// </summary>
-internal sealed class LiteralType : Type
+internal sealed record LiteralType : Type
 {
-    public override string Kind { get; set; } = string.Empty;
+    public override required string Kind { get; set; }
 
-    public object Value { get; set; } = null!;
+    public required object Value { get; set; }
 }

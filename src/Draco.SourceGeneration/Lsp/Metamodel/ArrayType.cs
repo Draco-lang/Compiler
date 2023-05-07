@@ -3,9 +3,9 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Represents an array type (e.g. `TextDocument[]`).
 /// </summary>
-internal sealed class ArrayType : Type
+internal sealed record ArrayType : Type
 {
-    public override string Kind { get; set; } = string.Empty;
+    public override required string Kind { get; set; }
 
-    public Type Element { get; set; } = null!;
+    public required Type Element { get; set; }
 }

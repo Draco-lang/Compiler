@@ -6,7 +6,7 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// </summary>
 internal sealed class TypeAlias : IDeclaration
 {
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
     public string? Documentation { get; set; }
     public string? Since { get; set; }
     public bool? Proposed { get; set; }
@@ -15,5 +15,5 @@ internal sealed class TypeAlias : IDeclaration
     /// <summary>
     /// The aliased type.
     /// </summary>
-    public Type Type { get; set; } = null!;
+    public required Type Type { get; set; }
 }

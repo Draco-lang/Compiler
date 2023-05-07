@@ -18,7 +18,7 @@ public sealed class Property : Declaration
     public string SerializedName { get; set; } = string.Empty;
 
     /// <summary>
-    /// True, if the property shold be omitted, if it's null.
+    /// True if the property should be omitted, if it's null.
     /// </summary>
     public bool OmitIfNull { get; set; }
 

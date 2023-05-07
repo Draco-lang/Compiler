@@ -14,7 +14,8 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Draco.Lsp.Model;
 using Draco.Lsp.Serialization;
-using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RequestMessage, Draco.Lsp.Model.NotificationMessage, Draco.Lsp.Model.ResponseMessage>;
+
+using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Serialization.RequestMessage, Draco.Lsp.Serialization.NotificationMessage, Draco.Lsp.Serialization.ResponseMessage>;
 
 namespace Draco.Lsp.Server;
 
@@ -377,22 +378,19 @@ public sealed class LanguageServerConnection
                 }
                 catch (JsonException ex)
                 {
+
+                    // Typically, only exceptions from Utf8JsonReader have the position info set.
+                    // So, we assume this is a parse error, and other errors are serialization errors.
+                    var code = ex.BytePositionInLine.HasValue
+                        ? -32700  // ParseError
+                        : -32602; // InvalidParams
+
                     var responseError = new ResponseError
                     {
                         Message = ex.Message,
-                        Data = JsonSerializer.SerializeToElement(ex.ToString())
+                        Data = JsonSerializer.SerializeToElement(ex.ToString()),
+                        Code = code
                     };
-
-                    if (ex.BytePositionInLine.HasValue)
-                    {
-                        // Typically, only exceptions from Utf8JsonReader have the position info set.
-                        // So, we assume this is a parse error, and other errors are serialization errors.
-                        responseError.Code = -32700; // ParseError
-                    }
-                    else
-                    {
-                        responseError.Code = -32602; // InvalidParams
-                    }
 
                     return Error(responseError);
                 }
@@ -478,7 +476,7 @@ public sealed class LanguageServerConnection
         var responseMessage = new ResponseMessage
         {
             Jsonrpc = "2.0",
-            Id = id
+            Id = id!
         };
 
         if (response.Is<ResponseError>(out var error))
@@ -540,7 +538,7 @@ public sealed class LanguageServerConnection
         JsonElement response;
         var block = new WriteOnceBlock<LspMessage>(null);
 
-        bool IsThisResponse(LspMessage m) => m.Is<ResponseMessage>(out var r) && r.Id?.As<int>() == id;
+        bool IsThisResponse(LspMessage m) => m.Is<ResponseMessage>(out var r) && r.Id.As<int>() == id;
         using (this.messageParser.LinkTo(block, new() { MaxMessages = 1 }, IsThisResponse))
         {
             var responseMessage = (await block.ReceiveAsync()).As<ResponseMessage>();
@@ -574,7 +572,7 @@ public sealed class LanguageServerConnection
     }
 }
 
-public sealed class LspResponseException : Exception
+internal sealed class LspResponseException : Exception
 {
     public LspResponseException(ResponseError error) : base(error.Message)
     {

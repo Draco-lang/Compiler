@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -237,18 +238,25 @@ internal sealed class MetadataCodegen : MetadataWriter
     private EntityHandle GetContainerEntityHandle(Symbol symbol) => symbol switch
     {
         MetadataNamespaceSymbol ns => this.GetContainerEntityHandle(ns.ContainingSymbol),
-        MetadataAssemblySymbol module => this.GetOrAddAssemblyReference(
-            name: module.Name,
-            // TODO: What version
-            version: new(1, 0)),
+        MetadataAssemblySymbol module => this.AddAssemblyReference(module),
+        MetadataTypeSymbol type => this.GetOrAddTypeReference(
+            assembly: this.AddAssemblyReference(type.Assembly),
+            @namespace: GetNamespaceForSymbol(type),
+            name: type.Name),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
+
+    private AssemblyReferenceHandle AddAssemblyReference(MetadataAssemblySymbol module) =>
+        this.GetOrAddAssemblyReference(
+            name: module.Name,
+            version: new(1, 0)); // TODO: What version?
 
     private static string? GetNamespaceForSymbol(Symbol symbol) => symbol switch
     {
         MetadataStaticClassSymbol staticClass => GetNamespaceForSymbol(staticClass.ContainingSymbol),
         MetadataTypeSymbol type => GetNamespaceForSymbol(type.ContainingSymbol),
         MetadataNamespaceSymbol ns => ns.FullName,
+        _ when symbol.ContainingSymbol is not null => GetNamespaceForSymbol(symbol.ContainingSymbol),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 

@@ -15,7 +15,7 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
     private ImmutableArray<Symbol>? members;
 
     public override string Name => this.MetadataName;
-    public string MetadataName => this.MetadataReader.GetString(this.namespaceDefinition.Name);
+    public override string MetadataName => this.MetadataReader.GetString(this.namespaceDefinition.Name);
     public override Symbol ContainingSymbol { get; }
 
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();

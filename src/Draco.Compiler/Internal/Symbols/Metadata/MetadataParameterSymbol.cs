@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class MetadataParameterSymbol : ParameterSymbol, IMetadataSymbol
 {
     public override string Name => this.MetadataName;
-    public string MetadataName => this.MetadataReader.GetString(this.parameterDefinition.Name);
+    public override string MetadataName => this.MetadataReader.GetString(this.parameterDefinition.Name);
 
     public override TypeSymbol Type { get; }
     public override Symbol ContainingSymbol { get; }

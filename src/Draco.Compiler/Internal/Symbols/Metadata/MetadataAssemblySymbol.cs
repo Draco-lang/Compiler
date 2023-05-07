@@ -29,7 +29,7 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     public AssemblyName AssemblyName => this.assemblyName ??= this.assemblyDefinition.GetAssemblyName();
     private AssemblyName? assemblyName;
 
-    public string MetadataName => this.MetadataReader.GetString(this.assemblyDefinition.Name);
+    public override string MetadataName => this.MetadataReader.GetString(this.assemblyDefinition.Name);
     public MetadataAssemblySymbol Assembly => this;
 
     public MetadataReader MetadataReader { get; }

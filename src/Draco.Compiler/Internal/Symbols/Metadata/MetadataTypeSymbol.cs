@@ -18,7 +18,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
     public override string Name => this.name ??= this.BuildName();
     private string? name;
 
-    public string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
+    public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
     private ImmutableArray<TypeParameterSymbol>? genericParameters;

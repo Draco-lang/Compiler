@@ -65,6 +65,11 @@ internal abstract partial class Symbol
     public bool IsGenericInstance => this.GenericArguments.Length > 0;
 
     /// <summary>
+    /// The metadata name of this symbol.
+    /// </summary>
+    public virtual string MetadataName => this.Name;
+
+    /// <summary>
     /// The name of this symbol.
     /// </summary>
     public virtual string Name => string.Empty;

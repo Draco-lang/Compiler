@@ -44,7 +44,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     private TypeSymbol? returnType;
 
     public override string Name => this.MetadataName;
-    public string MetadataName => this.MetadataReader.GetString(this.methodDefinition.Name);
+    public override string MetadataName => this.MetadataReader.GetString(this.methodDefinition.Name);
 
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;

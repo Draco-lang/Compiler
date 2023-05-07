@@ -193,6 +193,7 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             case FieldAccess fieldAccess:
+                this.EncodePush(fieldAccess.Reciever);
                 this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(ILOpCode.Stfld);
                 this.InstructionEncoder.Token(this.GetMemberReferenceHandle(fieldAccess.Member));

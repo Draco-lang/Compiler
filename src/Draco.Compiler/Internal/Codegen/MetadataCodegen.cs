@@ -162,7 +162,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 version: new(1, 0));
 
         // Metadata types
-        case IMetadataSymbol metadataSymbol:
+        case IMetadataSymbol metadataSymbol when metadataSymbol is not FunctionSymbol:
             Debug.Assert(symbol.ContainingSymbol is not null);
             return this.GetOrAddTypeReference(
                 parent: this.GetContainerEntityHandle(symbol.ContainingSymbol),

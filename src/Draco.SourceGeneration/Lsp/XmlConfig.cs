@@ -8,9 +8,6 @@ public sealed class XmlConfig
 {
     [XmlElement("BuiltinType")]
     public List<XmlBuiltinType> BuiltinTypes { get; set; } = null!;
-
-    [XmlElement("Generate")]
-    public List<XmlGenerate> GeneratedTypes { get; set; } = null!;
 }
 
 [XmlRoot(ElementName = "BuiltinType")]
@@ -21,11 +18,4 @@ public sealed class XmlBuiltinType
 
     [XmlAttribute]
     public string FullName { get; set; } = string.Empty;
-}
-
-[XmlRoot(ElementName = "Generate")]
-public sealed class XmlGenerate
-{
-    [XmlAttribute]
-    public string Name { get; set; } = string.Empty;
 }

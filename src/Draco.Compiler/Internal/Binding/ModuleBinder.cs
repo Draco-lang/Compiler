@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
@@ -48,7 +47,9 @@ internal sealed class ModuleBinder : Binder
     private bool isVisible(Symbol symbol, SyntaxTree? reference)
     {
         if (symbol.Visibility != Api.Semantics.VisibilityType.Private) return true;
-        if (this.symbol.Members.Any(x => x.DeclaringSyntax is not null && x.DeclaringSyntax.Tree == reference)) return true;
+
+        // If any of the files in this module are the same file as the reference, we are in the same module and we see all declared symbols
+        if (this.symbol.Members.Any(x => x.DeclaringSyntax?.Tree == reference)) return true;
         return false;
     }
 }

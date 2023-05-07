@@ -658,7 +658,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void OneVisibleAndOnenotVisibleOverloadFullyQualified()
+    public void OneVisibleAndOneNotVisibleOverloadFullyQualified()
     {
         var main = CreateSyntaxTree(""""
             func main(){

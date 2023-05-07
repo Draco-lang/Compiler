@@ -66,7 +66,6 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
     private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandlers = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
-    //private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
     {
@@ -140,12 +139,11 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (!this.moduleReferenceHandlers.TryGetValue(module, out var handle))
         {
             EntityHandle resolutionScope;
+
+            // Root module, we take the module definition containing it
             if (module.Parent is null) resolutionScope = this.ModuleDefinitionHandle;
 
-            else if (this.moduleReferenceHandlers.TryGetValue(module.Parent, out var result))
-            {
-                resolutionScope = result;
-            }
+            // We take its parent module
             else resolutionScope = this.GetModuleReferenceHandle(module.Parent);
 
             var name = string.IsNullOrEmpty(module.Name) ? "FreeFunctions" : module.Name;
@@ -294,7 +292,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         var name = string.IsNullOrEmpty(module.Name) ? "FreeFunctions" : module.Name;
 
-        // Create the free-functions type
+        // Create the type
         var createdModule = this.AddTypeDefinition(
             attributes: attributes,
             @namespace: default,
@@ -303,8 +301,10 @@ internal sealed class MetadataCodegen : MetadataWriter
             fieldList: MetadataTokens.FieldDefinitionHandle(fieldIndex),
             methodList: MetadataTokens.MethodDefinitionHandle(procIndex));
 
+        // If this isn't top level module, we specify nested relationship
         if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
 
+        // We encode every submodule
         foreach (var subModule in module.SubModules)
         {
             this.EncodeModule((OptimizingIr.Model.Module)subModule.Value, systemRuntime, systemObject, createdModule, currentFieldIndex, currentProcIndex);

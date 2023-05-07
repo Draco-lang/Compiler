@@ -9,7 +9,6 @@ namespace Draco.Lsp.Serialization;
 /// <summary>
 /// Serializes tuples into JSON arrays and back.
 /// </summary>
-///
 internal sealed class TupleConverter : JsonConverter<ITuple>
 {
     public override bool CanConvert(Type typeToConvert) => typeToConvert.FullName?.StartsWith("System.ValueTuple`") ?? false;

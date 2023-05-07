@@ -10,7 +10,7 @@ namespace Draco.Lsp.Serialization;
 /// <summary>
 /// Converts enum values according to the attribute.
 /// </summary>
-public class EnumValueConverter : JsonConverterFactory
+internal sealed class EnumValueConverter : JsonConverterFactory
 {
     public override bool CanConvert(Type typeToConvert) => typeToConvert.IsEnum;
 
@@ -21,7 +21,7 @@ public class EnumValueConverter : JsonConverterFactory
     }
 }
 
-public class EnumValueConverter<TEnum> : JsonConverter<TEnum> where TEnum : struct, Enum
+internal sealed class EnumValueConverter<TEnum> : JsonConverter<TEnum> where TEnum : struct, Enum
 {
     private readonly Dictionary<TEnum, string> enumToString = new();
     private readonly Dictionary<string, TEnum> stringToEnum = new();

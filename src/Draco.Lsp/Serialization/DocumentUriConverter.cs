@@ -11,10 +11,10 @@ namespace Draco.Lsp.Serialization;
 internal sealed class DocumentUriConverter : JsonConverter<DocumentUri>
 {
     public override DocumentUri Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => new(reader.GetString() ?? "");
+        => new(reader.GetString() ?? string.Empty);
 
     public override DocumentUri ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => new(reader.GetString() ?? "");
+        => new(reader.GetString() ?? string.Empty);
 
     public override void Write(Utf8JsonWriter writer, DocumentUri value, JsonSerializerOptions options)
         => writer.WriteStringValue(value.ToString());

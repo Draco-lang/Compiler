@@ -103,7 +103,7 @@ internal static class Program
         return null;
     }
 
-    private class StdioDuplexPipe : IDuplexPipe
+    private sealed class StdioDuplexPipe : IDuplexPipe
     {
         public PipeReader Input { get; } = PipeReader.Create(Console.OpenStandardInput());
 

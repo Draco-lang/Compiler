@@ -2,11 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-
-using Draco.Lsp.Attributes;
-
 
 namespace Draco.Lsp.Server;
 
@@ -16,6 +12,7 @@ namespace Draco.Lsp.Server;
 internal class LanguageClientProxy : DispatchProxy
 {
     internal LanguageServerConnection Connection { get; set; } = null!;
+
     private readonly ConcurrentDictionary<MethodInfo, LanguageServerMethodHandler> handlers = new();
 
     protected override object? Invoke(MethodInfo? method, object?[]? args)
@@ -50,7 +47,6 @@ internal class LanguageClientProxy : DispatchProxy
             {
                 returnType = returnType.GetGenericArguments()[0];
             }
-
 
             return SendRequestMethod.MakeGenericMethod(returnType).Invoke(this.Connection, new[] { handler.MethodName, args.SingleOrDefault() });
         }

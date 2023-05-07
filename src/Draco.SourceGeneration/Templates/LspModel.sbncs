@@ -80,7 +80,8 @@ namespace Draco.Lsp.Model;
             [JsonRequired]
         {{end}}
     {{end}}
-    public {{if !decl.OmitIfNull && !decl.Value && settable}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
+    {{$use_required_modifier = !decl.OmitIfNull && !decl.Value && settable}}
+    public {{if $use_required_modifier}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
     {{if decl.Value}}
         =>
         {{case decl.ValueDiscriminator}}

@@ -39,12 +39,12 @@ internal interface IModule
     public IReadOnlyDictionary<GlobalSymbol, Global> Globals { get; }
 
     /// <summary>
-    /// The procedure performing global initialization.
-    /// </summary>
-    public IProcedure GlobalInitializer { get; }
-
-    /// <summary>
     /// The compiled procedures within this module.
     /// </summary>
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }
+
+    /// <summary>
+    /// The procedure performing global initialization.
+    /// </summary>
+    public IProcedure GlobalInitializer { get; }
 }

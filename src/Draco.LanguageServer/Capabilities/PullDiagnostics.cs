@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 using DocumentDiagnosticReport = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RelatedFullDocumentDiagnosticReport, Draco.Lsp.Model.RelatedUnchangedDocumentDiagnosticReport>;
@@ -15,18 +13,22 @@ internal partial class DracoLanguageServer : IPullDiagnostics
     public DiagnosticRegistrationOptions DiagnosticRegistrationOptions => new()
     {
         DocumentSelector = this.DocumentSelector,
-        Identifier = "draco", // TODO: do we need this? does it do anything
+        Identifier = "draco", // TODO: do we need this? does it do anything?
         InterFileDependencies = true,
         WorkspaceDiagnostics = true,
     };
 
+    private int diagVersion = 0;
+
     public async Task<DocumentDiagnosticReport> DocumentDiagnosticsAsync(DocumentDiagnosticParams param, CancellationToken cancellationToken)
     {
+        // Clear push diagnostics to avoid duplicates
         await this.client.PublishDiagnosticsAsync(new()
         {
             Diagnostics = new List<Diagnostic>(),
             Uri = param.TextDocument.Uri
         });
+
         this.UpdateCompilation(param.TextDocument.Uri);
         var diags = this.semanticModel.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
@@ -36,8 +38,6 @@ internal partial class DracoLanguageServer : IPullDiagnostics
             // TODO: related documents for future
         };
     }
-
-    private int version = 0;
 
     public Task<WorkspaceDiagnosticReport> WorkSpaceDiagnosticsAsync(WorkspaceDiagnosticParams param, CancellationToken cancellationToken)
     {
@@ -51,11 +51,11 @@ internal partial class DracoLanguageServer : IPullDiagnostics
             {
                 Items = lspDiags,
                 Uri = DocumentUri.From(file.SourceText.Path!),
-                Version = this.version, //TODO: what is this? is this required?
+                Version = this.diagVersion, //TODO: what is this? is this required?
             };
             fileDiags.Add(fileDiag);
         }
-        this.version++;
+        this.diagVersion++;
         return Task.FromResult(new WorkspaceDiagnosticReport()
         {
             Items = fileDiags,

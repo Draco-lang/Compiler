@@ -58,10 +58,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var parentModules = symbol.AncestorChain.OfType<ModuleSymbol>().Reverse().Select(x => x.FullName).ToList();
         var last = parentModules.LastOrDefault();
         if (last is null) throw new System.InvalidOperationException();
-        var currentModule = this.procedure.Module.Symbol;
+        var currentModule = this.procedure.DeclaringModule.Symbol;
 
         // If the full name of the last of parent modules is the same as the full name of the module we are currently in we can return this module
-        if (last == currentModule.FullName) return this.procedure.Module;
+        if (last == currentModule.FullName) return this.procedure.DeclaringModule;
         if (!currentModule.FullName.StartsWith(parentModules.First())) throw new System.InvalidOperationException();
         return Recurse((Module)this.procedure.Assembly.RootModule);
 
@@ -89,8 +89,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         // We handle synthetized functions a bit specially, as they are not part of our symbol
         // tree, so we compile them, in case they have not been yet
-        var compiledAlready = this.procedure.Module.Procedures.ContainsKey(func);
-        var proc = this.procedure.Module.DefineProcedure(func);
+        var compiledAlready = this.procedure.DeclaringModule.Procedures.ContainsKey(func);
+        var proc = this.procedure.DeclaringModule.DefineProcedure(func);
         if (!compiledAlready)
         {
             var codegen = new FunctionBodyCodegen(proc);

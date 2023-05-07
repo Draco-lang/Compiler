@@ -126,7 +126,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             var signature = this.EncodeProcedureSignature(procedure);
             handle = this.AddMemberReference(
-                type: this.GetModuleReferenceHandle(procedure.Module),
+                type: this.GetModuleReferenceHandle(procedure.DeclaringModule),
                 name: procedure.Name,
                 signature: signature);
             this.procedureReferenceHandles.Add(procedure, handle);

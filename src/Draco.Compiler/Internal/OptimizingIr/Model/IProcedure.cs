@@ -21,7 +21,7 @@ internal interface IProcedure : IOperand
     /// <summary>
     /// The module this procedure is defined in.
     /// </summary>
-    public IModule Module { get; }
+    public IModule DeclaringModule { get; }
 
     /// <summary>
     /// The assembly this procedure is defined in.

@@ -195,7 +195,7 @@ internal sealed class CilCodegen
             case FieldAccess fieldAccess:
                 this.EncodePush(fieldAccess.Reciever);
                 this.EncodePush(store.Source);
-                this.InstructionEncoder.OpCode(ILOpCode.Stfld);
+                this.InstructionEncoder.OpCode(fieldAccess.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
                 this.InstructionEncoder.Token(this.GetMemberReferenceHandle(fieldAccess.Member));
                 break;
             case ArrayAccess arrayAccess:
@@ -340,8 +340,11 @@ internal sealed class CilCodegen
             break;
         case FieldAccess f:
             this.EncodePush(f.Reciever);
-            this.InstructionEncoder.OpCode(ILOpCode.Ldfld);
+            this.InstructionEncoder.OpCode(f.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
             this.InstructionEncoder.Token(this.GetMemberReferenceHandle(f.Member));
+            break;
+        case SymbolReference s when s.Symbol is ModuleSymbol module:
+            this.InstructionEncoder.Token(this.GetTypeReferenceHandle(module));
             break;
         case Constant c:
             switch (c.Value)

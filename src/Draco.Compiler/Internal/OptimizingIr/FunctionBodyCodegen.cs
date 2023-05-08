@@ -397,6 +397,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitMemberExpression(BoundMemberExpression node) =>
         new FieldAccess(this.Compile(node.Receiver), (FieldSymbol)node.Member);
+
+    public override IOperand VisitFieldExpression(BoundFieldExpression node) =>
+        new FieldAccess(new SymbolReference((ModuleSymbol)node.Field.ContainingSymbol!), node.Field);
+
     // TODO: Do something with this block
 
     private static bool IsEqual(Symbol op) => op == IntrinsicSymbols.Int32_Equal

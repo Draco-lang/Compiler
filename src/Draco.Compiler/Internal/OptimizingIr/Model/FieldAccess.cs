@@ -11,6 +11,8 @@ internal readonly record struct FieldAccess(IOperand Reciever, FieldSymbol Membe
 {
     public TypeSymbol? Type => this.Member.Type;
 
+    public bool IsStatic => this.Member.IsStatic;
+
     public override string ToString() => this.ToOperandString();
 
     public string ToOperandString() => $"{this.Reciever}.{this.Member.Name}";

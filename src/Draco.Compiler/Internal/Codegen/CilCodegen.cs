@@ -195,7 +195,7 @@ internal sealed class CilCodegen
             case FieldAccess fieldAccess:
                 if (!fieldAccess.IsStatic) this.EncodePush(fieldAccess.Reciever);
                 this.EncodePush(store.Source);
-                this.InstructionEncoder.OpCode(fieldAccess.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
+                this.InstructionEncoder.OpCode(fieldAccess.IsStatic ? ILOpCode.Stsfld : ILOpCode.Stfld);
                 this.InstructionEncoder.Token(this.GetMemberReferenceHandle(fieldAccess.Member));
                 break;
             case ArrayAccess arrayAccess:

@@ -20,7 +20,7 @@ internal static class EquatableArray
 }
 
 [JsonConverter(typeof(EquatableArrayConverter))]
-internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnumerable<T>
+internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IList<T>, IEnumerable<T>
     where T : IEquatable<T>
 {
     private readonly ImmutableArray<T> array;
@@ -30,9 +30,21 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnu
         this.array = array;
     }
 
+    public bool IsEmpty => this.array.IsEmpty;
+
+    int ICollection<T>.Count => this.array.Length;
+
+    public int Length => this.array.Length;
+
+    public bool IsReadOnly => true;
+
     public ref readonly T this[int index] => ref this.array.ItemRef(index);
 
-    public bool IsEmpty => this.array.IsEmpty;
+    T IList<T>.this[int index]
+    {
+        get => this[index];
+        set => throw new NotSupportedException();
+    }
 
     public bool Equals(EquatableArray<T> array) => this.array.AsSpan().SequenceEqual(array.array.AsSpan());
 
@@ -40,9 +52,23 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnu
 
     public override int GetHashCode() => ((IStructuralEquatable)this.array).GetHashCode(EqualityComparer<T>.Default);
 
-    public static EquatableArray<T> FromImmutableArray(ImmutableArray<T> array) => new(array);
-
     public T[] ToArray() => this.array.ToArray();
+
+    public int IndexOf(T item) => this.array.IndexOf(item);
+
+    public bool Contains(T item) => this.array.Contains(item);
+
+    public void CopyTo(T[] array, int arrayIndex) => this.array.CopyTo(array, arrayIndex);
+
+    public void Insert(int index, T item) => throw new NotSupportedException();
+
+    public void RemoveAt(int index) => throw new NotSupportedException();
+
+    public void Add(T item) => throw new NotSupportedException();
+
+    public void Clear() => throw new NotSupportedException();
+
+    public bool Remove(T item) => throw new NotSupportedException();
 
     public ImmutableArray<T>.Enumerator GetEnumerator() => this.array.GetEnumerator();
 
@@ -50,14 +76,9 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnu
 
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)this.array).GetEnumerator();
 
-    public static bool operator ==(EquatableArray<T> left, EquatableArray<T> right)
-    {
-        return left.Equals(right);
-    }
-    public static bool operator !=(EquatableArray<T> left, EquatableArray<T> right)
-    {
-        return !left.Equals(right);
-    }
+    public static bool operator ==(EquatableArray<T> left, EquatableArray<T> right) => left.Equals(right);
+
+    public static bool operator !=(EquatableArray<T> left, EquatableArray<T> right) => !left.Equals(right);
 }
 
 internal sealed class EquatableArrayConverter : JsonConverterFactory
@@ -99,8 +120,6 @@ internal sealed class EquatableArrayConverter : JsonConverterFactory
         }
 
         public override void Write(Utf8JsonWriter writer, EquatableArray<T> value, JsonSerializerOptions options)
-        {
-            JsonSerializer.Serialize(writer, value.AsEnumerable(), options);
-        }
+            => JsonSerializer.Serialize(writer, value.AsEnumerable(), options);
     }
 }

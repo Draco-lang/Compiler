@@ -487,7 +487,7 @@ internal sealed class Translator
             Value = new Ts.StructureLiteral
             {
                 Properties = always.Concat(optional).ToEquatableArray()
-            }
+            },
         };
     }
 

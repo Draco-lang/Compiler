@@ -99,18 +99,15 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
 
     public override bool CanConvert(Type objectType) => ExtractOneOfType(objectType) is not null;
 
-    private static object? FromPrimitive(ref Utf8JsonReader reader)
+    private static object? FromPrimitive(ref Utf8JsonReader reader) => reader.TokenType switch
     {
-        return reader.TokenType switch
-        {
-            JsonTokenType.String => reader.GetString(),
-            JsonTokenType.Number => reader.GetInt32(),
-            JsonTokenType.True => true,
-            JsonTokenType.False => false,
-            JsonTokenType.Null => null,
-            _ => throw new ArgumentException("Reader was in an invalid state.", nameof(reader))
-        };
-    }
+        JsonTokenType.String => reader.GetString(),
+        JsonTokenType.Number => reader.GetInt32(),
+        JsonTokenType.True => true,
+        JsonTokenType.False => false,
+        JsonTokenType.Null => null,
+        _ => throw new ArgumentException("Reader was in an invalid state.", nameof(reader))
+    };
 
     public override TOneOf? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -164,5 +161,4 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
 
         JsonSerializer.Serialize(writer, value.Value, options);
     }
-
 }

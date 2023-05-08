@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Draco.Lsp.Server;
 
-public interface ILanguageServerLifecycle
+internal interface ILanguageServerLifecycle
 {
     [Request("initialize")]
     public Task<InitializeResult> InitializeAsync(InitializedParams param);

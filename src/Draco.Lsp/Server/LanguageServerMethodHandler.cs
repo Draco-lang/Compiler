@@ -9,6 +9,25 @@ namespace Draco.Lsp.Server;
 
 internal sealed class LanguageServerMethodHandler
 {
+    internal MethodInfo HandlerMethod { get; }
+
+    internal object? Target { get; }
+
+    internal string MethodName { get; }
+
+    internal bool ProducesResponse { get; }
+
+    internal bool HasCancellation { get; }
+
+    [MemberNotNullWhen(true, nameof(DeclaredParamsType))]
+    internal bool HasParams => this.DeclaredParamsType is not null;
+
+    internal bool Mutating { get; }
+
+    internal Type? DeclaredParamsType { get; }
+
+    internal Type DeclaredReturnType { get; }
+
     internal LanguageServerMethodHandler(MethodInfo handlerMethod, object? target)
     {
         this.HandlerMethod = handlerMethod;
@@ -85,17 +104,4 @@ internal sealed class LanguageServerMethodHandler
 
         this.DeclaredReturnType = returnType;
     }
-
-    internal MethodInfo HandlerMethod { get; }
-    internal object? Target { get; }
-
-    internal string MethodName { get; }
-    internal bool ProducesResponse { get; }
-    internal bool HasCancellation { get; }
-    [MemberNotNullWhen(true, nameof(DeclaredParamsType))]
-    internal bool HasParams => this.DeclaredParamsType != null;
-    internal bool Mutating { get; }
-
-    internal Type? DeclaredParamsType { get; }
-    internal Type DeclaredReturnType { get; }
 }

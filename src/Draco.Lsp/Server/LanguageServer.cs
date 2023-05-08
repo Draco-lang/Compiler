@@ -42,12 +42,9 @@ public static class LanguageServer
         // Register server methods
         RegisterServerRpcMethods(server, connection);
 
-        if (server is not ILanguageServerLifecycle)
-        {
-            // Register builtin server methods
-            var lifecycle = new LanguageServerLifecycle(server, connection);
-            RegisterServerRpcMethods(lifecycle, connection);
-        }
+        // Register builtin server methods. In the future, we should consider making this extensible in some way.
+        var lifecycle = new LanguageServerLifecycle(server, connection);
+        RegisterServerRpcMethods(lifecycle, connection);
 
         // Done, now we can actually start
         await connection.ListenAsync();

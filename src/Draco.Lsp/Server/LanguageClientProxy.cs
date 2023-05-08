@@ -9,6 +9,7 @@ namespace Draco.Lsp.Server;
 /// <summary>
 /// Intercepts language client calls.
 /// </summary>
+// NOTE: Not sealed since DispatchProxy generates a class derived from this at runtime
 internal class LanguageClientProxy : DispatchProxy
 {
     internal LanguageServerConnection Connection { get; set; } = null!;

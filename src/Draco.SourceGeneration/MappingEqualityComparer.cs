@@ -6,10 +6,7 @@ namespace Draco.SourceGeneration;
 internal static class MappingEqualityComparer
 {
     internal static IEqualityComparer<TSource> Create<TSource, TKey>(Func<TSource, TKey> map)
-        where TKey : IEquatable<TKey>
-    {
-        return new MappingEqualityComparerImpl<TSource, TKey>(map);
-    }
+        where TKey : IEquatable<TKey> => new MappingEqualityComparerImpl<TSource, TKey>(map);
 
     private sealed class MappingEqualityComparerImpl<TSource, TKey> : EqualityComparer<TSource>
         where TKey : IEquatable<TKey>

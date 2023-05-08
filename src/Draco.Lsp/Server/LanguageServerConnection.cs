@@ -56,7 +56,7 @@ public sealed class LanguageServerConnection
         // Requests and notifications are sent to one of two blocks, the concurrent block or the exclusive block, based on whether the request processing
         // is expected to mutate the state of the workspace. These blocks are configured using ConcurrentExclusiveSchedulerPair so that messages sent
         // to the exclusive block are processed one at a time, in order, and never simultaneously with messages sent to the concurrent block. The concurrent block
-        // block will accept and process messages in parallel as long as no mutating messages are waiting to be processed.
+        // will accept and process messages in parallel as long as no mutating messages are waiting to be processed.
         // This allows us to use parallel processing for non-mutating ("query") requests while ensuring that mutating requests are processed in the order that the
         // client sends them.
         //
@@ -83,11 +83,11 @@ public sealed class LanguageServerConnection
         // ProcessRequestOrNotification returns a non-null result when a response message needs to be sent back to the client.
         // We keep only non-null responses and forward them to SerializeToTransport, which will serialize each LspMessage object it consumes to the output stream.
         var filterNullResponses = new TransformManyBlock<LspMessage?, LspMessage>(
-            m => m.HasValue ? new[] { m.Value } : Enumerable.Empty<LspMessage>());
+            m => m.HasValue ? new[] { m.Value } : Array.Empty<LspMessage>());
 
         this.outgoingMessages = new ActionBlock<LspMessage>(this.SerializeToTransport!);
 
-        bool ShouldHandle(LspMessage message, bool mutating)
+        bool ShouldHandle(LspMessage message, bool isExclusiveBlock)
         {
             string method;
             if (message.Is<RequestMessage>(out var request))
@@ -98,24 +98,24 @@ public sealed class LanguageServerConnection
             {
                 method = notification.Method;
             }
-            else
+            else // Response messages are handled in SendRequestAsync
             {
                 return false;
             }
 
             if (this.methodHandlers.TryGetValue(method, out var handler))
             {
-                return mutating == handler.Mutating;
+                return isExclusiveBlock == handler.Mutating;
             }
 
             // Handle in the concurrent block.
-            return mutating == false;
+            return isExclusiveBlock == false;
         }
 
         var propCompletion = new DataflowLinkOptions { PropagateCompletion = true };
 
-        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, m => ShouldHandle(m, mutating: false));
-        this.messageParser.LinkTo(exclusiveMessageHandler, propCompletion, m => ShouldHandle(m, mutating: true));
+        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, m => ShouldHandle(m, isExclusiveBlock: false));
+        this.messageParser.LinkTo(exclusiveMessageHandler, propCompletion, m => ShouldHandle(m, isExclusiveBlock: true));
 
         concurrentMessageHandler.LinkTo(filterNullResponses, propCompletion);
         exclusiveMessageHandler.LinkTo(filterNullResponses, propCompletion);
@@ -164,7 +164,7 @@ public sealed class LanguageServerConnection
                 continue;
             }
 
-            if (message != null)
+            if (message is not null)
             {
                 yield return message.Value;
             }
@@ -272,7 +272,7 @@ public sealed class LanguageServerConnection
             var TwoNewLines = "\r\n\r\n"u8;
 
             var written = 0;
-            var responseBuffer = writer.GetSpan(response.Length + ContentLengthHeader.Length + 14); // 14 UTF-8 bytes can encode any integer and 4 newlines
+            var responseBuffer = writer.GetSpan(response.Length + ContentLengthHeader.Length + 14); // 14 UTF-8 bytes can encode any integer and 2 newlines
 
             ContentLengthHeader.CopyTo(responseBuffer);
             written += ContentLengthHeader.Length;
@@ -330,7 +330,7 @@ public sealed class LanguageServerConnection
         LspMessage? Error(ResponseError error)
         {
             // We can't respond to a notification, even if we hit an error.
-            if (id != null)
+            if (id is not null)
             {
                 return CreateResponseMessage(id.Value, error);
             }
@@ -343,7 +343,7 @@ public sealed class LanguageServerConnection
             return Error(new()
             {
                 Code = -32601, // MethodNotFound
-                Message = $"A handler for the method '{method}' was not registered."
+                Message = $"A handler for the method '{method}' was not registered.",
             });
         }
 
@@ -353,22 +353,22 @@ public sealed class LanguageServerConnection
             return Error(new()
             {
                 Code = -32600, // InvalidRequest
-                Message = "Invalid request."
+                Message = "Invalid request.",
             });
         }
 
-        if (handler.ProducesResponse && id == null)
+        if (handler.ProducesResponse && id is null)
         {
             // The client sent a notification, but we have a request handler for this method.
             return null;
         }
-        else if (!handler.ProducesResponse && id != null)
+        else if (!handler.ProducesResponse && id is not null)
         {
             // The client sent a request, but we have a notification handler for this method.
             return Error(new()
             {
                 Code = -32603, // InternalError
-                Message = $"A handler for the method '{method}' was registered as a notification handler."
+                Message = $"A handler for the method '{method}' was registered as a notification handler.",
             });
         }
 
@@ -409,7 +409,6 @@ public sealed class LanguageServerConnection
 
             // If the handler takes a CancellationToken, it is always the last argument.
             args.Add(token);
-
         }
 
         OneOf<object?, Exception> result;
@@ -436,7 +435,7 @@ public sealed class LanguageServerConnection
         }
 
         // If we created a CancellationTokenSource for this request, we need to remove it from the dictionary and dispose it
-        if (cts != null)
+        if (cts is not null)
         {
             this.pendingIncomingRequests.Remove(id!.Value, out _);
             cts.Dispose();
@@ -456,14 +455,14 @@ public sealed class LanguageServerConnection
                 var errorCode = error switch
                 {
                     OperationCanceledException => -32800, // RequestCancelled
-                    _ => -32603 // InternalError
+                    _ => -32603, // InternalError
                 };
 
                 serializableResponse = new ResponseError
                 {
                     Message = error?.Message ?? "Internal error while processing request.",
                     Code = errorCode,
-                    Data = JsonSerializer.SerializeToElement(error?.ToString())
+                    Data = JsonSerializer.SerializeToElement(error?.ToString()),
                 };
             }
             else
@@ -483,7 +482,7 @@ public sealed class LanguageServerConnection
         var responseMessage = new ResponseMessage
         {
             Jsonrpc = "2.0",
-            Id = id!
+            Id = id!,
         };
 
         if (response.Is<ResponseError>(out var error))
@@ -510,7 +509,7 @@ public sealed class LanguageServerConnection
         {
             Message = ex.Message,
             Data = JsonSerializer.SerializeToElement(ex.ToString()),
-            Code = code
+            Code = code,
         };
 
         return responseError;
@@ -518,7 +517,7 @@ public sealed class LanguageServerConnection
 
     private LspMessage? ProcessImplementationDefinedMethod(string method, JsonElement? @params, OneOf<int, string>? id)
     {
-        if (id != null)
+        if (id is not null)
         {
             if (method == "$/cancelRequest")
             {
@@ -543,7 +542,7 @@ public sealed class LanguageServerConnection
         {
             Jsonrpc = "2.0",
             Method = method,
-            Params = serializedParams
+            Params = serializedParams,
         });
     }
 
@@ -557,7 +556,7 @@ public sealed class LanguageServerConnection
             Jsonrpc = "2.0",
             Method = method,
             Id = id,
-            Params = serializedParams
+            Params = serializedParams,
         });
 
         JsonElement response;
@@ -587,10 +586,7 @@ public sealed class LanguageServerConnection
         return response.Deserialize<TResponse>(jsonOptions);
     }
 
-    public void Shutdown()
-    {
-        this.shutdownTokenSource.Cancel();
-    }
+    public void Shutdown() => this.shutdownTokenSource.Cancel();
 }
 
 internal sealed class LspResponseException : Exception

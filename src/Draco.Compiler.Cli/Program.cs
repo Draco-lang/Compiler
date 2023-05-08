@@ -99,6 +99,7 @@ internal class Program
             Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(MetadataReference.FromAssembly(Assembly.LoadFrom(@"C:\Users\kubab\source\Languages\Draco\Test\TestLib.dll")))
+                .Append(MetadataReference.FromAssembly(Assembly.LoadFrom(@"C:\Users\kubab\source\repos\DracoTesting\bin\Debug\net7.0\DracoTesting.dll")))
                 .ToImmutableArray(),
             outputPath: path,
             assemblyName: name);

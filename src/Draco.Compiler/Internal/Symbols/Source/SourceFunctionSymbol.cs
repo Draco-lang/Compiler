@@ -27,6 +27,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;
+    public override bool IsStatic => true;
 
     public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 

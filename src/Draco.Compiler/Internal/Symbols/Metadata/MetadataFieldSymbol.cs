@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api.Semantics;
 
@@ -13,7 +14,7 @@ internal sealed class MetadataFieldSymbol : FieldSymbol
 
     public override bool IsMutable => false; // TODO
 
-    public override bool IsStatic { get; }
+    public override bool IsStatic => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Static);
 
     public override string Name => this.MetadataReader.GetString(this.fieldDefinition.Name);
 
@@ -31,11 +32,10 @@ internal sealed class MetadataFieldSymbol : FieldSymbol
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly FieldDefinition fieldDefinition;
-    public MetadataFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition, bool isStatic)
+    public MetadataFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.fieldDefinition = fieldDefinition;
-        this.IsStatic = isStatic;
     }
 
     private TypeSymbol Build()

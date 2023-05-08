@@ -12,6 +12,8 @@ internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol
 
     public TypeSymbol Type => IntrinsicSymbols.ErrorType;
 
+    public bool IsStatic => true;
+
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.AnySymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => throw new System.NotSupportedException();

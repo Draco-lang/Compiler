@@ -14,4 +14,6 @@ internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
     /// True, if this local is mutable.
     /// </summary>
     public abstract bool IsMutable { get; }
+
+    public abstract bool IsStatic { get; }
 }

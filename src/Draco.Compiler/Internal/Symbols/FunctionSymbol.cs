@@ -64,6 +64,8 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     /// </summary>
     public abstract TypeSymbol ReturnType { get; }
 
+    public abstract bool IsStatic { get; }
+
     /// <summary>
     /// If true, this is a member function.
     /// </summary>

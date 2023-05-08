@@ -9,4 +9,9 @@ internal interface ITypedSymbol
     /// The type of value the symbol references.
     /// </summary>
     public TypeSymbol Type { get; }
+
+    /// <summary>
+    /// Specifing if given symbol is static.
+    /// </summary>
+    public bool IsStatic { get; }
 }

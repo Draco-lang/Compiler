@@ -7,6 +7,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class GlobalSymbol : VariableSymbol
 {
+    public override bool IsStatic => true;
+
     public override ISymbol ToApiSymbol() => new Api.Semantics.GlobalSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitGlobal(this);

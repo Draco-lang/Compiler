@@ -4,6 +4,7 @@ using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Scripting;
@@ -93,11 +94,12 @@ internal class Program
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(syntaxTree),
             metadataReferences: //references
-            //                    .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
-            //                    .ToImmutableArray(),
+                                //                    .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                                //                    .ToImmutableArray(),
             Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-            .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-            .ToImmutableArray(),
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(MetadataReference.FromAssembly(Assembly.LoadFrom(@"C:\Users\kubab\source\Languages\Draco\Test\TestLib.dll")))
+                .ToImmutableArray(),
             outputPath: path,
             assemblyName: name);
         using var peStream = new FileStream(Path.ChangeExtension(output.FullName, ".dll"), FileMode.OpenOrCreate);

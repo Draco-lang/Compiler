@@ -240,6 +240,10 @@
     <Field Name="MemberAccess" Type="BoundMemberExpression" />
   </Node>
 
+  <Node Name="BoundStaticFieldLvalue" Base="BoundLvalue">
+    <Field Name="Field" Type="FieldSymbol" />
+  </Node>
+
   <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
     <Field Name="Array" Type="BoundExpression" />
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />

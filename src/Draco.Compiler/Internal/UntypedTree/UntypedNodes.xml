@@ -219,4 +219,9 @@
     <Field Name="MemberAccess" Type="UntypedMemberExpression" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
+
+  <Node Name="UntypedStaticFieldLvalue" Base="UntypedLvalue">
+    <Field Name="Field" Type="FieldSymbol" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
 </Tree>

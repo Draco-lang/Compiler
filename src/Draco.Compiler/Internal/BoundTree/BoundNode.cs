@@ -188,6 +188,11 @@ internal partial class BoundFieldLvalue
     public override TypeSymbol Type => this.MemberAccess.Type;
 }
 
+internal partial class BoundStaticFieldLvalue
+{
+    public override TypeSymbol Type => this.Field.Type;
+}
+
 internal partial class BoundArrayAccessLvalue
 {
     public override TypeSymbol Type => ((ArrayTypeSymbol)this.Array.TypeRequired).ElementType;

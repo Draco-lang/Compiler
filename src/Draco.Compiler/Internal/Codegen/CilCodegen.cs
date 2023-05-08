@@ -193,7 +193,7 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
             case FieldAccess fieldAccess:
-                this.EncodePush(fieldAccess.Reciever);
+                if (!fieldAccess.IsStatic) this.EncodePush(fieldAccess.Reciever);
                 this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(fieldAccess.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
                 this.InstructionEncoder.Token(this.GetMemberReferenceHandle(fieldAccess.Member));
@@ -339,7 +339,7 @@ internal sealed class CilCodegen
             this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
             break;
         case FieldAccess f:
-            this.EncodePush(f.Reciever);
+            if (!f.IsStatic) this.EncodePush(f.Reciever);
             this.InstructionEncoder.OpCode(f.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
             this.InstructionEncoder.Token(this.GetMemberReferenceHandle(f.Member));
             break;

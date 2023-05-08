@@ -463,8 +463,8 @@ internal sealed class Translator
     /// <returns>A single type, containing all fields of <paramref name="literals"/>.</returns>
     private static Ts.Type MergeStructureLiterals(IEnumerable<Ts.StructureLiteral> literals)
     {
-        // Don't compare documentation, optionality, etc.
-        var comparer = MappingEqualityComparer.Create((Ts.Property p) => (p.Name, p.Type));
+        // Don't compare documentation etc.
+        var comparer = MappingEqualityComparer.Create((Ts.Property p) => (p.Name, p.Type, p.IsOptional));
 
         var intersection = new HashSet<Ts.Property>(literals.First().Properties, comparer);
         var union = new HashSet<Ts.Property>(comparer);

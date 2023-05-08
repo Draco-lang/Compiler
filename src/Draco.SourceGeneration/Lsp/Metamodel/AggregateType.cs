@@ -6,7 +6,7 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Includes AndType, OrType, TupleType.
 /// </summary>
-internal sealed record AggregateType : Type
+internal sealed record class AggregateType : Type
 {
     public override required string Kind { get; set; }
 

@@ -6,7 +6,7 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Defines an unnamed structure of an object literal.
 /// </summary>
-internal sealed record StructureLiteral : IDocumented
+internal sealed record class StructureLiteral : IDocumented
 {
     public string? Documentation { get; set; }
     public string? Since { get; set; }

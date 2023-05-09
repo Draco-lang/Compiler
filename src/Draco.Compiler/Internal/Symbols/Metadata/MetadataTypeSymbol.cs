@@ -45,10 +45,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // TODO: nested-types
-        // TODO: static fields
         // TODO: static properties
-        // TODO: static functions
-        // TODO: nonstatic fields
         // TODO: nonstatic properties
 
         // Methods

@@ -17,7 +17,7 @@ public interface ILanguageServer : IDisposable
 
     // NOTE: This is handled by the lifecycle manager, so it's not annotated
     // The lifecycle manager will dynamically register capabilities here,
-    // then invokes these method
+    // then invokes these methods
     public Task InitializeAsync(InitializeParams param);
 
     public Task InitializedAsync(InitializedParams param);

@@ -7,19 +7,20 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
+
 internal sealed class Module : IModule
 {
     private static readonly string doubleNewline = $"{Environment.NewLine}{Environment.NewLine}";
 
     private readonly Dictionary<GlobalSymbol, Global> globals = new();
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
-    private readonly Dictionary<ModuleSymbol, IModule> subModules = new();
+    private readonly Dictionary<ModuleSymbol, IModule> submodules = new();
 
     public ModuleSymbol Symbol { get; }
 
     public string Name => this.Symbol.Name;
 
-    public IReadOnlyDictionary<ModuleSymbol, IModule> SubModules => this.subModules;
+    public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
 
     public IReadOnlyDictionary<GlobalSymbol, Global> Globals => this.globals;
 
@@ -49,7 +50,7 @@ internal sealed class Module : IModule
     {
         var result = ImmutableArray.CreateBuilder<IProcedure>();
         result.AddRange(this.procedures.Values.ToImmutableArray());
-        foreach (var submodule in this.subModules.Values)
+        foreach (var submodule in this.submodules.Values)
         {
             result.AddRange(((Module)submodule).GetProcedures());
         }
@@ -78,10 +79,10 @@ internal sealed class Module : IModule
 
     public Module DefineModule(ModuleSymbol moduleSymbol)
     {
-        if (!this.subModules.TryGetValue(moduleSymbol, out var result))
+        if (!this.submodules.TryGetValue(moduleSymbol, out var result))
         {
             result = new Module(moduleSymbol, this.Assembly, this);
-            this.subModules.Add(moduleSymbol, result);
+            this.submodules.Add(moduleSymbol, result);
         }
         return (Module)result;
     }
@@ -93,8 +94,8 @@ internal sealed class Module : IModule
         result.AppendJoin(Environment.NewLine, this.globals.Values);
         if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.procedures.Values);
-        if (this.procedures.Count > 0 && this.subModules.Count > 0) result.Append(doubleNewline);
-        result.AppendJoin(doubleNewline, this.subModules.Values);
+        if (this.procedures.Count > 0 && this.submodules.Count > 0) result.Append(doubleNewline);
+        result.AppendJoin(doubleNewline, this.submodules.Values);
         return result.ToString();
     }
 }

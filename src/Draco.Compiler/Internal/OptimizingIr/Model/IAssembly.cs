@@ -11,7 +11,7 @@ internal interface IAssembly
     /// <summary>
     /// The root module of this assembly.
     /// </summary>
-    IModule RootModule { get; }
+    public IModule RootModule { get; }
 
     /// <summary>
     /// The name of this assembly.

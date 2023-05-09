@@ -31,7 +31,7 @@ internal interface IModule
     /// <summary>
     /// The submodules of this module.
     /// </summary>
-    public IReadOnlyDictionary<ModuleSymbol, IModule> SubModules { get; }
+    public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules { get; }
 
     /// <summary>
     /// The globals within this module.

@@ -70,7 +70,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var index = parentModules!.IndexOf(parent.Symbol.FullName);
             if (index == -1) throw new System.InvalidOperationException();
             if (parentModules.Count() - 1 == index) return parent;
-            foreach (var subModule in parent.SubModules.Values.Cast<Module>())
+            foreach (var subModule in parent.Submodules.Values.Cast<Module>())
             {
                 if (subModule.Symbol.FullName == parentModules[index + 1]) return Recurse(subModule);
             }

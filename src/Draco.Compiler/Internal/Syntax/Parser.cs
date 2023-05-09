@@ -181,6 +181,13 @@ internal sealed class Parser
     private bool IsExpressionStarter(TokenKind kind) => expressionStarters.Contains(kind);
 
     /// <summary>
+    /// Checks if the token kind is visibility modifier.
+    /// </summary>
+    /// <param name="kind">The token kind to check for.</param>
+    /// <returns>True, if the token kind is visibility modifier, otherwise false.</returns>
+    private bool IsVisibilityModifier(TokenKind kind) => kind == TokenKind.KeywordInternal || kind == TokenKind.KeywordPublic ? true : false;
+
+    /// <summary>
     /// Parses a <see cref="CompilationUnitSyntax"/> until the end of input.
     /// </summary>
     /// <returns>The parsed <see cref="CompilationUnitSyntax"/>.</returns>
@@ -198,7 +205,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     internal DeclarationSyntax ParseDeclaration()
     {
-        var peekAmount = this.Peek() == TokenKind.KeywordInternal || this.Peek() == TokenKind.KeywordPublic ? 1 : 0;
+        var peekAmount = this.IsVisibilityModifier(this.Peek()) ? 1 : 0;
         switch (this.Peek(peekAmount))
         {
         case TokenKind.KeywordImport:
@@ -304,8 +311,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
     private VariableDeclarationSyntax ParseVariableDeclaration()
     {
-        SyntaxToken? visibility = null;
-        if (this.Peek() == TokenKind.KeywordInternal || this.Peek() == TokenKind.KeywordPublic) visibility = this.Advance();
+        SyntaxToken? visibility = this.ParseVisibilityModifier();
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
         Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);
@@ -331,8 +337,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
     private FunctionDeclarationSyntax ParseFunctionDeclaration()
     {
-        SyntaxToken? visibility = null;
-        if (this.Peek() == TokenKind.KeywordInternal || this.Peek() == TokenKind.KeywordPublic) visibility = this.Advance();
+        SyntaxToken? visibility = this.ParseVisibilityModifier();
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
         var name = this.Expect(TokenKind.Identifier);
@@ -1011,6 +1016,13 @@ internal sealed class Parser
             elements.Add(punct);
         }
         return elements.ToSeparatedSyntaxList();
+    }
+
+    private SyntaxToken? ParseVisibilityModifier()
+    {
+        var peek = this.Peek();
+        if (peek == TokenKind.KeywordInternal || peek == TokenKind.KeywordPublic) return this.Advance();
+        return null;
     }
 
     // Token-level operators

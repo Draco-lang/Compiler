@@ -26,7 +26,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public override Api.Semantics.VisibilityType Visibility => this.Members.Any(x => x.Visibility == Api.Semantics.VisibilityType.Public) ? Api.Semantics.VisibilityType.Public : Api.Semantics.VisibilityType.Internal;
+    public override Api.Semantics.Visibility Visibility => this.Members.Any(x => x.Visibility == Api.Semantics.Visibility.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
     public override SyntaxNode? DeclaringSyntax => null;
 

@@ -280,7 +280,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
 
         TypeAttributes visibility;
-        if (module.Symbol.Visibility == Api.Semantics.VisibilityType.Public)
+        if (module.Symbol.Visibility == Api.Semantics.Visibility.Public)
         {
             visibility = parentModule is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public;
         }
@@ -305,7 +305,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
 
         // We encode every submodule
-        foreach (var subModule in module.SubModules)
+        foreach (var subModule in module.Submodules)
         {
             this.EncodeModule((OptimizingIr.Model.Module)subModule.Value, systemRuntime, systemObject, createdModule, currentFieldIndex, currentProcIndex);
         }
@@ -315,9 +315,9 @@ internal sealed class MetadataCodegen : MetadataWriter
     {
         var visibility = global.Symbol.Visibility switch
         {
-            Api.Semantics.VisibilityType.Public => FieldAttributes.Public,
-            Api.Semantics.VisibilityType.Internal => FieldAttributes.Assembly,
-            Api.Semantics.VisibilityType.Private => FieldAttributes.Private,
+            Api.Semantics.Visibility.Public => FieldAttributes.Public,
+            Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
+            Api.Semantics.Visibility.Private => FieldAttributes.Private,
             _ => throw new ArgumentOutOfRangeException(nameof(global.Symbol.Visibility)),
         };
 
@@ -332,9 +332,9 @@ internal sealed class MetadataCodegen : MetadataWriter
     {
         var visibility = procedure.Symbol.Visibility switch
         {
-            Api.Semantics.VisibilityType.Public => MethodAttributes.Public,
-            Api.Semantics.VisibilityType.Internal => MethodAttributes.Assembly,
-            Api.Semantics.VisibilityType.Private => MethodAttributes.Private,
+            Api.Semantics.Visibility.Public => MethodAttributes.Public,
+            Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
+            Api.Semantics.Visibility.Private => MethodAttributes.Private,
             _ => throw new ArgumentOutOfRangeException(nameof(procedure.Symbol.Visibility)),
         };
 

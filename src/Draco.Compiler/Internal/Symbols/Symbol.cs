@@ -84,7 +84,7 @@ internal abstract partial class Symbol
     /// <summary>
     /// The visibility of this symbol.
     /// </summary>
-    public virtual Api.Semantics.VisibilityType Visibility => Api.Semantics.VisibilityType.Public;
+    public virtual Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     /// <summary>
     /// The syntax declaring this symbol.

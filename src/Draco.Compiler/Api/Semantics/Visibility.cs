@@ -3,7 +3,7 @@ namespace Draco.Compiler.Api.Semantics;
 /// <summary>
 /// The visibility of certain symbol.
 /// </summary>
-public enum VisibilityType
+public enum Visibility
 {
     /// <summary>
     /// The symbol is visible only in the scope it was declared in.

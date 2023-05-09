@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -145,69 +146,114 @@ internal sealed class MetadataCodegen : MetadataWriter
     public MemberReferenceHandle GetIntrinsicReferenceHandle(Symbol symbol) => this.intrinsicReferenceHandles[symbol];
 
     // TODO: This can be cached by symbol to avoid double reference instertion
-    public MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => symbol switch
+    public EntityHandle GetEntityHandle(Symbol symbol)
     {
-        FunctionSymbol func => this.AddMemberReference(
-            parent: this.GetTypeReferenceHandle(func.ContainingSymbol),
-            name: func.Name,
-            signature: this.EncodeBlob(e =>
-            {
-                e
-                    .MethodSignature(isInstanceMethod: func.IsMember)
-                    .Parameters(func.Parameters.Length, out var returnType, out var parameters);
-                this.EncodeReturnType(returnType, func.ReturnType);
-                foreach (var param in func.Parameters) this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
-            })),
-        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
-    };
-
-    // TODO: Cache?
-    public EntityHandle GetTypeReferenceHandle(Symbol? symbol) => symbol switch
-    {
-        Symbol s when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(s, out var metadataSymbol) =>
-            this.GetTypeReferenceHandle(metadataSymbol),
-        MetadataStaticClassSymbol staticClass => this.GetOrAddTypeReference(
-            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
-            @namespace: GetNamespaceForSymbol(symbol),
-            name: staticClass.MetadataName),
-        MetadataTypeSymbol metadataType => this.GetOrAddTypeReference(
-            parent: this.GetContainingTypeOrModuleHandle(symbol.ContainingSymbol),
-            @namespace: GetNamespaceForSymbol(symbol),
-            name: metadataType.MetadataName),
-        TypeInstanceSymbol instance => this.GetTypeInstanceReferenceHandle(instance),
-        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
-    };
-
-    private EntityHandle GetTypeInstanceReferenceHandle(TypeInstanceSymbol instance)
-    {
-        var blob = this.EncodeBlob(e =>
+        switch (symbol)
         {
-            var encoder = e.TypeSpecificationSignature();
-            var typeRef = this.GetTypeReferenceHandle(instance.GenericDefinition);
-            var argsEncoder = encoder.GenericInstantiation(typeRef, instance.GenericArguments.Length, instance.IsValueType);
-            foreach (var arg in instance.GenericArguments)
+        // If we can translate a symbol to a metadata type, get the handle for that
+        // This is because primitives are encoded differently as an entity handle
+        case Symbol when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(symbol, out var metadataSymbol):
+            return this.GetEntityHandle(metadataSymbol);
+
+        case MetadataAssemblySymbol assembly:
+            return this.AddAssemblyReference(assembly);
+
+        // Metadata types
+        case IMetadataSymbol metadataSymbol when metadataSymbol is TypeSymbol or MetadataStaticClassSymbol:
+            Debug.Assert(symbol.ContainingSymbol is not null);
+            return this.GetOrAddTypeReference(
+                parent: this.GetContainerEntityHandle(symbol.ContainingSymbol),
+                @namespace: GetNamespaceForSymbol(symbol),
+                name: metadataSymbol.MetadataName);
+
+        // Generic type instance
+        case TypeSymbol typeSymbol when typeSymbol.IsGenericInstance:
+        {
+            Debug.Assert(typeSymbol.GenericDefinition is not null);
+            var blob = this.EncodeBlob(e =>
             {
-                this.EncodeSignatureType(argsEncoder.AddArgument(), arg);
-            }
-        });
-        return this.MetadataBuilder.AddTypeSpecification(blob);
+                var encoder = e.TypeSpecificationSignature();
+                var typeRef = this.GetEntityHandle(typeSymbol.GenericDefinition);
+                var argsEncoder = encoder.GenericInstantiation(
+                    genericType: typeRef,
+                    genericArgumentCount: typeSymbol.GenericArguments.Length,
+                    isValueType: typeSymbol.IsValueType);
+                foreach (var arg in typeSymbol.GenericArguments)
+                {
+                    this.EncodeSignatureType(argsEncoder.AddArgument(), arg);
+                }
+            });
+            return this.MetadataBuilder.AddTypeSpecification(blob);
+        }
+
+        // Generic function instance
+        case FunctionSymbol func when func.IsGenericInstance:
+        {
+            Debug.Assert(func.GenericDefinition is not null);
+            var blob = this.EncodeBlob(e =>
+            {
+                var encoder = e.MethodSpecificationSignature(func.GenericArguments.Length);
+                foreach (var arg in func.GenericArguments)
+                {
+                    this.EncodeSignatureType(encoder.AddArgument(), arg);
+                }
+            });
+            var genericDef = this.GetEntityHandle(func.GenericDefinition);
+            return this.MetadataBuilder.AddMethodSpecification(genericDef, blob);
+        }
+
+        // Nongeneric function
+        case FunctionSymbol func:
+            return this.AddMemberReference(
+                parent: func.ContainingSymbol is null
+                    ? this.freeFunctionsTypeReferenceHandle
+                    : this.GetEntityHandle(func.ContainingSymbol),
+                name: func.Name,
+                signature: this.EncodeBlob(e =>
+                {
+                    e
+                        .MethodSignature(
+                            genericParameterCount: func.GenericParameters.Length,
+                            isInstanceMethod: func.IsMember)
+                        .Parameters(func.Parameters.Length, out var returnType, out var parameters);
+                    this.EncodeReturnType(returnType, func.ReturnType);
+                    foreach (var param in func.Parameters)
+                    {
+                        this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
+                    }
+                }));
+
+        // NOTE: Temporary while we only have one module
+        case SourceModuleSymbol:
+            return this.freeFunctionsTypeReferenceHandle;
+
+        default:
+            throw new ArgumentOutOfRangeException(nameof(symbol));
+        }
     }
 
-    private EntityHandle GetContainingTypeOrModuleHandle(Symbol? symbol) => symbol switch
+    private EntityHandle GetContainerEntityHandle(Symbol symbol) => symbol switch
     {
-        MetadataNamespaceSymbol ns => this.GetContainingTypeOrModuleHandle(ns.ContainingSymbol),
-        MetadataAssemblySymbol module => this.GetOrAddAssemblyReference(
-            name: module.Name,
-            // TODO: What version
-            version: new(1, 0)),
+        MetadataNamespaceSymbol ns => this.GetContainerEntityHandle(ns.ContainingSymbol),
+        MetadataAssemblySymbol module => this.AddAssemblyReference(module),
+        MetadataTypeSymbol type => this.GetOrAddTypeReference(
+            assembly: this.AddAssemblyReference(type.Assembly),
+            @namespace: GetNamespaceForSymbol(type),
+            name: type.Name),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
+
+    private AssemblyReferenceHandle AddAssemblyReference(MetadataAssemblySymbol module) =>
+        this.GetOrAddAssemblyReference(
+            name: module.Name,
+            version: new(1, 0)); // TODO: What version?
 
     private static string? GetNamespaceForSymbol(Symbol symbol) => symbol switch
     {
         MetadataStaticClassSymbol staticClass => GetNamespaceForSymbol(staticClass.ContainingSymbol),
         MetadataTypeSymbol type => GetNamespaceForSymbol(type.ContainingSymbol),
         MetadataNamespaceSymbol ns => ns.FullName,
+        _ when symbol.ContainingSymbol is not null => GetNamespaceForSymbol(symbol.ContainingSymbol),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
@@ -403,8 +449,9 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (type.GenericArguments.Length > 0)
         {
             // Generic instantiation
+            Debug.Assert(type.GenericDefinition is not null);
             var genericsEncoder = encoder.GenericInstantiation(
-                genericType: this.GetTypeReferenceHandle(type.GenericDefinition),
+                genericType: this.GetEntityHandle(type.GenericDefinition),
                 genericArgumentCount: type.GenericArguments.Length,
                 isValueType: type.IsValueType);
             foreach (var arg in type.GenericArguments)
@@ -416,7 +463,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         if (type is MetadataTypeSymbol metadataType)
         {
-            var reference = this.GetTypeReferenceHandle(metadataType);
+            var reference = this.GetEntityHandle(metadataType);
             encoder.Type(reference, metadataType.IsValueType);
             return;
         }

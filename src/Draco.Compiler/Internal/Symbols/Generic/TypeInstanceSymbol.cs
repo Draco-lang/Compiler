@@ -94,7 +94,6 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         // Either way:
         //  - We have generic parameters, this is still a generic definition
         //  - Non-generic
-        // 
         return this.GenericDefinition.ToString();
     }
 

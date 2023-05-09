@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// Utility base-class for methods read up from metadata.
 /// </summary>
-internal class MetadataMethodSymbol : FunctionSymbol
+internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 {
     // TODO
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
@@ -43,17 +43,12 @@ internal class MetadataMethodSymbol : FunctionSymbol
     private ImmutableArray<ParameterSymbol> parameters;
     private TypeSymbol? returnType;
 
-    public override string Name => this.MetadataReader.GetString(this.methodDefinition.Name);
+    public override string Name => this.MetadataName;
+    public override string MetadataName => this.MetadataReader.GetString(this.methodDefinition.Name);
 
-    /// <summary>
-    /// The metadata assembly of this metadata symbol.
-    /// </summary>
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    /// <summary>
-    /// The metadata reader that was used to read up this metadata symbol.
-    /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly MethodDefinition methodDefinition;

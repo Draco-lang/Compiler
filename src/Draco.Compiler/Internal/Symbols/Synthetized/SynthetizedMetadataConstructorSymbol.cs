@@ -18,9 +18,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunctionSymbol
 {
-    public override MetadataTypeSymbol ContainingSymbol { get; }
-
-    public override string Name => this.ContainingSymbol.Name;
+    public override string Name => this.instantiatedType.Name;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         this.genericParameters ??= this.BuildGenericParameters();
@@ -41,15 +39,16 @@ internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunction
     private GenericContext? Context => this.context ??= this.BuildContext();
     private GenericContext? context;
 
+    private readonly MetadataTypeSymbol instantiatedType;
     private readonly MethodDefinition ctorDefinition;
 
-    public SynthetizedMetadataConstructorSymbol(MetadataTypeSymbol containingType, MethodDefinition ctorDefinition)
+    public SynthetizedMetadataConstructorSymbol(MetadataTypeSymbol instantiatedType, MethodDefinition ctorDefinition)
     {
-        this.ContainingSymbol = containingType;
+        this.instantiatedType = instantiatedType;
         this.ctorDefinition = ctorDefinition;
     }
 
-    private ImmutableArray<TypeParameterSymbol> BuildGenericParameters() => this.ContainingSymbol.GenericParameters
+    private ImmutableArray<TypeParameterSymbol> BuildGenericParameters() => this.instantiatedType.GenericParameters
         .Select(p => new SynthetizedTypeParameterSymbol(this, p.Name))
         .Cast<TypeParameterSymbol>()
         .ToImmutableArray();
@@ -60,8 +59,8 @@ internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunction
         .ToImmutableArray();
 
     private TypeSymbol BuildReturnType() => this.Context is null
-        ? this.ContainingSymbol
-        : this.ContainingSymbol.GenericInstantiate(this.ContainingSymbol.ContainingSymbol, this.Context.Value);
+        ? this.instantiatedType
+        : this.instantiatedType.GenericInstantiate(this.instantiatedType.ContainingSymbol, this.Context.Value);
 
     private BoundStatement BuildBody() => ExpressionStatement(ReturnExpression(
         value: ObjectCreationExpression(
@@ -82,7 +81,7 @@ internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunction
     private GenericContext? BuildContext()
     {
         if (this.GenericParameters.Length == 0) return null;
-        var substitutions = this.ContainingSymbol.GenericParameters
+        var substitutions = this.instantiatedType.GenericParameters
             .Zip(this.GenericParameters)
             .ToImmutableDictionary(p => p.First, p => p.Second as TypeSymbol);
         return new(substitutions);

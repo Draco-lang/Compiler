@@ -10,15 +10,15 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A type definition read up from metadata.
 /// </summary>
-internal sealed class MetadataTypeSymbol : TypeSymbol
+internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
-    public string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
-
     public override string Name => this.name ??= this.BuildName();
     private string? name;
+
+    public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
     private ImmutableArray<TypeParameterSymbol>? genericParameters;
@@ -27,15 +27,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     // TODO: Is this correct?
     public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
 
-    /// <summary>
-    /// The metadata assembly of this metadata symbol.
-    /// </summary>
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    /// <summary>
-    /// The metadata reader that was used to read up this metadata symbol.
-    /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly TypeDefinition typeDefinition;

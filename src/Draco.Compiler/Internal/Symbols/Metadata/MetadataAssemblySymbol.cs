@@ -8,14 +8,17 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// An assembly imported from metadata.
 /// </summary>
-internal class MetadataAssemblySymbol : ModuleSymbol
+internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members => this.RootNamespace.Members;
 
+    /// <summary>
+    /// The root namespace of this assembly.
+    /// </summary>
     public MetadataNamespaceSymbol RootNamespace => this.rootNamespace ??= this.BuildRootNamespace();
     private MetadataNamespaceSymbol? rootNamespace;
 
-    public override string Name => this.MetadataReader.GetString(this.assemblyDefinition.Name);
+    public override string Name => this.MetadataName;
     // NOTE: We don't emit the name of the module in fully qualified names
     public override string FullName => string.Empty;
     public override Symbol ContainingSymbol { get; }
@@ -26,9 +29,9 @@ internal class MetadataAssemblySymbol : ModuleSymbol
     public AssemblyName AssemblyName => this.assemblyName ??= this.assemblyDefinition.GetAssemblyName();
     private AssemblyName? assemblyName;
 
-    /// <summary>
-    /// The metadata reader used to read this assembly.
-    /// </summary>
+    public override string MetadataName => this.MetadataReader.GetString(this.assemblyDefinition.Name);
+    public MetadataAssemblySymbol Assembly => this;
+
     public MetadataReader MetadataReader { get; }
 
     /// <summary>

@@ -202,6 +202,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddMethodSpecification(genericDef, blob);
         }
 
+        // TODO: Can we get rid of this hack?
         // A function in a generic instance type
         // We need to reference the generic function
         case FunctionInstanceSymbol func when func.ContainingSymbol is not null

@@ -29,7 +29,7 @@ internal sealed class DracoConfigurationRepository
             },
         });
 
-        this.InlayHints.ParameterNames = cfg[0].Value<bool>("parameterNames");
-        this.InlayHints.VariableTypes = cfg[0].Value<bool>("variableTypes");
+        this.InlayHints.ParameterNames = cfg[0].GetProperty("parameterNames"u8).GetBoolean();
+        this.InlayHints.VariableTypes = cfg[0].GetProperty("variableTypes"u8).GetBoolean();
     }
 }

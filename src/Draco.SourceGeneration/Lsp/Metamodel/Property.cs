@@ -3,17 +3,17 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Represents an object property.
 /// </summary>
-internal sealed class Property : IDeclaration
+internal sealed record class Property : IDeclaration
 {
     /// <summary>
     /// The property name.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
     /// <summary>
     /// The type of the property.
     /// </summary>
-    public Type Type { get; set; } = null!;
+    public required Type Type { get; set; }
 
     /// <summary>
     /// Whether the property is optional. If

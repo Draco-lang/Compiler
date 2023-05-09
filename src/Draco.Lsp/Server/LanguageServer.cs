@@ -1,12 +1,9 @@
 using System;
-using System.IO;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Castle.DynamicProxy;
 using Draco.Lsp.Attributes;
-using Draco.Lsp.Serialization;
-using StreamJsonRpc;
 
 namespace Draco.Lsp.Server;
 
@@ -20,15 +17,10 @@ public static class LanguageServer
     /// </summary>
     /// <param name="stream">The duplex communication stream.</param>
     /// <returns>The constructed language client.</returns>
-    public static ILanguageClient Connect(Stream stream)
+    public static ILanguageClient Connect(IDuplexPipe stream)
     {
-        // Create an RPC message handler with the custom JSON converters
-        var messageFormatter = new JsonMessageFormatter();
-        messageFormatter.JsonSerializer.Converters.Add(new TupleConverter());
-        var messageHandler = new HeaderDelimitedMessageHandler(stream, messageFormatter);
-
         // Create the connection
-        var jsonRpc = new JsonRpc(messageHandler);
+        var jsonRpc = new LanguageServerConnection(stream);
 
         // Generate client proxy
         var languageClient = GenerateClientProxy(jsonRpc);
@@ -45,62 +37,39 @@ public static class LanguageServer
     /// <returns>The task that completes when the communication is over.</returns>
     public static async Task RunAsync(this ILanguageClient client, ILanguageServer server)
     {
-        var jsonRpc = client.Connection;
+        var connection = client.Connection;
 
-        // Register builtin server methods
-        RegisterBuiltinRpcMethods(server, jsonRpc);
         // Register server methods
-        RegisterServerRpcMethods(server, jsonRpc);
+        RegisterServerRpcMethods(server, connection);
+
+        // Register builtin server methods. In the future, we should consider making this extensible in some way.
+        var lifecycle = new LanguageServerLifecycle(server, connection);
+        RegisterServerRpcMethods(lifecycle, connection);
 
         // Done, now we can actually start
-        jsonRpc.StartListening();
-        await jsonRpc.Completion;
+        await connection.ListenAsync();
     }
 
-    private static void RegisterBuiltinRpcMethods(ILanguageServer server, JsonRpc jsonRpc)
-    {
-        var lifecycle = new LanguageServerLifecycle(server, jsonRpc);
-        jsonRpc.AddLocalRpcTarget(lifecycle);
-    }
-
-    private static void RegisterServerRpcMethods(ILanguageServer server, JsonRpc jsonRpc)
+    private static void RegisterServerRpcMethods(object target, LanguageServerConnection connection)
     {
         // Go through all methods of the server and register it
         // NOTE: We go through the interfaces, because interface attributes are not inherited
-        var langserverMethods = server
+        var langserverMethods = target
             .GetType()
             .GetInterfaces()
-            .SelectMany(i => i.GetMethods(BindingFlags.Public | BindingFlags.Instance));
+            .SelectMany(i => i.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            .Where(m => Attribute.IsDefined(m, typeof(RequestAttribute)) || Attribute.IsDefined(m, typeof(NotificationAttribute)));
+
         foreach (var method in langserverMethods)
         {
-            var requestAttr = method.GetCustomAttribute<RequestAttribute>();
-            var notificationAttr = method.GetCustomAttribute<NotificationAttribute>();
-            if (requestAttr is not null && notificationAttr is not null)
-            {
-                throw new InvalidOperationException($"method {method.Name} can not be both a request and notification handler");
-            }
-
-            if (requestAttr is not null)
-            {
-                // It's a request, register it
-                jsonRpc.AddLocalRpcMethod(method, server, GenerateRpcMethodAttribute(requestAttr.Method));
-            }
-            if (notificationAttr is not null)
-            {
-                // It's a notification, register it
-                jsonRpc.AddLocalRpcMethod(method, server, GenerateRpcMethodAttribute(notificationAttr.Method));
-            }
+            connection.AddRpcMethod(method, target);
         }
     }
 
-    private static ILanguageClient GenerateClientProxy(JsonRpc rpc)
+    private static ILanguageClient GenerateClientProxy(LanguageServerConnection connection)
     {
-        var generator = new ProxyGenerator();
-        return generator.CreateInterfaceProxyWithoutTarget<ILanguageClient>(new LanguageClientInterceptor(rpc));
+        var proxy = DispatchProxy.Create<ILanguageClient, LanguageClientProxy>();
+        ((LanguageClientProxy)(object)proxy).Connection = connection;
+        return proxy;
     }
-
-    private static JsonRpcMethodAttribute GenerateRpcMethodAttribute(string name) => new(name)
-    {
-        UseSingleObjectParameterDeserialization = true,
-    };
 }

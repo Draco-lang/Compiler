@@ -325,7 +325,7 @@ internal sealed class Translator
                     .ToImmutableArray();
                 var tsSubtype = new Ts.AggregateType
                 {
-                    Items = items,
+                    Items = items.AsEquatableArray(),
                     Kind = "or",
                 };
                 return this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
@@ -340,7 +340,7 @@ internal sealed class Translator
                     .ToImmutableArray();
                 var tsSubtype = new Ts.AggregateType
                 {
-                    Items = items,
+                    Items = items.AsEquatableArray(),
                     Kind = "or",
                 };
                 var subtype = this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
@@ -351,8 +351,7 @@ internal sealed class Translator
             if (items.Count(IsStructureLiteral) > 1)
             {
                 var literals = items
-                    .Where(IsStructureLiteral)
-                    .Cast<Ts.StructureLiteralType>()
+                    .OfType<Ts.StructureLiteralType>()
                     .Select(l => l.Value);
                 var mergedLiteral = MergeStructureLiterals(literals);
 
@@ -362,7 +361,7 @@ internal sealed class Translator
                     .ToImmutableArray();
                 var tsSubtype = new Ts.AggregateType
                 {
-                    Items = items,
+                    Items = items.AsEquatableArray(),
                     Kind = "or",
                 };
                 return this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
@@ -464,33 +463,31 @@ internal sealed class Translator
     /// <returns>A single type, containing all fields of <paramref name="literals"/>.</returns>
     private static Ts.Type MergeStructureLiterals(IEnumerable<Ts.StructureLiteral> literals)
     {
-        var newFields = new Dictionary<string, Ts.Property>();
+        // Don't compare documentation etc.
+        var comparer = MappingEqualityComparer.Create((Ts.Property p) => (p.Name, p.Type, p.IsOptional));
+
+        var intersection = new HashSet<Ts.Property>(literals.First().Properties, comparer);
+        var union = new HashSet<Ts.Property>(comparer);
+
         foreach (var alt in literals)
         {
-            foreach (var field in alt.Properties)
-            {
-                newFields[field.Name] = field;
-                if (!newFields.TryGetValue(field.Name, out var existing))
-                {
-                    // New, add it
-                    newFields.Add(field.Name, field);
-                }
-                else
-                {
-                    // Check, if nullability is looser
-                    // If so, replace
-                    if (field.IsOptional && !existing.IsOptional) newFields[field.Name] = field;
-                }
-            }
+            intersection.IntersectWith(alt.Properties);
+            union.UnionWith(alt.Properties);
         }
-        var mergedLiteral = new Ts.StructureLiteral
-        {
-            Properties = newFields.Values.ToImmutableArray(),
-        };
+
+        union.ExceptWith(intersection);
+
+        // Prefer the nullable version of the property if it exists
+        var always = intersection.GroupBy(i => i.Name).Select(g => g.OrderBy(p => p.IsOptional).First());
+        var optional = union.Select(a => a with { Optional = true }).Distinct(comparer);
+
         return new Ts.StructureLiteralType
         {
             Kind = "literal",
-            Value = mergedLiteral,
+            Value = new Ts.StructureLiteral
+            {
+                Properties = always.Concat(optional).ToEquatableArray()
+            },
         };
     }
 
@@ -509,7 +506,7 @@ internal sealed class Translator
             if (ch == char.ToUpper(ch)) break;
         }
         // Cut it off
-        return name.Substring(startIndex);
+        return name[startIndex..];
     }
 
     /// <summary>
@@ -520,5 +517,5 @@ internal sealed class Translator
     [return: NotNullIfNotNull(nameof(word))]
     private static string? Capitalize(string? word) => word is null
         ? null
-        : $"{char.ToUpper(word[0])}{word.Substring(1)}";
+        : $"{char.ToUpper(word[0])}{word[1..]}";
 }

@@ -3,12 +3,12 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// <summary>
 /// Includes BaseType, ReferenceType, EnumerationType, MapKeyType.
 /// </summary>
-internal sealed class NamedType : Type
+internal sealed record class NamedType : Type
 {
-    public override string Kind { get; set; } = string.Empty;
+    public override required string Kind { get; set; }
 
     /// <summary>
     /// The name of the type.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 }

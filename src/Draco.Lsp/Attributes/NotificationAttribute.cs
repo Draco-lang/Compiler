@@ -13,6 +13,11 @@ public sealed class NotificationAttribute : Attribute
     /// </summary>
     public string Method { get; set; }
 
+    /// <summary>
+    /// Whether the notification will mutate the workspace.
+    /// </summary>
+    public bool Mutating { get; set; }
+
     public NotificationAttribute(string method)
     {
         this.Method = method;

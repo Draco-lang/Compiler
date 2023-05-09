@@ -1,9 +1,8 @@
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
-using Newtonsoft.Json.Linq;
-using StreamJsonRpc;
 
 namespace Draco.Lsp.Server;
 
@@ -15,7 +14,7 @@ public interface ILanguageClient
     /// <summary>
     /// The RPC connection between the client and the server.
     /// </summary>
-    public JsonRpc Connection { get; }
+    public LanguageServerConnection Connection { get; }
 
     // Language features
 
@@ -25,7 +24,7 @@ public interface ILanguageClient
     // Workspace features
 
     [Request("workspace/configuration")]
-    public Task<IList<JToken>> GetConfigurationAsync(ConfigurationParams param);
+    public Task<IList<JsonElement>> GetConfigurationAsync(ConfigurationParams param);
 
     // Window features
 

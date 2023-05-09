@@ -13,6 +13,11 @@ public sealed class RequestAttribute : Attribute
     /// </summary>
     public string Method { get; set; }
 
+    /// <summary>
+    /// Whether the request will mutate the workspace.
+    /// </summary>
+    public bool Mutating { get; set; }
+
     public RequestAttribute(string method)
     {
         this.Method = method;

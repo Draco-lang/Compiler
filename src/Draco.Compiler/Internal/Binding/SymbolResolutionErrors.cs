@@ -94,11 +94,20 @@ internal static class SymbolResolutionErrors
         code: Code(9));
 
     /// <summary>
+    /// A function group was used as an expression.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalFounctionGroupExpression = DiagnosticTemplate.Create(
+        title: "illegal expression",
+        severity: DiagnosticSeverity.Error,
+        format: "the function group {0} is illegal in expression context",
+        code: Code(10));
+
+    /// <summary>
     /// File path is outside of root path.
     /// </summary>
     public static readonly DiagnosticTemplate FilePathOutsideOfRootPath = DiagnosticTemplate.Create(
         title: "file path is outside of root path",
         severity: DiagnosticSeverity.Error,
         format: "the file path {0} is outside of the root path {1}",
-        code: Code(10));
+        code: Code(11));
 }

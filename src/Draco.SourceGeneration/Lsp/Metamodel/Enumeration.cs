@@ -8,7 +8,7 @@ namespace Draco.SourceGeneration.Lsp.Metamodel;
 /// </summary>
 internal sealed class Enumeration : IDeclaration
 {
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
     public string? Documentation { get; set; }
     public string? Since { get; set; }
     public bool? Proposed { get; set; }
@@ -17,12 +17,12 @@ internal sealed class Enumeration : IDeclaration
     /// <summary>
     /// The type of the elements.
     /// </summary>
-    public NamedType Type { get; set; } = null!;
+    public required NamedType Type { get; set; }
 
     /// <summary>
     /// The enum values.
     /// </summary>
-    public IList<EnumerationEntry> Values { get; set; } = Array.Empty<EnumerationEntry>();
+    public required IList<EnumerationEntry> Values { get; set; }
 
     /// <summary>
     /// Whether the enumeration supports custom values (e.g. values which are not

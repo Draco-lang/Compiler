@@ -202,34 +202,10 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddMethodSpecification(genericDef, blob);
         }
 
-        // TODO: Can we get rid of this hack?
-        // A function in a generic instance type
-        // We need to reference the generic function
-        case FunctionInstanceSymbol func when func.ContainingSymbol is not null
-                                           && func.ContainingSymbol.IsGenericInstance:
-        {
-            return this.AddMemberReference(
-                parent: this.GetEntityHandle(func.ContainingSymbol),
-                name: func.Name,
-                signature: this.EncodeBlob(e =>
-                {
-                    var genericFunc = func.GenericDefinition;
-                    e
-                        .MethodSignature(
-                            genericParameterCount: genericFunc.GenericParameters.Length,
-                            isInstanceMethod: genericFunc.IsMember)
-                        .Parameters(genericFunc.Parameters.Length, out var returnType, out var parameters);
-                    this.EncodeReturnType(returnType, genericFunc.ReturnType);
-                    foreach (var param in genericFunc.Parameters)
-                    {
-                        this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
-                    }
-                }));
-        }
-
         // Nongeneric function
         case FunctionSymbol func:
         {
+            var isInGenericInstance = func.ContainingSymbol?.IsGenericInstance ?? false;
             return this.AddMemberReference(
                 parent: func.ContainingSymbol is null
                     ? this.freeFunctionsTypeReferenceHandle
@@ -237,6 +213,8 @@ internal sealed class MetadataCodegen : MetadataWriter
                 name: func.Name,
                 signature: this.EncodeBlob(e =>
                 {
+                    // In generic instances we still need to reference the generic types
+                    if (isInGenericInstance) func = (FunctionSymbol)func.GenericDefinition!;
                     e
                         .MethodSignature(
                             genericParameterCount: func.GenericParameters.Length,

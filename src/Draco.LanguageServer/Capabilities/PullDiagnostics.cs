@@ -8,7 +8,8 @@ using DocumentDiagnosticReport = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RelatedFu
 
 namespace Draco.LanguageServer;
 
-internal partial class DracoLanguageServer : IPullDiagnostics
+// TODO: Uncomment when we have threadsafe compiler
+internal partial class DracoLanguageServer// : IPullDiagnostics
 {
     public DiagnosticRegistrationOptions DiagnosticRegistrationOptions => new()
     {

@@ -31,7 +31,8 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         {
             ServerInfo = this.server.Info,
             Capabilities = this.BuildServerCapabilities(),
-        });
+        };
+    }
 
     public async Task InitializedAsync(InitializedParams param)
     {

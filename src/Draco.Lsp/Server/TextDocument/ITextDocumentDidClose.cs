@@ -10,6 +10,6 @@ public interface ITextDocumentDidClose
     [RegistrationOptions("textDocument/didClose")]
     public TextDocumentRegistrationOptions? DidCloseRegistrationOptions { get; }
 
-    [Notification("textDocument/didClose")]
+    [Notification("textDocument/didClose", Mutating = true)]
     public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken);
 }

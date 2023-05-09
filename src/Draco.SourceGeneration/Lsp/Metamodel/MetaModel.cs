@@ -16,25 +16,25 @@ internal sealed class MetaModel
     /// <summary>
     /// The requests.
     /// </summary>
-    public IList<Request> Requests { get; set; } = Array.Empty<Request>();
+    public required IList<Request> Requests { get; set; }
 
     /// <summary>
     /// The notifications.
     /// </summary>
-    public IList<Notification> Notifications { get; set; } = Array.Empty<Notification>();
+    public required IList<Notification> Notifications { get; set; }
 
     /// <summary>
     /// The structures.
     /// </summary>
-    public IList<Structure> Structures { get; set; } = Array.Empty<Structure>();
+    public required IList<Structure> Structures { get; set; }
 
     /// <summary>
     /// The enumerations.
     /// </summary>
-    public IList<Enumeration> Enumerations { get; set; } = Array.Empty<Enumeration>();
+    public required IList<Enumeration> Enumerations { get; set; }
 
     /// <summary>
     /// The type aliases.
     /// </summary>
-    public IList<TypeAlias> TypeAliases { get; set; } = Array.Empty<TypeAlias>();
+    public required IList<TypeAlias> TypeAliases { get; set; }
 }

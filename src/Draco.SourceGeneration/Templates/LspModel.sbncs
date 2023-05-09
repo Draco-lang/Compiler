@@ -2,9 +2,9 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
 using Draco.Lsp.Attributes;
+using Draco.Lsp.Serialization;
 
 namespace Draco.Lsp.Model;
 
@@ -58,7 +58,7 @@ namespace Draco.Lsp.Model;
 
 {{func enum(decl)}}
     {{if decl.IsStringEnum}}
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(EnumValueConverter))]
     {{end}}
     public enum {{decl.Name}}
     {
@@ -74,11 +74,14 @@ namespace Draco.Lsp.Model;
     {{if decl.IsExtensionData}}
         [JsonExtensionData]
     {{else}}
-        [JsonProperty(
-            PropertyName = {{string.literal(decl.SerializedName)}},
-            NullValueHandling = NullValueHandling.{{if decl.OmitIfNull}}Ignore{{else}}Include{{end}})]
+        [JsonPropertyName({{string.literal(decl.SerializedName)}})]
+        [JsonIgnore(Condition = JsonIgnoreCondition.{{if decl.OmitIfNull}}WhenWritingDefault{{else}}Never{{end}})]
+        {{if !decl.OmitIfNull}}
+            [JsonRequired]
+        {{end}}
     {{end}}
-    public {{type(decl.Type)}} {{decl.Name}}
+    {{$use_required_modifier = !decl.OmitIfNull && !decl.Value && settable}}
+    public {{if $use_required_modifier}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
     {{if decl.Value}}
         =>
         {{case decl.ValueDiscriminator}}
@@ -142,9 +145,8 @@ namespace Draco.Lsp.Model;
 {{end}}
 
 #nullable enable
-#pragma warning disable CS8618
+#pragma warning disable CS9042
 {{for $decl in Declarations}}
     {{declaration($decl)}}
 {{end}}
-#pragma warning restore CS8618
-#nullable restore
+#pragma warning restore CS9042

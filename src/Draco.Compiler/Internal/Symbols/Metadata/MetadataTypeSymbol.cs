@@ -59,8 +59,6 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
             if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
             // Skip special name
             if (method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
-            // Skip static
-            if (method.Attributes.HasFlag(MethodAttributes.Static)) continue;
             // Add it
             var methodSymbol = new MetadataMethodSymbol(
                 containingSymbol: this,
@@ -76,13 +74,10 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
             if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
             // Skip non-public
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
-            // Skip static
-            if (fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
             // Add it
             var fieldSym = new MetadataFieldSymbol(
                 containingSymbol: this,
-                fieldDefinition: fieldDef,
-                isStatic: false);
+                fieldDefinition: fieldDef);
             result.Add(fieldSym);
         }
 

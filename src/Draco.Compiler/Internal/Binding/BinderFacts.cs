@@ -21,7 +21,8 @@ internal static class BinderFacts
         or GlobalSymbol
         or FieldSymbol
         or FunctionSymbol
-        or ModuleSymbol;
+        or ModuleSymbol
+        or TypeSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a type-context.

@@ -455,6 +455,20 @@ internal partial class Binder
             var symbol = result.GetValue(memberName, syntax, diagnostics);
             return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
         }
+        else if (left is UntypedTypeExpression typeExpr)
+        {
+            // Module member access
+            var type = typeExpr.Type;
+            var members = type.Members
+                .Where(m => m.Name == memberName)
+                .Where(m => m is ITypedSymbol typed && typed.IsStatic)
+                .Where(BinderFacts.IsValueSymbol)
+                .ToImmutableArray();
+            // Reuse logic from LookupResult
+            var result = LookupResult.FromResultSet(members);
+            var symbol = result.GetValue(memberName, syntax, diagnostics);
+            return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
+        }
         else
         {
             // Value, add constraint
@@ -476,6 +490,8 @@ internal partial class Binder
             // NOTE: Hack, see the node above this method definition
             this.BindModuleSyntaxToSymbol(syntax, module);
             return new UntypedModuleExpression(syntax, module);
+        case TypeSymbol type:
+            return new UntypedTypeExpression(syntax, type);
         case ParameterSymbol param:
             return new UntypedParameterExpression(syntax, param);
         case UntypedLocalSymbol local:

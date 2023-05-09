@@ -23,6 +23,7 @@ internal partial class Binder
     {
         UntypedUnexpectedExpression unexpected => new BoundUnexpectedExpression(unexpected.Syntax),
         UntypedModuleExpression module => this.TypeModuleExpression(module, constraints, diagnostics),
+        UntypedTypeExpression type => this.TypeTypeExpression(type, constraints, diagnostics),
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedStringExpression str => this.TypeStringExpression(str, constraints, diagnostics),
@@ -58,6 +59,16 @@ internal partial class Binder
             location: module.Syntax?.Location,
             formatArgs: module.Module.Name));
         return new BoundUnexpectedExpression(module.Syntax);
+    }
+
+    private BoundUnexpectedExpression TypeTypeExpression(UntypedTypeExpression type, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // A type expression is illegal by itself, report it
+        diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.IllegalModuleExpression,
+            location: type.Syntax?.Location,
+            formatArgs: type.Type.Name));
+        return new BoundUnexpectedExpression(type.Syntax);
     }
 
     private BoundExpression TypeUnitExpression(UntypedUnitExpression unit, ConstraintSolver constraints, DiagnosticBag diagnostics) =>

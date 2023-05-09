@@ -457,7 +457,7 @@ internal partial class Binder
         }
         else if (left is UntypedTypeExpression typeExpr)
         {
-            // Module member access
+            // Type member access
             var type = typeExpr.Type;
             var members = type.Members
                 .Where(m => m.Name == memberName)

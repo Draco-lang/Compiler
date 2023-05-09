@@ -54,6 +54,7 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
         // Not a type variable, we can look into members
         var membersWithName = accessed.Members
             .Where(m => m.Name == this.MemberName)
+            .Where(m => m is ITypedSymbol s && !s.IsStatic)
             .ToImmutableArray();
 
         if (membersWithName.Length == 0)

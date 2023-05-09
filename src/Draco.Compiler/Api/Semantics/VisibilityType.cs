@@ -1,7 +1,7 @@
 namespace Draco.Compiler.Api.Semantics;
 
 /// <summary>
-/// The visibility type of certain symbol.
+/// The visibility of certain symbol.
 /// </summary>
 public enum VisibilityType
 {

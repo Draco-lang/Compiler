@@ -92,4 +92,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "import directives must appear at the top of the scope",
         code: Code(9));
+
+    /// <summary>
+    /// A function group was used as an expression.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalFounctionGroupExpression = DiagnosticTemplate.Create(
+        title: "illegal expression",
+        severity: DiagnosticSeverity.Error,
+        format: "the function group {0} is illegal in expression context",
+        code: Code(10));
 }

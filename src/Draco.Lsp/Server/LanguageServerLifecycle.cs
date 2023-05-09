@@ -35,6 +35,7 @@ internal sealed class LanguageServerLifecycle
             Capabilities = this.BuildServerCapabilities(),
         };
     }
+
     [JsonRpcMethod("initialized", UseSingleObjectParameterDeserialization = true)]
     public async Task InizializedAsync(InitializedParams param)
     {

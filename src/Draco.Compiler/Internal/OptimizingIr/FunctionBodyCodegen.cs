@@ -384,10 +384,16 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         SourceFunctionSymbol func => this.DefineProcedure(func),
         SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
         MetadataMethodSymbol m => new SymbolReference(m),
-        // TODO: This is incorrect
-        FunctionInstanceSymbol i => new SymbolReference(i),
+        FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
+
+    private IOperand TranslateFunctionInstanceSymbol(FunctionInstanceSymbol i)
+    {
+        // NOTE: We visit the underlying instantiated symbol in case it's synthetized by us
+        this.TranslateFunctionSymbol(i.GenericDefinition);
+        return new SymbolReference(i);
+    }
 
     // NOTE: Parameters don't need loading, they are read-only values by default
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>

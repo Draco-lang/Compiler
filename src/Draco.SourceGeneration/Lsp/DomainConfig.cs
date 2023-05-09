@@ -11,22 +11,15 @@ public sealed class Config
         var builtins = config.BuiltinTypes
             .Select(b => new BuiltinType(b.Name, b.FullName))
             .ToList();
-        var generated = config.GeneratedTypes
-            .Select(b => new GeneratedType(b.Name))
-            .ToList();
-        return new(builtins, generated);
+        return new(builtins);
     }
 
     public IList<BuiltinType> BuiltinTypes { get; }
-    public IList<GeneratedType> GeneratedTypes { get; }
 
-    public Config(IList<BuiltinType> builtinTypes, IList<GeneratedType> generatedTypes)
+    public Config(IList<BuiltinType> builtinTypes)
     {
         this.BuiltinTypes = builtinTypes;
-        this.GeneratedTypes = generatedTypes;
     }
 }
 
 public readonly record struct BuiltinType(string Name, string FullName);
-
-public readonly record struct GeneratedType(string DeclaredName);

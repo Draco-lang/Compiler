@@ -1,12 +1,11 @@
 using System;
 using System.CommandLine;
-using System.IO;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Lsp.Server;
-using Nerdbank.Streams;
 using NuGet.Common;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
@@ -92,15 +91,22 @@ internal static class Program
         ? TransportKind.Stdio
         : TransportKind.Unknown;
 
-    private static Stream BuildTransportStream(TransportKind transportKind)
+    private static IDuplexPipe BuildTransportStream(TransportKind transportKind)
     {
         if (transportKind == TransportKind.Stdio)
         {
-            return FullDuplexStream.Splice(Console.OpenStandardInput(), Console.OpenStandardOutput());
+            return new StdioDuplexPipe();
         }
 
         Console.Error.WriteLine($"The transport kind {transportKind} is not yet supported");
         Environment.Exit(1);
-        return Stream.Null;
+        return null;
+    }
+
+    private sealed class StdioDuplexPipe : IDuplexPipe
+    {
+        public PipeReader Input { get; } = PipeReader.Create(Console.OpenStandardInput());
+
+        public PipeWriter Output { get; } = PipeWriter.Create(Console.OpenStandardOutput());
     }
 }

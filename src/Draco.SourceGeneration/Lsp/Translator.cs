@@ -3,83 +3,26 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Cs = Draco.SourceGeneration.Lsp.CSharp;
-using Ts = Draco.SourceGeneration.Lsp.TypeScript;
+using System.Text.Json;
+using Cs = Draco.SourceGeneration.Lsp.CsModel;
+using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 
 namespace Draco.SourceGeneration.Lsp;
 
 /// <summary>
-/// Translates a TypeScript object model to a C# one.
+/// Translates the TS-based metamodel into a C# model.
 /// </summary>
 internal sealed class Translator
 {
-    /// <summary>
-    /// Searches for a direct type-reference.
-    /// </summary>
-    private sealed class TypeReferenceFinder : Ts.ModelVisitor
-    {
-        /// <summary>
-        /// Looks up of a type name is referenced directly inside a model.
-        /// </summary>
-        /// <param name="model">The model to search in.</param>
-        /// <param name="typeName">The type name to search for.</param>
-        /// <returns>True, if <paramref name="model"/> references <paramref name="typeName"/> directly.</returns>
-        public static bool Find(Ts.Model model, string typeName)
-        {
-            var finder = new TypeReferenceFinder(typeName);
-            finder.VisitModel(model);
-            return finder.found;
-        }
+    private readonly Ts.MetaModel sourceModel;
+    private readonly Cs.Model targetModel = new();
 
-        private readonly string typeNameToSearch;
-        private bool found;
-
-        private TypeReferenceFinder(string typeNameToSearch)
-        {
-            this.typeNameToSearch = typeNameToSearch;
-        }
-
-        public override object? VisitNameExpression(Ts.NameExpression name)
-        {
-            this.found = this.found || name.Name == this.typeNameToSearch;
-            return null;
-        }
-
-        // Don't cares
-        public override object? VisitConstant(Ts.Constant c) => null;
-        public override object? VisitNamespace(Ts.Namespace n) => null;
-        public override object? VisitEnum(Ts.Enum e) => null;
-        public override object? VisitIndexSignature(Ts.IndexSignature indexSign) => null;
-    }
-
-    /// <summary>
-    /// The source TypeScript model.
-    /// </summary>
-    public Ts.Model SourceModel { get; }
-
-    // The types we already translated
     private readonly Dictionary<string, Cs.Type> translatedTypes = new();
-    // Interfaces in addition to the base types, in case it is needed
-    private readonly Dictionary<Cs.Type, Cs.Interface> interfaces = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Ts.Structure, Cs.Interface> structureInterfaces = new();
 
-    public Translator(Ts.Model sourceModel)
+    public Translator(Ts.MetaModel sourceModel)
     {
-        this.SourceModel = sourceModel;
-    }
-
-    /// <summary>
-    /// Generates the model to everything that has been added so far.
-    /// </summary>
-    /// <returns>The generated model.</returns>
-    public Cs.Model Generate()
-    {
-        var target = new Cs.Model();
-        foreach (var decl in this.translatedTypes.Values.OfType<Cs.DeclarationType>())
-        {
-            target.Declarations.Add(decl.Declaration);
-            if (this.interfaces.TryGetValue(decl, out var @interface)) target.Declarations.Add(@interface);
-        }
-        return target;
+        this.sourceModel = sourceModel;
     }
 
     /// <summary>
@@ -99,524 +42,453 @@ internal sealed class Translator
         this.translatedTypes.Add(name, new Cs.BuiltinType(fullName));
 
     /// <summary>
-    /// Generates a type by its name.
+    /// Translates the given type by name.
     /// </summary>
-    /// <param name="typeName">The name of the type to generate.</param>
-    public void GenerateByName(string typeName) =>
-        this.TranslateTypeByDeclarationName(typeName);
-
-    /// <summary>
-    /// Translates a type by its declaration name in the TS model.
-    /// </summary>
-    /// <param name="typeName">The name of the declared TS type.</param>
-    /// <returns>The translated C# type.</returns>
-    private Cs.Type TranslateTypeByDeclarationName(string typeName)
+    /// <param name="name">The name of the type to translate.</param>
+    /// <returns>The translated C# type reference.</returns>
+    public Cs.Type TranslateTypeByName(string name)
     {
-        // If we already generated it, we are done
-        if (this.translatedTypes.TryGetValue(typeName, out var existing)) return existing;
+        if (this.translatedTypes.TryGetValue(name, out var translated)) return translated;
 
-        // Search in the model
-        if (!this.TryGetTsDeclarations(typeName, out var tsDecls))
+        var structure = this.sourceModel.Structures.FirstOrDefault(s => s.Name == name);
+        if (structure is not null)
         {
-            throw new ArgumentException($"could not find declaration with name {typeName}", nameof(typeName));
+            // If the structure is used as a base type for other types, we return the interface to be referenced instead
+            var usedAsInterface = this.sourceModel.Structures
+                .Any(s => s.Extends.OfType<Ts.NamedType>().Any(t => t.Name == name));
+
+            return usedAsInterface
+                ? new Cs.DeclarationType(this.TranslateStructureAsInterface(structure))
+                : this.TranslateStructure(structure);
         }
 
-        // Now depending on what we have, we have different cases
-        if (tsDecls.Length == 1)
+        var enumeration = this.sourceModel.Enumerations.FirstOrDefault(s => s.Name == name);
+        if (enumeration is not null)
         {
-            // Simple case, we only have one declaration
-            return tsDecls[0] switch
-            {
-                Ts.TypeAlias alias => this.TranslateTypeAlias(alias),
-                Ts.Interface @interface => this.TranslateInterface(@interface),
-                _ => throw new NotImplementedException(),
-            };
+            return this.TranslateEnumeration(enumeration);
         }
-        if (tsDecls.Length == 2 && tsDecls.Any(d => d is Ts.TypeAlias) && tsDecls.Any(d => d is Ts.Namespace))
+
+        var alias = this.sourceModel.TypeAliases.FirstOrDefault(s => s.Name == name);
+        if (alias is not null)
         {
-            // An enum with custom values
-            var typeAlias = tsDecls.OfType<Ts.TypeAlias>().First();
-            var @namespace = tsDecls.OfType<Ts.Namespace>().First();
-            return this.TranslateEnum(@namespace);
+            this.TranslateTypeAlias(alias);
+            return this.translatedTypes[name];
         }
-        if (tsDecls.All(d => d is Ts.Interface))
-        {
-            // Multiple definitions of the same interface
-            // First, see if there's only one exported
-            // If so, translate that
-            var exportedInterfaces = tsDecls
-                .Cast<Ts.Interface>()
-                .Where(i => i.IsExported)
-                .ToList();
-            if (exportedInterfaces.Count == 1) return this.TranslateInterface(exportedInterfaces[0]);
-            // Just find the largest interface and try that
-            var largestInterface = tsDecls
-                .Cast<Ts.Interface>()
-                .MaxBy(i => i.Fields.Length);
-            return this.TranslateInterface(largestInterface);
-        }
-        // Unhandled
-        throw new NotImplementedException();
+
+        // Marker for unresolved types
+        return new Cs.BuiltinType($"NOT_FOUND<{name}>");
     }
 
     /// <summary>
-    /// Translated the given TS type-alias.
+    /// Translated the source model to a C# model.
     /// </summary>
-    /// <param name="tsAlias">The TS type-alias to translate.</param>
-    /// <returns>The translated, aliased type.</returns>
-    private Cs.Type TranslateTypeAlias(Ts.TypeAlias tsAlias)
+    /// <returns>The translated C# model.</returns>
+    public Cs.Model Translate()
     {
-        var type = this.TranslateType(tsAlias.Type, nameHint: tsAlias.Name, containingClass: null);
-        if (this.translatedTypes.TryGetValue(tsAlias.Name, out var existingType))
+        // Translate
+        foreach (var structure in this.sourceModel.Structures)
         {
-            // Happens on things like
-            // type Foo = { ... };
-            // because the anonymous type gets hinted the type-alias name
-            if (!ReferenceEquals(type, existingType)) throw new InvalidOperationException();
+            // Check if a builtin has overriden it already
+            if (this.translatedTypes.ContainsKey(structure.Name)) continue;
+            this.TranslateStructure(structure);
         }
-        else
+        foreach (var enumeration in this.sourceModel.Enumerations)
         {
-            // Add it
-            this.translatedTypes.Add(tsAlias.Name, type);
+            // Check if a builtin has overriden it already
+            if (this.translatedTypes.ContainsKey(enumeration.Name)) continue;
+            this.TranslateEnumeration(enumeration);
         }
-        return type;
+        foreach (var typeAlias in this.sourceModel.TypeAliases)
+        {
+            // Check if a builtin has overriden it already
+            if (this.translatedTypes.ContainsKey(typeAlias.Name)) continue;
+            this.TranslateTypeAlias(typeAlias);
+        }
+
+        return this.targetModel;
     }
 
-    /// <summary>
-    /// Translated the given TS interface.
-    /// </summary>
-    /// <param name="tsInterface">The TS interface to translate.</param>
-    /// <returns>The equivalent C# type.</returns>
-    private Cs.Type TranslateInterface(Ts.Interface tsInterface)
+    private Cs.Type TranslateStructure(Ts.Structure structure)
     {
-        // An interface will either produce a class, an interface, or both depending on usage
-        var csClass = null as Cs.Class;
-        var csInterface = null as Cs.Interface;
+        if (this.translatedTypes.TryGetValue(structure.Name, out var existing)) return existing;
 
-        // We need a class, if any of the fields reference the type directly
-        var needsClass = TypeReferenceFinder.Find(this.SourceModel, tsInterface.Name);
-        // We need an interface, if any of the TS interfaces use it in inheritance
-        var needsInterface = this.SourceModel.Declarations
-            .OfType<Ts.Interface>()
-            .Any(i => i.Bases.OfType<Ts.NameExpression>().Any(n => n.Name == tsInterface.Name));
-        // In case we don't make an interface, we do make a class
-        if (!needsInterface) needsClass = true;
+        var result = TranslateDeclaration<Cs.Class>(structure);
+        var resultRef = new Cs.DeclarationType(result);
+        this.translatedTypes.Add(structure.Name, resultRef);
+        this.targetModel.Declarations.Add(result);
 
-        // Instantiate whichever we need
-        if (needsClass)
+        foreach (var @base in structure.Extends)
         {
-            csClass = new Cs.Class()
+            var @interface = this.TranslateBaseType(@base);
+            result.Interfaces.Add(@interface);
+        }
+
+        // The properties will be an aggregation of
+        //  - implemented interface properties (transitive closure)
+        //  - mixin properties (transitive closure)
+        //  - properties from the structure
+
+        var allInterfaceProps = structure.Extends
+            .Select(this.FindStructureByType)
+            .SelectMany(s => TransitiveClosure(s, s => s.Extends.Select(this.FindStructureByType)))
+            .SelectMany(i => i.Properties.Select(prop => (Parent: i, Property: prop)));
+        var allMixinProps = structure.Mixins
+            .Select(this.FindStructureByType)
+            .SelectMany(s => TransitiveClosure(s, s => s.Mixins.Select(this.FindStructureByType)))
+            .SelectMany(s => s.Properties.Select(prop => (Parent: s, Property: prop)));
+
+        var allProps = allInterfaceProps
+            .Concat(allMixinProps)
+            .Concat(structure.Properties.Select(prop => (Parent: structure, Property: prop)));
+
+        // We deduplicate the properties, only keeping the last occurrence, so
+        // mixin takes priority over interface ans structure takes priority over mixin
+        allProps = allProps
+            .GroupBy(p => p.Property.Name)
+            .Select(g => g.Last());
+
+        foreach (var (parent, prop) in allProps)
+        {
+            var csParent = (Cs.Class)((Cs.DeclarationType)this.TranslateStructure(parent)).Declaration;
+            var csProp = this.TranslateProperty(csParent, prop);
+            result.Properties.Add(csProp);
+        }
+
+        return resultRef;
+    }
+
+    private Cs.Interface TranslateStructureAsInterface(Ts.Structure structure)
+    {
+        if (this.structureInterfaces.TryGetValue(structure, out var existing)) return existing;
+
+        var csClass = (Cs.Class)((Cs.DeclarationType)this.TranslateStructure(structure)).Declaration;
+        // Prefix the interface name to follow C# conventions
+        var result = TranslateDeclaration<Cs.Interface>(structure);
+        result.Name = $"I{result.Name}";
+        this.structureInterfaces.Add(structure, result);
+        this.targetModel.Declarations.Add(result);
+
+        foreach (var @base in structure.Extends)
+        {
+            var @interface = this.TranslateBaseType(@base);
+            result.Interfaces.Add(@interface);
+        }
+
+        foreach (var prop in structure.Properties)
+        {
+            // NOTE: We pass in the class on purose
+            var csProp = this.TranslateProperty(csClass, prop);
+            result.Properties.Add(csProp);
+        }
+
+        return result;
+    }
+
+    private Cs.Type TranslateEnumeration(Ts.Enumeration enumeration)
+    {
+        if (this.translatedTypes.TryGetValue(enumeration.Name, out var existing)) return existing;
+
+        var result = TranslateDeclaration<Cs.Enum>(enumeration);
+        var resultRef = new Cs.DeclarationType(result);
+        this.translatedTypes.Add(enumeration.Name, resultRef);
+        this.targetModel.Declarations.Add(result);
+
+        foreach (var member in enumeration.Values)
+        {
+            this.TranslateEnumerationEntry(result, member);
+        }
+
+        return resultRef;
+    }
+
+    private void TranslateEnumerationEntry(Cs.Enum @enum, Ts.EnumerationEntry member)
+    {
+        var result = TranslateDeclaration<Cs.EnumMember>(member);
+        @enum.Members.Add(result);
+        result.Value = TranslateValue(member.Value);
+    }
+
+    private void TranslateTypeAlias(Ts.TypeAlias typeAlias)
+    {
+        if (this.translatedTypes.ContainsKey(typeAlias.Name)) return;
+
+        var aliasedType = this.TranslateType(typeAlias.Type, parent: null, hintName: typeAlias.Name);
+
+        // We can cause a duplicate key in case this is an alias for an anonymous type
+        if (!this.translatedTypes.ContainsKey(typeAlias.Name))
+        {
+            this.translatedTypes.Add(typeAlias.Name, aliasedType);
+        }
+    }
+
+    private Cs.Interface TranslateBaseType(Ts.Type type)
+    {
+        var structure = this.FindStructureByType(type);
+        return this.TranslateStructureAsInterface(structure);
+    }
+
+    private Ts.Structure FindStructureByType(Ts.Type type)
+    {
+        if (type is not Ts.NamedType namedType)
+        {
+            throw new ArgumentException($"can not reference type of kind {type.GetType().Name}", nameof(type));
+        }
+
+        var structure = this.sourceModel.Structures.FirstOrDefault(s => s.Name == namedType.Name)
+                     ?? throw new ArgumentException($"can not find type {namedType.Name} among the structures", nameof(type));
+
+        return structure;
+    }
+
+    private Cs.Property TranslateProperty(Cs.Class parent, Ts.Property property)
+    {
+        var result = TranslateDeclaration<Cs.Property>(property);
+
+        // There can be name collisions, check for that
+        if (result.Name == parent.Name) result.Name = $"{result.Name}_";
+
+        result.SerializedName = property.Name;
+        result.Type = this.TranslateType(property.Type, parent: parent, hintName: result.Name);
+
+        if (property.IsOptional)
+        {
+            result.OmitIfNull = true;
+            // If the type is not nullable, we make it one
+            if (result.Type is not Cs.NullableType) result.Type = new Cs.NullableType(result.Type);
+        }
+
+        if (property.Type.Kind == "stringLiteral")
+        {
+            // It has a constant value
+            var literalType = (Ts.LiteralType)property.Type;
+            result.Value = TranslateValue(literalType.Value);
+        }
+
+        return result;
+    }
+
+    private Cs.Type TranslateType(Ts.Type type, Cs.Class? parent, string? hintName)
+    {
+        switch (type.Kind)
+        {
+        case "stringLiteral":
+            return this.TranslateTypeByName("string");
+        case "base":
+        case "reference":
+        {
+            var namedType = (Ts.NamedType)type;
+            return this.TranslateTypeByName(namedType.Name);
+        }
+        case "array":
+        {
+            var arrayType = (Ts.ArrayType)type;
+            var elementType = this.TranslateType(arrayType.Element, parent: parent, hintName: hintName);
+            return new Cs.ArrayType(elementType);
+        }
+        case "map":
+        {
+            var mapType = (Ts.MapType)type;
+            var keyType = this.TranslateType(mapType.Key, parent: parent, hintName: hintName);
+            var valueType = this.TranslateType(mapType.Value, parent: parent, hintName: hintName);
+            return new Cs.DictionaryType(keyType, valueType);
+        }
+        case "or":
+        {
+            Ts.Type UnwrapAlias(Ts.Type t)
             {
-                Name = tsInterface.Name,
-                Documentation = ExtractDocumentation(tsInterface.Documentation),
-            };
-        }
-        if (needsInterface)
-        {
-            csInterface = new Cs.Interface()
-            {
-                Name = $"I{tsInterface.Name}",
-                Documentation = ExtractDocumentation(tsInterface.Documentation),
-            };
-        }
-
-        // Register early in case of recursion
-        var typeReference =
-            csClass is not null ? new Cs.DeclarationType(csClass) :
-            csInterface is not null ? new Cs.DeclarationType(csInterface) :
-            throw new InvalidOperationException();
-        this.translatedTypes.Add(tsInterface.Name, typeReference);
-
-        // TODO: Generics
-        if (tsInterface.GenericParams.Length > 0) throw new NotImplementedException();
-
-        // Add base types
-        foreach (var baseExpr in tsInterface.Bases)
-        {
-            var @base = this.TranslateType(baseExpr, nameHint: null, containingClass: null);
-            // We expect an interface alternative to be present
-            var @interface = this.interfaces[@base];
-
-            // Add to whichever needs it
-            csClass?.Interfaces.Add(@interface);
-            csInterface?.Interfaces.Add(@interface);
-        }
-
-        // Add fields
-        foreach (var field in tsInterface.Fields)
-        {
-            var prop = this.TranslateField(field, containingClass: csClass);
-            // Add to whichever needs it
-            csClass?.Properties.Add(prop);
-            csInterface?.Properties.Add(prop);
-        }
-
-        // Map the output to the interface, in case there is one
-        if (csInterface is not null) this.interfaces.Add(typeReference, csInterface);
-
-        // If we have a class, transitively implement all interfaces
-        if (csClass is not null)
-        {
-            var allInterfaces = csClass.Interfaces.SelectMany(CollectInterfacesTransitively);
-            foreach (var prop in allInterfaces.SelectMany(i => i.Properties))
-            {
-                // If the class happens to implement it, skip it
-                if (csClass.Properties.Any(p => p.Name == prop.Name)) continue;
-                // Add it
-                csClass.Properties.Add(prop);
+                if (t.Kind != "base" && t.Kind != "reference") return t;
+                var namedType = (Ts.NamedType)t;
+                return this.sourceModel.TypeAliases.FirstOrDefault(t => t.Name == namedType.Name)?.Type ?? t;
             }
+            static bool IsNull(Ts.Type t) => t is Ts.NamedType { Kind: "base", Name: "null" };
+            static bool IsOr(Ts.Type t) => t is Ts.AggregateType { Kind: "or" };
+            static bool IsStructureLiteral(Ts.Type t) => t is Ts.StructureLiteralType;
+
+            var aggregateType = (Ts.AggregateType)type;
+            var items = aggregateType.Items
+                .Select(UnwrapAlias)
+                .ToImmutableArray();
+
+            // If it's a singular type, just translate that
+            if (items.Length == 1) return this.TranslateType(items[0], parent: parent, hintName: hintName);
+
+            // We have nested OR types, flatten
+            if (items.Any(IsOr))
+            {
+                // Keep non-or types and merge in OR'd types
+                items = items
+                    .Where(i => !IsOr(i))
+                    .Concat(items
+                        .Where(IsOr)
+                        .Cast<Ts.AggregateType>()
+                        .SelectMany(i => i.Items))
+                    .ToImmutableArray();
+                var tsSubtype = new Ts.AggregateType
+                {
+                    Items = items.AsEquatableArray(),
+                    Kind = "or",
+                };
+                return this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
+            }
+
+            // We have a null OR'd into the type, for example number | string | null
+            if (items.Any(IsNull))
+            {
+                // We remove it and make the type nullable instead
+                items = items
+                    .Where(i => !IsNull(i))
+                    .ToImmutableArray();
+                var tsSubtype = new Ts.AggregateType
+                {
+                    Items = items.AsEquatableArray(),
+                    Kind = "or",
+                };
+                var subtype = this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
+                return new Cs.NullableType(subtype);
+            }
+
+            // If we have multiple literal types, merge them
+            if (items.Count(IsStructureLiteral) > 1)
+            {
+                var literals = items
+                    .OfType<Ts.StructureLiteralType>()
+                    .Select(l => l.Value);
+                var mergedLiteral = MergeStructureLiterals(literals);
+
+                items = items
+                    .Where(i => !IsStructureLiteral(i))
+                    .Append(mergedLiteral)
+                    .ToImmutableArray();
+                var tsSubtype = new Ts.AggregateType
+                {
+                    Items = items.AsEquatableArray(),
+                    Kind = "or",
+                };
+                return this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
+            }
+
+            // Just a general DU
+            var alternatives = items
+                .Select(i => this.TranslateType(i, parent: parent, hintName: hintName))
+                .ToImmutableArray();
+            return new Cs.DiscriminatedUnionType(alternatives);
         }
-        // If we have a class, initialize parentship
-        csClass?.InitializeParents();
-
-        // Done
-        return typeReference;
-    }
-
-    /// <summary>
-    /// Translates the given TS namespace to a C# enum.
-    /// </summary>
-    /// <param name="tsNamespace">The TS namespace to translate.</param>
-    /// <returns>The equivalent C# type.</returns>
-    private Cs.Type TranslateEnum(Ts.Namespace tsNamespace)
-    {
-        var csEnum = new Cs.Enum()
+        case "tuple":
         {
-            Documentation = ExtractDocumentation(tsNamespace.Documentation),
-            Name = tsNamespace.Name,
-            Members = tsNamespace.Constants.Select(this.TranslateEnumMember).ToList(),
-        };
-        var typeRef = new Cs.DeclarationType(csEnum);
-        this.translatedTypes.Add(tsNamespace.Name, typeRef);
-        return typeRef;
+            var aggregateType = (Ts.AggregateType)type;
+            var items = aggregateType.Items
+                .Select(i => this.TranslateType(i, parent: parent, hintName: hintName))
+                .ToImmutableArray();
+            return new Cs.TupleType(items);
+        }
+        case "literal":
+        {
+            var structLiteral = (Ts.StructureLiteralType)type;
+            if (hintName is null) throw new InvalidOperationException("no hint name for anonymous type");
+
+            // Translate the literal
+            var result = TranslateDeclaration<Cs.Class>(structLiteral.Value);
+            result.Parent = parent;
+            result.Name = parent is null
+                ? hintName
+                : $"{hintName}{ExtractNameSuffix(parent.Name)}";
+
+            // Add to parent type or global decls
+            if (parent is null)
+            {
+                // Check if already exists
+                if (this.translatedTypes.TryGetValue(result.Name, out var existing)) return existing;
+
+                this.targetModel.Declarations.Add(result);
+                this.translatedTypes.Add(result.Name, new Cs.DeclarationType(result));
+            }
+            else
+            {
+                // Check if already exists
+                var nestedType = parent.NestedDeclarations.FirstOrDefault(d => d.Name == result.Name);
+                if (nestedType is not null) return new Cs.DeclarationType(nestedType);
+
+                parent.NestedDeclarations.Add(result);
+            }
+
+            foreach (var prop in structLiteral.Value.Properties)
+            {
+                var csProp = this.TranslateProperty(result, prop);
+                result.Properties.Add(csProp);
+            }
+
+            return new Cs.DeclarationType(result);
+        }
+        default:
+            return new Cs.BuiltinType($"UNKNOWN<{type.Kind}>");
+        }
     }
 
-    /// <summary>
-    /// Translates a contant to an enum member.
-    /// </summary>
-    /// <param name="constant">The constant to translate.</param>
-    /// <returns>The translated enum member.</returns>
-    private Cs.EnumMember TranslateEnumMember(Ts.Constant constant)
+    private static TDeclaration TranslateDeclaration<TDeclaration>(Ts.IDocumented source)
+        where TDeclaration : Cs.Declaration, new()
     {
-        // Extract constant value
-        var value = this.EvaluateExpression(constant.Value);
-        // Create member
-        return new(
-            Documentation: ExtractDocumentation(constant.Documentation),
-            Name: Capitalize(constant.Name),
-            SerializedValue: value);
+        var target = new TDeclaration();
+
+        if (source is Ts.IDeclaration declSource) target.Name = Capitalize(declSource.Name);
+
+        target.Documentation = source.Documentation;
+        target.Deprecated = source.Deprecated;
+        target.SinceVersion = source.Since;
+        target.IsProposed = source.Proposed ?? false;
+
+        return target;
     }
 
-    /// <summary>
-    /// Evaluates a TS expression to a constant.
-    /// </summary>
-    /// <param name="expr">The expression to evaluate.</param>
-    /// <returns>The evaluation result.</returns>
-    private object EvaluateExpression(Ts.Expression expr) => expr switch
+    private static IEnumerable<T> TransitiveClosure<T>(T element, Func<T, IEnumerable<T>> neighbors)
     {
-        Ts.StringExpression s => s.Value,
-        Ts.IntExpression i => i.Value,
-        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+        yield return element;
+        foreach (var n in neighbors(element)) yield return n;
+    }
+
+    private static object? TranslateValue(object? value) => value switch
+    {
+        JsonElement element => element.ValueKind switch
+        {
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number => element.GetInt32(),
+            _ => value,
+        },
+        _ => value,
     };
 
     /// <summary>
-    /// Translated a TS field declaration.
+    /// Merges multiple structure literal types into one.
     /// </summary>
-    /// <param name="field">The field declaration to translate.</param>
-    /// <param name="containingClass">The containing type.</param>
-    /// <returns>The translated property.</returns>
-    private Cs.Property TranslateField(Ts.Field field, Cs.Class? containingClass)
+    /// <param name="literals">The literal types to merge.</param>
+    /// <returns>A single type, containing all fields of <paramref name="literals"/>.</returns>
+    private static Ts.Type MergeStructureLiterals(IEnumerable<Ts.StructureLiteral> literals)
     {
-        switch (field)
-        {
-        // A field with constant value
-        case Ts.SimpleField simpleField when simpleField.Type is Ts.StringExpression strValue:
-        {
-            // Translate type
-            var propType = this.TranslateTypeByDeclarationName("string");
-            if (simpleField.Nullable)
-            {
-                // If the type is not nullable, we make it one
-                if (propType is not Cs.NullableType) propType = new Cs.NullableType(propType);
-            }
-            // We infer a name, sometimes there are collisions
-            var name = Capitalize(simpleField.Name);
-            if (name == containingClass?.Name) name = $"{name}_";
-            // Finally we can create the property
-            return new(
-                Documentation: ExtractDocumentation(simpleField.Documentation),
-                Name: name,
-                Type: propType,
-                SerializedName: simpleField.Name,
-                OmitIfNull: simpleField.Nullable,
-                IsExtensionData: false,
-                ConstantValue: strValue.Value);
-        }
-        case Ts.SimpleField simpleField:
-        {
-            // Translate type
-            var propType = this.TranslateType(
-                simpleField.Type,
-                nameHint: simpleField.Name,
-                containingClass: containingClass);
-            if (simpleField.Nullable)
-            {
-                // If the type is not nullable, we make it one
-                if (propType is not Cs.NullableType) propType = new Cs.NullableType(propType);
-            }
-            // We infer a name, sometimes there are collisions
-            var name = Capitalize(simpleField.Name);
-            if (name == containingClass?.Name) name = $"{name}_";
-            // Finally we can create the property
-            return new(
-                Documentation: ExtractDocumentation(simpleField.Documentation),
-                Name: name,
-                Type: propType,
-                SerializedName: simpleField.Name,
-                OmitIfNull: simpleField.Nullable,
-                IsExtensionData: false,
-                ConstantValue: null);
-        }
-        case Ts.IndexSignature indexSignature:
-        {
-            // We just translate to a catch-all
-            return new(
-                Documentation: ExtractDocumentation(indexSignature.Documentation),
-                Name: "Extra",
-                // NOTE: While the index signature has an exact type, this is simpler
-                // Because Newtonsoft has direct support for this with JsonExtensionData
-                Type: new Cs.DictionaryType(
-                    new Cs.BuiltinType(typeof(string).FullName),
-                    new Cs.BuiltinType(typeof(object).FullName)),
-                // Serialized name does not matter
-                SerializedName: string.Empty,
-                OmitIfNull: true,
-                IsExtensionData: true,
-                ConstantValue: null);
-        }
-        default:
-            throw new ArgumentOutOfRangeException(nameof(field));
-        }
-    }
+        // Don't compare documentation etc.
+        var comparer = MappingEqualityComparer.Create((Ts.Property p) => (p.Name, p.Type, p.IsOptional));
 
-    /// <summary>
-    /// Translates a TS type to C#.
-    /// </summary>
-    /// <param name="type">The TS type expression to translate.</param>
-    /// <param name="nameHint">A hint for name.</param>
-    /// <param name="containingClass">The containing class.</param>
-    /// <returns>The translated C# type.</returns>
-    private Cs.Type TranslateType(Ts.Expression type, string? nameHint, Cs.Class? containingClass)
-    {
-        string GenerateName()
+        var intersection = new HashSet<Ts.Property>(literals.First().Properties, comparer);
+        var union = new HashSet<Ts.Property>(comparer);
+
+        foreach (var alt in literals)
         {
-            if (nameHint is null) throw new InvalidOperationException("a hint is required to generate type-name");
-            var typeName = Capitalize(nameHint);
-            if (containingClass is not null) typeName = $"{typeName}{ExtractNameSuffix(containingClass.Name)}";
-            return typeName;
+            intersection.IntersectWith(alt.Properties);
+            union.UnionWith(alt.Properties);
         }
 
-        Cs.Type AddLocalType(Cs.Declaration decl)
-        {
-            var typeRef = new Cs.DeclarationType(decl);
-            // Add as a translated type or as a nested type
-            if (containingClass is not null) containingClass.NestedDeclarations.Add(decl);
-            else this.translatedTypes.Add(decl.Name, typeRef);
-            return typeRef;
-        }
+        union.ExceptWith(intersection);
 
-        switch (type)
-        {
-        case Ts.NameExpression nameExpr:
-        {
-            // If it is translated already, use it
-            if (this.translatedTypes.TryGetValue(nameExpr.Name, out var existing)) return existing;
-            // Not translated, we have to translate by name
-            return this.TranslateTypeByDeclarationName(nameExpr.Name);
-        }
-        case Ts.ArrayTypeExpression array:
-        {
-            var element = this.TranslateType(array.ElementType, nameHint: Singular(nameHint), containingClass: containingClass);
-            return new Cs.ArrayType(element);
-        }
-        case Ts.ArrayExpression array:
-        {
-            var elements = array.Elements
-                .Select(e => this.TranslateType(e, nameHint: null, containingClass: containingClass))
-                .ToImmutableArray();
-            return new Cs.TupleType(elements);
-        }
-        case Ts.UnionTypeExpression union:
-        {
-            // If the union consists of a single type, just propagate
-            if (union.Alternatives.Length == 1)
-            {
-                return this.TranslateType(union.Alternatives[0], nameHint: nameHint, containingClass: containingClass);
-            }
-            // If the union has a null-element, make it instead an optional type
-            if (union.Alternatives.Any(alt => alt is Ts.NullExpression))
-            {
-                // Filter out the non-null elements
-                var alts = union.Alternatives
-                    .Where(alt => alt is not Ts.NullExpression)
-                    .ToImmutableArray();
-                var newUnion = new Ts.UnionTypeExpression(alts);
-                // Translate that
-                var subType = this.TranslateType(newUnion, nameHint: nameHint, containingClass: containingClass);
-                // Wrap it up in nullable
-                return new Cs.NullableType(subType);
-            }
-            // If we union together anonymous expressions, we can merge the anonymous expressions
-            if (union.Alternatives.All(alt => alt is Ts.AnonymousTypeExpression))
-            {
-                var alts = union.Alternatives.Cast<Ts.AnonymousTypeExpression>();
-                var newType = MergeAnonymousTypes(alts);
-                return this.TranslateType(newType, nameHint: nameHint, containingClass: containingClass);
-            }
-            // If we union together string values, it is an enumeration
-            if (union.Alternatives.All(alt => alt is Ts.StringExpression))
-            {
-                var strAlts = union.Alternatives
-                    .Cast<Ts.StringExpression>()
-                    .Select(str => str.Value);
-                // Generate a name
-                var typeName = GenerateName();
-                // Generate members
-                var csEnum = new Cs.Enum()
-                {
-                    Name = typeName,
-                    Members = strAlts
-                        .Select(str => new Cs.EnumMember(
-                            Documentation: null,
-                            Name: Capitalize(str),
-                            SerializedValue: str))
-                        .ToList(),
-                };
-                // Register it
-                return AddLocalType(csEnum);
-            }
-            // Not a special case, just translate
-            var elements = union.Alternatives
-                .Select(alt => this.TranslateType(alt, nameHint: nameHint, containingClass: containingClass))
-                .ToImmutableArray();
-            return new Cs.DiscriminatedUnionType(elements);
-        }
-        case Ts.AnonymousTypeExpression anon:
-        {
-            // Special-case, if the anonymous type contains a single index signature
-            if (anon.Fields.Length == 1 && anon.Fields[0] is Ts.IndexSignature indexSignature)
-            {
-                // Shortcut, just translate it to a dictionary
-                var keyType = this.TranslateType(indexSignature.KeyType, nameHint: indexSignature.KeyName, containingClass: containingClass);
-                var valueType = this.TranslateType(indexSignature.ValueType, nameHint: null, containingClass: containingClass);
-                return new Cs.DictionaryType(keyType, valueType);
-            }
+        // Prefer the nullable version of the property if it exists
+        var always = intersection.GroupBy(i => i.Name).Select(g => g.OrderBy(p => p.IsOptional).First());
+        var optional = union.Select(a => a with { Optional = true }).Distinct(comparer);
 
-            // Not a special case
-            if (nameHint is null) throw new InvalidOperationException("a hint is required to generate anonymous types");
-
-            // Generate a name for it
-            var typeName = GenerateName();
-            // NOTE: Should we check if this already exists?
-            // Probably not
-            // Translate it
-            var csClass = new Cs.Class()
-            {
-                Name = typeName,
-            };
-            // No base type or generics
-            // Translate fields
-            foreach (var field in anon.Fields)
-            {
-                var prop = this.TranslateField(field, containingClass);
-                csClass.Properties.Add(prop);
-            }
-            // Register it
-            return AddLocalType(csClass);
-        }
-        default:
-            throw new ArgumentOutOfRangeException(nameof(type));
-        }
-    }
-
-    /// <summary>
-    /// Retrieves the declarations from the TS code with a given name.
-    /// </summary>
-    /// <param name="name">The name to retrieve by.</param>
-    /// <param name="decls">The declarations with name <paramref name="name"/> get written here.</param>
-    /// <returns>True, if at least one declaration was found with <paramref name="name"/>.</returns>
-    private bool TryGetTsDeclarations(string name, out ImmutableArray<Ts.Declaration> decls)
-    {
-        decls = this.SourceModel.Declarations
-            .Where(d => d.Name == name)
-            .ToImmutableArray();
-        return decls.Length != 0;
-    }
-
-    /// <summary>
-    /// Collects all transitive base interfaces.
-    /// </summary>
-    /// <param name="interface">The interface to get the bases of.</param>
-    /// <returns>The sequence of all base interfaces of <paramref name="interface"/>.</returns>
-    private static IEnumerable<Cs.Interface> CollectInterfacesTransitively(Cs.Interface @interface)
-    {
-        yield return @interface;
-        foreach (var b in @interface.Interfaces.SelectMany(CollectInterfacesTransitively)) yield return b;
-    }
-
-    /// <summary>
-    /// Merges multiple anonymous types into one.
-    /// </summary>
-    /// <param name="alternatives">The alternative anonymous types to merge.</param>
-    /// <returns>A single type, containing all fields of the types.</returns>
-    private static Ts.Expression MergeAnonymousTypes(IEnumerable<Ts.AnonymousTypeExpression> alternatives)
-    {
-        var newFields = new Dictionary<string, Ts.SimpleField>();
-        foreach (var alt in alternatives)
+        return new Ts.StructureLiteralType
         {
-            foreach (var field in alt.Fields.Cast<Ts.SimpleField>())
+            Kind = "literal",
+            Value = new Ts.StructureLiteral
             {
-                if (!newFields.TryGetValue(field.Name, out var existing))
-                {
-                    // New, add it
-                    newFields.Add(field.Name, field);
-                }
-                else
-                {
-                    // We need to compare
-                    // Types must equal
-                    if (!Equals(field.Type, existing.Type)) throw new InvalidOperationException();
-                    // Check, if nullability is looser
-                    // If so, replace
-                    if (field.Nullable && !existing.Nullable) newFields[field.Name] = field;
-                }
-            }
-        }
-        return new Ts.AnonymousTypeExpression(newFields.Values.Cast<Ts.Field>().ToImmutableArray());
-    }
-
-    /// <summary>
-    /// Capitalizes a word.
-    /// </summary>
-    /// <param name="word">The word to capitalize.</param>
-    /// <returns>The capitalized <paramref name="word"/>.</returns>
-    [return: NotNullIfNotNull(nameof(word))]
-    private static string? Capitalize(string? word) => word is null
-        ? null
-        : $"{char.ToUpper(word[0])}{word.Substring(1)}";
-
-    /// <summary>
-    /// Converts a word to singular.
-    /// </summary>
-    /// <param name="word">The word to convert.</param>
-    /// <returns><paramref name="word"/> in singular form.</returns>
-    [return: NotNullIfNotNull(nameof(word))]
-    private static string? Singular(string? word)
-    {
-        if (word is null) return null;
-        return word.EndsWith("s")
-            ? word.Substring(0, word.Length - 1)
-            : word;
+                Properties = always.Concat(optional).ToEquatableArray()
+            },
+        };
     }
 
     /// <summary>
@@ -634,50 +506,16 @@ internal sealed class Translator
             if (ch == char.ToUpper(ch)) break;
         }
         // Cut it off
-        return name.Substring(startIndex);
+        return name[startIndex..];
     }
 
     /// <summary>
-    /// Extracts documentation from a TypeScript comment.
+    /// Capitalizes a word.
     /// </summary>
-    /// <param name="docComment">The TS comment to extract docs from.</param>
-    /// <returns>The extracted documentation text or null, if <paramref name="docComment"/> was deemed not to
-    /// be a doc comment.</returns>
-    private static string? ExtractDocumentation(string? docComment)
-    {
-        if (docComment is null) return null;
-
-        // Normalize newlines
-        docComment = docComment
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n');
-        // Split into lines
-        var lines = docComment.Split('\n');
-        if (lines.Length < 3)
-        {
-            if (lines.Length == 1)
-            {
-                // Could be /** ... */
-                var line = lines[0].Trim();
-                if (line.StartsWith("/**") && line.EndsWith("*/"))
-                {
-                    return line.Substring(3, line.Length - 5).Trim();
-                }
-                // Unknown, discard
-                return null;
-            }
-            // TODO
-            throw new NotImplementedException();
-        }
-        // At least 3 lines, check for JavaDoc notation
-        if (lines[0].Trim() != "/**" || lines[lines.Length - 1].Trim() != "*/") return null;
-        // Ok
-        var trimmedLines = lines
-            // These 2 lines are cutting of the first and last lines, we do this because ns2.0
-            .Skip(1)
-            .Take(lines.Length - 2)
-            // Cut off leading star
-            .Select(line => line.Substring(line.IndexOf('*') + 1).Trim());
-        return string.Join("\n", trimmedLines);
-    }
+    /// <param name="word">The word to capitalize.</param>
+    /// <returns>The capitalized <paramref name="word"/>.</returns>
+    [return: NotNullIfNotNull(nameof(word))]
+    private static string? Capitalize(string? word) => word is null
+        ? null
+        : $"{char.ToUpper(word[0])}{word[1..]}";
 }

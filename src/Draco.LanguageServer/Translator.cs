@@ -18,10 +18,15 @@ internal static class Translator
     public static LspModels.Diagnostic ToLsp(CompilerApi.Diagnostics.Diagnostic diag) => new()
     {
         Message = diag.Message,
-        // TODO: Not necessarily an error
-        Severity = LspModels.DiagnosticSeverity.Error,
+        Severity = diag.Severity switch
+        {
+            CompilerApi.Diagnostics.DiagnosticSeverity.Info => LspModels.DiagnosticSeverity.Information,
+            CompilerApi.Diagnostics.DiagnosticSeverity.Warning => LspModels.DiagnosticSeverity.Warning,
+            CompilerApi.Diagnostics.DiagnosticSeverity.Error => LspModels.DiagnosticSeverity.Error,
+            _ => throw new System.Exception()
+        },
         // TODO: Is there a no-range option?
-        Range = ToLsp(diag.Location.Range) ?? new(),
+        Range = ToLsp(diag.Location.Range) ?? default!,
         Code = diag.Template.Code,
         RelatedInformation = diag.RelatedInformation
             .Select(ToLsp)
@@ -43,7 +48,7 @@ internal static class Translator
         : new()
         {
             // TODO: Is there a no-range option?
-            Range = ToLsp(location.Range) ?? new(),
+            Range = ToLsp(location.Range) ?? default!,
             Uri = LspModels.DocumentUri.From(location.SourceText.Path),
         };
 
@@ -74,7 +79,7 @@ internal static class Translator
             detail = item.Symbols.Length == 1 ? typed.Type.ToString() : $"{item.Symbols.Length} overloads";
         }
 
-        var documentation = new LspModels.MarkupContent();
+        LspModels.MarkupContent? documentation = null;
         if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation))
         {
             documentation = new LspModels.MarkupContent()
@@ -90,7 +95,7 @@ internal static class Translator
             TextEdit = textEdit,
             AdditionalTextEdits = additionalEdits,
             Detail = detail,
-            Documentation = documentation,
+            Documentation = documentation is not null ? new(documentation) : default,
         };
     }
 
@@ -113,7 +118,7 @@ internal static class Translator
 
     public static LspModels.SignatureInformation ToLsp(CompilerApi.Semantics.IFunctionSymbol item)
     {
-        var documentation = new LspModels.MarkupContent();
+        LspModels.MarkupContent? documentation = null;
         if (!string.IsNullOrEmpty(item.Documentation))
         {
             documentation = new LspModels.MarkupContent()
@@ -129,7 +134,7 @@ internal static class Translator
             {
                 Label = x.Name,
             }).ToList(),
-            Documentation = documentation,
+            Documentation = documentation is not null ? new(documentation) : default,
         };
     }
 

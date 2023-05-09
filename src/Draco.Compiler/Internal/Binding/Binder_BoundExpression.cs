@@ -89,8 +89,12 @@ internal partial class Binder
 
     private BoundExpression TypeFunctionGroupExpression(UntypedFunctionGroupExpression group, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        // TODO
-        throw new NotImplementedException();
+        // A function group expression is illegal by itself, report it
+        diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
+            location: group.Syntax?.Location,
+            formatArgs: group.Functions.First().Name));
+        return new BoundUnexpectedExpression(group.Syntax);
     }
 
     private BoundExpression TypeReferenceErrorExpression(UntypedReferenceErrorExpression err, ConstraintSolver constraints, DiagnosticBag diagnostics) =>

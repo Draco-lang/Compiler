@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Reflection;
 using Draco.Compiler.Api;
@@ -832,6 +833,46 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleExpression);
+    }
+
+    [Fact]
+    public void FunctionGroupIsIllegalInExpressionContext()
+    {
+        // func main()
+        // {
+        //     foo
+        // }
+        // func foo() { }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(NameExpression("foo")))),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody())));
+
+        var funcGroupRef = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalFounctionGroupExpression);
     }
 
     [Fact]

@@ -10,6 +10,6 @@ public interface ITextDocumentDidOpen
     [RegistrationOptions("textDocument/didOpen")]
     public TextDocumentRegistrationOptions? DidOpenRegistrationOptions { get; }
 
-    [Notification("textDocument/didOpen")]
+    [Notification("textDocument/didOpen", Mutating = true)]
     public Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken);
 }

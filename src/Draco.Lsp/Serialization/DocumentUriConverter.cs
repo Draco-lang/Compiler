@@ -1,19 +1,24 @@
 using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Draco.Lsp.Model;
-using Newtonsoft.Json;
 
 namespace Draco.Lsp.Serialization;
 
 /// <summary>
 /// Converter for <see cref="DocumentUri"/>.
 /// </summary>
-internal sealed class DocumentUriConverter : JsonConverter
+internal sealed class DocumentUriConverter : JsonConverter<DocumentUri>
 {
-    public override bool CanConvert(Type objectType) => objectType == typeof(DocumentUri);
+    public override DocumentUri Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => new(reader.GetString() ?? string.Empty);
 
-    public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer) =>
-        new DocumentUri((string)reader.Value!);
+    public override DocumentUri ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => new(reader.GetString() ?? string.Empty);
 
-    public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) =>
-        writer.WriteValue(((DocumentUri)value!).ToString());
+    public override void Write(Utf8JsonWriter writer, DocumentUri value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value.ToString());
+
+    public override void WriteAsPropertyName(Utf8JsonWriter writer, DocumentUri value, JsonSerializerOptions options)
+        => writer.WritePropertyName(value.ToString());
 }

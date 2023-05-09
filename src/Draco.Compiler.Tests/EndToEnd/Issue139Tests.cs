@@ -180,6 +180,12 @@ public sealed class Issue139Tests
     [InlineData(""""
         func foo(): System = 5;
         """")]
+    [InlineData(""""
+        func main(){
+            foo
+        }
+        func foo() {}
+        """")]
     [Theory]
     public void DoesNotCrash(string source)
     {

@@ -19,7 +19,7 @@ internal static class CodeGenerator
         Render("BoundTree.sbncs", tree, cancellationToken);
     public static string GenerateOneOf(OneOf.Config config, CancellationToken cancellationToken) =>
         Render("OneOf.sbncs", config, cancellationToken);
-    public static string GenerateLspModel(Lsp.CSharp.Model model, CancellationToken cancellationToken) =>
+    public static string GenerateLspModel(Lsp.CsModel.Model model, CancellationToken cancellationToken) =>
         Render("LspModel.sbncs", model, cancellationToken);
     public static string GenerateWellKnownTypes(WellKnownTypes.WellKnownTypes model, CancellationToken cancellationToken) =>
         Render("WellKnownTypes.sbncs", model, cancellationToken);

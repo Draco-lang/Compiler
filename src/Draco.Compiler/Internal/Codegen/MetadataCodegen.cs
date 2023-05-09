@@ -202,8 +202,33 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddMethodSpecification(genericDef, blob);
         }
 
+        // A function in a generic instance type
+        // We need to reference the generic function
+        case FunctionInstanceSymbol func when func.ContainingSymbol is not null
+                                           && func.ContainingSymbol.IsGenericInstance:
+        {
+            return this.AddMemberReference(
+                parent: this.GetEntityHandle(func.ContainingSymbol),
+                name: func.Name,
+                signature: this.EncodeBlob(e =>
+                {
+                    var genericFunc = func.GenericDefinition;
+                    e
+                        .MethodSignature(
+                            genericParameterCount: genericFunc.GenericParameters.Length,
+                            isInstanceMethod: genericFunc.IsMember)
+                        .Parameters(genericFunc.Parameters.Length, out var returnType, out var parameters);
+                    this.EncodeReturnType(returnType, genericFunc.ReturnType);
+                    foreach (var param in genericFunc.Parameters)
+                    {
+                        this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
+                    }
+                }));
+        }
+
         // Nongeneric function
         case FunctionSymbol func:
+        {
             return this.AddMemberReference(
                 parent: func.ContainingSymbol is null
                     ? this.freeFunctionsTypeReferenceHandle
@@ -222,6 +247,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                         this.EncodeSignatureType(parameters.AddParameter().Type(), param.Type);
                     }
                 }));
+        }
 
         // NOTE: Temporary while we only have one module
         case SourceModuleSymbol:

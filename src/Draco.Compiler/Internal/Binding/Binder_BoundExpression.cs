@@ -65,7 +65,7 @@ internal partial class Binder
     {
         // A type expression is illegal by itself, report it
         diagnostics.Add(Diagnostic.Create(
-            template: SymbolResolutionErrors.IllegalModuleExpression,
+            template: SymbolResolutionErrors.IllegalTypeExpression,
             location: type.Syntax?.Location,
             formatArgs: type.Type.Name));
         return new BoundUnexpectedExpression(type.Syntax);

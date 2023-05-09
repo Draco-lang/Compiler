@@ -21,6 +21,19 @@ internal partial class Binder
     }
 
     /// <summary>
+    /// Looks up a symbol that can be used in call context.
+    /// </summary>
+    /// <param name="name">The name of the symbol to look up.</param>
+    /// <param name="reference">The syntax referencing the symbol.</param>
+    /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
+    /// <returns>The looked up symbol, which might represent an error.</returns>
+    internal Symbol LookupFunctionSymbol(string name, SyntaxNode reference, DiagnosticBag diagnostics)
+    {
+        var result = this.LookupInternal(name, BinderFacts.IsFunctionSymbol, reference);
+        return result.GetValue(name, reference, diagnostics);
+    }
+
+    /// <summary>
     /// Looks up a symbol that can be used in type-context.
     /// </summary>
     /// <param name="name">The name of the symbol to look up.</param>

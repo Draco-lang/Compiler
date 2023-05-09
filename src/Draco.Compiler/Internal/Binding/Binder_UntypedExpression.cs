@@ -113,7 +113,9 @@ internal partial class Binder
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        Symbol symbol;
+        if (syntax.Parent is CallExpressionSyntax) symbol = this.LookupFunctionSymbol(syntax.Name.Text, syntax, diagnostics);
+        else symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 

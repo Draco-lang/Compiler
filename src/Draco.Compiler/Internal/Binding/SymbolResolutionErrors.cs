@@ -76,13 +76,22 @@ internal static class SymbolResolutionErrors
         code: Code(7));
 
     /// <summary>
+    /// A type was used as an expression.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalTypeExpression = DiagnosticTemplate.Create(
+        title: "illegal expression",
+        severity: DiagnosticSeverity.Error,
+        format: "the type name {0} is illegal in expression context",
+        code: Code(8));
+
+    /// <summary>
     /// A module was used as an expression.
     /// </summary>
     public static readonly DiagnosticTemplate IllegalModuleType = DiagnosticTemplate.Create(
         title: "illegal type",
         severity: DiagnosticSeverity.Error,
         format: "the module name {0} is illegal in type context",
-        code: Code(8));
+        code: Code(9));
 
     /// <summary>
     /// Import is not at the top of the scope.
@@ -91,5 +100,5 @@ internal static class SymbolResolutionErrors
         title: "import not at the top of the scope",
         severity: DiagnosticSeverity.Error,
         format: "import directives must appear at the top of the scope",
-        code: Code(9));
+        code: Code(10));
 }

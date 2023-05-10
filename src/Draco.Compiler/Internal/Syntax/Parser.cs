@@ -337,7 +337,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
     private FunctionDeclarationSyntax ParseFunctionDeclaration()
     {
-        SyntaxToken? visibility = this.ParseVisibilityModifier();
+        var visibility = this.ParseVisibilityModifier();
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
         var name = this.Expect(TokenKind.Identifier);

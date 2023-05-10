@@ -68,45 +68,11 @@ internal sealed class BinderCache
 
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
-        var filePath = Path.TrimEndingDirectorySeparator(syntax.Tree.SourceText.Path?.LocalPath ?? string.Empty);
-        var rootPath = this.compilation.DeclarationTable.RootPath;
-        var rootName = this.compilation.SourceModule.FullName;
-
-        // If we don't have root path or this tree is in memory only or the tree is outside of the root, return the root module
-        if (string.IsNullOrEmpty(rootPath)
-            || string.IsNullOrEmpty(filePath)
-            || !filePath.StartsWith(rootPath)) return WrapInImportBinder(this.ModuleBinder, syntax);
-
-        var subPath = filePath[rootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
-        var moduleName = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(subPath) ?? string.Empty).Replace(Path.DirectorySeparatorChar, '.');
-        if (moduleName == string.Empty) moduleName = rootName;
-        else moduleName = $"{rootName}.{moduleName}";
-
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         binder = new ModuleBinder(binder, this.compilation.RootModule);
-        binder = new ModuleBinder(binder, this.GetModuleSymbol(moduleName));
+        binder = new ModuleBinder(binder, this.compilation.GetCompilationUnitModule(syntax.Tree));
         binder = WrapInImportBinder(binder, syntax);
         return binder;
-    }
-
-    private Symbols.ModuleSymbol GetModuleSymbol(string fullName)
-    {
-        Symbols.ModuleSymbol Recurse(Symbols.ModuleSymbol parent)
-        {
-            foreach (var member in parent.Members.OfType<Symbols.ModuleSymbol>())
-            {
-                if (member.FullName == fullName)
-                {
-                    return member;
-                }
-                return Recurse(member);
-            }
-            throw new InvalidOperationException();
-        }
-
-        // Root module
-        if (this.compilation.SourceModule.FullName == fullName) return this.compilation.SourceModule;
-        return Recurse(this.compilation.SourceModule);
     }
 
     private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)

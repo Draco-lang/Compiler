@@ -230,6 +230,44 @@ public sealed class Compilation : IBinderProvider
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
 
+    internal ModuleSymbol GetCompilationUnitModule(SyntaxTree tree)
+    {
+        var filePath = Path.TrimEndingDirectorySeparator(tree.SourceText.Path?.LocalPath ?? string.Empty);
+        var rootPath = this.DeclarationTable.RootPath;
+        var rootName = this.SourceModule.FullName;
+
+        // If we don't have root path or this tree is in memory only or the tree is outside of the root, return the root module
+        if (string.IsNullOrEmpty(rootPath)
+            || string.IsNullOrEmpty(filePath)
+            || !filePath.StartsWith(rootPath)) return this.SourceModule;
+
+        var subPath = filePath[rootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
+        var moduleName = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(subPath) ?? string.Empty).Replace(Path.DirectorySeparatorChar, '.');
+        if (moduleName == string.Empty) moduleName = rootName;
+        else moduleName = $"{rootName}.{moduleName}";
+        return this.GetModuleSymbol(moduleName);
+    }
+
+    private ModuleSymbol GetModuleSymbol(string fullName)
+    {
+        ModuleSymbol Recurse(ModuleSymbol parent)
+        {
+            foreach (var member in parent.Members.OfType<ModuleSymbol>())
+            {
+                if (member.FullName == fullName)
+                {
+                    return member;
+                }
+                return Recurse(member);
+            }
+            throw new InvalidOperationException();
+        }
+
+        // Root module
+        if (this.SourceModule.FullName == fullName) return this.SourceModule;
+        return Recurse(this.SourceModule);
+    }
+
     internal Binder GetBinder(SyntaxNode syntax) => this.binderCache.GetBinder(syntax);
 
     internal Binder GetBinder(Symbol symbol)

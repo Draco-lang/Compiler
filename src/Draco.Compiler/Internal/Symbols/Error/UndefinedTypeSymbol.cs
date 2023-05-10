@@ -6,7 +6,6 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class UndefinedTypeSymbol : TypeSymbol
 {
     public override bool IsError => true;
-    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
     public override Symbol? ContainingSymbol => null;
 
     public override string Name { get; }

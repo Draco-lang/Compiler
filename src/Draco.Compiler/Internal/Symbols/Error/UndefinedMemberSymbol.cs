@@ -8,7 +8,6 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol
 {
     public override bool IsError => true;
-    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
 
     public override Symbol? ContainingSymbol => null;
 

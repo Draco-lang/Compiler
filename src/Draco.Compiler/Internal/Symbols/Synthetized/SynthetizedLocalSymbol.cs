@@ -8,7 +8,6 @@ internal sealed class SynthetizedLocalSymbol : LocalSymbol
     public override TypeSymbol Type { get; }
     public override bool IsMutable { get; }
     public override Symbol? ContainingSymbol => null;
-    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
 
     public SynthetizedLocalSymbol(TypeSymbol type, bool isMutable)
     {

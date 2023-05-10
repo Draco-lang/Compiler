@@ -16,8 +16,6 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
 
     public override string Name => this.MetadataReader.GetString(this.typeDefinition.Name);
 
-    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
-
     public override Symbol ContainingSymbol { get; }
 
     /// <summary>

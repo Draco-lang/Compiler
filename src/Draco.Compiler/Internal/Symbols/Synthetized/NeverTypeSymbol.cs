@@ -9,6 +9,7 @@ internal sealed class NeverTypeSymbol : TypeSymbol
     /// A singleton instance.
     /// </summary>
     public static NeverTypeSymbol Instance { get; } = new();
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
 
     public override Symbol? ContainingSymbol => null;
 

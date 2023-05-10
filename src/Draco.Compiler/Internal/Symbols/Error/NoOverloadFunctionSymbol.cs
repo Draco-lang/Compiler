@@ -11,6 +11,7 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
     public override TypeSymbol ReturnType => IntrinsicSymbols.ErrorType;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
 
     public override Symbol? ContainingSymbol => null;
     public override bool IsError => true;

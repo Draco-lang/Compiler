@@ -15,6 +15,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     private ImmutableArray<Symbol>? members;
 
     public override string Name => this.MetadataReader.GetString(this.typeDefinition.Name);
+
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
+
     public override Symbol ContainingSymbol { get; }
     // TODO: Is this correct?
     public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);

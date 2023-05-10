@@ -6,6 +6,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 internal sealed class PrimitiveTypeSymbol : TypeSymbol
 {
     public override Symbol? ContainingSymbol => null;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
 
     public override string Name { get; }
     public override bool IsValueType { get; }

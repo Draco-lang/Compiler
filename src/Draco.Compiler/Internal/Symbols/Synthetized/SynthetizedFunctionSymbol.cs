@@ -8,6 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 internal abstract class SynthetizedFunctionSymbol : FunctionSymbol
 {
     public override Symbol? ContainingSymbol => null;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
 
     public override string Name { get; }
 

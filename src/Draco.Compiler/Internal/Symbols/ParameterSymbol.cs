@@ -9,6 +9,8 @@ internal abstract partial class ParameterSymbol : LocalSymbol
 {
     public override bool IsMutable => false;
 
+    public override Visibility Visibility => this.ContainingSymbol is null ? Visibility.Internal : this.ContainingSymbol.Visibility;
+
     public override IParameterSymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitParameter(this);

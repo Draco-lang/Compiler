@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
 
@@ -67,6 +68,12 @@ public static partial class SyntaxFactory
 
     public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
+    public static SyntaxToken? VisibilityToken(Visibility visibility) => visibility switch
+    {
+        Visibility.Private => null,
+        Visibility.Internal => MakeToken(TokenKind.KeywordInternal),
+        _ => MakeToken(TokenKind.KeywordPublic),
+    };
 
     public static SyntaxList<TNode> SyntaxList<TNode>(IEnumerable<TNode> elements)
         where TNode : SyntaxNode => new(
@@ -138,7 +145,7 @@ public static partial class SyntaxFactory
         ExpressionSyntax? value = null) => VariableDeclaration(null, true, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
-        SyntaxToken visibility,
+        SyntaxToken? visibility,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) => VariableDeclaration(visibility, true, name, type, value);
@@ -149,7 +156,7 @@ public static partial class SyntaxFactory
         ExpressionSyntax? value = null) => VariableDeclaration(null, false, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
-        SyntaxToken visibility,
+        SyntaxToken? visibility,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) => VariableDeclaration(visibility, false, name, type, value);

@@ -311,7 +311,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
     private VariableDeclarationSyntax ParseVariableDeclaration()
     {
-        SyntaxToken? visibility = this.ParseVisibilityModifier();
+        var visibility = this.ParseVisibilityModifier();
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
         Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);

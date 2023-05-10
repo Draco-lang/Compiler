@@ -1,3 +1,4 @@
+using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Tests.ModuleTestsUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
@@ -341,13 +342,13 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void SimpleModuleFunctionCall()
     {
-        var bar = CreateSyntaxTree("""
+        var bar = SyntaxTree.Parse("""
             public func bar(): int32{
                 return FooTest.foo();
             }
             """, ToPath("Tests", "bar.draco"));
 
-        var foo = CreateSyntaxTree("""
+        var foo = SyntaxTree.Parse("""
             internal func foo(): int32 = x;
             val x = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
@@ -361,13 +362,13 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void SimpleModuleGlobalAccess()
     {
-        var bar = CreateSyntaxTree("""
+        var bar = SyntaxTree.Parse("""
             public func bar(): int32{
                 return FooTest.x;
             }
             """, ToPath("Tests", "bar.draco"));
 
-        var foo = CreateSyntaxTree("""
+        var foo = SyntaxTree.Parse("""
             public val x = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
 
@@ -380,7 +381,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void SimpleNestedModuleAccess()
     {
-        var foo = CreateSyntaxTree("""
+        var foo = SyntaxTree.Parse("""
             public func foo(): int32 = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
 

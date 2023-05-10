@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Reflection;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Tests.EndToEnd;
@@ -40,7 +41,7 @@ public abstract class EndToEndTestsBase
         string methodName,
         TextReader? stdin,
         TextWriter? stdout,
-        string moduleName = "FreeFunctions",
+        string moduleName = CompilerConstants.DefaultModuleName,
         params object[] args)
     {
         Console.SetIn(stdin ?? Console.In);
@@ -66,7 +67,7 @@ public abstract class EndToEndTestsBase
 
     protected static TResult Invoke<TResult>(Assembly assembly, string methodName, params object[] args) => Invoke<TResult>(
         assembly: assembly,
-        moduleName: "FreeFunctions",
+        moduleName: CompilerConstants.DefaultModuleName,
         methodName: methodName,
         stdin: null,
         stdout: null,

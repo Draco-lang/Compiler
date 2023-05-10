@@ -146,7 +146,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             // We take its parent module
             else resolutionScope = this.GetModuleReferenceHandle(module.Parent);
 
-            var name = string.IsNullOrEmpty(module.Name) ? "FreeFunctions" : module.Name;
+            var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
 
             handle = this.GetOrAddTypeReference(resolutionScope, null, name);
 
@@ -290,7 +290,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
         var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed;
 
-        var name = string.IsNullOrEmpty(module.Name) ? "FreeFunctions" : module.Name;
+        var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
 
         // Create the type
         var createdModule = this.AddTypeDefinition(

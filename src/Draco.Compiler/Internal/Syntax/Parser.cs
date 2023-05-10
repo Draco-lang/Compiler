@@ -205,7 +205,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     internal DeclarationSyntax ParseDeclaration()
     {
-        var peekAmount = this.IsVisibilityModifier(this.Peek()) ? 1 : 0;
+        var peekAmount = IsVisibilityModifier(this.Peek()) ? 1 : 0;
         switch (this.Peek(peekAmount))
         {
         case TokenKind.KeywordImport:

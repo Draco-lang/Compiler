@@ -24,6 +24,14 @@ public sealed class SyntaxTree
         new(sourceText: SourceText.None, greenRoot: root.Green, syntaxDiagnostics: new());
 
     /// <summary>
+    /// Constructs a new <see cref="SyntaxTree"/> with given <paramref name="path"/> from the given <paramref name="root"/>.
+    /// </summary>
+    /// <param name="root">The root of the tree.</param>
+    /// <returns>A new <see cref="SyntaxTree"/> with <see cref="Root"/> <paramref name="root"/> and <see cref="SourceText.Path"/> <paramref name="path"/>.</returns>
+    public static SyntaxTree Create(SyntaxNode root, string path) =>
+        new(sourceText: SourceText.FromText(new System.Uri(path), System.ReadOnlyMemory<char>.Empty), greenRoot: root.Green, syntaxDiagnostics: new());
+
+    /// <summary>
     /// Parses the given text into a <see cref="SyntaxTree"/>.
     /// </summary>
     /// <param name="source">The source to parse.</param>

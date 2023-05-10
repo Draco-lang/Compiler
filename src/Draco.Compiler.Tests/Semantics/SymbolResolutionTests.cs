@@ -1067,15 +1067,29 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void VisibleElementFullyQualified()
     {
-        var main = CreateSyntaxTree(""""
-            func main(){
-               FooModule.foo();
-            }
-            """", ToPath("Tests", "main.draco"));
+        // func main(){
+        //   FooModule.foo();
+        // }
 
-        var foo = CreateSyntaxTree(""""
-            internal func foo(): int32 = 0;
-            """", ToPath("Tests", "FooModule", "foo.draco"));
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // internal func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                VisibilityToken(Api.Semantics.Visibility.Internal),
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
 
 
         // Act
@@ -1097,15 +1111,28 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void NotVisibleElementFullyQualified()
     {
-        var main = CreateSyntaxTree(""""
-            func main(){
-               FooModule.foo();
-            }
-            """", ToPath("Tests", "main.draco"));
+        // func main(){
+        //   FooModule.foo();
+        // }
 
-        var foo = CreateSyntaxTree(""""
-            func foo(): int32 = 0;
-            """", ToPath("Tests", "FooModule", "foo.draco"));
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -1127,16 +1154,31 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void VisibleElementImported()
     {
-        var main = CreateSyntaxTree(""""
-            import FooModule;
-            func main(){
-               foo();
-            }
-            """", ToPath("Tests", "main.draco"));
+        // import FooModule;
+        // func main(){
+        //   foo();
+        // }
 
-        var foo = CreateSyntaxTree(""""
-            internal func foo(): int32 = 0;
-            """", ToPath("Tests", "FooModule", "foo.draco"));
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // internal func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                VisibilityToken(Api.Semantics.Visibility.Internal),
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -1157,16 +1199,30 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void NotVisibleElementImported()
     {
-        var main = CreateSyntaxTree(""""
-            import FooModule;
-            func main(){
-               foo();
-            }
-            """", ToPath("Tests", "main.draco"));
+        // import FooModule;
+        // func main(){
+        //   foo();
+        // }
 
-        var foo = CreateSyntaxTree(""""
-            func foo(): int32 = 0;
-            """", ToPath("Tests", "FooModule", "foo.draco"));
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -1188,15 +1244,28 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void ElementFromTheSameModuleButDifferentFile()
     {
-        var main = CreateSyntaxTree(""""
-            func main(){
-               foo();
-            }
-            """", ToPath("Tests", "main.draco"));
+        // func main(){
+        //   foo();
+        // }
 
-        var foo = CreateSyntaxTree(""""
-            func foo(): int32 = 0;
-            """", ToPath("Tests", "foo.draco"));
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "foo.draco"));
 
         // Act
         var compilation = Compilation.Create(
@@ -1217,10 +1286,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void SyntaxTreeOutsideOfRoot()
     {
-        var main = CreateSyntaxTree(""""
-            func main(){
-            }
-            """", ToPath("NotRoot", "main.draco"));
+        // func main() { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody())),
+            ToPath("NotRoot", "main.draco"));
 
         // Act
         var compilation = Compilation.Create(

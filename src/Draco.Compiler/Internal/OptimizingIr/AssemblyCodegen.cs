@@ -4,6 +4,7 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
+
 internal sealed partial class AssemblyCodegen
 {
     public static Assembly Generate(

@@ -93,16 +93,13 @@ internal sealed class BinderCache
     {
         Symbols.ModuleSymbol Recurse(Symbols.ModuleSymbol parent)
         {
-            foreach (var member in parent.Members)
+            foreach (var member in parent.Members.OfType<Symbols.ModuleSymbol>())
             {
-                if (member is Symbols.ModuleSymbol module)
+                if (member.FullName == fullName)
                 {
-                    if (module.FullName == fullName)
-                    {
-                        return module;
-                    }
-                    return Recurse(module);
+                    return member;
                 }
+                return Recurse(member);
             }
             throw new InvalidOperationException();
         }

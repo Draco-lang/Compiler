@@ -64,7 +64,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
-    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandlers = new();
+    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
@@ -136,7 +136,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     public TypeReferenceHandle GetModuleReferenceHandle(IModule module)
     {
-        if (!this.moduleReferenceHandlers.TryGetValue(module, out var handle))
+        if (!this.moduleReferenceHandles.TryGetValue(module, out var handle))
         {
             EntityHandle resolutionScope;
 
@@ -150,7 +150,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
             handle = this.GetOrAddTypeReference(resolutionScope, null, name);
 
-            this.moduleReferenceHandlers.Add(module, handle);
+            this.moduleReferenceHandles.Add(module, handle);
         }
         return handle;
     }

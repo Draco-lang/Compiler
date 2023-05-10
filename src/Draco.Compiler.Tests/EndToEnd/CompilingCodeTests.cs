@@ -339,7 +339,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleModuleFunctionCallExample()
+    public void SimpleModuleFunctionCall()
     {
         var bar = CreateSyntaxTree("""
             public func bar(): int32{
@@ -359,7 +359,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleModuleGlobalAccessExample()
+    public void SimpleModuleGlobalAccess()
     {
         var bar = CreateSyntaxTree("""
             public func bar(): int32{
@@ -378,7 +378,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleNestedModuleAccessExample()
+    public void SimpleNestedModuleAccess()
     {
         var foo = CreateSyntaxTree("""
             public func foo(): int32 = 5;

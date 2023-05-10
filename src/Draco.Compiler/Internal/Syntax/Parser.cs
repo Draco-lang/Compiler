@@ -185,7 +185,7 @@ internal sealed class Parser
     /// </summary>
     /// <param name="kind">The token kind to check for.</param>
     /// <returns>True, if the token kind is visibility modifier, otherwise false.</returns>
-    private bool IsVisibilityModifier(TokenKind kind) => kind == TokenKind.KeywordInternal || kind == TokenKind.KeywordPublic ? true : false;
+    private static bool IsVisibilityModifier(TokenKind kind) => kind is TokenKind.KeywordInternal or TokenKind.KeywordPublic;
 
     /// <summary>
     /// Parses a <see cref="CompilationUnitSyntax"/> until the end of input.

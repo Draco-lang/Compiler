@@ -297,6 +297,7 @@ public sealed class Compilation : IBinderProvider
         .ToImmutableArray();
     private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
         containingSymbol: null,
+        name: string.Empty,
         modules: this.MetadataAssemblies
             .Cast<ModuleSymbol>()
             .Append(this.SourceModule)

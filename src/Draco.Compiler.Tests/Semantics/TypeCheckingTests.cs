@@ -653,7 +653,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                NameType("int32"),
                InlineFunctionBody(LiteralExpression(0))),
             FunctionDeclaration(
-                VisibilityToken(Api.Semantics.Visibility.Internal),
+                Api.Semantics.Visibility.Internal,
                 "foo",
                 ParameterList(Parameter("x", NameType("string"))),
                 NameType("int32"),
@@ -703,7 +703,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                NameType("int32"),
                InlineFunctionBody(LiteralExpression(0))),
             FunctionDeclaration(
-                VisibilityToken(Api.Semantics.Visibility.Internal),
+                Api.Semantics.Visibility.Internal,
                 "foo",
                 ParameterList(Parameter("x", NameType("string"))),
                 NameType("int32"),

@@ -36,7 +36,7 @@ internal sealed class DeclarationTable
 
     public string RootPath { get; }
 
-    private Compilation compilation;
+    private readonly Compilation compilation;
 
     private readonly ImmutableArray<SyntaxTree> syntaxTrees;
 

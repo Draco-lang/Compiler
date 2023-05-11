@@ -16,7 +16,7 @@ internal sealed class Procedure : IProcedure
     public TypeSymbol? Type => this.Symbol.Type;
     public Module DeclaringModule { get; }
     IModule IProcedure.DeclaringModule => this.DeclaringModule;
-    public Assembly Assembly { get; }
+    public Assembly Assembly => this.DeclaringModule.Assembly;
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
@@ -39,7 +39,6 @@ internal sealed class Procedure : IProcedure
     public Procedure(Module declaringModule, FunctionSymbol symbol)
     {
         this.DeclaringModule = declaringModule;
-        this.Assembly = declaringModule.Assembly;
         this.Symbol = symbol;
         this.Entry = this.DefineBasicBlock(new SynthetizedLabelSymbol("begin"));
     }

@@ -1018,12 +1018,7 @@ internal sealed class Parser
         return elements.ToSeparatedSyntaxList();
     }
 
-    private SyntaxToken? ParseVisibilityModifier()
-    {
-        var peek = this.Peek();
-        if (peek == TokenKind.KeywordInternal || peek == TokenKind.KeywordPublic) return this.Advance();
-        return null;
-    }
+    private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.Peek()) ? this.Advance() : null;
 
     // Token-level operators
 

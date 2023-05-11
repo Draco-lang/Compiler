@@ -111,12 +111,12 @@ public static partial class SyntaxFactory
         Semicolon);
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
-        SyntaxToken? visibility,
+        Visibility visibility,
         string name,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
-            visibility,
+            VisibilityToken(visibility),
             Func,
             Name(name),
             OpenParen,
@@ -145,10 +145,10 @@ public static partial class SyntaxFactory
         ExpressionSyntax? value = null) => VariableDeclaration(null, true, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
-        SyntaxToken? visibility,
+        Visibility visibility,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(visibility, true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(VisibilityToken(visibility), true, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         string name,
@@ -156,10 +156,10 @@ public static partial class SyntaxFactory
         ExpressionSyntax? value = null) => VariableDeclaration(null, false, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
-        SyntaxToken? visibility,
+        Visibility visibility,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(visibility, false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(VisibilityToken(visibility), false, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         SyntaxToken? visibility,

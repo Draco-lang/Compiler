@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Reflection;
 using Draco.Compiler.Api;
@@ -6,16 +5,9 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
-using RoslynSyntaxTree = Microsoft.CodeAnalysis.SyntaxTree;
-using RoslynSyntaxFactory = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using RoslynSourceText = Microsoft.CodeAnalysis.Text.SourceText;
-using RoslynMetadataReference = Microsoft.CodeAnalysis.MetadataReference;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
 using static Draco.Compiler.Tests.ModuleTestsUtilities;
-using static System.Net.Mime.MediaTypeNames;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -31,20 +23,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Since the Parent property is protected, we need to access it via reflection
         var childParent = (Binder?)BinderParentProperty.GetValue(child);
         Assert.True(ReferenceEquals(childParent, parent));
-    }
-
-    private static MetadataReference CompileCSharpToMetadataRef(string code)
-    {
-        var stringText = RoslynSourceText.From(code, Encoding.UTF8);
-        var tree = RoslynSyntaxFactory.ParseSyntaxTree(stringText);
-        var defaultReferences = Basic.Reference.Assemblies.Net70.ReferenceInfos.All.Select(r => RoslynMetadataReference.CreateFromStream(new MemoryStream(r.ImageBytes)));
-
-        var compilation = CSharpCompilation.Create("Test.dll", new RoslynSyntaxTree[] { tree }, defaultReferences, new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary));
-        var stream = new MemoryStream();
-        var emitResult = compilation.Emit(stream);
-        Assert.True(emitResult.Success);
-        stream.Position = 0;
-        return MetadataReference.FromPeStream(stream);
     }
 
     [Fact]
@@ -1105,7 +1083,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var foo = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
-                VisibilityToken(Api.Semantics.Visibility.Internal),
+                Api.Semantics.Visibility.Internal,
                 "foo",
                 ParameterList(),
                 NameType("int32"),
@@ -1266,7 +1244,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var foo = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
-                VisibilityToken(Api.Semantics.Visibility.Internal),
+                Api.Semantics.Visibility.Internal,
                 "foo",
                 ParameterList(),
                 NameType("int32"),

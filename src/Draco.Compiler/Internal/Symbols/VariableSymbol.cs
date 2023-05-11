@@ -21,10 +21,15 @@ internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
     {
         get
         {
-            var syntax = this.DeclaringSyntax as VariableDeclarationSyntax;
+            var syntax = this.DeclaringSyntax as FunctionDeclarationSyntax;
             if (syntax is null) return Api.Semantics.Visibility.Internal; // Default
-            if (syntax.VisibilityModifier is null) return Api.Semantics.Visibility.Private;
-            return syntax.VisibilityModifier.Kind == TokenKind.KeywordInternal ? Api.Semantics.Visibility.Internal : Api.Semantics.Visibility.Public;
+            return syntax.VisibilityModifier?.Kind switch
+            {
+                null => Api.Semantics.Visibility.Private,
+                TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
+                TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
+                _ => throw new System.ArgumentOutOfRangeException(nameof(syntax.VisibilityModifier.Kind)),
+            };
         }
     }
 }

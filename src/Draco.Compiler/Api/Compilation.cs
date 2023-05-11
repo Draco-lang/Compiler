@@ -53,7 +53,9 @@ public sealed class Compilation : IBinderProvider
         outputPath: outputPath,
         assemblyName: assemblyName);
 
-    // TODO: Probably not the smartest idea, will only work for single files (likely)
+    // TODO: Should we cache semantic models? Currently we sometimes pass the entire code twice
+    // just because this method instantiates a new semantic model each time, and then
+    // we ask for a semantic model
     /// <summary>
     /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
     /// </summary>
@@ -93,13 +95,14 @@ public sealed class Compilation : IBinderProvider
     /// <summary>
     /// The top-level merged module that contains the source along with references.
     /// </summary>
-    internal MetadataReferencesModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
-    private MetadataReferencesModuleSymbol? rootModule;
+    internal ModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
+    private ModuleSymbol? rootModule;
 
     /// <summary>
     /// The metadata assemblies this compilation references.
     /// </summary>
-    internal ImmutableArray<MetadataAssemblySymbol> MetadataAssemblies => this.RootModule.MetadataAssemblies;
+    internal ImmutableArray<MetadataAssemblySymbol> MetadataAssemblies => this.metadataAssemblies ??= this.BuildMetadataAssemblies();
+    private ImmutableArray<MetadataAssemblySymbol>? metadataAssemblies;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
@@ -289,5 +292,13 @@ public sealed class Compilation : IBinderProvider
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees, this.RootModulePath, this);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
-    private MetadataReferencesModuleSymbol BuildRootModule() => new(this);
+    private ImmutableArray<MetadataAssemblySymbol> BuildMetadataAssemblies() => this.MetadataReferences
+        .Select(r => new MetadataAssemblySymbol(this, r.MetadataReader))
+        .ToImmutableArray();
+    private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
+        containingSymbol: null,
+        modules: this.MetadataAssemblies
+            .Cast<ModuleSymbol>()
+            .Append(this.SourceModule)
+            .ToImmutableArray());
 }

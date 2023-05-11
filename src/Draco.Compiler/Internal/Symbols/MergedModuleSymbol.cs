@@ -20,8 +20,6 @@ internal sealed class MergedModuleSymbol : ModuleSymbol
 
     public MergedModuleSymbol(Symbol? containingSymbol, ImmutableArray<ModuleSymbol> modules)
     {
-        Debug.Assert(modules.All(m => m.Name == modules[0].Name));
-
         this.ContainingSymbol = containingSymbol;
         this.Name = modules[0].Name;
         this.modules = modules;

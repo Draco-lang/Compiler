@@ -20,11 +20,18 @@ public sealed class SignatureService
     public SignatureItem? GetSignature(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
     {
         // Check if this is a call expression
-        var call = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault(x => x is CallExpressionSyntax) as CallExpressionSyntax;
+        var call = tree.Root
+            .TraverseSubtreesAtCursorPosition(cursor)
+            .OfType<CallExpressionSyntax>()
+            .LastOrDefault();
         if (call is null) return null;
 
         // Get all overloads
-        var symbols = semanticModel.GetReferencedOverloads(call.Function).Select(x => (IFunctionSymbol)x).OrderBy(x => x.Parameters.Length).ToImmutableArray();
+        var symbols = semanticModel
+            .GetReferencedOverloads(call.Function)
+            .Cast<IFunctionSymbol>()
+            .OrderBy(x => x.Parameters.Length)
+            .ToImmutableArray();
         if (symbols.Length == 0) return null;
         // Figure out which param should be active
         var paramCount = call.ArgumentList.Values.Count();

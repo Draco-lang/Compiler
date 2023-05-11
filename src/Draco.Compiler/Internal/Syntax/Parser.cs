@@ -127,6 +127,15 @@ internal sealed class Parser
     };
 
     /// <summary>
+    /// The list of all tokens that can be a visibility modifier.
+    /// </summary>
+    private static readonly TokenKind[] visibilityModifiers = new[]
+    {
+        TokenKind.KeywordInternal,
+        TokenKind.KeywordPublic,
+    };
+
+    /// <summary>
     /// The list of all tokens that can start an expression.
     /// </summary>
     private static readonly TokenKind[] expressionStarters = new[]
@@ -174,18 +183,18 @@ internal sealed class Parser
         || kind == TokenKind.Identifier && this.Peek(1) == TokenKind.Colon;
 
     /// <summary>
+    /// Checks if the token kind is visibility modifier.
+    /// </summary>
+    /// <param name="kind">The token kind to check for.</param>
+    /// <returns>True, if the token kind is visibility modifier, otherwise false.</returns>
+    private bool IsVisibilityModifier(TokenKind kind) => visibilityModifiers.Contains(kind);
+
+    /// <summary>
     /// Checks, if the current token kind and the potentially following tokens form an expression.
     /// </summary>
     /// <param name="kind">The current token kind.</param>
     /// <returns>True, uf <paramref name="kind"/> in the current state can form the start of an expression.</returns>
     private bool IsExpressionStarter(TokenKind kind) => expressionStarters.Contains(kind);
-
-    /// <summary>
-    /// Checks if the token kind is visibility modifier.
-    /// </summary>
-    /// <param name="kind">The token kind to check for.</param>
-    /// <returns>True, if the token kind is visibility modifier, otherwise false.</returns>
-    private static bool IsVisibilityModifier(TokenKind kind) => kind is TokenKind.KeywordInternal or TokenKind.KeywordPublic;
 
     /// <summary>
     /// Parses a <see cref="CompilationUnitSyntax"/> until the end of input.
@@ -205,7 +214,8 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     internal DeclarationSyntax ParseDeclaration()
     {
-        var peekAmount = IsVisibilityModifier(this.Peek()) ? 1 : 0;
+        var isModifier = this.IsVisibilityModifier(this.Peek());
+        var peekAmount = isModifier ? 1 : 0;
         switch (this.Peek(peekAmount))
         {
         case TokenKind.KeywordImport:
@@ -223,14 +233,16 @@ internal sealed class Parser
 
         default:
         {
+            var modifier = isModifier ? this.Advance() : null;
             var input = this.Synchronize(t => t switch
             {
                 _ when this.IsDeclarationStarter(t) => false,
+                _ when this.IsVisibilityModifier(t) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
-            var node = new UnexpectedDeclarationSyntax(input);
+            var node = new UnexpectedDeclarationSyntax(modifier, input);
             this.AddDiagnostic(node, diag);
             return node;
         }
@@ -1018,7 +1030,7 @@ internal sealed class Parser
         return elements.ToSeparatedSyntaxList();
     }
 
-    private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.Peek()) ? this.Advance() : null;
+    private SyntaxToken? ParseVisibilityModifier() => this.IsVisibilityModifier(this.Peek()) ? this.Advance() : null;
 
     // Token-level operators
 

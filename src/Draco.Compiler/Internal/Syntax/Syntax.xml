@@ -38,6 +38,15 @@
       Unexpected input in declaration context.
     </Documentation>
 
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        The visibility modifier keyword of this declaration.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
+
     <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
       <Documentation>
         The unexpected syntax nodes.

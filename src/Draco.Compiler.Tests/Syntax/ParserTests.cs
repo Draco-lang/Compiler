@@ -408,6 +408,23 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void TestUnexpectedDeclarationStartingWithVisibilityModifier()
+    {
+        this.ParseDeclaration("internal gibrish, more gibrish");
+        this.N<UnexpectedDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordInternal);
+            this.N<SyntaxList<SyntaxNode>>();
+            {
+                this.T(TokenKind.Identifier, "gibrish");
+                this.T(TokenKind.Comma);
+                this.T(TokenKind.Identifier, "more");
+                this.T(TokenKind.Identifier, "gibrish");
+            }
+        }
+    }
+
+    [Fact]
     public void TestVariableDeclarationWithNoTypeAndWithValueAndMissingSemicolon()
     {
         this.ParseDeclaration("val x = 5");

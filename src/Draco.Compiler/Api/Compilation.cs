@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -160,19 +161,37 @@ public sealed class Compilation : IBinderProvider
     }
 
     /// <summary>
-    /// Replaces <see cref="SyntaxTree"/> that was created from file with <paramref name="path"/> with the <paramref name="newTree"/>.
+    /// Updates the given <paramref name="oldTree"/> with <paramref name="newTree"/>.
     /// </summary>
-    /// <param name="path">The path to the file the <see cref="SyntaxTree"/> was created from.</param>
-    /// <param name="newTree">The <see cref="SyntaxTree"/> that will replace the original <see cref="SyntaxTree"/>.</param>
-    /// <returns>New <see cref="Compilation"/> with the <see cref="SyntaxTree"/> updated.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    public Compilation UpdateSyntaxTree(Uri path, SyntaxTree newTree)
+    /// <param name="oldTree">The old <see cref="SyntaxTree"/> to update.</param>
+    /// <param name="newTree">The new <see cref="SyntaxTree"/> to replace with.</param>
+    /// <returns>A <see cref="Compilation"/> reflecting the change.</returns>
+    public Compilation UpdateSyntaxTree(SyntaxTree oldTree, SyntaxTree newTree)
     {
-        var oldTrees = this.SyntaxTrees.ToBuilder();
-        var oldTree = oldTrees.FirstOrDefault(x => x.SourceText.Path == path);
-        if (oldTree is null) throw new InvalidOperationException();
-        oldTrees[oldTrees.IndexOf(oldTree)] = newTree;
-        return new Compilation(oldTrees.ToImmutable(), this.MetadataReferences, this.RootModulePath, this.OutputPath, this.AssemblyName);
+        var treeIndex = this.SyntaxTrees.IndexOf(oldTree);
+        if (treeIndex < 0) throw new ArgumentException("the specified tree was not in the compilation", nameof(oldTree));
+
+        var newSyntaxTrees = this.SyntaxTrees.ToBuilder();
+        newSyntaxTrees[treeIndex] = newTree;
+
+        return new Compilation(
+            syntaxTrees: newSyntaxTrees.ToImmutable(),
+            metadataReferences: this.MetadataReferences,
+            rootModulePath: this.RootModulePath,
+            outputPath: this.OutputPath,
+            assemblyName: this.AssemblyName,
+            // Needs to be rebuilt
+            rootModule: null,
+            // We can carry on cached metadata assemblies, they are untouched
+            metadataAssemblies: this.metadataAssemblies,
+            // Needs to be rebuilt
+            sourceModule: null,
+            // Needs to be rebuilt
+            declarationTable: null,
+            // Just a cache
+            wellKnownTypes: this.WellKnownTypes,
+            // TODO: We could definitely carry on info here, invalidating the correct things
+            binderCache: null);
     }
 
     /// <summary>

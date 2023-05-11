@@ -38,18 +38,20 @@ public sealed class Compilation : IBinderProvider
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
+    /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
+    /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences = null,
-        string? rootModule = null,
+        string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null) => new(
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
-        rootModule: rootModule,
+        rootModulePath: rootModulePath,
         outputPath: outputPath,
         assemblyName: assemblyName);
 
@@ -101,8 +103,9 @@ public sealed class Compilation : IBinderProvider
     /// <summary>
     /// The metadata assemblies this compilation references.
     /// </summary>
-    internal ImmutableArray<MetadataAssemblySymbol> MetadataAssemblies => this.metadataAssemblies ??= this.BuildMetadataAssemblies();
-    private ImmutableArray<MetadataAssemblySymbol>? metadataAssemblies;
+    internal ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> MetadataAssemblies =>
+        this.metadataAssemblies ??= this.BuildMetadataAssemblies();
+    private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
@@ -129,20 +132,31 @@ public sealed class Compilation : IBinderProvider
 
     private readonly BinderCache binderCache;
 
+    // Main ctor with all state
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences,
-        string? rootModule,
-        string? outputPath,
-        string? assemblyName)
+        string? rootModulePath = null,
+        string? outputPath = null,
+        string? assemblyName = null,
+        ModuleSymbol? rootModule = null,
+        ImmutableDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies = null,
+        ModuleSymbol? sourceModule = null,
+        DeclarationTable? declarationTable = null,
+        WellKnownTypes? wellKnownTypes = null,
+        BinderCache? binderCache = null)
     {
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
-        this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModule ?? string.Empty);
+        this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
-        this.WellKnownTypes = new(this);
-        this.binderCache = new(this);
+        this.rootModule = rootModule;
+        this.metadataAssemblies = metadataAssemblies;
+        this.sourceModule = sourceModule;
+        this.declarationTable = declarationTable;
+        this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
+        this.binderCache = binderCache ?? new BinderCache(this);
     }
 
     /// <summary>
@@ -292,13 +306,14 @@ public sealed class Compilation : IBinderProvider
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees, this.RootModulePath, this);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
-    private ImmutableArray<MetadataAssemblySymbol> BuildMetadataAssemblies() => this.MetadataReferences
-        .Select(r => new MetadataAssemblySymbol(this, r.MetadataReader))
-        .ToImmutableArray();
+    private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> BuildMetadataAssemblies() => this.MetadataReferences
+        .ToImmutableDictionary(
+            r => r,
+            r => new MetadataAssemblySymbol(this, r.MetadataReader));
     private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
         containingSymbol: null,
         name: string.Empty,
-        modules: this.MetadataAssemblies
+        modules: this.MetadataAssemblies.Values
             .Cast<ModuleSymbol>()
             .Append(this.SourceModule)
             .ToImmutableArray());

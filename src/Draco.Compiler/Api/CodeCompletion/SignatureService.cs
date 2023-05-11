@@ -40,8 +40,8 @@ public sealed class SignatureService
 
         // Select the best overload to show as default in the signature
         var currentOverload = symbols.FirstOrDefault(x => x.Parameters.Length == paramCount && (separatorCount == paramCount - 1 || paramCount == 0));
-        if (currentOverload is null) currentOverload = symbols.FirstOrDefault(x => x.Parameters.Length > paramCount);
-        if (currentOverload is null) currentOverload = symbols.First();
+        currentOverload ??= symbols.FirstOrDefault(x => x.Parameters.Length > paramCount);
+        currentOverload ??= symbols.First();
         IParameterSymbol? currentParameter = null;
         if (currentOverload.Parameters.Length != 0) currentParameter = currentOverload.Parameters[activeParam];
         // Return all the overloads

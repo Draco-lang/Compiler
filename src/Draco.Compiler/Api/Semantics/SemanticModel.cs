@@ -263,13 +263,18 @@ public sealed partial class SemanticModel : IBinderProvider
         }
         // We look up syntax based on the symbol in context
         var binder = this.compilation.GetBinder(syntax);
-        var result = ImmutableArray.CreateBuilder<ISymbol>();
+        var result = new HashSet<ISymbol>();
         while (binder is not null)
         {
-            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol()).Where(x => x is FunctionSymbol && x.Name == syntax.ToString()));
+            var symbols = binder.DeclaredSymbols
+                .Select(x => x is UntypedLocalSymbol loc
+                    ? this.GetDeclaredSymbol(loc.DeclaringSyntax)!
+                    : x.ToApiSymbol())
+                .Where(x => x is FunctionSymbol && x.Name == syntax.ToString());
+            foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;
         }
-        return result.ToImmutable();
+        return result.ToImmutableArray();
     }
 
     private Binder GetBinder(SyntaxNode syntax)

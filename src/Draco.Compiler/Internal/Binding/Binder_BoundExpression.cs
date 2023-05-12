@@ -223,8 +223,12 @@ internal partial class Binder
         }
         else
         {
-            // NOTE: This can happeb in case of function with more overloads, but without () after the function name. For example builder.Append
-            throw new NotImplementedException();
+            // NOTE: This can happen in case of function with more overloads, but without () after the function name. For example builder.Append
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
+                location: mem.Syntax?.Location,
+                formatArgs: members[0].Name));
+            return new BoundUnexpectedExpression(mem.Syntax);
         }
     }
 

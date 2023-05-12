@@ -21,7 +21,11 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
         var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
         if (syntax is null) return ImmutableArray<CompletionItem>.Empty;
         var symbols = semanticModel.GetAllDefinedSymbols(syntax);
-        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, syntax.Range));
+        var range = (syntax as SyntaxToken)?.Range ?? new(cursor, 0);
+        var completions = symbols
+            // NOTE: Grouping by GetType is very error-prone, maybe we need a symbol "kind"
+            .GroupBy(x => (x.GetType(), x.Name))
+            .Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
         return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 

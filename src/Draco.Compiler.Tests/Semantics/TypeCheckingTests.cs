@@ -626,7 +626,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void OneVisibleAndOnenotVisibleOverloadImported()
+    public void OneVisibleAndOneNotVisibleOverloadImported()
     {
         // import FooModule;
         // func main(){

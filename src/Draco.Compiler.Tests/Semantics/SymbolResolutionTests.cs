@@ -1090,6 +1090,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(LiteralExpression(0)))),
            ToPath("Tests", "FooModule", "foo.draco"));
 
+        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -1099,12 +1101,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
-        var semanticModel = compilation.GetSemanticModel(main);
+        var mainModel = compilation.GetSemanticModel(main);
+        var fooModel = compilation.GetSemanticModel(foo);
 
-        var diags = semanticModel.Diagnostics;
+        var diags = mainModel.Diagnostics;
+
+        var fooCallSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetReferencedSymbol(fooCall));
+        var fooDeclSymbol = GetInternalSymbol<FunctionSymbol>(fooModel.GetDeclaredSymbol(fooDecl));
 
         // Assert
         Assert.Empty(diags);
+        Assert.Equal(fooDeclSymbol, fooCallSymbol);
     }
 
     [Fact]
@@ -1259,12 +1266,20 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
-        var semanticModel = compilation.GetSemanticModel(main);
+        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
 
-        var diags = semanticModel.Diagnostics;
+        var mainModel = compilation.GetSemanticModel(main);
+        var fooModel = compilation.GetSemanticModel(foo);
+
+        var diags = mainModel.Diagnostics;
+
+        var fooCallSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetReferencedSymbol(fooCall));
+        var fooDeclSymbol = GetInternalSymbol<FunctionSymbol>(fooModel.GetDeclaredSymbol(fooDecl));
 
         // Assert
         Assert.Empty(diags);
+        Assert.Equal(fooDeclSymbol, fooCallSymbol);
     }
 
     [Fact]
@@ -1346,12 +1361,20 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
-        var semanticModel = compilation.GetSemanticModel(main);
+        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
 
-        var diags = semanticModel.Diagnostics;
+        var mainModel = compilation.GetSemanticModel(main);
+        var fooModel = compilation.GetSemanticModel(foo);
+
+        var diags = mainModel.Diagnostics;
+
+        var fooCallSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetReferencedSymbol(fooCall));
+        var fooDeclSymbol = GetInternalSymbol<FunctionSymbol>(fooModel.GetDeclaredSymbol(fooDecl));
 
         // Assert
         Assert.Empty(diags);
+        Assert.Equal(fooDeclSymbol, fooCallSymbol);
     }
 
     [Fact]

@@ -1123,4 +1123,42 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
+
+    [Fact]
+    public void GenericFunction()
+    {
+        // func identity<T>(x: T): T = x;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            GenericParameterList(GenericParameter("T")),
+            ParameterList(Parameter("x", NameType("T"))),
+            NameType("T"),
+            BlockFunctionBody())));
+
+        var functionSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var genericTypeSyntax = tree.FindInChildren<GenericParameterSyntax>(0);
+        var paramTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+        var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var functionSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(functionSyntax));
+        var genericTypeSymbol = GetInternalSymbol<TypeParameterSymbol>(semanticModel.GetDeclaredSymbol(genericTypeSyntax));
+        var paramTypeSymbol = GetInternalSymbol<TypeParameterSymbol>(semanticModel.GetReferencedSymbol(paramTypeSyntax));
+        var returnTypeSymbol = GetInternalSymbol<TypeParameterSymbol>(semanticModel.GetReferencedSymbol(returnTypeSyntax));
+
+        // Assert
+        Assert.True(functionSymbol.IsGenericDefinition);
+        Assert.NotNull(genericTypeSymbol);
+        Assert.Same(genericTypeSymbol, paramTypeSymbol);
+        Assert.Same(genericTypeSymbol, returnTypeSymbol);
+        Assert.Empty(diags);
+    }
 }

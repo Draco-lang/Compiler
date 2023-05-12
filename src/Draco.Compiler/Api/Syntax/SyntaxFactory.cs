@@ -88,8 +88,13 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList(Comma, parameters);
     public static SeparatedSyntaxList<ParameterSyntax> ParameterList(params ParameterSyntax[] parameters) =>
         SeparatedSyntaxList(Comma, parameters);
-
     public static ParameterSyntax Parameter(string name, TypeSyntax type) => Parameter(Name(name), Colon, type);
+
+    public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
+        SeparatedSyntaxList(Comma, parameters);
+    public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(params GenericParameterSyntax[] parameters) =>
+        SeparatedSyntaxList(Comma, parameters);
+    public static GenericParameterSyntax GenericParameter(string name) => GenericParameter(Name(name));
 
     public static CompilationUnitSyntax CompilationUnit(IEnumerable<DeclarationSyntax> decls) =>
         CompilationUnit(SyntaxList(decls), EndOfInput);
@@ -111,6 +116,21 @@ public static partial class SyntaxFactory
             Func,
             Name(name),
             null,
+            OpenParen,
+            parameters,
+            CloseParen,
+            returnType is null ? null : TypeSpecifier(Colon, returnType),
+            body);
+
+    public static FunctionDeclarationSyntax FunctionDeclaration(
+        string name,
+        SeparatedSyntaxList<GenericParameterSyntax> generics,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
+            Func,
+            Name(name),
+            GenericParameterList(LessThan, generics, GreaterThan),
             OpenParen,
             parameters,
             CloseParen,
@@ -233,6 +253,8 @@ public static partial class SyntaxFactory
     public static SyntaxToken OpenParen { get; } = MakeToken(TokenKind.ParenOpen);
     public static SyntaxToken CloseParen { get; } = MakeToken(TokenKind.ParenClose);
     public static SyntaxToken Plus { get; } = MakeToken(TokenKind.Plus);
+    public static SyntaxToken LessThan { get; } = MakeToken(TokenKind.LessThan);
+    public static SyntaxToken GreaterThan { get; } = MakeToken(TokenKind.GreaterThan);
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
 

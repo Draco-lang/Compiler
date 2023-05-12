@@ -1097,7 +1097,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: ToPath("Tests"));
+            rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1139,7 +1139,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: ToPath("Tests"));
+            rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1257,7 +1257,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: ToPath("Tests"));
+            rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1301,7 +1301,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: ToPath("Tests"));
+            rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1344,7 +1344,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: ToPath("Tests"));
+            rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1373,7 +1373,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: ToPath("Tests"));
+            rootModulePath: ToPath("Tests"));
 
         var diags = compilation.Diagnostics;
 

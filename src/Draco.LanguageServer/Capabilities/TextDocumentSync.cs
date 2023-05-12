@@ -12,7 +12,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
     public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken)
     {
         this.documentRepository.AddOrUpdateDocument(param.TextDocument.Uri, param.TextDocument.Text);
-        this.UpdateCompilation(param.TextDocument.Uri);
+        this.UpdateDocument(param.TextDocument.Uri);
         await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
     }
 
@@ -25,14 +25,18 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var change = param.ContentChanges.First();
         var sourceText = change.Text;
         this.documentRepository.AddOrUpdateDocument(uri, sourceText);
-        this.UpdateCompilation(uri);
+        this.UpdateDocument(uri);
         await this.PublishDiagnosticsAsync(uri);
     }
 
-    private void UpdateCompilation(DocumentUri uri)
+    private void UpdateDocument(DocumentUri documentUri)
     {
-        this.syntaxTree = SyntaxTree.Parse(this.documentRepository.GetOrCreateDocument(uri));
-        this.compilation = this.compilation.UpdateSyntaxTree(uri.ToUri(), this.syntaxTree);
+        var uri = documentUri.ToUri();
+        var oldTree = this.compilation.SyntaxTrees
+            .FirstOrDefault(tree => tree.SourceText.Path == uri);
+        var newSourceText = this.documentRepository.GetOrCreateDocument(documentUri);
+        this.syntaxTree = SyntaxTree.Parse(newSourceText);
+        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, this.syntaxTree);
         this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
     }
 

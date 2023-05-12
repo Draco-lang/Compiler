@@ -21,7 +21,7 @@ public abstract class EndToEndTestsBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: root);
+            rootModulePath: root);
 
         using var peStream = new MemoryStream();
         var emitResult = compilation.Emit(peStream: peStream);

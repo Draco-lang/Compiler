@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -38,22 +39,26 @@ public sealed class Compilation : IBinderProvider
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
+    /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
+    /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences = null,
-        string? rootModule = null,
+        string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null) => new(
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
-        rootModule: rootModule,
+        rootModulePath: rootModulePath,
         outputPath: outputPath,
         assemblyName: assemblyName);
 
-    // TODO: Probably not the smartest idea, will only work for single files (likely)
+    // TODO: Should we cache semantic models? Currently we sometimes pass the entire code twice
+    // just because this method instantiates a new semantic model each time, and then
+    // we ask for a semantic model
     /// <summary>
     /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
     /// </summary>
@@ -93,13 +98,15 @@ public sealed class Compilation : IBinderProvider
     /// <summary>
     /// The top-level merged module that contains the source along with references.
     /// </summary>
-    internal MetadataReferencesModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
-    private MetadataReferencesModuleSymbol? rootModule;
+    internal ModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
+    private ModuleSymbol? rootModule;
 
     /// <summary>
     /// The metadata assemblies this compilation references.
     /// </summary>
-    internal ImmutableArray<MetadataAssemblySymbol> MetadataAssemblies => this.RootModule.MetadataAssemblies;
+    internal ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> MetadataAssemblies =>
+        this.metadataAssemblies ??= this.BuildMetadataAssemblies();
+    private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
@@ -126,36 +133,72 @@ public sealed class Compilation : IBinderProvider
 
     private readonly BinderCache binderCache;
 
+    // Main ctor with all state
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences,
-        string? rootModule,
-        string? outputPath,
-        string? assemblyName)
+        string? rootModulePath = null,
+        string? outputPath = null,
+        string? assemblyName = null,
+        ModuleSymbol? rootModule = null,
+        ImmutableDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies = null,
+        ModuleSymbol? sourceModule = null,
+        DeclarationTable? declarationTable = null,
+        WellKnownTypes? wellKnownTypes = null,
+        BinderCache? binderCache = null)
     {
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
-        this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModule ?? string.Empty);
+        this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
-        this.WellKnownTypes = new(this);
-        this.binderCache = new(this);
+        this.rootModule = rootModule;
+        this.metadataAssemblies = metadataAssemblies;
+        this.sourceModule = sourceModule;
+        this.declarationTable = declarationTable;
+        this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
+        this.binderCache = binderCache ?? new BinderCache(this);
     }
 
     /// <summary>
-    /// Replaces <see cref="SyntaxTree"/> that was created from file with <paramref name="path"/> with the <paramref name="newTree"/>.
+    /// Updates the given <paramref name="oldTree"/> with <paramref name="newTree"/>.
     /// </summary>
-    /// <param name="path">The path to the file the <see cref="SyntaxTree"/> was created from.</param>
-    /// <param name="newTree">The <see cref="SyntaxTree"/> that will replace the original <see cref="SyntaxTree"/>.</param>
-    /// <returns>New <see cref="Compilation"/> with the <see cref="SyntaxTree"/> updated.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    public Compilation UpdateSyntaxTree(Uri path, SyntaxTree newTree)
+    /// <param name="oldTree">The old <see cref="SyntaxTree"/> to update.
+    /// If null, then <paramref name="newTree"/> is considered an addition.</param>
+    /// <param name="newTree">The new <see cref="SyntaxTree"/> to replace with.</param>
+    /// <returns>A <see cref="Compilation"/> reflecting the change.</returns>
+    public Compilation UpdateSyntaxTree(SyntaxTree? oldTree, SyntaxTree newTree)
     {
-        var oldTrees = this.SyntaxTrees.ToBuilder();
-        var oldTree = oldTrees.FirstOrDefault(x => x.SourceText.Path == path);
-        if (oldTree is null) throw new InvalidOperationException();
-        oldTrees[oldTrees.IndexOf(oldTree)] = newTree;
-        return new Compilation(oldTrees.ToImmutable(), this.MetadataReferences, this.RootModulePath, this.OutputPath, this.AssemblyName);
+        var newSyntaxTrees = this.SyntaxTrees.ToBuilder();
+        if (oldTree is null)
+        {
+            newSyntaxTrees.Add(newTree);
+        }
+        else
+        {
+            var treeIndex = this.SyntaxTrees.IndexOf(oldTree);
+            if (treeIndex < 0) throw new ArgumentException("the specified tree was not in the compilation", nameof(oldTree));
+            newSyntaxTrees[treeIndex] = newTree;
+        }
+
+        return new Compilation(
+            syntaxTrees: newSyntaxTrees.ToImmutable(),
+            metadataReferences: this.MetadataReferences,
+            rootModulePath: this.RootModulePath,
+            outputPath: this.OutputPath,
+            assemblyName: this.AssemblyName,
+            // Needs to be rebuilt
+            rootModule: null,
+            // We can carry on cached metadata assemblies, they are untouched
+            metadataAssemblies: this.metadataAssemblies,
+            // Needs to be rebuilt
+            sourceModule: null,
+            // Needs to be rebuilt
+            declarationTable: null,
+            // Just a cache
+            wellKnownTypes: this.WellKnownTypes,
+            // TODO: We could definitely carry on info here, invalidating the correct things
+            binderCache: null);
     }
 
     /// <summary>
@@ -289,5 +332,15 @@ public sealed class Compilation : IBinderProvider
 
     private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees, this.RootModulePath, this);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
-    private MetadataReferencesModuleSymbol BuildRootModule() => new(this);
+    private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> BuildMetadataAssemblies() => this.MetadataReferences
+        .ToImmutableDictionary(
+            r => r,
+            r => new MetadataAssemblySymbol(this, r.MetadataReader));
+    private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
+        containingSymbol: null,
+        name: string.Empty,
+        modules: this.MetadataAssemblies.Values
+            .Cast<ModuleSymbol>()
+            .Append(this.SourceModule)
+            .ToImmutableArray());
 }

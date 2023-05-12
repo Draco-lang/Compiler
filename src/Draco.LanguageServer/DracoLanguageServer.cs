@@ -79,7 +79,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
-            rootModule: rootPath);
+            rootModulePath: rootPath);
     }
 
     public void Dispose() { }

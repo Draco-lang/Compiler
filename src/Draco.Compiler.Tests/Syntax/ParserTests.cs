@@ -179,6 +179,54 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void TestGenericFunc()
+    {
+        this.ParseCompilationUnit("""
+            func foo<T, U>() {
+            }
+            """);
+
+        this.N<CompilationUnitSyntax>();
+        this.N<SyntaxList<DeclarationSyntax>>();
+        {
+            this.N<FunctionDeclarationSyntax>();
+            {
+                this.T(TokenKind.KeywordFunc);
+                this.T(TokenKind.Identifier);
+
+                this.N<GenericParameterListSyntax>();
+                {
+                    this.T(TokenKind.LessThan);
+                    this.N<SeparatedSyntaxList<GenericParameterSyntax>>();
+                    {
+                        this.N<GenericParameterSyntax>();
+                        {
+                            this.T(TokenKind.Identifier, "T");
+                        }
+                        this.T(TokenKind.Comma);
+                        this.N<GenericParameterSyntax>();
+                        {
+                            this.T(TokenKind.Identifier, "U");
+                        }
+                    }
+                    this.T(TokenKind.GreaterThan);
+                }
+
+                this.T(TokenKind.ParenOpen);
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
+                this.T(TokenKind.ParenClose);
+
+                this.N<BlockFunctionBodySyntax>();
+                {
+                    this.T(TokenKind.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
+                    this.T(TokenKind.CurlyClose);
+                }
+            }
+        }
+    }
+
+    [Fact]
     public void TestLineString()
     {
         this.ParseExpression("""

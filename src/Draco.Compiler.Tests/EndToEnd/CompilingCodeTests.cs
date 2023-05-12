@@ -340,7 +340,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleModuleFunctionCall()
+    public void ModuleFunctionCall()
     {
         var bar = SyntaxTree.Parse("""
             public func bar(): int32{
@@ -360,7 +360,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleModuleGlobalAccess()
+    public void ModuleGlobalAccess()
     {
         var bar = SyntaxTree.Parse("""
             public func bar(): int32{
@@ -379,7 +379,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleNestedModuleAccess()
+    public void NestedModuleAccess()
     {
         var foo = SyntaxTree.Parse("""
             public func foo(): int32 = 5;

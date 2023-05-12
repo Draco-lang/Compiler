@@ -25,7 +25,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleInterpolation()
+    public void Interpolation()
     {
         var assembly = Compile("""
             import System.Console;

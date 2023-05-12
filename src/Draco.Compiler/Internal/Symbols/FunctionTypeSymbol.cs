@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -18,6 +19,8 @@ internal sealed class FunctionTypeSymbol : TypeSymbol
     public TypeSymbol ReturnType { get; }
 
     public override Symbol? ContainingSymbol => null;
+
+    public override IEnumerable<Symbol> Members => this.ReturnType.Members;
 
     public FunctionTypeSymbol(ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType)
     {

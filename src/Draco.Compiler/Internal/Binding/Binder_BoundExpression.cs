@@ -223,10 +223,7 @@ internal partial class Binder
         }
         else
         {
-            // NOTE: I'm not sure this can happen
-            // Multiple members can maybe happen, in case there are duplicates, in which case this would be a cascaded
-            // error
-            // TODO: Verify
+            // NOTE: This can happeb in case of function with more overloads, but without () after the function name. For example builder.Append
             throw new NotImplementedException();
         }
     }

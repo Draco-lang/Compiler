@@ -37,11 +37,12 @@ public sealed class KeywordCompletionProvider : CompletionProvider
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
-        var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
-        if (token is null) return ImmutableArray<CompletionItem>.Empty;
+        var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
+        if (syntax is null) return ImmutableArray<CompletionItem>.Empty;
+        var range = (syntax as SyntaxToken)?.Range ?? new(cursor, 0);
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(GetExpressionKeywords(token.Range));
-        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(GetDeclarationKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(GetExpressionKeywords(range));
+        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(GetDeclarationKeywords(range));
         return result.ToImmutable();
     }
 }

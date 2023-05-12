@@ -113,7 +113,7 @@ internal class Program
             metadataReferences: references
                 .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
                 .ToImmutableArray(),
-            rootModule: rootModule?.FullName,
+            rootModulePath: rootModule?.FullName,
             outputPath: path,
             assemblyName: name);
         using var peStream = new FileStream(Path.ChangeExtension(output.FullName, ".dll"), FileMode.OpenOrCreate);
@@ -134,7 +134,7 @@ internal class Program
             metadataReferences: references
                 .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
                 .ToImmutableArray(),
-            rootModule: rootModule?.FullName);
+            rootModulePath: rootModule?.FullName);
         var execResult = ScriptingEngine.Execute(compilation);
         if (!EmitDiagnostics(execResult, msbuildDiags))
         {
@@ -147,7 +147,7 @@ internal class Program
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            rootModule: rootModule?.FullName);
+            rootModulePath: rootModule?.FullName);
         using var irStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(irStream: irStream);
         EmitDiagnostics(emitResult, msbuildDiags);
@@ -158,7 +158,7 @@ internal class Program
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            rootModule: rootModule?.FullName);
+            rootModulePath: rootModule?.FullName);
         using var symbolsStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(symbolTreeStream: symbolsStream);
         EmitDiagnostics(emitResult, msbuildDiags);
@@ -169,7 +169,7 @@ internal class Program
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            rootModule: rootModule?.FullName);
+            rootModulePath: rootModule?.FullName);
         using var declarationStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(declarationTreeStream: declarationStream);
         EmitDiagnostics(emitResult, msbuildDiags);

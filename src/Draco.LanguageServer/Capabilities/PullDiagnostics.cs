@@ -30,7 +30,7 @@ internal partial class DracoLanguageServer// : IPullDiagnostics
             Uri = param.TextDocument.Uri
         });
 
-        this.UpdateCompilation(param.TextDocument.Uri);
+        this.UpdateDocument(param.TextDocument.Uri);
         var diags = this.semanticModel.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
         return new RelatedFullDocumentDiagnosticReport()

@@ -163,16 +163,23 @@ public sealed class Compilation : IBinderProvider
     /// <summary>
     /// Updates the given <paramref name="oldTree"/> with <paramref name="newTree"/>.
     /// </summary>
-    /// <param name="oldTree">The old <see cref="SyntaxTree"/> to update.</param>
+    /// <param name="oldTree">The old <see cref="SyntaxTree"/> to update.
+    /// If null, then <paramref name="newTree"/> is considered an addition.</param>
     /// <param name="newTree">The new <see cref="SyntaxTree"/> to replace with.</param>
     /// <returns>A <see cref="Compilation"/> reflecting the change.</returns>
-    public Compilation UpdateSyntaxTree(SyntaxTree oldTree, SyntaxTree newTree)
+    public Compilation UpdateSyntaxTree(SyntaxTree? oldTree, SyntaxTree newTree)
     {
-        var treeIndex = this.SyntaxTrees.IndexOf(oldTree);
-        if (treeIndex < 0) throw new ArgumentException("the specified tree was not in the compilation", nameof(oldTree));
-
         var newSyntaxTrees = this.SyntaxTrees.ToBuilder();
-        newSyntaxTrees[treeIndex] = newTree;
+        if (oldTree is null)
+        {
+            newSyntaxTrees.Add(newTree);
+        }
+        else
+        {
+            var treeIndex = this.SyntaxTrees.IndexOf(oldTree);
+            if (treeIndex < 0) throw new ArgumentException("the specified tree was not in the compilation", nameof(oldTree));
+            newSyntaxTrees[treeIndex] = newTree;
+        }
 
         return new Compilation(
             syntaxTrees: newSyntaxTrees.ToImmutable(),

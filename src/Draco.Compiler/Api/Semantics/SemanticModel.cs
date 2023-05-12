@@ -115,19 +115,17 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <returns>All the <see cref="ISymbol"/>s accesible from the <paramref name="node"/>.</returns>
     public ImmutableArray<ISymbol> GetAllDefinedSymbols(SyntaxNode node)
     {
-        var result = ImmutableArray.CreateBuilder<ISymbol>();
+        var result = new HashSet<ISymbol>();
         var binder = this.compilation.GetBinder(node);
         while (binder is not null)
         {
-            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol()));
+            var symbols = binder.DeclaredSymbols
+                .Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol());
+            foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;
         }
-        return result.ToImmutable();
+        return result.ToImmutableArray();
     }
-
-    // NOTE: These OrNull functions are not too pretty
-    // For now public API is not that big of a concern, so they can stay
-    // Instead we could just always return a nullable or an error symbol when appropriate
 
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> declared by <paramref name="syntax"/>.

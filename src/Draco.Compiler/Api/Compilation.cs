@@ -315,10 +315,6 @@ public sealed class Compilation : IBinderProvider
 
     internal Binder GetBinder(Symbol symbol)
     {
-        if (symbol is SourceModuleSymbol)
-        {
-            return this.binderCache.ModuleBinder;
-        }
         if (symbol.DeclaringSyntax is null)
         {
             throw new ArgumentException("symbol must have a declaration syntax", nameof(symbol));

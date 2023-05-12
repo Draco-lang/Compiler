@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
@@ -72,7 +73,8 @@ public static partial class SyntaxFactory
     {
         Visibility.Private => null,
         Visibility.Internal => MakeToken(TokenKind.KeywordInternal),
-        _ => MakeToken(TokenKind.KeywordPublic),
+        Visibility.Public => MakeToken(TokenKind.KeywordPublic),
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
     };
 
     public static SyntaxList<TNode> SyntaxList<TNode>(IEnumerable<TNode> elements)

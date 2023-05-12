@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
@@ -14,9 +13,6 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class BinderCache
 {
-    public Binder ModuleBinder => this.moduleBinder ??= this.BuildSourceModuleBinder();
-    private Binder? moduleBinder;
-
     private readonly Compilation compilation;
     private readonly Dictionary<SyntaxNode, Binder> binders = new();
 
@@ -53,18 +49,6 @@ internal sealed class BinderCache
         WhileExpressionSyntax loop => this.BuildLoopBinder(loop),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
-
-    private Binder BuildSourceModuleBinder()
-    {
-        // We need to wrap up the module with builtins
-        var binder = new IntrinsicsBinder(this.compilation) as Binder;
-        // Then with references
-        binder = new ModuleBinder(binder, this.compilation.RootModule);
-        // Finally add the source module
-        binder = new ModuleBinder(binder, this.compilation.SourceModule);
-
-        return binder;
-    }
 
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {

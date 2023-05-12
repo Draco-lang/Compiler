@@ -1135,7 +1135,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             GenericParameterList(GenericParameter("T")),
             ParameterList(Parameter("x", NameType("T"))),
             NameType("T"),
-            BlockFunctionBody())));
+            InlineFunctionBody(NameExpression("x")))));
 
         var functionSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
         var genericTypeSyntax = tree.FindInChildren<GenericParameterSyntax>(0);

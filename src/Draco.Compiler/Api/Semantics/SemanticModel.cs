@@ -150,6 +150,14 @@ public sealed partial class SemanticModel : IBinderProvider
             // This is just the function itself
             if (func.DeclaringSyntax == syntax) return containingSymbol.ToApiSymbol();
 
+            // Could be a generic parameter
+            if (syntax is GenericParameterSyntax genericParam)
+            {
+                var paramSymbol = containingSymbol.GenericParameters
+                    .FirstOrDefault(p => p.DeclaringSyntax == syntax);
+                return paramSymbol?.ToApiSymbol();
+            }
+
             // Bind the function contents
             func.Bind(this);
 

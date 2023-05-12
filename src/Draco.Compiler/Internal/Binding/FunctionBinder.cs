@@ -15,7 +15,9 @@ internal sealed class FunctionBinder : Binder
 
     public override SyntaxNode? DeclaringSyntax => this.symbol.DeclaringSyntax;
 
-    public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Parameters;
+    public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Parameters
+        .Cast<Symbol>()
+        .Concat(this.symbol.GenericParameters);
 
     private readonly FunctionSymbol symbol;
 

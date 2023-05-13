@@ -49,7 +49,13 @@ internal sealed class DeclarationTable
     private MergedModuleDeclaration BuildMergedRoot()
     {
         // If we don't have root path, we put all file into top level module
-        if (string.IsNullOrEmpty(this.RootPath)) return new("", "", this.syntaxTrees.Select(s => new SingleModuleDeclaration(string.Empty, string.Empty, (CompilationUnitSyntax)s.Root)).ToImmutableArray());
+        if (string.IsNullOrEmpty(this.RootPath)) 
+        {
+            var singleModules = this.syntaxTrees
+                .Select(s => new SingleModuleDeclaration(string.Empty, string.Empty, (CompilationUnitSyntax)s.Root))
+                .ToImmutableArray()
+            return new(string.Empty, string.Empty, singleModules);
+        }
 
         var rootName = Path.GetFileName(this.RootPath.TrimEnd(Path.DirectorySeparatorChar));
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();

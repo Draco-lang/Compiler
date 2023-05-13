@@ -61,7 +61,7 @@ internal sealed class DeclarationTable
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
         {
-            string path = Path.TrimEndingDirectorySeparator(tree.SourceText.Path?.LocalPath ?? string.Empty);
+            var path = Path.TrimEndingDirectorySeparator(tree.SourceText.Path?.LocalPath ?? string.Empty);
 
             // In memory tree, default to root module
             if (string.IsNullOrEmpty(path))

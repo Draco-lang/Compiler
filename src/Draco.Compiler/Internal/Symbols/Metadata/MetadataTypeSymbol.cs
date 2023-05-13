@@ -82,6 +82,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         foreach (var propHandle in this.typeDefinition.GetProperties())
         {
             var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
+            // TODO: visibility
             //// Skip special name
             //if (propDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
             //// Skip non-public

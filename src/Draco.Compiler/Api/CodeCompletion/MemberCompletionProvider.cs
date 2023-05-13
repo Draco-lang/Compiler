@@ -39,9 +39,9 @@ public sealed class MemberCompletionProvider : CompletionProvider
         result = ImmutableArray<ISymbol>.Empty;
         if (TryDeconstructMemberAccess(expr, out var accessed))
         {
-            ISymbol? symbol;
-            if (accessed is ExpressionSyntax accessedExpr) symbol = semanticModel.TypeOf(accessedExpr) ?? semanticModel.GetReferencedSymbol(accessed);
-            else symbol = semanticModel.GetReferencedSymbol(accessed);
+            var symbol = null as ISymbol;
+            if (accessed is ExpressionSyntax accessedExpr) symbol = semanticModel.TypeOf(accessedExpr);
+            symbol ??= semanticModel.GetReferencedSymbol(accessed);
             if (symbol is null) return false;
             result = symbol.Members.ToImmutableArray();
             return true;

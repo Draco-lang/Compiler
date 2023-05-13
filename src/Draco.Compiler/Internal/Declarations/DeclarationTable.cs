@@ -40,7 +40,6 @@ internal sealed class DeclarationTable
     public string RootPath => this.compilation.RootModulePath;
 
     private readonly Compilation compilation;
-
     private readonly ImmutableArray<SyntaxTree> syntaxTrees;
 
     private DeclarationTable(ImmutableArray<SyntaxTree> syntaxTrees, Compilation compilation)
@@ -52,13 +51,19 @@ internal sealed class DeclarationTable
     private MergedModuleDeclaration BuildMergedRoot()
     {
         // If we don't have root path, we put all file into top level module
-        if (string.IsNullOrEmpty(this.RootPath)) return new("", "", this.syntaxTrees.Select(s => new SingleModuleDeclaration(string.Empty, string.Empty, (CompilationUnitSyntax)s.Root)).ToImmutableArray());
+        if (string.IsNullOrEmpty(this.RootPath)) 
+        {
+            var singleModules = this.syntaxTrees
+                .Select(s => new SingleModuleDeclaration(string.Empty, string.Empty, (CompilationUnitSyntax)s.Root))
+                .ToImmutableArray()
+            return new(string.Empty, string.Empty, singleModules);
+        }
 
         var rootName = Path.GetFileName(this.RootPath.TrimEnd(Path.DirectorySeparatorChar));
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
         {
-            string path = Path.TrimEndingDirectorySeparator(tree.SourceText.Path?.LocalPath ?? string.Empty);
+            var path = Path.TrimEndingDirectorySeparator(tree.SourceText.Path?.LocalPath ?? string.Empty);
 
             // In memory tree, default to root module
             if (string.IsNullOrEmpty(path))

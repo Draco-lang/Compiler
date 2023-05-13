@@ -49,7 +49,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     {
         this.client = client;
         this.configurationRepository = new(client);
-        this.rootUri = default!; // Default value, it will be given correct value on inicialization
+        this.rootUri = default!; // Default value, it will be given correct value on initialization
 
         // Some empty defaults
         this.syntaxTree = SyntaxTree.Create(SyntaxFactory.CompilationUnit());

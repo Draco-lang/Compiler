@@ -25,7 +25,11 @@ public sealed class MemberCompletionProvider : CompletionProvider
         var range = token.Kind == TokenKind.Dot ? new SyntaxRange(token.Range.End, 0) : token.Range;
         // If we can't get the accessed propery, we just return empty array
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return ImmutableArray<CompletionItem>.Empty;
-        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
+        var completions = symbols
+            // NOTE: Not very robust, just like in the other place
+            // Also, duplication
+            .GroupBy(x => (x.GetType(), x.Name))
+            .Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
         return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 

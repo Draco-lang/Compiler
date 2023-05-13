@@ -223,6 +223,13 @@ public static partial class SyntaxFactory
             LessThan,
             SeparatedSyntaxList(Comma, typeParameters),
             GreaterThan);
+    public static GenericTypeSyntax GenericType(
+        TypeSyntax instantiated,
+        params TypeSyntax[] typeParameters) => GenericType(
+            instantiated,
+            LessThan,
+            SeparatedSyntaxList(Comma, typeParameters),
+            GreaterThan);
 
     public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(Return, value);
     public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(Name(label)));

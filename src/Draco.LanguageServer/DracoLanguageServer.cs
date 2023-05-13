@@ -87,8 +87,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     public Task InitializeAsync(InitializeParams param)
     {
         if (param.WorkspaceFolders is null || param.WorkspaceFolders.Count == 0) throw new System.InvalidOperationException();
-        // TODO: Do this in serialization
-        this.rootUri = new Uri(Uri.UnescapeDataString(param.WorkspaceFolders[0].Uri.AbsoluteUri));
+        this.rootUri = param.WorkspaceFolders[0].Uri;
         this.CreateCompilation();
         return Task.CompletedTask;
     }

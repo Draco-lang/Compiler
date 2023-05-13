@@ -51,11 +51,11 @@ internal sealed class DeclarationTable
     private MergedModuleDeclaration BuildMergedRoot()
     {
         // If we don't have root path, we put all file into top level module
-        if (string.IsNullOrEmpty(this.RootPath)) 
+        if (string.IsNullOrEmpty(this.RootPath))
         {
             var singleModules = this.syntaxTrees
                 .Select(s => new SingleModuleDeclaration(string.Empty, string.Empty, (CompilationUnitSyntax)s.Root))
-                .ToImmutableArray()
+                .ToImmutableArray();
             return new(string.Empty, string.Empty, singleModules);
         }
 

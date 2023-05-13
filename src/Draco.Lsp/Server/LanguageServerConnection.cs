@@ -33,7 +33,11 @@ public sealed class LanguageServerConnection
 
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
-        Converters = { new TupleConverter() }
+        Converters =
+        {
+            new TupleConverter(),
+            new UriConverter(),
+        }
     };
 
     public LanguageServerConnection(IDuplexPipe pipeTransport)

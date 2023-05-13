@@ -38,9 +38,25 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
 
     private bool NeedsBuild => this.type is null;
 
-    public override bool IsStatic => this.propertyDefinition.Attributes.HasFlag(PropertyAttributes.);
+    public override bool IsStatic
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.isStatic;
+        }
+    }
+    private bool isStatic = false;
 
-    public override bool IsMutable => false; // TODO: Read this from metedata and account for it in Lvalues
+    public override bool IsMutable
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.isMutable;
+        }
+    }
+    private bool isMutable = false;
 
     public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
 
@@ -66,14 +82,25 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
 
     private void Build()
     {
-        // Decode signature
-        var decoder = new SignatureDecoder(this.Assembly.Compilation);
         var accessors = this.propertyDefinition.GetAccessors();
-        var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
-        var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
-
-        this.type = getter.DecodeSignature(decoder, default).ReturnType;
-        this.getter = new MetadataMethodSymbol(this.ContainingSymbol, getter);
-        this.setter = new MetadataMethodSymbol(this.ContainingSymbol, setter);
+        if (!accessors.Getter.IsNil)
+        {
+            var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
+            this.isStatic = getter.Attributes.HasFlag(MethodAttributes.Static);
+            this.getter = new MetadataMethodSymbol(this.ContainingSymbol, getter);
+            this.type = this.getter.ReturnType;
+        }
+        if (!accessors.Setter.IsNil)
+        {
+            this.isMutable = true;
+            var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
+            this.isStatic = setter.Attributes.HasFlag(MethodAttributes.Static);
+            this.setter = new MetadataMethodSymbol(this.ContainingSymbol, setter);
+            if (this.type is null)
+            {
+                var decoder = new SignatureDecoder(this.Assembly.Compilation);
+                this.type = setter.DecodeSignature(decoder, default!).ParameterTypes.First();
+            }
+        }
     }
 }

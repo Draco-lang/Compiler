@@ -148,7 +148,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
             var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
 
-            handle = this.GetOrAddTypeReference(resolutionScope, null, name);
+            handle = this.GetOrAddTypeReference(parent: resolutionScope, @namespace: null, name: name);
 
             this.moduleReferenceHandles.Add(module, handle);
         }
@@ -222,7 +222,7 @@ internal sealed class MetadataCodegen : MetadataWriter
            @namespace: "System",
            name: "Object");
 
-        this.EncodeModule((OptimizingIr.Model.Module)this.assembly.RootModule, systemRuntime, systemObject);
+        this.EncodeModule(this.assembly.RootModule, systemRuntime, systemObject);
 
         // If we write a PDB, we add the debuggable attribute to the assembly
         if (this.PdbCodegen is not null)
@@ -251,7 +251,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
-    private void EncodeModule(OptimizingIr.Model.Module module, AssemblyReferenceHandle systemRuntime, TypeReferenceHandle systemObject, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
+    private void EncodeModule(IModule module, AssemblyReferenceHandle systemRuntime, TypeReferenceHandle systemObject, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
     {
         var currentFieldIndex = fieldIndex;
         var currentProcIndex = procIndex;

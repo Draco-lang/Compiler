@@ -19,14 +19,14 @@ internal sealed class DeclarationTable
     /// Constructs a new declaration table from the given syntax trees.
     /// </summary>
     /// <param name="syntaxTrees">The syntax trees to construct the declarations from.</param>
-    /// <param name="rootPath">The path to the root module.</param>
+    /// <param name="compilation">The compilation using this declaration table.</param>
     /// <returns>The declaration table containing <paramref name="syntaxTrees"/>.</returns>
-    public static DeclarationTable From(ImmutableArray<SyntaxTree> syntaxTrees, string rootPath, Compilation compilation) => new(syntaxTrees, rootPath, compilation);
+    public static DeclarationTable From(ImmutableArray<SyntaxTree> syntaxTrees, Compilation compilation) => new(syntaxTrees, compilation);
 
     /// <summary>
     /// An empty declaration table.
     /// </summary>
-    public static DeclarationTable Empty { get; } = new(ImmutableArray<SyntaxTree>.Empty, string.Empty, Compilation.Create(ImmutableArray<SyntaxTree>.Empty));
+    public static DeclarationTable Empty { get; } = new(ImmutableArray<SyntaxTree>.Empty, Compilation.Create(ImmutableArray<SyntaxTree>.Empty));
 
     /// <summary>
     /// The merged root module.
@@ -34,16 +34,18 @@ internal sealed class DeclarationTable
     public MergedModuleDeclaration MergedRoot => this.mergedRoot ??= this.BuildMergedRoot();
     private MergedModuleDeclaration? mergedRoot;
 
-    public string RootPath { get; }
+    /// <summary>
+    /// The root path of this declaration table.
+    /// </summary>
+    public string RootPath => this.compilation.RootModulePath;
 
     private readonly Compilation compilation;
 
     private readonly ImmutableArray<SyntaxTree> syntaxTrees;
 
-    private DeclarationTable(ImmutableArray<SyntaxTree> syntaxTrees, string rootPath, Compilation compilation)
+    private DeclarationTable(ImmutableArray<SyntaxTree> syntaxTrees, Compilation compilation)
     {
         this.syntaxTrees = syntaxTrees;
-        this.RootPath = rootPath;
         this.compilation = compilation;
     }
 
@@ -83,7 +85,7 @@ internal sealed class DeclarationTable
             var fullName = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(subPath) ?? string.Empty).Replace(Path.DirectorySeparatorChar, '.');
 
             // Root module
-            if (fullName == string.Empty) fullName = rootName;
+            if (string.IsNullOrEmpty(fullName)) fullName = rootName;
             else fullName = $"{rootName}.{fullName}";
             modules.Add(new SingleModuleDeclaration(fullName.Split('.').Last(), fullName, (CompilationUnitSyntax)tree.Root));
         }
@@ -96,7 +98,7 @@ internal sealed class DeclarationTable
     /// <param name="syntaxTree">The syntax tree to add.</param>
     /// <returns>The new table, containing declarations in <paramref name="syntaxTree"/>.</returns>
     public DeclarationTable AddCompilationUnit(SyntaxTree syntaxTree) =>
-        new(this.syntaxTrees.Add(syntaxTree), this.RootPath, this.compilation);
+        new(this.syntaxTrees.Add(syntaxTree), this.compilation);
 
     /// <summary>
     /// Adds a syntax-trees to this table.
@@ -104,7 +106,7 @@ internal sealed class DeclarationTable
     /// <param name="syntaxTrees">The syntax trees to add.</param>
     /// <returns>The new table, containing <paramref name="syntaxTrees"/>.</returns>
     public DeclarationTable AddCompilationUnits(IEnumerable<SyntaxTree> syntaxTrees) =>
-        new(this.syntaxTrees.AddRange(syntaxTrees), this.RootPath, this.compilation);
+        new(this.syntaxTrees.AddRange(syntaxTrees), this.compilation);
 
     /// <summary>
     /// Retrieves the DOT graph of the declaration tree for debugging purposes.

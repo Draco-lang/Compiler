@@ -286,7 +286,7 @@ public sealed class Compilation : IBinderProvider
 
         var subPath = filePath[rootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
         var moduleName = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(subPath) ?? string.Empty).Replace(Path.DirectorySeparatorChar, '.');
-        if (moduleName == string.Empty) moduleName = rootName;
+        if (string.IsNullOrEmpty(moduleName)) moduleName = rootName;
         else moduleName = $"{rootName}.{moduleName}";
         return this.GetModuleSymbol(moduleName);
     }

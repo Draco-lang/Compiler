@@ -85,7 +85,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
                 null => Api.Semantics.Visibility.Private,
                 TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
                 TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
-                _ => throw new System.ArgumentOutOfRangeException(nameof(syntax.VisibilityModifier.Kind)),
+                _ => throw new System.InvalidOperationException(nameof(syntax.VisibilityModifier.Kind)),
             };
         }
     }

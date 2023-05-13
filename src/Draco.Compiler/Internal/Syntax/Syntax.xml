@@ -468,6 +468,37 @@
     </Field>
   </Node>
 
+  <Node Name="GenericTypeSyntax" Base="TypeSyntax">
+    <Documentation>
+      Represents a generic instantiation in type context.
+    </Documentation>
+
+    <Field Name="Instantiated" Type="TypeSyntax">
+      <Documentation>
+        The instantiated type.
+      </Documentation>
+    </Field>
+    <Field Name="OpenBracket" Type="SyntaxToken">
+      <Documentation>
+        The &lt; before the generic arguments.
+      </Documentation>
+
+      <Token Kind="LessThan" />
+    </Field>
+    <Field Name="Arguments" Type="SeparatedSyntaxList&lt;TypeSyntax&gt;">
+      <Documentation>
+        The list of generic arguments.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBracket" Type="SyntaxToken">
+      <Documentation>
+        The &gt; after the generic arguments.
+      </Documentation>
+
+      <Token Kind="GreaterThan" />
+    </Field>
+  </Node>
+
   <AbstractNode Name="StatementSyntax" Base="SyntaxNode">
     <Documentation>
       Any statement.

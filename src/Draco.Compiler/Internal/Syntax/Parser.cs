@@ -498,6 +498,17 @@ internal sealed class Parser
                 var member = this.Expect(TokenKind.Identifier);
                 result = new MemberTypeSyntax(result, dot, member);
             }
+            else if (peek == TokenKind.LessThan)
+            {
+                // Generic instantiation
+                var openBracket = this.Advance();
+                var args = this.ParseSeparatedSyntaxList(
+                    elementParser: this.ParseType,
+                    separatorKind: TokenKind.Comma,
+                    stopKind: TokenKind.GreaterThan);
+                var closeBracket = this.Expect(TokenKind.GreaterThan);
+                result = new GenericTypeSyntax(result, openBracket, args, closeBracket);
+            }
             else
             {
                 break;

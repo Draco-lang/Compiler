@@ -335,4 +335,20 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<string>(assembly, "foo");
         Assert.Equal("Hello    World!", x);
     }
+
+    [Fact]
+    public void FunctionsWithExplicitGenerics()
+    {
+        var assembly = Compile(""""
+            func identity<T>(x: T): T = x;
+            func first<T, U>(a: T, b: U): T = identity<T>(a);
+            func second<T, U>(a: T, b: U): U = identity<U>(b);
+
+            func foo(n: int32, m: int32): int32 =
+                first<int32, string>(n, "Hello") + second<bool, int32>(false, m);
+            """");
+
+        var x = Invoke<int>(assembly, "foo", 2, 3);
+        Assert.Equal(5, x);
+    }
 }

@@ -944,4 +944,84 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.CallNonFunction);
     }
+
+    [Fact]
+    public void ExplicitGenerics()
+    {
+        // func identity<T>(x: T): T = x;
+        //
+        // func main() {
+        //     var a = identity<int32>(1);
+        //     var b = identity<string>("foo");
+        //     var c = identity<int32>("foo");
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "identity",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(Parameter("x", NameType("T"))),
+                NameType("T"),
+                InlineFunctionBody(NameExpression("x"))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration(
+                        "a",
+                        null,
+                        CallExpression(
+                            GenericExpression(NameExpression("identity"), NameType("int32")),
+                            LiteralExpression(0)))),
+                    DeclarationStatement(VariableDeclaration(
+                        "b",
+                        null,
+                        CallExpression(
+                            GenericExpression(NameExpression("identity"), NameType("string")),
+                            StringExpression("foo")))),
+                    DeclarationStatement(VariableDeclaration(
+                        "c",
+                        null,
+                        CallExpression(
+                            GenericExpression(NameExpression("identity"), NameType("int32")),
+                            StringExpression("foo"))))))));
+
+        var identitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var firstCallSyntax = tree.FindInChildren<CallExpressionSyntax>(0);
+
+        var aSyntax = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var bSyntax = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var cSyntax = tree.FindInChildren<VariableDeclarationSyntax>(2);
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var identitySym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(identitySyntax));
+        var firstCalledSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(firstCallSyntax.Function));
+
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(aSyntax));
+        var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(bSyntax));
+        var cSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(cSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        // NOTE: This might not be the best error...
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+
+        Assert.True(identitySym.IsGenericDefinition);
+        Assert.True(firstCalledSym.IsGenericInstance);
+        Assert.False(firstCalledSym.IsGenericDefinition);
+        Assert.Same(identitySym, firstCalledSym.GenericDefinition);
+        Assert.Single(firstCalledSym.GenericArguments);
+        Assert.Same(IntrinsicSymbols.Int32, firstCalledSym.GenericArguments[0]);
+
+        Assert.Same(IntrinsicSymbols.Int32, aSym.Type);
+        Assert.Same(IntrinsicSymbols.String, bSym.Type);
+        Assert.True(cSym.Type.IsError);
+    }
 }

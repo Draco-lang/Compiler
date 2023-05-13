@@ -216,6 +216,14 @@ public static partial class SyntaxFactory
         TypeSyntax accessed,
         string member) => MemberType(accessed, Dot, Name(member));
 
+    public static GenericExpressionSyntax GenericExpression(
+        ExpressionSyntax instantiated,
+        params TypeSyntax[] typeParameters) => GenericExpression(
+            instantiated,
+            LessThan,
+            SeparatedSyntaxList(Comma, typeParameters),
+            GreaterThan);
+
     public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(Return, value);
     public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(Name(label)));
 

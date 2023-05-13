@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -242,6 +243,58 @@ public sealed partial class SemanticModel : IBinderProvider
             if (binder is ImportBinder importBinder) return importBinder;
             binder = binder.Parent!;
         }
+    }
+
+    /// <summary>
+    /// Retrieves the type of the expression represented by <paramref name="syntax"/>.
+    /// </summary>
+    /// <param name="syntax">The expression that the type will be checked of.</param>
+    /// <returns>The <see cref="ITypeSymbol"/> that <paramref name="syntax"/> will evaluate to,
+    /// or null if it does not evaluate to a value with type.</returns>
+    public ITypeSymbol? TypeOf(ExpressionSyntax syntax)
+    {
+        if (this.TryGetBoundNode(syntax, out var existing))
+        {
+            return (existing as BoundExpression)?.Type?.ToApiSymbol();
+        }
+
+        // NOTE: Very similar logic to GetReferencedSymbol, maybe factor out?
+        // Get enclosing context
+        var binder = this.GetBinder(syntax);
+        var containingSymbol = binder.ContainingSymbol;
+
+        switch (containingSymbol)
+        {
+        case SourceFunctionSymbol func:
+        {
+            // Bind the function contents
+            func.Bind(this);
+            break;
+        }
+        case SourceModuleSymbol module:
+        {
+            // Bind top-level members
+            foreach (var member in module.Members.OfType<ISourceSymbol>())
+            {
+                member.Bind(this);
+            }
+            break;
+        }
+        }
+
+        // Attempt to retrieve
+        this.TryGetBoundNode(syntax, out var node);
+        return (node as BoundExpression)?.Type?.ToApiSymbol();
+    }
+
+    private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node)
+    {
+        if (!this.untypedNodeMap.TryGetValue(syntax, out var untypedNode))
+        {
+            node = null;
+            return false;
+        }
+        return this.boundNodeMap.TryGetValue(untypedNode, out node);
     }
 
     /// <summary>

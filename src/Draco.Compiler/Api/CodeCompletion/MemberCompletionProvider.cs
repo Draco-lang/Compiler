@@ -9,11 +9,11 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// <summary>
 /// Provides completions for member access.
 /// </summary>
-public sealed class MemberAccessCompletionProvider : CompletionProvider
+public sealed class MemberCompletionProvider : CompletionProvider
 {
     public override bool IsApplicableIn(CompletionContext context)
     {
-        if (!context.HasFlag(CompletionContext.MemberAccess)) return false;
+        if (!context.HasFlag(CompletionContext.Member)) return false;
         return context.HasFlag(CompletionContext.Expression) || context.HasFlag(CompletionContext.Type) || context.HasFlag(CompletionContext.Import);
     }
 
@@ -25,7 +25,11 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
         var range = token.Kind == TokenKind.Dot ? new SyntaxRange(token.Range.End, 0) : token.Range;
         // If we can't get the accessed propery, we just return empty array
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return ImmutableArray<CompletionItem>.Empty;
-        var completions = symbols.GroupBy(x => (x.GetType(), x.Name)).Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
+        var completions = symbols
+            // NOTE: Not very robust, just like in the other place
+            // Also, duplication
+            .GroupBy(x => (x.GetType(), x.Name))
+            .Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
         return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 
@@ -35,10 +39,11 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
         result = ImmutableArray<ISymbol>.Empty;
         if (TryDeconstructMemberAccess(expr, out var accessed))
         {
-            var symbol = semanticModel.GetReferencedSymbol(accessed);
+            ISymbol? symbol;
+            if (accessed is ExpressionSyntax accessedExpr) symbol = semanticModel.TypeOf(accessedExpr) ?? semanticModel.GetReferencedSymbol(accessed);
+            else symbol = semanticModel.GetReferencedSymbol(accessed);
             if (symbol is null) return false;
-            if (symbol is ITypedSymbol typed) result = typed.Type.Members.ToImmutableArray();
-            else result = symbol.Members.ToImmutableArray();
+            result = symbol.Members.ToImmutableArray();
             return true;
         }
         return false;

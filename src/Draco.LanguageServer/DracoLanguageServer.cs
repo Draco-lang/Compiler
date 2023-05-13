@@ -60,7 +60,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.completionService = new CompletionService();
         this.completionService.AddProvider(new KeywordCompletionProvider());
         this.completionService.AddProvider(new ExpressionCompletionProvider());
-        this.completionService.AddProvider(new MemberAccessCompletionProvider());
+        this.completionService.AddProvider(new MemberCompletionProvider());
 
         this.signatureService = new SignatureService();
 

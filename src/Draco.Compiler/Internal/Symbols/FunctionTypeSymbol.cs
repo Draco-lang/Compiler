@@ -20,8 +20,6 @@ internal sealed class FunctionTypeSymbol : TypeSymbol
 
     public override Symbol? ContainingSymbol => null;
 
-    public override IEnumerable<Symbol> Members => this.ReturnType.Members;
-
     public FunctionTypeSymbol(ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType)
     {
         this.Parameters = parameters;

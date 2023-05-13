@@ -31,7 +31,7 @@ public sealed class KeywordCompletionProvider : CompletionProvider
 
     public override bool IsApplicableIn(CompletionContext context)
     {
-        if (context.HasFlag(CompletionContext.MemberAccess)) return false;
+        if (context.HasFlag(CompletionContext.Member)) return false;
         return context.HasFlag(CompletionContext.Declaration) || context.HasFlag(CompletionContext.Expression);
     }
 

@@ -37,5 +37,5 @@ public enum CompletionContext
     /// <summary>
     /// Inside member access syntax.
     /// </summary>
-    MemberAccess = 1 << 4,
+    Member = 1 << 4,
 }

@@ -16,7 +16,7 @@ public sealed class CodeCompletionTests
         var service = new CompletionService();
         service.AddProvider(new KeywordCompletionProvider());
         service.AddProvider(new ExpressionCompletionProvider());
-        service.AddProvider(new MemberAccessCompletionProvider());
+        service.AddProvider(new MemberCompletionProvider());
         return service.GetCompletions(tree, model, cursor);
     }
 

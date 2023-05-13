@@ -138,13 +138,11 @@ internal sealed class MetadataCodegen : MetadataWriter
     {
         if (!this.moduleReferenceHandles.TryGetValue(module, out var handle))
         {
-            EntityHandle resolutionScope;
-
-            // Root module, we take the module definition containing it
-            if (module.Parent is null) resolutionScope = this.ModuleDefinitionHandle;
-
-            // We take its parent module
-            else resolutionScope = this.GetModuleReferenceHandle(module.Parent);
+            var resolutionScope = module.Parent is null
+                // Root module, we take the module definition containing it
+                ? (EntityHandle)this.ModuleDefinitionHandle
+                // We take its parent module
+                : this.GetModuleReferenceHandle(module.Parent);
 
             var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
 

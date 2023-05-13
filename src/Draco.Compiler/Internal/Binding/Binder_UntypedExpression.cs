@@ -514,7 +514,8 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldExpression(syntax, field);
         case PropertySymbol prop:
-            return new UntypedPropertyExpression(syntax, prop);
+            if (prop.Getter is null) throw new NotImplementedException();
+            return new UntypedPropertyGetExpression(syntax, prop.Getter, null); // TODO
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
         case OverloadSymbol overload:

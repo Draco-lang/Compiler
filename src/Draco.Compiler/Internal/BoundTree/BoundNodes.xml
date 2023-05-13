@@ -175,9 +175,17 @@
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
-  <Node Name="BoundPropertyExpression" Base="BoundExpression">
-    <Field Name="Property" Type="PropertySymbol" />
+  <Node Name="BoundPropertyGetExpression" Base="BoundExpression">
+    <Field Name="Getter" Type="FunctionSymbol" />
+    <Field Name="Receiver" Type="BoundExpression?"/>
   </Node>
+
+  <Node Name="BoundPropertySetExpression" Base="BoundExpression">
+    <Field Name="Setter" Type="FunctionSymbol" />
+    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Value" Type="BoundExpression"/>
+  </Node>
+
 
   <Node Name="BoundParameterExpression" Base="BoundExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />

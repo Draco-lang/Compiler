@@ -328,6 +328,17 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return result.Accept(this);
     }
 
+    public override BoundNode VisitPropertyGetExpression(BoundPropertyGetExpression node)
+    {
+        // property
+        //
+        // =>
+        //
+        // property_get()
+
+        return new BoundCallExpression(null, node.Receiver, node.Getter, ImmutableArray<BoundExpression>.Empty);
+    }
+
     // Utility to store an expression to a temporary variable
     private TemporaryStorage StoreTemporary(BoundExpression expr)
     {

@@ -31,7 +31,7 @@ internal partial class Binder
         UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
         UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
         UntypedFieldExpression field => this.TypeFieldExpression(field, constraints, diagnostics),
-        UntypedPropertyExpression prop => this.TypePropertyExpression(prop, constraints, diagnostics),
+        UntypedPropertyGetExpression prop => this.TypePropertyGetExpression(prop, constraints, diagnostics),
         UntypedFunctionGroupExpression group => this.TypeFunctionGroupExpression(group, constraints, diagnostics),
         UntypedReferenceErrorExpression err => this.TypeReferenceErrorExpression(err, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
@@ -103,8 +103,8 @@ internal partial class Binder
     private BoundExpression TypeFieldExpression(UntypedFieldExpression field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundFieldExpression(field.Syntax, field.Field);
 
-    private BoundExpression TypePropertyExpression(UntypedPropertyExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundPropertyExpression(prop.Syntax, prop.Property);
+    private BoundExpression TypePropertyGetExpression(UntypedPropertyGetExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        new BoundPropertyGetExpression(prop.Syntax, prop.Getter, prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics));
 
     private BoundExpression TypeFunctionGroupExpression(UntypedFunctionGroupExpression group, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

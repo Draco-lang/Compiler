@@ -149,8 +149,15 @@
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
-  <Node Name="UntypedPropertyExpression" Base="UntypedExpression">
-    <Field Name="Property" Type="PropertySymbol" />
+  <Node Name="UntypedPropertyGetExpression" Base="UntypedExpression">
+    <Field Name="Getter" Type="FunctionSymbol" />
+    <Field Name="Receiver" Type="UntypedExpression?"/>
+  </Node>
+
+  <Node Name="UntypedPropertySetExpression" Base="UntypedExpression">
+    <Field Name="Setter" Type="FunctionSymbol" />
+    <Field Name="Receiver" Type="UntypedExpression?"/>
+    <Field Name="Value" Type="UntypedExpression"/>
   </Node>
 
   <Node Name="UntypedParameterExpression" Base="UntypedExpression">

@@ -1,8 +1,6 @@
-using System;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
-using Draco.Compiler.Api.Semantics;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -12,7 +10,7 @@ internal sealed class MetadataFieldSymbol : FieldSymbol
 
     private TypeSymbol? type;
 
-    public override bool IsMutable => false; // TODO
+    public override bool IsMutable => false; // TODO: Read this from metedata and account for it in Lvalues
 
     public override bool IsStatic => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Static);
 

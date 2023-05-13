@@ -513,6 +513,8 @@ internal partial class Binder
             return new UntypedGlobalExpression(syntax, global);
         case FieldSymbol field:
             return new UntypedFieldExpression(syntax, field);
+        case PropertySymbol prop:
+            return new UntypedPropertyExpression(syntax, prop);
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
         case OverloadSymbol overload:

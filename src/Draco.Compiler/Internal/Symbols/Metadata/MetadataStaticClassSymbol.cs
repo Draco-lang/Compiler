@@ -77,6 +77,22 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             result.Add(fieldSym);
         }
 
+        // Properties
+        foreach (var propHandle in this.typeDefinition.GetProperties())
+        {
+            var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
+            // TODO: visibility
+            //// Skip special name
+            //if (propDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
+            //// Skip non-public
+            //if (!propDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
+            //// Add it
+            var propSym = new MetadataPropertySymbol(
+                containingSymbol: this,
+                propertyDefinition: propDef);
+            if (propSym.IsStatic) result.Add(propSym);
+        }
+
         // Done
         return result.ToImmutable();
     }

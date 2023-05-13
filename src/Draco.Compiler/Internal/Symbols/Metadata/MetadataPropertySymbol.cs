@@ -48,15 +48,25 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
     }
     private bool isStatic = false;
 
-    public override bool IsMutable
+    public override bool IsGettable
     {
         get
         {
             if (this.NeedsBuild) this.Build();
-            return this.isMutable;
+            return this.isGettable;
         }
     }
-    private bool isMutable = false;
+    private bool isGettable = false;
+
+    public override bool IsSettable
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.isSettable;
+        }
+    }
+    private bool isSettable = false;
 
     public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
 
@@ -85,6 +95,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
         var accessors = this.propertyDefinition.GetAccessors();
         if (!accessors.Getter.IsNil)
         {
+            this.isGettable = true;
             var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
             this.isStatic = getter.Attributes.HasFlag(MethodAttributes.Static);
             this.getter = new MetadataMethodSymbol(this.ContainingSymbol, getter);
@@ -92,7 +103,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
         }
         if (!accessors.Setter.IsNil)
         {
-            this.isMutable = true;
+            this.isSettable = true;
             var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
             this.isStatic = setter.Attributes.HasFlag(MethodAttributes.Static);
             this.setter = new MetadataMethodSymbol(this.ContainingSymbol, setter);

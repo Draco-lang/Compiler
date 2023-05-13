@@ -149,6 +149,10 @@
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
+  <Node Name="UntypedPropertyExpression" Base="UntypedExpression">
+    <Field Name="Property" Type="PropertySymbol" />
+  </Node>
+
   <Node Name="UntypedParameterExpression" Base="UntypedExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>

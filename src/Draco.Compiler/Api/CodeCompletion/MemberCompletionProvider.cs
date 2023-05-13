@@ -9,7 +9,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// <summary>
 /// Provides completions for member access.
 /// </summary>
-public sealed class MemberAccessCompletionProvider : CompletionProvider
+public sealed class MemberCompletionProvider : CompletionProvider
 {
     public override bool IsApplicableIn(CompletionContext context)
     {

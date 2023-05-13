@@ -13,7 +13,7 @@ public sealed class MemberCompletionProvider : CompletionProvider
 {
     public override bool IsApplicableIn(CompletionContext context)
     {
-        if (!context.HasFlag(CompletionContext.MemberAccess)) return false;
+        if (!context.HasFlag(CompletionContext.Member)) return false;
         return context.HasFlag(CompletionContext.Expression) || context.HasFlag(CompletionContext.Type) || context.HasFlag(CompletionContext.Import);
     }
 

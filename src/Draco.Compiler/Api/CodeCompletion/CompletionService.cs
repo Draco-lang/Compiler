@@ -64,11 +64,11 @@ public sealed class CompletionService
                 // Declaring identifier
                 DeclarationSyntax => CompletionContext.None,
                 // Member access
-                MemberExpressionSyntax => CompletionContext.Expression | CompletionContext.MemberAccess,
+                MemberExpressionSyntax => CompletionContext.Expression | CompletionContext.Member,
                 // Member type access
-                MemberTypeSyntax => CompletionContext.Type | CompletionContext.MemberAccess,
+                MemberTypeSyntax => CompletionContext.Type | CompletionContext.Member,
                 // Import member
-                MemberImportPathSyntax => CompletionContext.Import | CompletionContext.MemberAccess,
+                MemberImportPathSyntax => CompletionContext.Import | CompletionContext.Member,
                 // Import start
                 RootImportPathSyntax => CompletionContext.Import,
                 // Global scope

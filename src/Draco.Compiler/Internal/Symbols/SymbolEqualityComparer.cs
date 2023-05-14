@@ -42,6 +42,22 @@ internal abstract class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqu
         if (x is TypeVariable xTypeVar) x = this.Unwrap(xTypeVar);
         if (y is TypeVariable yTypeVar) y = this.Unwrap(yTypeVar);
 
+        if (x.IsGenericInstance && y.IsGenericInstance)
+        {
+            // Generic instances might not adhere to referential equality
+            // Instead we check if the generic definitions and the arguments are equal
+
+            // TODO: Should we check for the entire context equality?
+            // Could context affect the type here in any significant way, for ex. in the
+            // case of nested generic types?
+            // The problem with that would be that not all context variables are significant tho,
+            // whe might need to end up projecting down generic args like C# does?
+
+            if (x.GenericArguments.Length != y.GenericArguments.Length) return false;
+            if (!this.Equals(x.GenericDefinition, y.GenericDefinition)) return false;
+            return x.GenericArguments.SequenceEqual(y.GenericArguments, this);
+        }
+
         return (x, y) switch
         {
             (FunctionTypeSymbol f1, FunctionTypeSymbol f2) =>

@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -55,6 +56,7 @@ internal partial class Binder
         UnexpectedTypeSyntax => new UndefinedTypeSymbol("<error>"),
         NameTypeSyntax name => this.BindNameType(name, diagnostics),
         MemberTypeSyntax member => this.BindMemberType(member, diagnostics),
+        GenericTypeSyntax generic => this.BindGenericType(generic, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -81,6 +83,37 @@ internal partial class Binder
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetType(memberName, syntax, diagnostics);
             return symbol;
+        }
+    }
+
+    private Symbol BindGenericType(GenericTypeSyntax syntax, DiagnosticBag diagnostics)
+    {
+        var instantiated = this.BindType(syntax.Instantiated, diagnostics);
+        var args = syntax.Arguments.Values
+            .Select(arg => this.BindType(arg, diagnostics))
+            // TODO: Why do we even need this cast?
+            .Cast<TypeSymbol>()
+            .ToImmutableArray();
+        // TODO: Check if this is even a generic type?
+        // TODO: Check for correch amount of args
+        if (instantiated.IsGenericDefinition)
+        {
+            if (instantiated.GenericParameters.Length != args.Length)
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+
+            var substitutions = instantiated.GenericParameters
+                .Zip(args)
+                .ToImmutableDictionary(pair => pair.First, pair => pair.Second);
+            var context = new GenericContext(substitutions);
+            return instantiated.GenericInstantiate(instantiated.ContainingSymbol, context);
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
         }
     }
 }

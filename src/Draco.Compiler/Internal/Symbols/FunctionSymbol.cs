@@ -76,6 +76,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     /// </summary>
     public virtual bool IsVirtual => false;
 
+    public override FunctionSymbol? GenericDefinition => null;
     public override IEnumerable<Symbol> Members => this.Parameters;
 
     public TypeSymbol Type => this.type ??= this.BuildType();

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -360,6 +361,20 @@ internal sealed class ConstraintSolver
                 if (!this.Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
             }
             return this.Unify(f1.ReturnType, f2.ReturnType);
+        }
+
+        case (_, _) when first.IsGenericInstance && second.IsGenericInstance:
+        {
+            // NOTE: Generic instances might not obey referential equality
+            Debug.Assert(first.GenericDefinition is not null);
+            Debug.Assert(second.GenericDefinition is not null);
+            if (first.GenericArguments.Length != second.GenericArguments.Length) return false;
+            if (!this.Unify(first.GenericDefinition, second.GenericDefinition)) return false;
+            for (var i = 0; i < first.GenericArguments.Length; ++i)
+            {
+                if (!this.Unify(first.GenericArguments[i], second.GenericArguments[i])) return false;
+            }
+            return true;
         }
 
         default:

@@ -18,6 +18,8 @@ internal abstract partial class TypeSymbol : Symbol
     /// </summary>
     public virtual bool IsValueType => false;
 
+    public override TypeSymbol? GenericDefinition => null;
+
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         new TypeInstanceSymbol(containingSymbol, this, context);
 

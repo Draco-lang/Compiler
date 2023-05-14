@@ -36,7 +36,7 @@ internal sealed class ModuleBinder : Binder
     {
         foreach (var symbol in this.symbol.Members)
         {
-            if (!this.IsVisible(symbol, currentReference?.Tree)) continue;
+            if (!this.IsVisible(symbol)) continue;
             if (symbol.Name != name) continue;
             if (!allowSymbol(symbol)) continue;
             if (symbol is GlobalSymbol && !flags.HasFlag(LookupFlags.AllowGlobals)) continue;
@@ -44,12 +44,12 @@ internal sealed class ModuleBinder : Binder
         }
     }
 
-    private bool IsVisible(Symbol symbol, SyntaxTree? reference)
+    private bool IsVisible(Symbol symbol)
     {
         if (symbol.Visibility != Api.Semantics.Visibility.Private) return true;
 
-        // If any of the files in this module are the same file as the reference, we are in the same module and we see all declared symbols
-        if (this.symbol.Members.Any(x => x.DeclaringSyntax?.Tree == reference)) return true;
+        // If the module symbol of the current symbol is the same as this module, return true
+        if (this.symbol == symbol.AncestorChain.FirstOrDefault(x => x is ModuleSymbol)) return true;
         return false;
     }
 }

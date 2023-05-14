@@ -187,14 +187,14 @@ internal sealed class Parser
     /// </summary>
     /// <param name="kind">The token kind to check for.</param>
     /// <returns>True, if the token kind is visibility modifier, otherwise false.</returns>
-    private bool IsVisibilityModifier(TokenKind kind) => visibilityModifiers.Contains(kind);
+    private static bool IsVisibilityModifier(TokenKind kind) => visibilityModifiers.Contains(kind);
 
     /// <summary>
     /// Checks, if the current token kind and the potentially following tokens form an expression.
     /// </summary>
     /// <param name="kind">The current token kind.</param>
     /// <returns>True, uf <paramref name="kind"/> in the current state can form the start of an expression.</returns>
-    private bool IsExpressionStarter(TokenKind kind) => expressionStarters.Contains(kind);
+    private static bool IsExpressionStarter(TokenKind kind) => expressionStarters.Contains(kind);
 
     /// <summary>
     /// Parses a <see cref="CompilationUnitSyntax"/> until the end of input.
@@ -214,7 +214,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     internal DeclarationSyntax ParseDeclaration()
     {
-        var isModifier = this.IsVisibilityModifier(this.Peek());
+        var isModifier = IsVisibilityModifier(this.Peek());
         var peekAmount = isModifier ? 1 : 0;
         switch (this.Peek(peekAmount))
         {
@@ -237,7 +237,7 @@ internal sealed class Parser
             var input = this.Synchronize(t => t switch
             {
                 _ when this.IsDeclarationStarter(t) => false,
-                _ when this.IsVisibilityModifier(t) => false,
+                _ when IsVisibilityModifier(t) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
@@ -493,7 +493,7 @@ internal sealed class Parser
                 or TokenKind.ParenClose or TokenKind.BracketClose
                 or TokenKind.CurlyClose or TokenKind.InterpolationEnd
                 or TokenKind.Assign => false,
-                _ when this.IsExpressionStarter(t) => false,
+                _ when IsExpressionStarter(t) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "type");
@@ -601,7 +601,7 @@ internal sealed class Parser
 
             default:
             {
-                if (this.IsExpressionStarter(this.Peek()))
+                if (IsExpressionStarter(this.Peek()))
                 {
                     // Some expression
                     var expr = this.ParseExpression();
@@ -625,7 +625,7 @@ internal sealed class Parser
                     {
                         TokenKind.CurlyClose => false,
                         _ when this.IsDeclarationStarter(kind) => false,
-                        _ when this.IsExpressionStarter(kind) => false,
+                        _ when IsExpressionStarter(kind) => false,
                         _ => true,
                     });
                     var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "statement");
@@ -732,7 +732,7 @@ internal sealed class Parser
         {
             var returnKeyword = this.Advance();
             ExpressionSyntax? value = null;
-            if (this.IsExpressionStarter(this.Peek())) value = this.ParseExpression();
+            if (IsExpressionStarter(this.Peek())) value = this.ParseExpression();
             return new ReturnExpressionSyntax(returnKeyword, value);
         }
         case TokenKind.KeywordGoto:
@@ -846,7 +846,7 @@ internal sealed class Parser
                 TokenKind.Semicolon or TokenKind.Comma
                 or TokenKind.ParenClose or TokenKind.BracketClose
                 or TokenKind.CurlyClose or TokenKind.InterpolationEnd => false,
-                var kind when this.IsExpressionStarter(kind) => false,
+                var kind when IsExpressionStarter(kind) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "expression");
@@ -1030,7 +1030,7 @@ internal sealed class Parser
         return elements.ToSeparatedSyntaxList();
     }
 
-    private SyntaxToken? ParseVisibilityModifier() => this.IsVisibilityModifier(this.Peek()) ? this.Advance() : null;
+    private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.Peek()) ? this.Advance() : null;
 
     // Token-level operators
 

@@ -91,6 +91,14 @@ internal abstract partial class Symbol
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => null;
 
+    protected private Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
+    {
+        null => Api.Semantics.Visibility.Private,
+        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
+        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
+        _ => throw new System.InvalidOperationException($"illegal visibility modifier token {kind}"),
+    };
+
     /// <summary>
     /// Converts this symbol into an API symbol.
     /// </summary>

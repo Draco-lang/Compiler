@@ -5,18 +5,26 @@ using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
+/// <summary>
+/// Generates IR code on top-level.
+/// </summary>
 internal sealed partial class AssemblyCodegen
 {
+    /// <summary>
+    /// Generates IR of this <see cref="Compilation"/>.
+    /// </summary>
+    /// <param name="compilation">The compilation to generate IR for.</param>
+    /// <param name="emitSequencePoints">If true, sequence points will be generated in the IR.</param>
+    /// <returns>Generated IR.</returns>
     public static Assembly Generate(
         Compilation compilation,
-        ModuleSymbol rootModule,
         bool emitSequencePoints)
     {
         var assemblyCodegen = new AssemblyCodegen(compilation);
-        var root = new Module(rootModule, assemblyCodegen.assembly, null);
+        var root = new Module(compilation.SourceModule, assemblyCodegen.assembly, null);
         assemblyCodegen.assembly.AddRootModule(root);
         var moduleCodegen = new ModuleCodegen(root, compilation, emitSequencePoints);
-        rootModule.Accept(moduleCodegen);
+        compilation.SourceModule.Accept(moduleCodegen);
         assemblyCodegen.Complete();
         return assemblyCodegen.assembly;
     }
@@ -35,7 +43,7 @@ internal sealed partial class AssemblyCodegen
     {
         // Set the entry point, in case we have one
         var mainProcedure = (Procedure?)this.assembly.RootModule.Procedures.Values
-            .FirstOrDefault(p => p.Name == "main");
+            .FirstOrDefault(p => p.Name == CompilerConstants.EntryPointName);
         this.assembly.EntryPoint = mainProcedure;
     }
 }

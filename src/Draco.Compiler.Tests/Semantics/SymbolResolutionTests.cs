@@ -1158,6 +1158,45 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
+    public void NotVisibleGlobalVariableFullyQualified()
+    {
+        // func main(){
+        //   var x = BarModule.bar;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", type: null, value: MemberExpression(NameExpression("BarModule"), "bar")))))),
+            ToPath("Tests", "main.draco"));
+
+        // var bar = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("bar", type: null, value: LiteralExpression(0))),
+           ToPath("Tests", "BarModule", "bar.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
     public void InternalElementImportedFromDifferentAssembly()
     {
         // import FooModule;

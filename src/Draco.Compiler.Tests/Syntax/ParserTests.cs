@@ -425,6 +425,25 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void TestVariableDeclarationStatementStartingWithVisibilityModifier()
+    {
+        this.ParseStatement("internal var x = 0;");
+        this.N<ExpressionStatementSyntax>();
+        {
+            this.N<UnexpectedExpressionSyntax>();
+            {
+                this.N<SyntaxList<SyntaxNode>>();
+                {
+                    this.T(TokenKind.KeywordInternal);
+                    this.T(TokenKind.KeywordVar);
+                    // NOTE: It is cut off at the first expression starter, which is the identifier, the rest of the code would be in next statement
+                    this.MissingT(TokenKind.Semicolon);
+                }
+            }
+        }
+    }
+
+    [Fact]
     public void TestVariableDeclarationWithNoTypeAndWithValueAndMissingSemicolon()
     {
         this.ParseDeclaration("val x = 5");

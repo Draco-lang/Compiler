@@ -251,7 +251,6 @@ public sealed class Compilation : IBinderProvider
         // Generate IR
         var assembly = AssemblyCodegen.Generate(
             compilation: this,
-            rootModule: this.SourceModule,
             emitSequencePoints: pdbStream is not null);
         // Optimize the IR
         // TODO: Options for optimization

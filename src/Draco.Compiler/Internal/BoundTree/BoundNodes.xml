@@ -172,6 +172,7 @@
   </Node>
 
   <Node Name="BoundFieldExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?"/>
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 

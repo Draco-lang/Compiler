@@ -101,7 +101,7 @@ internal partial class Binder
         new BoundGlobalExpression(global.Syntax, global.Global);
 
     private BoundExpression TypeFieldExpression(UntypedFieldExpression field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundFieldExpression(field.Syntax, field.Field);
+        new BoundFieldExpression(field.Syntax, null, field.Field);
 
     private BoundExpression TypePropertyGetExpression(UntypedPropertyGetExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundPropertyGetExpression(prop.Syntax, prop.Getter, prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics));
@@ -234,6 +234,8 @@ internal partial class Binder
         var members = mem.Member.Result;
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
+            if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
+            if (member is PropertySymbol prop) return null; // TODO
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }
         else

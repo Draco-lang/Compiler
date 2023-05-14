@@ -20,6 +20,7 @@ internal static class BinderFacts
         or UntypedLocalSymbol
         or GlobalSymbol
         or FieldSymbol
+        or PropertySymbol
         or FunctionSymbol
         or ModuleSymbol
         or TypeSymbol;

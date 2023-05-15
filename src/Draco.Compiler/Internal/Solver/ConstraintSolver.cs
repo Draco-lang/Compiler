@@ -206,11 +206,26 @@ internal sealed class ConstraintSolver
             if (!advanced) break;
         }
 
+        // Check for uninferred locals
+        foreach (var (local, localType) in this.inferredLocalTypes)
+        {
+            var unwrappedLocalType = this.Unwrap(localType);
+            if (unwrappedLocalType is TypeVariable typeVar)
+            {
+                this.Unify(typeVar, IntrinsicSymbols.ErrorType);
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.CouldNotInferType,
+                    location: local.DeclaringSyntax.Location,
+                    formatArgs: local.Name));
+            }
+        }
+
+        // And for failed inference
         var inferenceFailed = this.constraints.Count > 0
                            || this.typeVariables.Select(this.Unwrap).Any(t => t.IsTypeVariable);
         if (inferenceFailed)
         {
-            // Couldn't solve all constraints
+            // Couldn't solve all constraints or variables
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.InferenceIncomplete,
                 location: this.Context.Location,
@@ -218,20 +233,6 @@ internal sealed class ConstraintSolver
 
             // To avoid major trip-ups later, we resolve all constraints to some sentinel value
             foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
-
-            // We also report each variable we failed to infer
-            foreach (var (local, localType) in this.inferredLocalTypes)
-            {
-                var unwrappedLocalType = this.Unwrap(localType);
-                if (unwrappedLocalType is TypeVariable typeVar)
-                {
-                    this.Unify(typeVar, IntrinsicSymbols.ErrorType);
-                    diagnostics.Add(Diagnostic.Create(
-                        template: TypeCheckingErrors.CouldNotInferType,
-                        location: local.DeclaringSyntax.Location,
-                        formatArgs: local.Name));
-                }
-            }
 
             // We also unify type variables with the error type
             foreach (var typeVar in this.typeVariables)

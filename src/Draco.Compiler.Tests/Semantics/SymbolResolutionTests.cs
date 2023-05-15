@@ -92,7 +92,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         AssertParentOf(GetDefiningScope(compilation, symFoo), GetDefiningScope(compilation, symn));
         Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), GetDefiningScope(compilation, symn)));
 
-        Assert.True(diagnostics.Length == 6);
+        Assert.Equal(6, diagnostics.Length);
         Assert.All(diagnostics, diag => Assert.Equal(TypeCheckingErrors.CouldNotInferType, diag.Template));
     }
 

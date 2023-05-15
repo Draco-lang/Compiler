@@ -273,6 +273,8 @@ internal partial class Binder
                         out var resultType);
                     callPromise.ConfigureDiagnostic(diag => diag
                         .WithLocation(syntax.Location));
+
+                    constraints.Unify(resultType, promisedType);
                     return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
                 }
                 else

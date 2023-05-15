@@ -393,8 +393,8 @@ internal sealed class ConstraintSolver
         var paramType = this.Unwrap(param.Type);
         argType = this.Unwrap(argType);
 
-        // If the argument is still a type parameter, we can't score it
-        if (argType.IsTypeVariable) return null;
+        // If the parameter or argument is still a type parameter, we can't score it
+        if (paramType.IsTypeVariable || argType.IsTypeVariable) return null;
 
         // Exact equality is max score
         if (this.typeEqualityComparer.Equals(paramType, argType)) return 16;

@@ -18,11 +18,11 @@ internal class Program
 
     private static RootCommand ConfigureCommands()
     {
-        var fileArgument = new Argument<FileInfo>("file", description: "The Draco source file");
+        var fileArgument = new Argument<FileInfo>("source file", description: "The Draco source file");
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
         var optionalOutputOption = new Option<FileInfo?>(new string[] { "-o", "--output" }, () => null, "Specifies the (optional) output file");
         var referencesOption = new Option<FileInfo[]>(new string[] { "-r", "--reference" }, Array.Empty<FileInfo>, "Specifies assembly references to use when compiling");
-        var filesOption = new Option<FileInfo[]>(new string[] { "-f", "--files" }, Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
+        var filesOption = new Argument<FileInfo[]>("source files", Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
         var rootModuleOption = new Option<DirectoryInfo?>(new string[] { "-m", "--root-module" }, () => null, "Specifies the root module folder of the compiled files");
         var pdbOption = new Option<bool>("--pdb", () => false, "Specifies that a PDB should be generated for debugging");
         var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");

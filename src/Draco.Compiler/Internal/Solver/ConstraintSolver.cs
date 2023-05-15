@@ -277,6 +277,18 @@ internal sealed class ConstraintSolver
     public TypeVariable AllocateTypeVariable() => new(this.typeVariableCounter++);
 
     /// <summary>
+    /// Converts the given <paramref name="type"/> to a ground type, meaning that all type variables
+    /// get substituted.
+    /// </summary>
+    /// <param name="type">The type to convert to ground to.</param>
+    /// <returns>The equivalent of <paramref name="type"/>, but all type variables substituted.</returns>
+    public TypeSymbol ToGround(TypeSymbol type)
+    {
+        if (type.IsGround) return type;
+        return type.ToGround(this);
+    }
+
+    /// <summary>
     /// Unwraps the given type from potential variable substitutions.
     /// </summary>
     /// <param name="type">The type to unwrap.</param>

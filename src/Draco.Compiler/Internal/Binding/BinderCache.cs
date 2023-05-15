@@ -54,7 +54,7 @@ internal sealed class BinderCache
     {
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         binder = new ModuleBinder(binder, this.compilation.RootModule);
-        binder = new ModuleBinder(binder, this.compilation.GetCompilationUnitModule(syntax.Tree));
+        binder = new ModuleBinder(binder, this.compilation.GetModuleForSyntaxTree(syntax.Tree));
         binder = WrapInImportBinder(binder, syntax);
         return binder;
     }

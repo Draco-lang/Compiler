@@ -66,6 +66,8 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
     private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
+    private AssemblyReferenceHandle systemRuntimeReference;
+    private TypeReferenceHandle systemObjectReference;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
     {
@@ -74,6 +76,17 @@ internal sealed class MetadataCodegen : MetadataWriter
         this.assembly = assembly;
         this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
+
+        // Reference System.Object from System.Runtime
+        this.systemRuntimeReference = this.GetOrAddAssemblyReference(
+            name: "System.Runtime",
+            version: new System.Version(7, 0, 0, 0),
+            publicKeyOrToken: MicrosoftPublicKeyToken);
+
+        this.systemObjectReference = this.GetOrAddTypeReference(
+          assembly: this.systemRuntimeReference,
+          @namespace: "System",
+          name: "Object");
     }
 
     private void LoadIntrinsics()
@@ -210,23 +223,13 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private void EncodeAssembly()
     {
-        // Reference System.Object from System.Runtime
-        var systemRuntime = this.GetOrAddAssemblyReference(
-            name: "System.Runtime",
-            version: new System.Version(7, 0, 0, 0),
-            publicKeyOrToken: MicrosoftPublicKeyToken);
-        var systemObject = this.GetOrAddTypeReference(
-           assembly: systemRuntime,
-           @namespace: "System",
-           name: "Object");
-
-        this.EncodeModule(this.assembly.RootModule, systemRuntime, systemObject);
+        this.EncodeModule(this.assembly.RootModule);
 
         // If we write a PDB, we add the debuggable attribute to the assembly
         if (this.PdbCodegen is not null)
         {
             var debuggableAttribute = this.GetOrAddTypeReference(
-                assembly: systemRuntime,
+                assembly: this.systemRuntimeReference,
                 @namespace: "System.Diagnostics",
                 name: "DebuggableAttribute");
             var debuggingModes = this.GetOrAddTypeReference(
@@ -249,7 +252,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
-    private void EncodeModule(IModule module, AssemblyReferenceHandle systemRuntime, TypeReferenceHandle systemObject, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
+    private void EncodeModule(IModule module, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
     {
         var currentFieldIndex = fieldIndex;
         var currentProcIndex = procIndex;
@@ -295,7 +298,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             attributes: attributes,
             @namespace: default,
             name: name,
-            baseType: systemObject,
+            baseType: this.systemObjectReference,
             fieldList: MetadataTokens.FieldDefinitionHandle(fieldIndex),
             methodList: MetadataTokens.MethodDefinitionHandle(procIndex));
 
@@ -305,7 +308,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         // We encode every submodule
         foreach (var subModule in module.Submodules)
         {
-            this.EncodeModule((OptimizingIr.Model.Module)subModule.Value, systemRuntime, systemObject, createdModule, currentFieldIndex, currentProcIndex);
+            this.EncodeModule((OptimizingIr.Model.Module)subModule.Value, createdModule, currentFieldIndex, currentProcIndex);
         }
     }
 

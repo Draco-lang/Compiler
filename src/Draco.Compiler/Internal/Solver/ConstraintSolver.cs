@@ -35,8 +35,8 @@ internal sealed class ConstraintSolver
     private readonly List<IConstraint> constraintsToRemove = new();
     // The constraints that were queued for insertion
     private readonly List<IConstraint> constraintsToAdd = new();
-    // Number of type variables allocated
-    private int typeVariableCounter = 0;
+    // The allocated type variables
+    private readonly List<TypeVariable> typeVariables = new();
     // Type variable substitutions
     private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new(ReferenceEqualityComparer.Instance);
     // The declared/inferred types of locals
@@ -206,7 +206,9 @@ internal sealed class ConstraintSolver
             if (!advanced) break;
         }
 
-        if (this.constraints.Count > 0)
+        var inferenceFailed = this.constraints.Count > 0
+                           || this.typeVariables.Select(this.Unwrap).Any(t => t.IsTypeVariable);
+        if (inferenceFailed)
         {
             // Couldn't solve all constraints
             diagnostics.Add(Diagnostic.Create(
@@ -216,6 +218,12 @@ internal sealed class ConstraintSolver
 
             // To avoid major trip-ups later, we resolve all constraints to some sentinel value
             foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
+            // We also unify type variables with the error type
+            foreach (var typeVar in this.typeVariables)
+            {
+                var unwrapped = this.Unwrap(typeVar);
+                if (unwrapped is TypeVariable unwrappedTv) this.Unify(unwrappedTv, IntrinsicSymbols.ErrorType);
+            }
         }
     }
 
@@ -271,7 +279,12 @@ internal sealed class ConstraintSolver
     /// Allocates a type-variable.
     /// </summary>
     /// <returns>A new, unique type-variable.</returns>
-    public TypeVariable AllocateTypeVariable() => new(this, this.typeVariableCounter++);
+    public TypeVariable AllocateTypeVariable()
+    {
+        var typeVar = new TypeVariable(this, this.typeVariables.Count);
+        this.typeVariables.Add(typeVar);
+        return typeVar;
+    }
 
     /// <summary>
     /// Unwraps the given type from potential variable substitutions.

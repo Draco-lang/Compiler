@@ -1064,4 +1064,32 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.NoGenericFunctionWithParamCount);
     }
+
+    [Fact]
+    public void ExplicitGenericTypeWithWrongNumberOfArgs()
+    {
+        // import System.Collections.Generic;
+        // var l: List<int32, int32>;
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Generic"),
+            VariableDeclaration(
+                "l",
+                GenericType(NameType("List"), NameType("int32"), NameType("int32")))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.GenericTypeParamCountMismatch);
+    }
 }

@@ -123,6 +123,28 @@ internal abstract partial class Symbol
     /// Instantiates this generic symbol with the given substitutions.
     /// </summary>
     /// <param name="containingSymbol">The symbol that should be considered the containing symbol.</param>
+    /// <param name="arguments">The generic arguments.</param>
+    /// <returns>The instantiated symbol.</returns>
+    public virtual Symbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments)
+    {
+        if (this.GenericParameters.Length != arguments.Length)
+        {
+            throw new System.ArgumentException(
+                $"the number of generic parameters ({this.GenericParameters.Length}) does not match the passed in number of arguments ({arguments.Length})",
+                nameof(arguments));
+        }
+
+        var substitutions = this.GenericParameters
+            .Zip(arguments)
+            .ToImmutableDictionary(pair => pair.First, pair => pair.Second);
+        var context = new GenericContext(substitutions);
+        return this.GenericInstantiate(containingSymbol, context);
+    }
+
+    /// <summary>
+    /// Instantiates this generic symbol with the given substitutions.
+    /// </summary>
+    /// <param name="containingSymbol">The symbol that should be considered the containing symbol.</param>
     /// <param name="context">The generic context.</param>
     /// <returns>This symbol with all type parameters replaced according to <paramref name="context"/>.</returns>
     public virtual Symbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>

@@ -104,11 +104,7 @@ internal partial class Binder
                 throw new NotImplementedException();
             }
 
-            var substitutions = instantiated.GenericParameters
-                .Zip(args)
-                .ToImmutableDictionary(pair => pair.First, pair => pair.Second);
-            var context = new GenericContext(substitutions);
-            return instantiated.GenericInstantiate(instantiated.ContainingSymbol, context);
+            return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);
         }
         else
         {

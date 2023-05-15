@@ -93,6 +93,8 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
         return result.ToString();
     }
 
+    public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
+        (FunctionSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         new FunctionInstanceSymbol(containingSymbol, this, context);
 

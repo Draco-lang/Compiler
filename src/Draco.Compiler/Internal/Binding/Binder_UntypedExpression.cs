@@ -488,18 +488,9 @@ internal partial class Binder
             else
             {
                 // There are functions with this same number of parameters
-                FunctionSymbol Instantiate(FunctionSymbol f)
-                {
-                    var substitutions = f.GenericParameters
-                        .Zip(args)
-                        .ToImmutableDictionary(pair => pair.First, pair => pair.Second);
-                    var context = new GenericContext(substitutions);
-                    return f.GenericInstantiate(f.ContainingSymbol, context);
-                }
-
                 // Instantiate each possibility
                 var instantiatedFuncs = withSameNoParams
-                    .Select(Instantiate)
+                    .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
                     .ToImmutableArray();
 
                 // Wrap them back up in a function group

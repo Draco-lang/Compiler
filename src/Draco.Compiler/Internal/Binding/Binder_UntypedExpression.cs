@@ -2,7 +2,9 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
@@ -482,8 +484,14 @@ internal partial class Binder
             if (withSameNoParams.Length == 0)
             {
                 // No generic functions with this number of parameters
-                // TODO
-                throw new NotImplementedException();
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
+                    location: syntax.Location,
+                    formatArgs: new object[] { group.Functions[0].Name, args.Length }));
+
+                // Return a sentinel
+                // NOTE: Is this the right one to return?
+                return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
             }
             else
             {

@@ -31,6 +31,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
             return this.genericArguments!.Value;
         }
     }
+    public override bool IsGround => this.GenericDefinition.IsGround && this.GenericArguments.All(a => a.IsGround);
 
     private ImmutableArray<TypeSymbol>? genericArguments;
     private ImmutableArray<TypeParameterSymbol>? genericParameters;

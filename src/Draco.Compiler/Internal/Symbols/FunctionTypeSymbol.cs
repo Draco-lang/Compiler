@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -16,6 +17,8 @@ internal sealed class FunctionTypeSymbol : TypeSymbol
     /// The return type of the function.
     /// </summary>
     public TypeSymbol ReturnType { get; }
+
+    public override bool IsGround => this.Parameters.All(p => p.Type.IsGround) && this.ReturnType.IsGround;
 
     public override Symbol? ContainingSymbol => null;
 

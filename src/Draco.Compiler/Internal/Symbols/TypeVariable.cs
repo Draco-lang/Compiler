@@ -10,6 +10,7 @@ namespace Draco.Compiler.Internal.Symbols;
 internal sealed class TypeVariable : TypeSymbol
 {
     public override bool IsTypeVariable => true;
+    public override bool IsGround => false;
     public override bool IsValueType => throw new NotSupportedException();
     public override bool IsError => throw new NotSupportedException();
     public override Symbol? ContainingSymbol => throw new NotSupportedException();

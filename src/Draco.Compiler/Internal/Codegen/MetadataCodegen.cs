@@ -214,7 +214,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 signature: this.EncodeBlob(e =>
                 {
                     // In generic instances we still need to reference the generic types
-                    if (isInGenericInstance) func = (FunctionSymbol)func.GenericDefinition!;
+                    if (isInGenericInstance) func = func.GenericDefinition!;
                     e
                         .MethodSignature(
                             genericParameterCount: func.GenericParameters.Length,

@@ -49,7 +49,7 @@ internal sealed class ModuleBinder : Binder
         if (symbol.Visibility != Api.Semantics.Visibility.Private) return true;
 
         // If the module symbol of the current symbol is the same as this module, return true
-        if (this.symbol == symbol.AncestorChain.FirstOrDefault(x => x is ModuleSymbol)) return true;
+        if (this.symbol == symbol.AncestorChain.OfType<ModuleSymbol>().FirstOrDefault()) return true;
         return false;
     }
 }

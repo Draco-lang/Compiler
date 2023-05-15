@@ -92,7 +92,7 @@ internal sealed class DeclarationTable
             // Root module
             if (string.IsNullOrEmpty(fullName)) fullName = rootName;
             else fullName = $"{rootName}.{fullName}";
-            var name = fullName.Split('.').Last();
+            var name = fullName.Split('.')[^1];
             modules.Add(new SingleModuleDeclaration(name, fullName, (CompilationUnitSyntax)tree.Root));
         }
         return new(rootName, rootName, modules.ToImmutable());

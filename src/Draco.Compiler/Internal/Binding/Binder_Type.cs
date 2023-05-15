@@ -94,22 +94,20 @@ internal partial class Binder
             // TODO: Why do we even need this cast?
             .Cast<TypeSymbol>()
             .ToImmutableArray();
-        // TODO: Check if this is even a generic type?
-        // TODO: Check for correch amount of args
-        if (instantiated.IsGenericDefinition)
-        {
-            if (instantiated.GenericParameters.Length != args.Length)
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
 
-            return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);
-        }
-        else
+        if (!instantiated.IsGenericDefinition)
         {
+            // Not even a generic type, error
             // TODO
             throw new NotImplementedException();
         }
+        if (instantiated.GenericParameters.Length != args.Length)
+        {
+            // Wrong number of args
+            // TODO
+            throw new NotImplementedException();
+        }
+        // Ok, instantiate
+        return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);
     }
 }

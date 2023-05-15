@@ -946,7 +946,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void ExplicitGenerics()
+    public void ExplicitGenericFunction()
     {
         // func identity<T>(x: T): T = x;
         //
@@ -1023,5 +1023,45 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Same(IntrinsicSymbols.Int32, aSym.Type);
         Assert.Same(IntrinsicSymbols.String, bSym.Type);
         Assert.True(cSym.Type.IsError);
+    }
+
+    [Fact]
+    public void ExplicitGenericFunctionWithWrongNumberOfArgs()
+    {
+        // func identity<T>(x: T): T = x;
+        //
+        // func main() {
+        //     var a = identity<int32, int32>(1);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "identity",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(Parameter("x", NameType("T"))),
+                NameType("T"),
+                InlineFunctionBody(NameExpression("x"))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration(
+                        "a",
+                        null,
+                        CallExpression(
+                            GenericExpression(NameExpression("identity"), NameType("int32"), NameType("int32")),
+                            LiteralExpression(0))))))));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoGenericFunctionWithParamCount);
     }
 }

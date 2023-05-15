@@ -44,13 +44,10 @@ internal sealed class ConstraintSolver
     // All locals that have a typed variant constructed
     private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
 
-    private readonly SymbolEqualityComparer typeEqualityComparer;
-
     public ConstraintSolver(SyntaxNode context, string contextName)
     {
         this.Context = context;
         this.ContextName = contextName;
-        this.typeEqualityComparer = SymbolEqualityComparer.Unwrapping(this);
     }
 
     /// <summary>
@@ -274,19 +271,7 @@ internal sealed class ConstraintSolver
     /// Allocates a type-variable.
     /// </summary>
     /// <returns>A new, unique type-variable.</returns>
-    public TypeVariable AllocateTypeVariable() => new(this.typeVariableCounter++);
-
-    /// <summary>
-    /// Converts the given <paramref name="type"/> to a ground type, meaning that all type variables
-    /// get substituted.
-    /// </summary>
-    /// <param name="type">The type to convert to ground to.</param>
-    /// <returns>The equivalent of <paramref name="type"/>, but all type variables substituted.</returns>
-    public TypeSymbol ToGround(TypeSymbol type)
-    {
-        if (type.IsGround) return type;
-        return type.ToGround(this);
-    }
+    public TypeVariable AllocateTypeVariable() => new(this, this.typeVariableCounter++);
 
     /// <summary>
     /// Unwraps the given type from potential variable substitutions.
@@ -409,7 +394,7 @@ internal sealed class ConstraintSolver
         if (paramType.IsTypeVariable || argType.IsTypeVariable) return null;
 
         // Exact equality is max score
-        if (this.typeEqualityComparer.Equals(paramType, argType)) return 16;
+        if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return 16;
 
         // Type parameter match is half score
         if (paramType is TypeParameterSymbol) return 8;

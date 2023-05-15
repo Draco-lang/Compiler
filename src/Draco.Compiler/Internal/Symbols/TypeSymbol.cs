@@ -19,20 +19,7 @@ internal abstract partial class TypeSymbol : Symbol
     /// </summary>
     public virtual bool IsValueType => false;
 
-    /// <summary>
-    /// True, if this type has everything substituted.
-    /// </summary>
-    public virtual bool IsGround => true;
-
     public override TypeSymbol? GenericDefinition => null;
-
-    /// <summary>
-    /// Converts this type to a ground type.
-    /// </summary>
-    /// <param name="solver">The solver to use for type variable substitution.</param>
-    /// <returns>The equivalent type without type variables.</returns>
-    public virtual TypeSymbol ToGround(ConstraintSolver solver) =>
-        throw new System.NotImplementedException();
 
     public override Symbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);

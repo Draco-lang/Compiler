@@ -18,8 +18,6 @@ internal sealed class FunctionTypeSymbol : TypeSymbol
     /// </summary>
     public TypeSymbol ReturnType { get; }
 
-    public override bool IsGround => this.Parameters.All(p => p.Type.IsGround) && this.ReturnType.IsGround;
-
     public override Symbol? ContainingSymbol => null;
 
     public FunctionTypeSymbol(ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType)

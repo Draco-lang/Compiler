@@ -11,20 +11,16 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Base of equality comparers for symbols.
 /// </summary>
-internal abstract class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqualityComparer<TypeSymbol>
+internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqualityComparer<TypeSymbol>
 {
     /// <summary>
-    /// A symbol equality comparer that only compares ground-types, type-variables are illegal.
+    /// A default symbol equality comparer.
     /// </summary>
-    public static SymbolEqualityComparer Ground { get; } = new GroundSymbolEqualityComparer();
+    public static SymbolEqualityComparer Default { get; } = new();
 
-    /// <summary>
-    /// Constructs a symbol-equality comparer that can compare types with substituted type variables.
-    /// </summary>
-    /// <param name="solver">The solver to use for resolving substitutions.</param>
-    /// <returns>A symbol equality comparer using <paramref name="solver"/> to resolve substitutions.</returns>
-    public static SymbolEqualityComparer Unwrapping(ConstraintSolver solver) =>
-        new UnwrappingSymbolEqualityComparer(solver);
+    private SymbolEqualityComparer()
+    {
+    }
 
     public bool Equals(Symbol? x, Symbol? y)
     {
@@ -39,8 +35,8 @@ internal abstract class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqu
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
 
-        if (x is TypeVariable xTypeVar) x = this.Unwrap(xTypeVar);
-        if (y is TypeVariable yTypeVar) y = this.Unwrap(yTypeVar);
+        if (x is TypeVariable xTypeVar) x = Unwrap(xTypeVar);
+        if (y is TypeVariable yTypeVar) y = Unwrap(yTypeVar);
 
         if (x.IsGenericInstance && y.IsGenericInstance)
         {
@@ -75,7 +71,7 @@ internal abstract class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqu
 
     public int GetHashCode([DisallowNull] TypeSymbol obj)
     {
-        if (obj is TypeVariable v) obj = this.Unwrap(v);
+        if (obj is TypeVariable v) obj = v;
 
         switch (obj)
         {
@@ -89,28 +85,10 @@ internal abstract class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqu
     /// </summary>
     /// <param name="type">The type-variable to unwrap.</param>
     /// <returns>The substitution of <paramref name="type"/>.</returns>
-    protected abstract TypeSymbol Unwrap(TypeVariable type);
-
-    private sealed class GroundSymbolEqualityComparer : SymbolEqualityComparer
+    private static TypeSymbol Unwrap(TypeVariable type)
     {
-        protected override TypeSymbol Unwrap(TypeVariable type) =>
-            throw new InvalidOperationException("cannot compare type variables");
-    }
-
-    private sealed class UnwrappingSymbolEqualityComparer : SymbolEqualityComparer
-    {
-        private readonly ConstraintSolver solver;
-
-        public UnwrappingSymbolEqualityComparer(ConstraintSolver solver)
-        {
-            this.solver = solver;
-        }
-
-        protected override TypeSymbol Unwrap(TypeVariable type)
-        {
-            var unwrappedType = this.solver.Unwrap(type);
-            if (unwrappedType.IsTypeVariable) throw new InvalidOperationException("could not unwrap type variable");
-            return unwrappedType;
-        }
+        var unwrappedType = type.Substitution;
+        if (unwrappedType.IsTypeVariable) throw new InvalidOperationException("could not unwrap type variable");
+        return unwrappedType;
     }
 }

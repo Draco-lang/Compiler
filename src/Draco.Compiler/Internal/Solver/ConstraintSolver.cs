@@ -218,6 +218,21 @@ internal sealed class ConstraintSolver
 
             // To avoid major trip-ups later, we resolve all constraints to some sentinel value
             foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
+
+            // We also report each variable we failed to infer
+            foreach (var (local, localType) in this.inferredLocalTypes)
+            {
+                var unwrappedLocalType = this.Unwrap(localType);
+                if (unwrappedLocalType is TypeVariable typeVar)
+                {
+                    this.Unify(typeVar, IntrinsicSymbols.ErrorType);
+                    diagnostics.Add(Diagnostic.Create(
+                        template: TypeCheckingErrors.CouldNotInferType,
+                        location: local.DeclaringSyntax.Location,
+                        formatArgs: local.Name));
+                }
+            }
+
             // We also unify type variables with the error type
             foreach (var typeVar in this.typeVariables)
             {
@@ -259,16 +274,7 @@ internal sealed class ConstraintSolver
         if (!this.typedLocals.TryGetValue(local, out var typedLocal))
         {
             var localType = this.GetLocalType(local);
-            if (localType.IsTypeVariable)
-            {
-                // We could not infer the type
-                diagnostics.Add(Diagnostic.Create(
-                    template: TypeCheckingErrors.CouldNotInferType,
-                    location: local.DeclaringSyntax.Location,
-                    formatArgs: local.Name));
-                // We use an error type
-                localType = IntrinsicSymbols.ErrorType;
-            }
+            Debug.Assert(!localType.IsTypeVariable);
             typedLocal = new SourceLocalSymbol(local, localType);
             this.typedLocals.Add(local, typedLocal);
         }

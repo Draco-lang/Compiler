@@ -95,17 +95,14 @@ internal partial class Binder
             .Cast<TypeSymbol>()
             .ToImmutableArray();
 
-        if (!instantiated.IsGenericDefinition)
-        {
-            // Not even a generic type, error
-            // TODO
-            throw new NotImplementedException();
-        }
         if (instantiated.GenericParameters.Length != args.Length)
         {
             // Wrong number of args
-            // TODO
-            throw new NotImplementedException();
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.GenericTypeParamCountMismatch,
+                location: syntax.Location,
+                formatArgs: new object[] { instantiated, args.Length }));
+            return IntrinsicSymbols.ErrorType;
         }
         // Ok, instantiate
         return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);

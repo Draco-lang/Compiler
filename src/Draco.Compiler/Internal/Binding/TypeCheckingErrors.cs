@@ -74,12 +74,21 @@ internal static class TypeCheckingErrors
         code: Code(7));
 
     /// <summary>
-    /// A generic function or type with the given no. args was not found.
+    /// A generic function with the given no. args was not found.
     /// </summary>
     public static readonly DiagnosticTemplate NoGenericFunctionWithParamCount = DiagnosticTemplate.Create(
         title: "generic parameter count mismatch",
         severity: DiagnosticSeverity.Error,
-        format: "a function {0} with {1} number of generic parameters could not be found",
+        format: "function {0} with {1} number of generic parameters could not be found",
         code: Code(8));
+
+    /// <summary>
+    /// A generic type does not take the given amount of parameters.
+    /// </summary>
+    public static readonly DiagnosticTemplate GenericTypeParamCountMismatch = DiagnosticTemplate.Create(
+        title: "generic parameter count mismatch",
+        severity: DiagnosticSeverity.Error,
+        format: "type {0} with {1} number of generic parameters could not be found",
+        code: Code(9));
 }
 

@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// A generic type parameter defined in-source.
 /// </summary>
-internal class SourceTypeParameterSymbol : TypeParameterSymbol, ISourceSymbol
+internal sealed class SourceTypeParameterSymbol : TypeParameterSymbol, ISourceSymbol
 {
     public override Symbol ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;

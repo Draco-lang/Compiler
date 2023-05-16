@@ -30,7 +30,7 @@ internal sealed class ConstraintSolver
     public string ContextName { get; }
 
     // The raw constraints and their states
-    private readonly Dictionary<IConstraint, IEnumerator<SolveState>> constraints = new();
+    private readonly List<KeyValuePair<IConstraint, IEnumerator<SolveState>>> constraints = new();
     // The constraints that were marked for removal
     private readonly List<IConstraint> constraintsToRemove = new();
     // The constraints that were queued for insertion
@@ -182,29 +182,10 @@ internal sealed class ConstraintSolver
         while (true)
         {
             // Add and removal
-            foreach (var r in this.constraintsToRemove) this.constraints.Remove(r);
-            foreach (var a in this.constraintsToAdd) this.constraints.Add(a, a.Solve(diagnostics).GetEnumerator());
-            this.constraintsToRemove.Clear();
-            this.constraintsToAdd.Clear();
+            this.AddAndRemoveConstraints(diagnostics);
 
             // Pass through all constraints
-            var advanced = false;
-            foreach (var (constraint, solve) in this.constraints)
-            {
-                while (true)
-                {
-                    solve.MoveNext();
-                    var state = solve.Current;
-                    advanced = advanced || state != SolveState.Stale;
-                    if (state is SolveState.AdvancedBreak or SolveState.Stale) break;
-                    if (state == SolveState.Solved)
-                    {
-                        this.Remove(constraint);
-                        break;
-                    }
-                }
-            }
-            if (!advanced) break;
+            if (!this.SolveOnce()) break;
         }
 
         // Check for uninferred locals
@@ -212,6 +193,51 @@ internal sealed class ConstraintSolver
 
         // And for failed inference
         this.CheckForIncompleteInference(diagnostics);
+    }
+
+    private int GetConstraintIndex(IConstraint constraint)
+    {
+        for (var i = 0; i < this.constraints.Count; ++i)
+        {
+            if (this.constraints[i].Key == constraint) return i;
+        }
+        return -1;
+    }
+
+    private void AddAndRemoveConstraints(DiagnosticBag diagnostics)
+    {
+        foreach (var r in this.constraintsToRemove)
+        {
+            var idx = this.GetConstraintIndex(r);
+            if (idx != -1) this.constraints.RemoveAt(idx);
+        }
+        foreach (var a in this.constraintsToAdd)
+        {
+            this.constraints.Add(new(a, a.Solve(diagnostics).GetEnumerator()));
+        }
+        this.constraintsToRemove.Clear();
+        this.constraintsToAdd.Clear();
+    }
+
+    private bool SolveOnce()
+    {
+        var advanced = false;
+        foreach (var (constraint, solve) in this.constraints)
+        {
+            while (true)
+            {
+                solve.MoveNext();
+                var state = solve.Current;
+                advanced = advanced || state != SolveState.Stale;
+                if (state is SolveState.AdvancedBreak or SolveState.Stale) break;
+                if (state == SolveState.Solved)
+                {
+                    this.Remove(constraint);
+                    break;
+                }
+            }
+        }
+        return advanced;
     }
 
     private void CheckForUninferredLocals(DiagnosticBag diagnostics)
@@ -243,7 +269,7 @@ internal sealed class ConstraintSolver
             formatArgs: this.ContextName));
 
         // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-        foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
+        foreach (var (constraint, _) in this.constraints) constraint.FailSilently();
 
         // We also unify type variables with the error type
         foreach (var typeVar in this.typeVariables)

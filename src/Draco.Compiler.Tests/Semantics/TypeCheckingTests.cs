@@ -1188,4 +1188,41 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Equal(IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
         Assert.Equal(IntrinsicSymbols.Int32, stackSym.GenericArguments[0], SymbolEqualityComparer.Default);
     }
+
+    [Fact]
+    public void CanNotInferGenericCollectionTypeFromUse()
+    {
+        // import System.Collections.Generic;
+        //
+        // func main() {
+        //     var s = Stack();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("s", null, CallExpression(NameExpression("Stack"))))))));
+
+        var callSyntax = tree.FindInChildren<CallExpressionSyntax>();
+        var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.InferenceIncomplete);
+    }
 }

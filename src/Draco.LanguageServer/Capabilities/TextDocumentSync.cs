@@ -11,9 +11,10 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
 {
     public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken)
     {
-        this.documentRepository.AddOrUpdateDocument(param.TextDocument.Uri, param.TextDocument.Text);
-        this.UpdateDocument(param.TextDocument.Uri);
-        await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
+        var uri = param.TextDocument.Uri;
+        var sourceText = param.TextDocument.Text;
+        this.UpdateDocument(uri, sourceText);
+        await this.PublishDiagnosticsAsync(uri);
     }
 
     public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken) =>
@@ -24,17 +25,18 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var uri = param.TextDocument.Uri;
         var change = param.ContentChanges.First();
         var sourceText = change.Text;
-        this.documentRepository.AddOrUpdateDocument(uri, sourceText);
-        this.UpdateDocument(uri);
+        this.UpdateDocument(uri, sourceText);
         await this.PublishDiagnosticsAsync(uri);
     }
 
-    private void UpdateDocument(DocumentUri documentUri)
+    private void UpdateDocument(DocumentUri documentUri, string? sourceText = null)
     {
+        var newSourceText = sourceText is null
+            ? this.documentRepository.GetOrCreateDocument(documentUri)
+            : this.documentRepository.AddOrUpdateDocument(documentUri, sourceText);
         var uri = documentUri.ToUri();
         var oldTree = this.compilation.SyntaxTrees
             .FirstOrDefault(tree => tree.SourceText.Path == uri);
-        var newSourceText = this.documentRepository.GetOrCreateDocument(documentUri);
         this.syntaxTree = SyntaxTree.Parse(newSourceText);
         this.compilation = this.compilation.UpdateSyntaxTree(oldTree, this.syntaxTree);
         this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);

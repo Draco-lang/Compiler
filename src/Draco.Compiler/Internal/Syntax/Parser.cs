@@ -214,26 +214,24 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     internal DeclarationSyntax ParseDeclaration()
     {
-        var isModifier = IsVisibilityModifier(this.Peek());
-        var peekAmount = isModifier ? 1 : 0;
-        switch (this.Peek(peekAmount))
+        var modifier = this.ParseVisibilityModifier();
+        switch (this.Peek())
         {
         case TokenKind.KeywordImport:
             return this.ParseImportDeclaration();
 
         case TokenKind.KeywordFunc:
-            return this.ParseFunctionDeclaration();
+            return this.ParseFunctionDeclaration(modifier);
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration();
+            return this.ParseVariableDeclaration(modifier);
 
         case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
             return this.ParseLabelDeclaration();
 
         default:
         {
-            var modifier = isModifier ? this.Advance() : null;
             var input = this.Synchronize(t => t switch
             {
                 _ when this.IsDeclarationStarter(t) => false,
@@ -321,9 +319,8 @@ internal sealed class Parser
     /// Parses a <see cref="VariableDeclarationSyntax"/>.
     /// </summary>
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
-    private VariableDeclarationSyntax ParseVariableDeclaration()
+    private VariableDeclarationSyntax ParseVariableDeclaration(SyntaxToken? visibility)
     {
-        var visibility = this.ParseVisibilityModifier();
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
         Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);
@@ -347,9 +344,8 @@ internal sealed class Parser
     /// Parsed a function declaration.
     /// </summary>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
-    private FunctionDeclarationSyntax ParseFunctionDeclaration()
+    private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxToken? visibility)
     {
-        var visibility = this.ParseVisibilityModifier();
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
         var name = this.Expect(TokenKind.Identifier);

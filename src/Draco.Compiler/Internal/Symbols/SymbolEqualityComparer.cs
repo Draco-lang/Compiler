@@ -32,11 +32,11 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public bool Equals(TypeSymbol? x, TypeSymbol? y)
     {
-        if (ReferenceEquals(x, y)) return true;
-        if (x is null || y is null) return false;
-
         if (x is TypeVariable xTypeVar) x = Unwrap(xTypeVar);
         if (y is TypeVariable yTypeVar) y = Unwrap(yTypeVar);
+
+        if (ReferenceEquals(x, y)) return true;
+        if (x is null || y is null) return false;
 
         if (x.IsGenericInstance && y.IsGenericInstance)
         {

@@ -55,8 +55,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private Module GetDefiningModule(Symbol symbol)
     {
-        var parentModule = symbol.AncestorChain.OfType<ModuleSymbol>().FirstOrDefault();
-        if (parentModule is null) throw new System.InvalidOperationException();
+        var parentModule = symbol.AncestorChain.OfType<ModuleSymbol>().First();
         var result = Recurse(this.procedure.Assembly.RootModule);
         if (result is null) throw new System.InvalidOperationException();
         return (Module)result;

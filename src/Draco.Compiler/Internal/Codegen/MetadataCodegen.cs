@@ -266,7 +266,6 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Go through procedures
         foreach (var procedure in module.Procedures.Values)
         {
-            currentProcIndex++;
             // Global initializer will get special treatment
             if (ReferenceEquals(module.GlobalInitializer, procedure)) continue;
 
@@ -275,10 +274,12 @@ internal sealed class MetadataCodegen : MetadataWriter
 
             // If this is the entry point, save it
             if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
+            currentProcIndex++;
         }
 
         // Compile global initializer too
         this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
+        currentProcIndex++;
 
         TypeAttributes visibility;
         if (module.Symbol.Visibility == Api.Semantics.Visibility.Public)
@@ -306,9 +307,9 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
 
         // We encode every submodule
-        foreach (var subModule in module.Submodules)
+        foreach (var subModule in module.Submodules.Values)
         {
-            this.EncodeModule((OptimizingIr.Model.Module)subModule.Value, createdModule, currentFieldIndex, currentProcIndex);
+            this.EncodeModule(subModule, createdModule, currentFieldIndex, currentProcIndex);
         }
     }
 

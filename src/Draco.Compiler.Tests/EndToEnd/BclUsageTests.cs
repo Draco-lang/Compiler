@@ -126,4 +126,32 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal("321", stringWriter.ToString());
     }
+
+    [Fact]
+    public void StackUsageWithImplicitGenerics()
+    {
+        var assembly = Compile("""
+            import System.Console;
+            import System.Collections.Generic;
+
+            func main() {
+                val s = Stack();
+                s.Push(1);
+                s.Push(2);
+                s.Push(3);
+                Write(s.Pop());
+                Write(s.Pop());
+                Write(s.Pop());
+            }
+            """);
+
+        var stringWriter = new StringWriter();
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("321", stringWriter.ToString());
+    }
 }

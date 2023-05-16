@@ -51,15 +51,16 @@ public sealed class DracoCompiler : ToolTask
 
     protected override string GenerateResponseFileCommands()
     {
-        var sb = new StringBuilder($"compile --output {this.OutputFile} --root-module {this.ProjectDirectory} --msbuild-diags");
+        var sb = new StringBuilder($"compile");
         sb.AppendLine();
 
         foreach (var file in this.Compile)
         {
-            sb.AppendLine($"-f \"{file}\"");
+            sb.AppendLine(file);
         }
 
         sb.AppendLine();
+        sb.AppendLine($"--output {this.OutputFile} --root-module {this.ProjectDirectory} --msbuild-diags");
 
         foreach (var refefence in this.References)
         {

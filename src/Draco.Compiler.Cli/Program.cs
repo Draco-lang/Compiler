@@ -22,7 +22,7 @@ internal class Program
         var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
         var optionalOutputOption = new Option<FileInfo?>(new string[] { "-o", "--output" }, () => null, "Specifies the (optional) output file");
         var referencesOption = new Option<FileInfo[]>(new string[] { "-r", "--reference" }, Array.Empty<FileInfo>, "Specifies assembly references to use when compiling");
-        var filesOption = new Argument<FileInfo[]>("source files", Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
+        var filesArgument = new Argument<FileInfo[]>("source files", Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
         var rootModuleOption = new Option<DirectoryInfo?>(new string[] { "-m", "--root-module" }, () => null, "Specifies the root module folder of the compiled files");
         var pdbOption = new Option<bool>("--pdb", () => false, "Specifies that a PDB should be generated for debugging");
         var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
@@ -31,58 +31,58 @@ internal class Program
 
         var compileCommand = new Command("compile", "Compiles the Draco program")
         {
-            filesOption,
+            filesArgument,
             outputOption,
             rootModuleOption,
             referencesOption,
             pdbOption,
             msbuildDiagOption,
         };
-        compileCommand.SetHandler(CompileCommand, filesOption, outputOption, rootModuleOption, referencesOption, pdbOption, msbuildDiagOption);
+        compileCommand.SetHandler(CompileCommand, filesArgument, outputOption, rootModuleOption, referencesOption, pdbOption, msbuildDiagOption);
 
         // Run
 
         var runCommand = new Command("run", "Runs the Draco program")
         {
-            filesOption,
+            filesArgument,
             rootModuleOption,
             referencesOption,
             msbuildDiagOption,
         };
-        runCommand.SetHandler(RunCommand, filesOption, rootModuleOption, referencesOption, msbuildDiagOption);
+        runCommand.SetHandler(RunCommand, filesArgument, rootModuleOption, referencesOption, msbuildDiagOption);
 
         // IR code
 
         var irCommand = new Command("ir", "Generates the intermediate-representation of the Draco program")
         {
-            filesOption,
+            filesArgument,
             rootModuleOption,
             optionalOutputOption,
             msbuildDiagOption,
         };
-        irCommand.SetHandler(IrCommand, filesOption, rootModuleOption, optionalOutputOption, msbuildDiagOption);
+        irCommand.SetHandler(IrCommand, filesArgument, rootModuleOption, optionalOutputOption, msbuildDiagOption);
 
         // Symbol tree
 
         var symbolsCommand = new Command("symbols", "Prints the symbol-tree of the program")
         {
-            filesOption,
+            filesArgument,
             rootModuleOption,
             optionalOutputOption,
             msbuildDiagOption,
         };
-        symbolsCommand.SetHandler(SymbolsCommand, filesOption, rootModuleOption, optionalOutputOption, msbuildDiagOption);
+        symbolsCommand.SetHandler(SymbolsCommand, filesArgument, rootModuleOption, optionalOutputOption, msbuildDiagOption);
 
         // Declaration tree
 
         var declarationsCommand = new Command("declarations", "Prints the declarations-tree of the program")
         {
-            filesOption,
+            filesArgument,
             rootModuleOption,
             optionalOutputOption,
             msbuildDiagOption,
         };
-        declarationsCommand.SetHandler(DeclarationsCommand, filesOption, rootModuleOption, optionalOutputOption, msbuildDiagOption);
+        declarationsCommand.SetHandler(DeclarationsCommand, filesArgument, rootModuleOption, optionalOutputOption, msbuildDiagOption);
 
         // Formatting
 

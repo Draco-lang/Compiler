@@ -23,7 +23,7 @@ internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
         {
             var syntax = this.DeclaringSyntax as VariableDeclarationSyntax;
             if (syntax is null) return Api.Semantics.Visibility.Internal; // Default
-            return this.GetVisibilityFromTokenKind(syntax.VisibilityModifier?.Kind);
+            return GetVisibilityFromTokenKind(syntax.VisibilityModifier?.Kind);
         }
     }
 }

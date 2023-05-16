@@ -59,21 +59,21 @@ internal sealed class DeclarationTable
             return new(string.Empty, string.Empty, singleModules);
         }
 
-        var rootName = Path.GetFileName(this.RootPath.TrimEnd(Path.DirectorySeparatorChar));
+        var rootName = this.compilation.SplitRootModulePath.Parts.Span[^1];
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
         {
-            var path = Path.TrimEndingDirectorySeparator(tree.SourceText.Path?.LocalPath ?? string.Empty);
+            var path = SplitPath.FromFilePath(tree.SourceText.Path?.LocalPath ?? string.Empty);
 
             // In memory tree, default to root module
-            if (string.IsNullOrEmpty(path))
+            if (path.IsEmpty)
             {
                 modules.Add(new SingleModuleDeclaration(rootName, rootName, (CompilationUnitSyntax)tree.Root));
                 continue;
             }
 
             // Add error if path doesn't start with root path
-            if (!path.StartsWith(this.RootPath))
+            if (!path.StartsWith(this.compilation.SplitRootModulePath))
             {
                 this.compilation.GlobalDiagnosticBag.Add(
                 Diagnostic.Create(
@@ -86,8 +86,8 @@ internal sealed class DeclarationTable
                 continue;
             }
 
-            var subPath = path[this.RootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
-            var fullName = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(subPath) ?? string.Empty).Replace(Path.DirectorySeparatorChar, '.');
+            var subPath = path.ToModuleSplitPath(this.compilation.SplitRootModulePath);
+            var fullName = string.Join('.', subPath.Parts.ToArray());
 
             // Root module
             if (string.IsNullOrEmpty(fullName)) fullName = rootName;

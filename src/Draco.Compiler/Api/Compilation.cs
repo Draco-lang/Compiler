@@ -5,6 +5,7 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Declarations;
@@ -82,6 +83,8 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     public string RootModulePath { get; }
 
+    internal SplitPath SplitRootModulePath { get; }
+
     /// <summary>
     /// The output path.
     /// </summary>
@@ -149,6 +152,7 @@ public sealed class Compilation : IBinderProvider
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
         this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
+        this.SplitRootModulePath = SplitPath.FromDirectoryPath(this.RootModulePath);
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
         this.rootModule = rootModule;
@@ -273,18 +277,17 @@ public sealed class Compilation : IBinderProvider
 
     internal ModuleSymbol GetModuleForSyntaxTree(SyntaxTree tree)
     {
-        var filePath = Path.TrimEndingDirectorySeparator(tree.SourceText.Path?.LocalPath ?? string.Empty);
-        var rootPath = this.DeclarationTable.RootPath;
+        var filePath = SplitPath.FromFilePath(tree.SourceText.Path?.LocalPath ?? string.Empty);
+        var rootPath = this.SplitRootModulePath;
 
         // If we don't have root path or this tree is in memory only or the tree is outside of the root, return the root module
-        if (string.IsNullOrEmpty(rootPath)
-            || string.IsNullOrEmpty(filePath)
+        if (rootPath.IsEmpty
+            || filePath.IsEmpty
             || !filePath.StartsWith(rootPath)) return this.SourceModule;
 
-        var subPath = filePath[rootPath.Length..].TrimStart(Path.DirectorySeparatorChar);
-        var moduleName = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(subPath) ?? string.Empty).Replace(Path.DirectorySeparatorChar, '.');
-        if (string.IsNullOrEmpty(moduleName)) return this.SourceModule;
-        return this.SourceModule.Lookup(moduleName.Split('.').ToImmutableArray()).OfType<ModuleSymbol>().Single();
+        var subPath = filePath.ToModuleSplitPath(rootPath);
+        if (subPath.IsEmpty) return this.SourceModule;
+        return this.SourceModule.Lookup(subPath.Parts.Span.ToImmutableArray()).OfType<ModuleSymbol>().Single();
     }
 
     internal Binder GetBinder(SyntaxNode syntax) => this.binderCache.GetBinder(syntax);

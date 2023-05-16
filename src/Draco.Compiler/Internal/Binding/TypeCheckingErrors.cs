@@ -90,5 +90,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "type {0} with {1} number of generic parameters could not be found",
         code: Code(9));
+
+    /// <summary>
+    /// The given expression can not be generic instantiated.
+    /// </summary>
+    public static readonly DiagnosticTemplate NotGenericConstruct = DiagnosticTemplate.Create(
+        title: "not a generic construct",
+        severity: DiagnosticSeverity.Error,
+        format: "the given construct can not be generic instantiated",
+        code: Code(10));
 }
 

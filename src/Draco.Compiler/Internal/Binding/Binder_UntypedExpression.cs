@@ -507,8 +507,14 @@ internal partial class Binder
         }
         else
         {
-            // TODO
-            throw new NotImplementedException();
+            // Tried to instantiate something that can not be instantiated
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.NotGenericConstruct,
+                location: syntax.Location));
+
+            // Return a sentinel
+            // NOTE: Is this the right one to return?
+            return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
         }
     }
 

@@ -1098,6 +1098,38 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void InstantiateIllegalConstruct()
+    {
+        // func main() {
+        //     var a = int32<int32>();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration(
+                        "a",
+                        null,
+                        CallExpression(GenericExpression(NameExpression("int32"), NameType("int32")))))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        // NOTE: int32 is technically not defined in value-context, so it adds an additional diagnostic
+        // Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NotGenericConstruct);
+    }
+
+    [Fact]
     public void ExplicitGenericTypeWithWrongNumberOfArgs()
     {
         // import System.Collections.Generic;

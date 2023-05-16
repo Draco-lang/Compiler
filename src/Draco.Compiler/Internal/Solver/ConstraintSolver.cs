@@ -187,6 +187,7 @@ internal sealed class ConstraintSolver
             this.constraintsToRemove.Clear();
             this.constraintsToAdd.Clear();
 
+            // Pass through all constraints
             var advanced = false;
             foreach (var (constraint, solve) in this.constraints)
             {
@@ -207,6 +208,14 @@ internal sealed class ConstraintSolver
         }
 
         // Check for uninferred locals
+        this.CheckForUninferredLocals(diagnostics);
+
+        // And for failed inference
+        this.CheckForIncompleteInference(diagnostics);
+    }
+
+    private void CheckForUninferredLocals(DiagnosticBag diagnostics)
+    {
         foreach (var (local, localType) in this.inferredLocalTypes)
         {
             var unwrappedLocalType = this.Unwrap(localType);
@@ -219,27 +228,28 @@ internal sealed class ConstraintSolver
                     formatArgs: local.Name));
             }
         }
+    }
 
-        // And for failed inference
+    private void CheckForIncompleteInference(DiagnosticBag diagnostics)
+    {
         var inferenceFailed = this.constraints.Count > 0
                            || this.typeVariables.Select(this.Unwrap).Any(t => t.IsTypeVariable);
-        if (inferenceFailed)
+        if (!inferenceFailed) return;
+
+        // Couldn't solve all constraints or infer all variables
+        diagnostics.Add(Diagnostic.Create(
+            template: TypeCheckingErrors.InferenceIncomplete,
+            location: this.Context.Location,
+            formatArgs: this.ContextName));
+
+        // To avoid major trip-ups later, we resolve all constraints to some sentinel value
+        foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
+
+        // We also unify type variables with the error type
+        foreach (var typeVar in this.typeVariables)
         {
-            // Couldn't solve all constraints or variables
-            diagnostics.Add(Diagnostic.Create(
-                template: TypeCheckingErrors.InferenceIncomplete,
-                location: this.Context.Location,
-                formatArgs: this.ContextName));
-
-            // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-            foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
-
-            // We also unify type variables with the error type
-            foreach (var typeVar in this.typeVariables)
-            {
-                var unwrapped = this.Unwrap(typeVar);
-                if (unwrapped is TypeVariable unwrappedTv) this.Unify(unwrappedTv, IntrinsicSymbols.ErrorType);
-            }
+            var unwrapped = this.Unwrap(typeVar);
+            if (unwrapped is TypeVariable unwrappedTv) this.Unify(unwrappedTv, IntrinsicSymbols.ErrorType);
         }
     }
 

@@ -21,9 +21,7 @@ internal sealed partial class AssemblyCodegen
         bool emitSequencePoints)
     {
         var assemblyCodegen = new AssemblyCodegen(compilation);
-        var root = new Module(compilation.SourceModule, assemblyCodegen.assembly, null);
-        assemblyCodegen.assembly.AddRootModule(root);
-        var moduleCodegen = new ModuleCodegen(root, compilation, emitSequencePoints);
+        var moduleCodegen = new ModuleCodegen(compilation, (Module)assemblyCodegen.assembly.RootModule, emitSequencePoints);
         compilation.SourceModule.Accept(moduleCodegen);
         assemblyCodegen.Complete();
         return assemblyCodegen.assembly;
@@ -33,7 +31,7 @@ internal sealed partial class AssemblyCodegen
 
     private AssemblyCodegen(Compilation compilation)
     {
-        this.assembly = new()
+        this.assembly = new(compilation.SourceModule)
         {
             Name = compilation.AssemblyName,
         };

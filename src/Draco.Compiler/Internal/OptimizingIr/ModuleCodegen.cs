@@ -15,15 +15,15 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 internal sealed class ModuleCodegen : SymbolVisitor
 {
     private readonly FunctionBodyCodegen globalInitializer;
-    private readonly Module module;
     private readonly Compilation compilation;
+    private readonly Module module;
     private readonly bool emitSequencePoints;
 
-    public ModuleCodegen(Module module, Compilation compilation, bool emitSequencePoints)
+    public ModuleCodegen(Compilation compilation, Module module, bool emitSequencePoints)
     {
+        this.compilation = compilation;
         this.module = module;
         this.globalInitializer = new(module.GlobalInitializer);
-        this.compilation = compilation;
         this.emitSequencePoints = emitSequencePoints;
     }
 
@@ -81,7 +81,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         foreach (var subModuleSymbol in moduleSymbol.Members.OfType<ModuleSymbol>())
         {
             var module = this.module.DefineModule(subModuleSymbol);
-            var moduleCodegen = new ModuleCodegen(module, this.compilation, this.emitSequencePoints);
+            var moduleCodegen = new ModuleCodegen(this.compilation, module, this.emitSequencePoints);
             subModuleSymbol.Accept(moduleCodegen);
         }
 

@@ -55,26 +55,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private Module GetDefiningModule(Symbol symbol)
     {
-        var parentModules = symbol.AncestorChain.OfType<ModuleSymbol>().Reverse().Select(x => x.FullName).ToList();
-        var last = parentModules.LastOrDefault();
-        if (last is null) throw new System.InvalidOperationException();
-        var currentModule = this.procedure.DeclaringModule.Symbol;
+        var parentModule = symbol.AncestorChain.OfType<ModuleSymbol>().FirstOrDefault();
+        if (parentModule is null) throw new System.InvalidOperationException();
+        var result = Recurse(this.procedure.Assembly.RootModule);
+        if (result is null) throw new System.InvalidOperationException();
+        return (Module)result;
 
-        // If the full name of the last of parent modules is the same as the full name of the module we are currently in we can return this module
-        if (last == currentModule.FullName) return this.procedure.DeclaringModule;
-        if (!currentModule.FullName.StartsWith(parentModules.First())) throw new System.InvalidOperationException();
-        return Recurse((Module)this.procedure.Assembly.RootModule);
-
-        Module Recurse(Module parent)
+        IModule? Recurse(IModule parent)
         {
-            var index = parentModules!.IndexOf(parent.Symbol.FullName);
-            if (index == -1) throw new System.InvalidOperationException();
-            if (parentModules.Count() - 1 == index) return parent;
-            foreach (var subModule in parent.Submodules.Values.Cast<Module>())
+            if (parent.Symbol == parentModule) return parent;
+            foreach (var subModule in parent.Submodules.Values)
             {
-                if (subModule.Symbol.FullName == parentModules[index + 1]) return Recurse(subModule);
+                var result = Recurse(subModule);
+                if (result is not null) return result;
             }
-            throw new System.InvalidOperationException();
+            return null;
         }
     }
 

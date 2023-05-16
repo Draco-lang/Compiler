@@ -295,11 +295,13 @@ internal sealed class ConstraintSolver
     /// <summary>
     /// Allocates a type-variable.
     /// </summary>
+    /// <param name="track">True, if the type-variable should be tracked during inference.
+    /// If not tracked, not substituting won't result in an error.</param>
     /// <returns>A new, unique type-variable.</returns>
-    public TypeVariable AllocateTypeVariable()
+    public TypeVariable AllocateTypeVariable(bool track = true)
     {
         var typeVar = new TypeVariable(this, this.typeVariables.Count);
-        this.typeVariables.Add(typeVar);
+        if (track) this.typeVariables.Add(typeVar);
         return typeVar;
     }
 

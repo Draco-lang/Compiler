@@ -389,6 +389,29 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
+    public void GenericParameterRedefinitionError()
+    {
+        // func foo<T, T>() {}
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            GenericParameterList(GenericParameter("T"), GenericParameter("T")),
+            ParameterList(),
+            null,
+            BlockFunctionBody())));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diagnostics);
+        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+    }
+
+    [Fact]
     public void FuncOverloadsGlobalVar()
     {
         // var b: int32;

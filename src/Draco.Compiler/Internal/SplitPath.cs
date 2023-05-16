@@ -38,7 +38,7 @@ internal readonly struct SplitPath
     public SplitPath(ReadOnlyMemory<string> path)
     {
         this.Parts = path;
-        this.IsEmpty = this.Parts.Length == 1 && string.IsNullOrEmpty(this.Parts.Span[0]);
+        this.IsEmpty = Parts.Length == 0 || (this.Parts.Length == 1 && string.IsNullOrEmpty(this.Parts.Span[0]));
     }
 
     /// <summary>

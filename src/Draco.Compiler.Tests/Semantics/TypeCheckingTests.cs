@@ -1225,4 +1225,111 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.InferenceIncomplete);
     }
+
+    [Fact]
+    public void ExactMatchOverloadPriorityOverGeneric()
+    {
+        // func identity<T>(x: T): T = x;
+        // func identity(x: int32): int32 = x;
+        //
+        // func main() {
+        //     identity(0);
+        //     identity<int32>(0);
+        //     identity(true);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "identity",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(Parameter("x", NameType("T"))),
+                NameType("T"),
+                InlineFunctionBody(NameExpression("x"))),
+            FunctionDeclaration(
+                "identity",
+                ParameterList(Parameter("x", NameType("int32"))),
+                NameType("int32"),
+                InlineFunctionBody(NameExpression("x"))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("identity"), LiteralExpression(0))),
+                    ExpressionStatement(CallExpression(
+                        GenericExpression(NameExpression("identity"), NameType("int32")),
+                        LiteralExpression(0))),
+                    ExpressionStatement(CallExpression(NameExpression("identity"), LiteralExpression(true)))))));
+
+        var genericIdentitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var int32IdentitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
+        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
+        var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var genericIdentitySym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(genericIdentitySyntax));
+        var int32IdentitySym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(int32IdentitySyntax));
+        var call1Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call1Syntax.Function));
+        var call2Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call2Syntax.Function));
+        var call3Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call3Syntax.Function));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(int32IdentitySym, call1Sym);
+        Assert.True(call2Sym.IsGenericInstance);
+        Assert.True(call3Sym.IsGenericInstance);
+        Assert.Equal(genericIdentitySym, call2Sym.GenericDefinition);
+        Assert.Equal(genericIdentitySym, call3Sym.GenericDefinition);
+    }
+
+    [Fact]
+    public void AmbiguousOverload()
+    {
+        // func foo<T>(x: T, y: int32) {}
+        // func foo<T>(x: int32, y: T) {}
+        //
+        // func main() {
+        //     foo(0, 0);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(Parameter("x", NameType("T")), Parameter("y", NameType("int32"))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "foo",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0), LiteralExpression(0)))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.AmbiguousOverloadedCall);
+    }
 }

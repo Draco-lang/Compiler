@@ -285,7 +285,7 @@ public sealed class Compilation : IBinderProvider
             || filePath.IsEmpty
             || !filePath.StartsWith(rootPath)) return this.SourceModule;
 
-        var subPath = filePath.ToModuleSplitPath(rootPath);
+        var subPath = filePath.RemovePrefix(rootPath);
         if (subPath.IsEmpty) return this.SourceModule;
         return this.SourceModule.Lookup(subPath.Parts.Span.ToImmutableArray()).OfType<ModuleSymbol>().Single();
     }

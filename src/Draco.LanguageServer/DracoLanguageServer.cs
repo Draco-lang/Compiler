@@ -71,7 +71,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private void CreateCompilation()
     {
         var rootPath = this.rootUri.LocalPath;
-        var syntaxTrees = ImmutableArray.Create(Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories).Select(x => SyntaxTree.Parse(SourceText.FromFile(x))).ToArray());
+        var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories).Select(x => SyntaxTree.Parse(SourceText.FromFile(x))).ToImmutableArray();
 
         this.compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,

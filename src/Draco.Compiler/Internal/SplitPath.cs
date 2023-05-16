@@ -42,15 +42,15 @@ internal readonly struct SplitPath
     }
 
     /// <summary>
-    /// Gets a submodules path, excluding the root module, determinig the root module from the <paramref name="root"/>.
+    /// Removes a <paramref name="prefix"/> from this path.
     /// </summary>
-    /// <param name="root">The root path from which the module path will be determined.</param>
-    /// <returns>The new created <see cref="SplitPath"/> holding information about module path.</returns>
+    /// <param name="prefix">The prefix that will be removed.</param>
+    /// <returns>The new created <see cref="SplitPath"/> without the <paramref name="prefix"/>.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public SplitPath ToModuleSplitPath(SplitPath root)
+    public SplitPath RemovePrefix(SplitPath prefix)
     {
-        if (!this.StartsWith(root)) throw new InvalidOperationException();
-        return new SplitPath(this.Parts[root.Parts.Length..]);
+        if (!this.StartsWith(prefix)) throw new InvalidOperationException();
+        return new SplitPath(this.Parts[prefix.Parts.Length..]);
     }
 
     /// <summary>

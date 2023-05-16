@@ -86,7 +86,7 @@ internal sealed class DeclarationTable
                 continue;
             }
 
-            var subPath = path.ToModuleSplitPath(this.compilation.SplitRootModulePath);
+            var subPath = path.RemovePrefix(this.compilation.SplitRootModulePath);
             var fullName = string.Join('.', subPath.Parts.ToArray());
 
             // Root module

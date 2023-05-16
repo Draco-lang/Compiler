@@ -32,7 +32,8 @@ internal sealed class Assembly : IAssembly
     }
     IProcedure? IAssembly.EntryPoint => this.EntryPoint;
 
-    public IModule RootModule => this.rootModule;
+    public Module RootModule => this.rootModule;
+    IModule IAssembly.RootModule => this.RootModule;
 
     public ImmutableArray<IProcedure> GetAllProcedures() => this.rootModule.GetProcedures();
 

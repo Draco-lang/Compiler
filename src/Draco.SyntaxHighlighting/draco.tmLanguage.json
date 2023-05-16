@@ -56,7 +56,7 @@
       ]
     },
     "visibility-keywords": {
-      "match": "\\b(internal|public)",
+      "match": "\\b(internal|public)\\b",
       "captures": {
         "1": {
           "name": "keyword.other.draco"

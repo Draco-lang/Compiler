@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;

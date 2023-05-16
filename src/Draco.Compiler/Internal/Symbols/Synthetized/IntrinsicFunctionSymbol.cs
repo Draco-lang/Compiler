@@ -41,8 +41,6 @@ internal sealed class IntrinsicFunctionSymbol : FunctionSymbol
     public static FunctionSymbol ComparisonOperator(TokenKind token, TypeSymbol leftType, TypeSymbol rightType) =>
         new IntrinsicFunctionSymbol(GetComparisonOperatorName(token), new[] { leftType, rightType }, IntrinsicSymbols.Bool);
 
-    // TODO: Is this ok?
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray<TypeParameterSymbol>.Empty;
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
 
     public override TypeSymbol ReturnType { get; }

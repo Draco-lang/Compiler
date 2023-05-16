@@ -3,7 +3,6 @@ using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

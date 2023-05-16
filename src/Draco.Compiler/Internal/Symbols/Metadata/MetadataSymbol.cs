@@ -1,11 +1,6 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
-using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;

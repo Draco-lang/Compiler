@@ -13,13 +13,28 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqualityComparer<TypeSymbol>
 {
+    [Flags]
+    private enum ComparerFlags
+    {
+        None = 0,
+        EquateGenericParameters = 1 << 0,
+    }
+
     /// <summary>
     /// A default symbol equality comparer.
     /// </summary>
-    public static SymbolEqualityComparer Default { get; } = new();
+    public static SymbolEqualityComparer Default { get; } = new(ComparerFlags.None);
 
-    private SymbolEqualityComparer()
+    /// <summary>
+    /// A symbol equality comparer that can be used for signature matching.
+    /// </summary>
+    public static SymbolEqualityComparer SignatureMatch { get; } = new(ComparerFlags.EquateGenericParameters);
+
+    private readonly ComparerFlags flags;
+
+    private SymbolEqualityComparer(ComparerFlags flags)
     {
+        this.flags = flags;
     }
 
     public bool Equals(Symbol? x, Symbol? y)
@@ -59,6 +74,8 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
             (FunctionTypeSymbol f1, FunctionTypeSymbol f2) =>
                    f1.Parameters.SequenceEqual(f2.Parameters, this)
                 && this.Equals(f1.ReturnType, f2.ReturnType),
+            (TypeParameterSymbol, TypeParameterSymbol)
+                when this.flags.HasFlag(ComparerFlags.EquateGenericParameters) => true,
             _ => false,
         };
     }

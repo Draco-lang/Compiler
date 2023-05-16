@@ -812,6 +812,38 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void IllegalOverloadingWithGenerics()
+    {
+        // func foo<T>(x: int32, y: T) { }
+        // func foo<T>(x: int32, y: T) { }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "foo",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
+    }
+
+    [Fact]
     public void IllegalNestedOverloading()
     {
         // func foo(x: int32) {

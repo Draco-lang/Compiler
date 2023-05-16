@@ -180,7 +180,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
             var p1 = f1.Parameters[i];
             var p2 = f2.Parameters[i];
 
-            if (!SymbolEqualityComparer.Default.Equals(p1.Type, p2.Type)) return false;
+            if (!SymbolEqualityComparer.SignatureMatch.Equals(p1.Type, p2.Type)) return false;
         }
 
         return true;

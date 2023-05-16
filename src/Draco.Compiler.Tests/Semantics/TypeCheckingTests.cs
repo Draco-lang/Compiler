@@ -1101,7 +1101,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     public void InstantiateIllegalConstruct()
     {
         // func main() {
-        //     var a = int32<int32>();
+        //     var a = 0;
+        //     a<int32>()
         // }
 
         // Arrange
@@ -1111,10 +1112,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(
-                        "a",
-                        null,
-                        CallExpression(GenericExpression(NameExpression("int32"), NameType("int32")))))))));
+                    DeclarationStatement(VariableDeclaration("a", null, LiteralExpression(0))),
+                    ExpressionStatement(CallExpression(GenericExpression(NameExpression("a"), NameType("int32"))))))));
 
         // Act
         var compilation = Compilation.Create(
@@ -1124,8 +1123,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
 
         // Assert
-        // NOTE: int32 is technically not defined in value-context, so it adds an additional diagnostic
-        // Assert.Single(diags);
+        Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.NotGenericConstruct);
     }
 

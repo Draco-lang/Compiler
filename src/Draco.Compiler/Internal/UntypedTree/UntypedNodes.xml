@@ -155,12 +155,6 @@
     <Field Name="Receiver" Type="UntypedExpression?"/>
   </Node>
 
-  <Node Name="UntypedPropertySetExpression" Base="UntypedExpression">
-    <Field Name="Setter" Type="FunctionSymbol" />
-    <Field Name="Receiver" Type="UntypedExpression?"/>
-    <Field Name="Value" Type="UntypedExpression"/>
-  </Node>
-
   <Node Name="UntypedParameterExpression" Base="UntypedExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
@@ -234,6 +228,12 @@
   <Node Name="UntypedFieldLvalue" Base="UntypedLvalue">
     <Field Name="Reciever" Type="UntypedExpression?"/>
     <Field Name="Field" Type="FieldSymbol" />
+  </Node>
+
+  <Node Name="UntypedPropertySetLvalue" Base="UntypedLvalue">
+    <Field Name="Setter" Type="FunctionSymbol" />
+    <Field Name="Receiver" Type="UntypedExpression?"/>
+    <Field Name="Value" Type="UntypedExpression"/>
   </Node>
 
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">

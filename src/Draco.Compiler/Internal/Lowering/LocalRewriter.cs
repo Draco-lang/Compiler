@@ -336,7 +336,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         //
         // property_get()
 
-        return new BoundCallExpression(null, node.Receiver, node.Getter, ImmutableArray<BoundExpression>.Empty);
+        return new BoundCallExpression(node.Syntax, node.Receiver, node.Getter, ImmutableArray<BoundExpression>.Empty);
     }
 
     // Utility to store an expression to a temporary variable

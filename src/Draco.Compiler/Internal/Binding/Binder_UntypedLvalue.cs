@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -47,13 +48,14 @@ internal partial class Binder
         }
     }
 
-    private UntypedLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
-    {
-        var expr = this.BindMemberExpression(syntax, constraints, diagnostics);
-        if (expr is UntypedMemberExpression member) return new UntypedMemberLvalue(syntax, member);
-        else if (expr is UntypedFieldExpression field) return new UntypedFieldLvalue(syntax, null, field.Field);
-        else throw new InvalidOperationException();
-    }
+    private UntypedLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        this.BindMemberExpression(syntax, constraints, diagnostics) switch
+        {
+            UntypedMemberExpression member => new UntypedMemberLvalue(syntax, member),
+            UntypedFieldExpression field => new UntypedFieldLvalue(syntax, null, field.Field),
+            _ when this.LookupValueSymbol(syntax.Member.Text, syntax, diagnostics) is PropertySymbol prop => new UntypedPropertySetLvalue(syntax, prop.Setter, null, ),
+            _ => throw new InvalidOperationException(),
+        };
 
     private UntypedLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

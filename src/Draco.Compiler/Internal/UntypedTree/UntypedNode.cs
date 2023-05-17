@@ -94,6 +94,11 @@ internal partial class UntypedFieldExpression
     public override TypeSymbol Type => this.Field.Type;
 }
 
+internal partial class UntypedPropertyGetExpression
+{
+    public override TypeSymbol Type => this.Getter.ReturnType;
+}
+
 internal partial class UntypedReferenceErrorExpression
 {
     public override TypeSymbol? Type => IntrinsicSymbols.ErrorType;

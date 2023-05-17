@@ -235,7 +235,9 @@ internal partial class Binder
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
-            if (member is PropertySymbol prop) return null; // TODO
+            if (member is PropertySymbol prop) return prop.Getter is null
+                    ? throw new NotImplementedException()
+                    : new BoundPropertyGetExpression(mem.Syntax, prop.Getter, left);
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }
         else

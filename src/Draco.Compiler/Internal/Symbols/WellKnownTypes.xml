@@ -9,6 +9,7 @@
   <Type Name="System.Int32" Assembly="System.Runtime" Symbol="IntrinsicSymbols.Int32" />
   <Type Name="System.String" Assembly="System.Runtime" Symbol="IntrinsicSymbols.String" />
   <Type Name="System.Object" Assembly="System.Runtime" Symbol="IntrinsicSymbols.Object" />
+  <Type Name="System.Type" Assembly="System.Runtime" />
   <Type Name="System.Array" Assembly="System.Runtime" />
 
 </WellKnownTypes>

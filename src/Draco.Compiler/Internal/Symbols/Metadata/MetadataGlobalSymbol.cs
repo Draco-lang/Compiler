@@ -36,7 +36,7 @@ internal sealed class MetadataGlobalSymbol : GlobalSymbol
     private TypeSymbol Build()
     {
         // Decode signature
-        var decoder = new SignatureDecoder(this.Assembly.Compilation);
+        var decoder = new TypeProvider(this.Assembly.Compilation);
         return this.fieldDefinition.DecodeSignature(decoder, default);
     }
 }

@@ -91,7 +91,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
             this.setter = new MetadataMethodSymbol(this.ContainingSymbol, setter);
             if (this.type is null)
             {
-                var decoder = new SignatureDecoder(this.Assembly.Compilation);
+                var decoder = new TypeProvider(this.Assembly.Compilation);
                 this.type = setter.DecodeSignature(decoder, default!).ParameterTypes.First();
             }
         }

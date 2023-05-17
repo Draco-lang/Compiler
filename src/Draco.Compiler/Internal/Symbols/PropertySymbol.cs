@@ -8,6 +8,7 @@ internal abstract class PropertySymbol : VariableSymbol
     public abstract FunctionSymbol? Setter { get; }
 
     public override bool IsMutable => !(this.Setter is null);
+    public abstract bool IsIndexer { get; }
 
     public override ISymbol ToApiSymbol() => new Api.Semantics.PropertySymbol(this);
 

@@ -45,8 +45,6 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // TODO: nested-types
-        // TODO: static properties
-        // TODO: nonstatic properties
 
         // Methods
         foreach (var methodHandle in this.typeDefinition.GetMethods())
@@ -90,7 +88,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
             //// Add it
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
-                propertyDefinition: propDef);
+                propertyDefinition: propDef,
+                this.typeDefinition.GetCustomAttributes().Select(x => this.MetadataReader.GetCustomAttribute(x).DecodeValue<string>()).OfType<DefaultMemberAttribute>().Single().MemberName);
             result.Add(propSym);
         }
 

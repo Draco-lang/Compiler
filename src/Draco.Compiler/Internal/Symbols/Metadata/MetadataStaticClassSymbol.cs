@@ -89,7 +89,8 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             //// Add it
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
-                propertyDefinition: propDef);
+                propertyDefinition: propDef,
+                this.typeDefinition.GetCustomAttributes().OfType<DefaultMemberAttribute>().Single().MemberName);
             if (propSym.IsStatic) result.Add(propSym);
         }
 

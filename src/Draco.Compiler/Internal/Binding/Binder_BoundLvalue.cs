@@ -1,4 +1,5 @@
 using System;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -43,7 +44,10 @@ internal partial class Binder
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
             if (member is FieldSymbol field) return new BoundFieldLvalue(mem.Syntax, left, field);
-            throw new InvalidOperationException();
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalLvalue,
+                location: mem.Syntax?.Location));
+            return new BoundIllegalLvalue(mem.Syntax);
         }
         else
         {

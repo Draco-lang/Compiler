@@ -48,6 +48,9 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
     }
     private bool isStatic = false;
 
+    public override bool IsIndexer => this.Name == this.defaultMemberName;
+    private readonly string defaultMemberName;
+
     public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
 
     public override Symbol ContainingSymbol { get; }
@@ -64,10 +67,11 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly PropertyDefinition propertyDefinition;
-    public MetadataPropertySymbol(Symbol containingSymbol, PropertyDefinition propertyDefinition)
+    public MetadataPropertySymbol(Symbol containingSymbol, PropertyDefinition propertyDefinition, string defaultMemberName)
     {
         this.ContainingSymbol = containingSymbol;
         this.propertyDefinition = propertyDefinition;
+        this.defaultMemberName = defaultMemberName;
     }
 
     private void Build()

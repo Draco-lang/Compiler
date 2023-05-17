@@ -74,8 +74,8 @@ public sealed class MemberAccessCompletionProvider : CompletionProvider
                        || currentContexts.HasFlag(CompletionContext.Import) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
 
-        IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Variable),
+        IVariableSymbol var when currentContexts.HasFlag(CompletionContext.Expression) =>
+            CompletionItem.Create(symbols.First().Name, range, symbols, var is PropertySymbol ? CompletionKind.Property : CompletionKind.Variable),
 
         FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Function),

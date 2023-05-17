@@ -512,10 +512,10 @@ internal partial class Binder
         case GlobalSymbol global:
             return new UntypedGlobalExpression(syntax, global);
         case FieldSymbol field:
-            return new UntypedFieldExpression(syntax, field);
+            return new UntypedFieldExpression(syntax, null, field);
         case PropertySymbol prop:
             if (prop.Getter is null) throw new NotImplementedException();
-            return new UntypedPropertyGetExpression(syntax, prop.Getter, null); // TODO
+            return new UntypedPropertyGetExpression(syntax, prop.Getter, null);
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
         case OverloadSymbol overload:

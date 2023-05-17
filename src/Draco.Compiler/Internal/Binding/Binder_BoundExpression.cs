@@ -101,7 +101,7 @@ internal partial class Binder
         new BoundGlobalExpression(global.Syntax, global.Global);
 
     private BoundExpression TypeFieldExpression(UntypedFieldExpression field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundFieldExpression(field.Syntax, null, field.Field);
+        new BoundFieldExpression(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
 
     private BoundExpression TypePropertyGetExpression(UntypedPropertyGetExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundPropertyGetExpression(prop.Syntax, prop.Getter, prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics));

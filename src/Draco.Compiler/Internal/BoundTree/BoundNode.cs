@@ -185,11 +185,6 @@ internal partial class BoundGlobalLvalue
 
 internal partial class BoundFieldLvalue
 {
-    public override TypeSymbol Type => this.MemberAccess.Type;
-}
-
-internal partial class BoundStaticFieldLvalue
-{
     public override TypeSymbol Type => this.Field.Type;
 }
 

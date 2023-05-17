@@ -250,10 +250,7 @@
   </Node>
 
   <Node Name="BoundFieldLvalue" Base="BoundLvalue">
-    <Field Name="MemberAccess" Type="BoundMemberExpression" />
-  </Node>
-
-  <Node Name="BoundStaticFieldLvalue" Base="BoundLvalue">
+    <Field Name="Receiver" Type="BoundExpression?"/>
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 

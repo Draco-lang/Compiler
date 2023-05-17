@@ -146,6 +146,7 @@
   </Node>
 
   <Node Name="UntypedFieldExpression" Base="UntypedExpression">
+    <Field Name="Reciever" Type="UntypedExpression?"/>
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
@@ -231,12 +232,11 @@
   </Node>
 
   <Node Name="UntypedFieldLvalue" Base="UntypedLvalue">
-    <Field Name="MemberAccess" Type="UntypedMemberExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
+    <Field Name="Reciever" Type="UntypedExpression?"/>
+    <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
-  <Node Name="UntypedStaticFieldLvalue" Base="UntypedLvalue">
-    <Field Name="Field" Type="FieldSymbol" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">
+    <Field Name="Expression" Type="UntypedMemberExpression"/>
   </Node>
 </Tree>

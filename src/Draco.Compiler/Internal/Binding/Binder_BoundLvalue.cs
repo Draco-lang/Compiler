@@ -22,7 +22,7 @@ internal partial class Binder
         UntypedLocalLvalue local => this.TypeLocalLvalue(local, constraints, diagnostics),
         UntypedGlobalLvalue global => this.TypeGlobalLvalue(global, constraints, diagnostics),
         UntypedFieldLvalue field => this.TypeFieldLvalue(field, constraints, diagnostics),
-        UntypedStaticFieldLvalue staticField => this.TypeStaticFieldLvalue(staticField, constraints, diagnostics),
+        UntypedMemberLvalue member => this.TypeMemberLvalue(member, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };
 
@@ -33,8 +33,12 @@ internal partial class Binder
         new BoundGlobalLvalue(global.Syntax, global.Global);
 
     private BoundLvalue TypeFieldLvalue(UntypedFieldLvalue field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundFieldLvalue(field.Syntax, (BoundMemberExpression)this.TypeMemberExpression(field.MemberAccess, constraints, diagnostics));
+        new BoundFieldLvalue(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
 
-    private BoundLvalue TypeStaticFieldLvalue(UntypedStaticFieldLvalue staticField, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundStaticFieldLvalue(staticField.Syntax, staticField.Field);
+    private BoundLvalue TypeMemberLvalue(UntypedMemberLvalue member, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        this.TypeMemberExpression(member.Expression, constraints, diagnostics) switch
+        {
+            BoundFieldExpression field => new BoundFieldLvalue(field.Syntax, field.Receiver, field.Field),
+            _ => throw new InvalidOperationException(),
+        };
 }

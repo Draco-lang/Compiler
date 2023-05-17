@@ -50,8 +50,8 @@ internal partial class Binder
     private UntypedLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var expr = this.BindMemberExpression(syntax, constraints, diagnostics);
-        if (expr is UntypedMemberExpression member) return new UntypedFieldLvalue(syntax, member, member.MemberType);
-        else if (expr is UntypedFieldExpression field) return new UntypedStaticFieldLvalue(syntax, field.Field, field.Type);
+        if (expr is UntypedMemberExpression member) return new UntypedMemberLvalue(syntax, member);
+        else if (expr is UntypedFieldExpression field) return new UntypedFieldLvalue(syntax, null, field.Field);
         else throw new InvalidOperationException();
     }
 

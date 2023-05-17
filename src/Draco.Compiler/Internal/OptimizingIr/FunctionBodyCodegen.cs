@@ -139,9 +139,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
     public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
     public override IOperand VisitFieldLvalue(BoundFieldLvalue node) =>
-        new FieldAccess(this.Compile(node.MemberAccess.Receiver), (FieldSymbol)node.MemberAccess.Member);
-    public override IOperand VisitStaticFieldLvalue(BoundStaticFieldLvalue node) =>
-        new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field);
+        node.Receiver is null
+        ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
+        : new FieldAccess(this.Compile(node.Receiver), node.Field);
     public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) =>
         new ArrayAccess(this.Compile(node.Array), node.Indices.Select(this.Compile).ToImmutableArray());
 
@@ -397,11 +397,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
-    public override IOperand VisitMemberExpression(BoundMemberExpression node) =>
-        new FieldAccess(this.Compile(node.Receiver), (FieldSymbol)node.Member);
-
     public override IOperand VisitFieldExpression(BoundFieldExpression node) =>
-        new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field);
+        node.Receiver is null
+        ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
+        : new FieldAccess(this.Compile(node.Receiver), node.Field);
 
     // TODO: Do something with this block
 

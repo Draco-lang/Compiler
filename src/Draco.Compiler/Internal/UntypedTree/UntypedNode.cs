@@ -137,6 +137,16 @@ internal partial class UntypedIllegalLvalue
     public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
+internal partial class UntypedFieldLvalue
+{
+    public override TypeSymbol Type => this.Field.Type;
+}
+
+internal partial class UntypedMemberLvalue
+{
+    public override TypeSymbol Type => this.Expression.MemberType;
+}
+
 internal partial class UntypedLvalue
 {
     public abstract TypeSymbol Type { get; }

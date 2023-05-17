@@ -78,5 +78,5 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Unit>, I
     public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
     public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
     public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;
-    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type) => UnknownType;
+    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type) => PrimitiveTypeCode.Void;
 }

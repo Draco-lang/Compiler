@@ -76,6 +76,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
             result.Add(fieldSym);
         }
 
+        var defaultName = this.GetDefaultMemberAttributeName();
+        if (defaultName == null) throw new System.InvalidOperationException();
+
         // Properties
         foreach (var propHandle in this.typeDefinition.GetProperties())
         {
@@ -89,11 +92,35 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef,
-                this.typeDefinition.GetCustomAttributes().Select(x => this.MetadataReader.GetCustomAttribute(x).DecodeValue<string>()).OfType<DefaultMemberAttribute>().Single().MemberName);
+                defaultMemberName: defaultName);
             result.Add(propSym);
         }
 
         // Done
         return result.ToImmutable();
+    }
+
+    private string? GetDefaultMemberAttributeName()
+    {
+        foreach (var attributeHandle in this.typeDefinition.GetCustomAttributes())
+        {
+            var attribute = this.MetadataReader.GetCustomAttribute(attributeHandle);
+            var typeProvider = new TypeProvider(this.DeclaringCompilation!);
+            switch (attribute.Constructor.Kind)
+            {
+            case HandleKind.MethodDefinition:
+                var method = this.MetadataReader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
+                var methodType = this.MetadataReader.GetTypeDefinition(method.GetDeclaringType());
+                if (this.MetadataReader.GetString(methodType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                break;
+            case HandleKind.MemberReference:
+                var member = this.MetadataReader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+                var memberType = this.MetadataReader.GetTypeReference((TypeReferenceHandle)member.Parent);
+                if (this.MetadataReader.GetString(memberType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                break;
+            default: throw new System.InvalidOperationException();
+            };
+        }
+        return "";
     }
 }

@@ -22,7 +22,6 @@ internal readonly struct SplitPath
         var split = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
         if (split.Length == 0) return new SplitPath(ReadOnlyMemory<string>.Empty);
         return new SplitPath(split.AsMemory()[..^1]);
-
     }
 
     /// <summary>

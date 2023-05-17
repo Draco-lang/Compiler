@@ -12,6 +12,11 @@ namespace Draco.Compiler.Internal;
 internal readonly record struct SplitPath(ReadOnlyMemory<string> Parts)
 {
     /// <summary>
+    /// An empty path.
+    /// </summary>
+    public static SplitPath Empty = new(ReadOnlyMemory<string>.Empty);
+
+    /// <summary>
     /// Creates a <see cref="SplitPath"/> from a file path, excluding the file name.
     /// </summary>
     /// <param name="path">The file path from which to create the <see cref="SplitPath"/>.</param>

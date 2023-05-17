@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace Draco.Compiler.Internal;
@@ -11,6 +12,8 @@ internal readonly struct SplitPath
     public ReadOnlyMemory<string> Parts { get; }
 
     public bool IsEmpty => this.Parts.Length == 0;
+
+    public static SplitPath Empty => new SplitPath();
 
     /// <summary>
     /// Creates a <see cref="SplitPath"/> from file excluding file name.
@@ -44,12 +47,14 @@ internal readonly struct SplitPath
     /// Removes a <paramref name="prefix"/> from this path.
     /// </summary>
     /// <param name="prefix">The prefix that will be removed.</param>
-    /// <returns>The new created <see cref="SplitPath"/> without the <paramref name="prefix"/>.</returns>
+    /// <param name="includeLastPart">Specifies if the last <see cref="SplitPath.Parts"/> of <paramref name="prefix"/> should be included in the new <see cref="SplitPath"/>.</param>
+    /// <returns>The new created <see cref="SplitPath"/>.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public SplitPath RemovePrefix(SplitPath prefix)
+    public SplitPath RemovePrefix(SplitPath prefix, bool includeLastPart = false)
     {
         if (!this.StartsWith(prefix)) throw new InvalidOperationException();
-        return new SplitPath(this.Parts[prefix.Parts.Length..]);
+        var removeLength = includeLastPart ? prefix.Parts.Length - 1 : prefix.Parts.Length;
+        return new SplitPath(this.Parts[removeLength..]);
     }
 
     /// <summary>
@@ -58,4 +63,20 @@ internal readonly struct SplitPath
     /// <param name="other">The other <see cref="SplitPath"/> this path should start with.</param>
     /// <returns>True, if this path starts with <paramref name="other"/>, otherwise false.</returns>
     public bool StartsWith(SplitPath other) => this.Parts.Span.StartsWith(other.Parts.Span);
+
+    public static bool operator ==(SplitPath s1, SplitPath s2)
+    {
+        return s1.Equals(s2);
+    }
+
+    public static bool operator !=(SplitPath s1, SplitPath s2)
+    {
+        return !s1.Equals(s2);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not SplitPath path) return false;
+        return path.Parts.Span.SequenceEqual(this.Parts.Span);
+    }
 }

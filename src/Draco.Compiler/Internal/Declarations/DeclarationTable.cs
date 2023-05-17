@@ -56,17 +56,18 @@ internal sealed class DeclarationTable
             var singleModules = this.syntaxTrees
                 .Select(s => new SingleModuleDeclaration(
                     name: string.Empty,
-                    fullName: string.Empty,
+                    fullName: SplitPath.Empty,
                     syntax: (CompilationUnitSyntax)s.Root))
                 .ToImmutableArray();
 
             return new(
                 name: string.Empty,
-                fullName: string.Empty,
+                fullName: SplitPath.Empty,
                 declarations: singleModules);
         }
 
         var rootName = this.compilation.SplitRootModulePath.Parts.Span[^1];
+        var rootNameSplitPath = SplitPath.FromDirectoryPath(rootName);
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
         {
@@ -75,7 +76,7 @@ internal sealed class DeclarationTable
             // In memory tree, default to root module
             if (path.IsEmpty)
             {
-                modules.Add(new SingleModuleDeclaration(rootName, rootName, (CompilationUnitSyntax)tree.Root));
+                modules.Add(new SingleModuleDeclaration(rootName, rootNameSplitPath, (CompilationUnitSyntax)tree.Root));
                 continue;
             }
 
@@ -89,20 +90,17 @@ internal sealed class DeclarationTable
                     path, this.RootPath));
 
                 // Add to root so the compilation can continue
-                modules.Add(new SingleModuleDeclaration(rootName, rootName, (CompilationUnitSyntax)tree.Root));
+                modules.Add(new SingleModuleDeclaration(rootName, rootNameSplitPath, (CompilationUnitSyntax)tree.Root));
                 continue;
             }
 
-            var subPath = path.RemovePrefix(this.compilation.SplitRootModulePath);
-            var fullName = string.Join('.', subPath.Parts.ToArray());
+            var subPath = path.RemovePrefix(this.compilation.SplitRootModulePath, true);
+            if (subPath.IsEmpty) subPath = rootNameSplitPath;
+            var name = subPath.Parts.Span[^1];
 
-            if (string.IsNullOrEmpty(fullName)) fullName = rootName;
-            else fullName = $"{rootName}.{fullName}";
-            var name = fullName.Split('.')[^1];
-
-            modules.Add(new SingleModuleDeclaration(name, fullName, (CompilationUnitSyntax)tree.Root));
+            modules.Add(new SingleModuleDeclaration(name, subPath, (CompilationUnitSyntax)tree.Root));
         }
-        return new(rootName, rootName, modules.ToImmutable());
+        return new(rootName, rootNameSplitPath, modules.ToImmutable());
     }
 
     /// <summary>

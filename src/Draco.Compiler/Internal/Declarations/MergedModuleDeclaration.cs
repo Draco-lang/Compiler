@@ -12,11 +12,11 @@ internal sealed class MergedModuleDeclaration : Declaration
     public override ImmutableArray<Declaration> Children => this.children ??= this.BuildChildren();
     private ImmutableArray<Declaration>? children;
 
-    public string FullName { get; }
+    public SplitPath FullName { get; }
 
     private readonly ImmutableArray<SingleModuleDeclaration> declarations;
 
-    public MergedModuleDeclaration(string name, string fullName, ImmutableArray<SingleModuleDeclaration> declarations)
+    public MergedModuleDeclaration(string name, SplitPath fullName, ImmutableArray<SingleModuleDeclaration> declarations)
         : base(name)
     {
         this.declarations = declarations;
@@ -25,7 +25,7 @@ internal sealed class MergedModuleDeclaration : Declaration
 
     private ImmutableArray<Declaration> BuildChildren()
     {
-        var parentNesting = this.FullName.Count(x => x == '.');
+        var parentNesting = this.FullName.Parts.Length;
         var children = ImmutableArray.CreateBuilder<Declaration>();
         var submodules = new List<SingleModuleDeclaration>();
         foreach (var singleModule in this.declarations)
@@ -49,10 +49,10 @@ internal sealed class MergedModuleDeclaration : Declaration
         }
 
         // Submodules directly under this module
-        var directSubmodulesGrouped = submodules.Where(x => x.FullName.Count(y => y == '.') == parentNesting + 1).GroupBy(m => m.FullName);
+        var directSubmodulesGrouped = submodules.Where(x => x.FullName.Parts.Length == parentNesting + 1).GroupBy(m => m.FullName);
 
         // more nested submodules
-        var otherSubmodules = submodules.Where(x => x.FullName.Count(y => y == '.') != parentNesting + 1);
+        var otherSubmodules = submodules.Where(x => x.FullName.Parts.Length != parentNesting + 1);
         foreach (var group in directSubmodulesGrouped)
         {
             var groupArray = group.ToImmutableArray();

@@ -15,12 +15,12 @@ internal sealed class SingleModuleDeclaration : Declaration
     /// </summary>
     public CompilationUnitSyntax Syntax { get; }
 
-    public string FullName { get; }
+    public SplitPath FullName { get; }
 
     public override ImmutableArray<Declaration> Children => this.children ??= this.BuildChildren();
     private ImmutableArray<Declaration>? children;
 
-    public SingleModuleDeclaration(string name, string fullName, CompilationUnitSyntax syntax)
+    public SingleModuleDeclaration(string name, SplitPath fullName, CompilationUnitSyntax syntax)
         : base(name)
     {
         this.Syntax = syntax;

@@ -74,8 +74,15 @@ internal readonly record struct SplitPath(ReadOnlyMemory<string> Parts)
         {
             throw new ArgumentException("the split path does not start with the given prefix", nameof(prefix));
         }
-        return new SplitPath(this.Parts[prefix.Length..]);
+        return this.Slice(prefix.Length..);
     }
+
+    /// <summary>
+    /// Slices this path given a range.
+    /// </summary>
+    /// <param name="range">The range to slice by.</param>
+    /// <returns>The sub-path of this path sliced by <paramref name="range"/>.</returns>
+    public SplitPath Slice(Range range) => new(this.Parts[range]);
 
     public bool Equals(SplitPath other) =>
         this.Span.SequenceEqual(other.Span);

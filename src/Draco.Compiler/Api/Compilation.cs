@@ -83,8 +83,6 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     public string RootModulePath { get; }
 
-    internal SplitPath SplitRootModulePath { get; }
-
     /// <summary>
     /// The output path.
     /// </summary>
@@ -152,7 +150,6 @@ public sealed class Compilation : IBinderProvider
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
         this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
-        this.SplitRootModulePath = SplitPath.FromDirectoryPath(this.RootModulePath);
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
         this.rootModule = rootModule;
@@ -278,15 +275,20 @@ public sealed class Compilation : IBinderProvider
     internal ModuleSymbol GetModuleForSyntaxTree(SyntaxTree tree)
     {
         var filePath = SplitPath.FromFilePath(tree.SourceText.Path?.LocalPath ?? string.Empty);
-        var rootPath = this.SplitRootModulePath;
+        var rootPath = SplitPath.FromDirectoryPath(this.RootModulePath);
 
-        // If we don't have root path or this tree is in memory only or the tree is outside of the root, return the root module
+        // If we don't have root path or this tree is in memory only or the tree is outside of the root,
+        // return the root module
         if (rootPath.IsEmpty
-            || filePath.IsEmpty
-            || !filePath.StartsWith(rootPath)) return this.SourceModule;
+         || filePath.IsEmpty
+         || !filePath.StartsWith(rootPath)) return this.SourceModule;
 
+        // We look up the module starting from the root
         var subPath = filePath.RemovePrefix(rootPath);
-        return this.SourceModule.Lookup(subPath.Parts.Span.ToImmutableArray()).OfType<ModuleSymbol>().Single();
+        return this.SourceModule
+            .Lookup(subPath.Span.ToImmutableArray())
+            .OfType<ModuleSymbol>()
+            .Single();
     }
 
     internal Binder GetBinder(SyntaxNode syntax) => this.binderCache.GetBinder(syntax);

@@ -233,7 +233,6 @@
   <Node Name="UntypedPropertySetLvalue" Base="UntypedLvalue">
     <Field Name="Setter" Type="FunctionSymbol" />
     <Field Name="Receiver" Type="UntypedExpression?"/>
-    <Field Name="Value" Type="UntypedExpression"/>
   </Node>
 
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">

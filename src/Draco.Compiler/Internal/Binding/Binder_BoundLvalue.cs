@@ -2,6 +2,7 @@ using System;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -22,6 +23,7 @@ internal partial class Binder
         UntypedLocalLvalue local => this.TypeLocalLvalue(local, constraints, diagnostics),
         UntypedGlobalLvalue global => this.TypeGlobalLvalue(global, constraints, diagnostics),
         UntypedFieldLvalue field => this.TypeFieldLvalue(field, constraints, diagnostics),
+        UntypedPropertySetLvalue prop => this.TypePropertySetLvalue(prop, constraints, diagnostics),
         UntypedMemberLvalue member => this.TypeMemberLvalue(member, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };
@@ -35,10 +37,28 @@ internal partial class Binder
     private BoundLvalue TypeFieldLvalue(UntypedFieldLvalue field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundFieldLvalue(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
 
-    private BoundLvalue TypeMemberLvalue(UntypedMemberLvalue member, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        this.TypeMemberExpression(member.Expression, constraints, diagnostics) switch
+    private BoundLvalue TypePropertySetLvalue(UntypedPropertySetLvalue prop, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        new BoundPropertySetLvalue(prop.Syntax, prop.Setter, prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics));
+
+    private BoundLvalue TypeMemberLvalue(UntypedMemberLvalue mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics);
+        var members = mem.Expression.Member.Result;
+        if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
-            BoundFieldExpression field => new BoundFieldLvalue(field.Syntax, field.Receiver, field.Field),
-            _ => throw new InvalidOperationException(),
-        };
+            if (member is FieldSymbol field) return new BoundFieldLvalue(mem.Syntax, left, field);
+            else if (member is PropertySymbol prop) return prop.Setter is null
+                    ? throw new NotImplementedException()
+                    : new BoundPropertySetLvalue(mem.Syntax, prop.Setter, left);
+            throw new InvalidOperationException();
+        }
+        else
+        {
+            // NOTE: I'm not sure this can happen
+            // Multiple members can maybe happen, in case there are duplicates, in which case this would be a cascaded
+            // error
+            // TODO: Verify
+            throw new NotImplementedException();
+        }
+    }
 }

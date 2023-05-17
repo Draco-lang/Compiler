@@ -53,7 +53,10 @@ internal partial class Binder
         {
             UntypedMemberExpression member => new UntypedMemberLvalue(syntax, member),
             UntypedFieldExpression field => new UntypedFieldLvalue(syntax, null, field.Field),
-            _ when this.LookupValueSymbol(syntax.Member.Text, syntax, diagnostics) is PropertySymbol prop => new UntypedPropertySetLvalue(syntax, prop.Setter, null, ),
+            _ when this.LookupValueSymbol(syntax.Member.Text, syntax, diagnostics) is PropertySymbol prop =>
+                prop.Setter is null
+                    ? throw new NotImplementedException()
+                    : new UntypedPropertySetLvalue(syntax, prop.Setter, null),
             _ => throw new InvalidOperationException(),
         };
 

@@ -328,6 +328,23 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return result.Accept(this);
     }
 
+    public override BoundNode VisitAssignmentExpression(BoundAssignmentExpression node)
+    {
+        // property = x
+        //
+        // =>
+        //
+        // property_set(x)
+
+        // TODO: Compund operators
+        if (node.Left is BoundPropertySetLvalue prop)
+        {
+            return new BoundCallExpression(null, prop.Receiver is null ? null : (BoundExpression)this.VisitExpression(prop.Receiver), prop.Setter, ImmutableArray.Create(node.Right));
+        }
+
+        return base.VisitAssignmentExpression(node);
+    }
+
     public override BoundNode VisitPropertyGetExpression(BoundPropertyGetExpression node)
     {
         // property
@@ -336,7 +353,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         //
         // property_get()
 
-        return new BoundCallExpression(node.Syntax, node.Receiver, node.Getter, ImmutableArray<BoundExpression>.Empty);
+        return new BoundCallExpression(node.Syntax, node.Receiver is null ? null : (BoundExpression)this.VisitExpression(node.Receiver), node.Getter, ImmutableArray<BoundExpression>.Empty);
     }
 
     // Utility to store an expression to a temporary variable

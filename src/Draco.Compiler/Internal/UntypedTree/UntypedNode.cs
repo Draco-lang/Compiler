@@ -147,6 +147,11 @@ internal partial class UntypedFieldLvalue
     public override TypeSymbol Type => this.Field.Type;
 }
 
+internal partial class UntypedPropertySetLvalue
+{
+    public override TypeSymbol Type => this.Setter.Parameters[0].Type;
+}
+
 internal partial class UntypedMemberLvalue
 {
     public override TypeSymbol Type => this.Expression.MemberType;

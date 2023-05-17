@@ -181,13 +181,6 @@
     <Field Name="Receiver" Type="BoundExpression?"/>
   </Node>
 
-  <Node Name="BoundPropertySetExpression" Base="BoundExpression">
-    <Field Name="Setter" Type="FunctionSymbol" />
-    <Field Name="Receiver" Type="BoundExpression?"/>
-    <Field Name="Value" Type="BoundExpression"/>
-  </Node>
-
-
   <Node Name="BoundParameterExpression" Base="BoundExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
@@ -254,7 +247,13 @@
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
-  <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
+	<Node Name="BoundPropertySetLvalue" Base="BoundLvalue">
+		<Field Name="Setter" Type="FunctionSymbol" />
+		<Field Name="Receiver" Type="BoundExpression?"/>
+	</Node>
+
+
+	<Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
     <Field Name="Array" Type="BoundExpression" />
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>

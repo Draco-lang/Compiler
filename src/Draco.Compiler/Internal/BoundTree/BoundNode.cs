@@ -193,7 +193,7 @@ internal partial class BoundFieldLvalue
     public override TypeSymbol Type => this.Field.Type;
 }
 
-internal partial class BoundPropertySetLvalue
+internal partial class BoundPropertySetExpression
 {
     public override TypeSymbol Type => this.Setter.Parameters[0].Type;
 }

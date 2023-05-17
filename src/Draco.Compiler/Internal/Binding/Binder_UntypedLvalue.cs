@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -48,17 +51,57 @@ internal partial class Binder
         }
     }
 
-    private UntypedLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        this.BindMemberExpression(syntax, constraints, diagnostics) switch
+    private UntypedLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
+        var memberName = syntax.Member.Text;
+        if (left is UntypedModuleExpression moduleExpr)
         {
-            UntypedMemberExpression member => new UntypedMemberLvalue(syntax, member),
-            UntypedFieldExpression field => new UntypedFieldLvalue(syntax, null, field.Field),
-            _ when this.LookupValueSymbol(syntax.Member.Text, syntax, diagnostics) is PropertySymbol prop =>
-                prop.Setter is null
-                    ? throw new NotImplementedException()
-                    : new UntypedPropertySetLvalue(syntax, prop.Setter, null),
-            _ => throw new InvalidOperationException(),
-        };
+            // Module member access
+            var module = moduleExpr.Module;
+            ImmutableArray<Symbol> members;
+            if (syntax.Parent is CallExpressionSyntax) members = module.Members
+                .Where(m => m.Name == memberName)
+                .Where(BinderFacts.IsFunctionSymbol)
+                .ToImmutableArray();
+            else members = module.Members
+                .Where(m => m.Name == memberName)
+                .Where(BinderFacts.IsValueSymbol)
+                .ToImmutableArray();
+            // Reuse logic from LookupResult
+            var result = LookupResult.FromResultSet(members);
+            var symbol = result.GetValue(memberName, syntax, diagnostics);
+            return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
+        }
+        else if (left is UntypedTypeExpression typeExpr)
+        {
+            // Type member access
+            var type = typeExpr.Type;
+            ImmutableArray<Symbol> members;
+            if (syntax.Parent is CallExpressionSyntax) members = type.Members
+                .Where(m => m.Name == memberName)
+                .Where(m => m is ITypedSymbol typed && typed.IsStatic)
+                .Where(BinderFacts.IsFunctionSymbol)
+                .ToImmutableArray();
+            else members = type.Members
+                .Where(m => m.Name == memberName)
+                .Where(m => m is ITypedSymbol typed && typed.IsStatic)
+                .Where(BinderFacts.IsValueSymbol)
+                .ToImmutableArray();
+            // Reuse logic from LookupResult
+            var result = LookupResult.FromResultSet(members);
+            var symbol = result.GetValue(memberName, syntax, diagnostics);
+            return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
+        }
+        else
+        {
+            // Value, add constraint
+            var promise = constraints.Member(left.TypeRequired, memberName, out var memberType);
+            promise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Location));
+            return new UntypedMemberLvalue(syntax, new UntypedMemberExpression(syntax, left, memberType, promise));
+        }
+    }
 
     private UntypedLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
@@ -68,5 +111,19 @@ internal partial class Binder
             template: SymbolResolutionErrors.IllegalLvalue,
             location: syntax?.Location));
         return new UntypedIllegalLvalue(syntax);
+    }
+
+    private UntypedLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        switch (symbol)
+        {
+        case FieldSymbol field:
+            return new UntypedFieldLvalue(syntax, null, field);
+        case PropertySymbol prop:
+            if (prop.Setter is null) throw new NotImplementedException();
+            return new UntypedPropertySetLvalue(syntax, prop.Setter, null);
+        default:
+            throw new InvalidOperationException();
+        }
     }
 }

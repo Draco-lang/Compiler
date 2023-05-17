@@ -23,7 +23,6 @@ internal partial class Binder
         UntypedLocalLvalue local => this.TypeLocalLvalue(local, constraints, diagnostics),
         UntypedGlobalLvalue global => this.TypeGlobalLvalue(global, constraints, diagnostics),
         UntypedFieldLvalue field => this.TypeFieldLvalue(field, constraints, diagnostics),
-        UntypedPropertySetLvalue prop => this.TypePropertySetLvalue(prop, constraints, diagnostics),
         UntypedMemberLvalue member => this.TypeMemberLvalue(member, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(lvalue)),
     };
@@ -37,9 +36,6 @@ internal partial class Binder
     private BoundLvalue TypeFieldLvalue(UntypedFieldLvalue field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundFieldLvalue(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
 
-    private BoundLvalue TypePropertySetLvalue(UntypedPropertySetLvalue prop, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundPropertySetLvalue(prop.Syntax, prop.Setter, prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics));
-
     private BoundLvalue TypeMemberLvalue(UntypedMemberLvalue mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics);
@@ -47,9 +43,6 @@ internal partial class Binder
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
             if (member is FieldSymbol field) return new BoundFieldLvalue(mem.Syntax, left, field);
-            else if (member is PropertySymbol prop) return prop.Setter is null
-                    ? throw new NotImplementedException()
-                    : new BoundPropertySetLvalue(mem.Syntax, prop.Setter, left);
             throw new InvalidOperationException();
         }
         else

@@ -175,6 +175,23 @@ internal partial class Binder
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+        // TODO: Compund operators
+        // NOTE: This is how we deal with properties
+        if (assignment.Left is UntypedPropertySetLvalue prop) return new BoundPropertySetExpression(
+            assignment.Syntax,
+            prop.Setter,
+            prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
+            this.TypeExpression(assignment.Right, constraints, diagnostics));
+
+        else if (assignment.Left is UntypedMemberLvalue mem && mem.Expression.Member.Result[0] is PropertySymbol pr)
+        {
+            if (pr.Setter is null) throw new NotImplementedException();
+            return new BoundPropertySetExpression(
+            assignment.Syntax,
+            pr.Setter,
+            this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics),
+            this.TypeExpression(assignment.Right, constraints, diagnostics));
+        }
         var typedLeft = this.TypeLvalue(assignment.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
         var compoundOperator = assignment.CompoundOperator?.Result;

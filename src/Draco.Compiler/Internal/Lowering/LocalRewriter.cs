@@ -328,7 +328,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return result.Accept(this);
     }
 
-    public override BoundNode VisitAssignmentExpression(BoundAssignmentExpression node)
+    public override BoundNode VisitPropertySetExpression(BoundPropertySetExpression node)
     {
         // property = x
         //
@@ -336,13 +336,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         //
         // property_set(x)
 
-        // TODO: Compund operators
-        if (node.Left is BoundPropertySetLvalue prop)
-        {
-            return new BoundCallExpression(null, prop.Receiver is null ? null : (BoundExpression)this.VisitExpression(prop.Receiver), prop.Setter, ImmutableArray.Create(node.Right));
-        }
-
-        return base.VisitAssignmentExpression(node);
+        return new BoundCallExpression(null, node.Receiver is null ? null : (BoundExpression)this.VisitExpression(node.Receiver), node.Setter, ImmutableArray.Create((BoundExpression)this.VisitExpression(node.Value)));
     }
 
     public override BoundNode VisitPropertyGetExpression(BoundPropertyGetExpression node)

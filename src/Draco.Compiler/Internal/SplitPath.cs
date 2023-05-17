@@ -19,7 +19,8 @@ internal readonly struct SplitPath
     /// <returns>The created <see cref="SplitPath"/>.</returns>
     public static SplitPath FromFilePath(string path)
     {
-        var split = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
+        var split = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+        if (split.Length == 0) return new SplitPath(ReadOnlyMemory<string>.Empty);
         return new SplitPath(split.AsMemory()[..^1]);
 
     }

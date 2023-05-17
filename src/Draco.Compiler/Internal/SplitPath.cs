@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace Draco.Compiler.Internal;
 
@@ -11,7 +10,7 @@ internal readonly struct SplitPath
 {
     public ReadOnlyMemory<string> Parts { get; }
 
-    public bool IsEmpty { get; }
+    public bool IsEmpty => this.Parts.Length == 0;
 
     /// <summary>
     /// Creates a <see cref="SplitPath"/> from file excluding file name.
@@ -22,6 +21,7 @@ internal readonly struct SplitPath
     {
         var split = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
         return new SplitPath(split.AsMemory()[..^1]);
+
     }
 
     /// <summary>
@@ -31,14 +31,13 @@ internal readonly struct SplitPath
     /// <returns>The created <see cref="SplitPath"/>.</returns>
     public static SplitPath FromDirectoryPath(string path)
     {
-        var split = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
+        var split = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
         return new SplitPath(split.AsMemory());
     }
 
     public SplitPath(ReadOnlyMemory<string> path)
     {
         this.Parts = path;
-        this.IsEmpty = Parts.Length == 0 || (this.Parts.Length == 1 && string.IsNullOrEmpty(this.Parts.Span[0]));
     }
 
     /// <summary>

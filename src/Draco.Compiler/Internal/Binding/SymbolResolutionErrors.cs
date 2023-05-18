@@ -119,4 +119,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "the file path {0} is outside of the root path {1}",
         code: Code(12));
+
+    /// <summary>
+    /// Can not assign to the readonly or constant field.
+    /// </summary>
+    public static readonly DiagnosticTemplate CannotAssignToReadonlyOrConstantField = DiagnosticTemplate.Create(
+        title: "can not assign to the readonly or constant field",
+        severity: DiagnosticSeverity.Error,
+        format: "can not assign to the readonly or constant field {0}",
+        code: Code(13));
 }

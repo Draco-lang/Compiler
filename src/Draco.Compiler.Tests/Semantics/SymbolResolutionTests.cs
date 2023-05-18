@@ -1505,7 +1505,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
-    // TODO: maybe different error here for the fields and props
     [Fact]
     public void ReadingAndSettingStaticFieldFullyQualified()
     {
@@ -1650,11 +1649,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
     }
 
     [Fact]
-    public void SettingConstantStaticField()
+    public void SettingConstantField()
     {
         // func main(){
         //   FooModule.foo = 5;
@@ -1685,7 +1684,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
     }
 
     [Fact]
@@ -1707,7 +1706,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooModule{
-                public int readonly foo = 0;
+                public readonly int foo = 0;
             }
             """);
 
@@ -1722,44 +1721,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
-    }
-
-    [Fact]
-    public void SettingConstantNonStaticField()
-    {
-        // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo = 5;
-        // }
-
-        var main = SyntaxTree.Create(CompilationUnit(
-            FunctionDeclaration(
-                "main",
-                ParameterList(),
-                null,
-                BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
-
-        var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
-                public int const foo = 0;
-            }
-            """);
-
-        // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
-
-        var semanticModel = compilation.GetSemanticModel(main);
-
-        var diags = semanticModel.Diagnostics;
-
-        // Assert
-        Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
     }
 
     [Fact]

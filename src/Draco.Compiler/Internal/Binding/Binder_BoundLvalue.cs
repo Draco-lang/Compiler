@@ -34,8 +34,18 @@ internal partial class Binder
     private BoundLvalue TypeGlobalLvalue(UntypedGlobalLvalue global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalLvalue(global.Syntax, global.Global);
 
-    private BoundLvalue TypeFieldLvalue(UntypedFieldLvalue field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundFieldLvalue(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
+    private BoundLvalue TypeFieldLvalue(UntypedFieldLvalue field, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        if (!field.Field.IsMutable)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField,
+                location: field.Syntax?.Location,
+                field.Field.Name));
+            return new BoundIllegalLvalue(field.Syntax);
+        }
+        return new BoundFieldLvalue(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
+    }
 
     private BoundLvalue TypeMemberLvalue(UntypedMemberLvalue mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
@@ -43,7 +53,18 @@ internal partial class Binder
         var members = mem.Expression.Member.Result;
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
-            if (member is FieldSymbol field) return new BoundFieldLvalue(mem.Syntax, left, field);
+            if (member is FieldSymbol field)
+            {
+                if (!field.IsMutable)
+                {
+                    diagnostics.Add(Diagnostic.Create(
+                        template: SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField,
+                        location: mem.Syntax?.Location,
+                        field.Name));
+                    return new BoundIllegalLvalue(mem.Syntax);
+                }
+                return new BoundFieldLvalue(mem.Syntax, left, field);
+            }
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalLvalue,
                 location: mem.Syntax?.Location));

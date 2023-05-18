@@ -13,9 +13,6 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class BinderCache
 {
-    public Binder ModuleBinder => this.moduleBinder ??= this.BuildSourceModuleBinder();
-    private Binder? moduleBinder;
-
     private readonly Compilation compilation;
     private readonly Dictionary<SyntaxNode, Binder> binders = new();
 
@@ -53,22 +50,11 @@ internal sealed class BinderCache
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private Binder BuildSourceModuleBinder()
-    {
-        // We need to wrap up the module with builtins
-        var binder = new IntrinsicsBinder(this.compilation) as Binder;
-        // Then with references
-        binder = new ModuleBinder(binder, this.compilation.RootModule);
-        // Finally add the source module
-        binder = new ModuleBinder(binder, this.compilation.SourceModule);
-
-        return binder;
-    }
-
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
-        // We simply take the source module binder and wrap it up in imports
-        var binder = this.ModuleBinder;
+        var binder = new IntrinsicsBinder(this.compilation) as Binder;
+        binder = new ModuleBinder(binder, this.compilation.RootModule);
+        binder = new ModuleBinder(binder, this.compilation.GetModuleForSyntaxTree(syntax.Tree));
         binder = WrapInImportBinder(binder, syntax);
         return binder;
     }

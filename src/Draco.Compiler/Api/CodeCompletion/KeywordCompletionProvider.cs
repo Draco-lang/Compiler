@@ -14,7 +14,9 @@ public sealed class KeywordCompletionProvider : CompletionProvider
         CompletionItem.Create("import", range, CompletionKind.Keyword),
         CompletionItem.Create("var", range, CompletionKind.Keyword),
         CompletionItem.Create("val", range, CompletionKind.Keyword),
-        CompletionItem.Create("func", range, CompletionKind.Keyword));
+        CompletionItem.Create("func", range, CompletionKind.Keyword),
+        CompletionItem.Create("internal", range, CompletionKind.Keyword),
+        CompletionItem.Create("public", range, CompletionKind.Keyword));
 
     private static ImmutableArray<CompletionItem> GetExpressionKeywords(SyntaxRange range) => ImmutableArray.Create(
         CompletionItem.Create("if", range, CompletionKind.Keyword),
@@ -29,17 +31,18 @@ public sealed class KeywordCompletionProvider : CompletionProvider
 
     public override bool IsApplicableIn(CompletionContext context)
     {
-        if (context.HasFlag(CompletionContext.MemberAccess)) return false;
+        if (context.HasFlag(CompletionContext.Member)) return false;
         return context.HasFlag(CompletionContext.Declaration) || context.HasFlag(CompletionContext.Expression);
     }
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
-        var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
-        if (token is null) return ImmutableArray<CompletionItem>.Empty;
+        var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
+        if (syntax is null) return ImmutableArray<CompletionItem>.Empty;
+        var range = (syntax as SyntaxToken)?.Range ?? new(cursor, 0);
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(GetExpressionKeywords(token.Range));
-        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(GetDeclarationKeywords(token.Range));
+        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(GetExpressionKeywords(range));
+        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(GetDeclarationKeywords(range));
         return result.ToImmutable();
     }
 }

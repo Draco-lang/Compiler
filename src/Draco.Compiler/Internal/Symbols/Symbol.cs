@@ -82,9 +82,22 @@ internal abstract partial class Symbol
     public virtual string Documentation => string.Empty;
 
     /// <summary>
+    /// The visibility of this symbol.
+    /// </summary>
+    public virtual Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
+
+    /// <summary>
     /// The syntax declaring this symbol.
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => null;
+
+    protected private static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
+    {
+        null => Api.Semantics.Visibility.Private,
+        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
+        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
+        _ => throw new System.InvalidOperationException($"illegal visibility modifier token {kind}"),
+    };
 
     /// <summary>
     /// Converts this symbol into an API symbol.

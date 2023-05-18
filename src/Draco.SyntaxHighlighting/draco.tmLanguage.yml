@@ -19,16 +19,21 @@ repository:
   declarations:
     patterns:
     - include: '#comments'
+    - include: '#visibility-keywords'
     - include: '#import-declaration'
     - include: '#variable-declaration'
     - include: '#function-declaration'
+  visibility-keywords:
+    match: \b(internal|public)\b
+    captures:
+      '1': { name: keyword.other.draco }
   import-declaration:
     # 'import' and identifier-list dot-separated, semicolon
     match: \b(import)\b\s*(?:([A-Za-z_][A-Za-z0-9_]*)(?:\.([A-Za-z_][A-Za-z0-9_]*))*)?;?
     captures:
-      '1': { name: keyword.other.draco }
-      '2': { name: entity.name.module.draco }
-      '3': { name: entity.name.module.draco }
+      '1': { name: keyword.other.using.draco }
+      '2': { name: entity.name.type.namespace.draco }
+      '3': { name: entity.name.type.namespace.draco }
   variable-declaration:
     # 'var' and identifier
     begin: \b(var|val)\b\s*\b([A-Za-z_][A-Za-z0-9_]*)\b

@@ -8,6 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol
 {
     public override bool IsError => true;
+
     public override Symbol? ContainingSymbol => null;
 
     public TypeSymbol Type => IntrinsicSymbols.ErrorType;

@@ -186,6 +186,7 @@ public sealed class Issue139Tests
         }
         func foo() {}
         """")]
+    [InlineData("public import Foo")]
     [Theory]
     public void DoesNotCrash(string source)
     {

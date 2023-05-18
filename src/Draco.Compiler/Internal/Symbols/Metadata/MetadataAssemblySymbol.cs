@@ -18,7 +18,7 @@ internal class MetadataAssemblySymbol : ModuleSymbol
     public override string Name => this.MetadataReader.GetString(this.assemblyDefinition.Name);
     // NOTE: We don't emit the name of the module in fully qualified names
     public override string FullName => string.Empty;
-    public override Symbol ContainingSymbol { get; }
+    public override Symbol? ContainingSymbol => null;
 
     /// <summary>
     /// The <see cref="System.Reflection.AssemblyName"/> of this referenced assembly.
@@ -40,11 +40,9 @@ internal class MetadataAssemblySymbol : ModuleSymbol
     private readonly AssemblyDefinition assemblyDefinition;
 
     public MetadataAssemblySymbol(
-        Symbol containingSymbol,
         Compilation compilation,
         MetadataReader metadataReader)
     {
-        this.ContainingSymbol = containingSymbol;
         this.Compilation = compilation;
         this.MetadataReader = metadataReader;
         this.moduleDefinition = metadataReader.GetModuleDefinition();

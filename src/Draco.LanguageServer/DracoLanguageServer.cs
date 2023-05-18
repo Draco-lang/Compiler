@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.CodeCompletion;
@@ -33,6 +36,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private readonly DracoConfigurationRepository configurationRepository;
     private readonly DracoDocumentRepository documentRepository = new();
 
+    private Uri rootUri;
     private Compilation compilation;
     private SemanticModel semanticModel;
     private SyntaxTree syntaxTree;
@@ -45,6 +49,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     {
         this.client = client;
         this.configurationRepository = new(client);
+        this.rootUri = default!; // Default value, it will be given correct value on initialization
 
         // Some empty defaults
         this.syntaxTree = SyntaxTree.Create(SyntaxFactory.CompilationUnit());
@@ -55,7 +60,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.completionService = new CompletionService();
         this.completionService.AddProvider(new KeywordCompletionProvider());
         this.completionService.AddProvider(new ExpressionCompletionProvider());
-        this.completionService.AddProvider(new MemberAccessCompletionProvider());
+        this.completionService.AddProvider(new MemberCompletionProvider());
 
         this.signatureService = new SignatureService();
 
@@ -63,7 +68,29 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.codeFixService.AddProvider(new ImportCodeFixProvider());
     }
 
+    private void CreateCompilation()
+    {
+        var rootPath = this.rootUri.LocalPath;
+        var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories).Select(x => SyntaxTree.Parse(SourceText.FromFile(x))).ToImmutableArray();
+
+        this.compilation = Compilation.Create(
+            syntaxTrees: syntaxTrees,
+            // NOTE: Temporary until we solve MSBuild communication
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: rootPath);
+    }
+
     public void Dispose() { }
+
+    public Task InitializeAsync(InitializeParams param)
+    {
+        if (param.WorkspaceFolders is null || param.WorkspaceFolders.Count == 0) return Task.CompletedTask;
+        this.rootUri = param.WorkspaceFolders[0].Uri;
+        this.CreateCompilation();
+        return Task.CompletedTask;
+    }
 
     public async Task InitializedAsync(InitializedParams param)
     {

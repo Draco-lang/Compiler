@@ -59,9 +59,7 @@ public static class ScriptingEngine
         var peBytes = peStream.ToArray();
         var assembly = Assembly.Load(peBytes);
 
-        var mainMethod = assembly
-            .GetType("FreeFunctions")?
-            .GetMethod("main");
+        var mainMethod = assembly.EntryPoint;
 
         if (mainMethod is null)
         {

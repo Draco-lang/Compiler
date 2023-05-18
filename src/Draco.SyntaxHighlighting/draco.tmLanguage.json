@@ -42,6 +42,9 @@
           "include": "#comments"
         },
         {
+          "include": "#visibility-keywords"
+        },
+        {
           "include": "#import-declaration"
         },
         {
@@ -52,17 +55,25 @@
         }
       ]
     },
+    "visibility-keywords": {
+      "match": "\\b(internal|public)\\b",
+      "captures": {
+        "1": {
+          "name": "keyword.other.draco"
+        }
+      }
+    },
     "import-declaration": {
       "match": "\\b(import)\\b\\s*(?:([A-Za-z_][A-Za-z0-9_]*)(?:\\.([A-Za-z_][A-Za-z0-9_]*))*)?;?",
       "captures": {
         "1": {
-          "name": "keyword.other.draco"
+          "name": "keyword.other.using.draco"
         },
         "2": {
-          "name": "entity.name.module.draco"
+          "name": "entity.name.type.namespace.draco"
         },
         "3": {
-          "name": "entity.name.module.draco"
+          "name": "entity.name.type.namespace.draco"
         }
       }
     },

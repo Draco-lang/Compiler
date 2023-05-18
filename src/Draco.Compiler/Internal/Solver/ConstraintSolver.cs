@@ -247,7 +247,7 @@ internal sealed class ConstraintSolver
             var unwrappedLocalType = this.Unwrap(localType);
             if (unwrappedLocalType is TypeVariable typeVar)
             {
-                this.Unify(typeVar, IntrinsicSymbols.ErrorType);
+                this.Unify(typeVar, IntrinsicSymbols.UninferredType);
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
                     location: local.DeclaringSyntax.Location,
@@ -275,7 +275,7 @@ internal sealed class ConstraintSolver
         foreach (var typeVar in this.typeVariables)
         {
             var unwrapped = this.Unwrap(typeVar);
-            if (unwrapped is TypeVariable unwrappedTv) this.Unify(unwrappedTv, IntrinsicSymbols.ErrorType);
+            if (unwrapped is TypeVariable unwrappedTv) this.Unify(unwrappedTv, IntrinsicSymbols.UninferredType);
         }
     }
 

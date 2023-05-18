@@ -8,8 +8,9 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal static class IntrinsicSymbols
 {
-    public static TypeSymbol ErrorType => ErrorTypeSymbol.Instance;
     public static TypeSymbol Never => NeverTypeSymbol.Instance;
+    public static TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
+    public static TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
     public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
     public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", isValueType: true);
     public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);

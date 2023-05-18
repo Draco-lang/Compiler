@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.ComponentModel;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.CodeCompletion;
 using Draco.Compiler.Api.Semantics;
@@ -322,8 +323,15 @@ public sealed class CodeCompletionTests
             { "WriteLine", 18 },
             { "SetWindowPosition", 1 },
             { "SetWindowSize", 1 },
+            { "BufferWidth", 1 },
+            { "LargestWindowHeight", 1 },
+            { "LargestWindowWidth", 1 },
+            { "WindowHeight", 1 },
+            { "WindowLeft", 1 },
+            { "WindowTop", 1 },
+            { "WindowWidth", 1 },
         };
-        Assert.Equal(4, completions.Length);
+        Assert.Equal(expected.Count, completions.Length);
         foreach (var completion in completions)
         {
             Assert.True(expected.TryGetValue(completion.DisplayText, out var type));

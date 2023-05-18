@@ -1504,4 +1504,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
+
+
 }

@@ -137,6 +137,25 @@
       "end": "(?<=[;}])",
       "patterns": [
         {
+          "begin": "<",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.angle.open.draco"
+            }
+          },
+          "end": "\\>",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.angle.open.draco"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#type-specifiers"
+            }
+          ]
+        },
+        {
           "begin": "\\(",
           "beginCaptures": {
             "0": {

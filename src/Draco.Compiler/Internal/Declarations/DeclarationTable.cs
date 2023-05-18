@@ -112,7 +112,7 @@ internal sealed class DeclarationTable
 
         return new MergedModuleDeclaration(
             name: rootPath.Last,
-            path: rootPath,
+            path: rootPath.Slice(^1..),
             declarations: modules.ToImmutable());
     }
 

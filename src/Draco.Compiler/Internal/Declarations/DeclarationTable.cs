@@ -56,13 +56,13 @@ internal sealed class DeclarationTable
             var singleModules = this.syntaxTrees
                 .Select(s => new SingleModuleDeclaration(
                     name: string.Empty,
-                    fullName: SplitPath.Empty,
+                    path: SplitPath.Empty,
                     syntax: (CompilationUnitSyntax)s.Root))
                 .ToImmutableArray();
 
             return new(
                 name: string.Empty,
-                fullName: SplitPath.Empty,
+                path: SplitPath.Empty,
                 declarations: singleModules);
         }
 

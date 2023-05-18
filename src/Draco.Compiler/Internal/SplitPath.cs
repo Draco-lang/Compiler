@@ -47,6 +47,11 @@ internal readonly record struct SplitPath(ReadOnlyMemory<string> Parts)
     public ReadOnlySpan<string> Span => this.Parts.Span;
 
     /// <summary>
+    /// The last element of the path.
+    /// </summary>
+    public string Last => this.Span[^1];
+
+    /// <summary>
     /// True, if this path contains no segments.
     /// </summary>
     public bool IsEmpty => this.Length == 0;

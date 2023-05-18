@@ -12,53 +12,73 @@ internal sealed class MergedModuleDeclaration : Declaration
     public override ImmutableArray<Declaration> Children => this.children ??= this.BuildChildren();
     private ImmutableArray<Declaration>? children;
 
-    public SplitPath FullName { get; }
+    /// <summary>
+    /// The path of this module, including the root module.
+    /// </summary>
+    public SplitPath Path { get; }
 
     private readonly ImmutableArray<SingleModuleDeclaration> declarations;
 
-    public MergedModuleDeclaration(string name, SplitPath fullName, ImmutableArray<SingleModuleDeclaration> declarations)
+    public MergedModuleDeclaration(string name, SplitPath path, ImmutableArray<SingleModuleDeclaration> declarations)
         : base(name)
     {
         this.declarations = declarations;
-        this.FullName = fullName;
+        this.Path = path;
     }
 
     private ImmutableArray<Declaration> BuildChildren()
     {
-        var parentNesting = this.FullName.Parts.Length;
+        var nesting = this.Path.Length;
+
+        // Collect children here directly
         var children = ImmutableArray.CreateBuilder<Declaration>();
+        // Collect submodules under this module
         var submodules = new List<SingleModuleDeclaration>();
+
         foreach (var singleModule in this.declarations)
         {
             submodules.Add(singleModule);
-            // More nested submodule, some other merged module will deal with this
-            if (singleModule.FullName != this.FullName) continue;
 
-            // singleModule is a piece of this module, we need to go through each element of that
+            // More nested submodule, some other merged module will deal with this
+            if (singleModule.Path != this.Path) continue;
+
+            // The paths are the same, unwrap into this module, it contributes to this module
             foreach (var declaration in singleModule.Children)
             {
                 if (declaration is SingleModuleDeclaration module)
                 {
+                    // Yet another submodule
                     submodules.Add(module);
                 }
                 else
                 {
+                    // Just a raw child declaration
                     children.Add(declaration);
                 }
             }
         }
 
         // Submodules directly under this module
-        var directSubmodulesGrouped = submodules.Where(x => x.FullName.Parts.Length == parentNesting + 1).GroupBy(m => m.FullName);
+        var directSubmodules = submodules
+            .Where(x => x.Path.Length == nesting + 1)
+            .GroupBy(m => m.Path);
 
-        // more nested submodules
-        var otherSubmodules = submodules.Where(x => x.FullName.Parts.Length != parentNesting + 1);
-        foreach (var group in directSubmodulesGrouped)
+        // More nested submodules
+        var deeperNestedSubmodules = submodules
+            .Where(x => x.Path.Length != nesting + 1)
+            .ToList();
+
+        foreach (var group in directSubmodules)
         {
-            var groupArray = group.ToImmutableArray();
+            // We pass the non direct submodules that start with the same name as the grouped module as submodules
+            var childDeclarations = group
+                .Concat(deeperNestedSubmodules.Where(x => x.Path.StartsWith(group.Key)))
+                .ToImmutableArray();
 
-            // We pass the non dirrect submodules that start with the same name as the grouped module as submodules
-            children.Add(new MergedModuleDeclaration(groupArray[0].Name, groupArray[0].FullName, groupArray.Concat(otherSubmodules.Where(x => x.FullName.StartsWith(groupArray[0].FullName))).ToImmutableArray()));
+            children.Add(new MergedModuleDeclaration(
+                name: group.Key.Last,
+                path: group.Key,
+                declarations: childDeclarations));
         }
         return children.ToImmutable();
     }

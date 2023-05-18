@@ -290,24 +290,39 @@
       ]
     },
     "call-expression": {
-      "begin": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*([(])",
+      "begin": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?<type_args>\\s*<([^<>]|\\g<type_args>)+>\\s*)?\\s*(?=[(])",
       "beginCaptures": {
         "1": {
           "name": "entity.name.function.draco"
         },
         "2": {
-          "name": "punctuation.parenthesis.open.draco"
+          "patterns": [
+            {
+              "include": "#type-specifiers"
+            }
+          ]
         }
       },
-      "end": "\\)",
-      "endCaptures": {
-        "0": {
-          "name": "punctuation.parenthesis.close.draco"
-        }
-      },
+      "end": "(?<=[)])",
       "patterns": [
         {
-          "include": "#expressions"
+          "begin": "\\(",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.parenthesis.open.draco"
+            }
+          },
+          "end": "\\)",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.parenthesis.close.draco"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#expressions"
+            }
+          ]
         }
       ]
     },

@@ -1670,7 +1670,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
-                public static const int foo = 0;
+                public const int foo = 0;
             }
             """);
 

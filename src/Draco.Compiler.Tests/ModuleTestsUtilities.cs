@@ -1,5 +1,3 @@
-using Draco.Compiler.Api.Syntax;
-
 namespace Draco.Compiler.Tests;
 
 internal static class ModuleTestsUtilities

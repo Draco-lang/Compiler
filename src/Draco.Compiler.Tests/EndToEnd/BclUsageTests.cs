@@ -106,7 +106,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             import System.Console;
             import System.Collections.Generic;
 
-            func main() {
+            public func main() {
                 val s = Stack<int32>();
                 s.Push(1);
                 s.Push(2);
@@ -134,7 +134,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             import System.Console;
             import System.Collections.Generic;
 
-            func main() {
+            public func main() {
                 val s = Stack();
                 s.Push(1);
                 s.Push(2);

@@ -234,10 +234,14 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Nongeneric function
         case FunctionSymbol func:
         {
-            if (func.ContainingSymbol is null) throw new InvalidOperationException();
-            var isInGenericInstance = func.ContainingSymbol.IsGenericInstance;
+            var isInGenericInstance = func.ContainingSymbol?.IsGenericInstance ?? false;
             return this.AddMemberReference(
-                parent: this.GetEntityHandle(func.ContainingSymbol),
+                // TODO: Should a function ever have a null container?
+                // Probably not, let's shove them somewhere known once we can make up our minds
+                // This is the case for synthetized ctor functions for example
+                parent: func.ContainingSymbol is null
+                    ? this.GetModuleReferenceHandle(this.assembly.RootModule)
+                    : this.GetEntityHandle(func.ContainingSymbol),
                 name: func.Name,
                 signature: this.EncodeBlob(e =>
                 {

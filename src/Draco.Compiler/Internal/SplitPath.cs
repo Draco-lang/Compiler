@@ -1,82 +1,103 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Draco.Compiler.Internal;
 
 /// <summary>
-/// Represents parts of a path split by directory separator, excluding file names.
+/// Represents parts of a path split by directory separator, excluding the file name.
 /// </summary>
-internal readonly struct SplitPath
+/// <param name="Parts">The path segments of this split path.</param>
+internal readonly record struct SplitPath(ReadOnlyMemory<string> Parts)
 {
-    public ReadOnlyMemory<string> Parts { get; }
-
-    public bool IsEmpty => this.Parts.Length == 0;
-
-    public static SplitPath Empty => new SplitPath();
+    /// <summary>
+    /// An empty path.
+    /// </summary>
+    public static SplitPath Empty = new(ReadOnlyMemory<string>.Empty);
 
     /// <summary>
-    /// Creates a <see cref="SplitPath"/> from file excluding file name.
+    /// Creates a <see cref="SplitPath"/> from a file path, excluding the file name.
     /// </summary>
-    /// <param name="path">The file path from which to create <see cref="SplitPath"/>.</param>
+    /// <param name="path">The file path from which to create the <see cref="SplitPath"/>.</param>
     /// <returns>The created <see cref="SplitPath"/>.</returns>
     public static SplitPath FromFilePath(string path)
     {
-        var split = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-        if (split.Length == 0) return new SplitPath(ReadOnlyMemory<string>.Empty);
-        return new SplitPath(split.AsMemory()[..^1]);
+        var splitPath = FromDirectoryPath(path);
+        if (splitPath.IsEmpty) return new SplitPath(ReadOnlyMemory<string>.Empty);
+        return new SplitPath(splitPath.Parts[..^1]);
     }
 
     /// <summary>
-    /// Creates a <see cref="SplitPath"/> from a directory including every part of the path.
+    /// Creates a <see cref="SplitPath"/> from a directory.
     /// </summary>
     /// <param name="path">The direcotry path from which to create <see cref="SplitPath"/>.</param>
     /// <returns>The created <see cref="SplitPath"/>.</returns>
     public static SplitPath FromDirectoryPath(string path)
     {
-        var split = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+        var split = path.Split(
+            new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+            StringSplitOptions.RemoveEmptyEntries);
         return new SplitPath(split.AsMemory());
     }
 
-    public SplitPath(ReadOnlyMemory<string> path)
-    {
-        this.Parts = path;
-    }
+    /// <summary>
+    /// The span of path segments.
+    /// </summary>
+    public ReadOnlySpan<string> Span => this.Parts.Span;
+
+    /// <summary>
+    /// The last element of the path.
+    /// </summary>
+    public string Last => this.Span[^1];
+
+    /// <summary>
+    /// True, if this path contains no segments.
+    /// </summary>
+    public bool IsEmpty => this.Length == 0;
+
+    /// <summary>
+    /// The number of sections in this path.
+    /// </summary>
+    public int Length => this.Parts.Length;
+
+    /// <summary>
+    /// Determines if this path starts with <paramref name="other"/>.
+    /// </summary>
+    /// <param name="other">The other <see cref="SplitPath"/> this path should start with.</param>
+    /// <returns>True, if this path starts with <paramref name="other"/>, otherwise false.</returns>
+    public bool StartsWith(SplitPath other) => this.Span.StartsWith(other.Span);
 
     /// <summary>
     /// Removes a <paramref name="prefix"/> from this path.
     /// </summary>
     /// <param name="prefix">The prefix that will be removed.</param>
-    /// <param name="includeLastPart">Specifies if the last <see cref="SplitPath.Parts"/> of <paramref name="prefix"/> should be included in the new <see cref="SplitPath"/>.</param>
-    /// <returns>The new created <see cref="SplitPath"/>.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    public SplitPath RemovePrefix(SplitPath prefix, bool includeLastPart = false)
+    /// <returns>A new <see cref="SplitPath"/> with <paramref name="prefix"/> removed.</returns>
+    public SplitPath RemovePrefix(SplitPath prefix)
     {
-        if (!this.StartsWith(prefix)) throw new InvalidOperationException();
-        var removeLength = includeLastPart ? prefix.Parts.Length - 1 : prefix.Parts.Length;
-        return new SplitPath(this.Parts[removeLength..]);
+        if (!this.StartsWith(prefix))
+        {
+            throw new ArgumentException("the split path does not start with the given prefix", nameof(prefix));
+        }
+        return this.Slice(prefix.Length..);
     }
 
     /// <summary>
-    /// Determines if this path starts with <paramref name="other"/> <see cref="SplitPath"/>.
+    /// Slices this path given a range.
     /// </summary>
-    /// <param name="other">The other <see cref="SplitPath"/> this path should start with.</param>
-    /// <returns>True, if this path starts with <paramref name="other"/>, otherwise false.</returns>
-    public bool StartsWith(SplitPath other) => this.Parts.Span.StartsWith(other.Parts.Span);
+    /// <param name="range">The range to slice by.</param>
+    /// <returns>The sub-path of this path sliced by <paramref name="range"/>.</returns>
+    public SplitPath Slice(Range range) => new(this.Parts[range]);
 
-    public static bool operator ==(SplitPath s1, SplitPath s2)
+    public bool Equals(SplitPath other) =>
+        this.Span.SequenceEqual(other.Span);
+
+    public override int GetHashCode()
     {
-        return s1.Equals(s2);
+        var h = default(HashCode);
+        foreach (var part in this.Span) h.Add(part);
+        return h.ToHashCode();
     }
 
-    public static bool operator !=(SplitPath s1, SplitPath s2)
-    {
-        return !s1.Equals(s2);
-    }
-
-    public override bool Equals(object? obj)
-    {
-        if (obj is not SplitPath path) return false;
-        return path.Parts.Span.SequenceEqual(this.Parts.Span);
-    }
+    public override string ToString() => string.Join(".", MemoryMarshal.ToEnumerable(this.Parts));
 }

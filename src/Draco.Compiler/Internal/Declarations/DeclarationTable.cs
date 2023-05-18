@@ -56,18 +56,19 @@ internal sealed class DeclarationTable
             var singleModules = this.syntaxTrees
                 .Select(s => new SingleModuleDeclaration(
                     name: string.Empty,
-                    fullName: SplitPath.Empty,
+                    path: SplitPath.Empty,
                     syntax: (CompilationUnitSyntax)s.Root))
                 .ToImmutableArray();
 
             return new(
                 name: string.Empty,
-                fullName: SplitPath.Empty,
+                path: SplitPath.Empty,
                 declarations: singleModules);
         }
 
-        var rootName = this.compilation.SplitRootModulePath.Parts.Span[^1];
-        var rootNameSplitPath = SplitPath.FromDirectoryPath(rootName);
+        var rootPath = SplitPath.FromDirectoryPath(this.RootPath);
+        var pathBeforeRoot = rootPath.Slice(..^1);
+
         var modules = ImmutableArray.CreateBuilder<SingleModuleDeclaration>();
         foreach (var tree in this.syntaxTrees)
         {
@@ -76,12 +77,15 @@ internal sealed class DeclarationTable
             // In memory tree, default to root module
             if (path.IsEmpty)
             {
-                modules.Add(new SingleModuleDeclaration(rootName, rootNameSplitPath, (CompilationUnitSyntax)tree.Root));
+                modules.Add(new SingleModuleDeclaration(
+                    name: rootPath.Last,
+                    path: rootPath.Slice(^1..),
+                    syntax: (CompilationUnitSyntax)tree.Root));
                 continue;
             }
 
             // Add error if path doesn't start with root path
-            if (!path.StartsWith(this.compilation.SplitRootModulePath))
+            if (!path.StartsWith(rootPath))
             {
                 this.compilation.GlobalDiagnosticBag.Add(
                 Diagnostic.Create(
@@ -90,17 +94,26 @@ internal sealed class DeclarationTable
                     path, this.RootPath));
 
                 // Add to root so the compilation can continue
-                modules.Add(new SingleModuleDeclaration(rootName, rootNameSplitPath, (CompilationUnitSyntax)tree.Root));
+                modules.Add(new SingleModuleDeclaration(
+                    name: rootPath.Last,
+                    path: rootPath.Slice(^1..),
+                    syntax: (CompilationUnitSyntax)tree.Root));
                 continue;
             }
 
-            var subPath = path.RemovePrefix(this.compilation.SplitRootModulePath, true);
-            if (subPath.IsEmpty) subPath = rootNameSplitPath;
-            var name = subPath.Parts.Span[^1];
+            var subPath = path.RemovePrefix(pathBeforeRoot);
+            if (subPath.IsEmpty) subPath = rootPath;
 
-            modules.Add(new SingleModuleDeclaration(name, subPath, (CompilationUnitSyntax)tree.Root));
+            modules.Add(new SingleModuleDeclaration(
+                name: subPath.Last,
+                path: subPath,
+                syntax: (CompilationUnitSyntax)tree.Root));
         }
-        return new(rootName, rootNameSplitPath, modules.ToImmutable());
+
+        return new MergedModuleDeclaration(
+            name: rootPath.Last,
+            path: rootPath.Slice(^1..),
+            declarations: modules.ToImmutable());
     }
 
     /// <summary>

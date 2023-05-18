@@ -450,11 +450,11 @@ internal partial class Binder
             var module = moduleExpr.Module;
             ImmutableArray<Symbol> members;
             if (syntax.Parent is CallExpressionSyntax) members = module.Members
-                .Where(m => m.Name == memberName)
+                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(BinderFacts.IsFunctionSymbol)
                 .ToImmutableArray();
             else members = module.Members
-                .Where(m => m.Name == memberName)
+                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(BinderFacts.IsValueSymbol)
                 .ToImmutableArray();
             // Reuse logic from LookupResult
@@ -468,12 +468,12 @@ internal partial class Binder
             var type = typeExpr.Type;
             ImmutableArray<Symbol> members;
             if (syntax.Parent is CallExpressionSyntax) members = type.Members
-                .Where(m => m.Name == memberName)
+                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(m => m is ITypedSymbol typed && typed.IsStatic)
                 .Where(BinderFacts.IsFunctionSymbol)
                 .ToImmutableArray();
             else members = type.Members
-                .Where(m => m.Name == memberName)
+                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(m => m is ITypedSymbol typed && typed.IsStatic)
                 .Where(BinderFacts.IsValueSymbol)
                 .ToImmutableArray();

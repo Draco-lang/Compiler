@@ -79,7 +79,7 @@ internal sealed class DeclarationTable
             {
                 modules.Add(new SingleModuleDeclaration(
                     name: rootPath.Last,
-                    path: rootPath,
+                    path: rootPath.Slice(^1..),
                     syntax: (CompilationUnitSyntax)tree.Root));
                 continue;
             }
@@ -96,7 +96,7 @@ internal sealed class DeclarationTable
                 // Add to root so the compilation can continue
                 modules.Add(new SingleModuleDeclaration(
                     name: rootPath.Last,
-                    path: rootPath,
+                    path: rootPath.Slice(^1..),
                     syntax: (CompilationUnitSyntax)tree.Root));
                 continue;
             }

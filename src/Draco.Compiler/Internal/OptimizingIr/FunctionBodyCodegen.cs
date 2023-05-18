@@ -56,13 +56,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private Module GetDefiningModule(Symbol symbol)
     {
-        var pathToSymbol = symbol.AncestorChain.OfType<ModuleSymbol>().Reverse().Skip(1);
-        IModule currentModule = this.procedure.Assembly.RootModule;
-        foreach (var currentSymbol in pathToSymbol)
-        {
-            currentModule = currentModule.Submodules[currentSymbol];
-        }
-        return (Module)currentModule;
+        var pathToSymbol = symbol.AncestorChain.OfType<ModuleSymbol>().First();
+        return (Module)this.procedure.Assembly.Lookup(pathToSymbol);
     }
 
     private Procedure DefineProcedure(FunctionSymbol function) => this.GetDefiningModule(function).DefineProcedure(function);

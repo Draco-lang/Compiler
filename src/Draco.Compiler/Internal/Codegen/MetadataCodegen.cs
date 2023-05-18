@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -255,9 +256,11 @@ internal sealed class MetadataCodegen : MetadataWriter
                 }));
         }
 
-        case SourceModuleSymbol:
-            // TODO
-            throw new NotImplementedException();
+        case SourceModuleSymbol module:
+        {
+            var irModule = this.assembly.Lookup(module);
+            return this.GetModuleReferenceHandle(irModule);
+        }
 
         default:
             throw new ArgumentOutOfRangeException(nameof(symbol));

@@ -347,7 +347,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             func first<T, U>(a: T, b: U): T = identity<T>(a);
             func second<T, U>(a: T, b: U): U = identity<U>(b);
 
-            func foo(n: int32, m: int32): int32 =
+            public func foo(n: int32, m: int32): int32 =
                 first<int32, string>(n, "Hello") + second<bool, int32>(false, m);
             """");
 
@@ -363,7 +363,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             func first<T, U>(a: T, b: U): T = identity(a);
             func second<T, U>(a: T, b: U): U = identity(b);
 
-            func foo(n: int32, m: int32): int32 =
+            public func foo(n: int32, m: int32): int32 =
                 first(n, "Hello") + second(false, m);
             """");
 
@@ -371,6 +371,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         Assert.Equal(5, x);
     }
 
+    [Fact]
     public void ModuleFunctionCall()
     {
         var bar = SyntaxTree.Parse("""

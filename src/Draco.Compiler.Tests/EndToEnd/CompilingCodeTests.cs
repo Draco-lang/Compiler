@@ -355,6 +355,22 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         Assert.Equal(5, x);
     }
 
+    [Fact]
+    public void FunctionsWithImplicitGenerics()
+    {
+        var assembly = Compile(""""
+            func identity<T>(x: T): T = x;
+            func first<T, U>(a: T, b: U): T = identity(a);
+            func second<T, U>(a: T, b: U): U = identity(b);
+
+            func foo(n: int32, m: int32): int32 =
+                first(n, "Hello") + second(false, m);
+            """");
+
+        var x = Invoke<int>(assembly, "foo", 2, 3);
+        Assert.Equal(5, x);
+    }
+
     public void ModuleFunctionCall()
     {
         var bar = SyntaxTree.Parse("""

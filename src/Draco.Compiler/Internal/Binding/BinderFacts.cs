@@ -42,8 +42,15 @@ internal static class BinderFacts
     public static bool IsLabelSymbol(Symbol symbol) => symbol
         is LabelSymbol;
 
+    // TODO: how to call this?
     public static bool IsFunctionSymbol(Symbol symbol) => symbol
-        is FunctionSymbol;
+        is LocalSymbol
+        or UntypedLocalSymbol
+        or GlobalSymbol
+        or FieldSymbol
+        or PropertySymbol
+        or FunctionSymbol
+        or ModuleSymbol;
 
     /// <summary>
     /// Retrieves the first scope defining ancestor of a given syntax node.

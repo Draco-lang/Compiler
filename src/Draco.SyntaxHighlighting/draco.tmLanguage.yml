@@ -28,15 +28,15 @@ repository:
     captures:
       '1': { name: keyword.other.draco }
   import-declaration:
-    # 'import' and identifier-list dot-separated, semicolon
-    match: \b(import)\b\s*(?:([A-Za-z_][A-Za-z0-9_]*)(?:\.([A-Za-z_][A-Za-z0-9_]*))*)?;?
+    # Keyword, first path segment, repeated path segments, semicolon
+    match: \b(import)\b\s*(?:([[:alpha:]_][[:alnum:]_]*)?\s*(?:\.\s*([[:alpha:]_][[:alnum:]_]*))*)?\s*;?
     captures:
       '1': { name: keyword.other.using.draco }
       '2': { name: entity.name.type.namespace.draco }
       '3': { name: entity.name.type.namespace.draco }
   variable-declaration:
-    # 'var' and identifier
-    begin: \b(var|val)\b\s*\b([A-Za-z_][A-Za-z0-9_]*)\b
+    # Keyword, name
+    begin: \b(var|val)\b\s*\b([[:alpha:]_][[:alnum:]_]*)\b
     beginCaptures:
       '1': { name: keyword.other.draco }
       '2': { name: entity.name.variable.draco }
@@ -60,8 +60,8 @@ repository:
       patterns:
       - include: '#expressions'
   function-declaration:
-    # 'func' and identifier
-    begin: \b(func)\b\s*\b([A-Za-z_][A-Za-z0-9_]*)\b
+    # Keyword, name
+    begin: \b(func)\b\s*\b([[:alpha:]_][[:alnum:]_]*)\b
     beginCaptures:
       '1': { name: keyword.other.draco }
       '2': { name: entity.name.function.draco }
@@ -85,7 +85,7 @@ repository:
         '0': { name: punctuation.parenthesis.close.draco }
       patterns:
         # A single argument
-      - begin: \b[A-Za-z_][A-Za-z0-9_]*\b
+      - begin: \b([[:alpha:]_][[:alnum:]_]*)\b
         beginCaptures:
           '0': { name: variable.parameter.draco }
         end: (?=[,)])
@@ -141,12 +141,12 @@ repository:
     - include: '#call-expression'
       # Variable name
     - name: variable.other.draco
-      match: '[a-zA-Z_][a-zA-Z0-9_]*'
+      match: '[[:alpha:]_][[:alnum:]_]*'
     - include: '#block'
     - include: '#literals'
   call-expression:
-    # Identifier, optional generic args, parenthesis not consumed yet
-    begin: \b([A-Za-z_][A-Za-z0-9_]*)\s*(?<type_args>\s*<([^<>]|\g<type_args>)+>\s*)?\s*(?=[(])
+    # Function name, generic args, unconsumed open paren
+    begin: \b([[:alpha:]_][[:alnum:]_]*)\b\s*(?<type_args>\s*<([^<>]|\g<type_args>)+>\s*)?\s*(?=[(])
     beginCaptures:
       '1': { name: entity.name.function.draco }
       '2':
@@ -167,7 +167,7 @@ repository:
     patterns:
       # Type name
     - name: entity.name.type.draco
-      match: \b[A-Za-z_][A-Za-z0-9_]*\b
+      match: \b[[:alpha:]_][[:alnum:]_]*\b
   block:
     begin: \{
     beginCaptures:

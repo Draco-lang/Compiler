@@ -64,7 +64,7 @@
       }
     },
     "import-declaration": {
-      "match": "\\b(import)\\b\\s*(?:([A-Za-z_][A-Za-z0-9_]*)(?:\\.([A-Za-z_][A-Za-z0-9_]*))*)?;?",
+      "match": "\\b(import)\\b\\s*(?:([[:alpha:]_][[:alnum:]_]*)?\\s*(?:\\.\\s*([[:alpha:]_][[:alnum:]_]*))*)?\\s*;?",
       "captures": {
         "1": {
           "name": "keyword.other.using.draco"
@@ -78,7 +78,7 @@
       }
     },
     "variable-declaration": {
-      "begin": "\\b(var|val)\\b\\s*\\b([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "begin": "\\b(var|val)\\b\\s*\\b([[:alpha:]_][[:alnum:]_]*)\\b",
       "beginCaptures": {
         "1": {
           "name": "keyword.other.draco"
@@ -125,7 +125,7 @@
       ]
     },
     "function-declaration": {
-      "begin": "\\b(func)\\b\\s*\\b([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "begin": "\\b(func)\\b\\s*\\b([[:alpha:]_][[:alnum:]_]*)\\b",
       "beginCaptures": {
         "1": {
           "name": "keyword.other.draco"
@@ -170,7 +170,7 @@
           },
           "patterns": [
             {
-              "begin": "\\b[A-Za-z_][A-Za-z0-9_]*\\b",
+              "begin": "\\b([[:alpha:]_][[:alnum:]_]*)\\b",
               "beginCaptures": {
                 "0": {
                   "name": "variable.parameter.draco"
@@ -279,7 +279,7 @@
         },
         {
           "name": "variable.other.draco",
-          "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+          "match": "[[:alpha:]_][[:alnum:]_]*"
         },
         {
           "include": "#block"
@@ -290,7 +290,7 @@
       ]
     },
     "call-expression": {
-      "begin": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?<type_args>\\s*<([^<>]|\\g<type_args>)+>\\s*)?\\s*(?=[(])",
+      "begin": "\\b([[:alpha:]_][[:alnum:]_]*)\\b\\s*(?<type_args>\\s*<([^<>]|\\g<type_args>)+>\\s*)?\\s*(?=[(])",
       "beginCaptures": {
         "1": {
           "name": "entity.name.function.draco"
@@ -330,7 +330,7 @@
       "patterns": [
         {
           "name": "entity.name.type.draco",
-          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+          "match": "\\b[[:alpha:]_][[:alnum:]_]*\\b"
         }
       ]
     },

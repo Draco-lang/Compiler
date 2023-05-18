@@ -46,7 +46,7 @@ internal partial class UntypedUnitExpression
 
 internal partial class UntypedMemberExpression
 {
-    public override TypeSymbol? Type => this.MemberType;
+    public override TypeSymbol? Type => this.MemberType is TypeVariable ? null : this.MemberType;
 }
 
 internal partial class UntypedGotoExpression

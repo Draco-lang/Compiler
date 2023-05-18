@@ -11,7 +11,7 @@ internal interface ITypedSymbol
     public TypeSymbol Type { get; }
 
     /// <summary>
-    /// Specifing if given symbol is static.
+    /// Specifying if given symbol is static.
     /// </summary>
     public bool IsStatic { get; }
 }

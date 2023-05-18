@@ -157,11 +157,13 @@ internal sealed class MetadataCodegen : MetadataWriter
                 ? (EntityHandle)this.ModuleDefinitionHandle
                 // We take its parent module
                 : this.GetModuleReferenceHandle(module.Parent);
-
-            var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
-
-            handle = this.GetOrAddTypeReference(parent: resolutionScope, @namespace: null, name: name);
-
+            var name = string.IsNullOrEmpty(module.Name)
+                ? CompilerConstants.DefaultModuleName
+                : module.Name;
+            handle = this.GetOrAddTypeReference(
+                parent: resolutionScope,
+                @namespace: null,
+                name: name);
             this.moduleReferenceHandles.Add(module, handle);
         }
         return handle;

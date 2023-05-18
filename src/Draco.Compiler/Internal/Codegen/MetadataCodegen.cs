@@ -231,11 +231,10 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Nongeneric function
         case FunctionSymbol func:
         {
-            var isInGenericInstance = func.ContainingSymbol?.IsGenericInstance ?? false;
+            if (func.ContainingSymbol is null) throw new InvalidOperationException();
+            var isInGenericInstance = func.ContainingSymbol.IsGenericInstance;
             return this.AddMemberReference(
-                parent: func.ContainingSymbol is null
-                    ? this.freeFunctionsTypeReferenceHandle
-                    : this.GetEntityHandle(func.ContainingSymbol),
+                parent: this.GetEntityHandle(func.ContainingSymbol),
                 name: func.Name,
                 signature: this.EncodeBlob(e =>
                 {
@@ -254,9 +253,9 @@ internal sealed class MetadataCodegen : MetadataWriter
                 }));
         }
 
-        // NOTE: Temporary while we only have one module
         case SourceModuleSymbol:
-            return this.freeFunctionsTypeReferenceHandle;
+            // TODO
+            throw new NotImplementedException();
 
         default:
             throw new ArgumentOutOfRangeException(nameof(symbol));

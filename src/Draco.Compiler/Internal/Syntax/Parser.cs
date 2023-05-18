@@ -1141,7 +1141,7 @@ internal sealed class Parser
                 return next switch
                 {
                     TokenKind.ParenOpen => LessThanDisambiguation.Generics,
-                    _ when this.IsExpressionStarter(next) => LessThanDisambiguation.Operator,
+                    _ when IsExpressionStarter(next) => LessThanDisambiguation.Operator,
                     _ => LessThanDisambiguation.Generics,
                 };
             }

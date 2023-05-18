@@ -117,6 +117,7 @@ public static partial class SyntaxFactory
             (path, member) => MemberImportPath(path, Dot, Name(member))),
         Semicolon);
 
+    // TODO: Clean up all these overloads
     public static FunctionDeclarationSyntax FunctionDeclaration(
         Visibility visibility,
         string name,
@@ -126,12 +127,12 @@ public static partial class SyntaxFactory
             VisibilityToken(visibility),
             Func,
             Name(name),
+            null,
             OpenParen,
             parameters,
             CloseParen,
             returnType is null ? null : TypeSpecifier(Colon, returnType),
             body);
-
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
         SeparatedSyntaxList<ParameterSyntax> parameters,
@@ -146,13 +147,13 @@ public static partial class SyntaxFactory
             CloseParen,
             returnType is null ? null : TypeSpecifier(Colon, returnType),
             body);
-
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
         SeparatedSyntaxList<GenericParameterSyntax> generics,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
+            VisibilityToken(Visibility.Private),
             Func,
             Name(name),
             GenericParameterList(LessThan, generics, GreaterThan),

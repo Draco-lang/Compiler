@@ -14,7 +14,7 @@ internal abstract class TypeParameterSymbol : TypeSymbol
         ? type
         : this;
 
-    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeParameterSymbol(this);
+    public override Api.Semantics.ITypeSymbol ToApiSymbol() => new Api.Semantics.TypeParameterSymbol(this);
 
     public override string ToString() => this.Name;
 

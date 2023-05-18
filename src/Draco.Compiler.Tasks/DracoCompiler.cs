@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -47,53 +45,41 @@ public sealed class DracoCompiler : ToolTask
 
     protected override string ToolName => Path.GetFileName(this.GetDotNetPath());
 
-    private readonly List<string> errorLines = new();
-
-    protected override bool ValidateParameters()
-    {
-        var mainFile = this.Compile.FirstOrDefault(f => f == "main.draco");
-        if (mainFile is null)
-        {
-            this.Log.LogError("File main.draco was not found");
-            return false;
-        }
-
-        return true;
-    }
+    private int errorCount = 0;
 
     protected override string GenerateCommandLineCommands() => $"exec \"{this.DracoCompilerPath}\"";
 
     protected override string GenerateResponseFileCommands()
     {
-        var mainFile = this.Compile.First(f => f == "main.draco");
-
-        var sb = new StringBuilder($"compile {mainFile} --output {this.OutputFile} --msbuild-diags");
+        var sb = new StringBuilder($"compile");
         sb.AppendLine();
 
-        foreach (var file in this.References)
+        foreach (var file in this.Compile)
         {
-            sb.AppendLine($"-r \"{file}\"");
+            sb.AppendLine(file);
         }
 
+        sb.AppendLine();
+        sb.AppendLine($"--output {this.OutputFile} --root-module {this.ProjectDirectory} --msbuild-diags");
+
+        foreach (var refefence in this.References)
+        {
+            sb.AppendLine($"-r \"{refefence}\"");
+        }
         return sb.ToString();
     }
 
     protected override void LogEventsFromTextOutput(string singleLine, MessageImportance messageImportance)
     {
-        if (messageImportance == MessageImportance.Normal)
-        {
-            // was singleLine read from standard error?
-            this.errorLines.Add(singleLine);
-        }
+        this.errorCount++;
+        base.LogEventsFromTextOutput(singleLine, messageImportance);
     }
 
     protected override bool HandleTaskExecutionErrors()
     {
-        if (this.errorLines.Count > 0)
+        if (this.errorCount == 0)
         {
-            var message = new StringBuilder();
-            message.AppendLine("Internal compiler error. Please open an issue with a repro case at https://github.com/Draco-lang/Compiler/issues");
-            message.Append(string.Join(Environment.NewLine, this.errorLines));
+            var message = "Internal compiler error. Please open an issue with a repro case at https://github.com/Draco-lang/Compiler/issues";
             this.Log.LogCriticalMessage(
                 subcategory: null, code: "DR0001", helpKeyword: null,
                 file: null,
@@ -102,7 +88,7 @@ public sealed class DracoCompiler : ToolTask
                 message: message.ToString());
         }
 
-        return base.HandleTaskExecutionErrors();
+        return false;
     }
 
     private string GetDotNetPath()

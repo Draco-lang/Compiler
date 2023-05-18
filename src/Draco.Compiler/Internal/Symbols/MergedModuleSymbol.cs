@@ -18,12 +18,13 @@ internal sealed class MergedModuleSymbol : ModuleSymbol
 
     private readonly ImmutableArray<ModuleSymbol> modules;
 
-    public MergedModuleSymbol(Symbol? containingSymbol, ImmutableArray<ModuleSymbol> modules)
+    public MergedModuleSymbol(
+        Symbol? containingSymbol,
+        string name,
+        ImmutableArray<ModuleSymbol> modules)
     {
-        Debug.Assert(modules.All(m => m.Name == modules[0].Name));
-
         this.ContainingSymbol = containingSymbol;
-        this.Name = modules[0].Name;
+        this.Name = name;
         this.modules = modules;
     }
 
@@ -54,7 +55,7 @@ internal sealed class MergedModuleSymbol : ModuleSymbol
             var groupElements = group.ToImmutableArray();
             // For single-element groups we skip merging
             if (groupElements.Length == 1) members.Add(groupElements[0]);
-            else members.Add(new MergedModuleSymbol(this, groupElements));
+            else members.Add(new MergedModuleSymbol(this, group.Key, groupElements));
         }
         return members.ToImmutable();
     }

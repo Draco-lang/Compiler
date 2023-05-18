@@ -127,6 +127,15 @@ internal sealed class Parser
     };
 
     /// <summary>
+    /// The list of all tokens that can be a visibility modifier.
+    /// </summary>
+    private static readonly TokenKind[] visibilityModifiers = new[]
+    {
+        TokenKind.KeywordInternal,
+        TokenKind.KeywordPublic,
+    };
+
+    /// <summary>
     /// The list of all tokens that can start an expression.
     /// </summary>
     private static readonly TokenKind[] expressionStarters = new[]
@@ -174,11 +183,18 @@ internal sealed class Parser
         || kind == TokenKind.Identifier && this.Peek(1) == TokenKind.Colon;
 
     /// <summary>
+    /// Checks if the token kind is visibility modifier.
+    /// </summary>
+    /// <param name="kind">The token kind to check for.</param>
+    /// <returns>True, if the token kind is visibility modifier, otherwise false.</returns>
+    private static bool IsVisibilityModifier(TokenKind kind) => visibilityModifiers.Contains(kind);
+
+    /// <summary>
     /// Checks, if the current token kind and the potentially following tokens form an expression.
     /// </summary>
     /// <param name="kind">The current token kind.</param>
     /// <returns>True, uf <paramref name="kind"/> in the current state can form the start of an expression.</returns>
-    private bool IsExpressionStarter(TokenKind kind) => expressionStarters.Contains(kind);
+    private static bool IsExpressionStarter(TokenKind kind) => expressionStarters.Contains(kind);
 
     /// <summary>
     /// Parses a <see cref="CompilationUnitSyntax"/> until the end of input.
@@ -198,17 +214,18 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     internal DeclarationSyntax ParseDeclaration()
     {
+        var modifier = this.ParseVisibilityModifier();
         switch (this.Peek())
         {
         case TokenKind.KeywordImport:
             return this.ParseImportDeclaration();
 
         case TokenKind.KeywordFunc:
-            return this.ParseFunctionDeclaration();
+            return this.ParseFunctionDeclaration(modifier);
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration();
+            return this.ParseVariableDeclaration(modifier);
 
         case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
             return this.ParseLabelDeclaration();
@@ -218,11 +235,12 @@ internal sealed class Parser
             var input = this.Synchronize(t => t switch
             {
                 _ when this.IsDeclarationStarter(t) => false,
+                _ when IsVisibilityModifier(t) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
-            var node = new UnexpectedDeclarationSyntax(input);
+            var node = new UnexpectedDeclarationSyntax(modifier, input);
             this.AddDiagnostic(node, diag);
             return node;
         }
@@ -301,7 +319,7 @@ internal sealed class Parser
     /// Parses a <see cref="VariableDeclarationSyntax"/>.
     /// </summary>
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
-    private VariableDeclarationSyntax ParseVariableDeclaration()
+    private VariableDeclarationSyntax ParseVariableDeclaration(SyntaxToken? visibility)
     {
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
@@ -319,14 +337,14 @@ internal sealed class Parser
         }
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(visibility, keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
     /// Parsed a function declaration.
     /// </summary>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
-    private FunctionDeclarationSyntax ParseFunctionDeclaration()
+    private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxToken? visibility)
     {
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
@@ -346,7 +364,7 @@ internal sealed class Parser
 
         var body = this.ParseFunctionBody();
 
-        return new FunctionDeclarationSyntax(funcKeyword, name, openParen, funcParameters, closeParen, returnType, body);
+        return new FunctionDeclarationSyntax(visibility, funcKeyword, name, openParen, funcParameters, closeParen, returnType, body);
     }
 
     /// <summary>
@@ -471,7 +489,7 @@ internal sealed class Parser
                 or TokenKind.ParenClose or TokenKind.BracketClose
                 or TokenKind.CurlyClose or TokenKind.InterpolationEnd
                 or TokenKind.Assign => false,
-                _ when this.IsExpressionStarter(t) => false,
+                _ when IsExpressionStarter(t) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "type");
@@ -579,7 +597,7 @@ internal sealed class Parser
 
             default:
             {
-                if (this.IsExpressionStarter(this.Peek()))
+                if (IsExpressionStarter(this.Peek()))
                 {
                     // Some expression
                     var expr = this.ParseExpression();
@@ -603,7 +621,7 @@ internal sealed class Parser
                     {
                         TokenKind.CurlyClose => false,
                         _ when this.IsDeclarationStarter(kind) => false,
-                        _ when this.IsExpressionStarter(kind) => false,
+                        _ when IsExpressionStarter(kind) => false,
                         _ => true,
                     });
                     var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "statement");
@@ -710,7 +728,7 @@ internal sealed class Parser
         {
             var returnKeyword = this.Advance();
             ExpressionSyntax? value = null;
-            if (this.IsExpressionStarter(this.Peek())) value = this.ParseExpression();
+            if (IsExpressionStarter(this.Peek())) value = this.ParseExpression();
             return new ReturnExpressionSyntax(returnKeyword, value);
         }
         case TokenKind.KeywordGoto:
@@ -824,7 +842,7 @@ internal sealed class Parser
                 TokenKind.Semicolon or TokenKind.Comma
                 or TokenKind.ParenClose or TokenKind.BracketClose
                 or TokenKind.CurlyClose or TokenKind.InterpolationEnd => false,
-                var kind when this.IsExpressionStarter(kind) => false,
+                var kind when IsExpressionStarter(kind) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "expression");
@@ -1007,6 +1025,8 @@ internal sealed class Parser
         }
         return elements.ToSeparatedSyntaxList();
     }
+
+    private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.Peek()) ? this.Advance() : null;
 
     // Token-level operators
 

@@ -10,17 +10,12 @@
   <xs:complexType name="LspModelType">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
       <xs:element name="BuiltinType" type="BuiltinTypeType" />
-      <xs:element name="Generate" type="GenerateType" />
     </xs:choice>
   </xs:complexType>
 
   <xs:complexType name="BuiltinTypeType">
     <xs:attribute name="Name" type="xs:string" use="required" />
     <xs:attribute name="FullName" type="xs:string" use="required" />
-  </xs:complexType>
-
-  <xs:complexType name="GenerateType">
-    <xs:attribute name="Name" type="xs:string" use="required" />
   </xs:complexType>
 
 </xs:schema>

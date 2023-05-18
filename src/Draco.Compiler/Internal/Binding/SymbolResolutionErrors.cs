@@ -101,4 +101,22 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "import directives must appear at the top of the scope",
         code: Code(10));
+
+    /// <summary>
+    /// A function group was used as an expression.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalFounctionGroupExpression = DiagnosticTemplate.Create(
+        title: "illegal expression",
+        severity: DiagnosticSeverity.Error,
+        format: "the function group {0} is illegal in expression context",
+        code: Code(11));
+
+    /// <summary>
+    /// File path is outside of root path.
+    /// </summary>
+    public static readonly DiagnosticTemplate FilePathOutsideOfRootPath = DiagnosticTemplate.Create(
+        title: "file path is outside of root path",
+        severity: DiagnosticSeverity.Error,
+        format: "the file path {0} is outside of the root path {1}",
+        code: Code(12));
 }

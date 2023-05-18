@@ -3,44 +3,44 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
-using Newtonsoft.Json.Linq;
-using StreamJsonRpc;
 
 namespace Draco.Lsp.Server;
 
 /// <summary>
 /// Handles fundamental LSP lifecycle messages so the user does not have to.
 /// </summary>
-internal sealed class LanguageServerLifecycle
+internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
 {
     private readonly ILanguageServer server;
-    private readonly JsonRpc jsonRpc;
+    private readonly LanguageServerConnection connection;
 
-    public LanguageServerLifecycle(ILanguageServer server, JsonRpc jsonRpc)
+    public LanguageServerLifecycle(ILanguageServer server, LanguageServerConnection connection)
     {
         this.server = server;
-        this.jsonRpc = jsonRpc;
+        this.connection = connection;
     }
 
-    [JsonRpcMethod("initialize", UseSingleObjectParameterDeserialization = true)]
-    public Task<InitializeResult> InitializeAsync(InitializedParams param) =>
-        Task.FromResult(new InitializeResult()
+    public async Task<InitializeResult> InitializeAsync(InitializeParams param)
+    {
+        await this.server.InitializeAsync(param);
+        return new InitializeResult()
         {
             ServerInfo = this.server.Info,
             Capabilities = this.BuildServerCapabilities(),
-        });
+        };
+    }
 
-    [JsonRpcMethod("initialized", UseSingleObjectParameterDeserialization = true)]
-    public async Task InizializedAsync(InitializedParams param)
+    public async Task InitializedAsync(InitializedParams param)
     {
         // First, we collect dynamic registration options
         var registrations = this.BuildDynamicRegistrations();
 
         // Then we register the collected capabilities
-        await this.jsonRpc.InvokeWithParameterObjectAsync("client/registerCapability", new RegistrationParams()
+        await this.connection.SendRequestAsync<object?>("client/registerCapability", new RegistrationParams()
         {
             Registrations = registrations,
         });
@@ -49,10 +49,9 @@ internal sealed class LanguageServerLifecycle
         await this.server.InitializedAsync(param);
     }
 
-    [JsonRpcMethod("exit", UseSingleObjectParameterDeserialization = true)]
     public Task ExitAsync()
     {
-        this.jsonRpc.Dispose();
+        this.connection.Shutdown();
         return Task.CompletedTask;
     }
 
@@ -114,7 +113,7 @@ internal sealed class LanguageServerLifecycle
             {
                 Id = $"reg_{attr.Method}",
                 Method = attr.Method,
-                RegisterOptions = JToken.FromObject(propValue),
+                RegisterOptions = JsonSerializer.SerializeToElement(propValue),
             });
         }
 

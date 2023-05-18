@@ -63,7 +63,7 @@ internal static class PassFactory
         {
             filter ??= _ => true;
             var changed = false;
-            foreach (var proc in assembly.Procedures.Values.Cast<Procedure>())
+            foreach (var proc in assembly.GetAllProcedures().Cast<Procedure>())
             {
                 if (!filter(proc)) continue;
                 changed = passDelegate(proc) || changed;
@@ -84,7 +84,7 @@ internal static class PassFactory
         {
             filter ??= _ => true;
             var changed = false;
-            foreach (var proc in assembly.Procedures.Values.Cast<Procedure>())
+            foreach (var proc in assembly.GetAllProcedures().Cast<Procedure>())
             {
                 foreach (var bb in proc.BasicBlocks.Values.Cast<BasicBlock>())
                 {
@@ -108,7 +108,7 @@ internal static class PassFactory
         {
             filter ??= _ => true;
             var changed = false;
-            foreach (var proc in assembly.Procedures.Values.Cast<Procedure>())
+            foreach (var proc in assembly.GetAllProcedures().Cast<Procedure>())
             {
                 foreach (var bb in proc.BasicBlocks.Values.Cast<BasicBlock>())
                 {

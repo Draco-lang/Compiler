@@ -116,6 +116,11 @@ public enum TokenKind
     KeywordImport,
 
     /// <summary>
+    /// The keyword 'internal'.
+    /// </summary>
+    KeywordInternal,
+
+    /// <summary>
     /// The keyword 'mod'.
     /// </summary>
     KeywordMod,
@@ -129,6 +134,11 @@ public enum TokenKind
     /// The keyword 'or'.
     /// </summary>
     KeywordOr,
+
+    /// <summary>
+    /// The keyword 'public'.
+    /// </summary>
+    KeywordPublic,
 
     /// <summary>
     /// The keyword 'rem'.

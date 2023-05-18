@@ -1,3 +1,5 @@
+using Draco.Compiler.Api.Syntax;
+
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
@@ -16,4 +18,14 @@ internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
     public abstract bool IsMutable { get; }
 
     public abstract bool IsStatic { get; }
+
+    public override Api.Semantics.Visibility Visibility
+    {
+        get
+        {
+            var syntax = this.DeclaringSyntax as VariableDeclarationSyntax;
+            if (syntax is null) return Api.Semantics.Visibility.Internal; // Default
+            return GetVisibilityFromTokenKind(syntax.VisibilityModifier?.Kind);
+        }
+    }
 }

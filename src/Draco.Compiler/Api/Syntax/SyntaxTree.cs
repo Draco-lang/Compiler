@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -16,19 +17,21 @@ public sealed class SyntaxTree
         Indentation: "    ");
 
     /// <summary>
-    /// Constructs a new <see cref="SyntaxTree"/> from the given <paramref name="root"/>.
+    /// Constructs a new <see cref="SyntaxTree"/> with given <paramref name="path"/> from the given <paramref name="root"/>, if <paramref name="path"/> is null, there will be no source text set.
     /// </summary>
     /// <param name="root">The root of the tree.</param>
-    /// <returns>A new <see cref="SyntaxTree"/> with <see cref="Root"/> <paramref name="root"/>.</returns>
-    public static SyntaxTree Create(SyntaxNode root) =>
-        new(sourceText: SourceText.None, greenRoot: root.Green, syntaxDiagnostics: new());
+    /// <returns>A new <see cref="SyntaxTree"/> with <see cref="Root"/> <paramref name="root"/> and <see cref="SourceText.Path"/> <paramref name="path"/>.</returns>
+    public static SyntaxTree Create(SyntaxNode root, string? path = null) =>
+        new(sourceText: path is null ? SourceText.None : SourceText.FromText(new Uri(path), ReadOnlyMemory<char>.Empty), greenRoot: root.Green, syntaxDiagnostics: new());
 
     /// <summary>
-    /// Parses the given text into a <see cref="SyntaxTree"/>.
+    /// Parses the given text into a <see cref="SyntaxTree"/> with <see cref="SourceText.Path"/> <paramref name="path"/>.
     /// </summary>
     /// <param name="source">The source to parse.</param>
+    /// <param name="path">The path this tree comes from.</param>
     /// <returns>The parsed tree.</returns>
-    public static SyntaxTree Parse(string source) => Parse(SourceText.FromText(source));
+    public static SyntaxTree Parse(string source, string? path = null) =>
+        Parse(path is null ? SourceText.FromText(source.AsMemory()) : SourceText.FromText(new Uri(path), source.AsMemory()));
 
     /// <summary>
     /// Parses the given <see cref="Syntax.SourceText"/> into a <see cref="SyntaxTree"/>.

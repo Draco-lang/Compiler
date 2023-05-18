@@ -234,6 +234,9 @@ public static partial class SyntaxFactory
         TypeSyntax accessed,
         string member) => MemberType(accessed, Dot, Name(member));
 
+    public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, SeparatedSyntaxList<ExpressionSyntax> indices) => IndexExpression(indexed, OpenBracket, indices, CloseBracket);
+    public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) => IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
+
     public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(Return, value);
     public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(Name(label)));
 
@@ -270,6 +273,8 @@ public static partial class SyntaxFactory
     public static SyntaxToken CloseBrace { get; } = MakeToken(TokenKind.CurlyClose);
     public static SyntaxToken OpenParen { get; } = MakeToken(TokenKind.ParenOpen);
     public static SyntaxToken CloseParen { get; } = MakeToken(TokenKind.ParenClose);
+    public static SyntaxToken OpenBracket { get; } = MakeToken(TokenKind.BracketOpen);
+    public static SyntaxToken CloseBracket { get; } = MakeToken(TokenKind.BracketClose);
     public static SyntaxToken Plus { get; } = MakeToken(TokenKind.Plus);
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");

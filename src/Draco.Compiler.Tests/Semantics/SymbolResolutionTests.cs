@@ -2017,4 +2017,120 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
+
+    [Fact]
+    public void ReadingAndSettingIndexer()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule[0] = 5;
+        //   var x = fooModule[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooModule"), LiteralExpression(0)), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooModule"), LiteralExpression(0))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int this[int index]
+                {
+                    get => index * 2;
+                    set { }
+                }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void SettingGetOnlyIndexer()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule[0] = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooModule"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int this[int index] => index * 2;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void GettingSetOnlyIndexer()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   var x = fooModule[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooModule"), LiteralExpression(0))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int this[int index] { set { } }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
 }

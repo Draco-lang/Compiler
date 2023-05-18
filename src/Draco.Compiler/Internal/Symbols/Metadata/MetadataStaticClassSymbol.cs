@@ -77,6 +77,8 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             result.Add(fieldSym);
         }
 
+        var defaultName = MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
+
         // Properties
         foreach (var propHandle in this.typeDefinition.GetProperties())
         {
@@ -90,7 +92,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef,
-                this.typeDefinition.GetCustomAttributes().OfType<DefaultMemberAttribute>().Single().MemberName);
+                defaultMemberName: defaultName);
             if (propSym.IsStatic) result.Add(propSym);
         }
 

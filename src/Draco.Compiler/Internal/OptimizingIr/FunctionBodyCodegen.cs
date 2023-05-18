@@ -54,10 +54,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
-    private Procedure DefineProcedure(FunctionSymbol function) => this.procedure.Assembly.DefineProcedure(function);
+    private Module GetDefiningModule(Symbol symbol)
+    {
+        var pathToSymbol = symbol.AncestorChain.OfType<ModuleSymbol>().Reverse().Skip(1);
+        IModule currentModule = this.procedure.Assembly.RootModule;
+        foreach (var currentSymbol in pathToSymbol)
+        {
+            currentModule = currentModule.Submodules[currentSymbol];
+        }
+        return (Module)currentModule;
+    }
+
+    private Procedure DefineProcedure(FunctionSymbol function) => this.GetDefiningModule(function).DefineProcedure(function);
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
-    private Global DefineGlobal(GlobalSymbol global) => this.procedure.Assembly.DefineGlobal(global);
+    private Global DefineGlobal(GlobalSymbol global) => this.GetDefiningModule(global).DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
     private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
@@ -65,8 +76,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         // We handle synthetized functions a bit specially, as they are not part of our symbol
         // tree, so we compile them, in case they have not been yet
-        var compiledAlready = this.procedure.Assembly.Procedures.ContainsKey(func);
-        var proc = this.DefineProcedure(func);
+        var compiledAlready = this.procedure.DeclaringModule.Procedures.ContainsKey(func);
+        var proc = this.procedure.DeclaringModule.DefineProcedure(func);
         if (!compiledAlready)
         {
             var codegen = new FunctionBodyCodegen(proc);

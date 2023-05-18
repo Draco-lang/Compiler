@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
 
@@ -67,6 +69,13 @@ public static partial class SyntaxFactory
 
     public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
+    public static SyntaxToken? VisibilityToken(Visibility visibility) => visibility switch
+    {
+        Visibility.Private => null,
+        Visibility.Internal => MakeToken(TokenKind.KeywordInternal),
+        Visibility.Public => MakeToken(TokenKind.KeywordPublic),
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
+    };
 
     public static SyntaxList<TNode> SyntaxList<TNode>(IEnumerable<TNode> elements)
         where TNode : SyntaxNode => new(
@@ -109,10 +118,26 @@ public static partial class SyntaxFactory
         Semicolon);
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
+        Visibility visibility,
         string name,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
+            VisibilityToken(visibility),
+            Func,
+            Name(name),
+            OpenParen,
+            parameters,
+            CloseParen,
+            returnType is null ? null : TypeSpecifier(Colon, returnType),
+            body);
+
+    public static FunctionDeclarationSyntax FunctionDeclaration(
+        string name,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
+            null,
             Func,
             Name(name),
             null,
@@ -140,18 +165,32 @@ public static partial class SyntaxFactory
     public static VariableDeclarationSyntax VariableDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(null, true, name, type, value);
+
+    public static VariableDeclarationSyntax VariableDeclaration(
+        Visibility visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) => VariableDeclaration(VisibilityToken(visibility), true, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(null, false, name, type, value);
+
+    public static VariableDeclarationSyntax ImmutableVariableDeclaration(
+        Visibility visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) => VariableDeclaration(VisibilityToken(visibility), false, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
+        SyntaxToken? visibility,
         bool isMutable,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) => VariableDeclaration(
+        visibility,
         isMutable ? Var : Val,
         Name(name),
         type is null ? null : TypeSpecifier(Colon, type),

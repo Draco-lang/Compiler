@@ -223,11 +223,12 @@ internal partial class Binder
         }
         else
         {
-            // NOTE: I'm not sure this can happen
-            // Multiple members can maybe happen, in case there are duplicates, in which case this would be a cascaded
-            // error
-            // TODO: Verify
-            throw new NotImplementedException();
+            // NOTE: This can happen in case of function with more overloads, but without () after the function name. For example builder.Append
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
+                location: mem.Syntax?.Location,
+                formatArgs: members[0].Name));
+            return new BoundUnexpectedExpression(mem.Syntax);
         }
     }
 

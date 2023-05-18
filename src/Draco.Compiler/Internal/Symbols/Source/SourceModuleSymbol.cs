@@ -91,9 +91,11 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     {
         FunctionDeclaration f => this.BuildFunction(f),
         GlobalDeclaration g => this.BuildGlobal(g),
+        MergedModuleDeclaration m => this.BuildModule(m),
         _ => throw new ArgumentOutOfRangeException(nameof(declaration)),
     };
 
     private FunctionSymbol BuildFunction(FunctionDeclaration declaration) => new SourceFunctionSymbol(this, declaration);
     private GlobalSymbol BuildGlobal(GlobalDeclaration declaration) => new SourceGlobalSymbol(this, declaration);
+    private ModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new SourceModuleSymbol(this.DeclaringCompilation, this, declaration);
 }

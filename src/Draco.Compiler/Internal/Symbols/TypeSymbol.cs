@@ -25,7 +25,7 @@ internal abstract partial class TypeSymbol : Symbol
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         new TypeInstanceSymbol(containingSymbol, this, context);
 
-    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
+    public override Api.Semantics.ITypeSymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitType(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitType(this);

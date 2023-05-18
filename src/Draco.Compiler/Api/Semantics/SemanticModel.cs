@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -115,19 +116,17 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <returns>All the <see cref="ISymbol"/>s accesible from the <paramref name="node"/>.</returns>
     public ImmutableArray<ISymbol> GetAllDefinedSymbols(SyntaxNode node)
     {
-        var result = ImmutableArray.CreateBuilder<ISymbol>();
+        var result = new HashSet<ISymbol>();
         var binder = this.compilation.GetBinder(node);
         while (binder is not null)
         {
-            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol()));
+            var symbols = binder.DeclaredSymbols
+                .Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol());
+            foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;
         }
-        return result.ToImmutable();
+        return result.ToImmutableArray();
     }
-
-    // NOTE: These OrNull functions are not too pretty
-    // For now public API is not that big of a concern, so they can stay
-    // Instead we could just always return a nullable or an error symbol when appropriate
 
     /// <summary>
     /// Retrieves the <see cref="ISymbol"/> declared by <paramref name="syntax"/>.
@@ -255,6 +254,58 @@ public sealed partial class SemanticModel : IBinderProvider
     }
 
     /// <summary>
+    /// Retrieves the type of the expression represented by <paramref name="syntax"/>.
+    /// </summary>
+    /// <param name="syntax">The expression that the type will be checked of.</param>
+    /// <returns>The <see cref="ITypeSymbol"/> that <paramref name="syntax"/> will evaluate to,
+    /// or null if it does not evaluate to a value with type.</returns>
+    public ITypeSymbol? TypeOf(ExpressionSyntax syntax)
+    {
+        if (this.TryGetBoundNode(syntax, out var existing))
+        {
+            return (existing as BoundExpression)?.Type?.ToApiSymbol();
+        }
+
+        // NOTE: Very similar logic to GetReferencedSymbol, maybe factor out?
+        // Get enclosing context
+        var binder = this.GetBinder(syntax);
+        var containingSymbol = binder.ContainingSymbol;
+
+        switch (containingSymbol)
+        {
+        case SourceFunctionSymbol func:
+        {
+            // Bind the function contents
+            func.Bind(this);
+            break;
+        }
+        case SourceModuleSymbol module:
+        {
+            // Bind top-level members
+            foreach (var member in module.Members.OfType<ISourceSymbol>())
+            {
+                member.Bind(this);
+            }
+            break;
+        }
+        }
+
+        // Attempt to retrieve
+        this.TryGetBoundNode(syntax, out var node);
+        return (node as BoundExpression)?.Type?.ToApiSymbol();
+    }
+
+    private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node)
+    {
+        if (!this.untypedNodeMap.TryGetValue(syntax, out var untypedNode))
+        {
+            node = null;
+            return false;
+        }
+        return this.boundNodeMap.TryGetValue(untypedNode, out node);
+    }
+
+    /// <summary>
     /// Retrieves the function overloads referenced by <paramref name="syntax"/>.
     /// </summary>
     /// <param name="syntax">The tree that is asked for the referenced overloads.</param>
@@ -264,20 +315,24 @@ public sealed partial class SemanticModel : IBinderProvider
     {
         if (syntax is MemberExpressionSyntax member)
         {
-            var accessed = this.GetReferencedSymbol(member.Accessed);
-            if (accessed is null) return ImmutableArray<ISymbol>.Empty;
-            if (accessed is ITypedSymbol typed) return typed.Type.Members.Where(x => x is FunctionSymbol && x.Name == member.Member.Text).ToImmutableArray();
-            else return accessed.Members.Where(x => x is FunctionSymbol && x.Name == member.Member.Text).ToImmutableArray();
+            var symbol = this.TypeOf(member.Accessed) ?? this.GetReferencedSymbol(member.Accessed);
+            if (symbol is null) return ImmutableArray<ISymbol>.Empty;
+            else return symbol.Members.Where(x => x is FunctionSymbol && x.Name == member.Member.Text).ToImmutableArray();
         }
         // We look up syntax based on the symbol in context
         var binder = this.compilation.GetBinder(syntax);
-        var result = ImmutableArray.CreateBuilder<ISymbol>();
+        var result = new HashSet<ISymbol>();
         while (binder is not null)
         {
-            result.AddRange(binder.DeclaredSymbols.Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol()).Where(x => x is FunctionSymbol && x.Name == syntax.ToString()));
+            var symbols = binder.DeclaredSymbols
+                .Select(x => x is UntypedLocalSymbol loc
+                    ? this.GetDeclaredSymbol(loc.DeclaringSyntax)!
+                    : x.ToApiSymbol())
+                .Where(x => x is FunctionSymbol && x.Name == syntax.ToString());
+            foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;
         }
-        return result.ToImmutable();
+        return result.ToImmutableArray();
     }
 
     private Binder GetBinder(SyntaxNode syntax)

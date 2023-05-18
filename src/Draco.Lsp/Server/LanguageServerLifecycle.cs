@@ -24,12 +24,15 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         this.connection = connection;
     }
 
-    public Task<InitializeResult> InitializeAsync(InitializedParams param) =>
-        Task.FromResult(new InitializeResult()
+    public async Task<InitializeResult> InitializeAsync(InitializeParams param)
+    {
+        await this.server.InitializeAsync(param);
+        return new InitializeResult()
         {
             ServerInfo = this.server.Info,
             Capabilities = this.BuildServerCapabilities(),
-        });
+        };
+    }
 
     public async Task InitializedAsync(InitializedParams param)
     {

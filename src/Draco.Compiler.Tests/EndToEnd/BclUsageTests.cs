@@ -9,7 +9,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
         var assembly = Compile("""
             import System.Console;
 
-            func main() {
+            public func main() {
                 WriteLine("Hello, World!");
             }
             """);
@@ -25,12 +25,12 @@ public sealed class BclUsageTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void SimpleInterpolation()
+    public void Interpolation()
     {
         var assembly = Compile("""
             import System.Console;
 
-            func main() {
+            public func main() {
                 Write("\{1} + \{2} = \{1 + 2}");
             }
             """);
@@ -52,7 +52,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             import System.Console;
             import System.Text;
 
-            func main() {
+            public func main() {
                 var sb = StringBuilder();
                 sb.Append("Hello, ");
                 sb.Append(123);
@@ -81,7 +81,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
             func make_builder(): System.Text.StringBuilder = StringBuilder();
 
-            func main() {
+            public func main() {
                 var sb = make_builder();
                 var myName = "Draco";
                 sb.Append("Hello \{myName}!");

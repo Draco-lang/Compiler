@@ -14,7 +14,9 @@ internal sealed class Procedure : IProcedure
     public FunctionSymbol Symbol { get; }
     public string Name => this.Symbol.Name;
     public TypeSymbol? Type => this.Symbol.Type;
-    public Assembly Assembly { get; }
+    public Module DeclaringModule { get; }
+    IModule IProcedure.DeclaringModule => this.DeclaringModule;
+    public Assembly Assembly => this.DeclaringModule.Assembly;
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
@@ -35,9 +37,9 @@ internal sealed class Procedure : IProcedure
     private readonly Dictionary<LocalSymbol, Local> locals = new();
     private readonly List<Register> registers = new();
 
-    public Procedure(Assembly assembly, FunctionSymbol symbol)
+    public Procedure(Module declaringModule, FunctionSymbol symbol)
     {
-        this.Assembly = assembly;
+        this.DeclaringModule = declaringModule;
         this.Symbol = symbol;
         this.Entry = this.DefineBasicBlock(new SynthetizedLabelSymbol("begin"));
     }

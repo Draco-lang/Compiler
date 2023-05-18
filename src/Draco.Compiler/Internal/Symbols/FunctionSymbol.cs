@@ -77,6 +77,17 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     public virtual bool IsVirtual => false;
 
     public override FunctionSymbol? GenericDefinition => null;
+
+    public override Api.Semantics.Visibility Visibility
+    {
+        get
+        {
+            var syntax = this.DeclaringSyntax as FunctionDeclarationSyntax;
+            if (syntax is null) return Api.Semantics.Visibility.Internal; // Default
+            return GetVisibilityFromTokenKind(syntax.VisibilityModifier?.Kind);
+        }
+    }
+
     public override IEnumerable<Symbol> Members => this.Parameters;
 
     public TypeSymbol Type => this.type ??= this.BuildType();

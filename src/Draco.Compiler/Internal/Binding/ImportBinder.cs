@@ -41,6 +41,7 @@ internal sealed class ImportBinder : Binder
     {
         foreach (var symbol in this.DeclaredSymbols)
         {
+            if (symbol.Visibility == Api.Semantics.Visibility.Private) continue;
             if (symbol.Name != name) continue;
             if (!allowSymbol(symbol)) continue;
             result.Add(symbol);

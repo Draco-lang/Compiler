@@ -65,20 +65,29 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly BlobBuilder ilBuilder = new();
     private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
+    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
-    private readonly TypeReferenceHandle freeFunctionsTypeReferenceHandle;
+    private AssemblyReferenceHandle systemRuntimeReference;
+    private TypeReferenceHandle systemObjectReference;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
     {
         this.Compilation = compilation;
         if (writePdb) this.PdbCodegen = new(this);
         this.assembly = assembly;
-        this.freeFunctionsTypeReferenceHandle = this.GetOrAddTypeReference(
-            module: this.ModuleDefinitionHandle,
-            @namespace: null,
-            name: "FreeFunctions");
         this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
+
+        // Reference System.Object from System.Runtime
+        this.systemRuntimeReference = this.GetOrAddAssemblyReference(
+            name: "System.Runtime",
+            version: new System.Version(7, 0, 0, 0),
+            publicKeyOrToken: MicrosoftPublicKeyToken);
+
+        this.systemObjectReference = this.GetOrAddTypeReference(
+          assembly: this.systemRuntimeReference,
+          @namespace: "System",
+          name: "Object");
     }
 
     private void LoadIntrinsics()
@@ -116,7 +125,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             // Add the field reference
             handle = this.AddMemberReference(
-                parent: this.freeFunctionsTypeReferenceHandle,
+                parent: this.GetModuleReferenceHandle(global.DeclaringModule),
                 name: global.Name,
                 signature: this.EncodeGlobalSignature(global));
             // Cache
@@ -131,10 +140,29 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             var signature = this.EncodeProcedureSignature(procedure);
             handle = this.AddMemberReference(
-                parent: this.freeFunctionsTypeReferenceHandle,
+                parent: this.GetModuleReferenceHandle(procedure.DeclaringModule),
                 name: procedure.Name,
                 signature: signature);
             this.procedureReferenceHandles.Add(procedure, handle);
+        }
+        return handle;
+    }
+
+    public TypeReferenceHandle GetModuleReferenceHandle(IModule module)
+    {
+        if (!this.moduleReferenceHandles.TryGetValue(module, out var handle))
+        {
+            var resolutionScope = module.Parent is null
+                // Root module, we take the module definition containing it
+                ? (EntityHandle)this.ModuleDefinitionHandle
+                // We take its parent module
+                : this.GetModuleReferenceHandle(module.Parent);
+
+            var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
+
+            handle = this.GetOrAddTypeReference(parent: resolutionScope, @namespace: null, name: name);
+
+            this.moduleReferenceHandles.Add(module, handle);
         }
         return handle;
     }
@@ -262,52 +290,13 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private void EncodeAssembly()
     {
-        // Go through globals
-        foreach (var global in this.assembly.Globals.Values) this.EncodeGlobal(global);
-
-        // Go through procedures
-        foreach (var procedure in this.assembly.Procedures.Values)
-        {
-            // Global initializer will get special treatment
-            if (ReferenceEquals(this.assembly.GlobalInitializer, procedure)) continue;
-
-            // Encode the procedure
-            var handle = this.EncodeProcedure(procedure);
-
-            // If this is the entry point, save it
-            if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
-        }
-
-        // Compile global initializer too
-        this.EncodeProcedure(this.assembly.GlobalInitializer, specialName: ".cctor");
-
-        // Reference System.Object from System.Runtime
-        var systemRuntime = this.GetOrAddAssemblyReference(
-            name: "System.Runtime",
-            version: new System.Version(7, 0, 0, 0),
-            publicKeyOrToken: MicrosoftPublicKeyToken);
-        var systemObject = this.GetOrAddTypeReference(
-           assembly: systemRuntime,
-           @namespace: "System",
-           name: "Object");
-
-        // Create the free-functions type
-        this.AddTypeDefinition(
-            attributes: TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed,
-            @namespace: default,
-            name: "FreeFunctions",
-            baseType: systemObject,
-            // TODO: Again, this should be read up from an index
-            fieldList: MetadataTokens.FieldDefinitionHandle(1),
-            // TODO: This depends on the order of types
-            // we likely want to read this up from an index
-            methodList: MetadataTokens.MethodDefinitionHandle(1));
+        this.EncodeModule(this.assembly.RootModule);
 
         // If we write a PDB, we add the debuggable attribute to the assembly
         if (this.PdbCodegen is not null)
         {
             var debuggableAttribute = this.GetOrAddTypeReference(
-                assembly: systemRuntime,
+                assembly: this.systemRuntimeReference,
                 @namespace: "System.Diagnostics",
                 name: "DebuggableAttribute");
             var debuggingModes = this.GetOrAddTypeReference(
@@ -330,17 +319,94 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
+    private void EncodeModule(IModule module, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
+    {
+        var currentFieldIndex = fieldIndex;
+        var currentProcIndex = procIndex;
+        // Go through globals
+        foreach (var global in module.Globals.Values)
+        {
+            this.EncodeGlobal(global);
+            currentFieldIndex++;
+        }
+
+        // Go through procedures
+        foreach (var procedure in module.Procedures.Values)
+        {
+            // Global initializer will get special treatment
+            if (ReferenceEquals(module.GlobalInitializer, procedure)) continue;
+
+            // Encode the procedure
+            var handle = this.EncodeProcedure(procedure);
+
+            // If this is the entry point, save it
+            if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
+            currentProcIndex++;
+        }
+
+        // Compile global initializer too
+        this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
+        currentProcIndex++;
+
+        TypeAttributes visibility;
+        if (module.Symbol.Visibility == Api.Semantics.Visibility.Public)
+        {
+            visibility = parentModule is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public;
+        }
+        else
+        {
+            visibility = parentModule is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic;
+        }
+        var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed;
+
+        var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
+
+        // Create the type
+        var createdModule = this.AddTypeDefinition(
+            attributes: attributes,
+            @namespace: default,
+            name: name,
+            baseType: this.systemObjectReference,
+            fieldList: MetadataTokens.FieldDefinitionHandle(fieldIndex),
+            methodList: MetadataTokens.MethodDefinitionHandle(procIndex));
+
+        // If this isn't top level module, we specify nested relationship
+        if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
+
+        // We encode every submodule
+        foreach (var subModule in module.Submodules.Values)
+        {
+            this.EncodeModule(subModule, createdModule, currentFieldIndex, currentProcIndex);
+        }
+    }
+
     private FieldDefinitionHandle EncodeGlobal(Global global)
     {
+        var visibility = global.Symbol.Visibility switch
+        {
+            Api.Semantics.Visibility.Public => FieldAttributes.Public,
+            Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
+            Api.Semantics.Visibility.Private => FieldAttributes.Private,
+            _ => throw new ArgumentOutOfRangeException(nameof(global.Symbol.Visibility)),
+        };
+
         // Definition
         return this.AddFieldDefinition(
-            attributes: FieldAttributes.Public | FieldAttributes.Static,
+            attributes: visibility | FieldAttributes.Static,
             name: global.Name,
             signature: this.EncodeGlobalSignature(global));
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
+        var visibility = procedure.Symbol.Visibility switch
+        {
+            Api.Semantics.Visibility.Public => MethodAttributes.Public,
+            Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
+            Api.Semantics.Visibility.Private => MethodAttributes.Private,
+            _ => throw new ArgumentOutOfRangeException(nameof(procedure.Symbol.Visibility)),
+        };
+
         // Encode instructions
         var cilCodegen = new CilCodegen(this, procedure);
         cilCodegen.EncodeProcedure();
@@ -364,7 +430,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Determine attributes
         var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
         attributes |= specialName is null
-            ? MethodAttributes.Public
+            ? visibility
             : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
         // Parameters

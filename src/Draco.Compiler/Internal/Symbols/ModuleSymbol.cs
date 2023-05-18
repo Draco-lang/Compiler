@@ -10,6 +10,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class ModuleSymbol : Symbol
 {
+    public override Api.Semantics.Visibility Visibility => this.Members.Any(x => x.Visibility == Api.Semantics.Visibility.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+
     public override void Accept(SymbolVisitor visitor) => visitor.VisitModule(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitModule(this);
 

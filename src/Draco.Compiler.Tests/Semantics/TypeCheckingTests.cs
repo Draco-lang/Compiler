@@ -5,6 +5,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using static Draco.Compiler.Tests.ModuleTestsUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -620,6 +621,108 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Equal(IntrinsicSymbols.ErrorType, xSym.Type);
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+    }
+
+    [Fact]
+    public void OneVisibleAndOneNotVisibleOverloadImported()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // func foo(): int32 = 0;
+        // internal func foo(x: string): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+           FunctionDeclaration(
+               "foo",
+               ParameterList(),
+               NameType("int32"),
+               InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                Api.Semantics.Visibility.Internal,
+                "foo",
+                ParameterList(Parameter("x", NameType("string"))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+    }
+
+    [Fact]
+    public void OneVisibleAndOneNotVisibleOverloadFullyQualified()
+    {
+        // func main(){
+        //   FooModule.foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // func foo(): int32 = 0;
+        // internal func foo(x: string): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+           FunctionDeclaration(
+               "foo",
+               ParameterList(),
+               NameType("int32"),
+               InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                Api.Semantics.Visibility.Internal,
+                "foo",
+                ParameterList(Parameter("x", NameType("string"))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
     }

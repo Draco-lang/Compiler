@@ -1,8 +1,6 @@
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -11,14 +9,10 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class Assembly : IAssembly
 {
-    private static readonly string doubleNewline = $"{System.Environment.NewLine}{System.Environment.NewLine}";
+    private Procedure? entryPoint;
+    private Module rootModule;
 
-    public ModuleSymbol Symbol { get; }
     public string Name { get; set; } = "output";
-    public IReadOnlyDictionary<GlobalSymbol, Global> Globals => this.globals;
-    public Procedure GlobalInitializer { get; }
-    IProcedure IAssembly.GlobalInitializer => this.GlobalInitializer;
-    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
     public Procedure? EntryPoint
     {
         get => this.entryPoint;
@@ -38,37 +32,14 @@ internal sealed class Assembly : IAssembly
     }
     IProcedure? IAssembly.EntryPoint => this.EntryPoint;
 
-    private readonly Dictionary<GlobalSymbol, Global> globals = new();
-    private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
-    private Procedure? entryPoint;
+    public Module RootModule => this.rootModule;
+    IModule IAssembly.RootModule => this.RootModule;
 
-    public Assembly(ModuleSymbol symbol)
-    {
-        this.Symbol = symbol;
-        this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
-            name: "<global initializer>",
-            paramTypes: Enumerable.Empty<TypeSymbol>(),
-            returnType: IntrinsicSymbols.Unit));
-    }
+    public ImmutableArray<IProcedure> GetAllProcedures() => this.rootModule.GetProcedures();
 
-    public Global DefineGlobal(GlobalSymbol globalSymbol)
+    public Assembly(ModuleSymbol module)
     {
-        if (!this.globals.TryGetValue(globalSymbol, out var result))
-        {
-            result = new Global(globalSymbol);
-            this.globals.Add(globalSymbol, result);
-        }
-        return result;
-    }
-
-    public Procedure DefineProcedure(FunctionSymbol functionSymbol)
-    {
-        if (!this.procedures.TryGetValue(functionSymbol, out var result))
-        {
-            result = new Procedure(this, functionSymbol);
-            this.procedures.Add(functionSymbol, result);
-        }
-        return (Procedure)result;
+        this.rootModule = new Module(module, this, null);
     }
 
     public override string ToString()
@@ -77,9 +48,7 @@ internal sealed class Assembly : IAssembly
         result.AppendLine($"assembly {this.Name}");
         if (this.EntryPoint is not null) result.AppendLine($"entry {this.EntryPoint.Name}");
         result.AppendLine();
-        result.AppendJoin(System.Environment.NewLine, this.globals.Values);
-        if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
-        result.AppendJoin(doubleNewline, this.procedures.Values);
+        result.Append(this.rootModule);
         return result.ToString();
     }
 }

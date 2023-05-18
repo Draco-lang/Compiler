@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
+using static Draco.Compiler.Tests.ModuleTestsUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -1083,6 +1084,387 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(varTypeSymbol.IsError);
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+    }
+
+    [Fact]
+    public void VisibleElementFullyQualified()
+    {
+        // func main(){
+        //   FooModule.foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // internal func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                Api.Semantics.Visibility.Internal,
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
+
+        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var mainModel = compilation.GetSemanticModel(main);
+        var fooModel = compilation.GetSemanticModel(foo);
+
+        var diags = mainModel.Diagnostics;
+
+        var fooCallSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetReferencedSymbol(fooCall));
+        var fooDeclSymbol = GetInternalSymbol<FunctionSymbol>(fooModel.GetDeclaredSymbol(fooDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(fooDeclSymbol, fooCallSymbol);
+    }
+
+    [Fact]
+    public void NotVisibleElementFullyQualified()
+    {
+        // func main(){
+        //   FooModule.foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void NotVisibleGlobalVariableFullyQualified()
+    {
+        // func main(){
+        //   var x = BarModule.bar;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", type: null, value: MemberExpression(NameExpression("BarModule"), "bar")))))),
+            ToPath("Tests", "main.draco"));
+
+        // var bar = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            VariableDeclaration("bar", type: null, value: LiteralExpression(0))),
+           ToPath("Tests", "BarModule", "bar.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void InternalElementImportedFromDifferentAssembly()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                internal static void Foo() { }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void InternalElementFullyQualifiedFromDifferentAssembly()
+    {
+        // func main(){
+        //   FooModule.foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                internal static void Foo() { }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void VisibleElementImported()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // internal func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                Api.Semantics.Visibility.Internal,
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+
+        var mainModel = compilation.GetSemanticModel(main);
+        var fooModel = compilation.GetSemanticModel(foo);
+
+        var diags = mainModel.Diagnostics;
+
+        var fooCallSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetReferencedSymbol(fooCall));
+        var fooDeclSymbol = GetInternalSymbol<FunctionSymbol>(fooModel.GetDeclaredSymbol(fooDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(fooDeclSymbol, fooCallSymbol);
+    }
+
+    [Fact]
+    public void NotVisibleElementImported()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "FooModule", "foo.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void ElementFromTheSameModuleButDifferentFile()
+    {
+        // func main(){
+        //   foo();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo")))))),
+            ToPath("Tests", "main.draco"));
+
+        // func foo(): int32 = 0;
+
+        var foo = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0)))),
+           ToPath("Tests", "foo.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
+        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+
+        var mainModel = compilation.GetSemanticModel(main);
+        var fooModel = compilation.GetSemanticModel(foo);
+
+        var diags = mainModel.Diagnostics;
+
+        var fooCallSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetReferencedSymbol(fooCall));
+        var fooDeclSymbol = GetInternalSymbol<FunctionSymbol>(fooModel.GetDeclaredSymbol(fooDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(fooDeclSymbol, fooCallSymbol);
+    }
+
+    [Fact]
+    public void SyntaxTreeOutsideOfRoot()
+    {
+        // func main() { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody())),
+            ToPath("NotRoot", "main.draco"));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var diags = compilation.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.FilePathOutsideOfRootPath);
     }
 
     [Fact]

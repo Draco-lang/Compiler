@@ -48,33 +48,37 @@ public sealed class CompletionService
     /// <returns>Flag enum of the currently valid <see cref="CompletionContext"/>s.</returns>
     private CompletionContext GetCurrentContexts(SyntaxTree syntaxTree, SyntaxPosition cursor)
     {
-        var token = syntaxTree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
-        return token.Parent switch
+        var node = syntaxTree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
+        return node switch
         {
-            // Type expression
-            NameTypeSyntax => CompletionContext.Type,
-            // Parameter name declaration
-            ParameterSyntax => CompletionContext.None,
-            // Global declaration
-            UnexpectedDeclarationSyntax => CompletionContext.Declaration,
-            // Declaring identifier
-            DeclarationSyntax => CompletionContext.None,
-            // Member access
-            MemberExpressionSyntax => CompletionContext.Expression | CompletionContext.MemberAccess,
-            // Member type access
-            MemberTypeSyntax => CompletionContext.Type | CompletionContext.MemberAccess,
-            // Import member
-            MemberImportPathSyntax => CompletionContext.Import | CompletionContext.MemberAccess,
-            // Import start
-            RootImportPathSyntax => CompletionContext.Import,
-            // Global scope
-            null => CompletionContext.Declaration,
-            // Start of statement inside function
-            _ when token.Parent?.Parent is ExpressionStatementSyntax =>
-                token.Parent.Parent.Children.Count() == 2
-                ? CompletionContext.Expression | CompletionContext.Declaration
-                : CompletionContext.Expression,
-            _ => CompletionContext.Expression,
+            InlineFunctionBodySyntax => CompletionContext.Expression,
+            BlockFunctionBodySyntax => CompletionContext.Declaration | CompletionContext.Expression,
+            _ => node.Parent switch
+            {
+                // Type expression
+                NameTypeSyntax => CompletionContext.Type,
+                // Parameter name declaration
+                ParameterSyntax => CompletionContext.None,
+                // Global declaration
+                UnexpectedDeclarationSyntax => CompletionContext.Declaration,
+                // Declaring identifier
+                DeclarationSyntax => CompletionContext.None,
+                // Member access
+                MemberExpressionSyntax => CompletionContext.Expression | CompletionContext.Member,
+                // Member type access
+                MemberTypeSyntax => CompletionContext.Type | CompletionContext.Member,
+                // Import member
+                MemberImportPathSyntax => CompletionContext.Import | CompletionContext.Member,
+                // Import start
+                RootImportPathSyntax => CompletionContext.Import,
+                // Global scope
+                null => CompletionContext.Declaration,
+                // Start of statement inside function
+                _ when node.Parent?.Parent is ExpressionStatementSyntax exprStmt => exprStmt.Children.Count() == 2
+                    ? CompletionContext.Expression | CompletionContext.Declaration
+                    : CompletionContext.Expression,
+                _ => CompletionContext.Expression,
+            },
         };
     }
 }

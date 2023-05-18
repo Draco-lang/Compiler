@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// A global value that can be read from and written to.
 /// </summary>
 /// <param name="Symbol">The corresponding global symbol.</param>
-internal readonly record struct Global(GlobalSymbol Symbol) : IOperand
+internal readonly record struct Global(GlobalSymbol Symbol, IModule DeclaringModule) : IOperand
 {
     /// <summary>
     /// An optional name of this global.

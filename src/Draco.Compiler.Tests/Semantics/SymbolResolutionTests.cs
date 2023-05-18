@@ -1201,7 +1201,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     {
         // import FooModule;
         // func main(){
-        //   foo();
+        //   Foo();
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1211,7 +1211,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    ExpressionStatement(CallExpression(NameExpression("foo")))))));
+                    ExpressionStatement(CallExpression(NameExpression("Foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
@@ -1237,7 +1237,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void InternalElementFullyQualifiedFromDifferentAssembly()
     {
         // func main(){
-        //   FooModule.foo();
+        //   FooModule.Foo();
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1246,7 +1246,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo")))))));
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "Foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
@@ -1505,5 +1505,516 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
+    // TODO: maybe different error here for the fields and props
+    [Fact]
+    public void ReadingAndSettingStaticFieldFullyQualified()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        //   var x = FooModule.foo;
+        // }
 
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo = 0;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void ReadingAndSettingStaticFieldImported()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo = 5;
+        //   var x = foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo = 0;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void ReadingAndSettingNonStaticField()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule.foo = 5;
+        //   var x = fooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int foo = 0;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void SettingReadonlyStaticField()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static readonly int foo = 0;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void SettingConstantStaticField()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static const int foo = 0;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void SettingReadonlyNonStaticField()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int readonly foo = 0;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void SettingConstantNonStaticField()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int const foo = 0;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void ReadingAndSettingStaticPropertyFullyQualified()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        //   var x = FooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { get; set; }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void ReadingAndSettingStaticPropertyImported()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo = 5;
+        //   var x = foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { get; set; }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void ReadingAndSettingNonStaticProperty()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule.foo = 5;
+        //   var x = fooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int foo { get; set; }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void SettingGetOnlyStaticProperty()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { get; }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void GettingSetOnlyStaticProperty()
+    {
+        // func main(){
+        //   var x = FooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { set { } }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo); // TODO: definitely wrong error
+    }
+
+    [Fact]
+    public void SettingGetOnlyNonStaticProperty()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int foo { get; }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void GettingSetOnlyNonStaticProperty()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   var x = fooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int foo { set { } }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
 }

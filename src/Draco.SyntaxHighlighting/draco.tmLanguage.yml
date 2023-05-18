@@ -28,12 +28,14 @@ repository:
     captures:
       '1': { name: keyword.other.draco }
   import-declaration:
-    # Keyword, first path segment, repeated path segments, semicolon
-    match: \b(import)\b\s*(?:([[:alpha:]_][[:alnum:]_]*)?\s*(?:\.\s*([[:alpha:]_][[:alnum:]_]*))*)?\s*;?
-    captures:
+    begin: \b(import)\b
+    beginCaptures:
       '1': { name: keyword.other.using.draco }
-      '2': { name: entity.name.type.namespace.draco }
-      '3': { name: entity.name.type.namespace.draco }
+    end: (?=;)
+    patterns:
+    - match: ([[:alpha:]_][[:alnum:]_]*)
+      captures:
+        '1': { name: entity.name.type.namespace.draco }
   variable-declaration:
     # Keyword, name
     begin: \b(var|val)\b\s*\b([[:alpha:]_][[:alnum:]_]*)\b

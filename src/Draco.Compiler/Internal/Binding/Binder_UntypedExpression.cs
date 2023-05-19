@@ -505,12 +505,14 @@ internal partial class Binder
                 return new UntypedFunctionGroupExpression(syntax, instantiatedFuncs);
             }
         }
-        // NOTE: We'll need to implement this eventually
-        /*
         else if (instantiated is UntypedMemberExpression member)
         {
+            // We are playing the same game as with call expression
+            // A member access has to be delayed to get resolved
+
+            // TODO
+            throw new NotImplementedException();
         }
-        */
         else
         {
             // Tried to instantiate something that can not be instantiated

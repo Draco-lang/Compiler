@@ -12,15 +12,14 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 {
-    // TODO
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
-        ImmutableArray<TypeParameterSymbol>.Empty;
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
+    private ImmutableArray<TypeParameterSymbol>? genericParameters;
 
     public override ImmutableArray<ParameterSymbol> Parameters
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
+            if (this.SignatureNeedsBuild) this.BuildSignature();
             return this.parameters;
         }
     }
@@ -28,7 +27,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
+            if (this.SignatureNeedsBuild) this.BuildSignature();
             return this.returnType!;
         }
     }
@@ -38,7 +37,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     public override Symbol ContainingSymbol { get; }
 
-    private bool NeedsBuild => this.returnType is null;
+    private bool SignatureNeedsBuild => this.returnType is null;
 
     private ImmutableArray<ParameterSymbol> parameters;
     private TypeSymbol? returnType;
@@ -59,7 +58,22 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         this.methodDefinition = methodDefinition;
     }
 
-    private void Build()
+    private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
+    {
+        var genericParamsHandle = this.methodDefinition.GetGenericParameters();
+        if (genericParamsHandle.Count == 0) return ImmutableArray<TypeParameterSymbol>.Empty;
+
+        var result = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
+        foreach (var genericParamHandle in genericParamsHandle)
+        {
+            var genericParam = this.MetadataReader.GetGenericParameter(genericParamHandle);
+            var symbol = new MetadataTypeParameterSymbol(this, genericParam);
+            result.Add(symbol);
+        }
+        return result.ToImmutableArray();
+    }
+
+    private void BuildSignature()
     {
         // Decode signature
         var decoder = new SignatureDecoder(this.Assembly.Compilation);

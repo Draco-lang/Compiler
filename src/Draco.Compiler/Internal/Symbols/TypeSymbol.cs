@@ -20,7 +20,7 @@ internal abstract partial class TypeSymbol : Symbol
 
     public override TypeSymbol? GenericDefinition => null;
 
-    public override Symbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         new TypeInstanceSymbol(containingSymbol, this, context);

@@ -29,8 +29,18 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Symb
         new ArrayTypeSymbol(elementType, 1);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
-    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => UnknownType;
-    public TypeSymbol GetGenericMethodParameter(Symbol genericContext, int index) => UnknownType;
+    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) =>
+        genericType.GenericInstantiate(genericType.ContainingSymbol, typeArguments);
+    public TypeSymbol GetGenericMethodParameter(Symbol genericContext, int index)
+    {
+        var methodAncestor = genericContext.AncestorChain
+            .OfType<FunctionSymbol>()
+            .First();
+
+        return methodAncestor.IsGenericDefinition
+            ? methodAncestor.GenericParameters[index]
+            : methodAncestor.GenericDefinition!.GenericParameters[index];
+    }
     public TypeSymbol GetGenericTypeParameter(Symbol genericContext, int index)
     {
         var typeAncestor = genericContext.AncestorChain

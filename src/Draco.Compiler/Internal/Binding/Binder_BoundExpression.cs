@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -179,7 +180,7 @@ internal partial class Binder
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        // TODO: Compund operators
+        // TODO: Compound operators
         // NOTE: This is how we deal with properties
         if (assignment.Left is UntypedPropertySetLvalue prop) return new BoundPropertySetExpression(
             assignment.Syntax,
@@ -189,12 +190,20 @@ internal partial class Binder
 
         else if (assignment.Left is UntypedMemberLvalue mem && mem.Expression.Member.Result[0] is PropertySymbol pr)
         {
-            if (pr.Setter is null) throw new NotImplementedException();
+            var setter = pr.Setter;
+            if (pr.Setter is null)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                    location: assignment.Syntax?.Location,
+                    pr.FullName));
+                setter = new NoOverloadFunctionSymbol(1);
+            }
             return new BoundPropertySetExpression(
-            assignment.Syntax,
-            pr.Setter,
-            this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics),
-            this.TypeExpression(assignment.Right, constraints, diagnostics));
+                assignment.Syntax,
+                setter!,
+                this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics),
+                this.TypeExpression(assignment.Right, constraints, diagnostics));
         }
         var typedLeft = this.TypeLvalue(assignment.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
@@ -256,9 +265,19 @@ internal partial class Binder
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
-            if (member is PropertySymbol prop) return prop.Getter is null
-                    ? throw new NotImplementedException()
-                    : new BoundPropertyGetExpression(mem.Syntax, prop.Getter, left);
+            if (member is PropertySymbol prop)
+            {
+                var getter = prop.Getter;
+                if (prop.Getter is null)
+                {
+                    diagnostics.Add(Diagnostic.Create(
+                        template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
+                        location: mem.Syntax?.Location,
+                        prop.FullName));
+                    getter = new NoOverloadFunctionSymbol(0);
+                }
+                return new BoundPropertyGetExpression(mem.Syntax, getter!, left);
+            }
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }
         else

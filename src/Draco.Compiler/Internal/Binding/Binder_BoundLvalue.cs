@@ -41,7 +41,7 @@ internal partial class Binder
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField,
                 location: field.Syntax?.Location,
-                field.Field.Name));
+                field.Field.FullName));
             return new BoundIllegalLvalue(field.Syntax);
         }
         return new BoundFieldLvalue(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
@@ -60,7 +60,7 @@ internal partial class Binder
                     diagnostics.Add(Diagnostic.Create(
                         template: SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField,
                         location: mem.Syntax?.Location,
-                        field.Name));
+                        field.FullName));
                     return new BoundIllegalLvalue(mem.Syntax);
                 }
                 return new BoundFieldLvalue(mem.Syntax, left, field);

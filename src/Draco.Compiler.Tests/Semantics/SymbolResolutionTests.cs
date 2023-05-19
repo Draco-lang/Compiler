@@ -1725,6 +1725,70 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
+    public void ReadingNonExistingNonStaticField()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray<MetadataReference>.Empty);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(3, diags.Length);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalLvalue);
+    }
+
+    [Fact]
+    public void ReadingNonExistingStaticField()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray<MetadataReference>.Empty);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(3, diags.Length);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalLvalue);
+    }
+
+    [Fact]
     public void ReadingAndSettingStaticPropertyFullyQualified()
     {
         // func main(){
@@ -1868,7 +1932,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
     }
 
     [Fact]
@@ -1903,7 +1967,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo); // TODO: definitely wrong error
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
     }
 
     [Fact]
@@ -1940,7 +2004,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
     }
 
     [Fact]
@@ -1977,7 +2041,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
     }
 
     [Fact]
@@ -2094,5 +2158,34 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void GettingNonExistingIndexer()
+    {
+        // func main(){
+        //   var x = foo[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray<MetadataReference>.Empty);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 }

@@ -128,4 +128,22 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "can not assign to the readonly or constant field {0}",
         code: Code(13));
+
+    /// <summary>
+    /// Can not set get only property.
+    /// </summary>
+    public static readonly DiagnosticTemplate CannotSetGetOnlyProperty = DiagnosticTemplate.Create(
+        title: "can not set get only property",
+        severity: DiagnosticSeverity.Error,
+        format: "can not set get only property {0}",
+        code: Code(14));
+
+    /// <summary>
+    /// Can not get set only property.
+    /// </summary>
+    public static readonly DiagnosticTemplate CannotGetSetOnlyProperty = DiagnosticTemplate.Create(
+        title: "can not get set only property",
+        severity: DiagnosticSeverity.Error,
+        format: "can not get set only property {0}",
+        code: Code(15));
 }

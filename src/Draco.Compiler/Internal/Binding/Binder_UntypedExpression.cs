@@ -2,10 +2,12 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
@@ -514,8 +516,16 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldExpression(syntax, null, field);
         case PropertySymbol prop:
-            if (prop.Getter is null) throw new NotImplementedException();
-            return new UntypedPropertyGetExpression(syntax, prop.Getter, null);
+            var getter = prop.Getter;
+            if (prop.Getter is null)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
+                    location: syntax?.Location,
+                    prop.FullName));
+                getter = new NoOverloadFunctionSymbol(0);
+            }
+            return new UntypedPropertyGetExpression(syntax, getter!, null);
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
         case OverloadSymbol overload:

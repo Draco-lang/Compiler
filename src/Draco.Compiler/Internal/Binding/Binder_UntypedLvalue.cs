@@ -7,6 +7,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
@@ -41,6 +42,19 @@ internal partial class Binder
             return new UntypedLocalLvalue(syntax, local, constraints.GetLocalType(local));
         case GlobalSymbol global:
             return new UntypedGlobalLvalue(syntax, global);
+        case FieldSymbol field:
+            return new UntypedFieldLvalue(syntax, null, field);
+        case PropertySymbol prop:
+            var setter = prop.Setter;
+            if (prop.Setter is null)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                    location: syntax?.Location,
+                    prop.FullName));
+                setter = new NoOverloadFunctionSymbol(1);
+            }
+            return new UntypedPropertySetLvalue(syntax, setter!, null);
         default:
         {
             diagnostics.Add(Diagnostic.Create(
@@ -120,8 +134,16 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldLvalue(syntax, null, field);
         case PropertySymbol prop:
-            if (prop.Setter is null) throw new NotImplementedException();
-            return new UntypedPropertySetLvalue(syntax, prop.Setter, null);
+            var setter = prop.Setter;
+            if (prop.Setter is null)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                    location: syntax?.Location,
+                    prop.FullName));
+                setter = new NoOverloadFunctionSymbol(1);
+            }
+            return new UntypedPropertySetLvalue(syntax, setter!, null);
         default:
             throw new InvalidOperationException();
         }

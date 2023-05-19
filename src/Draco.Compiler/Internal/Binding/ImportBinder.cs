@@ -115,6 +115,7 @@ internal sealed class ImportBinder : Binder
                 // Look up in parent
                 var membersWithName = parent.Members
                     .Where(m => m.Name == mem.Member.Text)
+                    .OfType<ModuleSymbol>()
                     .ToList();
                 if (membersWithName.Count == 1)
                 {

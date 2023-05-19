@@ -154,4 +154,22 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal("321", stringWriter.ToString());
     }
+
+    [Fact]
+    public void SystemTupleConstruction()
+    {
+        var assembly = Compile("""
+            import System.Tuple;
+
+            public func main() {
+                val t = Create(1, "hello");
+            }
+            """);
+
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: null);
+    }
 }

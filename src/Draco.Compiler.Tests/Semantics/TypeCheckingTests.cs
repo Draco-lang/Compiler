@@ -5,7 +5,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using static Draco.Compiler.Tests.ModuleTestsUtilities;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 

@@ -1,5 +1,5 @@
 using Draco.Compiler.Api.Syntax;
-using static Draco.Compiler.Tests.ModuleTestsUtilities;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 

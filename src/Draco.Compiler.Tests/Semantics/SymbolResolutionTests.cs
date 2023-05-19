@@ -7,7 +7,7 @@ using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
-using static Draco.Compiler.Tests.ModuleTestsUtilities;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 

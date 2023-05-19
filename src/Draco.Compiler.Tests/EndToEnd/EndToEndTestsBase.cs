@@ -14,12 +14,19 @@ public abstract class EndToEndTestsBase
         return Compile(null, syntaxTree);
     }
 
-    protected static Assembly Compile(string? root, params SyntaxTree[] trees)
+    protected static Assembly Compile(string? root, params SyntaxTree[] syntaxTrees) =>
+        Compile(root, syntaxTrees.ToImmutableArray(), ImmutableArray<MetadataReference>.Empty);
+
+    protected static Assembly Compile(
+        string? root,
+        ImmutableArray<SyntaxTree> syntaxTrees,
+        ImmutableArray<MetadataReference> additionalMetadataReferences)
     {
         var compilation = Compilation.Create(
-            syntaxTrees: trees.ToImmutableArray(),
+            syntaxTrees: syntaxTrees,
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Concat(additionalMetadataReferences)
                 .ToImmutableArray(),
             rootModulePath: root);
 

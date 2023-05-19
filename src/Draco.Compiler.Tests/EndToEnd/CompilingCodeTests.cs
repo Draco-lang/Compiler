@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Tests.TestUtilities;
 
@@ -421,5 +422,30 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var x = Invoke<int>(assembly, "Tests.FooTest", "foo");
         Assert.Equal(5, x);
+    }
+
+    [Fact]
+    public void GenericMemberMethodCall()
+    {
+        var csReference = CompileCSharpToMetadataRef("""
+            public class IdentityProvider
+            {
+                public T Identity<T>(T x) => x;
+            }
+            """);
+        var foo = SyntaxTree.Parse("""
+            public func foo(): int32 {
+                val provider = IdentityProvider();
+                return provider.Identity<int32>(2) + provider.Identity(123);
+            }
+            """);
+
+        var assembly = Compile(
+            root: ToPath("Tests"),
+            syntaxTrees: ImmutableArray.Create(foo),
+            additionalMetadataReferences: ImmutableArray.Create(csReference));
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(125, x);
     }
 }

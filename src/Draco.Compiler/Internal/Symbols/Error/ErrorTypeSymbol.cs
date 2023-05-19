@@ -1,4 +1,4 @@
-namespace Draco.Compiler.Internal.Symbols.Synthetized;
+namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
 /// Represents a type of some type-checking error. Acts as a sentinel value, absorbs cascading errors.

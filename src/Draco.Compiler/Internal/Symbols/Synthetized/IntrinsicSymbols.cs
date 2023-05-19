@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols.Error;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 

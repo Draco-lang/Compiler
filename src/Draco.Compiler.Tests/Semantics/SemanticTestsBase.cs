@@ -32,14 +32,22 @@ public abstract class SemanticTestsBase
 
     private protected static MetadataReference CompileCSharpToMetadataRef(string code)
     {
-        var stringText = SourceText.From(code, Encoding.UTF8);
-        var tree = SyntaxFactory.ParseSyntaxTree(stringText);
-        var defaultReferences = Basic.Reference.Assemblies.Net70.ReferenceInfos.All.Select(r => RoslynMetadataReference.CreateFromStream(new MemoryStream(r.ImageBytes)));
+        var sourceText = SourceText.From(code, Encoding.UTF8);
+        var tree = SyntaxFactory.ParseSyntaxTree(sourceText);
 
-        var compilation = CSharpCompilation.Create("Test.dll", new[] { tree }, defaultReferences, new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary));
+        var defaultReferences = Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            .Select(r => RoslynMetadataReference.CreateFromStream(new MemoryStream(r.ImageBytes)));
+
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "Test.dll",
+            syntaxTrees: new[] { tree },
+            references: defaultReferences,
+            options: new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary));
+
         var stream = new MemoryStream();
         var emitResult = compilation.Emit(stream);
         Assert.True(emitResult.Success);
+
         stream.Position = 0;
         return MetadataReference.FromPeStream(stream);
     }

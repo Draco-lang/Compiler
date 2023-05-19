@@ -117,46 +117,55 @@ public static partial class SyntaxFactory
             (path, member) => MemberImportPath(path, Dot, Name(member))),
         Semicolon);
 
-    // TODO: Clean up all these overloads
+    public static FunctionDeclarationSyntax FunctionDeclaration(
+        string name,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
+            Visibility.Private,
+            name,
+            null,
+            parameters,
+            returnType,
+            body);
+
     public static FunctionDeclarationSyntax FunctionDeclaration(
         Visibility visibility,
         string name,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
+            visibility,
+            name,
+            null,
+            parameters,
+            returnType,
+            body);
+
+    public static FunctionDeclarationSyntax FunctionDeclaration(
+        string name,
+        SeparatedSyntaxList<GenericParameterSyntax>? generics,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
+            Visibility.Private,
+            name,
+            generics,
+            parameters,
+            returnType,
+            body);
+
+    public static FunctionDeclarationSyntax FunctionDeclaration(
+        Visibility visibility,
+        string name,
+        SeparatedSyntaxList<GenericParameterSyntax>? generics,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
             VisibilityToken(visibility),
             Func,
             Name(name),
-            null,
-            OpenParen,
-            parameters,
-            CloseParen,
-            returnType is null ? null : TypeSpecifier(Colon, returnType),
-            body);
-    public static FunctionDeclarationSyntax FunctionDeclaration(
-        string name,
-        SeparatedSyntaxList<ParameterSyntax> parameters,
-        TypeSyntax? returnType,
-        FunctionBodySyntax body) => FunctionDeclaration(
-            null,
-            Func,
-            Name(name),
-            null,
-            OpenParen,
-            parameters,
-            CloseParen,
-            returnType is null ? null : TypeSpecifier(Colon, returnType),
-            body);
-    public static FunctionDeclarationSyntax FunctionDeclaration(
-        string name,
-        SeparatedSyntaxList<GenericParameterSyntax> generics,
-        SeparatedSyntaxList<ParameterSyntax> parameters,
-        TypeSyntax? returnType,
-        FunctionBodySyntax body) => FunctionDeclaration(
-            VisibilityToken(Visibility.Private),
-            Func,
-            Name(name),
-            GenericParameterList(LessThan, generics, GreaterThan),
+            generics is null ? null : GenericParameterList(LessThan, generics, GreaterThan),
             OpenParen,
             parameters,
             CloseParen,

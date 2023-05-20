@@ -223,7 +223,30 @@ internal partial class Binder
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
 
-        if (method is UntypedFunctionGroupExpression group)
+        return this.BindCallExpression(syntax, method, args, constraints, diagnostics);
+    }
+
+    private UntypedExpression BindCallExpression(
+        CallExpressionSyntax syntax,
+        UntypedExpression method,
+        ImmutableArray<UntypedExpression> args,
+        ConstraintSolver constraints,
+        DiagnosticBag diagnostics)
+    {
+        if (method is UntypedDelayedExpression delayed)
+        {
+            // The binding is delayed, we have to delay this as well
+            var promisedType = constraints.AllocateTypeVariable();
+            var promise = constraints.Await(delayed.Promise, UntypedExpression (resolved) =>
+            {
+                // Retry binding with the resolved variant
+                var call = this.BindCallExpression(syntax, resolved, args, constraints, diagnostics);
+                constraints.Unify(promisedType, call.TypeRequired);
+                return call;
+            });
+            return new UntypedDelayedExpression(syntax, promise, promisedType);
+        }
+        else if (method is UntypedFunctionGroupExpression group)
         {
             // Simple overload
             // Resolve symbol overload
@@ -510,8 +533,34 @@ internal partial class Binder
             // We are playing the same game as with call expression
             // A member access has to be delayed to get resolved
 
-            // TODO
-            throw new NotImplementedException();
+            var promise = constraints.Await(member.Member, UntypedExpression (members) =>
+            {
+                // Search for all function members with the same number of generic parameters
+                var withSameNoParams = members
+                    .OfType<FunctionSymbol>()
+                    .Where(f => f.GenericParameters.Length == args.Length)
+                    .ToImmutableArray();
+                if (withSameNoParams.Length == 0)
+                {
+                    // Error, no functions with the same number of generic params
+                    // TODO
+                    throw new NotImplementedException();
+                }
+                else
+                {
+                    // There are functions with this same number of parameters
+                    // Instantiate each possibility
+                    var instantiatedFuncs = withSameNoParams
+                        .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
+                        .Cast<Symbol>()
+                        .ToImmutableArray();
+
+                    // Wrap them back up in a member expression
+                    return new UntypedMemberExpression(syntax, member.Accessed, ConstraintPromise.FromResult(instantiatedFuncs));
+                }
+            });
+            // NOTE: The generic function itself has no concrete type
+            return new UntypedDelayedExpression(syntax, promise, IntrinsicSymbols.ErrorType);
         }
         else
         {

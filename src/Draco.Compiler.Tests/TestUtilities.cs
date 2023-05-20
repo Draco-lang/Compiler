@@ -12,6 +12,12 @@ internal static class TestUtilities
 
     public static MetadataReference CompileCSharpToMetadataRef(string code)
     {
+        var stream = CompileCSharpToStream("Test.dll", code);
+        return MetadataReference.FromPeStream(stream);
+    }
+
+    public static Stream CompileCSharpToStream(string assemblyName, string code)
+    {
         var sourceText = SourceText.From(code, Encoding.UTF8);
         var tree = SyntaxFactory.ParseSyntaxTree(sourceText);
 
@@ -19,7 +25,7 @@ internal static class TestUtilities
             .Select(r => RoslynMetadataReference.CreateFromStream(new MemoryStream(r.ImageBytes)));
 
         var compilation = CSharpCompilation.Create(
-            assemblyName: "Test.dll",
+            assemblyName: assemblyName,
             syntaxTrees: new[] { tree },
             references: defaultReferences,
             options: new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary));
@@ -29,6 +35,6 @@ internal static class TestUtilities
         Assert.True(emitResult.Success);
 
         stream.Position = 0;
-        return MetadataReference.FromPeStream(stream);
+        return stream;
     }
 }

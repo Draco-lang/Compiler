@@ -427,7 +427,9 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void GenericMemberMethodCall()
     {
-        var csReference = CompileCSharpToMetadataRef("""
+        var csReference = CompileCSharpToStream(
+            "Test.dll",
+            """
             public class IdentityProvider
             {
                 public T Identity<T>(T x) => x;
@@ -443,7 +445,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var assembly = Compile(
             root: null,
             syntaxTrees: ImmutableArray.Create(foo),
-            additionalMetadataReferences: ImmutableArray.Create(csReference));
+            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");
         Assert.Equal(125, x);

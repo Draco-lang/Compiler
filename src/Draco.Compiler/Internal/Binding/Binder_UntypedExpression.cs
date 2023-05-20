@@ -542,9 +542,15 @@ internal partial class Binder
                     .ToImmutableArray();
                 if (withSameNoParams.Length == 0)
                 {
-                    // Error, no functions with the same number of generic params
-                    // TODO
-                    throw new NotImplementedException();
+                    // No generic functions with this number of parameters
+                    diagnostics.Add(Diagnostic.Create(
+                        template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
+                        location: syntax.Location,
+                        formatArgs: new object[] { members[0].Name, args.Length }));
+
+                    // Return a sentinel
+                    // NOTE: Is this the right one to return?
+                    return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
                 }
                 else
                 {

@@ -441,7 +441,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             """);
 
         var assembly = Compile(
-            root: ToPath("Tests"),
+            root: null,
             syntaxTrees: ImmutableArray.Create(foo),
             additionalMetadataReferences: ImmutableArray.Create(csReference));
 

@@ -19,7 +19,7 @@ internal sealed class PrimitiveTypeSymbol : TypeSymbol
     }
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
-        (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);
+        base.GenericInstantiate(containingSymbol, arguments);
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) => this;
 
     public override string ToString() => this.Name;

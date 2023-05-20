@@ -45,13 +45,12 @@ public abstract class EndToEndTestsBase
 
         // We need a custom load context
         var loadContext = new AssemblyLoadContext("testLoadContext");
-
-        // Load additional references
-        foreach (var (_, stream) in additionalPeReferences) loadContext.LoadFromStream(stream);
-
-        // TODO: This is janky as hell
         loadContext.Resolving += (loader, name) =>
-            loader.Assemblies.First(a => a.FullName!.Contains(name.Name!));
+        {
+            // Look through the additional references
+            var stream = additionalPeReferences.First(r => r.Name == name.Name).Stream;
+            return loader.LoadFromStream(stream);
+        };
 
         // Load emitted bytes as assembly
         peStream.Position = 0;

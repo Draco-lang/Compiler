@@ -42,6 +42,7 @@ internal partial class Binder
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
         MemberExpressionSyntax maccess => this.BindMemberExpression(maccess, constraints, diagnostics),
+        IndexExpressionSyntax index => this.BindIndexExpression(index, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -493,6 +494,8 @@ internal partial class Binder
             return new UntypedMemberExpression(syntax, left, memberType, promise);
         }
     }
+
+    private UntypedExpression BindIndexExpression(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics) => throw new NotImplementedException();
 
     private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

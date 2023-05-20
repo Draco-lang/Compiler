@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -12,7 +13,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Symbol>
 {
     // TODO: We return a special error type for now to swallow errors
-    private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
+    private static TypeSymbol UnknownType { get; } = new ErrorTypeSymbol("<unknown>");
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
 

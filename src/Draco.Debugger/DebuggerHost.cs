@@ -21,7 +21,7 @@ public sealed class DebuggerHost
         this.dbgShim = dbgShim;
     }
 
-    public Debugger StartProcess(string command)
+    public async Task<Debugger> StartProcess(string command)
     {
         var debugger = null as Debugger;
         var unregisterToken = IntPtr.Zero;
@@ -36,7 +36,10 @@ public sealed class DebuggerHost
                 corDbg.Initialize();
 
                 var cb = new CorDebugManagedCallback();
-                cb.OnAnyEvent += (s, e) => e.Controller.Continue(false);
+                cb.OnAnyEvent += (s, e) =>
+                {
+                    e.Controller.TryContinue(false);
+                };
                 corDbg.SetManagedHandler(cb);
 
                 var corDbgProcess = corDbg.DebugActiveProcess(process.ProcessId, win32Attach: false);
@@ -54,6 +57,7 @@ public sealed class DebuggerHost
             this.dbgShim.CloseResumeHandle(process.ResumeHandle);
         }
 
+        await debugger!.Started;
         return debugger!;
     }
 }

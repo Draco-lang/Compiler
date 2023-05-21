@@ -10,12 +10,14 @@ namespace Draco.Debugger;
 public sealed class Debugger
 {
     public Task Terminated => this.terminatedCompletionSource.Task;
+    internal Task Started => this.startedCompletionSource.Task;
 
     private readonly DebuggerHost host;
     private readonly CorDebug corDebug;
     private readonly CorDebugManagedCallback corDebugManagedCallback;
     private readonly CorDebugProcess corDebugProcess;
 
+    private readonly TaskCompletionSource startedCompletionSource = new();
     private readonly TaskCompletionSource terminatedCompletionSource = new();
 
     internal Debugger(
@@ -38,9 +40,16 @@ public sealed class Debugger
         {
             Console.WriteLine($"Loaded module {args.Module.Name}");
         };
+        this.corDebugManagedCallback.OnCreateProcess += (sender, args) =>
+        {
+            this.corDebugProcess.Stop(-1);
+            this.startedCompletionSource.SetResult();
+        };
         this.corDebugManagedCallback.OnExitProcess += (sender, args) =>
         {
             this.terminatedCompletionSource.SetResult();
         };
     }
+
+    public void Resume() => this.corDebugProcess.Continue(false);
 }

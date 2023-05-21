@@ -34,7 +34,10 @@ internal static class Program
     internal static async Task Main(string[] args)
     {
         var host = DebuggerHost.Create(new NativeMethods(), FindDbgShim());
-        var debugger = host.StartProcess("c:/TMP/DracoTest/bin/Debug/net7.0/DracoTest.exe");
+        var debugger = await host.StartProcess("c:/TMP/DracoTest/bin/Debug/net7.0/DracoTest.exe");
+
+        debugger.Resume();
+
         await debugger.Terminated;
     }
 

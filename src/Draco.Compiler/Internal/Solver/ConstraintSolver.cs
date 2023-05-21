@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -101,18 +102,6 @@ internal sealed class ConstraintSolver
     }
 
     /// <summary>
-    /// Adds a index-constraint to the solver.
-    /// </summary>
-    /// <param name="accessedType">The accessed object type.</param>
-    /// <returns>The promise of the accessed index symbol.</returns>
-    public IConstraintPromise<ImmutableArray<Symbol>> Index(TypeSymbol accessedType)
-    {
-        var constraint = new MemberConstraint(this, accessedType, memberName, memberType);
-        this.Add(constraint);
-        return constraint.Promise;
-    }
-
-    /// <summary>
     /// Adds a callability constraint to the solver.
     /// </summary>
     /// <param name="calledType">The called function type.</param>
@@ -169,6 +158,19 @@ internal sealed class ConstraintSolver
             this.Add(constraint);
             return constraint.Promise;
         }
+    }
+
+    /// <summary>
+    /// Adds a type-constraint to the solver.
+    /// </summary>
+    /// <param name="original">The original type, usually a type variable.</param>
+    /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
+    /// <returns>The promise of the type symbol symbol.</returns>
+    public IConstraintPromise<TypeSymbol> Type(TypeSymbol original, Action<TypeSymbol> map)
+    {
+        var constraint = new TypeConstraint(this, original, map);
+        this.Add(constraint);
+        return constraint.Promise;
     }
 
     /// <summary>

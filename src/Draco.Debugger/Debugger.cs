@@ -82,8 +82,6 @@ public sealed class Debugger
         var code = function.ILCode;
         // var baseAddress = module.BaseAddress;
         // var code = this.corDebugProcess.GetCode(baseAddress);
-        var bp1 = code.CreateBreakpoint(0x05);
-        bp1.Activate(true);
         var bp2 = code.CreateBreakpoint(0x0a);
         bp2.Activate(true);
     }

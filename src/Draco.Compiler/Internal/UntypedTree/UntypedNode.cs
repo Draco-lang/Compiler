@@ -157,11 +157,6 @@ internal partial class UntypedPropertySetLvalue
     public override TypeSymbol Type => this.Setter.Parameters[0].Type;
 }
 
-internal partial class UntypedIndexSetLvalue
-{
-    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
-}
-
 internal partial class UntypedMemberLvalue
 {
     public override TypeSymbol Type => this.Expression.MemberType;

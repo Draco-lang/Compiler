@@ -102,49 +102,26 @@ internal static class ConstraintPromise
 
     private sealed class UnwrapConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
-        public bool IsResolved { get; private set; }
+        public bool IsResolved => this.original.IsResolved && this.original.Result.IsResolved;
 
-        public TResult Result
-        {
-            get
-            {
-                if (!this.IsResolved) throw new InvalidOperationException("can not access the result of unresolved promise");
-                return this.result!;
-            }
-            private set
-            {
-                if (this.IsResolved) throw new InvalidOperationException("can not set the result of an already resolved promise");
-                this.result = value;
-                this.IsResolved = true;
-            }
-        }
-        private TResult? result;
+        public TResult Result => this.original.Result.Result;
 
-        public IConstraint<TResult> Constraint { get; }
+        private IConstraintPromise<IConstraintPromise<TResult>> original;
+        public IConstraint<TResult> Constraint => throw new NotSupportedException();
         IConstraint IConstraintPromise.Constraint => this.Constraint;
 
-        public UnwrapConstraintPromise(IConstraintPromise<IConstraintPromise<TResult>> constraint)
+        public UnwrapConstraintPromise(IConstraintPromise<IConstraintPromise<TResult>> promise)
         {
-            this.Constraint = constraint.Result.Constraint;
+            this.original = promise;
         }
 
-        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
-        {
-            configure(this.Constraint.Diagnostic);
-            return this;
-        }
+        public void Resolve(TResult result) =>
+            throw new InvalidOperationException("can not resolve an already solved constraint");
+        public void Fail(TResult result, DiagnosticBag? diagnostics) =>
+            throw new InvalidOperationException("can not resolve an already solved constraint");
+
+        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => this;
         IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
             this.ConfigureDiagnostic(configure);
-
-        public void Resolve(TResult result) => this.Result = result;
-        public void Fail(TResult result, DiagnosticBag? diagnostics)
-        {
-            this.Result = result;
-            if (diagnostics is not null)
-            {
-                var diag = this.Constraint.Diagnostic.Build();
-                diagnostics.Add(diag);
-            }
-        }
     }
 }

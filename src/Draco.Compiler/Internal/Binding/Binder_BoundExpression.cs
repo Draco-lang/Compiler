@@ -186,12 +186,19 @@ internal partial class Binder
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // TODO: Compound operators
-        // NOTE: This is how we deal with properties
+        // NOTE: This is how we deal with properties and indexers
         if (assignment.Left is UntypedPropertySetLvalue prop) return new BoundPropertySetExpression(
             assignment.Syntax,
             prop.Setter,
             prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
             this.TypeExpression(assignment.Right, constraints, diagnostics));
+
+        if (assignment.Left is UntypedIndexSetLvalue index) return new BoundIndexSetExpression(
+            assignment.Syntax,
+            index.Setter.Result,
+            this.TypeExpression(index.Receiver, constraints, diagnostics),
+            this.TypeExpression(assignment.Right, constraints, diagnostics),
+            index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray());
 
         else if (assignment.Left is UntypedMemberLvalue mem && mem.Expression.Member.Result[0] is PropertySymbol pr)
         {

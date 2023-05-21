@@ -30,6 +30,7 @@ internal partial class Binder
         GroupingExpressionSyntax group => this.BindLvalue(group.Expression, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameLvalue(name, constraints, diagnostics),
         MemberExpressionSyntax member => this.BindMemberLvalue(member, constraints, diagnostics),
+        IndexExpressionSyntax index => this.BindIndexLvalue(index, constraints, diagnostics),
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
@@ -147,5 +148,23 @@ internal partial class Binder
         default:
             throw new InvalidOperationException();
         }
+    }
+
+    private UntypedLvalue BindIndexLvalue(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var receiver = this.BindExpression(index.Indexed, constraints, diagnostics);
+        var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
+        var returnType = constraints.AllocateTypeVariable();
+        var promise = constraints.Type(receiver.TypeRequired, t =>
+        {
+            var indexers = t.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Setter).OfType<FunctionSymbol>().ToImmutableArray();
+            var overloaded = constraints.Overload(indexers, args.Select(x => x.TypeRequired).Append(returnType).ToImmutableArray(), out var gotReturnType);
+            constraints.Unify(returnType, gotReturnType);
+            return overloaded;
+        });
+        promise.ConfigureDiagnostic(diag => diag
+            .WithLocation(index.Location));
+
+        return new UntypedIndexSetLvalue(index, promise, receiver, args, returnType);
     }
 }

@@ -239,6 +239,7 @@
     <Field Name="Setter" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Receiver" Type="UntypedExpression"/>
     <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true"/>
   </Node>
 
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">

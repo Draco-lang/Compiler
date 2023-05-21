@@ -155,6 +155,12 @@
     <Field Name="Receiver" Type="UntypedExpression?"/>
   </Node>
 
+  <Node Name="UntypedIndexGetExpression" Base="UntypedExpression">
+    <Field Name="Getter" Type="FunctionSymbol" />
+    <Field Name="Receiver" Type="UntypedExpression?"/>
+    <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+  </Node>
+
   <Node Name="UntypedParameterExpression" Base="UntypedExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>
@@ -233,6 +239,12 @@
   <Node Name="UntypedPropertySetLvalue" Base="UntypedLvalue">
     <Field Name="Setter" Type="FunctionSymbol" />
     <Field Name="Receiver" Type="UntypedExpression?"/>
+  </Node>
+
+  <Node Name="UntypedIndexSetLvalue" Base="UntypedLvalue">
+    <Field Name="Setter" Type="FunctionSymbol" />
+    <Field Name="Receiver" Type="UntypedExpression?"/>
+    <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
   </Node>
 
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">

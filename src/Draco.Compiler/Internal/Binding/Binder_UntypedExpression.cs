@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Mail;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -495,7 +496,13 @@ internal partial class Binder
         }
     }
 
-    private UntypedExpression BindIndexExpression(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics) => throw new NotImplementedException();
+    private UntypedExpression BindIndexExpression(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // TODO: delete UntypedIndexExpression
+        var receiver = null as UntypedExpression;
+        if (index.Indexed is MemberExpressionSyntax mem) receiver = this.BindExpression(mem.Accessed, constraints, diagnostics);
+        return new UntypedIndexGetExpression(index, , receiver, );
+    }
 
     private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

@@ -499,16 +499,32 @@ internal partial class Binder
     private UntypedExpression BindIndexExpression(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = this.BindExpression(index.Indexed, constraints, diagnostics);
+        if (receiver is UntypedReferenceErrorExpression err)
+        {
+            return new UntypedReferenceErrorExpression(index, err.Symbol);
+        }
         var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
+        var returnType = constraints.AllocateTypeVariable();
         var promise = constraints.Type(receiver.TypeRequired, t =>
         {
             var indexers = t.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Getter).OfType<FunctionSymbol>().ToImmutableArray();
-            return constraints.Overload(indexers, args.Select(x => x.TypeRequired).ToImmutableArray(), out _);
+            if (indexers.Length == 0)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.NoGettableIndexerInType,
+                    location: index.Location,
+                    receiver.ToString()));
+                constraints.Unify(returnType, ErrorTypeSymbol.Instance);
+                return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
+            }
+            var overloaded = constraints.Overload(indexers, args.Select(x => x.TypeRequired).ToImmutableArray(), out var gotReturnType);
+            constraints.Unify(returnType, gotReturnType);
+            return overloaded;
         });
         promise.ConfigureDiagnostic(diag => diag
             .WithLocation(index.Location));
 
-        return new UntypedIndexGetExpression(index, promise, receiver, args);
+        return new UntypedIndexGetExpression(index, promise, receiver, args, returnType);
     }
 
     private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)

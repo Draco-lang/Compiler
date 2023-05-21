@@ -146,4 +146,22 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "can not get set only property {0}",
         code: Code(15));
+
+    /// <summary>
+    /// No settable indexer was found in type.
+    /// </summary>
+    public static readonly DiagnosticTemplate NoSettableIndexerInType = DiagnosticTemplate.Create(
+        title: "no settable indexer was found in type",
+        severity: DiagnosticSeverity.Error,
+        format: "no settable indexer was found in type {0}",
+        code: Code(16));
+
+    /// <summary>
+    /// No gettable indexer was found in type.
+    /// </summary>
+    public static readonly DiagnosticTemplate NoGettableIndexerInType = DiagnosticTemplate.Create(
+        title: "no gettable indexer was found in type",
+        severity: DiagnosticSeverity.Error,
+        format: "no gettable indexer was found in type {0}",
+        code: Code(17));
 }

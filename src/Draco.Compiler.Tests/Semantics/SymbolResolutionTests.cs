@@ -2120,7 +2120,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]
@@ -2157,7 +2157,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
@@ -2242,7 +2242,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]
@@ -2282,7 +2282,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
@@ -2299,6 +2299,35 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray<MetadataReference>.Empty);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void SettingNonExistingIndexer()
+    {
+        // func main(){
+        //   foo[0] = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
         // Act
         var compilation = Compilation.Create(

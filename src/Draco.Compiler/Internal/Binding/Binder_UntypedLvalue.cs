@@ -153,11 +153,24 @@ internal partial class Binder
     private UntypedLvalue BindIndexLvalue(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = this.BindExpression(index.Indexed, constraints, diagnostics);
+        if (receiver is UntypedReferenceErrorExpression err)
+        {
+            return new UntypedIllegalLvalue(index);
+        }
         var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
         var returnType = constraints.AllocateTypeVariable();
         var promise = constraints.Type(receiver.TypeRequired, t =>
         {
             var indexers = t.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Setter).OfType<FunctionSymbol>().ToImmutableArray();
+            if (indexers.Length == 0)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.NoSettableIndexerInType,
+                    location: index.Location,
+                    receiver.ToString()));
+                constraints.Unify(returnType, ErrorTypeSymbol.Instance);
+                return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
+            }
             var overloaded = constraints.Overload(indexers, args.Select(x => x.TypeRequired).Append(returnType).ToImmutableArray(), out var gotReturnType);
             constraints.Unify(returnType, gotReturnType);
             return overloaded;

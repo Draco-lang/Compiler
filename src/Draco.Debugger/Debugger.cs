@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +21,8 @@ public sealed class Debugger
     private readonly TaskCompletionSource startedCompletionSource = new();
     private readonly TaskCompletionSource terminatedCompletionSource = new();
 
+    private CorDebugAssembly? corDebugAssembly;
+
     internal Debugger(
         DebuggerHost host,
         CorDebug corDebug,
@@ -36,20 +39,52 @@ public sealed class Debugger
 
     private void InitializeEventHandler()
     {
+        this.corDebugManagedCallback.OnAnyEvent += (sender, args) =>
+        {
+            if (args.Kind == CorDebugManagedCallbackKind.Breakpoint) return;
+            this.Resume();
+        };
         this.corDebugManagedCallback.OnLoadModule += (sender, args) =>
         {
             Console.WriteLine($"Loaded module {args.Module.Name}");
         };
-        this.corDebugManagedCallback.OnCreateProcess += (sender, args) =>
+        var assemblyCount = 0;
+        this.corDebugManagedCallback.OnLoadAssembly += (sender, args) =>
         {
-            this.corDebugProcess.Stop(-1);
-            this.startedCompletionSource.SetResult();
+            // TODO: Is this reliable?
+            if (assemblyCount == 1)
+            {
+                this.corDebugAssembly = args.Assembly;
+                this.corDebugProcess.Stop(-1);
+                this.startedCompletionSource.SetResult();
+            }
+            ++assemblyCount;
         };
         this.corDebugManagedCallback.OnExitProcess += (sender, args) =>
         {
             this.terminatedCompletionSource.SetResult();
         };
+        this.corDebugManagedCallback.OnBreakpoint += (sender, args) =>
+        {
+            // TODO
+            var x = 0;
+        };
     }
 
-    public void Resume() => this.corDebugProcess.Continue(false);
+    public void Resume() => this.corDebugProcess.TryContinue(false);
+
+    public void SetBreakpoint(/* Uri sourceFile, int lineNumber */)
+    {
+        Debug.Assert(this.corDebugAssembly is not null);
+        var module = this.corDebugAssembly.Modules.Single();
+        // var @class = module.GetClassFromToken(new mdTypeDef(1));
+        var function = module.GetFunctionFromToken(new mdMethodDef(100663297));
+        var code = function.ILCode;
+        // var baseAddress = module.BaseAddress;
+        // var code = this.corDebugProcess.GetCode(baseAddress);
+        var bp1 = code.CreateBreakpoint(0x05);
+        bp1.Activate(true);
+        var bp2 = code.CreateBreakpoint(0x0a);
+        bp2.Activate(true);
+    }
 }

@@ -36,10 +36,6 @@ public sealed class DebuggerHost
                 corDbg.Initialize();
 
                 var cb = new CorDebugManagedCallback();
-                cb.OnAnyEvent += (s, e) =>
-                {
-                    e.Controller.TryContinue(false);
-                };
                 corDbg.SetManagedHandler(cb);
 
                 var corDbgProcess = corDbg.DebugActiveProcess(process.ProcessId, win32Attach: false);

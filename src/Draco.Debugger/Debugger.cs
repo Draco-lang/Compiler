@@ -102,6 +102,11 @@ public sealed class Debugger
         var method = meta.MetaDataImport.GetMethodProps(methods[0]);
         // var methods = meta.MetaDataImport.EnumMethods();
 
-        var reader = this.corDebugModule.CreateReaderForInMemorySymbols(typeof(ISymUnmanagedReader).GUID);
+        var binderRaw = (ISymUnmanagedBinder)new ClrDebug.CoClass.CorSymBinder_SxS();
+        var binder = new SymUnmanagedBinder(binderRaw);
+        var reader = binder.GetReaderForFile(
+            meta.MetaDataImport.Raw,
+            "c:\\TMP\\DracoTest\\bin\\Debug\\net7.0\\DracoTest.exe",
+            null);
     }
 }

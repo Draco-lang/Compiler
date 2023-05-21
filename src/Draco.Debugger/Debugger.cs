@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -23,7 +24,8 @@ public sealed class Debugger
     private readonly TaskCompletionSource startedCompletionSource = new();
     private readonly TaskCompletionSource terminatedCompletionSource = new();
 
-    private CorDebugAssembly? corDebugAssembly;
+    private CorDebugAssembly corDebugAssembly = null!;
+    private CorDebugModule corDebugModule = null!;
 
     internal Debugger(
         DebuggerHost host,
@@ -57,6 +59,8 @@ public sealed class Debugger
             if (assemblyCount == 1)
             {
                 this.corDebugAssembly = args.Assembly;
+                this.corDebugModule = args.Assembly.Modules.Single();
+
                 this.corDebugProcess.Stop(-1);
                 this.startedCompletionSource.SetResult();
             }
@@ -71,16 +75,33 @@ public sealed class Debugger
             // TODO
             var x = 0;
         };
+        this.corDebugManagedCallback.OnUpdateModuleSymbols += (sender, args) =>
+        {
+            // TODO
+            var x = 0;
+        };
     }
 
     public void Resume() => this.corDebugProcess.TryContinue(false);
 
     public void SetBreakpoint(int methodDefinitionHandle, int offset)
     {
-        Debug.Assert(this.corDebugAssembly is not null);
-        var module = this.corDebugAssembly.Modules.Single();
-        var function = module.GetFunctionFromToken(new mdMethodDef(methodDefinitionHandle));
+        var function = this.corDebugModule.GetFunctionFromToken(new mdMethodDef(methodDefinitionHandle));
         var code = function.ILCode;
         var bp = code.CreateBreakpoint(offset);
+    }
+
+    public void Foo()
+    {
+        var module = this.corDebugModule;
+
+        var meta = this.corDebugModule.GetMetaDataInterface();
+        var types = meta.MetaDataImport.EnumTypeDefs();
+        var typeDef = meta.MetaDataImport.GetTypeDefProps(types[0]);
+        var methods = meta.MetaDataImport.EnumMethods(types[0]);
+        var method = meta.MetaDataImport.GetMethodProps(methods[0]);
+        // var methods = meta.MetaDataImport.EnumMethods();
+
+        var reader = this.corDebugModule.CreateReaderForInMemorySymbols(typeof(ISymUnmanagedReader).GUID);
     }
 }

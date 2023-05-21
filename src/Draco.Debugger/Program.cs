@@ -36,7 +36,10 @@ internal static class Program
         var host = DebuggerHost.Create(new NativeMethods(), FindDbgShim());
         var debugger = await host.StartProcess("c:/TMP/DracoTest/bin/Debug/net7.0/DracoTest.exe");
 
-        debugger.SetBreakpoint();
+        debugger.SetBreakpoint(100663297, 0x0a);
+
+        await Task.Delay(5000);
+
         debugger.Resume();
 
         await Task.Delay(5000);

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using ClrDebug;
@@ -73,16 +75,12 @@ public sealed class Debugger
 
     public void Resume() => this.corDebugProcess.TryContinue(false);
 
-    public void SetBreakpoint(/* Uri sourceFile, int lineNumber */)
+    public void SetBreakpoint(int methodDefinitionHandle, int offset)
     {
         Debug.Assert(this.corDebugAssembly is not null);
         var module = this.corDebugAssembly.Modules.Single();
-        // var @class = module.GetClassFromToken(new mdTypeDef(1));
-        var function = module.GetFunctionFromToken(new mdMethodDef(100663297));
+        var function = module.GetFunctionFromToken(new mdMethodDef(methodDefinitionHandle));
         var code = function.ILCode;
-        // var baseAddress = module.BaseAddress;
-        // var code = this.corDebugProcess.GetCode(baseAddress);
-        var bp2 = code.CreateBreakpoint(0x0a);
-        bp2.Activate(true);
+        var bp = code.CreateBreakpoint(offset);
     }
 }

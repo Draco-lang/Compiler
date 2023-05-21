@@ -32,6 +32,22 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// The result of trying to disambiguate '<'.
+    /// </summary>
+    private enum LessThanDisambiguation
+    {
+        /// <summary>
+        /// Must be an operator for comparison.
+        /// </summary>
+        Operator,
+
+        /// <summary>
+        /// Must be a generic parameter list.
+        /// </summary>
+        Generics,
+    }
+
+    /// <summary>
     /// Represents a parsed block.
     /// This is factored out because we parse blocks differently, and instantiating an AST node could be wasteful.
     /// </summary>
@@ -350,6 +366,10 @@ internal sealed class Parser
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
         var name = this.Expect(TokenKind.Identifier);
 
+        // Optional generics
+        var generics = null as GenericParameterListSyntax;
+        if (this.Peek() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
+
         // Parameters
         var openParen = this.Expect(TokenKind.ParenOpen);
         var funcParameters = this.ParseSeparatedSyntaxList(
@@ -364,7 +384,16 @@ internal sealed class Parser
 
         var body = this.ParseFunctionBody();
 
-        return new FunctionDeclarationSyntax(visibility, funcKeyword, name, openParen, funcParameters, closeParen, returnType, body);
+        return new FunctionDeclarationSyntax(
+            visibility,
+            funcKeyword,
+            name,
+            generics,
+            openParen,
+            funcParameters,
+            closeParen,
+            returnType,
+            body);
     }
 
     /// <summary>
@@ -388,6 +417,31 @@ internal sealed class Parser
         var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
         return new(name, colon, type);
+    }
+
+    /// <summary>
+    /// Parses a generic parameter list.
+    /// </summary>
+    /// <returns>The parsed <see cref="GenericParameterListSyntax"/>.</returns>
+    private GenericParameterListSyntax ParseGenericParameterList()
+    {
+        var openBracket = this.Expect(TokenKind.LessThan);
+        var parameters = this.ParseSeparatedSyntaxList(
+            elementParser: this.ParseGenericParameter,
+            separatorKind: TokenKind.Comma,
+            stopKind: TokenKind.GreaterThan);
+        var closeBracket = this.Expect(TokenKind.GreaterThan);
+        return new(openBracket, parameters, closeBracket);
+    }
+
+    /// <summary>
+    /// Parses a single generic parameter in a generic parameter list.
+    /// </summary>
+    /// <returns>The parsed <see cref="GenericParameterSyntax"/>.</returns>
+    private GenericParameterSyntax ParseGenericParameter()
+    {
+        var name = this.Expect(TokenKind.Identifier);
+        return new(name);
     }
 
     /// <summary>
@@ -462,6 +516,17 @@ internal sealed class Parser
                 var dot = this.Advance();
                 var member = this.Expect(TokenKind.Identifier);
                 result = new MemberTypeSyntax(result, dot, member);
+            }
+            else if (peek == TokenKind.LessThan)
+            {
+                // Generic instantiation
+                var openBracket = this.Advance();
+                var args = this.ParseSeparatedSyntaxList(
+                    elementParser: this.ParseType,
+                    separatorKind: TokenKind.Comma,
+                    stopKind: TokenKind.GreaterThan);
+                var closeBracket = this.Expect(TokenKind.GreaterThan);
+                result = new GenericTypeSyntax(result, openBracket, args, closeBracket);
             }
             else
             {
@@ -785,6 +850,19 @@ internal sealed class Parser
                 var closeBracket = this.Expect(TokenKind.BracketClose);
                 result = new IndexExpressionSyntax(result, openBracket, args, closeBracket);
             }
+            else if (peek == TokenKind.LessThan
+                  && CanBeGenericInstantiated(result)
+                  && this.DisambiguateLessThan() == LessThanDisambiguation.Generics)
+            {
+                // Generic instantiation
+                var openBracket = this.Expect(TokenKind.LessThan);
+                var args = this.ParseSeparatedSyntaxList(
+                    elementParser: this.ParseType,
+                    separatorKind: TokenKind.Comma,
+                    stopKind: TokenKind.GreaterThan);
+                var closeBracket = this.Expect(TokenKind.GreaterThan);
+                result = new GenericExpressionSyntax(result, openBracket, args, closeBracket);
+            }
             else if (this.Matches(TokenKind.Dot, out var dot))
             {
                 var name = this.Expect(TokenKind.Identifier);
@@ -992,6 +1070,86 @@ internal sealed class Parser
             this.AddDiagnostic(closeQuote, diag);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
+    }
+
+    /// <summary>
+    /// Checks, if a given syntax can be followed by a generic argument list.
+    /// </summary>
+    /// <param name="syntaxNode">The node to check.</param>
+    /// <returns>True, if <paramref name="syntaxNode"/> can be followed by a generic argument list.</returns>
+    private static bool CanBeGenericInstantiated(SyntaxNode syntaxNode) => syntaxNode
+        is NameExpressionSyntax
+        or NameTypeSyntax
+        or MemberExpressionSyntax
+        or MemberTypeSyntax;
+
+    /// <summary>
+    /// Attempts to disambiguate the upcoming less-than token.
+    /// </summary>
+    /// <returns>The result of the disambiguation.</returns>
+    private LessThanDisambiguation DisambiguateLessThan()
+    {
+        var offset = 0;
+        return this.DisambiguateLessThan(ref offset);
+    }
+
+    /// <summary>
+    /// Attempts to disambiguate the upcoming less-than token.
+    /// </summary>
+    /// <param name="offset">The offset to start disambiguation from. The value will be updated to the farthest
+    /// offset that was peeked to disambiguate. If the token turns out to be a generic argument list, it is set
+    /// to the offset after the matching '>'.</param>
+    /// <returns>The result of the disambiguation.</returns>
+    private LessThanDisambiguation DisambiguateLessThan(ref int offset)
+    {
+        Debug.Assert(this.Peek(offset) == TokenKind.LessThan);
+
+        // Skip '<'
+        ++offset;
+        while (true)
+        {
+            var peek = this.Peek(offset);
+
+            switch (peek)
+            {
+            case TokenKind.Dot:
+            case TokenKind.Comma:
+            {
+                // Just skip, legal here
+                ++offset;
+                break;
+            }
+            case TokenKind.Identifier:
+            {
+                ++offset;
+                // We can have a nested generic here
+                if (this.Peek(offset) == TokenKind.LessThan)
+                {
+                    // Judge this list then
+                    var judgement = this.DisambiguateLessThan(ref offset);
+                    // If a nested thing is not a generic list, we are not either
+                    if (judgement == LessThanDisambiguation.Operator) return LessThanDisambiguation.Operator;
+                    // Otherwise, it's still fair game to be both
+                }
+                break;
+            }
+            case TokenKind.GreaterThan:
+            {
+                // We could not decide, we peek one ahead to determine
+                ++offset;
+                var next = this.Peek(offset);
+                return next switch
+                {
+                    TokenKind.ParenOpen => LessThanDisambiguation.Generics,
+                    _ when IsExpressionStarter(next) => LessThanDisambiguation.Operator,
+                    _ => LessThanDisambiguation.Generics,
+                };
+            }
+            default:
+                // Illegal in generics
+                return LessThanDisambiguation.Operator;
+            }
+        }
     }
 
     // General utilities

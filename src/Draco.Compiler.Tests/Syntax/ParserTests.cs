@@ -179,6 +179,54 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void TestGenericFunc()
+    {
+        this.ParseCompilationUnit("""
+            func foo<T, U>() {
+            }
+            """);
+
+        this.N<CompilationUnitSyntax>();
+        this.N<SyntaxList<DeclarationSyntax>>();
+        {
+            this.N<FunctionDeclarationSyntax>();
+            {
+                this.T(TokenKind.KeywordFunc);
+                this.T(TokenKind.Identifier);
+
+                this.N<GenericParameterListSyntax>();
+                {
+                    this.T(TokenKind.LessThan);
+                    this.N<SeparatedSyntaxList<GenericParameterSyntax>>();
+                    {
+                        this.N<GenericParameterSyntax>();
+                        {
+                            this.T(TokenKind.Identifier, "T");
+                        }
+                        this.T(TokenKind.Comma);
+                        this.N<GenericParameterSyntax>();
+                        {
+                            this.T(TokenKind.Identifier, "U");
+                        }
+                    }
+                    this.T(TokenKind.GreaterThan);
+                }
+
+                this.T(TokenKind.ParenOpen);
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
+                this.T(TokenKind.ParenClose);
+
+                this.N<BlockFunctionBodySyntax>();
+                {
+                    this.T(TokenKind.CurlyOpen);
+                    this.N<SyntaxList<StatementSyntax>>();
+                    this.T(TokenKind.CurlyClose);
+                }
+            }
+        }
+    }
+
+    [Fact]
     public void TestLineString()
     {
         this.ParseExpression("""
@@ -1492,6 +1540,163 @@ public sealed class ParserTests
             }
             this.StringContent("b");
             this.T(TokenKind.LineStringEnd, "\"");
+        }
+    }
+
+    [Fact]
+    public void TestFunctionCall()
+    {
+        this.ParseExpression("""
+            foo()
+            """);
+
+        this.N<CallExpressionSyntax>();
+        {
+            this.N<NameExpressionSyntax>();
+            {
+                this.T(TokenKind.Identifier, "foo");
+            }
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ExpressionSyntax>>();
+            this.T(TokenKind.ParenClose);
+        }
+    }
+
+    [Fact]
+    public void TestDoubleFunctionCall()
+    {
+        this.ParseExpression("""
+            foo()()
+            """);
+
+        this.N<CallExpressionSyntax>();
+        {
+            this.N<CallExpressionSyntax>();
+            {
+                this.N<NameExpressionSyntax>();
+                {
+                    this.T(TokenKind.Identifier, "foo");
+                }
+                this.T(TokenKind.ParenOpen);
+                this.N<SeparatedSyntaxList<ExpressionSyntax>>();
+                this.T(TokenKind.ParenClose);
+            }
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ExpressionSyntax>>();
+            this.T(TokenKind.ParenClose);
+        }
+    }
+
+    [Fact]
+    public void TestGenericCall()
+    {
+        this.ParseExpression("""
+            foo<T>()
+            """);
+
+        this.N<CallExpressionSyntax>();
+        {
+            this.N<GenericExpressionSyntax>();
+            {
+                this.N<NameExpressionSyntax>();
+                {
+                    this.T(TokenKind.Identifier, "foo");
+                }
+                this.T(TokenKind.LessThan);
+                this.N<SeparatedSyntaxList<TypeSyntax>>();
+                {
+                    this.N<NameTypeSyntax>();
+                    {
+                        this.T(TokenKind.Identifier, "T");
+                    }
+                }
+                this.T(TokenKind.GreaterThan);
+            }
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ExpressionSyntax>>();
+            this.T(TokenKind.ParenClose);
+        }
+    }
+
+    [Fact]
+    public void TestGenericCallWithParameter()
+    {
+        this.ParseExpression("""
+            foo<T>(0)
+            """);
+
+        this.N<CallExpressionSyntax>();
+        {
+            this.N<GenericExpressionSyntax>();
+            {
+                this.N<NameExpressionSyntax>();
+                {
+                    this.T(TokenKind.Identifier, "foo");
+                }
+                this.T(TokenKind.LessThan);
+                this.N<SeparatedSyntaxList<TypeSyntax>>();
+                {
+                    this.N<NameTypeSyntax>();
+                    {
+                        this.T(TokenKind.Identifier, "T");
+                    }
+                }
+                this.T(TokenKind.GreaterThan);
+            }
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ExpressionSyntax>>();
+            {
+                this.N<LiteralExpressionSyntax>();
+                {
+                    this.T(TokenKind.LiteralInteger, "0");
+                }
+            }
+            this.T(TokenKind.ParenClose);
+        }
+    }
+
+    [Fact]
+    public void TestRelationalExpressionDisambiguatedFromGenericCall()
+    {
+        this.ParseExpression("""
+            (foo)<T>(0)
+            """);
+
+        this.N<RelationalExpressionSyntax>();
+        {
+            this.N<GroupingExpressionSyntax>();
+            {
+                this.T(TokenKind.ParenOpen);
+                this.N<NameExpressionSyntax>();
+                {
+                    this.T(TokenKind.Identifier, "foo");
+                }
+                this.T(TokenKind.ParenClose);
+            }
+            this.N<SyntaxList<ComparisonElementSyntax>>();
+            {
+                this.N<ComparisonElementSyntax>();
+                {
+                    this.T(TokenKind.LessThan);
+                    this.N<NameExpressionSyntax>();
+                    {
+                        this.T(TokenKind.Identifier, "T");
+                    }
+                }
+                this.N<ComparisonElementSyntax>();
+                {
+                    this.T(TokenKind.GreaterThan);
+                    this.N<GroupingExpressionSyntax>();
+                    {
+                        this.T(TokenKind.ParenOpen);
+                        this.N<LiteralExpressionSyntax>();
+                        {
+                            this.T(TokenKind.LiteralInteger, "0");
+                        }
+                        this.T(TokenKind.ParenClose);
+                    }
+                }
+            }
         }
     }
 }

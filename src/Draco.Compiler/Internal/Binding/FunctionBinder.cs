@@ -15,7 +15,9 @@ internal sealed class FunctionBinder : Binder
 
     public override SyntaxNode? DeclaringSyntax => this.symbol.DeclaringSyntax;
 
-    public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Parameters;
+    public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Parameters
+        .Cast<Symbol>()
+        .Concat(this.symbol.GenericParameters);
 
     private readonly FunctionSymbol symbol;
 
@@ -27,6 +29,15 @@ internal sealed class FunctionBinder : Binder
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {
+        // Check type parameters
+        foreach (var typeParam in this.symbol.GenericParameters)
+        {
+            if (typeParam.Name != name) continue;
+            if (!allowSymbol(typeParam)) continue;
+            result.Add(typeParam);
+            break;
+        }
+
         if (flags.HasFlag(LookupFlags.DisallowLocals)) return;
 
         // Check parameters

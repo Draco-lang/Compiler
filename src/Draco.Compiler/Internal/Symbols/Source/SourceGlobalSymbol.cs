@@ -25,7 +25,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     }
 
     public override bool IsMutable => this.declaration.Syntax.Keyword.Kind == TokenKind.KeywordVar;
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
     public override VariableDeclarationSyntax DeclaringSyntax => this.declaration.Syntax;
@@ -55,7 +55,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     private TypeSymbol? type;
     private BoundExpression? value;
 
-    public SourceGlobalSymbol(Symbol? containingSymbol, GlobalDeclaration declaration)
+    public SourceGlobalSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
     {
         this.ContainingSymbol = containingSymbol;
         this.declaration = declaration;

@@ -28,10 +28,10 @@ internal abstract partial class ModuleSymbol : Symbol
         {
             var part = parts[i];
             current = current.Members
-                .Where(m => m.Name == part)
+                .Where(m => m.MetadataName == part)
                 .Single();
         }
 
-        return current.Members.Where(m => m.Name == parts[^1]);
+        return current.Members.Where(m => m.MetadataName == parts[^1]);
     }
 }

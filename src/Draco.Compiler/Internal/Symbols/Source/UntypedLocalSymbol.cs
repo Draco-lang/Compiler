@@ -10,14 +10,14 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class UntypedLocalSymbol : Symbol, ISourceSymbol
 {
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;
 
     public override VariableDeclarationSyntax DeclaringSyntax { get; }
 
     public bool IsMutable => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVar;
 
-    public UntypedLocalSymbol(Symbol? containingSymbol, VariableDeclarationSyntax syntax)
+    public UntypedLocalSymbol(Symbol containingSymbol, VariableDeclarationSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = syntax;

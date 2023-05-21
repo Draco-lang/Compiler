@@ -9,24 +9,19 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A static class read up from metadata that we handle as a module.
 /// </summary>
-internal sealed class MetadataStaticClassSymbol : ModuleSymbol
+internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
-    public override string Name => this.MetadataReader.GetString(this.typeDefinition.Name);
+    public override string Name => this.MetadataName;
+    public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
 
     public override Symbol ContainingSymbol { get; }
 
-    /// <summary>
-    /// The metadata assembly of this metadata symbol.
-    /// </summary>
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    /// <summary>
-    /// The metadata reader that was used to read up this metadata symbol.
-    /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly TypeDefinition typeDefinition;

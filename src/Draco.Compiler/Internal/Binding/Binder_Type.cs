@@ -55,6 +55,7 @@ internal partial class Binder
         UnexpectedTypeSyntax => new UndefinedTypeSymbol("<error>"),
         NameTypeSyntax name => this.BindNameType(name, diagnostics),
         MemberTypeSyntax member => this.BindMemberType(member, diagnostics),
+        GenericTypeSyntax generic => this.BindGenericType(generic, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -82,5 +83,27 @@ internal partial class Binder
             var symbol = result.GetType(memberName, syntax, diagnostics);
             return symbol;
         }
+    }
+
+    private Symbol BindGenericType(GenericTypeSyntax syntax, DiagnosticBag diagnostics)
+    {
+        var instantiated = this.BindType(syntax.Instantiated, diagnostics);
+        var args = syntax.Arguments.Values
+            .Select(arg => this.BindType(arg, diagnostics))
+            // TODO: Why do we even need this cast?
+            .Cast<TypeSymbol>()
+            .ToImmutableArray();
+
+        if (instantiated.GenericParameters.Length != args.Length)
+        {
+            // Wrong number of args
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.GenericTypeParamCountMismatch,
+                location: syntax.Location,
+                formatArgs: new object[] { instantiated, args.Length }));
+            return IntrinsicSymbols.ErrorType;
+        }
+        // Ok, instantiate
+        return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);
     }
 }

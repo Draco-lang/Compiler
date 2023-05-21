@@ -1,18 +1,19 @@
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
 /// <summary>
 /// Helper for decoding signature types.
 /// </summary>
-internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit>
+internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Symbol>
 {
     // TODO: We return a special error type for now to swallow errors
-    private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
+    private static TypeSymbol UnknownType { get; } = new ErrorTypeSymbol("<unknown>");
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
 
@@ -29,9 +30,31 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
         new ArrayTypeSymbol(elementType, 1);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
-    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => UnknownType;
-    public TypeSymbol GetGenericMethodParameter(Unit genericContext, int index) => UnknownType;
-    public TypeSymbol GetGenericTypeParameter(Unit genericContext, int index) => UnknownType;
+    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments)
+    {
+        if (ReferenceEquals(genericType, UnknownType)) return UnknownType;
+        return genericType.GenericInstantiate(genericType.ContainingSymbol, typeArguments);
+    }
+    public TypeSymbol GetGenericMethodParameter(Symbol genericContext, int index)
+    {
+        var methodAncestor = genericContext.AncestorChain
+            .OfType<FunctionSymbol>()
+            .First();
+
+        return methodAncestor.IsGenericDefinition
+            ? methodAncestor.GenericParameters[index]
+            : methodAncestor.GenericDefinition!.GenericParameters[index];
+    }
+    public TypeSymbol GetGenericTypeParameter(Symbol genericContext, int index)
+    {
+        var typeAncestor = genericContext.AncestorChain
+            .OfType<TypeSymbol>()
+            .First();
+
+        return typeAncestor.IsGenericDefinition
+            ? typeAncestor.GenericParameters[index]
+            : typeAncestor.GenericDefinition!.GenericParameters[index];
+    }
     public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => UnknownType;
     public TypeSymbol GetPinnedType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
@@ -73,5 +96,5 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Unit
         // TODO: Based on resolution scope, do the lookup
         return UnknownType;
     }
-    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Unit genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => UnknownType;
+    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => UnknownType;
 }

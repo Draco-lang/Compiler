@@ -2344,7 +2344,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void NestedTypeWithStaticParentInTypeContextAndConstructor()
+    public void NestedTypeWithStaticParentInTypeContextAndConstructorFullyQualified()
     {
         // func foo(): ParentType.FooType = ParentType.FooType();
 
@@ -2358,7 +2358,41 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
-                public class FooModule { }
+                public class FooType { }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void NestedTypeWithStaticParentInTypeContextAndConstructorImported()
+    {
+        // import ParentType;
+        // func foo(): FooType = FooType();
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("ParentType"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("FooType"),
+                InlineFunctionBody(
+                    CallExpression(NameExpression("FooType"))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class ParentType{
+                public class FooType { }
             }
             """);
 

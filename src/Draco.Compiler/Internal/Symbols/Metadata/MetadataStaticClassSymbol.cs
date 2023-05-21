@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api.Semantics;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -49,10 +50,8 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
-            Symbol typeSym = typeDef.Attributes.HasFlag(MetadataSymbol.StaticClassAttributes)
-                ? new MetadataStaticClassSymbol(this, typeDef)
-                : new MetadataTypeSymbol(this, typeDef);
-            result.Add(typeSym);
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
+            result.AddRange(symbols);
         }
 
         // Methods

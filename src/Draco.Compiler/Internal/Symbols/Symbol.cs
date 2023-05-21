@@ -22,7 +22,7 @@ internal abstract partial class Symbol
     public abstract Symbol? ContainingSymbol { get; }
 
     /// <summary>
-    /// The ancestory chain of this symbol, starting with this one.
+    /// The ancestor chain of this symbol, starting with this one.
     /// </summary>
     public IEnumerable<Symbol> AncestorChain
     {
@@ -75,6 +75,16 @@ internal abstract partial class Symbol
     /// All the members within this symbol.
     /// </summary>
     public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();
+
+    /// <summary>
+    /// The static members within this symbol.
+    /// </summary>
+    public virtual IEnumerable<Symbol> StaticMembers => this.Members.Where(x => x is not ITypedSymbol typed || typed.IsStatic);
+
+    /// <summary>
+    /// The instance members within this symbol.
+    /// </summary>
+    public virtual IEnumerable<Symbol> InstanceMembers => this.Members.Where(x => x is ITypedSymbol typed && !typed.IsStatic);
 
     /// <summary>
     /// Documentation attached to this symbol.

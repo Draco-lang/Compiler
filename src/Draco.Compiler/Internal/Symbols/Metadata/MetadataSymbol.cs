@@ -18,7 +18,7 @@ internal static class MetadataSymbol
     /// <summary>
     /// Attributes of a static class.
     /// </summary>
-    private static readonly TypeAttributes StaticClassAttributes =
+    public static readonly TypeAttributes StaticClassAttributes =
         TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class;
 
     public static IEnumerable<Symbol> ToSymbol(

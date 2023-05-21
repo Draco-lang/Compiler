@@ -2390,7 +2390,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
-                public class FooModule { }
+                public class FooType { }
             }
             """);
 
@@ -2421,11 +2421,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooModule"), "foo")))))));
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
-                public class FooModule{
+                public class FooType{
                     public static int foo = 0;
                 }
             }
@@ -2458,11 +2458,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooModule"), "foo")))))));
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
-                public class FooModule{
+                public class FooType{
                     public static int foo = 0;
                 }
             }
@@ -2501,7 +2501,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
-                public class FooModule{
+                public class FooType{
                     public int member = 0;
                 }
             }
@@ -2540,7 +2540,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
-                public class FooModule{
+                public class FooType{
                     public int member = 0;
                 }
             }

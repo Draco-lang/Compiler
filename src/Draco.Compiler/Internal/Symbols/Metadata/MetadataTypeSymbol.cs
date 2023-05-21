@@ -45,7 +45,19 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
-        // TODO: nested-types
+        // Nested types
+        foreach (var typeHandle in this.typeDefinition.GetNestedTypes())
+        {
+            var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
+            // Skip special name
+            if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
+            // Skip non-public
+            if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
+            Symbol typeSym = typeDef.Attributes.HasFlag(MetadataSymbol.StaticClassAttributes)
+                ? new MetadataStaticClassSymbol(this, typeDef)
+                : new MetadataTypeSymbol(this, typeDef);
+            result.Add(typeSym);
+        }
 
         // Methods
         foreach (var methodHandle in this.typeDefinition.GetMethods())
@@ -84,11 +96,6 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         {
             var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
             // TODO: visibility
-            //// Skip special name
-            //if (propDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
-            //// Skip non-public
-            //if (!propDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
-            //// Add it
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef,

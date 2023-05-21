@@ -90,13 +90,7 @@
     <Field Name="Promise" Type="IConstraintPromise&lt;UntypedExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
-
-  <Node Name="UntypedIndexExpression" Base="UntypedExpression">
-    <Field Name="Collection" Type="UntypedExpression" />
-    <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
-  </Node>
-
+  
   <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Operand" Type="UntypedExpression" />
@@ -157,7 +151,7 @@
 
   <Node Name="UntypedIndexGetExpression" Base="UntypedExpression">
     <Field Name="Getter" Type="FunctionSymbol" />
-    <Field Name="Receiver" Type="UntypedExpression?"/>
+    <Field Name="Receiver" Type="UntypedExpression"/>
     <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
   </Node>
 
@@ -243,7 +237,7 @@
 
   <Node Name="UntypedIndexSetLvalue" Base="UntypedLvalue">
     <Field Name="Setter" Type="FunctionSymbol" />
-    <Field Name="Receiver" Type="UntypedExpression?"/>
+    <Field Name="Receiver" Type="UntypedExpression"/>
     <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
   </Node>
 

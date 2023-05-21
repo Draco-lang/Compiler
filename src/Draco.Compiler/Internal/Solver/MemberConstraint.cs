@@ -11,7 +11,7 @@ using Draco.Compiler.Internal.Symbols.Synthetized;
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
-/// A constaint representing that a type needs to have a given member.
+/// A constraint representing that a type needs to have a given member.
 /// </summary>
 internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
 {

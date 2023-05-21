@@ -117,12 +117,6 @@
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
-  <Node Name="BoundIndexExpression" Base="BoundExpression">
-    <Field Name="Collection" Type="BoundExpression" />
-    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
-  </Node>
-
   <Node Name="BoundUnaryExpression" Base="BoundExpression">
     <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Operand" Type="BoundExpression" />
@@ -189,13 +183,13 @@
 
   <Node Name="BoundIndexGetExpression" Base="BoundExpression">
     <Field Name="Getter" Type="FunctionSymbol" />
-    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Receiver" Type="BoundExpression"/>
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 
   <Node Name="BoundIndexSetExpression" Base="BoundExpression">
     <Field Name="Setter" Type="FunctionSymbol" />
-    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Receiver" Type="BoundExpression"/>
     <Field Name="Value" Type="BoundExpression"/>
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>

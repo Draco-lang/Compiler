@@ -101,6 +101,18 @@ internal sealed class ConstraintSolver
     }
 
     /// <summary>
+    /// Adds a index-constraint to the solver.
+    /// </summary>
+    /// <param name="accessedType">The accessed object type.</param>
+    /// <returns>The promise of the accessed index symbol.</returns>
+    public IConstraintPromise<ImmutableArray<Symbol>> Index(TypeSymbol accessedType)
+    {
+        var constraint = new MemberConstraint(this, accessedType, memberName, memberType);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
+    /// <summary>
     /// Adds a callability constraint to the solver.
     /// </summary>
     /// <param name="calledType">The called function type.</param>

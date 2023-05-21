@@ -499,8 +499,11 @@ internal partial class Binder
     private UntypedExpression BindIndexExpression(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // TODO: delete UntypedIndexExpression
-        var receiver = null as UntypedExpression;
-        if (index.Indexed is MemberExpressionSyntax mem) receiver = this.BindExpression(mem.Accessed, constraints, diagnostics);
+        var receiver = this.BindExpression(index.Indexed, constraints, diagnostics);
+        var promise = constraints.Member(receiver.TypeRequired, memberName, out var memberType);
+        promise.ConfigureDiagnostic(diag => diag
+            .WithLocation(index.Location));
+
         return new UntypedIndexGetExpression(index, , receiver, );
     }
 

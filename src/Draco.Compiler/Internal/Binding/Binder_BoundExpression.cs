@@ -33,6 +33,7 @@ internal partial class Binder
         UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
         UntypedFieldExpression field => this.TypeFieldExpression(field, constraints, diagnostics),
         UntypedPropertyGetExpression prop => this.TypePropertyGetExpression(prop, constraints, diagnostics),
+        UntypedIndexGetExpression index => this.TypeIndexGetExpression(index, constraints, diagnostics),
         UntypedFunctionGroupExpression group => this.TypeFunctionGroupExpression(group, constraints, diagnostics),
         UntypedReferenceErrorExpression err => this.TypeReferenceErrorExpression(err, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
@@ -106,6 +107,10 @@ internal partial class Binder
 
     private BoundExpression TypePropertyGetExpression(UntypedPropertyGetExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundPropertyGetExpression(prop.Syntax, prop.Getter, prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics));
+
+    private BoundExpression TypeIndexGetExpression(UntypedIndexGetExpression index, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        new BoundIndexGetExpression(index.Syntax, index.Getter.Result, this.TypeExpression(index.Receiver, constraints, diagnostics),
+            index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray());
 
     private BoundExpression TypeFunctionGroupExpression(UntypedFunctionGroupExpression group, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

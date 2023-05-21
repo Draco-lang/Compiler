@@ -350,6 +350,30 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return new BoundCallExpression(node.Syntax, node.Receiver is null ? null : (BoundExpression)this.VisitExpression(node.Receiver), node.Getter, ImmutableArray<BoundExpression>.Empty);
     }
 
+    public override BoundNode VisitIndexSetExpression(BoundIndexSetExpression node)
+    {
+        // indexed[x] = foo
+        //
+        // =>
+        //
+        // indexed.Item_set(x, foo)
+
+        var args = node.Indices.Select(x => (BoundExpression)this.VisitExpression(x)).Append((BoundExpression)this.VisitExpression(node.Value)).ToImmutableArray();
+        return new BoundCallExpression(null, (BoundExpression)this.VisitExpression(node.Receiver), node.Setter, args);
+    }
+
+    public override BoundNode VisitIndexGetExpression(BoundIndexGetExpression node)
+    {
+        // indexed[x]
+        //
+        // =>
+        //
+        // indexed.Item_get()
+
+        var args = node.Indices.Select(x => (BoundExpression)this.VisitExpression(x)).ToImmutableArray();
+        return new BoundCallExpression(node.Syntax, (BoundExpression)this.VisitExpression(node.Receiver), node.Getter, args);
+    }
+
     // Utility to store an expression to a temporary variable
     private TemporaryStorage StoreTemporary(BoundExpression expr)
     {

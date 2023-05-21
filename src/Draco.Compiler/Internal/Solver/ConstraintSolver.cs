@@ -166,11 +166,11 @@ internal sealed class ConstraintSolver
     /// <param name="original">The original type, usually a type variable.</param>
     /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
     /// <returns>The promise of the type symbol symbol.</returns>
-    public IConstraintPromise<TypeSymbol> Type(TypeSymbol original, Action<TypeSymbol> map)
+    public IConstraintPromise<TResult> Type<TResult>(TypeSymbol original, Func<TypeSymbol, IConstraintPromise<TResult>> map)
     {
-        var constraint = new TypeConstraint(this, original, map);
+        var constraint = new TypeConstraint<TResult>(this, original, map);
         this.Add(constraint);
-        return constraint.Promise;
+        return ConstraintPromise.Unwrap(constraint.Promise);
     }
 
     /// <summary>

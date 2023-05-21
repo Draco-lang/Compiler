@@ -27,6 +27,9 @@ internal static class ConstraintPromise
     public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
         new ResolvedConstraintPromise<TResult>(result);
 
+    public static IConstraintPromise<TResult> Unwrap<TResult>(IConstraintPromise<IConstraintPromise<TResult>> toUnwrap) =>
+        new UnwrapConstraintPromise<TResult>(toUnwrap);
+
     private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
         public bool IsResolved => true;
@@ -75,6 +78,54 @@ internal static class ConstraintPromise
         public ResolvableConstraintPromise(IConstraint<TResult> constraint)
         {
             this.Constraint = constraint;
+        }
+
+        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
+        {
+            configure(this.Constraint.Diagnostic);
+            return this;
+        }
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostic(configure);
+
+        public void Resolve(TResult result) => this.Result = result;
+        public void Fail(TResult result, DiagnosticBag? diagnostics)
+        {
+            this.Result = result;
+            if (diagnostics is not null)
+            {
+                var diag = this.Constraint.Diagnostic.Build();
+                diagnostics.Add(diag);
+            }
+        }
+    }
+
+    private sealed class UnwrapConstraintPromise<TResult> : IConstraintPromise<TResult>
+    {
+        public bool IsResolved { get; private set; }
+
+        public TResult Result
+        {
+            get
+            {
+                if (!this.IsResolved) throw new InvalidOperationException("can not access the result of unresolved promise");
+                return this.result!;
+            }
+            private set
+            {
+                if (this.IsResolved) throw new InvalidOperationException("can not set the result of an already resolved promise");
+                this.result = value;
+                this.IsResolved = true;
+            }
+        }
+        private TResult? result;
+
+        public IConstraint<TResult> Constraint { get; }
+        IConstraint IConstraintPromise.Constraint => this.Constraint;
+
+        public UnwrapConstraintPromise(IConstraintPromise<IConstraintPromise<TResult>> constraint)
+        {
+            this.Constraint = constraint.Result.Constraint;
         }
 
         public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)

@@ -498,13 +498,17 @@ internal partial class Binder
 
     private UntypedExpression BindIndexExpression(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        // TODO: delete UntypedIndexExpression
         var receiver = this.BindExpression(index.Indexed, constraints, diagnostics);
-        var promise = constraints.Member(receiver.TypeRequired, memberName, out var memberType);
+        var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
+        var promise = constraints.Type(receiver.TypeRequired, t =>
+        {
+            var indexers = t.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Getter).OfType<FunctionSymbol>().ToImmutableArray();
+            return constraints.Overload(indexers, args.Select(x => x.TypeRequired).ToImmutableArray(), out _);
+        });
         promise.ConfigureDiagnostic(diag => diag
             .WithLocation(index.Location));
 
-        return new UntypedIndexGetExpression(index, , receiver, );
+        return new UntypedIndexGetExpression(index, promise, receiver, args);
     }
 
     private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)

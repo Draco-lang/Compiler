@@ -8,12 +8,12 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// Represents a constraint that wait until <see cref="Type"/> is substituted.
 /// </summary>
-internal class TypeConstraint : Constraint<TypeSymbol>
+internal class TypeConstraint<TResult> : Constraint<IConstraintPromise<TResult>>
 {
     /// <summary>
     /// The mapping function that executes user code once <see cref="Type"/> is substituted.
     /// </summary>
-    public Action<TypeSymbol> Map { get; }
+    Func<TypeSymbol, IConstraintPromise<TResult>> Map { get; }
 
     /// <summary>
     /// The <see cref="TypeSymbol"/> that is being waited for.
@@ -23,7 +23,7 @@ internal class TypeConstraint : Constraint<TypeSymbol>
     public TypeConstraint(
         ConstraintSolver solver,
         TypeSymbol type,
-        Action<TypeSymbol> map)
+        Func<TypeSymbol, IConstraintPromise<TResult>> map)
         : base(solver)
     {
         this.Type = type;
@@ -42,10 +42,10 @@ internal class TypeConstraint : Constraint<TypeSymbol>
             type = this.Unwrap(this.Type);
         }
         // We can resolve the awaited promise
-        this.Map(type);
+        var mapped = this.Map(type);
 
         // Resolve this promise
-        this.Promise.Resolve(type);
+        this.Promise.Resolve(mapped);
         yield return SolveState.Solved;
     }
 }

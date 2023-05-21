@@ -46,7 +46,7 @@ internal partial class UntypedUnitExpression
 
 internal partial class UntypedMemberExpression
 {
-    public override TypeSymbol? Type => this.MemberType is TypeVariable ? null : this.MemberType;
+    public override TypeSymbol? Type => this.MemberType;
 }
 
 internal partial class UntypedGotoExpression
@@ -99,6 +99,11 @@ internal partial class UntypedPropertyGetExpression
     public override TypeSymbol Type => this.Getter.ReturnType;
 }
 
+//internal partial class UntypedIndexGetExpression
+//{
+//    public override TypeSymbol Type => this.Getter.ReturnType;
+//}
+
 internal partial class UntypedReferenceErrorExpression
 {
     public override TypeSymbol? Type => IntrinsicSymbols.ErrorType;
@@ -150,6 +155,11 @@ internal partial class UntypedFieldLvalue
 internal partial class UntypedPropertySetLvalue
 {
     public override TypeSymbol Type => this.Setter.Parameters[0].Type;
+}
+
+internal partial class UntypedIndexSetLvalue
+{
+    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
 internal partial class UntypedMemberLvalue

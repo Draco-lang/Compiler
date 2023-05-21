@@ -65,6 +65,7 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
                 .WithFormatArgs(this.MemberName, this.Unwrap(this.Accessed));
             // We still provide a single error symbol
             var errorSymbol = new UndefinedMemberSymbol();
+            this.Unify(ErrorTypeSymbol.Instance, this.MemberType);
             this.Promise.Fail(ImmutableArray.Create<Symbol>(errorSymbol), diagnostics);
             yield return SolveState.Solved;
         }

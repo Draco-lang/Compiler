@@ -5,15 +5,37 @@ using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using ClrDebug;
 
 namespace Draco.Debugger;
 
+/// <summary>
+/// Represents a debugger for a single process.
+/// </summary>
 public sealed class Debugger
 {
+    /// <summary>
+    /// The path to the started program.
+    /// </summary>
+    public string ProgramPath { get; }
+
+    /// <summary>
+    /// The assumed PDB path of the started program.
+    /// </summary>
+    public string PdbPath => Path.ChangeExtension(this.ProgramPath, ".pdb");
+
+    /// <summary>
+    /// The task that is completed, when the process has terminated.
+    /// </summary>
     public Task Terminated => this.terminatedCompletionSource.Task;
+
+    /// <summary>
+    /// The task that is completed, when the process has started, including loading in the main assembly
+    /// and CLR.
+    /// </summary>
     internal Task Started => this.startedCompletionSource.Task;
 
     private readonly DebuggerHost host;
@@ -27,12 +49,27 @@ public sealed class Debugger
     private CorDebugAssembly corDebugAssembly = null!;
     private CorDebugModule corDebugModule = null!;
 
+    /// <summary>
+    /// The metadata reader for the PDB.
+    /// </summary>
+    private MetadataReader PdbMetadataReader
+    {
+        get
+        {
+            this.pdbMetadataReaderProvider ??= MetadataReaderProvider.FromPortablePdbStream(File.OpenRead(this.PdbPath));
+            return this.pdbMetadataReaderProvider.GetMetadataReader();
+        }
+    }
+    private MetadataReaderProvider? pdbMetadataReaderProvider;
+
     internal Debugger(
         DebuggerHost host,
+        string programPath,
         CorDebug corDebug,
         CorDebugManagedCallback corDebugManagedCallback,
         CorDebugProcess corDebugProcess)
     {
+        this.ProgramPath = programPath;
         this.host = host;
         this.corDebug = corDebug;
         this.corDebugManagedCallback = corDebugManagedCallback;
@@ -82,31 +119,20 @@ public sealed class Debugger
         };
     }
 
+    /// <summary>
+    /// Resumes the execution of the program.
+    /// </summary>
     public void Resume() => this.corDebugProcess.TryContinue(false);
 
+    /// <summary>
+    /// Sets a breakpoint in the program.
+    /// </summary>
+    /// <param name="methodDefinitionHandle">The method definition handle index.</param>
+    /// <param name="offset">The offset within the method.</param>
     public void SetBreakpoint(int methodDefinitionHandle, int offset)
     {
         var function = this.corDebugModule.GetFunctionFromToken(new mdMethodDef(methodDefinitionHandle));
         var code = function.ILCode;
         var bp = code.CreateBreakpoint(offset);
-    }
-
-    public void Foo()
-    {
-        var module = this.corDebugModule;
-
-        var meta = this.corDebugModule.GetMetaDataInterface();
-        var types = meta.MetaDataImport.EnumTypeDefs();
-        var typeDef = meta.MetaDataImport.GetTypeDefProps(types[0]);
-        var methods = meta.MetaDataImport.EnumMethods(types[0]);
-        var method = meta.MetaDataImport.GetMethodProps(methods[0]);
-        // var methods = meta.MetaDataImport.EnumMethods();
-
-        var binderRaw = (ISymUnmanagedBinder)new ClrDebug.CoClass.CorSymBinder_SxS();
-        var binder = new SymUnmanagedBinder(binderRaw);
-        var reader = binder.GetReaderForFile(
-            meta.MetaDataImport.Raw,
-            "c:\\TMP\\DracoTest\\bin\\Debug\\net7.0\\DracoTest.exe",
-            null);
     }
 }

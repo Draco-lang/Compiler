@@ -4,8 +4,12 @@ using ClrDebug;
 
 namespace Draco.Debugger;
 
+/// <summary>
+/// A host object that can be used to start debugger processes.
+/// </summary>
 public sealed class DebuggerHost
 {
+    // TODO: We can hide native methods, all we need is dbgshim
     public static DebuggerHost Create(INativeMethods nativeMethods, string dbgshimPath)
     {
         var dbgshim = new DbgShim(nativeMethods.LoadLibrary(dbgshimPath));
@@ -21,10 +25,18 @@ public sealed class DebuggerHost
         this.dbgShim = dbgShim;
     }
 
-    public async Task<Debugger> StartProcess(string command)
+    /// <summary>
+    /// Starts a new debugging process paused.
+    /// </summary>
+    /// <param name="programPath">The path to the program to be executed.</param>
+    /// <param name="args">The arguments to invoke the program with.</param>
+    /// <returns>The debugger instance responsible for debugging the startedf process.</returns>
+    public async Task<Debugger> StartProcess(string programPath, params string[] args)
     {
         var debugger = null as Debugger;
         var unregisterToken = IntPtr.Zero;
+        // TODO: Naive, but temporarily will work
+        var command = $"{programPath} {string.Join(' ', args)}";
         var process = this.dbgShim.CreateProcessForLaunch(command, bSuspendProcess: true);
 
         try
@@ -39,7 +51,7 @@ public sealed class DebuggerHost
                 corDbg.SetManagedHandler(cb);
 
                 var corDbgProcess = corDbg.DebugActiveProcess(process.ProcessId, win32Attach: false);
-                debugger = new(this, corDbg, cb, corDbgProcess);
+                debugger = new(this, programPath, corDbg, cb, corDbgProcess);
 
                 wait.Set();
             });

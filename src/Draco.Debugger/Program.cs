@@ -39,9 +39,7 @@ internal static class Program
         debugger.SetBreakpoint(100663297, 0x0c);
         debugger.Resume();
 
-        await Task.Delay(5000);
-
-        debugger.Foo();
+        await Task.Delay(1000);
 
         debugger.Resume();
 

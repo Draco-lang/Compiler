@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using System.Linq;
@@ -33,10 +35,29 @@ public sealed class Debugger
     public Task Terminated => this.terminatedCompletionSource.Task;
 
     /// <summary>
+    /// The source files discovered in the PDB.
+    /// </summary>
+    public ImmutableDictionary<Uri, SourceFile> SourceFiles => this.sourceFiles ??= this.BuildSourceFiles();
+    private ImmutableDictionary<Uri, SourceFile>? sourceFiles;
+
+    /// <summary>
     /// The task that is completed, when the process has started, including loading in the main assembly
     /// and CLR.
     /// </summary>
     internal Task Started => this.startedCompletionSource.Task;
+
+    /// <summary>
+    /// The metadata reader for the PDB.
+    /// </summary>
+    internal MetadataReader PdbMetadataReader
+    {
+        get
+        {
+            this.pdbMetadataReaderProvider ??= MetadataReaderProvider.FromPortablePdbStream(File.OpenRead(this.PdbPath));
+            return this.pdbMetadataReaderProvider.GetMetadataReader();
+        }
+    }
+    private MetadataReaderProvider? pdbMetadataReaderProvider;
 
     private readonly DebuggerHost host;
     private readonly CorDebug corDebug;
@@ -48,19 +69,6 @@ public sealed class Debugger
 
     private CorDebugAssembly corDebugAssembly = null!;
     private CorDebugModule corDebugModule = null!;
-
-    /// <summary>
-    /// The metadata reader for the PDB.
-    /// </summary>
-    private MetadataReader PdbMetadataReader
-    {
-        get
-        {
-            this.pdbMetadataReaderProvider ??= MetadataReaderProvider.FromPortablePdbStream(File.OpenRead(this.PdbPath));
-            return this.pdbMetadataReaderProvider.GetMetadataReader();
-        }
-    }
-    private MetadataReaderProvider? pdbMetadataReaderProvider;
 
     internal Debugger(
         DebuggerHost host,
@@ -134,5 +142,21 @@ public sealed class Debugger
         var function = this.corDebugModule.GetFunctionFromToken(new mdMethodDef(methodDefinitionHandle));
         var code = function.ILCode;
         var bp = code.CreateBreakpoint(offset);
+    }
+
+    private ImmutableDictionary<Uri, SourceFile> BuildSourceFiles()
+    {
+        var reader = this.PdbMetadataReader;
+        var result = ImmutableDictionary.CreateBuilder<Uri, SourceFile>();
+
+        foreach (var documentHandle in reader.Documents)
+        {
+            var document = reader.GetDocument(documentHandle);
+            var path = reader.GetString(document.Name);
+            var uri = new Uri(path);
+            result.Add(uri, new(uri));
+        }
+
+        return result.ToImmutable();
     }
 }

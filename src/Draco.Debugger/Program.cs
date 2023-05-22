@@ -39,6 +39,11 @@ internal static class Program
         debugger.SetBreakpoint(100663297, 0x0c);
         debugger.Resume();
 
+        foreach (var (uri, file) in debugger.SourceFiles)
+        {
+            Console.WriteLine(file.Text);
+        }
+
         await Task.Delay(1000);
 
         debugger.Resume();

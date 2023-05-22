@@ -6,7 +6,6 @@ using System.Reflection.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -57,57 +56,5 @@ internal static class MetadataSymbol
 
     private static FunctionSymbol SynthetizeConstructor(
         MetadataTypeSymbol type,
-        MethodDefinition ctorMethod)
-    {
-        var ctorSymbol = new MetadataMethodSymbol(type, ctorMethod);
-
-        return new LazySynthetizedFunctionSymbol(type.Name, () =>
-        {
-            // Parameters
-            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-            foreach (var param in ctorSymbol.Parameters)
-            {
-                var paramSym = new SynthetizedParameterSymbol(param.Name, param.Type);
-                parameters.Add(paramSym);
-            }
-
-            // Build body
-            var body = ExpressionStatement(ReturnExpression(
-                value: ObjectCreationExpression(
-                    objectType: type,
-                    constructor: ctorSymbol,
-                    arguments: parameters
-                        .Select(ParameterExpression)
-                        .Cast<BoundExpression>()
-                        .ToImmutableArray())));
-
-            // Done
-            return (parameters.ToImmutable(), type, body);
-        });
-    }
-
-
-    public static string? GetDefaultMemberAttributeName(TypeDefinition typeDefinition, Compilation compilation, MetadataReader reader)
-    {
-        foreach (var attributeHandle in typeDefinition.GetCustomAttributes())
-        {
-            var attribute = reader.GetCustomAttribute(attributeHandle);
-            var typeProvider = new TypeProvider(compilation!);
-            switch (attribute.Constructor.Kind)
-            {
-            case HandleKind.MethodDefinition:
-                var method = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
-                var methodType = reader.GetTypeDefinition(method.GetDeclaringType());
-                if (reader.GetString(methodType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
-                break;
-            case HandleKind.MemberReference:
-                var member = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
-                var memberType = reader.GetTypeReference((TypeReferenceHandle)member.Parent);
-                if (reader.GetString(memberType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
-                break;
-            default: throw new System.InvalidOperationException();
-            };
-        }
-        return "";
-    }
+        MethodDefinition ctorMethod) => new SynthetizedMetadataConstructorSymbol(type, ctorMethod);
 }

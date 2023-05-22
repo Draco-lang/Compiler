@@ -29,9 +29,31 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Unit>, I
         new ArrayTypeSymbol(elementType, 1);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
-    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments) => UnknownType;
-    public TypeSymbol GetGenericMethodParameter(Unit genericContext, int index) => UnknownType;
-    public TypeSymbol GetGenericTypeParameter(Unit genericContext, int index) => UnknownType;
+    public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments)
+    {
+        if (ReferenceEquals(genericType, UnknownType)) return UnknownType;
+        return genericType.GenericInstantiate(genericType.ContainingSymbol, typeArguments);
+    }
+    public TypeSymbol GetGenericMethodParameter(Symbol genericContext, int index)
+    {
+        var methodAncestor = genericContext.AncestorChain
+            .OfType<FunctionSymbol>()
+            .First();
+
+        return methodAncestor.IsGenericDefinition
+            ? methodAncestor.GenericParameters[index]
+            : methodAncestor.GenericDefinition!.GenericParameters[index];
+    }
+    public TypeSymbol GetGenericTypeParameter(Symbol genericContext, int index)
+    {
+        var typeAncestor = genericContext.AncestorChain
+            .OfType<TypeSymbol>()
+            .First();
+
+        return typeAncestor.IsGenericDefinition
+            ? typeAncestor.GenericParameters[index]
+            : typeAncestor.GenericDefinition!.GenericParameters[index];
+    }
     public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => UnknownType;
     public TypeSymbol GetPinnedType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;

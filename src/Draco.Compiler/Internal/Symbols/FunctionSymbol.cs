@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -76,6 +78,8 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     /// </summary>
     public virtual bool IsVirtual => false;
 
+    public override FunctionSymbol? GenericDefinition => null;
+
     public override Api.Semantics.Visibility Visibility
     {
         get
@@ -91,8 +95,21 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     public TypeSymbol Type => this.type ??= this.BuildType();
     private TypeSymbol? type;
 
-    public override string ToString() =>
-        $"{this.Name}({string.Join(", ", this.Parameters)}): {this.ReturnType}";
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        result.Append(this.Name);
+        result.Append(this.GenericsToString());
+        result.Append('(');
+        result.AppendJoin(", ", this.Parameters);
+        result.Append($"): {this.ReturnType}");
+        return result.ToString();
+    }
+
+    public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
+        (FunctionSymbol)base.GenericInstantiate(containingSymbol, arguments);
+    public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
+        new FunctionInstanceSymbol(containingSymbol, this, context);
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 

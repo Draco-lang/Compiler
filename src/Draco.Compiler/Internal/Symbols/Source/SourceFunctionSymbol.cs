@@ -16,6 +16,10 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
+        this.genericParameters ??= this.BindGenericParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
+    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+
     public override ImmutableArray<ParameterSymbol> Parameters =>
         this.parameters ??= this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
     private ImmutableArray<ParameterSymbol>? parameters;
@@ -24,7 +28,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         this.returnType ??= this.BindReturnType(this.DeclaringCompilation!);
     private TypeSymbol? returnType;
 
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;
     public override bool IsStatic => true;
 
@@ -37,6 +41,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
+        if (containingSymbol is null) throw new System.ArgumentNullException(nameof(containingSymbol));
+
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = syntax;
     }
@@ -48,6 +54,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public void Bind(IBinderProvider binderProvider)
     {
+        this.BindGenericParameters(binderProvider.DiagnosticBag);
         this.BindParameters(binderProvider.DiagnosticBag);
         // Force binding of parameters, as the type is lazy too
         foreach (var param in this.Parameters.Cast<SourceParameterSymbol>()) param.Bind(binderProvider);
@@ -61,6 +68,35 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
         DefiniteAssignment.Analyze(this.Body, binderProvider.DiagnosticBag);
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+    }
+
+    private ImmutableArray<TypeParameterSymbol> BindGenericParameters(DiagnosticBag diagnostics)
+    {
+        // Simplest case if the function is not generic
+        if (this.DeclaringSyntax.Generics is null) return ImmutableArray<TypeParameterSymbol>.Empty;
+
+        var genericParamSyntaxes = this.DeclaringSyntax.Generics.Parameters.Values.ToList();
+        var genericParams = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
+
+        foreach (var genericParamSyntax in genericParamSyntaxes)
+        {
+            var paramName = genericParamSyntax.Name.Text;
+
+            var usedBefore = genericParams.Any(p => p.Name == paramName);
+            if (usedBefore)
+            {
+                // NOTE: We only report later duplicates, no need to report the first instance
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.IllegalShadowing,
+                    location: genericParamSyntax.Location,
+                    formatArgs: paramName));
+            }
+
+            var genericParam = new SourceTypeParameterSymbol(this, genericParamSyntax);
+            genericParams.Add(genericParam);
+        }
+
+        return genericParams.ToImmutable();
     }
 
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)
@@ -99,13 +135,11 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
-        for (var i = 0; i < parameterSyntaxes.Count; ++i)
+        foreach (var parameterSyntax in parameterSyntaxes)
         {
-            var parameterSyntax = parameterSyntaxes[i];
             var parameterName = parameterSyntax.Name.Text;
 
             var usedBefore = parameters.Any(p => p.Name == parameterName);
-
             if (usedBefore)
             {
                 // NOTE: We only report later duplicates, no need to report the first instance
@@ -147,9 +181,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
             var p1 = f1.Parameters[i];
             var p2 = f2.Parameters[i];
 
-            // TODO: Solve type-equality across the compiler
-            // We need a proper symbol equality comparison thing
-            if (!ReferenceEquals(p1.Type, p2.Type)) return false;
+            if (!SymbolEqualityComparer.SignatureMatch.Equals(p1.Type, p2.Type)) return false;
         }
 
         return true;

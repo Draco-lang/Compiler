@@ -8,12 +8,12 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceLabelSymbol : LabelSymbol, ISourceSymbol
 {
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;
 
     public override LabelDeclarationSyntax DeclaringSyntax { get; }
 
-    public SourceLabelSymbol(Symbol? containingSymbol, LabelDeclarationSyntax declarationSyntax)
+    public SourceLabelSymbol(Symbol containingSymbol, LabelDeclarationSyntax declarationSyntax)
     {
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = declarationSyntax;

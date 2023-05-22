@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -53,6 +55,21 @@ internal abstract partial class Symbol
     public virtual bool IsSpecialName => false;
 
     /// <summary>
+    /// True, if this is a generic definition.
+    /// </summary>
+    public bool IsGenericDefinition => this.GenericParameters.Length > 0;
+
+    /// <summary>
+    /// True, if this is a generic instantiated symbol.
+    /// </summary>
+    public bool IsGenericInstance => this.GenericArguments.Length > 0;
+
+    /// <summary>
+    /// The metadata name of this symbol.
+    /// </summary>
+    public virtual string MetadataName => this.Name;
+
+    /// <summary>
     /// The name of this symbol.
     /// </summary>
     public virtual string Name => string.Empty;
@@ -65,9 +82,10 @@ internal abstract partial class Symbol
         get
         {
             var parentFullName = this.ContainingSymbol?.FullName;
-            return string.IsNullOrWhiteSpace(parentFullName)
+            var thisFullName = string.IsNullOrWhiteSpace(parentFullName)
                 ? this.Name
                 : $"{parentFullName}.{this.Name}";
+            return $"{thisFullName}{this.GenericsToString()}";
         }
     }
 
@@ -110,6 +128,52 @@ internal abstract partial class Symbol
     };
 
     /// <summary>
+    /// The generic definition of this symbol, in case this is a generic instance.
+    /// </summary>
+    public virtual Symbol? GenericDefinition => null;
+
+    /// <summary>
+    /// The generic parameters of this symbol.
+    /// </summary>
+    public virtual ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray<TypeParameterSymbol>.Empty;
+
+    /// <summary>
+    /// The generic arguments that this symbol was instantiated with.
+    /// </summary>
+    public virtual ImmutableArray<TypeSymbol> GenericArguments => ImmutableArray<TypeSymbol>.Empty;
+
+    /// <summary>
+    /// Instantiates this generic symbol with the given substitutions.
+    /// </summary>
+    /// <param name="containingSymbol">The symbol that should be considered the containing symbol.</param>
+    /// <param name="arguments">The generic arguments.</param>
+    /// <returns>The instantiated symbol.</returns>
+    public virtual Symbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments)
+    {
+        if (this.GenericParameters.Length != arguments.Length)
+        {
+            throw new System.ArgumentException(
+                $"the number of generic parameters ({this.GenericParameters.Length}) does not match the passed in number of arguments ({arguments.Length})",
+                nameof(arguments));
+        }
+
+        var substitutions = this.GenericParameters
+            .Zip(arguments)
+            .ToImmutableDictionary(pair => pair.First, pair => pair.Second);
+        var context = new GenericContext(substitutions);
+        return this.GenericInstantiate(containingSymbol, context);
+    }
+
+    /// <summary>
+    /// Instantiates this generic symbol with the given substitutions.
+    /// </summary>
+    /// <param name="containingSymbol">The symbol that should be considered the containing symbol.</param>
+    /// <param name="context">The generic context.</param>
+    /// <returns>This symbol with all type parameters replaced according to <paramref name="context"/>.</returns>
+    public virtual Symbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
+        throw new System.NotSupportedException();
+
+    /// <summary>
     /// Converts this symbol into an API symbol.
     /// </summary>
     /// <returns>The equivalent API symbol.</returns>
@@ -147,4 +211,16 @@ internal abstract partial class Symbol
     public override string ToString() => this is ITypedSymbol typed
         ? $"{this.Name}: {typed.Type}"
         : this.Name;
+
+    /// <summary>
+    /// Turns the generic list of this symbol into a string representation.
+    /// </summary>
+    /// <returns>The generic parameters or arguments between angle brackets, or an empty string,
+    /// if this symbol is not a generic definition or instantiation.</returns>
+    public string GenericsToString()
+    {
+        if (this.IsGenericDefinition) return $"<{string.Join(", ", this.GenericParameters)}>";
+        if (this.IsGenericInstance) return $"<{string.Join(", ", this.GenericArguments)}>";
+        return string.Empty;
+    }
 }

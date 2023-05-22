@@ -97,8 +97,13 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList(Comma, parameters);
     public static SeparatedSyntaxList<ParameterSyntax> ParameterList(params ParameterSyntax[] parameters) =>
         SeparatedSyntaxList(Comma, parameters);
-
     public static ParameterSyntax Parameter(string name, TypeSyntax type) => Parameter(Name(name), Colon, type);
+
+    public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
+        SeparatedSyntaxList(Comma, parameters);
+    public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(params GenericParameterSyntax[] parameters) =>
+        SeparatedSyntaxList(Comma, parameters);
+    public static GenericParameterSyntax GenericParameter(string name) => GenericParameter(Name(name));
 
     public static CompilationUnitSyntax CompilationUnit(IEnumerable<DeclarationSyntax> decls) =>
         CompilationUnit(SyntaxList(decls), EndOfInput);
@@ -113,28 +118,54 @@ public static partial class SyntaxFactory
         Semicolon);
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
+        string name,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
+            Visibility.Private,
+            name,
+            null,
+            parameters,
+            returnType,
+            body);
+
+    public static FunctionDeclarationSyntax FunctionDeclaration(
         Visibility visibility,
         string name,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
+            visibility,
+            name,
+            null,
+            parameters,
+            returnType,
+            body);
+
+    public static FunctionDeclarationSyntax FunctionDeclaration(
+        string name,
+        SeparatedSyntaxList<GenericParameterSyntax>? generics,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
+            Visibility.Private,
+            name,
+            generics,
+            parameters,
+            returnType,
+            body);
+
+    public static FunctionDeclarationSyntax FunctionDeclaration(
+        Visibility visibility,
+        string name,
+        SeparatedSyntaxList<GenericParameterSyntax>? generics,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
             VisibilityToken(visibility),
             Func,
             Name(name),
-            OpenParen,
-            parameters,
-            CloseParen,
-            returnType is null ? null : TypeSpecifier(Colon, returnType),
-            body);
-
-    public static FunctionDeclarationSyntax FunctionDeclaration(
-        string name,
-        SeparatedSyntaxList<ParameterSyntax> parameters,
-        TypeSyntax? returnType,
-        FunctionBodySyntax body) => FunctionDeclaration(
-            null,
-            Func,
-            Name(name),
+            generics is null ? null : GenericParameterList(LessThan, generics, GreaterThan),
             OpenParen,
             parameters,
             CloseParen,
@@ -234,6 +265,21 @@ public static partial class SyntaxFactory
         TypeSyntax accessed,
         string member) => MemberType(accessed, Dot, Name(member));
 
+    public static GenericExpressionSyntax GenericExpression(
+        ExpressionSyntax instantiated,
+        params TypeSyntax[] typeParameters) => GenericExpression(
+            instantiated,
+            LessThan,
+            SeparatedSyntaxList(Comma, typeParameters),
+            GreaterThan);
+    public static GenericTypeSyntax GenericType(
+        TypeSyntax instantiated,
+        params TypeSyntax[] typeParameters) => GenericType(
+            instantiated,
+            LessThan,
+            SeparatedSyntaxList(Comma, typeParameters),
+            GreaterThan);
+
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, SeparatedSyntaxList<ExpressionSyntax> indices) => IndexExpression(indexed, OpenBracket, indices, CloseBracket);
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) => IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 
@@ -276,6 +322,8 @@ public static partial class SyntaxFactory
     public static SyntaxToken OpenBracket { get; } = MakeToken(TokenKind.BracketOpen);
     public static SyntaxToken CloseBracket { get; } = MakeToken(TokenKind.BracketClose);
     public static SyntaxToken Plus { get; } = MakeToken(TokenKind.Plus);
+    public static SyntaxToken LessThan { get; } = MakeToken(TokenKind.LessThan);
+    public static SyntaxToken GreaterThan { get; } = MakeToken(TokenKind.GreaterThan);
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
 

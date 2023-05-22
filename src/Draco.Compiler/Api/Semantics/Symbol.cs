@@ -9,6 +9,8 @@ namespace Draco.Compiler.Api.Semantics;
 
 // Interfaces //////////////////////////////////////////////////////////////////
 
+// TODO: Kill the "IEquatable" and expose a symbol equality comparer
+
 /// <summary>
 /// Represents a symbol in the language.
 /// </summary>
@@ -132,6 +134,13 @@ public interface IFunctionSymbol : ISymbol, ITypedSymbol
 /// Represents a type symbol.
 /// </summary>
 public interface ITypeSymbol : ISymbol
+{
+}
+
+/// <summary>
+/// Represents a type parameter symbol.
+/// </summary>
+public interface ITypeParameterSymbol : ITypeSymbol
 {
 }
 
@@ -276,6 +285,14 @@ internal sealed class LabelSymbol : SymbolBase<Internal.Symbols.LabelSymbol>, IL
 internal sealed class TypeSymbol : SymbolBase<Internal.Symbols.TypeSymbol>, ITypeSymbol
 {
     public TypeSymbol(Internal.Symbols.TypeSymbol type)
+        : base(type)
+    {
+    }
+}
+
+internal sealed class TypeParameterSymbol : SymbolBase<Internal.Symbols.TypeParameterSymbol>, ITypeParameterSymbol
+{
+    public TypeParameterSymbol(Internal.Symbols.TypeParameterSymbol type)
         : base(type)
     {
     }

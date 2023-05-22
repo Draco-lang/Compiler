@@ -1,3 +1,6 @@
+using System.Collections.Immutable;
+using Draco.Compiler.Internal.Symbols.Generic;
+
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
 /// <summary>
@@ -14,6 +17,10 @@ internal sealed class PrimitiveTypeSymbol : TypeSymbol
         this.Name = name;
         this.IsValueType = isValueType;
     }
+
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
+        base.GenericInstantiate(containingSymbol, arguments);
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) => this;
 
     public override string ToString() => this.Name;
 }

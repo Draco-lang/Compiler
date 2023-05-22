@@ -9,12 +9,17 @@ internal abstract class SymbolVisitor
 
     public virtual void VisitFunction(FunctionSymbol functionSymbol)
     {
+        foreach (var genericParam in functionSymbol.GenericParameters) genericParam.Accept(this);
         foreach (var param in functionSymbol.Parameters) param.Accept(this);
     }
 
     public virtual void VisitType(TypeSymbol typeSymbol)
     {
         foreach (var member in typeSymbol.Members) member.Accept(this);
+    }
+
+    public virtual void VisitTypeParameter(TypeParameterSymbol typeParameterSymbol)
+    {
     }
 
     public virtual void VisitParameter(ParameterSymbol parameterSymbol)
@@ -52,6 +57,7 @@ internal abstract class SymbolVisitor<TResult>
 
     public virtual TResult VisitFunction(FunctionSymbol functionSymbol)
     {
+        foreach (var genericParam in functionSymbol.GenericParameters) genericParam.Accept(this);
         foreach (var param in functionSymbol.Parameters) param.Accept(this);
         return default!;
     }
@@ -61,6 +67,8 @@ internal abstract class SymbolVisitor<TResult>
         foreach (var member in typeSymbol.Members) member.Accept(this);
         return default!;
     }
+
+    public virtual TResult VisitTypeParameter(TypeParameterSymbol typeParameterSymbol) => default!;
 
     public virtual TResult VisitParameter(ParameterSymbol parameterSymbol) => default!;
 

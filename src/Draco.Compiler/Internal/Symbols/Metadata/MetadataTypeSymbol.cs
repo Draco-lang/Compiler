@@ -9,26 +9,26 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A type definition read up from metadata.
 /// </summary>
-internal sealed class MetadataTypeSymbol : TypeSymbol
+internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
 
-    public override string Name => this.MetadataReader.GetString(this.typeDefinition.Name);
+    public override string Name => this.name ??= this.BuildName();
+    private string? name;
+
+    public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
+
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
+    private ImmutableArray<TypeParameterSymbol>? genericParameters;
 
     public override Symbol ContainingSymbol { get; }
     // TODO: Is this correct?
     public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
 
-    /// <summary>
-    /// The metadata assembly of this metadata symbol.
-    /// </summary>
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    /// <summary>
-    /// The metadata reader that was used to read up this metadata symbol.
-    /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly TypeDefinition typeDefinition;
@@ -39,7 +39,33 @@ internal sealed class MetadataTypeSymbol : TypeSymbol
         this.typeDefinition = typeDefinition;
     }
 
-    public override string ToString() => this.Name;
+    public override string ToString() => this.GenericParameters.Length == 0
+        ? this.Name
+        : $"{this.Name}<{string.Join(", ", this.GenericParameters)}>";
+
+    private string BuildName()
+    {
+        var name = this.MetadataName;
+        var backtickIndex = name.IndexOf('`');
+        return backtickIndex == -1
+            ? name
+            : name[..backtickIndex];
+    }
+
+    private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
+    {
+        var genericParamsHandle = this.typeDefinition.GetGenericParameters();
+        if (genericParamsHandle.Count == 0) return ImmutableArray<TypeParameterSymbol>.Empty;
+
+        var result = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
+        foreach (var genericParamHandle in genericParamsHandle)
+        {
+            var genericParam = this.MetadataReader.GetGenericParameter(genericParamHandle);
+            var symbol = new MetadataTypeParameterSymbol(this, genericParam);
+            result.Add(symbol);
+        }
+        return result.ToImmutableArray();
+    }
 
     private ImmutableArray<Symbol> BuildMembers()
     {

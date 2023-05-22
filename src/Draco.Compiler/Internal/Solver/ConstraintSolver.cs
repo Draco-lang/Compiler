@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
@@ -8,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
@@ -30,13 +32,13 @@ internal sealed class ConstraintSolver
     public string ContextName { get; }
 
     // The raw constraints and their states
-    private readonly Dictionary<IConstraint, IEnumerator<SolveState>> constraints = new();
+    private readonly List<KeyValuePair<IConstraint, IEnumerator<SolveState>>> constraints = new();
     // The constraints that were marked for removal
     private readonly List<IConstraint> constraintsToRemove = new();
     // The constraints that were queued for insertion
     private readonly List<IConstraint> constraintsToAdd = new();
-    // Number of type variables allocated
-    private int typeVariableCounter = 0;
+    // The allocated type variables
+    private readonly List<TypeVariable> typeVariables = new();
     // Type variable substitutions
     private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new(ReferenceEqualityComparer.Instance);
     // The declared/inferred types of locals
@@ -196,40 +198,100 @@ internal sealed class ConstraintSolver
         while (true)
         {
             // Add and removal
-            foreach (var r in this.constraintsToRemove) this.constraints.Remove(r);
-            foreach (var a in this.constraintsToAdd) this.constraints.Add(a, a.Solve(diagnostics).GetEnumerator());
-            this.constraintsToRemove.Clear();
-            this.constraintsToAdd.Clear();
+            this.AddAndRemoveConstraints(diagnostics);
 
-            var advanced = false;
-            foreach (var (constraint, solve) in this.constraints)
-            {
-                while (true)
-                {
-                    solve.MoveNext();
-                    var state = solve.Current;
-                    advanced = advanced || state != SolveState.Stale;
-                    if (state is SolveState.AdvancedBreak or SolveState.Stale) break;
-                    if (state == SolveState.Solved)
-                    {
-                        this.Remove(constraint);
-                        break;
-                    }
-                }
-            }
-            if (!advanced) break;
+            // Pass through all constraints
+            if (!this.SolveOnce()) break;
         }
 
-        if (this.constraints.Count > 0)
-        {
-            // Couldn't solve all constraints
-            diagnostics.Add(Diagnostic.Create(
-                template: TypeCheckingErrors.InferenceIncomplete,
-                location: this.Context.Location,
-                formatArgs: this.ContextName));
+        // Check for uninferred locals
+        this.CheckForUninferredLocals(diagnostics);
 
-            // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-            foreach (var constraint in this.constraints.Keys) constraint.FailSilently();
+        // And for failed inference
+        this.CheckForIncompleteInference(diagnostics);
+    }
+
+    private int GetConstraintIndex(IConstraint constraint)
+    {
+        for (var i = 0; i < this.constraints.Count; ++i)
+        {
+            if (this.constraints[i].Key == constraint) return i;
+        }
+        return -1;
+    }
+
+    private void AddAndRemoveConstraints(DiagnosticBag diagnostics)
+    {
+        foreach (var r in this.constraintsToRemove)
+        {
+            var idx = this.GetConstraintIndex(r);
+            if (idx != -1) this.constraints.RemoveAt(idx);
+        }
+        foreach (var a in this.constraintsToAdd)
+        {
+            this.constraints.Add(new(a, a.Solve(diagnostics).GetEnumerator()));
+        }
+        this.constraintsToRemove.Clear();
+        this.constraintsToAdd.Clear();
+    }
+
+    private bool SolveOnce()
+    {
+        var advanced = false;
+        foreach (var (constraint, solve) in this.constraints)
+        {
+            while (true)
+            {
+                solve.MoveNext();
+                var state = solve.Current;
+                advanced = advanced || state != SolveState.Stale;
+                if (state is SolveState.AdvancedBreak or SolveState.Stale) break;
+                if (state == SolveState.Solved)
+                {
+                    this.Remove(constraint);
+                    break;
+                }
+            }
+        }
+        return advanced;
+    }
+
+    private void CheckForUninferredLocals(DiagnosticBag diagnostics)
+    {
+        foreach (var (local, localType) in this.inferredLocalTypes)
+        {
+            var unwrappedLocalType = this.Unwrap(localType);
+            if (unwrappedLocalType is TypeVariable typeVar)
+            {
+                this.Unify(typeVar, IntrinsicSymbols.UninferredType);
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.CouldNotInferType,
+                    location: local.DeclaringSyntax.Location,
+                    formatArgs: local.Name));
+            }
+        }
+    }
+
+    private void CheckForIncompleteInference(DiagnosticBag diagnostics)
+    {
+        var inferenceFailed = this.constraints.Count > 0
+                           || this.typeVariables.Select(this.Unwrap).Any(t => t.IsTypeVariable);
+        if (!inferenceFailed) return;
+
+        // Couldn't solve all constraints or infer all variables
+        diagnostics.Add(Diagnostic.Create(
+            template: TypeCheckingErrors.InferenceIncomplete,
+            location: this.Context.Location,
+            formatArgs: this.ContextName));
+
+        // To avoid major trip-ups later, we resolve all constraints to some sentinel value
+        foreach (var (constraint, _) in this.constraints) constraint.FailSilently();
+
+        // We also unify type variables with the error type
+        foreach (var typeVar in this.typeVariables)
+        {
+            var unwrapped = this.Unwrap(typeVar);
+            if (unwrapped is TypeVariable unwrappedTv) this.Unify(unwrappedTv, IntrinsicSymbols.UninferredType);
         }
     }
 
@@ -265,16 +327,7 @@ internal sealed class ConstraintSolver
         if (!this.typedLocals.TryGetValue(local, out var typedLocal))
         {
             var localType = this.GetLocalType(local);
-            if (localType.IsTypeVariable)
-            {
-                // We could not infer the type
-                diagnostics.Add(Diagnostic.Create(
-                    template: TypeCheckingErrors.CouldNotInferType,
-                    location: local.DeclaringSyntax.Location,
-                    formatArgs: local.Name));
-                // We use an error type
-                localType = IntrinsicSymbols.ErrorType;
-            }
+            Debug.Assert(!localType.IsTypeVariable);
             typedLocal = new SourceLocalSymbol(local, localType);
             this.typedLocals.Add(local, typedLocal);
         }
@@ -284,8 +337,15 @@ internal sealed class ConstraintSolver
     /// <summary>
     /// Allocates a type-variable.
     /// </summary>
+    /// <param name="track">True, if the type-variable should be tracked during inference.
+    /// If not tracked, not substituting won't result in an error.</param>
     /// <returns>A new, unique type-variable.</returns>
-    public TypeVariable AllocateTypeVariable() => new(this.typeVariableCounter++);
+    public TypeVariable AllocateTypeVariable(bool track = true)
+    {
+        var typeVar = new TypeVariable(this, this.typeVariables.Count);
+        if (track) this.typeVariables.Add(typeVar);
+        return typeVar;
+    }
 
     /// <summary>
     /// Unwraps the given type from potential variable substitutions.
@@ -327,6 +387,7 @@ internal sealed class ConstraintSolver
         first = this.Unwrap(first);
         second = this.Unwrap(second);
 
+        // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComprer, this is unification
         if (ReferenceEquals(first, second)) return true;
 
         switch (first, second)
@@ -336,6 +397,8 @@ internal sealed class ConstraintSolver
         case (TypeVariable v1, TypeVariable v2):
         {
             // Check for circularity
+            // NOTE: Referential equality is OK here, we are checking for CIRCULARITY
+            // which is  referential check
             if (ReferenceEquals(v1, v2)) return true;
             this.Substitute(v1, v2);
             return true;
@@ -371,6 +434,20 @@ internal sealed class ConstraintSolver
             return this.Unify(f1.ReturnType, f2.ReturnType);
         }
 
+        case (_, _) when first.IsGenericInstance && second.IsGenericInstance:
+        {
+            // NOTE: Generic instances might not obey referential equality
+            Debug.Assert(first.GenericDefinition is not null);
+            Debug.Assert(second.GenericDefinition is not null);
+            if (first.GenericArguments.Length != second.GenericArguments.Length) return false;
+            if (!this.Unify(first.GenericDefinition, second.GenericDefinition)) return false;
+            for (var i = 0; i < first.GenericArguments.Length; ++i)
+            {
+                if (!this.Unify(first.GenericArguments[i], second.GenericArguments[i])) return false;
+            }
+            return true;
+        }
+
         default:
             return false;
         }
@@ -387,11 +464,14 @@ internal sealed class ConstraintSolver
         var paramType = this.Unwrap(param.Type);
         argType = this.Unwrap(argType);
 
-        // If the argument is still a type parameter, we can't score it
-        if (argType.IsTypeVariable) return null;
+        // If the parameter or argument is still a type parameter, we can't score it
+        if (paramType.IsTypeVariable || argType.IsTypeVariable) return null;
 
         // Exact equality is max score
-        if (ReferenceEquals(paramType, argType)) return 16;
+        if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return 16;
+
+        // Type parameter match is half score
+        if (paramType is TypeParameterSymbol) return 8;
 
         // Otherwise, no match
         return 0;

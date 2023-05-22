@@ -52,15 +52,21 @@ internal sealed class CilCodegen
     private MemberReferenceHandle GetGlobalReferenceHandle(Global global) => this.metadataCodegen.GetGlobalReferenceHandle(global);
     private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
-    private TypeReferenceHandle GetTypeReferenceHandle(Symbol symbol) => this.metadataCodegen.GetTypeReferenceHandle(symbol);
-    private MemberReferenceHandle GetMemberReferenceHandle(Symbol symbol) => this.metadataCodegen.GetMemberReferenceHandle(symbol);
+
+    private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetEntityHandle(symbol);
+    private EntityHandle GetHandle(IOperand operand) => operand switch
+    {
+        IProcedure proc => this.GetProcedureDefinitionHandle(proc),
+        SymbolReference symbolRef => this.GetHandle(symbolRef.Symbol),
+        _ => throw new ArgumentOutOfRangeException(nameof(operand)),
+    };
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
 
     private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
-        if (ReferenceEquals(operand.Type, IntrinsicSymbols.Unit)) return null;
+        if (SymbolEqualityComparer.Default.Equals(operand.Type, IntrinsicSymbols.Unit)) return null;
         if (!this.allocatedLocals.TryGetValue(operand, out var local))
         {
             local = new(operand, this.allocatedLocals.Count);
@@ -241,20 +247,9 @@ internal sealed class CilCodegen
             this.EncodePush(mcall.Receiver);
             // Arguments
             foreach (var arg in mcall.Arguments) this.EncodePush(arg);
-            // TODO: If IOperand could tell by itself if it's virtual, we could reuse our token encoding
-            // Determine what we are calling
-            if (mcall.Procedure is SymbolReference metadataRef)
-            {
-                var symbol = (FunctionSymbol)metadataRef.Symbol;
-                var handle = this.GetMemberReferenceHandle(metadataRef.Symbol);
-                this.InstructionEncoder.OpCode(symbol.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
-                this.InstructionEncoder.Token(handle);
-            }
-            else
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
+            // Call
+            this.InstructionEncoder.OpCode(IsVirtual(mcall.Procedure) ? ILOpCode.Callvirt : ILOpCode.Call);
+            this.EncodeToken(mcall.Procedure);
             // Store result
             this.StoreLocal(mcall.Target);
             break;
@@ -295,7 +290,7 @@ internal sealed class CilCodegen
 
     private void EncodeToken(TypeSymbol symbol)
     {
-        var handle = this.GetTypeReferenceHandle(symbol);
+        var handle = this.GetHandle(symbol);
         this.InstructionEncoder.Token(handle);
     }
 
@@ -318,7 +313,7 @@ internal sealed class CilCodegen
         case SymbolReference symbolRef:
         {
             // Regular lookup
-            var handle = this.GetMemberReferenceHandle(symbolRef.Symbol);
+            var handle = this.GetHandle(symbolRef.Symbol);
             this.InstructionEncoder.Token(handle);
             break;
         }
@@ -396,4 +391,10 @@ internal sealed class CilCodegen
         if (index is null) return;
         this.InstructionEncoder.StoreLocal(index.Value);
     }
+
+    private static bool IsVirtual(IOperand operand) => operand switch
+    {
+        SymbolReference reference => (reference.Symbol as FunctionSymbol)?.IsVirtual ?? false,
+        _ => throw new ArgumentOutOfRangeException(nameof(operand)),
+    };
 }

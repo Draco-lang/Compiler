@@ -182,10 +182,10 @@ internal abstract class MetadataWriter
 
     // NOTE: non-caching, we don't deal with memoizing signatures
     public MemberReferenceHandle AddMemberReference(
-        TypeReferenceHandle type,
+        EntityHandle parent,
         string name,
         BlobHandle signature) => this.MetadataBuilder.AddMemberReference(
-            parent: type,
+            parent: parent,
             name: this.GetOrAddString(name),
             signature: signature);
 

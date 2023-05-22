@@ -98,4 +98,78 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal("Hello Draco!", stringWriter.ToString());
     }
+
+    [Fact]
+    public void StackUsageWithExplicitGenerics()
+    {
+        var assembly = Compile("""
+            import System.Console;
+            import System.Collections.Generic;
+
+            public func main() {
+                val s = Stack<int32>();
+                s.Push(1);
+                s.Push(2);
+                s.Push(3);
+                Write(s.Pop());
+                Write(s.Pop());
+                Write(s.Pop());
+            }
+            """);
+
+        var stringWriter = new StringWriter();
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("321", stringWriter.ToString());
+    }
+
+    [Fact]
+    public void StackUsageWithImplicitGenerics()
+    {
+        var assembly = Compile("""
+            import System.Console;
+            import System.Collections.Generic;
+
+            public func main() {
+                val s = Stack();
+                s.Push(1);
+                s.Push(2);
+                s.Push(3);
+                Write(s.Pop());
+                Write(s.Pop());
+                Write(s.Pop());
+            }
+            """);
+
+        var stringWriter = new StringWriter();
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("321", stringWriter.ToString());
+    }
+
+    [Fact]
+    public void SystemTupleConstruction()
+    {
+        var assembly = Compile("""
+            import System.Tuple;
+
+            public func main() {
+                val t = Create(1, "hello");
+            }
+            """);
+
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: null);
+    }
 }

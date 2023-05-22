@@ -3,6 +3,7 @@ using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -55,13 +56,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private Module GetDefiningModule(Symbol symbol)
     {
-        var pathToSymbol = symbol.AncestorChain.OfType<ModuleSymbol>().Reverse().Skip(1);
-        IModule currentModule = this.procedure.Assembly.RootModule;
-        foreach (var currentSymbol in pathToSymbol)
-        {
-            currentModule = currentModule.Submodules[currentSymbol];
-        }
-        return (Module)currentModule;
+        var pathToSymbol = symbol.AncestorChain.OfType<ModuleSymbol>().First();
+        return (Module)this.procedure.Assembly.Lookup(pathToSymbol);
     }
 
     private Procedure DefineProcedure(FunctionSymbol function) => this.GetDefiningModule(function).DefineProcedure(function);
@@ -132,7 +128,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // In case the condition is a never type, we don't bother writing out the then and else bodies,
         // as they can not be evaluated
         // Note, that for side-effects we still emit the condition code
-        if (ReferenceEquals(node.Condition.TypeRequired, IntrinsicSymbols.Never)) return default(Void);
+        if (SymbolEqualityComparer.Default.Equals(node.Condition.TypeRequired, IntrinsicSymbols.Never)) return default(Void);
 
         // Allocate blocks
         var thenBlock = this.DefineBasicBlock(node.Target);
@@ -398,8 +394,16 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         SourceFunctionSymbol func => this.DefineProcedure(func),
         SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func),
         MetadataMethodSymbol m => new SymbolReference(m),
+        FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
+
+    private IOperand TranslateFunctionInstanceSymbol(FunctionInstanceSymbol i)
+    {
+        // NOTE: We visit the underlying instantiated symbol in case it's synthetized by us
+        this.TranslateFunctionSymbol(i.GenericDefinition);
+        return new SymbolReference(i);
+    }
 
     // NOTE: Parameters don't need loading, they are read-only values by default
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>

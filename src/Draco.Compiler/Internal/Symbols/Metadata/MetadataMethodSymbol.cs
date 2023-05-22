@@ -10,13 +10,16 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// Utility base-class for methods read up from metadata.
 /// </summary>
-internal class MetadataMethodSymbol : FunctionSymbol
+internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 {
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
+    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+
     public override ImmutableArray<ParameterSymbol> Parameters
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
+            if (this.SignatureNeedsBuild) this.BuildSignature();
             return this.parameters;
         }
     }
@@ -24,7 +27,7 @@ internal class MetadataMethodSymbol : FunctionSymbol
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
+            if (this.SignatureNeedsBuild) this.BuildSignature();
             return this.returnType!;
         }
     }
@@ -35,22 +38,17 @@ internal class MetadataMethodSymbol : FunctionSymbol
 
     public override Symbol ContainingSymbol { get; }
 
-    private bool NeedsBuild => this.returnType is null;
+    private bool SignatureNeedsBuild => this.returnType is null;
 
     private ImmutableArray<ParameterSymbol> parameters;
     private TypeSymbol? returnType;
 
-    public override string Name => this.MetadataReader.GetString(this.methodDefinition.Name);
+    public override string Name => this.MetadataName;
+    public override string MetadataName => this.MetadataReader.GetString(this.methodDefinition.Name);
 
-    /// <summary>
-    /// The metadata assembly of this metadata symbol.
-    /// </summary>
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    /// <summary>
-    /// The metadata reader that was used to read up this metadata symbol.
-    /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly MethodDefinition methodDefinition;
@@ -61,7 +59,22 @@ internal class MetadataMethodSymbol : FunctionSymbol
         this.methodDefinition = methodDefinition;
     }
 
-    private void Build()
+    private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
+    {
+        var genericParamsHandle = this.methodDefinition.GetGenericParameters();
+        if (genericParamsHandle.Count == 0) return ImmutableArray<TypeParameterSymbol>.Empty;
+
+        var result = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
+        foreach (var genericParamHandle in genericParamsHandle)
+        {
+            var genericParam = this.MetadataReader.GetGenericParameter(genericParamHandle);
+            var symbol = new MetadataTypeParameterSymbol(this, genericParam);
+            result.Add(symbol);
+        }
+        return result.ToImmutableArray();
+    }
+
+    private void BuildSignature()
     {
         // Decode signature
         var decoder = new TypeProvider(this.Assembly.Compilation);

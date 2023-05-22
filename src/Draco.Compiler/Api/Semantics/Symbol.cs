@@ -45,6 +45,16 @@ public interface ISymbol : IEquatable<ISymbol>
     /// All the members within this symbol.
     /// </summary>
     public IEnumerable<ISymbol> Members { get; }
+
+    /// <summary>
+    /// The static members within this symbol.
+    /// </summary>
+    public IEnumerable<ISymbol> StaticMembers => this.Members.Where(x => x is not ITypedSymbol typed || typed.IsStatic);
+
+    /// <summary>
+    /// The instance members within this symbol.
+    /// </summary>
+    public IEnumerable<ISymbol> InstanceMembers => this.Members.Where(x => x is ITypedSymbol typed && !typed.IsStatic);
 }
 
 /// <summary>

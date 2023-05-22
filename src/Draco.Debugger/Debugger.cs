@@ -144,6 +144,19 @@ public sealed class Debugger
         var bp = code.CreateBreakpoint(offset);
     }
 
+    /// <summary>
+    /// Sets a breakpoint in a given source file, using the given line number.
+    /// </summary>
+    /// <param name="uri">The URI to the source file.</param>
+    /// <param name="lineNumber">The 0-based line number.</param>
+    public void SetBreakpoint(Uri uri, int lineNumber)
+    {
+        if (!this.SourceFiles.TryGetValue(uri, out var file)) return;
+
+        // TODO
+        throw new NotImplementedException();
+    }
+
     private ImmutableDictionary<Uri, SourceFile> BuildSourceFiles()
     {
         var reader = this.PdbMetadataReader;

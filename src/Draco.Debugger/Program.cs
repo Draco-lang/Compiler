@@ -36,17 +36,10 @@ internal static class Program
         var host = DebuggerHost.Create(new NativeMethods(), FindDbgShim());
         var debugger = await host.StartProcess("c:/TMP/DracoTest/bin/Debug/net7.0/DracoTest.exe");
 
-        debugger.SetBreakpoint(100663297, 0x0c);
-        debugger.Resume();
+        var mainFile = debugger.SourceFiles.Keys.First();
 
-        foreach (var (uri, file) in debugger.SourceFiles)
-        {
-            for (var i = 0; i < file.Lines.Length; ++i)
-            {
-                Console.Write($"{i + 1} {file.Lines[i]}");
-            }
-            Console.WriteLine();
-        }
+        debugger.SetBreakpoint(mainFile, lineNumber: 4);
+        debugger.Resume();
 
         await Task.Delay(1000);
 

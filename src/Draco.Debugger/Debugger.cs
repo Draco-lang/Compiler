@@ -47,6 +47,16 @@ public sealed class Debugger
     internal Task Started => this.startedCompletionSource.Task;
 
     /// <summary>
+    /// Debug information of methods.
+    /// </summary>
+    internal ImmutableArray<MethodInfo> MethodInfos => this.methodInfos ??= this.BuildMethodInfos();
+    private ImmutableArray<MethodInfo>? methodInfos;
+
+    internal ImmutableDictionary<DocumentHandle, ImmutableArray<MethodInfo>> MethodInfosPerDocument =>
+        this.methodInfosPerDocument ??= this.BuildMethodInfosPerDocument();
+    private ImmutableDictionary<DocumentHandle, ImmutableArray<MethodInfo>>? methodInfosPerDocument;
+
+    /// <summary>
     /// The metadata reader for the PDB.
     /// </summary>
     internal MetadataReader PdbMetadataReader
@@ -135,11 +145,12 @@ public sealed class Debugger
     /// <summary>
     /// Sets a breakpoint in the program.
     /// </summary>
-    /// <param name="methodDefinitionHandle">The method definition handle index.</param>
+    /// <param name="methodDefinitionHandle">The method definition handle.</param>
     /// <param name="offset">The offset within the method.</param>
-    public void SetBreakpoint(int methodDefinitionHandle, int offset)
+    public void SetBreakpoint(MethodDefinitionHandle methodDefinitionHandle, int offset)
     {
-        var function = this.corDebugModule.GetFunctionFromToken(new mdMethodDef(methodDefinitionHandle));
+        var methodDefToken = MetadataTokens.GetToken(methodDefinitionHandle);
+        var function = this.corDebugModule.GetFunctionFromToken(new mdMethodDef(methodDefToken));
         var code = function.ILCode;
         var bp = code.CreateBreakpoint(offset);
     }
@@ -152,6 +163,7 @@ public sealed class Debugger
     public void SetBreakpoint(Uri uri, int lineNumber)
     {
         if (!this.SourceFiles.TryGetValue(uri, out var file)) return;
+        if (!this.MethodInfosPerDocument.TryGetValue(file.Document, out var methodInfos)) return;
 
         // TODO
         throw new NotImplementedException();
@@ -167,9 +179,35 @@ public sealed class Debugger
             var document = reader.GetDocument(documentHandle);
             var path = reader.GetString(document.Name);
             var uri = new Uri(path);
-            result.Add(uri, new(uri));
+            result.Add(uri, new(documentHandle, uri));
         }
 
         return result.ToImmutable();
     }
+
+    private ImmutableArray<MethodInfo> BuildMethodInfos()
+    {
+        var pdbReader = this.PdbMetadataReader;
+        var result = ImmutableArray.CreateBuilder<MethodInfo>();
+
+        var meta = this.corDebugModule.GetMetaDataInterface();
+        var methodDefs = meta.MetaDataImport
+            .EnumTypeDefs()
+            .SelectMany(meta.MetaDataImport.EnumMethods);
+        // TODO: Is this reliable?
+        var defAndDebugInfoPairs = methodDefs.Zip(pdbReader.MethodDebugInformation);
+        foreach (var (methodDefHandle, debugInfoHandle) in defAndDebugInfoPairs)
+        {
+            // TODO: Load something that knows the start offset
+            var methodDef = pdbReader.GetMethodDefinition(methodDefHandle);
+            var debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle);
+            result.Add(new(pdbReader, methodDef, debugInfo));
+        }
+
+        return result.ToImmutable();
+    }
+
+    private ImmutableDictionary<DocumentHandle, ImmutableArray<MethodInfo>> BuildMethodInfosPerDocument() => this.MethodInfos
+        .GroupBy(m => m.Document)
+        .ToImmutableDictionary(g => g.Key, g => g.ToImmutableArray());
 }

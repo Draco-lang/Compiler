@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,6 +13,11 @@ namespace Draco.Debugger;
 /// </summary>
 public sealed class SourceFile
 {
+    /// <summary>
+    /// The document handle of this source file.
+    /// </summary>
+    internal DocumentHandle Document { get; }
+
     /// <summary>
     /// The path of the source file.
     /// </summary>
@@ -29,8 +35,9 @@ public sealed class SourceFile
     public ImmutableArray<ReadOnlyMemory<char>> Lines => this.lines ??= this.BuildLines();
     private ImmutableArray<ReadOnlyMemory<char>>? lines;
 
-    internal SourceFile(Uri uri)
+    internal SourceFile(DocumentHandle document, Uri uri)
     {
+        this.Document = document;
         this.Uri = uri;
     }
 

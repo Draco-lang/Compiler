@@ -61,8 +61,7 @@ public sealed class SourceFile
         }
 
         // Add last line
-        var lastLine = text[prevLineStart..textSpan.Length];
-        if (!lastLine.IsEmpty) result.Add(lastLine);
+        result.Add(text[prevLineStart..textSpan.Length]);
 
         return result.ToImmutable();
     }

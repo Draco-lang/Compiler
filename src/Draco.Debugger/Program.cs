@@ -41,7 +41,11 @@ internal static class Program
 
         foreach (var (uri, file) in debugger.SourceFiles)
         {
-            Console.WriteLine(file.Text);
+            for (var i = 0; i < file.Lines.Length; ++i)
+            {
+                Console.Write($"{i + 1} {file.Lines[i]}");
+            }
+            Console.WriteLine();
         }
 
         await Task.Delay(1000);

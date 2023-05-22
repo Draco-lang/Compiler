@@ -41,6 +41,7 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceS
     public override string Name => this.GenericDefinition.Name;
     public override bool IsMember => this.GenericDefinition.IsMember;
     public override bool IsVirtual => this.GenericDefinition.IsVirtual;
+    public override bool IsStatic => this.GenericDefinition.IsStatic;
 
     public override Symbol? ContainingSymbol { get; }
     public override FunctionSymbol GenericDefinition { get; }

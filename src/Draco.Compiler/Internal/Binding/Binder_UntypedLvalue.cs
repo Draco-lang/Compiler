@@ -166,7 +166,7 @@ internal partial class Binder
                     template: SymbolResolutionErrors.NoSettableIndexerInType,
                     location: index.Location,
                     receiver.ToString()));
-                constraints.Unify(returnType, ErrorTypeSymbol.Instance);
+                constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }
             var overloaded = constraints.Overload(indexers, args.Select(x => x.TypeRequired).Append(returnType).ToImmutableArray(), out var gotReturnType);

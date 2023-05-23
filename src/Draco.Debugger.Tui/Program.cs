@@ -1,19 +1,38 @@
+using System.CommandLine;
 using Terminal.Gui;
+using Command = System.CommandLine.Command;
 
 namespace Draco.Debugger.Tui;
 
 internal class Program
 {
-    internal static void Main(string[] args)
+    internal static void Main(string[] args) =>
+        ConfigureCommands().Invoke(args);
+
+    private static RootCommand ConfigureCommands()
     {
-        Application.Run<DebuggerWindow>();
-        Application.Shutdown();
+        var programArgument = new Argument<FileInfo>("program", description: "The .NET program to launch");
+
+        // Launch
+
+        var launchCommand = new Command("launch", "Launches a program for debugging")
+        {
+            programArgument,
+        };
+        launchCommand.SetHandler(LaunchCommand, programArgument);
+
+        // Run
+
+        return new RootCommand("TUI for the Draco debugger")
+        {
+            launchCommand,
+        };
     }
 
-    internal static async Task StartDebugger()
+    private static async Task LaunchCommand(FileInfo program)
     {
         var host = DebuggerHost.Create(FindDbgShim());
-        var debugger = await host.StartProcess("c:/TMP/DracoTest/bin/Debug/net7.0/DracoTest.exe");
+        var debugger = await host.StartProcess(program.FullName);
 
         var mainFile = debugger.SourceFiles.Keys.First();
 

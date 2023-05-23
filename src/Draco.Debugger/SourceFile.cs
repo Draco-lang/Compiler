@@ -16,7 +16,7 @@ public sealed class SourceFile
     /// <summary>
     /// The document handle of this source file.
     /// </summary>
-    internal DocumentHandle Document { get; }
+    internal DocumentHandle DocumentHandle { get; }
 
     /// <summary>
     /// The path of the source file.
@@ -35,9 +35,9 @@ public sealed class SourceFile
     public ImmutableArray<ReadOnlyMemory<char>> Lines => this.lines ??= this.BuildLines();
     private ImmutableArray<ReadOnlyMemory<char>>? lines;
 
-    internal SourceFile(DocumentHandle document, Uri uri)
+    internal SourceFile(DocumentHandle documentHandle, Uri uri)
     {
-        this.Document = document;
+        this.DocumentHandle = documentHandle;
         this.Uri = uri;
     }
 

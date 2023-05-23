@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
@@ -15,27 +16,33 @@ internal sealed class MethodInfo
     /// <summary>
     /// The method definition handle.
     /// </summary>
-    public MethodDefinition Definition { get; }
+    public MethodDefinitionHandle DefinitionHandle { get; }
 
     /// <summary>
-    /// The method debug information handle.
+    /// The method debug information.
     /// </summary>
     public MethodDebugInformation DebugInfo { get; }
 
     /// <summary>
     /// The document the method is defined in.
     /// </summary>
-    public DocumentHandle Document => this.DebugInfo.Document;
+    public DocumentHandle DocumentHandle => this.DebugInfo.Document;
 
-    private readonly MetadataReader pdbReader;
+    /// <summary>
+    /// The sequence points within this method.
+    /// </summary>
+    public ImmutableArray<SequencePoint> SequencePoints => this.sequencePoints ??= this.BuildSequencePoints();
+    private ImmutableArray<SequencePoint>? sequencePoints;
 
     public MethodInfo(
-        MetadataReader pdbReader,
-        MethodDefinition definition,
+        MethodDefinitionHandle definitionHandle,
         MethodDebugInformation debugInfo)
     {
-        this.Definition = definition;
+        this.DefinitionHandle = definitionHandle;
         this.DebugInfo = debugInfo;
-        this.pdbReader = pdbReader;
     }
+
+    private ImmutableArray<SequencePoint> BuildSequencePoints() => this.DebugInfo
+        .GetSequencePoints()
+        .ToImmutableArray();
 }

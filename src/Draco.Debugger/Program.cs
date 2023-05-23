@@ -41,7 +41,7 @@ internal static class Program
         debugger.SetBreakpoint(mainFile, lineNumber: 4);
         debugger.Resume();
 
-        await Task.Delay(1000);
+        await Task.Delay(5000);
 
         debugger.Resume();
 

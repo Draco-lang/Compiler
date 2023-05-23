@@ -163,10 +163,24 @@ public sealed class Debugger
     public void SetBreakpoint(Uri uri, int lineNumber)
     {
         if (!this.SourceFiles.TryGetValue(uri, out var file)) return;
-        if (!this.MethodInfosPerDocument.TryGetValue(file.Document, out var methodInfos)) return;
+        if (!this.MethodInfosPerDocument.TryGetValue(file.DocumentHandle, out var methodInfos)) return;
 
-        // TODO
-        throw new NotImplementedException();
+        // SRM uses 1-indexed line numbers, correct for it
+        ++lineNumber;
+
+        // Search for the method that contains the line number
+        var methodInfo = methodInfos
+            .Where(m => !m.SequencePoints.IsEmpty)
+            .FirstOrDefault(m => lineNumber >= m.SequencePoints[0].StartLine
+                              && lineNumber <= m.SequencePoints[^1].EndLine);
+        if (methodInfo is null) return;
+
+        // Search for the first sequence point that matches
+        var seqPoint = methodInfo.SequencePoints.FirstOrDefault(sp => lineNumber == sp.StartLine);
+        if (seqPoint.Document.IsNil) return;
+
+        // We can actually set it
+        this.SetBreakpoint(methodInfo.DefinitionHandle, seqPoint.Offset);
     }
 
     private ImmutableDictionary<Uri, SourceFile> BuildSourceFiles()
@@ -198,16 +212,15 @@ public sealed class Debugger
         var defAndDebugInfoPairs = methodDefs.Zip(pdbReader.MethodDebugInformation);
         foreach (var (methodDefHandle, debugInfoHandle) in defAndDebugInfoPairs)
         {
-            // TODO: Load something that knows the start offset
-            var methodDef = pdbReader.GetMethodDefinition(methodDefHandle);
+            var srmMethodDefHandle = MetadataTokens.MethodDefinitionHandle((int)methodDefHandle.Value);
             var debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle);
-            result.Add(new(pdbReader, methodDef, debugInfo));
+            result.Add(new(srmMethodDefHandle, debugInfo));
         }
 
         return result.ToImmutable();
     }
 
     private ImmutableDictionary<DocumentHandle, ImmutableArray<MethodInfo>> BuildMethodInfosPerDocument() => this.MethodInfos
-        .GroupBy(m => m.Document)
+        .GroupBy(m => m.DocumentHandle)
         .ToImmutableDictionary(g => g.Key, g => g.ToImmutableArray());
 }

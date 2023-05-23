@@ -3,6 +3,7 @@ using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Api.Syntax;
+using System.Runtime.Loader;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
@@ -14,12 +15,26 @@ public abstract class EndToEndTestsBase
         return Compile(null, syntaxTree);
     }
 
-    protected static Assembly Compile(string? root, params SyntaxTree[] trees)
+    protected static Assembly Compile(string? root, params SyntaxTree[] syntaxTrees) =>
+        Compile(root, syntaxTrees.ToImmutableArray(), ImmutableArray<(string Name, Stream Stream)>.Empty);
+
+    protected static Assembly Compile(
+        string? root,
+        ImmutableArray<SyntaxTree> syntaxTrees,
+        ImmutableArray<(string Name, Stream Stream)> additionalPeReferences)
     {
         var compilation = Compilation.Create(
-            syntaxTrees: trees.ToImmutableArray(),
+            syntaxTrees: syntaxTrees,
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Concat(additionalPeReferences.Select(r =>
+                {
+                    var streamCopy = new MemoryStream();
+                    r.Stream.CopyTo(streamCopy);
+                    r.Stream.Position = 0;
+                    streamCopy.Position = 0;
+                    return MetadataReference.FromPeStream(streamCopy);
+                }))
                 .ToImmutableArray(),
             rootModulePath: root);
 
@@ -28,10 +43,18 @@ public abstract class EndToEndTestsBase
 
         Assert.True(emitResult.Success);
 
+        // We need a custom load context
+        var loadContext = new AssemblyLoadContext("testLoadContext");
+        loadContext.Resolving += (loader, name) =>
+        {
+            // Look through the additional references
+            var stream = additionalPeReferences.First(r => r.Name == name.Name).Stream;
+            return loader.LoadFromStream(stream);
+        };
+
         // Load emitted bytes as assembly
         peStream.Position = 0;
-        var peBytes = peStream.ToArray();
-        var assembly = Assembly.Load(peBytes);
+        var assembly = loadContext.LoadFromStream(peStream);
 
         return assembly;
     }

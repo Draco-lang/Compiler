@@ -53,7 +53,7 @@ internal sealed class IntrinsicFunctionSymbol : FunctionSymbol
     {
         this.Name = name;
         this.Parameters = paramTypes
-            .Select(t => new SynthetizedParameterSymbol(t))
+            .Select(t => new SynthetizedParameterSymbol(this, t))
             .Cast<ParameterSymbol>()
             .ToImmutableArray();
         this.ReturnType = returnType;

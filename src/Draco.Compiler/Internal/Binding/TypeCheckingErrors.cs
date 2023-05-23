@@ -72,5 +72,32 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "the non-function type {0} can not be called",
         code: Code(7));
+
+    /// <summary>
+    /// A generic function with the given no. args was not found.
+    /// </summary>
+    public static readonly DiagnosticTemplate NoGenericFunctionWithParamCount = DiagnosticTemplate.Create(
+        title: "generic parameter count mismatch",
+        severity: DiagnosticSeverity.Error,
+        format: "function {0} with {1} number of generic parameters could not be found",
+        code: Code(8));
+
+    /// <summary>
+    /// A generic type does not take the given amount of parameters.
+    /// </summary>
+    public static readonly DiagnosticTemplate GenericTypeParamCountMismatch = DiagnosticTemplate.Create(
+        title: "generic parameter count mismatch",
+        severity: DiagnosticSeverity.Error,
+        format: "type {0} with {1} number of generic parameters could not be found",
+        code: Code(9));
+
+    /// <summary>
+    /// The given expression can not be generic instantiated.
+    /// </summary>
+    public static readonly DiagnosticTemplate NotGenericConstruct = DiagnosticTemplate.Create(
+        title: "not a generic construct",
+        severity: DiagnosticSeverity.Error,
+        format: "the given construct can not be generic instantiated",
+        code: Code(10));
 }
 

@@ -63,6 +63,8 @@ internal sealed class LocalBinder : Binder
     public override IEnumerable<Symbol> DeclaredSymbols => this.Declarations
         .Concat(this.LocalDeclarations.Select(d => d.Symbol));
 
+    public override Symbol ContainingSymbol => base.ContainingSymbol ?? throw new InvalidOperationException();
+
     private bool NeedsBuild => this.relativePositions is null;
 
     private ImmutableDictionary<SyntaxNode, int>? relativePositions;

@@ -11,14 +11,14 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     public override TypeSymbol Type => this.type ??= this.BindType(this.DeclaringCompilation!);
     private TypeSymbol? type;
 
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;
 
     public override ParameterSyntax DeclaringSyntax { get; }
 
     // TODO: Extracting parameter docs involves looking into the function docs and searching in the MD
 
-    public SourceParameterSymbol(Symbol? containingSymbol, ParameterSyntax syntax)
+    public SourceParameterSymbol(Symbol containingSymbol, ParameterSyntax syntax)
     {
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = syntax;

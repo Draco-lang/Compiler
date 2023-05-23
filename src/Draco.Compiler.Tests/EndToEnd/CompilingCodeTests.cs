@@ -1,5 +1,6 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
-using static Draco.Compiler.Tests.ModuleTestsUtilities;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
@@ -340,6 +341,38 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void FunctionsWithExplicitGenerics()
+    {
+        var assembly = Compile(""""
+            func identity<T>(x: T): T = x;
+            func first<T, U>(a: T, b: U): T = identity<T>(a);
+            func second<T, U>(a: T, b: U): U = identity<U>(b);
+
+            public func foo(n: int32, m: int32): int32 =
+                first<int32, string>(n, "Hello") + second<bool, int32>(false, m);
+            """");
+
+        var x = Invoke<int>(assembly, "foo", 2, 3);
+        Assert.Equal(5, x);
+    }
+
+    [Fact]
+    public void FunctionsWithImplicitGenerics()
+    {
+        var assembly = Compile(""""
+            func identity<T>(x: T): T = x;
+            func first<T, U>(a: T, b: U): T = identity(a);
+            func second<T, U>(a: T, b: U): U = identity(b);
+
+            public func foo(n: int32, m: int32): int32 =
+                first(n, "Hello") + second(false, m);
+            """");
+
+        var x = Invoke<int>(assembly, "foo", 2, 3);
+        Assert.Equal(5, x);
+    }
+
+    [Fact]
     public void ModuleFunctionCall()
     {
         var bar = SyntaxTree.Parse("""
@@ -389,5 +422,32 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var x = Invoke<int>(assembly, "Tests.FooTest", "foo");
         Assert.Equal(5, x);
+    }
+
+    [Fact]
+    public void GenericMemberMethodCall()
+    {
+        var csReference = CompileCSharpToStream(
+            "Test.dll",
+            """
+            public class IdentityProvider
+            {
+                public T Identity<T>(T x) => x;
+            }
+            """);
+        var foo = SyntaxTree.Parse("""
+            public func foo(): int32 {
+                val provider = IdentityProvider();
+                return provider.Identity<int32>(2) + provider.Identity(123);
+            }
+            """);
+
+        var assembly = Compile(
+            root: null,
+            syntaxTrees: ImmutableArray.Create(foo),
+            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(125, x);
     }
 }

@@ -67,6 +67,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         {
             var changed = this.RefineScores(candidates, out var wellDefined);
             if (wellDefined) break;
+            if (candidates.Count <= 1) break;
             yield return changed ? SolveState.AdvancedContinue : SolveState.Stale;
         }
 
@@ -84,23 +85,18 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         }
 
         // We have one or more, find the max dominator
-        // NOTE: This might not be the actual dominator in case of mutual non-dominance
-        var bestScore = CallScore.FindBest(candidates.Select(c => c.Score));
-        // We keep every candidate that dominates this score, or there is mutual non-dominance
-        var dominatingCandidates = candidates
-            .Where(pair => bestScore is null
-                        || CallScore.Compare(bestScore.Value, pair.Score)
-                               is CallScoreComparison.Equal
-                               or CallScoreComparison.NoDominance)
-            .Select(pair => pair.Symbol)
-            .ToImmutableArray();
-        Debug.Assert(dominatingCandidates.Length > 0);
-
+        var dominatingCandidates = GetDominatingCandidates(candidates);
         if (dominatingCandidates.Length == 1)
         {
-            // Resolved fine
-            this.Unify(this.ReturnType, dominatingCandidates[0].ReturnType);
-            this.Promise.Resolve(dominatingCandidates[0]);
+            // Resolved fine, choose the symbol, which might generic-instantiate it
+            var chosen = this.ChooseSymbol(dominatingCandidates[0]);
+
+            // Inference
+            // NOTE: Unification won't always be correct, especially not when subtyping arises
+            foreach (var (param, argType) in chosen.Parameters.Zip(this.Arguments)) this.Unify(param.Type, argType);
+            this.Unify(this.ReturnType, chosen.ReturnType);
+            // Resolve promise
+            this.Promise.Resolve(chosen);
             yield return SolveState.Solved;
         }
         else
@@ -114,6 +110,44 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             this.Promise.Fail(errorSymbol, diagnostics);
             yield return SolveState.Solved;
         }
+    }
+
+    private FunctionSymbol ChooseSymbol(FunctionSymbol chosen)
+    {
+        // Nongeneric, just return
+        if (!chosen.IsGenericDefinition) return chosen;
+
+        // Implicit generic instantiation
+        // Create the proper number of type variables as type arguments
+        var typeArgs = Enumerable
+            .Range(0, chosen.GenericParameters.Length)
+            .Select(_ => this.Solver.AllocateTypeVariable())
+            .Cast<TypeSymbol>()
+            .ToImmutableArray();
+
+        // Instantiate the chosen symbol
+        var instantiated = chosen.GenericInstantiate(chosen.ContainingSymbol, typeArgs);
+        return instantiated;
+    }
+
+    private static ImmutableArray<FunctionSymbol> GetDominatingCandidates(IReadOnlyList<Candidate> candidates)
+    {
+        // For a single candidate, don't bother
+        if (candidates.Count == 1) return ImmutableArray.Create(candidates[0].Symbol);
+
+        // We have more than one, find the max dominator
+        // NOTE: This might not be the actual dominator in case of mutual non-dominance
+        var bestScore = CallScore.FindBest(candidates.Select(c => c.Score));
+        // We keep every candidate that dominates this score, or there is mutual non-dominance
+        var dominatingCandidates = candidates
+            .Where(pair => bestScore is null
+                        || CallScore.Compare(bestScore.Value, pair.Score)
+                               is CallScoreComparison.Equal
+                               or CallScoreComparison.NoDominance)
+            .Select(pair => pair.Symbol)
+            .ToImmutableArray();
+        Debug.Assert(dominatingCandidates.Length > 0);
+        return dominatingCandidates;
     }
 
     private bool RefineScores(List<Candidate> candidates, out bool wellDefined)

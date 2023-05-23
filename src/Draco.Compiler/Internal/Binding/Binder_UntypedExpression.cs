@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -40,6 +41,7 @@ internal partial class Binder
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
         MemberExpressionSyntax maccess => this.BindMemberExpression(maccess, constraints, diagnostics),
+        GenericExpressionSyntax gen => this.BindGenericExpression(gen, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -221,7 +223,30 @@ internal partial class Binder
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
 
-        if (method is UntypedFunctionGroupExpression group)
+        return this.BindCallExpression(syntax, method, args, constraints, diagnostics);
+    }
+
+    private UntypedExpression BindCallExpression(
+        CallExpressionSyntax syntax,
+        UntypedExpression method,
+        ImmutableArray<UntypedExpression> args,
+        ConstraintSolver constraints,
+        DiagnosticBag diagnostics)
+    {
+        if (method is UntypedDelayedExpression delayed)
+        {
+            // The binding is delayed, we have to delay this as well
+            var promisedType = constraints.AllocateTypeVariable();
+            var promise = constraints.Await(delayed.Promise, UntypedExpression (resolved) =>
+            {
+                // Retry binding with the resolved variant
+                var call = this.BindCallExpression(syntax, resolved, args, constraints, diagnostics);
+                constraints.Unify(promisedType, call.TypeRequired);
+                return call;
+            });
+            return new UntypedDelayedExpression(syntax, promise, promisedType);
+        }
+        else if (method is UntypedFunctionGroupExpression group)
         {
             // Simple overload
             // Resolve symbol overload
@@ -269,6 +294,8 @@ internal partial class Binder
                         out var resultType);
                     callPromise.ConfigureDiagnostic(diag => diag
                         .WithLocation(syntax.Location));
+
+                    constraints.Unify(resultType, promisedType);
                     return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
                 }
                 else
@@ -462,6 +489,95 @@ internal partial class Binder
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
             return new UntypedMemberExpression(syntax, left, promise);
+        }
+    }
+
+    private UntypedExpression BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var instantiated = this.BindExpression(syntax.Instantiated, constraints, diagnostics);
+        var args = syntax.Arguments.Values
+            .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
+            .ToImmutableArray();
+        if (instantiated is UntypedFunctionGroupExpression group)
+        {
+            // Filter for same number of generic parameters
+            var withSameNoParams = group.Functions
+                .Where(f => f.GenericParameters.Length == args.Length)
+                .ToImmutableArray();
+            if (withSameNoParams.Length == 0)
+            {
+                // No generic functions with this number of parameters
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
+                    location: syntax.Location,
+                    formatArgs: new object[] { group.Functions[0].Name, args.Length }));
+
+                // Return a sentinel
+                // NOTE: Is this the right one to return?
+                return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
+            }
+            else
+            {
+                // There are functions with this same number of parameters
+                // Instantiate each possibility
+                var instantiatedFuncs = withSameNoParams
+                    .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
+                    .ToImmutableArray();
+
+                // Wrap them back up in a function group
+                return new UntypedFunctionGroupExpression(syntax, instantiatedFuncs);
+            }
+        }
+        else if (instantiated is UntypedMemberExpression member)
+        {
+            // We are playing the same game as with call expression
+            // A member access has to be delayed to get resolved
+
+            var promise = constraints.Await(member.Member, UntypedExpression (members) =>
+            {
+                // Search for all function members with the same number of generic parameters
+                var withSameNoParams = members
+                    .OfType<FunctionSymbol>()
+                    .Where(f => f.GenericParameters.Length == args.Length)
+                    .ToImmutableArray();
+                if (withSameNoParams.Length == 0)
+                {
+                    // No generic functions with this number of parameters
+                    diagnostics.Add(Diagnostic.Create(
+                        template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
+                        location: syntax.Location,
+                        formatArgs: new object[] { members[0].Name, args.Length }));
+
+                    // Return a sentinel
+                    // NOTE: Is this the right one to return?
+                    return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
+                }
+                else
+                {
+                    // There are functions with this same number of parameters
+                    // Instantiate each possibility
+                    var instantiatedFuncs = withSameNoParams
+                        .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
+                        .Cast<Symbol>()
+                        .ToImmutableArray();
+
+                    // Wrap them back up in a member expression
+                    return new UntypedMemberExpression(syntax, member.Accessed, ConstraintPromise.FromResult(instantiatedFuncs));
+                }
+            });
+            // NOTE: The generic function itself has no concrete type
+            return new UntypedDelayedExpression(syntax, promise, IntrinsicSymbols.ErrorType);
+        }
+        else
+        {
+            // Tried to instantiate something that can not be instantiated
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.NotGenericConstruct,
+                location: syntax.Location));
+
+            // Return a sentinel
+            // NOTE: Is this the right one to return?
+            return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
         }
     }
 

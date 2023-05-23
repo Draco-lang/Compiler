@@ -7,7 +7,6 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class MetadataFieldSymbol : FieldSymbol
 {
     public override TypeSymbol Type => this.type ??= this.Build();
-
     private TypeSymbol? type;
 
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
@@ -15,6 +14,8 @@ internal sealed class MetadataFieldSymbol : FieldSymbol
     public override bool IsStatic => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Static);
 
     public override string Name => this.MetadataReader.GetString(this.fieldDefinition.Name);
+
+    public override Api.Semantics.Visibility Visibility => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
     public override Symbol? ContainingSymbol { get; }
 

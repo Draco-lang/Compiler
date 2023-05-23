@@ -347,7 +347,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         //
         // property_get()
 
-        return new BoundCallExpression(node.Syntax, node.Receiver is null ? null : (BoundExpression)this.VisitExpression(node.Receiver), node.Getter, ImmutableArray<BoundExpression>.Empty);
+        return new BoundCallExpression(null, node.Receiver is null ? null : (BoundExpression)this.VisitExpression(node.Receiver), node.Getter, ImmutableArray<BoundExpression>.Empty);
     }
 
     public override BoundNode VisitIndexSetExpression(BoundIndexSetExpression node)
@@ -358,7 +358,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         //
         // indexed.Item_set(x, foo)
 
-        var args = node.Indices.Select(x => (BoundExpression)this.VisitExpression(x)).Append((BoundExpression)this.VisitExpression(node.Value)).ToImmutableArray();
+        var args = node.Indices.Append(node.Value).Select(x => (BoundExpression)this.VisitExpression(x)).ToImmutableArray();
         return new BoundCallExpression(null, (BoundExpression)this.VisitExpression(node.Receiver), node.Setter, args);
     }
 
@@ -371,7 +371,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         // indexed.Item_get()
 
         var args = node.Indices.Select(x => (BoundExpression)this.VisitExpression(x)).ToImmutableArray();
-        return new BoundCallExpression(node.Syntax, (BoundExpression)this.VisitExpression(node.Receiver), node.Getter, args);
+        return new BoundCallExpression(null, (BoundExpression)this.VisitExpression(node.Receiver), node.Getter, args);
     }
 
     // Utility to store an expression to a temporary variable

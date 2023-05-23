@@ -1752,6 +1752,42 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     {
         // func main(){
         //   var fooModule = FooModule();
+        //   var x = fooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooModule"), "foo")))))));
+
+        // Act
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule { }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+    }
+
+    [Fact]
+    public void SettingNonExistingNonStaticField()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
         //   fooModule.foo = 5;
         // }
 
@@ -1765,23 +1801,27 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
         // Act
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule { }
+            """);
+
+        // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray<MetadataReference>.Empty);
+            metadataReferences: ImmutableArray.Create(fooRef));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
-        Assert.Equal(3, diags.Length);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        Assert.Equal(2, diags.Length);
         AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
         AssertDiagnostic(diags, SymbolResolutionErrors.IllegalLvalue);
     }
 
     [Fact]
-    public void ReadingNonExistingStaticField()
+    public void SettingNonExistingStaticField()
     {
         // func main(){
         //   FooModule.foo = 5;
@@ -1796,19 +1836,56 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
         // Act
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule { }
+            """);
+
+        // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray<MetadataReference>.Empty);
+            metadataReferences: ImmutableArray.Create(fooRef));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
-        Assert.Equal(3, diags.Length);
+        Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalLvalue);
+    }
+
+    [Fact]
+    public void ReadingNonExistingStaticField()
+    {
+        // func main(){
+        //   var x = FooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        // Act
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule { }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -2312,6 +2389,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void GettingNonExistingIndexer()
     {
         // func main(){
+        //   var foo = FooModule();
         //   var x = foo[0];
         // }
 
@@ -2321,12 +2399,18 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooModule")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
+
+        // Act
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule { }
+            """);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray<MetadataReference>.Empty);
+            metadataReferences: ImmutableArray.Create(fooRef));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2334,13 +2418,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
     public void SettingNonExistingIndexer()
     {
         // func main(){
+        //   var foo = FooModule();
         //   foo[0] = 5;
         // }
 
@@ -2350,12 +2435,18 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooModule")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
+
+        // Act
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule { }
+            """);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray<MetadataReference>.Empty);
+            metadataReferences: ImmutableArray.Create(fooRef));
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2363,7 +2454,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]

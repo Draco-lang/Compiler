@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using static System.Formats.Asn1.AsnWriter;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;

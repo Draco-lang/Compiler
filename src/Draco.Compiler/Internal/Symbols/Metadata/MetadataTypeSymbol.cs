@@ -19,6 +19,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
 
     public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
 
+    public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
     private ImmutableArray<TypeParameterSymbol>? genericParameters;
 
@@ -119,12 +121,11 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
         foreach (var propHandle in this.typeDefinition.GetProperties())
         {
             var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
-            // TODO: visibility
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef,
                 defaultMemberName: defaultName);
-            result.Add(propSym);
+            if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 
         // Done

@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
-using Draco.Compiler.Api.Semantics;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -17,6 +16,8 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
 
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
+
+    public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
     public override Symbol ContainingSymbol { get; }
 
@@ -88,12 +89,11 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
         foreach (var propHandle in this.typeDefinition.GetProperties())
         {
             var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
-            // TODO: visibility
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef,
                 defaultMemberName: defaultName);
-            if (propSym.IsStatic) result.Add(propSym);
+            if (propSym.IsStatic && propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 
         // Done

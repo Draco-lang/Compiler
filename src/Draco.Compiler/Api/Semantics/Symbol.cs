@@ -103,6 +103,8 @@ public interface IFieldSymbol : IVariableSymbol
 /// </summary>
 public interface IPropertySymbol : IVariableSymbol
 {
+    public IFunctionSymbol? Getter { get; }
+    public IFunctionSymbol? Setter { get; }
 }
 
 /// <summary>
@@ -225,6 +227,10 @@ internal sealed class PropertySymbol : SymbolBase<Internal.Symbols.PropertySymbo
     public bool IsMutable => this.Symbol.IsMutable;
     public bool IsStatic => this.Symbol.IsStatic;
     public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+
+    public IFunctionSymbol? Getter => this.Symbol.Getter?.ToApiSymbol() as IFunctionSymbol;
+
+    public IFunctionSymbol? Setter => this.Symbol.Setter?.ToApiSymbol() as IFunctionSymbol;
 
     public PropertySymbol(Internal.Symbols.PropertySymbol property)
         : base(property)

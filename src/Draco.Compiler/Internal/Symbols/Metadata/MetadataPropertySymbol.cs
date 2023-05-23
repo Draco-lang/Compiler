@@ -21,7 +21,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
         get
         {
             if (this.NeedsBuild) this.Build();
-            return this.getter!;
+            return this.getter;
         }
     }
     private FunctionSymbol? getter;
@@ -31,12 +31,10 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
         get
         {
             if (this.NeedsBuild) this.Build();
-            return this.setter!;
+            return this.setter;
         }
     }
     private FunctionSymbol? setter;
-
-    private bool NeedsBuild => this.type is null;
 
     public override bool IsStatic
     {
@@ -47,6 +45,18 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
         }
     }
     private bool isStatic = false;
+
+    public override Api.Semantics.Visibility Visibility
+    {
+        get
+        {
+            if (this.NeedsBuild) this.Build();
+            return this.visibility;
+        }
+    }
+    private Api.Semantics.Visibility visibility = default;
+
+    private bool NeedsBuild => this.type is null;
 
     public override bool IsIndexer => this.Name == this.defaultMemberName;
     private readonly string? defaultMemberName;
@@ -80,15 +90,17 @@ internal sealed class MetadataPropertySymbol : PropertySymbol
         if (!accessors.Getter.IsNil)
         {
             var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
-            this.isStatic = getter.Attributes.HasFlag(MethodAttributes.Static);
             this.getter = new MetadataMethodSymbol(this.ContainingSymbol, getter);
+            this.visibility = this.getter.Visibility;
+            this.isStatic = this.getter.IsStatic;
             this.type = this.getter.ReturnType;
         }
         if (!accessors.Setter.IsNil)
         {
             var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
-            this.isStatic = setter.Attributes.HasFlag(MethodAttributes.Static);
             this.setter = new MetadataMethodSymbol(this.ContainingSymbol, setter);
+            this.visibility = this.setter.Visibility;
+            this.isStatic = this.setter.IsStatic;
             if (this.type is null)
             {
                 var decoder = new TypeProvider(this.Assembly.Compilation);

@@ -42,7 +42,7 @@ internal static class BinderFacts
     public static bool IsLabelSymbol(Symbol symbol) => symbol
         is LabelSymbol;
 
-    // TODO: how to call this?
+    // TODO: how to call this? Its separated from IsValueSymbol because of ctors
     public static bool IsFunctionSymbol(Symbol symbol) => symbol
         is LocalSymbol
         or UntypedLocalSymbol

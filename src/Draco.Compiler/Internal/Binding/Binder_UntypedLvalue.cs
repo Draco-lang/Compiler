@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -9,7 +7,6 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -126,28 +123,6 @@ internal partial class Binder
         return new UntypedIllegalLvalue(syntax);
     }
 
-    private UntypedLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
-    {
-        switch (symbol)
-        {
-        case FieldSymbol field:
-            return new UntypedFieldLvalue(syntax, null, field);
-        case PropertySymbol prop:
-            var setter = prop.Setter;
-            if (prop.Setter is null)
-            {
-                diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
-                    location: syntax?.Location,
-                    prop.FullName));
-                setter = new NoOverloadFunctionSymbol(1);
-            }
-            return new UntypedPropertySetLvalue(syntax, setter!, null);
-        default:
-            throw new InvalidOperationException();
-        }
-    }
-
     private UntypedLvalue BindIndexLvalue(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = this.BindExpression(index.Indexed, constraints, diagnostics);
@@ -177,5 +152,28 @@ internal partial class Binder
             .WithLocation(index.Location));
 
         return new UntypedIndexSetLvalue(index, promise, receiver, args, returnType);
+    }
+
+    private UntypedLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        switch (symbol)
+        {
+        case FieldSymbol field:
+            return new UntypedFieldLvalue(syntax, null, field);
+        case PropertySymbol prop:
+            var setter = prop.Setter;
+            if (prop.Setter is null)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                    location: syntax?.Location,
+                    prop.FullName));
+                setter = new NoOverloadFunctionSymbol(1);
+            }
+            return new UntypedPropertySetLvalue(syntax, setter!, null);
+        default:
+            // NOTE: The error is already reported
+            return new UntypedIllegalLvalue(syntax);
+        }
     }
 }

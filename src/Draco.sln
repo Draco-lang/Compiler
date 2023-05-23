@@ -34,7 +34,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Lsp", "Draco.Lsp\Drac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Fuzzer", "Draco.Fuzzer\Draco.Fuzzer.csproj", "{4B1D20EB-F2DF-4724-87E6-9839C67049FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Debugger", "Draco.Debugger\Draco.Debugger.csproj", "{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Debugger", "Draco.Debugger\Draco.Debugger.csproj", "{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Debugger.Tui", "Draco.Debugger.Tui\Draco.Debugger.Tui.csproj", "{887C5E8B-45AE-43BE-889F-5401D0CC76CC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -121,6 +123,12 @@ Global
 		{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{887C5E8B-45AE-43BE-889F-5401D0CC76CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{887C5E8B-45AE-43BE-889F-5401D0CC76CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{887C5E8B-45AE-43BE-889F-5401D0CC76CC}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{887C5E8B-45AE-43BE-889F-5401D0CC76CC}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{887C5E8B-45AE-43BE-889F-5401D0CC76CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{887C5E8B-45AE-43BE-889F-5401D0CC76CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

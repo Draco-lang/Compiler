@@ -1,15 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using Terminal.Gui;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.Tui;
 
-internal static class Program
+internal class Program
 {
-    internal static async Task Main(string[] args)
+    internal static void Main(string[] args)
+    {
+        Application.Run<DebuggerWindow>();
+        Application.Shutdown();
+    }
+
+    internal static async Task StartDebugger()
     {
         var host = DebuggerHost.Create(FindDbgShim());
         var debugger = await host.StartProcess("c:/TMP/DracoTest/bin/Debug/net7.0/DracoTest.exe");
@@ -31,14 +32,14 @@ internal static class Program
         var root = "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App";
 
         if (!Directory.Exists(root))
+        {
             throw new InvalidOperationException($"Cannot find dbgshim.dll: '{root}' does not exist");
+        }
 
         foreach (var dir in Directory.EnumerateDirectories(root).Reverse())
         {
             var dbgshim = Directory.EnumerateFiles(dir, "dbgshim.dll").FirstOrDefault();
-
-            if (dbgshim != null)
-                return dbgshim;
+            if (dbgshim is not null) return dbgshim;
         }
 
         throw new InvalidOperationException($"Failed to find a runtime containing dbgshim.dll under '{root}'");

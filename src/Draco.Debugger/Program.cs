@@ -7,33 +7,11 @@ using System.Threading.Tasks;
 
 namespace Draco.Debugger;
 
-internal static class Win32
-{
-    private const string kernel32 = "kernel32.dll";
-
-    [DllImport(kernel32, SetLastError = true)]
-    public static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
-
-    [DllImport(kernel32, CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "LoadLibraryW")]
-    public static extern IntPtr LoadLibrary(string lpLibFileName);
-
-    [DllImport(kernel32, SetLastError = true)]
-    public static extern uint WaitForSingleObject([In] IntPtr hHandle, [In] int dwMilliseconds);
-
-    [DllImport(kernel32, SetLastError = true)]
-    public static extern bool SetEvent([In] IntPtr hEvent);
-}
-
 internal static class Program
 {
-    private sealed class NativeMethods : INativeMethods
-    {
-        public nint LoadLibrary(string path) => Win32.LoadLibrary(path);
-    }
-
     internal static async Task Main(string[] args)
     {
-        var host = DebuggerHost.Create(new NativeMethods(), FindDbgShim());
+        var host = DebuggerHost.Create(FindDbgShim());
         var debugger = await host.StartProcess("c:/TMP/DracoTest/bin/Debug/net7.0/DracoTest.exe");
 
         var mainFile = debugger.SourceFiles.Keys.First();

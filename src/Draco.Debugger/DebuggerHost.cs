@@ -9,19 +9,16 @@ namespace Draco.Debugger;
 /// </summary>
 public sealed class DebuggerHost
 {
-    // TODO: We can hide native methods, all we need is dbgshim
-    public static DebuggerHost Create(INativeMethods nativeMethods, string dbgshimPath)
+    public static DebuggerHost Create(string dbgshimPath)
     {
-        var dbgshim = new DbgShim(nativeMethods.LoadLibrary(dbgshimPath));
-        return new(nativeMethods, dbgshim);
+        var dbgshim = new DbgShim(NativeMethods.LoadLibrary(dbgshimPath));
+        return new(dbgshim);
     }
 
-    private readonly INativeMethods nativeMethods;
     private readonly DbgShim dbgShim;
 
-    private DebuggerHost(INativeMethods nativeMethods, DbgShim dbgShim)
+    private DebuggerHost(DbgShim dbgShim)
     {
-        this.nativeMethods = nativeMethods;
         this.dbgShim = dbgShim;
     }
 

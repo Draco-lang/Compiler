@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
+using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -39,6 +40,11 @@ public sealed class Debugger
     /// </summary>
     public ImmutableDictionary<Uri, SourceFile> SourceFiles => this.sourceFiles ??= this.BuildSourceFiles();
     private ImmutableDictionary<Uri, SourceFile>? sourceFiles;
+
+    /// <summary>
+    /// The event that triggers, when a breakpoint is hit.
+    /// </summary>
+    public event EventHandler<OnBreakpointEventArgs>? OnBreakpoint;
 
     /// <summary>
     /// The task that is completed, when the process has started, including loading in the main assembly
@@ -127,8 +133,31 @@ public sealed class Debugger
         };
         this.corDebugManagedCallback.OnBreakpoint += (sender, args) =>
         {
-            // TODO
-            var x = 0;
+            if (args.Breakpoint is not CorDebugFunctionBreakpoint bp) return;
+
+            var methodInfo = this.MethodInfos.FirstOrDefault(mi => MetadataTokens.GetToken(mi.DefinitionHandle) == bp.Function.Token.Value);
+            if (methodInfo is null)
+            {
+                this.OnBreakpoint?.Invoke(this, new());
+                return;
+            }
+
+            var file = this.SourceFiles.Values.FirstOrDefault(f => f.DocumentHandle == methodInfo.DocumentHandle);
+            if (file is null)
+            {
+                this.OnBreakpoint?.Invoke(this, new());
+                return;
+            }
+
+            var seqPoint = this.MethodInfosPerDocument[file.DocumentHandle]
+                .SelectMany(f => f.SequencePoints)
+                .FirstOrDefault(s => bp.Offset == s.Offset);
+
+            this.OnBreakpoint?.Invoke(this, new()
+            {
+                SourceFile = file,
+                SequencePoint = seqPoint.Document.IsNil ? null : seqPoint,
+            });
         };
         this.corDebugManagedCallback.OnUpdateModuleSymbols += (sender, args) =>
         {

@@ -1,4 +1,8 @@
+using System;
 using System.CommandLine;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Terminal.Gui;
 using Command = System.CommandLine.Command;
 
@@ -6,8 +10,8 @@ namespace Draco.Debugger.Tui;
 
 internal class Program
 {
-    internal static void Main(string[] args) =>
-        ConfigureCommands().Invoke(args);
+    internal static async Task Main(string[] args) =>
+        await ConfigureCommands().InvokeAsync(args);
 
     private static RootCommand ConfigureCommands()
     {
@@ -31,19 +35,33 @@ internal class Program
 
     private static async Task LaunchCommand(FileInfo program)
     {
-        var host = DebuggerHost.Create(FindDbgShim());
-        var debugger = await host.StartProcess(program.FullName);
+        Application.Init();
+        var debuggerWindow = new DebuggerWindow();
+        Application.MainLoop.Invoke(async () =>
+        {
+            var host = DebuggerHost.Create(FindDbgShim());
+            var debugger = await host.StartProcess(program.FullName);
 
-        var mainFile = debugger.SourceFiles.Keys.First();
+            debugger.OnBreakpoint += async (_, args) =>
+            {
+                debuggerWindow.SourceText.Text = args.SourceFile?.Text ?? string.Empty;
+                await Task.Delay(3000);
+                debugger.Resume();
+            };
 
-        debugger.SetBreakpoint(mainFile, lineNumber: 4);
-        debugger.Resume();
+            var mainFile = debugger.SourceFiles.Keys.First();
 
-        await Task.Delay(5000);
+            debugger.SetBreakpoint(mainFile, lineNumber: 4);
+            debugger.SetBreakpoint(mainFile, lineNumber: 5);
+            debugger.Resume();
 
-        debugger.Resume();
+            // Application.Run(debuggerWindow);
 
-        await debugger.Terminated;
+            await debugger.Terminated;
+        });
+
+        Application.Run(debuggerWindow);
+        Application.Shutdown();
     }
 
     private static string FindDbgShim()

@@ -1,5 +1,8 @@
+using System;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 using ClrDebug;
 
 namespace Draco.Debugger;

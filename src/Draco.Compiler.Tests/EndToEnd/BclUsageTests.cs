@@ -172,4 +172,55 @@ public sealed class BclUsageTests : EndToEndTestsBase
             stdin: null,
             stdout: null);
     }
+
+    [Fact]
+    public void ListUsageWithPropertyAndIndexer()
+    {
+        var assembly = Compile("""
+            import System.Console;
+            import System.Collections.Generic;
+            
+            public func main() {
+                var list = List();
+                list.Add(0);
+                list.Add(1);
+                list.Add(2);
+                var i = 0;
+                while(i < list.Count){
+                    list[i] = list[i] * 2;
+                    Write(list[i]);
+                    i += 1;
+                }
+            }
+            """);
+        var stringWriter = new StringWriter();
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("024", stringWriter.ToString());
+    }
+
+    [Fact]
+    public void StaticProperty()
+    {
+        var assembly = Compile("""
+            import System.Collections;
+            import System.Console;
+
+            public func main() {
+                Write(ArrayList().Count);
+            }
+            """);
+        var stringWriter = new StringWriter();
+        var _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("0", stringWriter.ToString());
+    }
 }

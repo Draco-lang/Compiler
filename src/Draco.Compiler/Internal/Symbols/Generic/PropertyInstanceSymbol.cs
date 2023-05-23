@@ -5,9 +5,11 @@ internal sealed class PropertyInstanceSymbol : PropertySymbol, IGenericInstanceS
     public override TypeSymbol Type => this.type ??= this.BuildType();
     private TypeSymbol? type;
 
-    public override FunctionSymbol? Getter => this.GenericDefinition.Getter;
+    public override FunctionSymbol? Getter => this.getter ??= this.BuildGetter();
+    private FunctionSymbol? getter;
 
-    public override FunctionSymbol? Setter => this.GenericDefinition.Setter;
+    public override FunctionSymbol? Setter => this.setter ??= this.BuildSetter();
+    private FunctionSymbol? setter;
 
     public override string Name => this.GenericDefinition.Name;
 
@@ -29,4 +31,10 @@ internal sealed class PropertyInstanceSymbol : PropertySymbol, IGenericInstanceS
 
     private TypeSymbol BuildType() =>
         this.GenericDefinition.Type.GenericInstantiate(this.GenericDefinition.Type.ContainingSymbol, this.Context);
+
+    private FunctionSymbol? BuildGetter() =>
+        this.GenericDefinition.Getter?.GenericInstantiate(this.ContainingSymbol, this.Context);
+
+    private FunctionSymbol? BuildSetter() =>
+        this.GenericDefinition.Setter?.GenericInstantiate(this.ContainingSymbol, this.Context);
 }

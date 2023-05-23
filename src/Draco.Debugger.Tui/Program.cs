@@ -45,12 +45,12 @@ internal class Program
             debugger.OnBreakpoint += async (_, args) =>
             {
                 debuggerWindow.SourceText.Text = args.SourceFile?.Text ?? string.Empty;
-                if (args.SequencePoint is not null)
+                if (args.Range is not null)
                 {
-                    var seq = args.SequencePoint.Value;
-                    debuggerWindow.SourceText.SelectionStartRow = seq.StartLine - 1;
-                    debuggerWindow.SourceText.SelectionStartColumn = seq.StartColumn - 1;
-                    debuggerWindow.SourceText.CursorPosition = new(seq.EndColumn - 1, seq.EndLine - 1);
+                    var seq = args.Range.Value;
+                    debuggerWindow.SourceText.SelectionStartRow = seq.StartLine;
+                    debuggerWindow.SourceText.SelectionStartColumn = seq.StartColumn;
+                    debuggerWindow.SourceText.CursorPosition = new(x: seq.EndColumn - 1, y: seq.EndLine - 1);
                     debuggerWindow.SourceText.Selecting = true;
                 }
                 Application.Refresh();

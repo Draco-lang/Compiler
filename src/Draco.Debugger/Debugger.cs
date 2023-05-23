@@ -156,7 +156,13 @@ public sealed class Debugger
             this.OnBreakpoint?.Invoke(this, new()
             {
                 SourceFile = file,
-                SequencePoint = seqPoint.Document.IsNil ? null : seqPoint,
+                Range = seqPoint.Document.IsNil
+                    ? null
+                    : new(
+                        StartLine: seqPoint.StartLine - 1,
+                        StartColumn: seqPoint.StartColumn - 1,
+                        EndLine: seqPoint.EndLine,
+                        EndColumn: seqPoint.EndColumn),
             });
         };
         this.corDebugManagedCallback.OnUpdateModuleSymbols += (sender, args) =>

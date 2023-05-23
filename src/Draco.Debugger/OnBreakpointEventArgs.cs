@@ -18,7 +18,7 @@ public sealed class OnBreakpointEventArgs : EventArgs
     public SourceFile? SourceFile { get; init; }
 
     /// <summary>
-    /// The sequence point of the breakpoint.
+    /// The range of the breakpoint.
     /// </summary>
-    public SequencePoint? SequencePoint { get; init; }
+    public SourceRange? Range { get; init; }
 }

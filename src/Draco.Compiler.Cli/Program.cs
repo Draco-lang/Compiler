@@ -111,13 +111,8 @@ internal class Program
         var (path, name) = ExtractOutputPathAndName(output);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            metadataReferences: //references
-                                //                    .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
-                                //                    .ToImmutableArray(),
-            Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                //.Append(MetadataReference.FromAssembly(Assembly.LoadFrom(@"C:\Users\kubab\source\Languages\Draco\Test\TestLib.dll")))
-                .Append(MetadataReference.FromAssembly(Assembly.LoadFrom(@"C:\Users\kubab\source\repos\DracoTesting\bin\Debug\net7.0\DracoTesting.dll")))
+            metadataReferences: references
+                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName,
             outputPath: path,

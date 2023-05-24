@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ClrDebug;
@@ -12,7 +13,7 @@ public sealed class DebuggerHost
 {
     public static DebuggerHost Create(string dbgshimPath)
     {
-        var dbgshim = new DbgShim(NativeMethods.LoadLibrary(dbgshimPath));
+        var dbgshim = new XplatDbgShim(NativeLibrary.Load(dbgshimPath));
         return new(dbgshim);
     }
 

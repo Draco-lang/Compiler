@@ -1,12 +1,13 @@
 using System;
 using System.Runtime.InteropServices;
+using Draco.Debugger.IO;
 
-namespace Draco.Debugger.IO;
+namespace Draco.Debugger.Platform;
 
 /// <summary>
-/// Implements <see cref="IPlatformIo"/> for Unix systems.
+/// Implements <see cref="IPlatformMethods"/> for Unix systems.
 /// </summary>
-internal sealed class UnixPlatformIo : IPlatformIo
+internal sealed class UnixPlatformMethods : IPlatformMethods
 {
     private enum FileDescriptor : int
     {
@@ -23,7 +24,7 @@ internal sealed class UnixPlatformIo : IPlatformIo
     [DllImport(LibC, SetLastError = true)]
     private static extern int dup2(int oldfd, int newfd);
 
-    private static nint Replace(FileDescriptor old, nint @new)
+    private static nint ReplaceStdioHandle(FileDescriptor old, nint @new)
     {
         var oldCopy = dup((int)old);
         if (oldCopy == -1) throw new InvalidOperationException($"could not get {old} handle");
@@ -34,11 +35,11 @@ internal sealed class UnixPlatformIo : IPlatformIo
         return oldCopy;
     }
 
-    public IoHandles Replace(IoHandles newHandles)
+    public IoHandles ReplaceStdioHandles(IoHandles newHandles)
     {
-        var oldStdin = Replace(FileDescriptor.STDIN_FILENO, newHandles.StandardInput);
-        var oldStdout = Replace(FileDescriptor.STDOUT_FILENO, newHandles.StandardOutput);
-        var oldStderr = Replace(FileDescriptor.STDERR_FILENO, newHandles.StandardError);
+        var oldStdin = ReplaceStdioHandle(FileDescriptor.STDIN_FILENO, newHandles.StandardInput);
+        var oldStdout = ReplaceStdioHandle(FileDescriptor.STDOUT_FILENO, newHandles.StandardOutput);
+        var oldStderr = ReplaceStdioHandle(FileDescriptor.STDERR_FILENO, newHandles.StandardError);
 
         return new IoHandles(oldStdin, oldStdout, oldStderr);
     }

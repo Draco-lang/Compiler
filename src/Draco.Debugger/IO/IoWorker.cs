@@ -35,7 +35,7 @@ internal sealed class IoWorker<TProcess>
     {
         this.process = process;
         this.handles = handles;
-        this.StandardInput = new StreamWriter(handles.StandardInputWriter);
+        this.StandardInput = new StreamWriter(handles.StandardInputWriter) { AutoFlush = true };
     }
 
     /// <summary>

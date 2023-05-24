@@ -21,7 +21,7 @@ internal sealed class DebuggerWindow : Window
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Percent(80),
+            Height = Dim.Percent(70),
             Text = string.Empty,
             CanFocus = false,
         };
@@ -42,7 +42,7 @@ internal sealed class DebuggerWindow : Window
             X = 0,
             Y = Pos.Bottom(this.SourceText),
             Width = Dim.Fill(),
-            Height = Dim.Percent(20),
+            Height = Dim.Percent(30),
         };
         stdoutWindow.Add(this.StdoutText);
 

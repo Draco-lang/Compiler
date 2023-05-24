@@ -33,6 +33,7 @@ internal sealed class IoWorker<TProcess>
 
     public IoWorker(TProcess process, RemoteIoHandles handles)
     {
+        this.process = process;
         this.handles = handles;
         this.StandardInput = new StreamWriter(handles.StandardInputWriter);
     }

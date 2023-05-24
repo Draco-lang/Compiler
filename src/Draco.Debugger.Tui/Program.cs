@@ -47,6 +47,7 @@ internal class Program
             debugger.OnStandardOut += (_, text) =>
             {
                 debuggerWindow.StdoutText.Text += text;
+                debuggerWindow.StdoutText.MoveEnd();
             };
 
             debugger.OnBreakpoint += (_, _) => debugger.Continue();

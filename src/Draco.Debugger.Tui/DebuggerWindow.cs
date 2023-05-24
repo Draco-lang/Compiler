@@ -30,8 +30,8 @@ internal sealed class DebuggerWindow : Window
         {
             X = 0,
             Y = 0,
-            Width = Dim.Sized(40),
-            Height = Dim.Sized(128),
+            Width = Dim.Percent(50),
+            Height = Dim.Fill(),
             Text = string.Empty,
             ReadOnly = true,
             AutoSize = true,
@@ -42,7 +42,7 @@ internal sealed class DebuggerWindow : Window
             X = 0,
             Y = Pos.Bottom(this.SourceText),
             Width = Dim.Fill(),
-            Height = Dim.Percent(30),
+            Height = Dim.Fill(),
         };
         stdoutWindow.Add(this.StdoutText);
 

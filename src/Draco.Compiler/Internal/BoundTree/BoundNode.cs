@@ -107,7 +107,7 @@ internal partial class BoundFieldExpression
 
 internal partial class BoundPropertyGetExpression
 {
-    public override TypeSymbol? Type => this.Getter.ReturnType;
+    public override TypeSymbol Type => this.Getter.ReturnType;
 }
 
 internal partial class BoundLocalExpression

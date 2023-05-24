@@ -4,6 +4,9 @@ using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;
 
+/// <summary>
+/// Represents a field.
+/// </summary>
 internal abstract class FieldSymbol : VariableSymbol
 {
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

@@ -4,7 +4,10 @@ using System.Reflection.Metadata;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
-internal sealed class MetadataFieldSymbol : FieldSymbol
+/// <summary>
+/// Class for fields read from metadata.
+/// </summary>
+internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 {
     public override TypeSymbol Type => this.type ??= this.Build();
     private TypeSymbol? type;
@@ -41,6 +44,6 @@ internal sealed class MetadataFieldSymbol : FieldSymbol
     {
         // Decode signature
         var decoder = new TypeProvider(this.Assembly.Compilation);
-        return this.fieldDefinition.DecodeSignature(decoder, default);
+        return this.fieldDefinition.DecodeSignature(decoder, this);
     }
 }

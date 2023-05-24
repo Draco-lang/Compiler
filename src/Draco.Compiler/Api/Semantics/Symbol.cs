@@ -214,7 +214,7 @@ internal sealed class FieldSymbol : SymbolBase<Internal.Symbols.FieldSymbol>, IF
 {
     public bool IsMutable => this.Symbol.IsMutable;
     public bool IsStatic => this.Symbol.IsStatic;
-    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+    public ITypeSymbol Type => this.Symbol.Type.ToApiSymbol();
 
     public FieldSymbol(Internal.Symbols.FieldSymbol field)
         : base(field)
@@ -226,11 +226,11 @@ internal sealed class PropertySymbol : SymbolBase<Internal.Symbols.PropertySymbo
 {
     public bool IsMutable => this.Symbol.IsMutable;
     public bool IsStatic => this.Symbol.IsStatic;
-    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+    public ITypeSymbol Type => this.Symbol.Type.ToApiSymbol();
 
-    public IFunctionSymbol? Getter => this.Symbol.Getter?.ToApiSymbol() as IFunctionSymbol;
+    public IFunctionSymbol? Getter => this.Symbol.Getter?.ToApiSymbol();
 
-    public IFunctionSymbol? Setter => this.Symbol.Setter?.ToApiSymbol() as IFunctionSymbol;
+    public IFunctionSymbol? Setter => this.Symbol.Setter?.ToApiSymbol();
 
     public PropertySymbol(Internal.Symbols.PropertySymbol property)
         : base(property)
@@ -242,7 +242,7 @@ internal sealed class GlobalSymbol : SymbolBase<Internal.Symbols.GlobalSymbol>, 
 {
     public bool IsMutable => this.Symbol.IsMutable;
     public bool IsStatic => this.Symbol.IsStatic;
-    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+    public ITypeSymbol Type => this.Symbol.Type.ToApiSymbol();
 
     public GlobalSymbol(Internal.Symbols.GlobalSymbol global)
         : base(global)
@@ -254,7 +254,7 @@ internal sealed class LocalSymbol : SymbolBase<Internal.Symbols.LocalSymbol>, IL
 {
     public bool IsMutable => this.Symbol.IsMutable;
     public bool IsStatic => this.Symbol.IsStatic;
-    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+    public ITypeSymbol Type => this.Symbol.Type.ToApiSymbol();
 
     public LocalSymbol(Internal.Symbols.LocalSymbol local)
         : base(local)
@@ -266,7 +266,7 @@ internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSym
 {
     public bool IsMutable => this.Symbol.IsMutable;
     public bool IsStatic => this.Symbol.IsStatic;
-    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
+    public ITypeSymbol Type => this.Symbol.Type.ToApiSymbol();
 
     public ParameterSymbol(Internal.Symbols.ParameterSymbol parameter)
         : base(parameter)
@@ -276,8 +276,8 @@ internal sealed class ParameterSymbol : SymbolBase<Internal.Symbols.ParameterSym
 
 internal sealed class FunctionSymbol : SymbolBase<Internal.Symbols.FunctionSymbol>, IFunctionSymbol
 {
-    public ITypeSymbol Type => (ITypeSymbol)this.Symbol.Type.ToApiSymbol();
-    public ITypeSymbol ReturnType => (ITypeSymbol)this.Symbol.ReturnType.ToApiSymbol();
+    public ITypeSymbol Type => this.Symbol.Type.ToApiSymbol();
+    public ITypeSymbol ReturnType => this.Symbol.ReturnType.ToApiSymbol();
     public bool IsStatic => this.Symbol.IsStatic;
 
     public ImmutableArray<IParameterSymbol> Parameters => this.Symbol.Parameters

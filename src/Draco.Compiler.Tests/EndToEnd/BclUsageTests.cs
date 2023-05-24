@@ -204,7 +204,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void StaticProperty()
+    public void NonGenericProperty()
     {
         var assembly = Compile("""
             import System.Collections;

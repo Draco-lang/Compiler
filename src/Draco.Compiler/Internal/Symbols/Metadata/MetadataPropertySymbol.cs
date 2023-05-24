@@ -1,10 +1,12 @@
 using System.Linq;
 using System.Reflection.Metadata;
-using System.Reflection;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
-internal sealed class MetadataPropertySymbol : PropertySymbol
+/// <summary>
+/// Class for reading properties from metadata.
+/// </summary>
+internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 {
     public override TypeSymbol Type
     {

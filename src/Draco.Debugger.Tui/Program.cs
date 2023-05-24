@@ -40,7 +40,14 @@ internal class Program
         Application.MainLoop.Invoke(async () =>
         {
             var host = DebuggerHost.Create(FindDbgShim());
-            var debugger = await host.StartProcess(program.FullName);
+            var debugger = host.StartProcess(program.FullName);
+
+            debugger.OnStandardOut += (_, text) =>
+            {
+                debuggerWindow.StdoutText.Text += text;
+            };
+
+            debugger.OnBreakpoint += (_, _) => debugger.Continue();
 
 #if false
             debugger.OnBreakpoint += async (_, args) =>
@@ -71,6 +78,9 @@ internal class Program
             // Application.Run(debuggerWindow);
 
             await debugger.Terminated;
+
+            debuggerWindow.SourceText.Text = "DONE";
+            Application.Refresh();
         });
 
         Application.Run(debuggerWindow);

@@ -10,6 +10,7 @@ namespace Draco.Debugger.Tui;
 internal sealed class DebuggerWindow : Window
 {
     public TextView SourceText { get; set; }
+    public TextView StdoutText { get; set; }
 
     public DebuggerWindow()
     {
@@ -20,9 +21,31 @@ internal sealed class DebuggerWindow : Window
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Fill(),
+            Height = Dim.Percent(80),
             Text = string.Empty,
+            CanFocus = false,
         };
-        this.Add(this.SourceText);
+
+        this.StdoutText = new TextView()
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Sized(40),
+            Height = Dim.Sized(128),
+            Text = string.Empty,
+            ReadOnly = true,
+            AutoSize = true,
+        };
+        var stdoutWindow = new Window()
+        {
+            Title = "stdout",
+            X = 0,
+            Y = Pos.Bottom(this.SourceText),
+            Width = Dim.Fill(),
+            Height = Dim.Percent(20),
+        };
+        stdoutWindow.Add(this.StdoutText);
+
+        this.Add(this.SourceText, stdoutWindow);
     }
 }

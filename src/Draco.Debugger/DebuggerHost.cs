@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ClrDebug;
+using Draco.Debugger.IO;
 
 namespace Draco.Debugger;
 
@@ -30,13 +31,16 @@ public sealed class DebuggerHost
     /// <param name="programPath">The path to the program to be executed.</param>
     /// <param name="args">The arguments to invoke the program with.</param>
     /// <returns>The debugger instance responsible for debugging the startedf process.</returns>
-    public async Task<Debugger> StartProcess(string programPath, params string[] args)
+    public Debugger StartProcess(string programPath, params string[] args)
     {
         var debugger = null as Debugger;
         var unregisterToken = IntPtr.Zero;
         // TODO: Naive, but temporarily will work
         var command = $"{programPath} {string.Join(' ', args)}";
-        var process = this.dbgShim.CreateProcessForLaunch(command, bSuspendProcess: true);
+        // Start the process with STDIO captured
+        var process = IoUtils.CaptureProcess(
+            () => this.dbgShim.CreateProcessForLaunch(command, bSuspendProcess: true),
+            out var ioHandles);
 
         try
         {
@@ -52,6 +56,7 @@ public sealed class DebuggerHost
                 var corDbgProcess = corDbg.DebugActiveProcess(process.ProcessId, win32Attach: false);
                 debugger = new(
                     corDebugProcess: corDbgProcess,
+                    ioWorker: new(corDbgProcess, ioHandles),
                     cb: cb)
                 {
                     StopAtEntryPoint = true,

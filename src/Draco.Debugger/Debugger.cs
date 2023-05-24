@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ClrDebug;
+using Draco.Debugger.IO;
 
 namespace Draco.Debugger;
 
@@ -22,6 +23,29 @@ public sealed class Debugger
     public Task Terminated => this.terminatedCompletionSource.Task;
 
     /// <summary>
+    /// The event that triggers when the process writes to its STDOUT.
+    /// </summary>
+    public event EventHandler<string> OnStandardOut
+    {
+        add => this.ioWorker.OnStandardOut += value;
+        remove => this.ioWorker.OnStandardOut -= value;
+    }
+
+    /// <summary>
+    /// The event that triggers when the process writes to its STDERR.
+    /// </summary>
+    public event EventHandler<string> OnStandardError
+    {
+        add => this.ioWorker.OnStandardError += value;
+        remove => this.ioWorker.OnStandardError -= value;
+    }
+
+    /// <summary>
+    /// A writer to the processes standard input.
+    /// </summary>
+    public StreamWriter StandardInput => this.ioWorker.StandardInput;
+
+    /// <summary>
     /// The event that triggers, when a breakpoint is hit.
     /// </summary>
     public event EventHandler<OnBreakpointEventArgs>? OnBreakpoint;
@@ -32,18 +56,23 @@ public sealed class Debugger
     internal bool StopAtEntryPoint { get; init; }
 
     private readonly CorDebugProcess corDebugProcess;
+    private readonly IoWorker<CorDebugProcess> ioWorker;
 
     private readonly TaskCompletionSource terminatedCompletionSource = new();
+    private readonly CancellationTokenSource terminateTokenSource = new();
 
     private CorDebugBreakpoint? entryPointBreakpoint;
 
     internal Debugger(
         CorDebugProcess corDebugProcess,
+        IoWorker<CorDebugProcess> ioWorker,
         CorDebugManagedCallback cb)
     {
         this.corDebugProcess = corDebugProcess;
+        this.ioWorker = ioWorker;
 
         this.InitializeEventHandler(cb);
+        ioWorker.Run(this.terminateTokenSource.Token);
     }
 
     /// <summary>
@@ -118,6 +147,7 @@ public sealed class Debugger
 
     private void OnExitProcessHandler(object? sender, ExitProcessCorDebugManagedCallbackEventArgs args)
     {
+        this.terminateTokenSource.Cancel();
         this.terminatedCompletionSource.SetResult();
         this.Continue();
     }

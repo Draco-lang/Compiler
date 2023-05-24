@@ -8,7 +8,8 @@ namespace Draco.Debugger.IO;
 /// <summary>
 /// Represents a worker that handles IO for a remote process.
 /// </summary>
-internal sealed class IoWorker
+/// <typeparam name="TProcess">The process type.</typeparam>
+internal sealed class IoWorker<TProcess>
 {
     private const int BufferSize = 4096;
 
@@ -27,9 +28,10 @@ internal sealed class IoWorker
     /// </summary>
     public StreamWriter StandardInput { get; }
 
+    private readonly TProcess process;
     private readonly RemoteIoHandles handles;
 
-    public IoWorker(RemoteIoHandles handles)
+    public IoWorker(TProcess process, RemoteIoHandles handles)
     {
         this.handles = handles;
         this.StandardInput = new StreamWriter(handles.StandardInputWriter);
@@ -58,12 +60,12 @@ internal sealed class IoWorker
             if (stdoutTask.IsCompleted)
             {
                 var str = new string(stdoutBuffer, 0, stdoutTask.Result);
-                this.OnStandardOut?.Invoke(this, str);
+                this.OnStandardOut?.Invoke(this.process, str);
             }
             if (stderrTask.IsCompleted)
             {
                 var str = new string(stderrBuffer, 0, stderrTask.Result);
-                this.OnStandardError?.Invoke(this, str);
+                this.OnStandardError?.Invoke(this.process, str);
             }
         }
     }, cancellationToken);

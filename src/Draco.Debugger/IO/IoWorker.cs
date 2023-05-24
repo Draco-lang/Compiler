@@ -69,5 +69,5 @@ internal sealed class IoWorker
                 this.OnStandardError?.Invoke(this, str);
             }
         }
-    });
+    }, cancellationToken);
 }

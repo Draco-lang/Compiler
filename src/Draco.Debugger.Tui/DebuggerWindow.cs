@@ -11,6 +11,7 @@ internal sealed class DebuggerWindow : Window
 {
     public TextView SourceText { get; set; }
     public TextView StdoutText { get; set; }
+    public ListView CallStack { get; set; }
 
     public DebuggerWindow()
     {
@@ -34,7 +35,6 @@ internal sealed class DebuggerWindow : Window
             Height = Dim.Fill(),
             Text = string.Empty,
             ReadOnly = true,
-            AutoSize = true,
         };
         var stdoutWindow = new Window()
         {
@@ -46,6 +46,23 @@ internal sealed class DebuggerWindow : Window
         };
         stdoutWindow.Add(this.StdoutText);
 
-        this.Add(this.SourceText, stdoutWindow);
+        this.CallStack = new ListView()
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+        };
+        var callStackWindow = new Window()
+        {
+            Title = "call-stack",
+            X = Pos.Right(stdoutWindow),
+            Y = Pos.Bottom(this.SourceText),
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+        };
+        callStackWindow.Add(this.CallStack);
+
+        this.Add(this.SourceText, stdoutWindow, callStackWindow);
     }
 }

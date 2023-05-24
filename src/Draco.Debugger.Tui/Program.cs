@@ -42,6 +42,8 @@ internal class Program
             var host = DebuggerHost.Create(FindDbgShim());
             var debugger = host.StartProcess(program.FullName);
 
+            debuggerWindow.CallStack.SetSource(new[] { "Foo", "Bar" });
+
             debugger.StandardInput.WriteLine("John");
 
             debugger.OnStandardOut += (_, text) =>

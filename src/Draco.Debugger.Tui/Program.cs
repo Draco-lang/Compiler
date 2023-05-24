@@ -42,6 +42,7 @@ internal class Program
             var host = DebuggerHost.Create(FindDbgShim());
             var debugger = await host.StartProcess(program.FullName);
 
+#if false
             debugger.OnBreakpoint += async (_, args) =>
             {
                 debuggerWindow.SourceText.Text = args.SourceFile?.Text ?? string.Empty;
@@ -65,6 +66,7 @@ internal class Program
             debugger.SetBreakpoint(mainFile, lineNumber: 5);
             debugger.SetBreakpoint(mainFile, lineNumber: 6);
             debugger.Resume();
+#endif
 
             // Application.Run(debuggerWindow);
 

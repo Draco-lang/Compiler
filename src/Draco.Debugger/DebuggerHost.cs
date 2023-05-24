@@ -50,7 +50,12 @@ public sealed class DebuggerHost
                 corDbg.SetManagedHandler(cb);
 
                 var corDbgProcess = corDbg.DebugActiveProcess(process.ProcessId, win32Attach: false);
-                debugger = new(this, programPath, corDbg, cb, corDbgProcess);
+                debugger = new(
+                    corDebugProcess: corDbgProcess,
+                    cb: cb)
+                {
+                    StopAtEntryPoint = true,
+                };
 
                 wait.Set();
             });
@@ -64,7 +69,6 @@ public sealed class DebuggerHost
             this.dbgShim.CloseResumeHandle(process.ResumeHandle);
         }
 
-        await debugger!.Started;
         return debugger!;
     }
 }

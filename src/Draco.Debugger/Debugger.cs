@@ -167,8 +167,7 @@ public sealed class Debugger
     {
         if (this.entryPointBreakpoint is not null || !this.StopAtEntryPoint) return;
 
-        using var peReader = new PEReader(File.OpenRead(module.Name));
-        var entryPointToken = peReader.GetEntryPoint();
+        var entryPointToken = module.PeReader.GetEntryPoint();
         if (entryPointToken.IsNil) return;
 
         var corModule = module.CorDebugModule;

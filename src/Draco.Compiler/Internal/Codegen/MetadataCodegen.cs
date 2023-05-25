@@ -238,11 +238,9 @@ internal sealed class MetadataCodegen : MetadataWriter
                 // TODO: Should a function ever have a null container?
                 // Probably not, let's shove them somewhere known once we can make up our minds
                 // This is the case for synthetized ctor functions for example
-                parent: func.ContainingSymbol is null || (func.ContainingSymbol is PropertySymbol && func.ContainingSymbol.ContainingSymbol is null)
+                parent: func.ContainingSymbol is null
                     ? this.GetModuleReferenceHandle(this.assembly.RootModule)
-                    : this.GetEntityHandle(func.ContainingSymbol is PropertySymbol
-                        ? func.ContainingSymbol.ContainingSymbol!
-                        : func.ContainingSymbol),
+                    : this.GetEntityHandle(func.ContainingSymbol),
                 name: func.Name,
                 signature: this.EncodeBlob(e =>
                 {

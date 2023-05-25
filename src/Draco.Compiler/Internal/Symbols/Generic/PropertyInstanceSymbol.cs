@@ -33,8 +33,8 @@ internal sealed class PropertyInstanceSymbol : PropertySymbol, IGenericInstanceS
         this.GenericDefinition.Type.GenericInstantiate(this.GenericDefinition.Type.ContainingSymbol, this.Context);
 
     private FunctionSymbol? BuildGetter() =>
-        this.GenericDefinition.Getter?.GenericInstantiate(this, this.Context);
+        this.GenericDefinition.Getter?.GenericInstantiate(this.ContainingSymbol, this.Context);
 
     private FunctionSymbol? BuildSetter() =>
-        this.GenericDefinition.Setter?.GenericInstantiate(this, this.Context);
+        this.GenericDefinition.Setter?.GenericInstantiate(this.ContainingSymbol, this.Context);
 }

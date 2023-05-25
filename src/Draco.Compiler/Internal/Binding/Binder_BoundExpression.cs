@@ -204,7 +204,7 @@ internal partial class Binder
                     ? this.CompoundPropertyExpression(assignment.Syntax,
                         prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
                         typedRight,
-                        (PropertySymbol)prop.Setter.ContainingSymbol!,
+                        ((IPropertyAccessorSymbol)prop.Setter).Property,
                         compoundOperator,
                         ImmutableArray<BoundExpression>.Empty,
                         diagnostics)
@@ -225,7 +225,7 @@ internal partial class Binder
                     ? this.CompoundPropertyExpression(assignment.Syntax,
                         this.TypeExpression(index.Receiver, constraints, diagnostics),
                         typedRight,
-                        (PropertySymbol)index.Setter.Result.ContainingSymbol!,
+                        ((IPropertyAccessorSymbol)index.Setter.Result).Property,
                         compoundOperator,
                         index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray(),
                         diagnostics)
@@ -252,7 +252,7 @@ internal partial class Binder
                     ? this.CompoundPropertyExpression(assignment.Syntax,
                         this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics),
                         typedRight,
-                        (PropertySymbol)setter.ContainingSymbol!,
+                        pr,
                         compoundOperator,
                         ImmutableArray<BoundExpression>.Empty,
                         diagnostics)

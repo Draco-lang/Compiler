@@ -110,11 +110,8 @@ internal class Program
         var (path, name) = ExtractOutputPathAndName(output);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            metadataReferences: //references
-                                //.Select(r => MetadataReference.FromPeStream(r.OpenRead()))
-                                //.ToImmutableArray(),
-                Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+            metadataReferences: references
+                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName,
             outputPath: path,

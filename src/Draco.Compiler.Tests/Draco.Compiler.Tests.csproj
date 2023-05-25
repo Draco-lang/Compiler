@@ -25,4 +25,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Basic.Reference.Assemblies.Net70" Version="1.4.1" />
+  </ItemGroup>
 </Project>

@@ -185,25 +185,58 @@ internal partial class Binder
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+        var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
+        var compoundOperator = assignment.CompoundOperator?.Result;
+
         // TODO: Compound operators
         // NOTE: This is how we deal with properties and indexers
-        if (assignment.Left is UntypedPropertySetLvalue prop) return new BoundPropertySetExpression(
-            assignment.Syntax,
-            prop.Setter,
-            prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
-            this.TypeExpression(assignment.Right, constraints, diagnostics));
+        if (assignment.Left is UntypedPropertySetLvalue prop)
+        {
+            if (prop.Setter.IsError)
+            {
+                return new BoundReferenceErrorExpression(prop.Syntax, prop.Setter);
+            }
+            return new BoundPropertySetExpression(
+                assignment.Syntax,
+                prop.Setter,
+                prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
+                compoundOperator is not null
+                    ? this.CompoundPropertyExpression(assignment.Syntax,
+                        prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
+                        typedRight,
+                        (PropertySymbol)prop.Setter.ContainingSymbol!,
+                        compoundOperator,
+                        ImmutableArray<BoundExpression>.Empty,
+                        diagnostics)
+                    : typedRight);
+        }
 
-        if (assignment.Left is UntypedIndexSetLvalue index) return new BoundIndexSetExpression(
-            assignment.Syntax,
-            index.Setter.Result,
-            this.TypeExpression(index.Receiver, constraints, diagnostics),
-            this.TypeExpression(assignment.Right, constraints, diagnostics),
-            index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray());
+        if (assignment.Left is UntypedIndexSetLvalue index)
+        {
+            if (index.Setter.Result.IsError)
+            {
+                return new BoundReferenceErrorExpression(index.Syntax, index.Setter.Result);
+            }
+            return new BoundIndexSetExpression(
+                assignment.Syntax,
+                index.Setter.Result,
+                this.TypeExpression(index.Receiver, constraints, diagnostics),
+                compoundOperator is not null
+                    ? this.CompoundPropertyExpression(assignment.Syntax,
+                        this.TypeExpression(index.Receiver, constraints, diagnostics),
+                        typedRight,
+                        (PropertySymbol)index.Setter.Result.ContainingSymbol!,
+                        compoundOperator,
+                        index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray(),
+                        diagnostics)
+                    : typedRight,
+                index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray());
+        }
 
         else if (assignment.Left is UntypedMemberLvalue mem && mem.Expression.Member.Result[0] is PropertySymbol pr)
         {
             var setter = pr.Setter;
-            if (pr.Setter is null)
+            if (setter is null)
             {
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
@@ -215,11 +248,17 @@ internal partial class Binder
                 assignment.Syntax,
                 setter!,
                 this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics),
-                this.TypeExpression(assignment.Right, constraints, diagnostics));
+                compoundOperator is not null
+                    ? this.CompoundPropertyExpression(assignment.Syntax,
+                        this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics),
+                        typedRight,
+                        (PropertySymbol)setter.ContainingSymbol!,
+                        compoundOperator,
+                        ImmutableArray<BoundExpression>.Empty,
+                        diagnostics)
+                    : typedRight);
         }
         var typedLeft = this.TypeLvalue(assignment.Left, constraints, diagnostics);
-        var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
-        var compoundOperator = assignment.CompoundOperator?.Result;
         return new BoundAssignmentExpression(assignment.Syntax, compoundOperator, typedLeft, typedRight);
     }
 
@@ -280,7 +319,7 @@ internal partial class Binder
             if (member is PropertySymbol prop)
             {
                 var getter = prop.Getter;
-                if (prop.Getter is null)
+                if (getter is null)
                 {
                     diagnostics.Add(Diagnostic.Create(
                         template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
@@ -288,7 +327,7 @@ internal partial class Binder
                         prop.FullName));
                     getter = new NoOverloadFunctionSymbol(0);
                 }
-                return new BoundPropertyGetExpression(mem.Syntax, getter!, left);
+                return new BoundPropertyGetExpression(mem.Syntax, getter, left);
             }
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }
@@ -308,5 +347,19 @@ internal partial class Binder
         // Just take result and type that
         var result = delay.Promise.Result;
         return this.TypeExpression(result, constraints, diagnostics);
+    }
+
+    private BoundExpression CompoundPropertyExpression(Api.Syntax.SyntaxNode? syntax, BoundExpression? receiver, BoundExpression right, PropertySymbol prop, FunctionSymbol compoundOperator, ImmutableArray<BoundExpression> args, DiagnosticBag diagnostics)
+    {
+        var getter = prop.Getter;
+        if (getter is null)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
+                location: syntax?.Location,
+                prop.FullName));
+            getter = new NoOverloadFunctionSymbol(args.Length);
+        }
+        return new BoundBinaryExpression(syntax, compoundOperator, new BoundCallExpression(null, receiver, getter, args), right, right.TypeRequired);
     }
 }

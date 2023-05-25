@@ -2145,6 +2145,76 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
+    public void CompoundAssignmentNonStaticProperty()
+    {
+        // func main(){
+        //   var fooModule = FooModule();
+        //   fooModule.foo += 2;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), PlusAssign, LiteralExpression(2)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int foo { get; set; }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void CompoundAssignmentStaticProperty()
+    {
+        // func main(){
+        //   FooModule.foo += 2;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), PlusAssign, LiteralExpression(2)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { get; set; }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
     public void ReadingAndSettingIndexer()
     {
         // func main(){
@@ -2455,6 +2525,46 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+    }
+
+    [Fact]
+    public void CompoundAssignmentIndexer()
+    {
+        // func main(){
+        //   var foo = FooModule();
+        //   foo[0] += 2;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooModule")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), PlusAssign, LiteralExpression(2)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooModule{
+                public int this[int index]
+                {
+                    get => index * 2;
+                    set { }
+                }
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
     }
 
     [Fact]

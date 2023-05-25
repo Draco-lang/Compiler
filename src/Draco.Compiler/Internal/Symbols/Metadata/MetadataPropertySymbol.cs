@@ -92,7 +92,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
         if (!accessors.Getter.IsNil)
         {
             var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
-            this.getter = new MetadataMethodSymbol(this.ContainingSymbol, getter);
+            this.getter = new MetadataMethodSymbol(this, getter);
             this.visibility = this.getter.Visibility;
             this.isStatic = this.getter.IsStatic;
             this.type = this.getter.ReturnType;
@@ -100,7 +100,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
         if (!accessors.Setter.IsNil)
         {
             var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
-            this.setter = new MetadataMethodSymbol(this.ContainingSymbol, setter);
+            this.setter = new MetadataMethodSymbol(this, setter);
             this.visibility = this.setter.Visibility;
             this.isStatic = this.setter.IsStatic;
             if (this.type is null)

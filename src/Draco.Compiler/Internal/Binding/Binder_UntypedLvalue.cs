@@ -44,7 +44,7 @@ internal partial class Binder
             return new UntypedFieldLvalue(syntax, null, field);
         case PropertySymbol prop:
             var setter = prop.Setter;
-            if (prop.Setter is null)
+            if (setter is null)
             {
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
@@ -52,7 +52,7 @@ internal partial class Binder
                     prop.FullName));
                 setter = new NoOverloadFunctionSymbol(1);
             }
-            return new UntypedPropertySetLvalue(syntax, setter!, null);
+            return new UntypedPropertySetLvalue(syntax, setter, null);
         default:
         {
             diagnostics.Add(Diagnostic.Create(
@@ -162,7 +162,7 @@ internal partial class Binder
             return new UntypedFieldLvalue(syntax, null, field);
         case PropertySymbol prop:
             var setter = prop.Setter;
-            if (prop.Setter is null)
+            if (setter is null)
             {
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
@@ -170,7 +170,7 @@ internal partial class Binder
                     prop.FullName));
                 setter = new NoOverloadFunctionSymbol(1);
             }
-            return new UntypedPropertySetLvalue(syntax, setter!, null);
+            return new UntypedPropertySetLvalue(syntax, setter, null);
         default:
             // NOTE: The error is already reported
             return new UntypedIllegalLvalue(syntax);

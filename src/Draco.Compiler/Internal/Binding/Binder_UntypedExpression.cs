@@ -662,7 +662,7 @@ internal partial class Binder
             return new UntypedFieldExpression(syntax, null, field);
         case PropertySymbol prop:
             var getter = prop.Getter;
-            if (prop.Getter is null)
+            if (getter is null)
             {
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
@@ -670,7 +670,7 @@ internal partial class Binder
                     prop.FullName));
                 getter = new NoOverloadFunctionSymbol(0);
             }
-            return new UntypedPropertyGetExpression(syntax, getter!, null);
+            return new UntypedPropertyGetExpression(syntax, getter, null);
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
         case OverloadSymbol overload:

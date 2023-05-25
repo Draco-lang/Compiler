@@ -187,7 +187,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
                 list.Add(2);
                 var i = 0;
                 while(i < list.Count){
-                    list[i] = list[i] * 2;
+                    list[i] *= 2;
                     Write(list[i]);
                     i += 1;
                 }

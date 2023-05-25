@@ -322,6 +322,7 @@ public static partial class SyntaxFactory
     public static SyntaxToken OpenBracket { get; } = MakeToken(TokenKind.BracketOpen);
     public static SyntaxToken CloseBracket { get; } = MakeToken(TokenKind.BracketClose);
     public static SyntaxToken Plus { get; } = MakeToken(TokenKind.Plus);
+    public static SyntaxToken PlusAssign { get; } = MakeToken(TokenKind.PlusAssign);
     public static SyntaxToken LessThan { get; } = MakeToken(TokenKind.LessThan);
     public static SyntaxToken GreaterThan { get; } = MakeToken(TokenKind.GreaterThan);
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");

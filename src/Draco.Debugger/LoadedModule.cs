@@ -27,6 +27,11 @@ internal sealed class LoadedModule
     public string Name => this.CorDebugModule.Name;
 
     /// <summary>
+    /// The name of this module's corresponding PDB file.
+    /// </summary>
+    public string PdbName => Path.ChangeExtension(this.Name, ".pdb");
+
+    /// <summary>
     /// The reader for this module's PE file.
     /// </summary>
     public PEReader PeReader
@@ -34,8 +39,7 @@ internal sealed class LoadedModule
         get
         {
             if (this.peReader is not null) return this.peReader;
-            var baseAddr = (nint)this.CorDebugModule.BaseAddress.Value;
-            var peStream = new MemoryAddressStream(baseAddr, this.CorDebugModule.Size);
+            var peStream = File.OpenRead(this.Name);
             this.peReader = new PEReader(peStream);
             return this.peReader;
         }
@@ -50,9 +54,9 @@ internal sealed class LoadedModule
         get
         {
             if (this.pdbReaderProvider is not null) return this.pdbReaderProvider.GetMetadataReader();
-
-            // TODO
-            throw new NotImplementedException();
+            var pdbStream = File.OpenRead(this.PdbName);
+            this.pdbReaderProvider = MetadataReaderProvider.FromPortablePdbStream(pdbStream);
+            return this.pdbReaderProvider.GetMetadataReader();
         }
     }
     private MetadataReaderProvider? pdbReaderProvider;

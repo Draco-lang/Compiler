@@ -58,6 +58,12 @@ internal class Program
                     .Select(m => m.Uri.LocalPath)
                     .ToList();
                 debuggerWindow.SetSourceFileList(sourceFiles);
+
+                var sourceFile = a.SourceFile;
+                if (sourceFile is not null)
+                {
+                    debuggerWindow.SetSourceFile(sourceFile.Uri.LocalPath, sourceFile.Text);
+                }
             };
 
             // Application.Run(debuggerWindow);

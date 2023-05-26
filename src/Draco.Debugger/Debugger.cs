@@ -144,14 +144,23 @@ public sealed class Debugger
 
     private void OnBreakpointHandler(object? sender, BreakpointCorDebugManagedCallbackEventArgs args)
     {
-        this.OnBreakpoint?.Invoke(sender, new()
+        switch (args.Breakpoint)
         {
-            Thread = this.sessionCache.GetThread(args.Thread),
-            // TODO
-            SourceFile = null,
-            // TODO
-            Range = null,
-        });
+        case CorDebugFunctionBreakpoint funcBp:
+        {
+            var function = this.sessionCache.GetMethod(funcBp.Function);
+            this.OnBreakpoint?.Invoke(sender, new()
+            {
+                Thread = this.sessionCache.GetThread(args.Thread),
+                SourceFile = function.SourceFile,
+                // TODO
+                Range = null,
+            });
+            break;
+        }
+        default:
+            throw new NotImplementedException("unhahdled breakpoint kind");
+        }
     }
 
     private void OnUnloadModuleHandler(object? sender, UnloadModuleCorDebugManagedCallbackEventArgs args)

@@ -16,5 +16,5 @@ internal class MetadataPropertyAccessorSymbol : MetadataMethodSymbol, IPropertyA
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         base.GenericInstantiate(containingSymbol, arguments);
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
-        new PropertyAccessorInstanceSymbol(containingSymbol, this, context, this.Property);
+        new PropertyAccessorInstanceSymbol(containingSymbol, this, context, this.Property.GenericInstantiate(containingSymbol, context));
 }

@@ -67,7 +67,7 @@ internal sealed class DebuggerWindow : Window
 
         var statusBar = new StatusBar(new[]
         {
-            new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Application.RequestStop ()),
+            new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Application.RequestStop()),
         });
 
         this.Add(

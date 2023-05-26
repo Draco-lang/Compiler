@@ -152,7 +152,7 @@ public sealed class Debugger
             this.OnBreakpoint?.Invoke(sender, new()
             {
                 Thread = this.sessionCache.GetThread(args.Thread),
-                SourceFile = function.SourceFile,
+                Method = function,
                 // TODO
                 Range = null,
             });

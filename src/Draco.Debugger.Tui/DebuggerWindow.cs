@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,6 +47,7 @@ internal sealed class DebuggerWindow : Window
         var sourceBrowserFrame = MakeFrameView("sources", this.sourceBrowserList);
         sourceBrowserFrame.X = Pos.Right(this.sourceTextFrame);
         sourceBrowserFrame.Height = Dim.Height(this.sourceTextFrame);
+        this.sourceBrowserList.SelectedItemChanged += this.OnSelectedSourceFileChanged;
 
         this.stdinText = MakeTextView(readOnly: false);
         this.stdoutText = MakeTextView(readOnly: true);
@@ -86,12 +88,22 @@ internal sealed class DebuggerWindow : Window
     public void AppendStdout(string text) => AppendText(this.stdoutText, text);
     public void AppendStderr(string text) => AppendText(this.stderrText, text);
     public void SetCallStack(IReadOnlyList<string> elements) => this.callStackList.SetSource(elements.ToList());
-    public void SetSourceFile(string name, string text)
+    public void SetSourceFile(SourceFile sourceFile)
     {
-        this.sourceTextFrame.Title = name;
-        this.sourceText.Text = text;
+        if (this.sourceBrowserList.Source is SourceFileListDataSource ds)
+        {
+            this.sourceBrowserList.SelectedItem = ds.IndexOf(sourceFile);
+        }
     }
-    public void SetSourceFileList(IReadOnlyList<string> sourceFiles) => this.sourceBrowserList.SetSource(sourceFiles.ToList());
+    public void SetSourceFileList(IReadOnlyList<SourceFile> sourceFiles) =>
+        this.sourceBrowserList.Source = new SourceFileListDataSource(sourceFiles);
+
+    private void OnSelectedSourceFileChanged(ListViewItemEventArgs args)
+    {
+        var sourceFile = (SourceFile)args.Value;
+        this.sourceTextFrame.Title = sourceFile.Uri.LocalPath;
+        this.sourceText.Text = sourceFile.Text;
+    }
 
     private static void AppendText(TextView textView, string text)
     {

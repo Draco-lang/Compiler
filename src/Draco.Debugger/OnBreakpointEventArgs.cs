@@ -13,12 +13,17 @@ public sealed class OnBreakpointEventArgs : EventArgs
     public Thread Thread { get; init; } = null!;
 
     /// <summary>
-    /// The source file where the breakpoint is located.
+    /// The method this breakpoint happened in.
     /// </summary>
-    public SourceFile? SourceFile { get; init; }
+    public Method? Method { get; init; }
 
     /// <summary>
     /// The range of the breakpoint.
     /// </summary>
     public SourceRange? Range { get; init; }
+
+    /// <summary>
+    /// The source file where the breakpoint is located.
+    /// </summary>
+    public SourceFile? SourceFile => this.Method?.SourceFile;
 }

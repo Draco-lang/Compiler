@@ -54,15 +54,16 @@ internal class Program
                     .ToList();
                 debuggerWindow.SetCallStack(callStack);
 
-                var sourceFiles = debugger.MainModule.SourceFiles
-                    .Select(m => m.Uri.LocalPath)
-                    .ToList();
-                debuggerWindow.SetSourceFileList(sourceFiles);
+                var sourceFilesInModule = a.Method?.Module.SourceFiles;
+                if (sourceFilesInModule is not null)
+                {
+                    debuggerWindow.SetSourceFileList(sourceFilesInModule);
+                }
 
                 var sourceFile = a.SourceFile;
                 if (sourceFile is not null)
                 {
-                    debuggerWindow.SetSourceFile(sourceFile.Uri.LocalPath, sourceFile.Text);
+                    debuggerWindow.SetSourceFile(sourceFile);
                 }
             };
 

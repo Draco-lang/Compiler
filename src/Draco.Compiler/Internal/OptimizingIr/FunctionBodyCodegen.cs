@@ -171,9 +171,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
+        var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
         if (node.Receiver is null)
         {
-            var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
             var args = node.Arguments.Select(this.Compile).ToList();
             var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);
@@ -182,7 +182,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
         else
         {
-            var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
             var receiver = this.Compile(node.Receiver);
             var args = node.Arguments.Select(this.Compile).ToList();
             var callResult = this.DefineRegister(node.TypeRequired);

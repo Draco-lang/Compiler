@@ -44,56 +44,21 @@ internal class Program
 
             debugger.StandardInput.WriteLine("John");
 
-            debugger.OnStandardOut += (_, text) =>
-            {
-                debuggerWindow.StdoutText.Text += text;
-                debuggerWindow.StdoutText.MoveEnd();
-            };
+            debugger.OnStandardOut += (_, text) => debuggerWindow.AppendStdout(text);
+            debugger.OnStandardError += (_, text) => debuggerWindow.AppendStderr(text);
 
-            debugger.OnBreakpoint += async (_, a) =>
+            debugger.OnBreakpoint += (_, a) =>
             {
-                debuggerWindow.SourceText.Text = "Paused...";
-                debuggerWindow.SourceText.SetNeedsDisplay();
                 var callStack = a.Thread.CallStack
                     .Select(f => f.MethodName)
                     .ToList();
-                debuggerWindow.CallStack.SetSource(callStack);
-                debuggerWindow.CallStack.SetNeedsDisplay();
-                await Task.Delay(3000);
+                debuggerWindow.SetCallStack(callStack);
                 debugger.Continue();
             };
-
-#if false
-            debugger.OnBreakpoint += async (_, args) =>
-            {
-                debuggerWindow.SourceText.Text = args.SourceFile?.Text ?? string.Empty;
-                if (args.Range is not null)
-                {
-                    var seq = args.Range.Value;
-                    debuggerWindow.SourceText.SelectionStartRow = seq.StartLine;
-                    debuggerWindow.SourceText.SelectionStartColumn = seq.StartColumn;
-                    debuggerWindow.SourceText.CursorPosition = new(x: seq.EndColumn - 1, y: seq.EndLine - 1);
-                    debuggerWindow.SourceText.Selecting = true;
-                }
-                Application.Refresh();
-                await Task.Delay(3000);
-                debugger.Resume();
-            };
-
-            var mainFile = debugger.SourceFiles.Keys.First();
-
-            debugger.SetBreakpoint(mainFile, lineNumber: 3);
-            debugger.SetBreakpoint(mainFile, lineNumber: 4);
-            debugger.SetBreakpoint(mainFile, lineNumber: 5);
-            debugger.SetBreakpoint(mainFile, lineNumber: 6);
-            debugger.Resume();
-#endif
 
             // Application.Run(debuggerWindow);
 
             await debugger.Terminated;
-
-            debuggerWindow.SourceText.Text = "DONE";
             Application.Refresh();
         });
 

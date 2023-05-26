@@ -9,6 +9,11 @@ namespace Draco.Debugger.Tui;
 
 internal sealed class DebuggerWindow : Window
 {
+    private readonly FrameView sourceTextFrame;
+    private readonly TextView sourceText;
+
+    private readonly ListView sourceBrowserList;
+
     private readonly TextView stdinText;
     private readonly TextView stdoutText;
     private readonly TextView stderrText;
@@ -18,7 +23,26 @@ internal sealed class DebuggerWindow : Window
 
     public DebuggerWindow()
     {
-        this.Title = "Draco debugger (Ctrl+Q to quit)";
+        this.Y = 1; // menu
+        this.Height = Dim.Fill(1); // status bar
+
+        var menu = new MenuBar(new[]
+        {
+            new MenuBarItem("_File", new[]
+            {
+                new MenuItem("_TODO", "", () => { }),
+            }),
+        });
+
+        this.sourceText = MakeTextView(readOnly: true);
+        this.sourceTextFrame = MakeFrameView(string.Empty, this.sourceText);
+        this.sourceTextFrame.Height = Dim.Percent(65);
+        this.sourceTextFrame.Width = Dim.Percent(70);
+
+        this.sourceBrowserList = MakeListView();
+        var sourceBrowserFrame = MakeFrameView("sources", this.sourceBrowserList);
+        sourceBrowserFrame.X = Pos.Right(this.sourceTextFrame);
+        sourceBrowserFrame.Height = Dim.Height(this.sourceTextFrame);
 
         this.stdinText = MakeTextView(readOnly: false);
         this.stdoutText = MakeTextView(readOnly: true);
@@ -28,7 +52,8 @@ internal sealed class DebuggerWindow : Window
             new("stdout", this.stdoutText),
             new("stdin", this.stdinText),
             new("stderr", this.stderrText));
-        stdioTab.Height = Dim.Percent(40);
+        stdioTab.Y = Pos.Bottom(this.sourceTextFrame);
+        stdioTab.Height = Dim.Fill();
         stdioTab.Width = Dim.Percent(50);
 
         this.localsTable = MakeTableView();
@@ -40,12 +65,28 @@ internal sealed class DebuggerWindow : Window
         localsTab.Y = Pos.Top(stdioTab);
         localsTab.X = Pos.Right(stdioTab);
 
-        this.Add(stdioTab, localsTab);
+        var statusBar = new StatusBar(new[]
+        {
+            new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Application.RequestStop ()),
+        });
+
+        this.Add(
+            menu,
+            this.sourceTextFrame,
+            sourceBrowserFrame,
+            stdioTab,
+            localsTab,
+            statusBar);
     }
 
     public void AppendStdout(string text) => AppendText(this.stdoutText, text);
     public void AppendStderr(string text) => AppendText(this.stderrText, text);
     public void SetCallStack(IReadOnlyList<string> elements) => this.callStackList.SetSource(elements.ToList());
+    public void SetSourceFile(string name, string text)
+    {
+        this.sourceTextFrame.Title = name;
+        this.sourceText.Text = text;
+    }
 
     private static void AppendText(TextView textView, string text)
     {
@@ -90,4 +131,18 @@ internal sealed class DebuggerWindow : Window
         Height = Dim.Fill(),
         ReadOnly = readOnly,
     };
+
+    private static FrameView MakeFrameView(string title, View subview)
+    {
+        var frameView = new FrameView()
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            Title = title,
+        };
+        frameView.Add(subview);
+        return frameView;
+    }
 }

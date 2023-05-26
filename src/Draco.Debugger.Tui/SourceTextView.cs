@@ -27,7 +27,11 @@ internal sealed class SourceTextView : TextView
         base.SetNormalColor(line, idx);
     }
 
-    public void SetHighlightedRange(SourceRange? range) => this.highlightedRange = range;
+    public void SetHighlightedRange(SourceRange? range)
+    {
+        this.highlightedRange = range;
+        this.SetNeedsDisplay();
+    }
 
     private List<List<System.Rune>> GetLines()
     {

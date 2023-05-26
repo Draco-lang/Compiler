@@ -63,7 +63,7 @@ internal class Program
                 var sourceFile = a.SourceFile;
                 if (sourceFile is not null)
                 {
-                    debuggerWindow.SetSourceFile(sourceFile);
+                    debuggerWindow.SetSourceFile(sourceFile, a.Range);
                 }
             };
 

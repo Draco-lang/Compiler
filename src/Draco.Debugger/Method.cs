@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -47,6 +48,12 @@ public sealed class Method
     public SourceFile? SourceFile => this.sourceFile ??= this.BuildSourceFile();
     private SourceFile? sourceFile;
 
+    /// <summary>
+    /// The sequence points within this method.
+    /// </summary>
+    public ImmutableArray<SequencePoint> SequencePoints => this.sequencePoints ??= this.BuildSequencePoints();
+    private ImmutableArray<SequencePoint>? sequencePoints;
+
     internal Method(
         SessionCache sessionCache,
         CorDebugFunction corDebugFunction)
@@ -71,4 +78,8 @@ public sealed class Method
         var docHandle = this.DebugInfo.Document;
         return module.SourceFiles.FirstOrDefault(s => s.DocumentHandle == docHandle);
     }
+
+    private ImmutableArray<SequencePoint> BuildSequencePoints() => this.DebugInfo
+        .GetSequencePoints()
+        .ToImmutableArray();
 }

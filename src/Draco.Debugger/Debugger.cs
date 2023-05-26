@@ -149,12 +149,18 @@ public sealed class Debugger
         case CorDebugFunctionBreakpoint funcBp:
         {
             var function = this.sessionCache.GetMethod(funcBp.Function);
+            var seqPoint = function.SequencePoints.FirstOrDefault(s => funcBp.Offset == s.Offset);
             this.OnBreakpoint?.Invoke(sender, new()
             {
                 Thread = this.sessionCache.GetThread(args.Thread),
                 Method = function,
-                // TODO
-                Range = null,
+                Range = seqPoint.Document.IsNil
+                    ? null
+                    : new(
+                        StartLine: seqPoint.StartLine - 1,
+                        StartColumn: seqPoint.StartColumn - 1,
+                        EndLine: seqPoint.EndLine,
+                        EndColumn: seqPoint.EndColumn),
             });
             break;
         }

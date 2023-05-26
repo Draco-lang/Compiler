@@ -11,7 +11,7 @@ namespace Draco.Debugger.Tui;
 internal sealed class DebuggerWindow : Window
 {
     private readonly FrameView sourceTextFrame;
-    private readonly TextView sourceText;
+    private readonly SourceTextView sourceText;
 
     private readonly ListView sourceBrowserList;
 
@@ -38,7 +38,14 @@ internal sealed class DebuggerWindow : Window
             }),
         });
 
-        this.sourceText = MakeTextView(readOnly: true);
+        this.sourceText = new SourceTextView()
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            ReadOnly = true,
+        };
         this.sourceTextFrame = MakeFrameView(string.Empty, this.sourceText);
         this.sourceTextFrame.Height = Dim.Percent(65);
         this.sourceTextFrame.Width = Dim.Percent(75);
@@ -88,12 +95,13 @@ internal sealed class DebuggerWindow : Window
     public void AppendStdout(string text) => AppendText(this.stdoutText, text);
     public void AppendStderr(string text) => AppendText(this.stderrText, text);
     public void SetCallStack(IReadOnlyList<string> elements) => this.callStackList.SetSource(elements.ToList());
-    public void SetSourceFile(SourceFile sourceFile)
+    public void SetSourceFile(SourceFile sourceFile, SourceRange? rangeToHighlight)
     {
         if (this.sourceBrowserList.Source is SourceFileListDataSource ds)
         {
             this.sourceBrowserList.SelectedItem = ds.IndexOf(sourceFile);
         }
+        this.sourceText.SetHighlightedRange(rangeToHighlight);
     }
     public void SetSourceFileList(IReadOnlyList<SourceFile> sourceFiles) =>
         this.sourceBrowserList.Source = new SourceFileListDataSource(sourceFiles);

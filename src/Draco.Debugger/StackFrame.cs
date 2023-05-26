@@ -13,23 +13,23 @@ namespace Draco.Debugger;
 public sealed class StackFrame
 {
     /// <summary>
+    /// The cache for this object.
+    /// </summary>
+    internal SessionCache SessionCache { get; }
+
+    /// <summary>
     /// The internal frame.
     /// </summary>
     internal CorDebugFrame CorDebugFrame { get; }
 
     /// <summary>
-    /// Our wrapper around the frame's method.
+    /// The method the frame represents.
     /// </summary>
-    internal Method Method { get; }
+    public Method Method => this.SessionCache.GetMethod(this.CorDebugFrame.Function);
 
-    /// <summary>
-    /// The name of the called method.
-    /// </summary>
-    public string MethodName => this.Method.Name;
-
-    internal StackFrame(CorDebugFrame corDebugFrame)
+    internal StackFrame(SessionCache sessionCache, CorDebugFrame corDebugFrame)
     {
+        this.SessionCache = sessionCache;
         this.CorDebugFrame = corDebugFrame;
-        this.Method = new(corDebugFrame.Function);
     }
 }

@@ -18,6 +18,11 @@ namespace Draco.Debugger;
 public sealed class Module
 {
     /// <summary>
+    /// The cache for this object.
+    /// </summary>
+    internal SessionCache SessionCache { get; }
+
+    /// <summary>
     /// The native representation of the module.
     /// </summary>
     internal CorDebugModule CorDebugModule { get; }
@@ -68,8 +73,9 @@ public sealed class Module
     }
     private MetadataReaderProvider? pdbReaderProvider;
 
-    internal Module(CorDebugModule corDebugModule)
+    internal Module(SessionCache sessionCache, CorDebugModule corDebugModule)
     {
+        this.SessionCache = sessionCache;
         this.CorDebugModule = corDebugModule;
     }
 

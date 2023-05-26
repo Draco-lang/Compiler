@@ -10,8 +10,13 @@ namespace Draco.Debugger;
 /// <summary>
 /// Represents a method.
 /// </summary>
-internal sealed class Method
+public sealed class Method
 {
+    /// <summary>
+    /// The cache for this object.
+    /// </summary>
+    internal SessionCache SessionCache { get; }
+
     /// <summary>
     /// The internal handle.
     /// </summary>
@@ -23,8 +28,9 @@ internal sealed class Method
     public string Name => this.name ??= this.BuildName();
     private string? name;
 
-    internal Method(CorDebugFunction corDebugFunction)
+    internal Method(SessionCache sessionCache, CorDebugFunction corDebugFunction)
     {
+        this.SessionCache = sessionCache;
         this.CorDebugFunction = corDebugFunction;
     }
 

@@ -14,6 +14,11 @@ namespace Draco.Debugger;
 public sealed class Thread
 {
     /// <summary>
+    /// The cache for this object.
+    /// </summary>
+    internal SessionCache SessionCache { get; }
+
+    /// <summary>
     /// The internal thread representation.
     /// </summary>
     internal CorDebugThread CorDebugThread { get; }
@@ -24,8 +29,9 @@ public sealed class Thread
     public ImmutableArray<StackFrame> CallStack => this.callStack ??= this.BuildCallStack();
     private ImmutableArray<StackFrame>? callStack;
 
-    internal Thread(CorDebugThread corDebugThread)
+    internal Thread(SessionCache sessionCache, CorDebugThread corDebugThread)
     {
+        this.SessionCache = sessionCache;
         this.CorDebugThread = corDebugThread;
     }
 
@@ -44,7 +50,7 @@ public sealed class Thread
             if (corDebugFrame is null) goto next_frame;
 
             // Create the frame
-            var frame = new StackFrame(corDebugFrame);
+            var frame = new StackFrame(this.SessionCache, corDebugFrame);
             result.Add(frame);
 
         // Try to move to the next frame

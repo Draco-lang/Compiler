@@ -64,7 +64,7 @@ public sealed class Debugger
     private readonly TaskCompletionSource terminatedCompletionSource = new();
     private readonly CancellationTokenSource terminateTokenSource = new();
 
-    private readonly Dictionary<CorDebugModule, Module> loadedModules = new();
+    private readonly SessionCache sessionCache = new();
 
     private CorDebugBreakpoint? entryPointBreakpoint;
     private Module? mainModule;
@@ -122,9 +122,8 @@ public sealed class Debugger
 
     private void OnLoadModuleHandler(object? sender, LoadModuleCorDebugManagedCallbackEventArgs args)
     {
-        var loadedModule = new Module(args.Module);
-        this.loadedModules.Add(loadedModule.CorDebugModule, loadedModule);
-        this.HandleEntrypoint(loadedModule);
+        var module = this.sessionCache.GetModule(args.Module);
+        this.HandleEntrypoint(module);
         this.Continue();
     }
 
@@ -147,7 +146,7 @@ public sealed class Debugger
     {
         this.OnBreakpoint?.Invoke(sender, new()
         {
-            Thread = new Thread(args.Thread),
+            Thread = this.sessionCache.GetThread(args.Thread),
             // TODO
             SourceFile = null,
             // TODO
@@ -157,7 +156,6 @@ public sealed class Debugger
 
     private void OnUnloadModuleHandler(object? sender, UnloadModuleCorDebugManagedCallbackEventArgs args)
     {
-        this.loadedModules.Remove(args.Module);
         this.Continue();
     }
 

@@ -50,7 +50,7 @@ internal class Program
             debugger.OnBreakpoint += (_, a) =>
             {
                 var callStack = a.Thread.CallStack
-                    .Select(f => f.MethodName)
+                    .Select(f => f.Method.Name)
                     .ToList();
                 debuggerWindow.SetCallStack(callStack);
 

@@ -42,8 +42,6 @@ internal class Program
             var host = DebuggerHost.Create(FindDbgShim());
             var debugger = host.StartProcess(program.FullName);
 
-            debuggerWindow.CallStack.SetSource(new[] { "Foo", "Bar" });
-
             debugger.StandardInput.WriteLine("John");
 
             debugger.OnStandardOut += (_, text) =>
@@ -52,10 +50,15 @@ internal class Program
                 debuggerWindow.StdoutText.MoveEnd();
             };
 
-            debugger.OnBreakpoint += async (_, _) =>
+            debugger.OnBreakpoint += async (_, a) =>
             {
                 debuggerWindow.SourceText.Text = "Paused...";
                 debuggerWindow.SourceText.SetNeedsDisplay();
+                var callStack = a.Thread.CallStack
+                    .Select(f => f.MethodName)
+                    .ToList();
+                debuggerWindow.CallStack.SetSource(callStack);
+                debuggerWindow.CallStack.SetNeedsDisplay();
                 await Task.Delay(3000);
                 debugger.Continue();
             };

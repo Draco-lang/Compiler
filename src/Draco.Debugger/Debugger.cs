@@ -143,6 +143,7 @@ public sealed class Debugger
     {
         this.OnBreakpoint?.Invoke(sender, new()
         {
+            Thread = new Thread(args.Thread),
             // TODO
             SourceFile = null,
             // TODO

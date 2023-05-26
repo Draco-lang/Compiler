@@ -8,6 +8,11 @@ namespace Draco.Debugger;
 public sealed class OnBreakpointEventArgs : EventArgs
 {
     /// <summary>
+    /// The thread that was stopped.
+    /// </summary>
+    public Thread Thread { get; init; } = null!;
+
+    /// <summary>
     /// The source file where the breakpoint is located.
     /// </summary>
     public SourceFile? SourceFile { get; init; }

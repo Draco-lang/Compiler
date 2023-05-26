@@ -91,6 +91,7 @@ internal sealed class DebuggerWindow : Window
         this.sourceTextFrame.Title = name;
         this.sourceText.Text = text;
     }
+    public void SetSourceFileList(IReadOnlyList<string> sourceFiles) => this.sourceBrowserList.SetSource(sourceFiles.ToList());
 
     private static void AppendText(TextView textView, string text)
     {

@@ -22,6 +22,9 @@ public sealed class Debugger
     /// </summary>
     public Task Terminated => this.terminatedCompletionSource.Task;
 
+    public Module MainModule => this.mainModule
+        ?? throw new InvalidOperationException("the main module has not been loaded yet");
+
     /// <summary>
     /// The event that triggers when the process writes to its STDOUT.
     /// </summary>
@@ -61,9 +64,10 @@ public sealed class Debugger
     private readonly TaskCompletionSource terminatedCompletionSource = new();
     private readonly CancellationTokenSource terminateTokenSource = new();
 
-    private readonly Dictionary<CorDebugModule, LoadedModule> loadedModules = new();
+    private readonly Dictionary<CorDebugModule, Module> loadedModules = new();
 
     private CorDebugBreakpoint? entryPointBreakpoint;
+    private Module? mainModule;
 
     internal Debugger(
         CorDebugProcess corDebugProcess,
@@ -118,9 +122,9 @@ public sealed class Debugger
 
     private void OnLoadModuleHandler(object? sender, LoadModuleCorDebugManagedCallbackEventArgs args)
     {
-        var loadedModule = new LoadedModule(args.Module);
+        var loadedModule = new Module(args.Module);
         this.loadedModules.Add(loadedModule.CorDebugModule, loadedModule);
-        this.SetEntryPointBreakpointIfNeeded(loadedModule);
+        this.HandleEntrypoint(loadedModule);
         this.Continue();
     }
 
@@ -164,13 +168,19 @@ public sealed class Debugger
         this.Continue();
     }
 
-    private void SetEntryPointBreakpointIfNeeded(LoadedModule module)
+    private void HandleEntrypoint(Module module)
     {
-        if (this.entryPointBreakpoint is not null || !this.StopAtEntryPoint) return;
-
+        // We determine if this is the entry point by looking up the entry point token
         var entryPointToken = module.PeReader.GetEntryPoint();
         if (entryPointToken.IsNil) return;
 
+        // It is, save it
+        this.mainModule = module;
+
+        // Check, if we need to set up a breakpoint
+        if (this.entryPointBreakpoint is not null || !this.StopAtEntryPoint) return;
+
+        // We do
         var corModule = module.CorDebugModule;
         var method = corModule.GetFunctionFromToken(MetadataTokens.GetToken(entryPointToken));
         var code = method.ILCode;

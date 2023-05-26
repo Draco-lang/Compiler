@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -14,12 +15,12 @@ namespace Draco.Debugger;
 /// <summary>
 /// Represents a module loaded by the runtime.
 /// </summary>
-internal sealed class LoadedModule
+public sealed class Module
 {
     /// <summary>
     /// The native representation of the module.
     /// </summary>
-    public CorDebugModule CorDebugModule { get; }
+    internal CorDebugModule CorDebugModule { get; }
 
     /// <summary>
     /// The name of this module.
@@ -47,6 +48,12 @@ internal sealed class LoadedModule
     private PEReader? peReader;
 
     /// <summary>
+    /// The source files corresponding to this module.
+    /// </summary>
+    public ImmutableArray<SourceFile> SourceFiles => this.sourceFiles ??= this.BuildSourceFiles();
+    private ImmutableArray<SourceFile>? sourceFiles;
+
+    /// <summary>
     /// The reader for this module's PDB.
     /// </summary>
     public MetadataReader PdbReader
@@ -61,8 +68,21 @@ internal sealed class LoadedModule
     }
     private MetadataReaderProvider? pdbReaderProvider;
 
-    public LoadedModule(CorDebugModule corDebugModule)
+    internal Module(CorDebugModule corDebugModule)
     {
         this.CorDebugModule = corDebugModule;
+    }
+
+    private ImmutableArray<SourceFile> BuildSourceFiles()
+    {
+        var reader = this.PdbReader;
+        return reader.Documents
+            .Select(docHandle =>
+            {
+                var doc = reader.GetDocument(docHandle);
+                var docPath = reader.GetString(doc.Name);
+                return new SourceFile(docHandle, new Uri(docPath));
+            })
+            .ToImmutableArray();
     }
 }

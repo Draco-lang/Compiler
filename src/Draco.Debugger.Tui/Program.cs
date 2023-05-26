@@ -53,7 +53,11 @@ internal class Program
                     .Select(f => f.MethodName)
                     .ToList();
                 debuggerWindow.SetCallStack(callStack);
-                debugger.Continue();
+
+                var sourceFiles = debugger.MainModule.SourceFiles
+                    .Select(m => m.Uri.LocalPath)
+                    .ToList();
+                debuggerWindow.SetSourceFileList(sourceFiles);
             };
 
             // Application.Run(debuggerWindow);

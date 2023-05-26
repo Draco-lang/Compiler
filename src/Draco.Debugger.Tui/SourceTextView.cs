@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -22,15 +23,38 @@ internal sealed class SourceTextView : TextView
 
     private void SourceTextView_TextChanged() => this.lines = this.GetLines();
 
-    protected override void SetNormalColor(List<System.Rune> line, int idx)
+    protected override void SetReadOnlyColor(List<System.Rune> line, int idx)
     {
-        base.SetNormalColor(line, idx);
+        Debug.Assert(this.lines is not null);
+        var lineIndex = this.lines.IndexOf(line);
+
+        if (this.IsInHighlightedRange(lineIndex, idx))
+        {
+            Driver.SetAttribute(this.highlightedAttribute);
+        }
+        else
+        {
+            base.SetNormalColor(line, idx);
+        }
     }
 
     public void SetHighlightedRange(SourceRange? range)
     {
         this.highlightedRange = range;
         this.SetNeedsDisplay();
+    }
+
+    private bool IsInHighlightedRange(int lineIndex, int columnIndex)
+    {
+        if (this.highlightedRange is null) return false;
+        var r = this.highlightedRange.Value;
+        var rangeStart = (Line: r.StartLine, Column: r.StartColumn);
+        var rangeEnd = (Line: r.EndLine, Column: r.EndColumn);
+
+        var currentPos = (Line: lineIndex, Column: columnIndex);
+
+        return ComparePositions(rangeStart, currentPos) <= 0
+            && ComparePositions(currentPos, rangeEnd) < 0;
     }
 
     private List<List<System.Rune>> GetLines()
@@ -43,5 +67,11 @@ internal sealed class SourceTextView : TextView
             .GetField("lines", BindingFlags.NonPublic | BindingFlags.Instance)!
             .GetValue(model)!;
         return (List<List<System.Rune>>)lines;
+    }
+
+    private static int ComparePositions((int Line, int Column) p1, (int Line, int Column) p2)
+    {
+        var lineCmp = p1.Line.CompareTo(p2.Line);
+        return lineCmp != 0 ? lineCmp : p1.Column.CompareTo(p2.Column);
     }
 }

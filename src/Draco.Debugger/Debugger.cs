@@ -159,7 +159,7 @@ public sealed class Debugger
                     : new(
                         StartLine: seqPoint.StartLine - 1,
                         StartColumn: seqPoint.StartColumn - 1,
-                        EndLine: seqPoint.EndLine,
+                        EndLine: seqPoint.EndLine - 1,
                         EndColumn: seqPoint.EndColumn),
             });
             break;

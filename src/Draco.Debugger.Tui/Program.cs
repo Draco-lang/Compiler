@@ -52,7 +52,13 @@ internal class Program
                 debuggerWindow.StdoutText.MoveEnd();
             };
 
-            debugger.OnBreakpoint += (_, _) => debugger.Continue();
+            debugger.OnBreakpoint += async (_, _) =>
+            {
+                debuggerWindow.SourceText.Text = "Paused...";
+                debuggerWindow.SourceText.SetNeedsDisplay();
+                await Task.Delay(3000);
+                debugger.Continue();
+            };
 
 #if false
             debugger.OnBreakpoint += async (_, args) =>

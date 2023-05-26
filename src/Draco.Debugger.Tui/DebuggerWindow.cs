@@ -26,6 +26,9 @@ internal sealed class DebuggerWindow : Window
         this.Y = 1; // menu
         this.Height = Dim.Fill(1); // status bar
 
+        this.Border.BorderStyle = BorderStyle.None;
+        this.Border.DrawMarginFrame = false;
+
         var menu = new MenuBar(new[]
         {
             new MenuBarItem("_File", new[]
@@ -37,7 +40,7 @@ internal sealed class DebuggerWindow : Window
         this.sourceText = MakeTextView(readOnly: true);
         this.sourceTextFrame = MakeFrameView(string.Empty, this.sourceText);
         this.sourceTextFrame.Height = Dim.Percent(65);
-        this.sourceTextFrame.Width = Dim.Percent(70);
+        this.sourceTextFrame.Width = Dim.Percent(75);
 
         this.sourceBrowserList = MakeListView();
         var sourceBrowserFrame = MakeFrameView("sources", this.sourceBrowserList);

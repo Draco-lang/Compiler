@@ -173,20 +173,22 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         if (node.Receiver is null)
         {
+            var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
             var args = node.Arguments.Select(this.Compile).ToList();
-            var result = this.DefineRegister(node.TypeRequired);
+            var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);
-            this.Write(Call(result, proc, args));
-            return result;
+            this.Write(Call(callResult, proc, args));
+            return isSetter ? args[^1] : callResult;
         }
         else
         {
+            var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
             var receiver = this.Compile(node.Receiver);
             var args = node.Arguments.Select(this.Compile).ToList();
-            var result = this.DefineRegister(node.TypeRequired);
+            var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);
-            this.Write(MemberCall(result, proc, receiver, args));
-            return result;
+            this.Write(MemberCall(callResult, proc, receiver, args));
+            return isSetter ? args[^1] : callResult;
         }
     }
 

@@ -37,7 +37,6 @@ internal class Program
     {
         Application.Init();
         var debuggerWindow = new DebuggerWindow();
-        Application.Top.Add(debuggerWindow);
         Application.MainLoop.Invoke(async () =>
         {
             var host = DebuggerHost.Create(FindDbgShim());

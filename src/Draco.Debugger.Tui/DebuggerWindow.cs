@@ -77,6 +77,7 @@ internal sealed class DebuggerWindow : Window
             stdioTab,
             localsTab,
             statusBar);
+        Application.Top.Add(menu, statusBar, this);
     }
 
     public void AppendStdout(string text) => AppendText(this.stdoutText, text);

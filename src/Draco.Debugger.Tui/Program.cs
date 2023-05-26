@@ -37,6 +37,7 @@ internal class Program
     {
         Application.Init();
         var debuggerWindow = new DebuggerWindow();
+        var currentThread = null as Thread;
         Application.MainLoop.Invoke(async () =>
         {
             var host = DebuggerHost.Create(FindDbgShim());
@@ -49,6 +50,8 @@ internal class Program
 
             debugger.OnBreakpoint += (_, a) =>
             {
+                currentThread = a.Thread;
+
                 var callStack = a.Thread.CallStack
                     .Select(f => f.Method.Name)
                     .ToList();
@@ -66,6 +69,10 @@ internal class Program
                     debuggerWindow.SetSourceFile(sourceFile, a.Range);
                 }
             };
+
+            debuggerWindow.OnStepInto += (_, _) => currentThread?.StepInto();
+            debuggerWindow.OnStepOver += (_, _) => currentThread?.StepOver();
+            debuggerWindow.OnStepOut += (_, _) => currentThread?.StepOut();
 
             // Application.Run(debuggerWindow);
 

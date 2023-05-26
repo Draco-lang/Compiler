@@ -10,6 +10,10 @@ namespace Draco.Debugger.Tui;
 
 internal sealed class DebuggerWindow : Window
 {
+    public event EventHandler? OnStepOver;
+    public event EventHandler? OnStepInto;
+    public event EventHandler? OnStepOut;
+
     private readonly FrameView sourceTextFrame;
     private readonly SourceTextView sourceText;
 
@@ -80,6 +84,9 @@ internal sealed class DebuggerWindow : Window
         var statusBar = new StatusBar(new[]
         {
             new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Application.RequestStop()),
+            new StatusItem(Key.F5, "~F5~ Step Over", () => this.OnStepOver?.Invoke(this, null!)),
+            new StatusItem(Key.F6, "~F6~ Step Into", () => this.OnStepInto?.Invoke(this, null!)),
+            new StatusItem(Key.F7, "~F7~ Step Out", () => this.OnStepOut?.Invoke(this, null !)),
         });
 
         this.Add(

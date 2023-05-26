@@ -35,6 +35,36 @@ public sealed class Thread
         this.CorDebugThread = corDebugThread;
     }
 
+    /// <summary>
+    /// Steps into the current call.
+    /// </summary>
+    public void StepInto()
+    {
+        var stepper = this.BuildCorDebugStepper();
+        stepper.Step(true);
+        this.CorDebugThread.Process.Continue(false);
+    }
+
+    /// <summary>
+    /// Steps over the current statement.
+    /// </summary>
+    public void StepOver()
+    {
+        var stepper = this.BuildCorDebugStepper();
+        stepper.Step(false);
+        this.CorDebugThread.Process.Continue(false);
+    }
+
+    /// <summary>
+    /// Steps out of the current call.
+    /// </summary>
+    public void StepOut()
+    {
+        var stepper = this.BuildCorDebugStepper();
+        stepper.StepOut();
+        this.CorDebugThread.Process.Continue(false);
+    }
+
     private ImmutableArray<StackFrame> BuildCallStack()
     {
         var stackWalk = this.CorDebugThread.CreateStackWalk();
@@ -61,5 +91,19 @@ public sealed class Thread
         }
 
         return result.ToImmutable();
+    }
+
+    private CorDebugStepper BuildCorDebugStepper()
+    {
+        var stepper = this.CorDebugThread.CreateStepper();
+
+        var interceptMask = CorDebugIntercept.INTERCEPT_ALL & ~(CorDebugIntercept.INTERCEPT_SECURITY | CorDebugIntercept.INTERCEPT_CLASS_INIT);
+        stepper.SetInterceptMask(interceptMask);
+
+        var stopMask = CorDebugUnmappedStop.STOP_NONE;
+        stepper.SetUnmappedStopMask(stopMask);
+
+        stepper.SetJMC(true);
+        return stepper;
     }
 }

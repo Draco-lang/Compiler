@@ -412,8 +412,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
-    public override IOperand VisitFieldExpression(BoundFieldExpression node) =>
-        node.Receiver is null
+    public override IOperand VisitFieldExpression(BoundFieldExpression node) => node.Receiver is null
         ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
         : new FieldAccess(this.Compile(node.Receiver), node.Field);
 

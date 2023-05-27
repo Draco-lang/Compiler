@@ -133,9 +133,9 @@ internal static class SymbolResolutionErrors
     /// Can not set get only property.
     /// </summary>
     public static readonly DiagnosticTemplate CannotSetGetOnlyProperty = DiagnosticTemplate.Create(
-        title: "can not set get only property",
+        title: "can not set get-only property",
         severity: DiagnosticSeverity.Error,
-        format: "can not set get only property {0}",
+        format: "can not set get-only property {0}",
         code: Code(14));
 
     /// <summary>

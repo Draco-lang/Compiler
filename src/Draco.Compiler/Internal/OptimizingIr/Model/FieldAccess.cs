@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Represents a field access.
 /// </summary>
-/// <param name="Receiver">The accessed reciever.</param>
+/// <param name="Receiver">The accessed operand.</param>
 /// <param name="Member">The accessed member.</param>
 internal readonly record struct FieldAccess(IOperand Receiver, FieldSymbol Member) : IOperand
 {

@@ -110,6 +110,11 @@ internal partial class BoundPropertyGetExpression
     public override TypeSymbol Type => this.Getter.ReturnType;
 }
 
+internal partial class BoundPropertySetExpression
+{
+    public override TypeSymbol Type => this.Setter.Parameters[0].Type;
+}
+
 internal partial class BoundLocalExpression
 {
     public override TypeSymbol Type => this.Local.Type;
@@ -191,11 +196,6 @@ internal partial class BoundGlobalLvalue
 internal partial class BoundFieldLvalue
 {
     public override TypeSymbol Type => this.Field.Type;
-}
-
-internal partial class BoundPropertySetExpression
-{
-    public override TypeSymbol Type => this.Setter.Parameters[0].Type;
 }
 
 internal partial class BoundArrayAccessLvalue

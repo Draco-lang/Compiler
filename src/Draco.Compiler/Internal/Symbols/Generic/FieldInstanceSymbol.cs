@@ -24,5 +24,5 @@ internal sealed class FieldInstanceSymbol : FieldSymbol, IGenericInstanceSymbol
     }
 
     private TypeSymbol BuildType() =>
-    this.GenericDefinition.Type.GenericInstantiate(this.GenericDefinition.Type.ContainingSymbol, this.Context);
+        this.GenericDefinition.Type.GenericInstantiate(this.GenericDefinition.Type.ContainingSymbol, this.Context);
 }

@@ -40,6 +40,7 @@ public sealed class MemberCompletionProvider : CompletionProvider
         if (TryDeconstructMemberAccess(expr, out var accessed))
         {
             var referencedType = semanticModel.GetReferencedSymbol(accessed);
+            // NOTE: This is how we check for static access
             if (referencedType is ITypeSymbol or IModuleSymbol)
             {
                 result = referencedType.StaticMembers.ToImmutableArray();

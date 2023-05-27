@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract class FieldSymbol : VariableSymbol
 {
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
-    (FieldSymbol)base.GenericInstantiate(containingSymbol, arguments);
+        (FieldSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         new FieldInstanceSymbol(containingSymbol, this, context);
 

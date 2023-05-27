@@ -45,6 +45,7 @@ internal class Program
 
             debugger.StandardInput.WriteLine("John");
 
+            debugger.OnEventLog += (_, text) => debuggerWindow.Log(text);
             debugger.OnStandardOut += (_, text) => debuggerWindow.AppendStdout(text);
             debugger.OnStandardError += (_, text) => debuggerWindow.AppendStderr(text);
 

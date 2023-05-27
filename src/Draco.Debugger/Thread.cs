@@ -41,8 +41,15 @@ public sealed class Thread
     public void StepInto()
     {
         var stepper = this.BuildCorDebugStepper();
-        stepper.Step(true);
-        this.CorDebugThread.Process.Continue(false);
+        if (this.TryGetStepRange(out var range))
+        {
+            stepper.StepRange(true, new[] { range }, 1);
+        }
+        else
+        {
+            stepper.Step(true);
+        }
+        // this.CorDebugThread.Process.Continue(false);
     }
 
     /// <summary>
@@ -51,8 +58,15 @@ public sealed class Thread
     public void StepOver()
     {
         var stepper = this.BuildCorDebugStepper();
-        stepper.Step(false);
-        this.CorDebugThread.Process.Continue(false);
+        if (this.TryGetStepRange(out var range))
+        {
+            stepper.StepRange(false, new[] { range }, 1);
+        }
+        else
+        {
+            stepper.Step(false);
+        }
+        // this.CorDebugThread.Process.Continue(false);
     }
 
     /// <summary>
@@ -105,5 +119,42 @@ public sealed class Thread
 
         stepper.SetJMC(true);
         return stepper;
+    }
+
+    private bool TryGetStepRange(out COR_DEBUG_STEP_RANGE range)
+    {
+        var frame = this.CorDebugThread.ActiveFrame;
+        if (frame is not CorDebugILFrame ilFrame)
+        {
+            range = default;
+            return false;
+        }
+
+        var ilOffset = ilFrame.IP.pnOffset;
+        var method = this.SessionCache.GetMethod(frame.Function);
+        var seqPoints = method.SequencePoints;
+
+        for (var i = 1; i < seqPoints.Length; ++i)
+        {
+            var p = seqPoints[i];
+            if (p.Offset <= ilOffset) continue;
+            if (p.IsHidden) continue;
+
+            var startOffs = seqPoints[0].Offset;
+            for (var j = i - 1; j > 0; --j)
+            {
+                if (seqPoints[j].Offset > ilOffset) continue;
+
+                startOffs = seqPoints[j].Offset;
+                break;
+            }
+            var endOffs = p.Offset;
+            range.startOffset = startOffs;
+            range.endOffset = endOffs;
+            return true;
+        }
+
+        range = default;
+        return false;
     }
 }

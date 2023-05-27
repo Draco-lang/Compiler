@@ -54,6 +54,11 @@ public sealed class Debugger
     public event EventHandler<OnBreakpointEventArgs>? OnBreakpoint;
 
     /// <summary>
+    /// The event that is triggered on a debugger event logged.
+    /// </summary>
+    public event EventHandler<string>? OnEventLog;
+
+    /// <summary>
     /// True, if the debugger should stop at the entry-point.
     /// </summary>
     internal bool StopAtEntryPoint { get; init; }
@@ -88,11 +93,7 @@ public sealed class Debugger
 
     private void InitializeEventHandler(CorDebugManagedCallback cb)
     {
-        cb.OnAnyEvent += (sender, args) =>
-        {
-            var x = 0;
-        };
-
+        cb.OnAnyEvent += this.OnAnyEventHandler;
         cb.OnCreateProcess += this.OnCreateProcessHandler;
         cb.OnCreateAppDomain += this.OnCreateAppDomainHandler;
         cb.OnLoadAssembly += this.OnLoadAssemblyHandler;
@@ -103,6 +104,69 @@ public sealed class Debugger
         cb.OnUnloadModule += this.OnUnloadModuleHandler;
         cb.OnBreakpoint += this.OnBreakpointHandler;
         cb.OnExitProcess += this.OnExitProcessHandler;
+    }
+
+    private void OnAnyEventHandler(object? sender, CorDebugManagedCallbackEventArgs args)
+    {
+        switch (args.Kind)
+        {
+        case CorDebugManagedCallbackKind.CreateProcess:
+        {
+            var a = (CreateProcessCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, $"process {a.Process.Id} created");
+            break;
+        }
+        case CorDebugManagedCallbackKind.CreateAppDomain:
+        {
+            var a = (CreateAppDomainCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, $"app domain {a.AppDomain.Id} created");
+            break;
+        }
+        case CorDebugManagedCallbackKind.LoadAssembly:
+        {
+            var a = (LoadAssemblyCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, $"assembly {a.Assembly.Name} loaded");
+            break;
+        }
+        case CorDebugManagedCallbackKind.LoadModule:
+        {
+            var a = (LoadModuleCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, $"module {a.Module.Name} loaded");
+            break;
+        }
+        case CorDebugManagedCallbackKind.NameChange:
+        {
+            var a = (NameChangeCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, "name change");
+            break;
+        }
+        case CorDebugManagedCallbackKind.CreateThread:
+        {
+            var a = (CreateThreadCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, $"thread {a.Thread.Id} created");
+            break;
+        }
+        case CorDebugManagedCallbackKind.Breakpoint:
+        {
+            var a = (BreakpointCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, "breakpoint hit");
+            break;
+        }
+        case CorDebugManagedCallbackKind.ExitThread:
+        {
+            var a = (ExitThreadCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, $"thread {a.Thread.Id} exited");
+            break;
+        }
+        case CorDebugManagedCallbackKind.ExitProcess:
+        {
+            var a = (ExitProcessCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, $"process {a.Process.Id} exited");
+            break;
+        }
+        default:
+            throw new ArgumentOutOfRangeException(nameof(args));
+        }
     }
 
     private void OnCreateProcessHandler(object? sender, CreateProcessCorDebugManagedCallbackEventArgs args)

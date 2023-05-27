@@ -25,6 +25,7 @@ internal sealed class DebuggerWindow : Window
 
     private readonly ListView callStackList;
     private readonly TableView localsTable;
+    private readonly TextView logText;
 
     public DebuggerWindow()
     {
@@ -74,9 +75,11 @@ internal sealed class DebuggerWindow : Window
 
         this.localsTable = MakeTableView();
         this.callStackList = MakeListView();
+        this.logText = MakeTextView(readOnly: true);
         var localsTab = MakeTabView(
             new("locals", this.localsTable),
-            new("call-stack", this.callStackList));
+            new("call-stack", this.callStackList),
+            new("logs", this.logText));
         localsTab.Height = Dim.Height(stdioTab);
         localsTab.Y = Pos.Top(stdioTab);
         localsTab.X = Pos.Right(stdioTab);
@@ -101,6 +104,7 @@ internal sealed class DebuggerWindow : Window
 
     public void AppendStdout(string text) => AppendText(this.stdoutText, text);
     public void AppendStderr(string text) => AppendText(this.stderrText, text);
+    public void Log(string line) => AppendText(this.logText, $"{line}{Environment.NewLine}");
     public void SetCallStack(IReadOnlyList<string> elements) => this.callStackList.SetSource(elements.ToList());
     public void SetSourceFile(SourceFile sourceFile, SourceRange? rangeToHighlight)
     {

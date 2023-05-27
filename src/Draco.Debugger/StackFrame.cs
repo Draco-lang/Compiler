@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using ClrDebug;
@@ -45,14 +46,20 @@ public sealed class StackFrame
         if (this.CorDebugFrame is not CorDebugILFrame ilFrame) return ImmutableArray<string>.Empty;
 
         var offset = ilFrame.IP.pnOffset;
-        var function = this.SessionCache.GetMethod(ilFrame.Function);
 
-        var pdbReader = function.Module.PdbReader;
-        var localScopes = pdbReader.GetLocalScopes(function.MethodDefinitionHandle);
+        var meta = this.Method.Module.CorDebugModule.GetMetaDataInterface();
+        var methodParams = meta.MetaDataImport.EnumParams(MetadataTokens.GetToken(this.Method.MethodDefinitionHandle));
+        var pdbReader = this.Method.Module.PdbReader;
+        var localScopes = pdbReader.GetLocalScopes(this.Method.MethodDefinitionHandle);
 
         var result = ImmutableArray.CreateBuilder<string>();
 
-        // TODO: Args
+        // Process arguments
+        foreach (var paramHandle in methodParams)
+        {
+            var param = meta.MetaDataImport.GetParamProps(paramHandle);
+            result.Add(param.szName);
+        }
 
         // Process locals
         // var locals = ilFrame.LocalVariables;

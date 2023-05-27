@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a type definition.
 /// </summary>
-internal abstract partial class TypeSymbol : Symbol
+internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 {
     /// <summary>
     /// True, if this is a type variable, false otherwise.
@@ -19,6 +19,7 @@ internal abstract partial class TypeSymbol : Symbol
     public virtual bool IsValueType => false;
 
     public override TypeSymbol? GenericDefinition => null;
+    public bool IsStatic => true;
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);

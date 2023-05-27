@@ -7,8 +7,10 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a field.
 /// </summary>
-internal abstract class FieldSymbol : VariableSymbol
+internal abstract class FieldSymbol : VariableSymbol, IMemberSymbol
 {
+    public abstract bool IsStatic { get; }
+
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (FieldSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>

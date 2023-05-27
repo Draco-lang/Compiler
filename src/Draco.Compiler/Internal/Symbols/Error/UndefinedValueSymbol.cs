@@ -12,8 +12,6 @@ internal sealed class UndefinedValueSymbol : Symbol, ITypedSymbol
 
     public override string Name { get; }
 
-    public bool IsStatic => true;
-
     public TypeSymbol Type => IntrinsicSymbols.ErrorType;
 
     public UndefinedValueSymbol(string name)

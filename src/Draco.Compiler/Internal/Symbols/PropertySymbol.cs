@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a property.
 /// </summary>
-internal abstract class PropertySymbol : VariableSymbol
+internal abstract class PropertySymbol : VariableSymbol, IMemberSymbol
 {
     /// <summary>
     /// The getter of this property.
@@ -21,6 +21,7 @@ internal abstract class PropertySymbol : VariableSymbol
 
     public override bool IsMutable => !(this.Setter is null);
     public abstract bool IsIndexer { get; }
+    public abstract bool IsStatic { get; }
 
     public override PropertySymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
     (PropertySymbol)base.GenericInstantiate(containingSymbol, arguments);

@@ -17,8 +17,6 @@ internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
     /// </summary>
     public abstract bool IsMutable { get; }
 
-    public abstract bool IsStatic { get; }
-
     public override Api.Semantics.Visibility Visibility
     {
         get

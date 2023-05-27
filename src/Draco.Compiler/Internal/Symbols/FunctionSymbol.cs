@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a free-function.
 /// </summary>
-internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
+internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSymbol
 {
     /// <summary>
     /// Retrieves the name for the unary operator that is referenced by a given token.

@@ -97,12 +97,12 @@ internal abstract partial class Symbol
     /// <summary>
     /// The static members within this symbol.
     /// </summary>
-    public virtual IEnumerable<Symbol> StaticMembers => this.Members.Where(x => x is not ITypedSymbol typed || typed.IsStatic);
+    public virtual IEnumerable<Symbol> StaticMembers => this.Members.Where(x => x is IMemberSymbol mem && mem.IsStatic);
 
     /// <summary>
     /// The instance members within this symbol.
     /// </summary>
-    public virtual IEnumerable<Symbol> InstanceMembers => this.Members.Where(x => x is ITypedSymbol typed && !typed.IsStatic);
+    public virtual IEnumerable<Symbol> InstanceMembers => this.Members.Where(x => x is IMemberSymbol mem && !mem.IsStatic);
 
     /// <summary>
     /// Documentation attached to this symbol.

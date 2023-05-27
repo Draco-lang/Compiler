@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 /// <summary>
 /// Represents an undefined member reference.
 /// </summary>
-internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol
+internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol, IMemberSymbol
 {
     public override bool IsError => true;
 

@@ -40,6 +40,7 @@ public sealed class Thread
     /// </summary>
     public void StepInto()
     {
+        this.DisableAllSteppers();
         var stepper = this.BuildCorDebugStepper();
         if (this.TryGetStepRange(out var range))
         {
@@ -49,7 +50,7 @@ public sealed class Thread
         {
             stepper.Step(true);
         }
-        // this.CorDebugThread.Process.Continue(false);
+        this.CorDebugThread.Process.Continue(false);
     }
 
     /// <summary>
@@ -57,6 +58,7 @@ public sealed class Thread
     /// </summary>
     public void StepOver()
     {
+        this.DisableAllSteppers();
         var stepper = this.BuildCorDebugStepper();
         if (this.TryGetStepRange(out var range))
         {
@@ -74,6 +76,7 @@ public sealed class Thread
     /// </summary>
     public void StepOut()
     {
+        this.DisableAllSteppers();
         var stepper = this.BuildCorDebugStepper();
         stepper.StepOut();
         this.CorDebugThread.Process.Continue(false);
@@ -156,5 +159,17 @@ public sealed class Thread
 
         range = default;
         return false;
+    }
+
+    private void DisableAllSteppers()
+    {
+        var process = this.CorDebugThread.Process;
+        foreach (var appDomain in process.AppDomains)
+        {
+            foreach (var stepper in appDomain.Steppers)
+            {
+                stepper.Deactivate();
+            }
+        }
     }
 }

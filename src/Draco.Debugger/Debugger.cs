@@ -208,6 +208,12 @@ public sealed class Debugger
 
     private void OnBreakpointHandler(object? sender, BreakpointCorDebugManagedCallbackEventArgs args)
     {
+        if (this.entryPointBreakpoint?.Raw == args.Breakpoint.Raw)
+        {
+            // This was the entry point breakpoint
+            this.entryPointBreakpoint.Activate(false);
+        }
+
         switch (args.Breakpoint)
         {
         case CorDebugFunctionBreakpoint funcBp:

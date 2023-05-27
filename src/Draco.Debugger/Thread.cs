@@ -26,8 +26,7 @@ public sealed class Thread
     /// <summary>
     /// The current state of the call-stack.
     /// </summary>
-    public ImmutableArray<StackFrame> CallStack => this.callStack ??= this.BuildCallStack();
-    private ImmutableArray<StackFrame>? callStack;
+    public ImmutableArray<StackFrame> CallStack => this.BuildCallStack();
 
     internal Thread(SessionCache sessionCache, CorDebugThread corDebugThread)
     {
@@ -68,7 +67,7 @@ public sealed class Thread
         {
             stepper.Step(false);
         }
-        // this.CorDebugThread.Process.Continue(false);
+        this.CorDebugThread.Process.Continue(false);
     }
 
     /// <summary>

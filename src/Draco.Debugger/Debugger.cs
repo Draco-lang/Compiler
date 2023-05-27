@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,9 @@ public sealed class Debugger
     /// </summary>
     public Task Terminated => this.terminatedCompletionSource.Task;
 
+    /// <summary>
+    /// The main user-module.
+    /// </summary>
     public Module MainModule => this.mainModule
         ?? throw new InvalidOperationException("the main module has not been loaded yet");
 
@@ -52,6 +56,11 @@ public sealed class Debugger
     /// The event that triggers, when a breakpoint is hit.
     /// </summary>
     public event EventHandler<OnBreakpointEventArgs>? OnBreakpoint;
+
+    /// <summary>
+    /// The event that triggers, when a step is complete.
+    /// </summary>
+    public event EventHandler<OnStepEventArgs>? OnStep;
 
     /// <summary>
     /// The event that is triggered on a debugger event logged.
@@ -103,6 +112,7 @@ public sealed class Debugger
         cb.OnExitThread += this.OnExitThreadHandler;
         cb.OnUnloadModule += this.OnUnloadModuleHandler;
         cb.OnBreakpoint += this.OnBreakpointHandler;
+        cb.OnStepComplete += this.OnStepCompleteHandler;
         cb.OnExitProcess += this.OnExitProcessHandler;
     }
 
@@ -164,6 +174,12 @@ public sealed class Debugger
             this.OnEventLog?.Invoke(this, $"process {a.Process.Id} exited");
             break;
         }
+        case CorDebugManagedCallbackKind.StepComplete:
+        {
+            var a = (StepCompleteCorDebugManagedCallbackEventArgs)args;
+            this.OnEventLog?.Invoke(this, "step complete");
+            break;
+        }
         default:
             throw new ArgumentOutOfRangeException(nameof(args));
         }
@@ -219,24 +235,35 @@ public sealed class Debugger
         case CorDebugFunctionBreakpoint funcBp:
         {
             var function = this.sessionCache.GetMethod(funcBp.Function);
-            var seqPoint = function.SequencePoints.FirstOrDefault(s => funcBp.Offset == s.Offset);
+            var range = GetSourceRangeForOffset(function, funcBp.Offset);
             this.OnBreakpoint?.Invoke(sender, new()
             {
                 Thread = this.sessionCache.GetThread(args.Thread),
                 Method = function,
-                Range = seqPoint.Document.IsNil
-                    ? null
-                    : new(
-                        StartLine: seqPoint.StartLine - 1,
-                        StartColumn: seqPoint.StartColumn - 1,
-                        EndLine: seqPoint.EndLine - 1,
-                        EndColumn: seqPoint.EndColumn),
+                Range = range,
             });
             break;
         }
         default:
             throw new NotImplementedException("unhahdled breakpoint kind");
         }
+    }
+
+    private void OnStepCompleteHandler(object? sender, StepCompleteCorDebugManagedCallbackEventArgs args)
+    {
+        var frame = args.Thread.ActiveFrame;
+        if (frame is not CorDebugILFrame ilFrame) return;
+
+        var offset = ilFrame.IP.pnOffset;
+        var function = this.sessionCache.GetMethod(args.Thread.ActiveFrame.Function);
+        var range = GetSourceRangeForOffset(function, offset);
+
+        this.OnStep?.Invoke(sender, new()
+        {
+            Thread = this.sessionCache.GetThread(args.Thread),
+            Method = function,
+            Range = range,
+        });
     }
 
     private void OnUnloadModuleHandler(object? sender, UnloadModuleCorDebugManagedCallbackEventArgs args)
@@ -260,13 +287,29 @@ public sealed class Debugger
         // It is, save it
         this.mainModule = module;
 
+        // Set it up
+        var corModule = module.CorDebugModule;
+        corModule.JITCompilerFlags = CorDebugJITCompilerFlags.CORDEBUG_JIT_DISABLE_OPTIMIZATION;
+        corModule.SetJMCStatus(true, 0, null);
+
         // Check, if we need to set up a breakpoint
         if (this.entryPointBreakpoint is not null || !this.StopAtEntryPoint) return;
 
         // We do
-        var corModule = module.CorDebugModule;
         var method = corModule.GetFunctionFromToken(MetadataTokens.GetToken(entryPointToken));
         var code = method.ILCode;
         this.entryPointBreakpoint = code.CreateBreakpoint(0);
+    }
+
+    private static SourceRange? GetSourceRangeForOffset(Method function, int offset)
+    {
+        var seqPoint = function.SequencePoints.FirstOrDefault(s => offset == s.Offset);
+        return seqPoint.Document.IsNil
+            ? null
+            : new(
+                StartLine: seqPoint.StartLine - 1,
+                StartColumn: seqPoint.StartColumn - 1,
+                EndLine: seqPoint.EndLine - 1,
+                EndColumn: seqPoint.EndColumn);
     }
 }

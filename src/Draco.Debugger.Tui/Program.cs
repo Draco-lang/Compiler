@@ -43,33 +43,34 @@ internal class Program
             var host = DebuggerHost.Create(FindDbgShim());
             var debugger = host.StartProcess(program.FullName);
 
-            debugger.StandardInput.WriteLine("John");
-
-            debugger.OnEventLog += (_, text) => debuggerWindow.Log(text);
-            debugger.OnStandardOut += (_, text) => debuggerWindow.AppendStdout(text);
-            debugger.OnStandardError += (_, text) => debuggerWindow.AppendStderr(text);
-
-            debugger.OnBreakpoint += (_, a) =>
+            void BreakAt(Thread thread, Method? method, SourceRange? range)
             {
-                currentThread = a.Thread;
+                currentThread = thread;
 
-                var callStack = a.Thread.CallStack
+                var callStack = thread.CallStack
                     .Select(f => f.Method.Name)
                     .ToList();
-                debuggerWindow.SetCallStack(callStack);
+                debuggerWindow!.SetCallStack(callStack);
 
-                var sourceFilesInModule = a.Method?.Module.SourceFiles;
+                var sourceFilesInModule = method?.Module.SourceFiles;
                 if (sourceFilesInModule is not null)
                 {
                     debuggerWindow.SetSourceFileList(sourceFilesInModule);
                 }
 
-                var sourceFile = a.SourceFile;
+                var sourceFile = method?.SourceFile;
                 if (sourceFile is not null)
                 {
-                    debuggerWindow.SetSourceFile(sourceFile, a.Range);
+                    debuggerWindow.SetSourceFile(sourceFile, range);
                 }
-            };
+            }
+
+            debugger.OnEventLog += (_, text) => debuggerWindow.Log(text);
+            debugger.OnStandardOut += (_, text) => debuggerWindow.AppendStdout(text);
+            debugger.OnStandardError += (_, text) => debuggerWindow.AppendStderr(text);
+
+            debugger.OnBreakpoint += (_, a) => BreakAt(a.Thread, a.Method, a.Range);
+            debugger.OnStep += (_, a) => BreakAt(a.Thread, a.Method, a.Range);
 
             debuggerWindow.OnStepInto += (_, _) => currentThread?.StepInto();
             debuggerWindow.OnStepOver += (_, _) => currentThread?.StepOver();

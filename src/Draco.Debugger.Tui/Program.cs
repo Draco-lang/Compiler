@@ -47,10 +47,13 @@ internal class Program
             {
                 currentThread = thread;
 
-                var callStack = thread.CallStack
+                var callStack = thread.CallStack;
+                var methodNames = callStack
                     .Select(f => f.Method.Name)
                     .ToList();
-                debuggerWindow!.SetCallStack(callStack);
+                debuggerWindow!.SetCallStack(methodNames);
+
+                debuggerWindow.SetLocals(callStack[0].Locals);
 
                 var sourceFilesInModule = method?.Module.SourceFiles;
                 if (sourceFilesInModule is not null)

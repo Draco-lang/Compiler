@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,9 +28,49 @@ public sealed class StackFrame
     /// </summary>
     public Method Method => this.SessionCache.GetMethod(this.CorDebugFrame.Function);
 
+    /// <summary>
+    /// The locals visible in this frame.
+    /// </summary>
+    public ImmutableArray<string> Locals => this.locals ??= this.BuildLocals();
+    private ImmutableArray<string>? locals;
+
     internal StackFrame(SessionCache sessionCache, CorDebugFrame corDebugFrame)
     {
         this.SessionCache = sessionCache;
         this.CorDebugFrame = corDebugFrame;
+    }
+
+    private ImmutableArray<string> BuildLocals()
+    {
+        if (this.CorDebugFrame is not CorDebugILFrame ilFrame) return ImmutableArray<string>.Empty;
+
+        var offset = ilFrame.IP.pnOffset;
+        var function = this.SessionCache.GetMethod(ilFrame.Function);
+
+        var pdbReader = function.Module.PdbReader;
+        var localScopes = pdbReader.GetLocalScopes(function.MethodDefinitionHandle);
+
+        var result = ImmutableArray.CreateBuilder<string>();
+
+        // TODO: Args
+
+        // Process locals
+        // var locals = ilFrame.LocalVariables;
+        foreach (var scopeHandle in localScopes)
+        {
+            var scope = pdbReader.GetLocalScope(scopeHandle);
+            // Skip if not intersecting our offset
+            if (offset < scope.StartOffset || offset > scope.EndOffset) continue;
+
+            // Get locals
+            foreach (var localHandle in scope.GetLocalVariables())
+            {
+                var local = pdbReader.GetLocalVariable(localHandle);
+                var localName = pdbReader.GetString(local.Name);
+                result.Add(localName);
+            }
+        }
+
+        return result.ToImmutable();
     }
 }

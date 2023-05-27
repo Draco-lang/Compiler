@@ -26,6 +26,11 @@ public sealed class Method
     internal CorDebugFunction CorDebugFunction { get; }
 
     /// <summary>
+    /// The method definition handle of this method.
+    /// </summary>
+    internal MethodDefinitionHandle MethodDefinitionHandle => MetadataTokens.MethodDefinitionHandle(this.CorDebugFunction.Token);
+
+    /// <summary>
     /// The debug info of this method.
     /// </summary>
     internal MethodDebugInformation DebugInfo => this.debugInfo ??= this.BuildDebugInfo();
@@ -63,7 +68,7 @@ public sealed class Method
     }
 
     private MethodDebugInformation BuildDebugInfo() => this.Module.PdbReader
-        .GetMethodDebugInformation(MetadataTokens.MethodDefinitionHandle(this.CorDebugFunction.Token));
+        .GetMethodDebugInformation(this.MethodDefinitionHandle);
 
     private string BuildName()
     {

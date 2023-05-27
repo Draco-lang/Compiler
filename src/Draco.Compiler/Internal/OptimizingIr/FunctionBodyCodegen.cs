@@ -145,8 +145,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
     public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
-    public override IOperand VisitFieldLvalue(BoundFieldLvalue node) =>
-        node.Receiver is null
+    public override IOperand VisitFieldLvalue(BoundFieldLvalue node) => node.Receiver is null
         ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
         : new FieldAccess(this.Compile(node.Receiver), node.Field);
     public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) =>

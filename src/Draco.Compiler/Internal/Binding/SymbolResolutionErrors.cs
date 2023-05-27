@@ -124,7 +124,7 @@ internal static class SymbolResolutionErrors
     /// Can not assign to a readonly or constant field.
     /// </summary>
     public static readonly DiagnosticTemplate CannotAssignToReadonlyOrConstantField = DiagnosticTemplate.Create(
-        title: "can not assign to the readonly or constant field",
+        title: "can not assign to a readonly or constant field",
         severity: DiagnosticSeverity.Error,
         format: "can not assign to the readonly or constant field {0}",
         code: Code(13));

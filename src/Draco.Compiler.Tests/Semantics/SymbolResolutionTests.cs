@@ -1545,6 +1545,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo = 0;
@@ -1559,9 +1561,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetStaticMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel, main.Root, "FooModule"), "foo");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
     }
 
     [Fact]
@@ -1583,6 +1589,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo = 0;
@@ -1597,9 +1605,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetInternalSymbol<FieldSymbol>(semanticModel, main.Root, "foo");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
     }
 
     [Fact]

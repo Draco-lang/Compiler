@@ -118,8 +118,6 @@ public interface IPropertySymbol : ITypedSymbol, IMemberSymbol
 public interface IGlobalSymbol : IVariableSymbol, IMemberSymbol
 {
 }
-
-
 /// <summary>
 /// Represents a local variable symbol.
 /// </summary>

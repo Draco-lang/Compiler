@@ -4,7 +4,7 @@ using System.Reflection.Metadata;
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
 /// <summary>
-/// Class for reading properties from metadata.
+/// Represents properties that are read up from metadata.
 /// </summary>
 internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 {

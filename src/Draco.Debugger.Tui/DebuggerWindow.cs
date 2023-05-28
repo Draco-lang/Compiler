@@ -28,13 +28,13 @@ internal sealed class DebuggerWindow : Window
     private readonly ListView callStackList;
     private readonly TableView localsTable;
     private readonly TextView logText;
-    public readonly Dictionary<string, ColorScheme> Schemes = new();
 
+    private readonly Dictionary<string, ColorScheme> themes = new();
 
     public DebuggerWindow()
     {
-        this.Schemes["Light"] = Colors.Base;
-        this.Schemes["Dark"] = new ColorScheme
+        this.themes["Light"] = Colors.Base;
+        this.themes["Dark"] = new ColorScheme
         {
             Disabled = Attribute.Make(Color.BrightYellow, Color.DarkGray),
             Normal = Attribute.Make(Color.BrightYellow, Color.DarkGray),
@@ -56,14 +56,11 @@ internal sealed class DebuggerWindow : Window
                 new MenuItem("_TODO", "", () => { }),
             }),
 
-            new MenuBarItem("_Theme", this.Schemes.Select(x => new MenuItem(x.Key, "", () =>
+            new MenuBarItem("_Theme", this.themes.Select(x => new MenuItem(x.Key, "", () =>
             {
                 this.ColorScheme = x.Value;
                 this.sourceTextFrame!.Border.Background = this.ColorScheme.Normal.Background;
                 this.sourceBrowserFrame!.Border.Background = this.ColorScheme.Normal.Background;
-                this.sourceTextFrame.SetNeedsDisplay();
-                this.sourceBrowserFrame!.SetNeedsDisplay();
-                this.SetNeedsDisplay();
             })).ToArray())
         });
 

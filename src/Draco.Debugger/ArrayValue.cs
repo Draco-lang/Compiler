@@ -24,20 +24,20 @@ public sealed class ArrayValue : IReadOnlyList<object?>
     {
         get
         {
-            this.cachedElements ??= new Slot[this.Count];
-            var slot = this.cachedElements[index];
+            this.slots ??= new Slot[this.Count];
+            var slot = this.slots[index];
             if (!slot.Initialized)
             {
                 slot.Initialized = true;
                 slot.Value = this.value.GetElementAtPosition(index).ToBrowsableObject();
-                this.cachedElements[index] = slot;
+                this.slots[index] = slot;
             }
             return slot;
         }
     }
 
     private readonly CorDebugArrayValue value;
-    private Slot[]? cachedElements;
+    private Slot[]? slots;
 
     internal ArrayValue(CorDebugArrayValue value)
     {

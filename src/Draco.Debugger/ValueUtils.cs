@@ -83,6 +83,13 @@ internal static class ValueUtils
             return new ArrayValue(arrayValue);
         }
 
+        case CorElementType.Class:
+        {
+            // NOTE: I have no idea why, but this is the only reliable way I can reach the class value type
+            var objectValue = (ICorDebugObjectValue)value.Raw;
+            return new ObjectValue(objectValue);
+        }
+
         default:
             throw new ArgumentOutOfRangeException(nameof(value));
         }

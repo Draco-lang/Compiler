@@ -29,6 +29,9 @@ internal sealed class DebuggerWindow : Window
     private readonly TableView localsTable;
     private readonly TextView logText;
 
+    private readonly MenuBar menu;
+    private readonly StatusBar statusBar;
+
     private readonly Dictionary<string, ColorScheme> themes = new();
 
     public DebuggerWindow()
@@ -42,6 +45,38 @@ internal sealed class DebuggerWindow : Window
             Focus = Attribute.Make(Color.White, Color.Black),
             HotFocus = Attribute.Make(Color.Black, Color.White),
         };
+        this.themes["Contrast"] = new ColorScheme
+        {
+            Disabled = Attribute.Make(Color.White, Color.Black),
+            Normal = Attribute.Make(Color.Brown, Color.Black),
+            HotNormal = Attribute.Make(Color.White, Color.Black),
+            Focus = Attribute.Make(Color.White, Color.Black),
+            HotFocus = Attribute.Make(Color.White, Color.Black),
+        };
+        this.themes["Neon Cyan"] = new ColorScheme
+        {
+            Disabled = Attribute.Make(Color.White, Color.Black),
+            Normal = Attribute.Make(Color.Cyan, Color.Black),
+            HotNormal = Attribute.Make(Color.White, Color.Black),
+            Focus = Attribute.Make(Color.White, Color.Black),
+            HotFocus = Attribute.Make(Color.White, Color.Black),
+        };
+        this.themes["Neon Green"] = new ColorScheme
+        {
+            Disabled = Attribute.Make(Color.White, Color.Black),
+            Normal = Attribute.Make(Color.BrightGreen, Color.Black),
+            HotNormal = Attribute.Make(Color.White, Color.Black),
+            Focus = Attribute.Make(Color.White, Color.Black),
+            HotFocus = Attribute.Make(Color.White, Color.Black),
+        };
+        this.themes["Neon Magenta"] = new ColorScheme
+        {
+            Disabled = Attribute.Make(Color.White, Color.Black),
+            Normal = Attribute.Make(Color.BrightMagenta, Color.Black),
+            HotNormal = Attribute.Make(Color.White, Color.Black),
+            Focus = Attribute.Make(Color.White, Color.Black),
+            HotFocus = Attribute.Make(Color.White, Color.Black),
+        };
 
         this.Y = 1; // menu
         this.Height = Dim.Fill(1); // status bar
@@ -49,19 +84,14 @@ internal sealed class DebuggerWindow : Window
         this.Border.BorderStyle = BorderStyle.None;
         this.Border.DrawMarginFrame = false;
 
-        var menu = new MenuBar(new[]
+        this.menu = new MenuBar(new[]
         {
-            new MenuBarItem("_File", new[]
+            new MenuBarItem("File", new[]
             {
-                new MenuItem("_TODO", "", () => { }),
+                new MenuItem("TODO", "", () => { }),
             }),
 
-            new MenuBarItem("_Theme", this.themes.Select(x => new MenuItem(x.Key, "", () =>
-            {
-                this.ColorScheme = x.Value;
-                this.sourceTextFrame!.Border.Background = this.ColorScheme.Normal.Background;
-                this.sourceBrowserFrame!.Border.Background = this.ColorScheme.Normal.Background;
-            })).ToArray())
+            new MenuBarItem("Theme", this.themes.Select(x => new MenuItem(x.Key, "", () => this.ChangeTheme(x.Value))).ToArray())
         });
 
         this.sourceText = new SourceTextView()
@@ -105,7 +135,7 @@ internal sealed class DebuggerWindow : Window
         localsTab.Y = Pos.Top(stdioTab);
         localsTab.X = Pos.Right(stdioTab);
 
-        var statusBar = new StatusBar(new[]
+        this.statusBar = new StatusBar(new[]
         {
             new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Application.RequestStop()),
             new StatusItem(Key.F5, "~F5~ Step Over", () => this.OnStepOver?.Invoke(this, null!)),
@@ -113,14 +143,17 @@ internal sealed class DebuggerWindow : Window
             new StatusItem(Key.F7, "~F7~ Step Out", () => this.OnStepOut?.Invoke(this, null !)),
         });
 
+        // NOTE: We need this for the menu and the status bar
+        this.ChangeTheme(this.themes["Light"]);
+
         this.Add(
-            menu,
+            this.menu,
             this.sourceTextFrame,
             this.sourceBrowserFrame,
             stdioTab,
             localsTab,
-            statusBar);
-        Application.Top.Add(menu, statusBar, this);
+            this.statusBar);
+        Application.Top.Add(this.menu, this.statusBar, this);
     }
 
     public void AppendStdout(string text) => AppendText(this.stdoutText, text);
@@ -208,5 +241,17 @@ internal sealed class DebuggerWindow : Window
         };
         frameView.Add(subview);
         return frameView;
+    }
+
+    private void ChangeTheme(ColorScheme scheme)
+    {
+        this.ColorScheme = scheme;
+        this.menu!.ColorScheme = scheme;
+        this.statusBar!.ColorScheme = scheme;
+        this.sourceTextFrame!.Border.Background = scheme.Normal.Background;
+        this.sourceTextFrame!.Border.BorderBrush = scheme.Normal.Foreground;
+
+        this.sourceBrowserFrame!.Border.Background = scheme.Normal.Background;
+        this.sourceBrowserFrame!.Border.BorderBrush = scheme.Normal.Foreground;
     }
 }

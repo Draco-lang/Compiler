@@ -28,6 +28,17 @@ internal static class ValueUtils
         case CorElementType.I4:
             return (int)value.GetIntegralValue();
 
+        case CorElementType.String:
+        {
+            // NOTE: I have no idea why, but this is the only reliable way I cn read out the string
+            var strValue = new CorDebugStringValue((ICorDebugStringValue)value.Raw);
+            var len = strValue.Length;
+            var sb = new StringBuilder(len);
+            var result = strValue.Raw.GetString(len, out _, sb);
+            if (result != HRESULT.S_OK) throw new InvalidOperationException("failed to read out string");
+            return sb.ToString();
+        }
+
         default:
             throw new ArgumentOutOfRangeException(nameof(value));
         }

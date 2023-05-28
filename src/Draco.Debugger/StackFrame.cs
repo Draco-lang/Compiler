@@ -32,8 +32,8 @@ public sealed class StackFrame
     /// <summary>
     /// The locals visible in this frame.
     /// </summary>
-    public ImmutableArray<string> Locals => this.locals ??= this.BuildLocals();
-    private ImmutableArray<string>? locals;
+    public ImmutableDictionary<string, object?> Locals => this.locals ??= this.BuildLocals();
+    private ImmutableDictionary<string, object?>? locals;
 
     internal StackFrame(SessionCache sessionCache, CorDebugFrame corDebugFrame)
     {
@@ -41,9 +41,9 @@ public sealed class StackFrame
         this.CorDebugFrame = corDebugFrame;
     }
 
-    private ImmutableArray<string> BuildLocals()
+    private ImmutableDictionary<string, object?> BuildLocals()
     {
-        if (this.CorDebugFrame is not CorDebugILFrame ilFrame) return ImmutableArray<string>.Empty;
+        if (this.CorDebugFrame is not CorDebugILFrame ilFrame) return ImmutableDictionary<string, object?>.Empty;
 
         var offset = ilFrame.IP.pnOffset;
 
@@ -52,17 +52,17 @@ public sealed class StackFrame
         var pdbReader = this.Method.Module.PdbReader;
         var localScopes = pdbReader.GetLocalScopes(this.Method.MethodDefinitionHandle);
 
-        var result = ImmutableArray.CreateBuilder<string>();
+        var result = ImmutableDictionary.CreateBuilder<string, object?>();
 
         // Process arguments
         foreach (var paramHandle in methodParams)
         {
             var param = meta.MetaDataImport.GetParamProps(paramHandle);
-            result.Add(param.szName);
+            var argValue = ilFrame.GetArgument(param.pulSequence - 1);
+            result.Add(param.szName, argValue.ToBrowsableObject());
         }
 
         // Process locals
-        // var locals = ilFrame.LocalVariables;
         foreach (var scopeHandle in localScopes)
         {
             var scope = pdbReader.GetLocalScope(scopeHandle);
@@ -74,7 +74,8 @@ public sealed class StackFrame
             {
                 var local = pdbReader.GetLocalVariable(localHandle);
                 var localName = pdbReader.GetString(local.Name);
-                result.Add(localName);
+                var localValue = ilFrame.GetLocalVariable(local.Index);
+                result.Add(localName, localValue.ToBrowsableObject());
             }
         }
 

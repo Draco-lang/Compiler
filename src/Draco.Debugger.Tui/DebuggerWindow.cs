@@ -127,11 +127,12 @@ internal sealed class DebuggerWindow : Window
     public void AppendStderr(string text) => AppendText(this.stderrText, text);
     public void Log(string line) => AppendText(this.logText, $"{line}{Environment.NewLine}");
     public void SetCallStack(IReadOnlyList<string> elements) => this.callStackList.SetSource(elements.ToList());
-    public void SetLocals(IReadOnlyList<string> elements)
+    public void SetLocals(IReadOnlyDictionary<string, object?> elements)
     {
         this.localsTable.Table = new();
         this.localsTable.Table.Columns.Add("name");
-        foreach (var name in elements) this.localsTable.Table.Rows.Add(name);
+        this.localsTable.Table.Columns.Add("value");
+        foreach (var (name, value) in elements) this.localsTable.Table.Rows.Add(name, value?.ToString() ?? "null");
         this.localsTable.SetNeedsDisplay();
     }
     public void SetSourceFile(SourceFile sourceFile, SourceRange? rangeToHighlight)

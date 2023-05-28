@@ -1606,9 +1606,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void ReadingAndSettingNonStaticField()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo = 5;
-        //   var x = fooModule.foo;
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
+        //   var x = fooType.foo;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1617,12 +1617,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooModule"), "foo")))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int foo = 0;
             }
             """);
@@ -1714,8 +1714,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void SettingReadonlyNonStaticField()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo = 5;
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1724,11 +1724,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public readonly int foo = 0;
             }
             """);
@@ -1751,8 +1751,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void ReadingNonExistingNonStaticField()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   var x = fooModule.foo;
+        //   var fooType = FooType();
+        //   var x = fooType.foo;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1761,12 +1761,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooModule"), "foo")))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule { }
+            public class FooType { }
             """);
 
         // Act
@@ -1787,8 +1787,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void SettingNonExistingNonStaticField()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo = 5;
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1797,12 +1797,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule { }
+            public class FooType { }
             """);
 
         // Act
@@ -1966,9 +1966,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void ReadingAndSettingNonStaticProperty()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo = 5;
-        //   var x = fooModule.foo;
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
+        //   var x = fooType.foo;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1977,12 +1977,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooModule"), "foo")))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int foo { get; set; }
             }
             """);
@@ -2074,8 +2074,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void SettingGetOnlyNonStaticProperty()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo = 5;
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2084,11 +2084,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), Assign, LiteralExpression(5)))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int foo { get; }
             }
             """);
@@ -2111,8 +2111,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void GettingSetOnlyNonStaticProperty()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   var x = fooModule.foo;
+        //   var fooType = FooType();
+        //   var x = fooType.foo;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2121,11 +2121,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooModule"), "foo")))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int foo { set { } }
             }
             """);
@@ -2148,8 +2148,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void CompoundAssignmentNonStaticProperty()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo += 2;
+        //   var fooType = FooType();
+        //   fooType.foo += 2;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2158,11 +2158,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooModule"), "foo"), PlusAssign, LiteralExpression(2)))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), PlusAssign, LiteralExpression(2)))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int foo { get; set; }
             }
             """);
@@ -2218,9 +2218,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void ReadingAndSettingIndexer()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule[0] = 5;
-        //   var x = fooModule[0];
+        //   var fooType = FooType();
+        //   fooType[0] = 5;
+        //   var x = fooType[0];
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2229,12 +2229,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooModule"), LiteralExpression(0)), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooModule"), LiteralExpression(0))))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int this[int index]
                 {
                     get => index * 2;
@@ -2260,8 +2260,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void SettingGetOnlyIndexer()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule[0] = 5;
+        //   var fooType = FooType();
+        //   fooType[0] = 5;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2270,11 +2270,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooModule"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int this[int index] => index * 2;
             }
             """);
@@ -2297,8 +2297,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void GettingSetOnlyIndexer()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   var x = fooModule[0];
+        //   var fooType = FooType();
+        //   var x = fooType[0];
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2307,11 +2307,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooModule"), LiteralExpression(0))))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int this[int index] { set { } }
             }
             """);
@@ -2334,9 +2334,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void ReadingAndSettingMemberAccessIndexer()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo[0] = 5;
-        //   var x = fooModule.foo[0];
+        //   var fooType = FooType();
+        //   fooType.foo[0] = 5;
+        //   var x = fooType.foo[0];
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2345,12 +2345,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooModule"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooModule"), "foo"), LiteralExpression(0))))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public Foo foo = new Foo();
             }
             public class Foo{
@@ -2379,8 +2379,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void SettingGetOnlyMemberAccessIndexer()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   fooModule.foo[0] = 5;
+        //   var fooType = FooType();
+        //   fooType.foo[0] = 5;
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2389,11 +2389,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooModule"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public Foo foo = new Foo();
             }
             public class Foo{
@@ -2419,8 +2419,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void GettingSetOnlyMemberAccessIndexer()
     {
         // func main(){
-        //   var fooModule = FooModule();
-        //   var x = fooModule.foo[0];
+        //   var fooType = FooType();
+        //   var x = fooType.foo[0];
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2429,11 +2429,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("fooModule", null, CallExpression(NameExpression("FooModule")))),
-                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooModule"), "foo"), LiteralExpression(0))))))));
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public Foo foo = new Foo();
             }
             public class Foo{
@@ -2459,7 +2459,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void GettingNonExistingIndexer()
     {
         // func main(){
-        //   var foo = FooModule();
+        //   var foo = FooType();
         //   var x = foo[0];
         // }
 
@@ -2469,12 +2469,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooModule")))),
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
 
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule { }
+            public class FooType { }
             """);
 
         // Act
@@ -2495,7 +2495,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void SettingNonExistingIndexer()
     {
         // func main(){
-        //   var foo = FooModule();
+        //   var foo = FooType();
         //   foo[0] = 5;
         // }
 
@@ -2505,12 +2505,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooModule")))),
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule { }
+            public class FooType { }
             """);
 
         // Act
@@ -2531,7 +2531,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void CompoundAssignmentIndexer()
     {
         // func main(){
-        //   var foo = FooModule();
+        //   var foo = FooType();
         //   foo[0] += 2;
         // }
 
@@ -2541,11 +2541,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooModule")))),
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), PlusAssign, LiteralExpression(2)))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooModule{
+            public class FooType{
                 public int this[int index]
                 {
                     get => index * 2;

@@ -15,7 +15,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,
@@ -36,7 +36,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,
@@ -63,7 +63,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,
@@ -90,7 +90,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,
@@ -118,7 +118,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,
@@ -146,7 +146,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,
@@ -166,7 +166,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             }
             """);
 
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,
@@ -194,7 +194,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             }
             """);
         var stringWriter = new StringWriter();
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,
@@ -215,7 +215,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             }
             """);
         var stringWriter = new StringWriter();
-        var _ = Invoke<object?>(
+        _ = Invoke<object?>(
             assembly: assembly,
             methodName: "main",
             stdin: null,

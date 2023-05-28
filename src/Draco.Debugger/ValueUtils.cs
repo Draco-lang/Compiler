@@ -25,6 +25,9 @@ internal static class ValueUtils
 
         switch (value.Type)
         {
+        case CorElementType.Boolean:
+            return value.GetIntegralValue() != 0;
+
         case CorElementType.I4:
             return (int)value.GetIntegralValue();
 

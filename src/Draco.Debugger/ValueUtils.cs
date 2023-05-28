@@ -67,7 +67,7 @@ internal static class ValueUtils
 
         case CorElementType.String:
         {
-            // NOTE: I have no idea why, but this is the only reliable way I cn read out the string
+            // NOTE: I have no idea why, but this is the only reliable way I can read out the string
             var strValue = new CorDebugStringValue((ICorDebugStringValue)value.Raw);
             var len = strValue.Length;
             var sb = new StringBuilder(len);
@@ -78,8 +78,9 @@ internal static class ValueUtils
 
         case CorElementType.SZArray:
         {
-            // TODO
-            return "???";
+            // NOTE: I have no idea why, but this is the only reliable way I can reach the array value type
+            var arrayValue = new CorDebugArrayValue((ICorDebugArrayValue)value.Raw);
+            return new ArrayValue(arrayValue);
         }
 
         default:

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Terminal.Gui;
+using Attribute = Terminal.Gui.Attribute;
 
 namespace Draco.Debugger.Tui;
 
@@ -18,6 +19,7 @@ internal sealed class DebuggerWindow : Window
     private readonly SourceTextView sourceText;
 
     private readonly ListView sourceBrowserList;
+    private readonly FrameView sourceBrowserFrame;
 
     private readonly TextView stdinText;
     private readonly TextView stdoutText;
@@ -26,9 +28,21 @@ internal sealed class DebuggerWindow : Window
     private readonly ListView callStackList;
     private readonly TableView localsTable;
     private readonly TextView logText;
+    public readonly Dictionary<string, ColorScheme> Schemes = new();
+
 
     public DebuggerWindow()
     {
+        this.Schemes["Light"] = Colors.Base;
+        this.Schemes["Dark"] = new ColorScheme
+        {
+            Disabled = Attribute.Make(Color.BrightYellow, Color.DarkGray),
+            Normal = Attribute.Make(Color.BrightYellow, Color.DarkGray),
+            HotNormal = Attribute.Make(Color.Black, Color.BrightYellow),
+            Focus = Attribute.Make(Color.White, Color.Black),
+            HotFocus = Attribute.Make(Color.Black, Color.White),
+        };
+
         this.Y = 1; // menu
         this.Height = Dim.Fill(1); // status bar
 
@@ -41,6 +55,16 @@ internal sealed class DebuggerWindow : Window
             {
                 new MenuItem("_TODO", "", () => { }),
             }),
+
+            new MenuBarItem("_Theme", this.Schemes.Select(x => new MenuItem(x.Key, "", () =>
+            {
+                this.ColorScheme = x.Value;
+                this.sourceTextFrame!.Border.Background = this.ColorScheme.Normal.Background;
+                this.sourceBrowserFrame!.Border.Background = this.ColorScheme.Normal.Background;
+                this.sourceTextFrame.SetNeedsDisplay();
+                this.sourceBrowserFrame!.SetNeedsDisplay();
+                this.SetNeedsDisplay();
+            })).ToArray())
         });
 
         this.sourceText = new SourceTextView()
@@ -56,9 +80,9 @@ internal sealed class DebuggerWindow : Window
         this.sourceTextFrame.Width = Dim.Percent(75);
 
         this.sourceBrowserList = MakeListView();
-        var sourceBrowserFrame = MakeFrameView("sources", this.sourceBrowserList);
-        sourceBrowserFrame.X = Pos.Right(this.sourceTextFrame);
-        sourceBrowserFrame.Height = Dim.Height(this.sourceTextFrame);
+        this.sourceBrowserFrame = MakeFrameView("sources", this.sourceBrowserList);
+        this.sourceBrowserFrame.X = Pos.Right(this.sourceTextFrame);
+        this.sourceBrowserFrame.Height = Dim.Height(this.sourceTextFrame);
         this.sourceBrowserList.SelectedItemChanged += this.OnSelectedSourceFileChanged;
 
         this.stdinText = MakeTextView(readOnly: false);
@@ -95,7 +119,7 @@ internal sealed class DebuggerWindow : Window
         this.Add(
             menu,
             this.sourceTextFrame,
-            sourceBrowserFrame,
+            this.sourceBrowserFrame,
             stdioTab,
             localsTab,
             statusBar);

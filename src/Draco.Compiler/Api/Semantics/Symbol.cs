@@ -78,8 +78,6 @@ public interface IMemberSymbol
     /// </summary>
     public bool IsStatic { get; }
 }
-
-
 /// <summary>
 /// Represents a module symbol.
 /// </summary>

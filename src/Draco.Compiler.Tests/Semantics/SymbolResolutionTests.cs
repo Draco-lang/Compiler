@@ -1546,6 +1546,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
         var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
@@ -1562,7 +1563,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetStaticMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel, main.Root, "FooModule"), "foo");
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
 
         // Assert
         Assert.Empty(diags);
@@ -1590,6 +1591,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
 
         var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooNameRef = main.FindInChildren<NameExpressionSyntax>(0);
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
@@ -1606,7 +1608,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetInternalSymbol<FieldSymbol>(semanticModel, main.Root, "foo");
+        var fooSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetReferencedSymbol(fooNameRef));
 
         // Assert
         Assert.Empty(diags);
@@ -1633,6 +1635,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int foo = 0;
@@ -1647,9 +1652,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetTypeMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)), "foo");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
     }
 
     [Fact]
@@ -1667,6 +1676,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static readonly int foo = 0;
@@ -1681,9 +1692,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
 
         // Assert
         Assert.Single(diags);
+        Assert.False(fooSym.IsError);
         AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
     }
 
@@ -1702,6 +1715,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public const int foo = 0;
@@ -1716,9 +1731,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
 
         // Assert
         Assert.Single(diags);
+        Assert.False(fooSym.IsError);
         AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
     }
 

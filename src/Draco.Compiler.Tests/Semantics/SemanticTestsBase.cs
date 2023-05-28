@@ -1,7 +1,6 @@
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
-using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 
@@ -17,17 +16,11 @@ public abstract class SemanticTestsBase
         return (TSymbol)symbolBase.Symbol;
     }
 
-    private protected static Symbol GetInternalSymbol(SemanticModel model, SyntaxNode reference, string name) =>
-        (model as IBinderProvider).GetBinder(reference).LookupValueSymbol(name, reference, model.DiagnosticBag);
+    private protected static TMember GetMemberSymbol<TMember>(Symbol parent, string memberName) where TMember : Symbol =>
+        (TMember)parent.Members.Single(x => x.Name == memberName);
 
-    private protected static TSymbol GetInternalSymbol<TSymbol>(SemanticModel model, SyntaxNode reference, string name) where TSymbol : Symbol =>
-        (TSymbol)(model as IBinderProvider).GetBinder(reference).LookupValueSymbol(name, reference, model.DiagnosticBag);
-
-    private protected static TMember GetStaticMemberSymbol<TMember>(Symbol parent, string memberName) where TMember : Symbol =>
-        (TMember)parent.StaticMembers.Single(x => x.Name == memberName);
-
-    private protected static TMember GetInstanceMemberSymbol<TMember>(Symbol parent, string memberName) where TMember : Symbol =>
-        (TMember)parent.InstanceMembers.Single(x => x.Name == memberName);
+    private protected static TMember GetTypeMemberSymbol<TMember>(Internal.Symbols.ITypedSymbol parent, string memberName) where TMember : Symbol =>
+        (TMember)parent.Type.Members.Single(x => x.Name == memberName);
 
     private protected static Binder GetDefiningScope(Compilation compilation, Symbol? symbol)
     {

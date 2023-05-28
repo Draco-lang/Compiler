@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using ClrDebug;
@@ -28,8 +29,38 @@ internal static class ValueUtils
         case CorElementType.Boolean:
             return value.GetIntegralValue() != 0;
 
+        case CorElementType.I:
+            return value.GetIntegralValue();
+        case CorElementType.I1:
+            return (sbyte)value.GetIntegralValue();
+        case CorElementType.I2:
+            return (short)value.GetIntegralValue();
         case CorElementType.I4:
             return (int)value.GetIntegralValue();
+        case CorElementType.I8:
+            return (long)value.GetIntegralValue();
+
+        case CorElementType.U:
+            return (nuint)value.GetIntegralValue();
+        case CorElementType.U1:
+            return (byte)value.GetIntegralValue();
+        case CorElementType.U2:
+            return (ushort)value.GetIntegralValue();
+        case CorElementType.U4:
+            return (uint)value.GetIntegralValue();
+        case CorElementType.U8:
+            return (ulong)value.GetIntegralValue();
+
+        case CorElementType.R4:
+        {
+            var bytes = value.GetIntegralValue();
+            return BitConverter.ToSingle(BitConverter.GetBytes(bytes));
+        }
+        case CorElementType.R8:
+        {
+            var bytes = value.GetIntegralValue();
+            return BitConverter.ToDouble(BitConverter.GetBytes(bytes));
+        }
 
         case CorElementType.String:
         {
@@ -40,6 +71,12 @@ internal static class ValueUtils
             var result = strValue.Raw.GetString(len, out _, sb);
             if (result != HRESULT.S_OK) throw new InvalidOperationException("failed to read out string");
             return sb.ToString();
+        }
+
+        case CorElementType.SZArray:
+        {
+            // TODO
+            return "???";
         }
 
         default:

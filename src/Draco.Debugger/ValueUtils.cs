@@ -29,6 +29,9 @@ internal static class ValueUtils
         case CorElementType.Boolean:
             return value.GetIntegralValue() != 0;
 
+        case CorElementType.Char:
+            return (char)value.GetIntegralValue();
+
         case CorElementType.I:
             return value.GetIntegralValue();
         case CorElementType.I1:

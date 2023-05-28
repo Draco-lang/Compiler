@@ -1,5 +1,9 @@
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
+/// <summary>
+/// Represents a generic instantiated property.
+/// The property definition itself is not generic, but the property was within a generic context.
+/// </summary>
 internal sealed class PropertyInstanceSymbol : PropertySymbol, IGenericInstanceSymbol
 {
     public override TypeSymbol Type => this.type ??= this.BuildType();

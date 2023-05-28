@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a property.
 /// </summary>
-internal abstract class PropertySymbol : VariableSymbol, IMemberSymbol
+internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol
 {
     /// <summary>
     /// The getter of this property.
@@ -19,7 +19,7 @@ internal abstract class PropertySymbol : VariableSymbol, IMemberSymbol
     /// </summary>
     public abstract FunctionSymbol? Setter { get; }
 
-    public override bool IsMutable => !(this.Setter is null);
+    public abstract TypeSymbol Type { get; }
     public abstract bool IsIndexer { get; }
     public abstract bool IsStatic { get; }
 

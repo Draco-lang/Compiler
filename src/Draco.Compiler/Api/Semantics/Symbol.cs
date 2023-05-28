@@ -108,7 +108,7 @@ public interface IFieldSymbol : IVariableSymbol, IMemberSymbol
 /// <summary>
 /// Represents a property symbol.
 /// </summary>
-public interface IPropertySymbol : IVariableSymbol, IMemberSymbol
+public interface IPropertySymbol : ITypedSymbol, IMemberSymbol
 {
     public IFunctionSymbol? Getter { get; }
     public IFunctionSymbol? Setter { get; }
@@ -233,7 +233,6 @@ internal sealed class FieldSymbol : SymbolBase<Internal.Symbols.FieldSymbol>, IF
 
 internal sealed class PropertySymbol : SymbolBase<Internal.Symbols.PropertySymbol>, IPropertySymbol
 {
-    public bool IsMutable => this.Symbol.IsMutable;
     public bool IsStatic => this.Symbol.IsStatic;
     public ITypeSymbol Type => this.Symbol.Type.ToApiSymbol();
 

@@ -1,5 +1,9 @@
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
+/// <summary>
+/// Represents a generic instantiated field.
+/// The field definition itself is not generic, but the field was within a generic context.
+/// </summary>
 internal sealed class FieldInstanceSymbol : FieldSymbol, IGenericInstanceSymbol
 {
     public override TypeSymbol Type => this.type ??= this.BuildType();

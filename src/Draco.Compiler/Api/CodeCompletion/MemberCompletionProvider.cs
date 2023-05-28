@@ -86,7 +86,10 @@ public sealed class MemberCompletionProvider : CompletionProvider
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
 
         IVariableSymbol var when currentContexts.HasFlag(CompletionContext.Expression) =>
-            CompletionItem.Create(symbols.First().Name, range, symbols, var is PropertySymbol ? CompletionKind.Property : CompletionKind.Variable),
+            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Variable),
+
+        PropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Property),
 
         FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Function),

@@ -106,7 +106,7 @@ public interface IFieldSymbol : IVariableSymbol, IMemberSymbol
 /// <summary>
 /// Represents a property symbol.
 /// </summary>
-public interface IPropertySymbol : ITypedSymbol, IMemberSymbol
+public interface IPropertySymbol : ISymbol, ITypedSymbol, IMemberSymbol
 {
     public IFunctionSymbol? Getter { get; }
     public IFunctionSymbol? Setter { get; }

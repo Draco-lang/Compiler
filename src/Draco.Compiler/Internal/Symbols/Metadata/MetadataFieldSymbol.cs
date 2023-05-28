@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 {
-    public override TypeSymbol Type => this.type ??= this.Build();
+    public override TypeSymbol Type => this.type ??= this.BuildType();
     private TypeSymbol? type;
 
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
@@ -40,7 +40,7 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
         this.fieldDefinition = fieldDefinition;
     }
 
-    private TypeSymbol Build()
+    private TypeSymbol BuildType()
     {
         // Decode signature
         var decoder = new TypeProvider(this.Assembly.Compilation);

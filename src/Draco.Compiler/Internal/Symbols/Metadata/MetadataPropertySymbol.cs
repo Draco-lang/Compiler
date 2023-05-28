@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Reflection.Metadata;
 
@@ -8,57 +9,33 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 {
-    public override TypeSymbol Type
-    {
-        get
-        {
-            if (this.NeedsBuild) this.Build();
-            return this.type!;
-        }
-    }
-    private TypeSymbol? type;
+    public override TypeSymbol Type => this.Getter?.ReturnType ?? this.Setter?.Parameters[0].Type ?? throw new InvalidOperationException();
 
     public override FunctionSymbol? Getter
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
+            if (this.getterNeedsBuild) this.getter = this.BuildGetter();
             return this.getter;
         }
     }
     private FunctionSymbol? getter;
+    private bool getterNeedsBuild = true;
 
     public override FunctionSymbol? Setter
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
+            if (this.setterNeedsBuild) this.setter = this.BuildSetter();
             return this.setter;
         }
     }
     private FunctionSymbol? setter;
+    private bool setterNeedsBuild = true;
 
-    public override bool IsStatic
-    {
-        get
-        {
-            if (this.NeedsBuild) this.Build();
-            return this.isStatic;
-        }
-    }
-    private bool isStatic = false;
+    public override bool IsStatic => (this.Getter ?? this.Setter)?.IsStatic ?? throw new InvalidOperationException();
 
-    public override Api.Semantics.Visibility Visibility
-    {
-        get
-        {
-            if (this.NeedsBuild) this.Build();
-            return this.visibility;
-        }
-    }
-    private Api.Semantics.Visibility visibility = default;
-
-    private bool NeedsBuild => this.type is null;
+    public override Api.Semantics.Visibility Visibility => (this.Getter ?? this.Setter)?.Visibility ?? throw new InvalidOperationException();
 
     public override bool IsIndexer => this.Name == this.defaultMemberName;
     private readonly string? defaultMemberName;
@@ -86,28 +63,27 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
         this.defaultMemberName = defaultMemberName;
     }
 
-    private void Build()
+    private MetadataPropertyAccessorSymbol? BuildGetter()
     {
+        this.getterNeedsBuild = false;
         var accessors = this.propertyDefinition.GetAccessors();
         if (!accessors.Getter.IsNil)
         {
             var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
-            this.getter = new MetadataPropertyAccessorSymbol(this.ContainingSymbol, getter, this);
-            this.visibility = this.getter.Visibility;
-            this.isStatic = this.getter.IsStatic;
-            this.type = this.getter.ReturnType;
+            return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, getter, this);
         }
+        return null;
+    }
+
+    private MetadataPropertyAccessorSymbol? BuildSetter()
+    {
+        this.setterNeedsBuild = false;
+        var accessors = this.propertyDefinition.GetAccessors();
         if (!accessors.Setter.IsNil)
         {
             var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
-            this.setter = new MetadataPropertyAccessorSymbol(this.ContainingSymbol, setter, this);
-            this.visibility = this.setter.Visibility;
-            this.isStatic = this.setter.IsStatic;
-            if (this.type is null)
-            {
-                var decoder = new TypeProvider(this.Assembly.Compilation);
-                this.type = setter.DecodeSignature(decoder, default!).ParameterTypes.First();
-            }
+            return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, setter, this);
         }
+        return null;
     }
 }

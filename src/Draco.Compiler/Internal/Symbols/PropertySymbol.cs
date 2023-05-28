@@ -24,11 +24,11 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol
     public abstract bool IsStatic { get; }
 
     public override PropertySymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
-    (PropertySymbol)base.GenericInstantiate(containingSymbol, arguments);
+        (PropertySymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override PropertySymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         new PropertyInstanceSymbol(containingSymbol, this, context);
 
-    public override ISymbol ToApiSymbol() => new Api.Semantics.PropertySymbol(this);
+    public override IPropertySymbol ToApiSymbol() => new Api.Semantics.PropertySymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitProperty(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitProperty(this);

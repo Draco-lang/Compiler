@@ -4,6 +4,9 @@ using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
+/// <summary>
+/// Represents an property accessor symbol loaded from metadata.
+/// </summary>
 internal sealed class MetadataPropertyAccessorSymbol : MetadataMethodSymbol, IPropertyAccessorSymbol
 {
     public PropertySymbol Property { get; }

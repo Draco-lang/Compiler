@@ -76,8 +76,25 @@ internal sealed class Translator
         {
             ExtractDocumentation(sourceType, targetType);
 
-            // TODO
+            if (sourceType.TryGetProperty("properties", out var props))
+            {
+                foreach (var prop in props.EnumerateObject())
+                {
+                    var targetProp = new Property();
+                    targetProp.Name = Capitalize(prop.Name);
+                    this.TranslateProperty(prop.Value, targetProp);
+                    targetType.Properties.Add(targetProp);
+                }
+            }
         }
+    }
+
+    private void TranslateProperty(JsonElement sourceProperty, Property targetProperty)
+    {
+        ExtractDocumentation(sourceProperty, targetProperty);
+
+        // TODO
+        targetProperty.Type = new BuiltinType("Unknown");
     }
 
     private static bool TryGetRef(JsonElement element, [MaybeNullWhen(false)] out string path)
@@ -99,4 +116,14 @@ internal sealed class Translator
         if (element.TryGetProperty("title", out _)) { /* no-op*/ }
         if (element.TryGetProperty("description", out var doc)) declaration.Documentation = doc.GetString();
     }
+
+    /// <summary>
+    /// Capitalizes a word.
+    /// </summary>
+    /// <param name="word">The word to capitalize.</param>
+    /// <returns>The capitalized <paramref name="word"/>.</returns>
+    [return: NotNullIfNotNull(nameof(word))]
+    private static string? Capitalize(string? word) => word is null
+        ? null
+        : $"{char.ToUpper(word[0])}{word[1..]}";
 }

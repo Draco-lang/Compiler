@@ -22,12 +22,28 @@ namespace Draco.Dap.Model;
     : {{class.Name}}
 {{end}}
 
+{{func type(t)}}
+    {{case t.Discriminator}}
+    {{when 'Builtin'}} {{t.FullName}}
+    {{when 'Declaration'}}
+        {{t.Declaration.Name}}
+    {{end}}
+{{end}}
+
+{{func property(decl)}}
+    {{summary(decl.Documentation)}}
+    public {{type(decl.Type)}} {{decl.Name}} { get; set; }
+{{end}}
+
 #nullable enable
 #pragma warning disable CS9042
 {{for $class in Classes}}
     {{summary($class.Documentation)}}
     public class {{$class.Name}} {{base($class.Base)}}
     {
+        {{for $prop in $class.Properties}}
+            {{property($prop)}}
+        {{end}}
     }
 {{end}}
 #pragma warning restore CS9042

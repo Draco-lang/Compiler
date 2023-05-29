@@ -41,3 +41,15 @@ public sealed record class BuiltinType(string FullName) : Type;
 /// </summary>
 /// <param name="ElementType">The array element type.</param>
 public sealed record class ArrayType(Type ElementType) : Type;
+
+/// <summary>
+/// A type representing DUs.
+/// </summary>
+/// <param name="Alternatives">The alternative types.</param>
+public sealed record class DiscriminatedUnionType(ImmutableArray<Type> Alternatives) : Type;
+
+/// <summary>
+/// A nullable C# type.
+/// </summary>
+/// <param name="Type">The underlying type.</param>
+public sealed record class NullableType(Type Type) : Type;

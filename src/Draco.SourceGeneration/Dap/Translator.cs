@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -121,7 +122,11 @@ internal sealed class Translator
 
     private Type TranslateType(JsonElement source, Class parent, string? hintName)
     {
-        if (source.TryGetProperty("type", out var type))
+        if (source.ValueKind == JsonValueKind.String)
+        {
+            return this.builtinTypes[source.GetString()!];
+        }
+        else if (source.TryGetProperty("type", out var type))
         {
             if (type.ValueKind == JsonValueKind.String)
             {
@@ -162,8 +167,32 @@ internal sealed class Translator
                 }
                 else
                 {
-                    // TODO
-                    return new CsModel.BuiltinType($"Unknown<{type}>");
+                    var altElements = type
+                        .EnumerateArray()
+                        .ToList();
+
+                    // Check if a null is involved
+                    // If so, we need to unwrap it
+                    var toNullable = false;
+                    if (altElements.Any(IsNull))
+                    {
+                        toNullable = true;
+                        altElements = altElements
+                            .Where(e => !IsNull(e))
+                            .ToList();
+                        if (altElements.Count == 1)
+                        {
+                            var element = this.TranslateType(altElements[0], parent: parent, hintName: hintName);
+                            return new NullableType(element);
+                        }
+                    }
+
+                    var alternatives = altElements
+                        .Select(e => this.TranslateType(e, parent: parent, hintName: hintName))
+                        .ToImmutableArray();
+                    var result = new DiscriminatedUnionType(alternatives) as CsModel.Type;
+                    if (toNullable) result = new NullableType(result);
+                    return result;
                 }
             }
             else
@@ -208,6 +237,10 @@ internal sealed class Translator
         if (element.TryGetProperty("title", out _)) { /* no-op*/ }
         if (element.TryGetProperty("description", out var doc)) declaration.Documentation = doc.GetString();
     }
+
+    private static bool IsNull(JsonElement element) =>
+           element.ValueKind == JsonValueKind.String
+        && element.GetString() == "null";
 
     /// <summary>
     /// Capitalizes a word.

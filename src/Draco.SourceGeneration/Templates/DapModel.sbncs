@@ -27,7 +27,10 @@ namespace Draco.Dap.Model;
     {{when 'Builtin'}} {{t.FullName}}
     {{when 'Declaration'}}
         {{t.Declaration.Name}}
+    {{when 'Nullable'}} {{type(t.Type)}}?
     {{when 'Array'}} IList<{{type(t.ElementType)}}>
+    {{when 'DiscriminatedUnion'}}
+        OneOf<{{wrap separated(', ', t.Alternatives)}}{{type($element)}}{{end}}>
     {{end}}
 {{end}}
 

@@ -117,6 +117,7 @@ internal sealed class Translator
             var requiredPropNames = sourceType.TryGetProperty("required", out var reqProps)
                 ? reqProps.EnumerateArray().Select(e => e.GetString()!).ToHashSet()
                 : new HashSet<string>();
+            // Mark with required, if needed
             foreach (var prop in targetType.Properties)
             {
                 if (requiredPropNames.Contains(prop.SerializedName))
@@ -128,6 +129,24 @@ internal sealed class Translator
                     // Make it optional and nullable
                     prop.OmitIfNull = true;
                     if (prop.Type is not NullableType) prop.Type = new NullableType(prop.Type);
+                }
+            }
+
+            // For props where the base type has a different type for the same prop, we erase it from base
+            foreach (var prop in targetType.Properties)
+            {
+                var inBase = targetType.Base?.Properties.FirstOrDefault(p => p.Name == prop.Name);
+                if (inBase is null) continue;
+
+                if (inBase.Type == prop.Type)
+                {
+                    // Delete it here, it's inherited
+                    // TODO
+                }
+                else
+                {
+                    // Delete in base
+                    targetType.Base?.Properties.Remove(inBase);
                 }
             }
         }

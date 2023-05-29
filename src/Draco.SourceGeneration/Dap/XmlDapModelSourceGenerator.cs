@@ -25,15 +25,18 @@ public sealed class XmlDapModelSourceGenerator : XmlSourceGenerator
         // Parse the schema
         var schema = JsonDocument.Parse(metaModelJson);
 
-        // TODO
-        // Just a sample
-        var definitions = schema.RootElement.GetProperty("definitions");
-        var classes = definitions.EnumerateObject().Select(kv => $"class {kv.Name} {{ }}");
-        var code = string.Join("\n", classes);
+        // Create translator
+        var translator = new Translator(schema);
+
+        // Translate
+        var csModel = translator.Translate();
+
+        // Finally generate by template
+        var dapModelCode = CodeGenerator.GenerateDapModel(csModel, cancellationToken);
 
         return new KeyValuePair<string, string>[]
         {
-            new("DapModel.Generated.cs", code),
+            new("DapModel.Generated.cs", dapModelCode),
         };
     }
 }

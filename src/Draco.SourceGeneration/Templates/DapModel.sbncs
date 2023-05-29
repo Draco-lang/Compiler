@@ -1,0 +1,33 @@
+using System;
+using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
+
+namespace Draco.Dap.Model;
+
+{{include 'Utils.sbncs'}}
+
+{{func summary(doc)}}
+    {{if !doc}}{{ret}}{{end}}
+    /// <summary>
+    {{~for $line in split_lines(doc)-}}
+        /// {{$line}}
+    {{~end-}}
+    /// </summary>
+{{end}}
+
+{{func base(class)}}
+    {{if !class}}{{ret}}{{end}}
+    : {{class.Name}}
+{{end}}
+
+#nullable enable
+#pragma warning disable CS9042
+{{for $class in Classes}}
+    {{summary($class.Description)}}
+    public class {{$class.Name}} {{base($class.Base)}}
+    {
+    }
+{{end}}
+#pragma warning restore CS9042

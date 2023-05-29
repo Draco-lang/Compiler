@@ -34,6 +34,13 @@
       <LogicalName>Lsp.MetaModel.json</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
+
+  <!-- Embed the debug adapter protocol specification -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\external\dap-specification\metaModel.json" Visible="False">
+      <LogicalName>Dap.MetaModel.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
   
   <PropertyGroup>
     <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>

@@ -1,0 +1,13 @@
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://draco-lang.com/debug-adapter-protocol/model"
+  xmlns="http://draco-lang.com/debug-adapter-protocol/model"
+  attributeFormDefault="unqualified"
+  elementFormDefault="qualified">
+
+  <xs:element name="DapModel" type="DapModelType" />
+
+  <xs:complexType name="DapModelType">
+  </xs:complexType>
+
+</xs:schema>

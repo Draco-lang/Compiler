@@ -36,7 +36,9 @@ namespace Draco.Dap.Model;
 
 {{func property(decl)}}
     {{summary(decl.Documentation)}}
-    public {{type(decl.Type)}} {{decl.Name}} { get; set; }
+    public
+    {{if decl.Required}}required{{end}}
+    {{type(decl.Type)}} {{decl.Name}} { get; set; }
 {{end}}
 
 {{func class(cl)}}

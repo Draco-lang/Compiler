@@ -103,10 +103,31 @@ internal sealed class Translator
             {
                 foreach (var prop in props.EnumerateObject())
                 {
-                    var targetProp = new Property();
-                    targetProp.Name = Capitalize(prop.Name);
+                    var targetProp = new Property
+                    {
+                        SerializedName = prop.Name,
+                        Name = Capitalize(prop.Name),
+                    };
                     this.TranslateProperty(prop.Value, targetProp, targetType);
                     targetType.Properties.Add(targetProp);
+                }
+            }
+
+            // Get the required properties
+            var requiredPropNames = sourceType.TryGetProperty("required", out var reqProps)
+                ? reqProps.EnumerateArray().Select(e => e.GetString()!).ToHashSet()
+                : new HashSet<string>();
+            foreach (var prop in targetType.Properties)
+            {
+                if (requiredPropNames.Contains(prop.SerializedName))
+                {
+                    prop.Required = true;
+                }
+                else
+                {
+                    // Make it optional and nullable
+                    prop.OmitIfNull = true;
+                    if (prop.Type is not NullableType) prop.Type = new NullableType(prop.Type);
                 }
             }
         }

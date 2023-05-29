@@ -25,6 +25,11 @@ public sealed class Property : Declaration
     public bool OmitIfNull { get; set; }
 
     /// <summary>
+    /// True, if the property is required.
+    /// </summary>
+    public bool Required { get; set; }
+
+    /// <summary>
     /// The value of the enumeration member.
     /// </summary>
     public object? Value { get; set; }

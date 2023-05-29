@@ -201,16 +201,18 @@ internal sealed class Translator
                 return new CsModel.BuiltinType($"Unknown<{type}>");
             }
         }
-        else if (source.TryGetProperty("$ref", out var @ref))
+        else if (TryGetRef(source, out var path))
         {
-            var path = @ref.GetString()!;
             var refClass = this.TranslateByPath(path);
             return new DeclarationType(refClass);
         }
         else if (source.TryGetProperty("oneOf", out var variants))
         {
-            // TODO
-            return new CsModel.BuiltinType($"UnknownOneOf<{type}>");
+            var elements = variants
+                .EnumerateArray()
+                .Select(e => this.TranslateType(e, parent: parent, hintName: hintName))
+                .ToImmutableArray();
+            return new DiscriminatedUnionType(elements);
         }
         else
         {

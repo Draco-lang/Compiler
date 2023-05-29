@@ -112,7 +112,17 @@ internal partial class BoundPropertyGetExpression
 
 internal partial class BoundPropertySetExpression
 {
-    public override TypeSymbol Type => this.Setter.Parameters[0].Type;
+    public override TypeSymbol? Type => this.Value.Type;
+}
+
+internal partial class BoundIndexGetExpression
+{
+    public override TypeSymbol? Type => this.Getter.ReturnType;
+}
+
+internal partial class BoundIndexSetExpression
+{
+    public override TypeSymbol? Type => this.Value.Type;
 }
 
 internal partial class BoundLocalExpression

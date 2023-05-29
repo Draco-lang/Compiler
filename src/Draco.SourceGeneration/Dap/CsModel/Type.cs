@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 
 namespace Draco.SourceGeneration.Dap.CsModel;
@@ -37,6 +38,12 @@ public sealed record class DeclarationType(Declaration Declaration) : Type;
 public sealed record class BuiltinType(string FullName) : Type;
 
 /// <summary>
+/// A nullable C# type.
+/// </summary>
+/// <param name="Type">The underlying type.</param>
+public sealed record class NullableType(Type Type) : Type;
+
+/// <summary>
 /// An array type.
 /// </summary>
 /// <param name="ElementType">The array element type.</param>
@@ -46,10 +53,15 @@ public sealed record class ArrayType(Type ElementType) : Type;
 /// A type representing DUs.
 /// </summary>
 /// <param name="Alternatives">The alternative types.</param>
-public sealed record class DiscriminatedUnionType(ImmutableArray<Type> Alternatives) : Type;
+public sealed record class DiscriminatedUnionType(ImmutableArray<Type> Alternatives) : Type
+{
+    public bool Equals(DiscriminatedUnionType other) =>
+        this.Alternatives.SequenceEqual(other.Alternatives);
 
-/// <summary>
-/// A nullable C# type.
-/// </summary>
-/// <param name="Type">The underlying type.</param>
-public sealed record class NullableType(Type Type) : Type;
+    public override int GetHashCode()
+    {
+        var h = default(HashCode);
+        foreach (var a in this.Alternatives) h.Add(a);
+        return h.ToHashCode();
+    }
+}

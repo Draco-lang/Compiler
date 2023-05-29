@@ -25,7 +25,7 @@ namespace Draco.Dap.Model;
 #nullable enable
 #pragma warning disable CS9042
 {{for $class in Classes}}
-    {{summary($class.Description)}}
+    {{summary($class.Documentation)}}
     public class {{$class.Name}} {{base($class.Base)}}
     {
     }

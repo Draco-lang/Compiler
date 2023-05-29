@@ -32,7 +32,7 @@ public sealed class ArrayValue : IReadOnlyList<object?>
                 slot.Value = this.value.GetElementAtPosition(index).ToBrowsableObject();
                 this.slots[index] = slot;
             }
-            return slot;
+            return slot.Value;
         }
     }
 

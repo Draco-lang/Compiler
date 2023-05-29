@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Draco.SourceGeneration.Dap.CsModel;
+using Type = Draco.SourceGeneration.Dap.CsModel.Type;
 
 namespace Draco.SourceGeneration.Dap;
 
@@ -16,6 +17,7 @@ internal sealed class Translator
 {
     private readonly JsonDocument sourceModel;
     private readonly Model targetModel = new();
+    private readonly Dictionary<string, Type> builtinTypes = new();
     private readonly Dictionary<string, Class> translatedTypes = new();
 
     public Translator(JsonDocument sourceModel)
@@ -23,6 +25,26 @@ internal sealed class Translator
         this.sourceModel = sourceModel;
     }
 
+    /// <summary>
+    /// Adds a builtin type that does not need translation anymore.
+    /// </summary>
+    /// <param name="name">The name of the type.</param>
+    /// <param name="type">The reflected type.</param>
+    public void AddBuiltinType(string name, System.Type type) =>
+        this.AddBuiltinType(name, type.FullName);
+
+    /// <summary>
+    /// Adds a builtin type that does not need translation anymore.
+    /// </summary>
+    /// <param name="name">The name of the type.</param>
+    /// <param name="fullName">The full name of the type.</param>
+    public void AddBuiltinType(string name, string fullName) =>
+        this.builtinTypes.Add(name, new CsModel.BuiltinType(fullName));
+
+    /// <summary>
+    /// Translated the source model to a C# model.
+    /// </summary>
+    /// <returns>The translated C# model.</returns>
     public Model Translate()
     {
         var types = this.sourceModel.RootElement
@@ -94,25 +116,54 @@ internal sealed class Translator
         ExtractDocumentation(sourceProperty, targetProperty);
 
         // Determine type
-        if (sourceProperty.TryGetProperty("type", out var type))
+        targetProperty.Type = this.TranslateType(sourceProperty);
+    }
+
+    private Type TranslateType(JsonElement source)
+    {
+        if (source.TryGetProperty("type", out var type))
         {
-            // TODO
-            targetProperty.Type = new BuiltinType($"Unknown<{type}>");
+            if (type.ValueKind == JsonValueKind.String)
+            {
+                var typeName = type.GetString()!;
+                if (typeName == "object")
+                {
+                    // TODO
+                    return new CsModel.BuiltinType("UnknownAnonymous");
+                }
+                if (typeName == "array")
+                {
+                    // TODO
+                    return new CsModel.BuiltinType("UnknownArray");
+                }
+
+                // Builtin
+                if (!this.builtinTypes.TryGetValue(typeName, out var builtinType))
+                {
+                    throw new KeyNotFoundException($"the builtin {typeName} was not declared");
+                }
+                return builtinType;
+            }
+            else
+            {
+                // TODO
+                return new CsModel.BuiltinType($"Unknown<{type}>");
+            }
         }
-        else if (sourceProperty.TryGetProperty("$ref", out var @ref))
+        else if (source.TryGetProperty("$ref", out var @ref))
         {
             var path = @ref.GetString()!;
             var refClass = this.TranslateByPath(path);
-            targetProperty.Type = new DeclarationType(refClass);
+            return new DeclarationType(refClass);
         }
-        else if (sourceProperty.TryGetProperty("oneOf", out var variants))
+        else if (source.TryGetProperty("oneOf", out var variants))
         {
             // TODO
-            targetProperty.Type = new BuiltinType($"UnknownOneOf<{type}>");
+            return new CsModel.BuiltinType($"UnknownOneOf<{type}>");
         }
         else
         {
-            throw new ArgumentException($"could not determine the type of property {targetProperty.Name}");
+            throw new ArgumentException($"could not determine the type");
         }
     }
 

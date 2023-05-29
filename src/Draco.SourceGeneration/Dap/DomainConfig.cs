@@ -7,10 +7,19 @@ public sealed class Config
 {
     public static Config FromXml(XmlConfig config)
     {
-        return new();
+        var basicAssembly = typeof(object).Assembly;
+        var builtins = config.BuiltinTypes
+            .Select(b => new BuiltinType(b.Name, b.FullName))
+            .ToList();
+        return new(builtins);
     }
 
-    public Config()
+    public IList<BuiltinType> BuiltinTypes { get; }
+
+    public Config(IList<BuiltinType> builtinTypes)
     {
+        this.BuiltinTypes = builtinTypes;
     }
 }
+
+public readonly record struct BuiltinType(string Name, string FullName);

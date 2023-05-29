@@ -28,6 +28,9 @@ public sealed class XmlDapModelSourceGenerator : XmlSourceGenerator
         // Create translator
         var translator = new Translator(schema);
 
+        // Configure translator
+        foreach (var (name, fullName) in domainConfig.BuiltinTypes) translator.AddBuiltinType(name, fullName);
+
         // Translate
         var csModel = translator.Translate();
 

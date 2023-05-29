@@ -8,6 +8,14 @@
   <xs:element name="DapModel" type="DapModelType" />
 
   <xs:complexType name="DapModelType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="BuiltinType" type="BuiltinTypeType" />
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="BuiltinTypeType">
+    <xs:attribute name="Name" type="xs:string" use="required" />
+    <xs:attribute name="FullName" type="xs:string" use="required" />
   </xs:complexType>
 
 </xs:schema>

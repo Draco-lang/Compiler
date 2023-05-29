@@ -36,9 +36,12 @@ namespace Draco.Dap.Model;
 
 {{func property(decl)}}
     {{summary(decl.Documentation)}}
-    public
-    {{if decl.Required}}required{{end}}
-    {{type(decl.Type)}} {{decl.Name}} { get; set; }
+    [JsonPropertyName({{string.literal(decl.SerializedName)}})]
+    [JsonIgnore(Condition = JsonIgnoreCondition.{{if decl.OmitIfNull}}WhenWritingDefault{{else}}Never{{end}})]
+    {{if !decl.OmitIfNull}}
+        [JsonRequired]
+    {{end}}
+    public {{if decl.Required}}required{{end}} {{type(decl.Type)}} {{decl.Name}} { get; set; }
 {{end}}
 
 {{func class(cl)}}

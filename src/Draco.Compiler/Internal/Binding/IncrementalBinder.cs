@@ -148,6 +148,12 @@ public sealed partial class SemanticModel
             BoundGlobalLvalue g => g.Global,
             BoundMemberExpression m => m.Member,
             BoundCallExpression c => c.Method,
+            BoundFieldLvalue f => f.Field,
+            BoundFieldExpression f => f.Field,
+            BoundPropertyGetExpression p => p.Getter,
+            BoundPropertySetExpression p => p.Setter,
+            BoundIndexGetExpression i => i.Getter,
+            BoundIndexSetExpression i => i.Setter,
             _ => null,
         };
     }

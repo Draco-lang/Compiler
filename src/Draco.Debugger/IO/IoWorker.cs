@@ -51,10 +51,13 @@ internal sealed class IoWorker<TProcess>
         var stdoutBuffer = new char[BufferSize];
         var stderrBuffer = new char[BufferSize];
 
+        var stdoutTask = null as Task<int>;
+        var stderrTask = null as Task<int>;
+
         while (!cancellationToken.IsCancellationRequested)
         {
-            var stdoutTask = stdoutReader.ReadAsync(stdoutBuffer, cancellationToken).AsTask();
-            var stderrTask = stderrReader.ReadAsync(stderrBuffer, cancellationToken).AsTask();
+            stdoutTask ??= stdoutReader.ReadAsync(stdoutBuffer, cancellationToken).AsTask();
+            stderrTask ??= stderrReader.ReadAsync(stderrBuffer, cancellationToken).AsTask();
 
             await Task.WhenAny(stdoutTask, stderrTask);
 
@@ -62,11 +65,13 @@ internal sealed class IoWorker<TProcess>
             {
                 var str = new string(stdoutBuffer, 0, stdoutTask.Result);
                 this.OnStandardOut?.Invoke(this.process, str);
+                stdoutTask = null;
             }
             if (stderrTask.IsCompleted)
             {
                 var str = new string(stderrBuffer, 0, stderrTask.Result);
                 this.OnStandardError?.Invoke(this.process, str);
+                stderrTask = null;
             }
         }
     }, cancellationToken);

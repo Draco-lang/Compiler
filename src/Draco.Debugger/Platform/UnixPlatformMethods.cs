@@ -13,7 +13,7 @@ internal sealed class UnixPlatformMethods : IPlatformMethods
     {
         STDIN_FILENO = 0,
         STDOUT_FILENO = 1,
-        STDERR_FILENO = 2
+        STDERR_FILENO = 2,
     }
 
     private const string LibC = "libc";

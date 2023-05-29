@@ -10,7 +10,7 @@ public sealed class OnStepEventArgs : EventArgs
     /// <summary>
     /// The thread that was stopped.
     /// </summary>
-    public Thread Thread { get; init; } = null!;
+    public required Thread Thread { get; init; }
 
     /// <summary>
     /// The method this step happened in.

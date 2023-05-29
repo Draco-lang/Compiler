@@ -10,7 +10,7 @@ public sealed class OnBreakpointEventArgs : EventArgs
     /// <summary>
     /// The thread that was stopped.
     /// </summary>
-    public Thread Thread { get; init; } = null!;
+    public required Thread Thread { get; init; }
 
     /// <summary>
     /// The method this breakpoint happened in.

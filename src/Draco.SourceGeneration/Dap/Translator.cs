@@ -144,6 +144,19 @@ internal sealed class Translator
                 }
                 return builtinType;
             }
+            else if (type.ValueKind == JsonValueKind.Array)
+            {
+                if (type.GetArrayLength() >= 7)
+                {
+                    // Assume any type
+                    return this.builtinTypes["any"];
+                }
+                else
+                {
+                    // TODO
+                    return new CsModel.BuiltinType($"Unknown<{type}>");
+                }
+            }
             else
             {
                 // TODO

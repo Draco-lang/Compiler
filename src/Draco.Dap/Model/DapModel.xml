@@ -7,5 +7,6 @@
   <BuiltinType Name="string" FullName="System.String" />
   <BuiltinType Name="integer" FullName="System.Int32" />
   <BuiltinType Name="boolean" FullName="System.Boolean" />
+  <BuiltinType Name="any" FullName="System.Text.Json.JsonElement" />
 
 </DapModel>

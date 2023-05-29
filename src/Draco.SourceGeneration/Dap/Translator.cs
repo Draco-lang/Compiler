@@ -177,7 +177,7 @@ internal sealed class Translator
 
                     // Generate nested type
                     var nestedClass = new Class();
-                    nestedClass.Name = hintName;
+                    nestedClass.Name = $"{hintName}{ExtractNameSuffix(parent.Name)}";
                     parent.NestedClasses.Add(nestedClass);
                     nestedClass.Parent = parent;
 
@@ -283,6 +283,24 @@ internal sealed class Translator
     private static bool IsNull(JsonElement element) =>
            element.ValueKind == JsonValueKind.String
         && element.GetString() == "null";
+
+    /// <summary>
+    /// Extracts a suffix from a name, which is the last capitalized word in it.
+    /// </summary>
+    /// <param name="name">The name to extract the suffix from.</param>
+    /// <returns>The last capitalized word in <paramref name="name"/>.</returns>
+    private static string ExtractNameSuffix(string name)
+    {
+        // Search for the last uppercase letter
+        var startIndex = name.Length - 1;
+        for (; startIndex >= 0; --startIndex)
+        {
+            var ch = name[startIndex];
+            if (ch == char.ToUpper(ch)) break;
+        }
+        // Cut it off
+        return name[startIndex..];
+    }
 
     /// <summary>
     /// Capitalizes a word.

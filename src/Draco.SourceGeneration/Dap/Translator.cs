@@ -104,22 +104,22 @@ internal sealed class Translator
                 {
                     var targetProp = new Property();
                     targetProp.Name = Capitalize(prop.Name);
-                    this.TranslateProperty(prop.Value, targetProp);
+                    this.TranslateProperty(prop.Value, targetProp, targetType);
                     targetType.Properties.Add(targetProp);
                 }
             }
         }
     }
 
-    private void TranslateProperty(JsonElement sourceProperty, Property targetProperty)
+    private void TranslateProperty(JsonElement sourceProperty, Property targetProperty, Class parent)
     {
         ExtractDocumentation(sourceProperty, targetProperty);
 
         // Determine type
-        targetProperty.Type = this.TranslateType(sourceProperty);
+        targetProperty.Type = this.TranslateType(sourceProperty, parent: parent, hintName: targetProperty.Name);
     }
 
-    private Type TranslateType(JsonElement source)
+    private Type TranslateType(JsonElement source, Class parent, string? hintName)
     {
         if (source.TryGetProperty("type", out var type))
         {
@@ -128,12 +128,21 @@ internal sealed class Translator
                 var typeName = type.GetString()!;
                 if (typeName == "object")
                 {
-                    // TODO
-                    return new CsModel.BuiltinType("UnknownAnonymous");
+                    if (hintName is null) throw new InvalidOperationException("can not generate anonymous type without hint name");
+
+                    // Generate nested type
+                    var nestedClass = new Class();
+                    nestedClass.Name = hintName;
+                    parent.NestedClasses.Add(nestedClass);
+                    nestedClass.Parent = parent;
+
+                    this.TranslateType(source, nestedClass);
+
+                    return new DeclarationType(nestedClass);
                 }
                 if (typeName == "array")
                 {
-                    var elementType = this.TranslateType(source.GetProperty("items"));
+                    var elementType = this.TranslateType(source.GetProperty("items"), parent: parent, hintName: null);
                     return new ArrayType(elementType);
                 }
 

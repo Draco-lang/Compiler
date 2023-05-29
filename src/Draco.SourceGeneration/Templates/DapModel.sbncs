@@ -36,15 +36,23 @@ namespace Draco.Dap.Model;
     public {{type(decl.Type)}} {{decl.Name}} { get; set; }
 {{end}}
 
-#nullable enable
-#pragma warning disable CS9042
-{{for $class in Classes}}
-    {{summary($class.Documentation)}}
-    public class {{$class.Name}} {{base($class.Base)}}
+{{func class(cl)}}
+    {{summary(cl.Documentation)}}
+    public class {{cl.Name}} {{base(cl.Base)}}
     {
-        {{for $prop in $class.Properties}}
+        {{for $nested in cl.NestedClasses}}
+            {{class($nested)}}
+        {{end}}
+
+        {{for $prop in cl.Properties}}
             {{property($prop)}}
         {{end}}
     }
+{{end}}
+
+#nullable enable
+#pragma warning disable CS9042
+{{for $class in Classes}}
+    {{class($class)}}
 {{end}}
 #pragma warning restore CS9042

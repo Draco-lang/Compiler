@@ -35,3 +35,9 @@ public sealed record class DeclarationType(Declaration Declaration) : Type;
 /// </summary>
 /// <param name="FullName">The full name of the reflected type.</param>
 public sealed record class BuiltinType(string FullName) : Type;
+
+/// <summary>
+/// An array type.
+/// </summary>
+/// <param name="ElementType">The array element type.</param>
+public sealed record class ArrayType(Type ElementType) : Type;

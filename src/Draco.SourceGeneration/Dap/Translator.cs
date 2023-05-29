@@ -133,8 +133,8 @@ internal sealed class Translator
                 }
                 if (typeName == "array")
                 {
-                    // TODO
-                    return new CsModel.BuiltinType("UnknownArray");
+                    var elementType = this.TranslateType(source.GetProperty("items"));
+                    return new ArrayType(elementType);
                 }
 
                 // Builtin

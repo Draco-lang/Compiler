@@ -27,6 +27,7 @@ namespace Draco.Dap.Model;
     {{when 'Builtin'}} {{t.FullName}}
     {{when 'Declaration'}}
         {{t.Declaration.Name}}
+    {{when 'Array'}} IList<{{type(t.ElementType)}}>
     {{end}}
 {{end}}
 

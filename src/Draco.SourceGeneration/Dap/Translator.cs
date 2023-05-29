@@ -93,8 +93,27 @@ internal sealed class Translator
     {
         ExtractDocumentation(sourceProperty, targetProperty);
 
-        // TODO
-        targetProperty.Type = new BuiltinType("Unknown");
+        // Determine type
+        if (sourceProperty.TryGetProperty("type", out var type))
+        {
+            // TODO
+            targetProperty.Type = new BuiltinType($"Unknown<{type}>");
+        }
+        else if (sourceProperty.TryGetProperty("$ref", out var @ref))
+        {
+            var path = @ref.GetString()!;
+            var refClass = this.TranslateByPath(path);
+            targetProperty.Type = new DeclarationType(refClass);
+        }
+        else if (sourceProperty.TryGetProperty("oneOf", out var variants))
+        {
+            // TODO
+            targetProperty.Type = new BuiltinType($"UnknownOneOf<{type}>");
+        }
+        else
+        {
+            throw new ArgumentException($"could not determine the type of property {targetProperty.Name}");
+        }
     }
 
     private static bool TryGetRef(JsonElement element, [MaybeNullWhen(false)] out string path)

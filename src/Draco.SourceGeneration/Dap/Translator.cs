@@ -104,6 +104,7 @@ internal sealed class Translator
             var baseType = this.TranslateDeclarationByPath(basePath);
             var baseClass = (Class)((DeclarationType)baseType).Declaration;
             derivedClass.Base = baseClass;
+            this.ProcessInheritedProperties(derivedClass);
             return derivedType;
         }
 
@@ -274,6 +275,31 @@ internal sealed class Translator
         return result;
     }
 
+    private void ProcessInheritedProperties(Class @class)
+    {
+        Debug.Assert(@class.Base is not null);
+
+        foreach (var prop in @class.Properties)
+        {
+            var baseProp = @class.Base!.Properties.FirstOrDefault(p => p.SerializedName == prop.SerializedName);
+            if (baseProp is null) continue;
+
+            if (baseProp.Type != prop.Type && prop.Value is null)
+            {
+                // This is likely a specialized property, for simplicity we remove it from base
+                @class.Base.Properties.Remove(baseProp);
+                continue;
+            }
+
+            // There is such a property in base
+            prop.Overrides = baseProp;
+            prop.Type = baseProp.Type;
+            prop.Name = baseProp.Name;
+            baseProp.IsAbstract = true;
+            @class.Base.IsAbstract = true;
+        }
+    }
+
     private Property? TranslatePropertyDeclaration(string name, JsonElement element, Class parent)
     {
         var result = new Property()
@@ -282,15 +308,18 @@ internal sealed class Translator
             SerializedName = name,
         };
 
-        // Check if it exists in the base class
-        var inBase = parent.Base?.Properties.FirstOrDefault(p => p.SerializedName == result.SerializedName);
-        if (inBase is not null) return null;
-
         // Adjust name to avoid name collisions
         if (parent.Name == result.Name) result.Name = $"{result.Name}_";
 
         // Translate the type
         result.Type = this.TranslateType(element, nameHint: result.Name, parent: parent, path: null);
+
+        // Check if it's a singleton value
+        if (element.TryGetProperty("enum", out var alternatives) && alternatives.GetArrayLength() == 1)
+        {
+            var value = alternatives.EnumerateArray().First().GetString()!;
+            result.Value = value;
+        }
 
         return result;
     }

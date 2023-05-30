@@ -49,7 +49,7 @@ public sealed class LanguageServerConnection
         var scheduler = new ConcurrentExclusiveSchedulerPair();
 
         // When the server is started, we post DeserializeFromTransport() to this block.
-        // This will start deserializing messages from the client and pushing them through the dataflow network. 
+        // This will start deserializing messages from the client and pushing them through the dataflow network.
         this.messageParser = new TransformManyBlock<IAsyncEnumerable<LspMessage>, LspMessage>(
             ae => ae,
             new()

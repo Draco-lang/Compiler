@@ -1564,11 +1564,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Empty(diags);
         Assert.False(xSym.IsError);
         Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
     }
 
     [Fact]
@@ -1609,11 +1611,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var fooSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetReferencedSymbol(fooNameRef));
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Empty(diags);
         Assert.False(xSym.IsError);
         Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
     }
 
     [Fact]
@@ -1654,11 +1658,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
         Assert.Empty(diags);
         Assert.False(xSym.IsError);
         Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
     }
 
     [Fact]
@@ -1693,10 +1699,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var diags = semanticModel.Diagnostics;
         var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
     }
 
@@ -1732,10 +1740,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var diags = semanticModel.Diagnostics;
         var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
     }
 

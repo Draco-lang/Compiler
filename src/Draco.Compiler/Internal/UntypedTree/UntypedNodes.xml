@@ -125,7 +125,7 @@
   </Node>
 
   <Node Name="UntypedTypeExpression" Base="UntypedExpression">
-    <Field Name="Type" Type="TypeSymbol" />
+    <Field Name="Type" Type="TypeSymbol" Override="true"/>
   </Node>
 
   <Node Name="UntypedLocalExpression" Base="UntypedExpression">

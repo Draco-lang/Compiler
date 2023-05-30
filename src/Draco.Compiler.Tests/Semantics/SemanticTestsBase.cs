@@ -19,6 +19,28 @@ public abstract class SemanticTestsBase
     private protected static TMember GetMemberSymbol<TMember>(Symbol parent, string memberName) where TMember : Symbol =>
         (TMember)parent.Members.Single(x => x.Name == memberName);
 
+    private protected static Symbol GetMetadataSymbol(Compilation compilation, string? @namespace, params string[] path)
+    {
+        @namespace = @namespace ?? string.Empty;
+        foreach (var asm in compilation.MetadataAssemblies.Values)
+        {
+            if (asm.RootNamespace.Name == @namespace)
+            {
+                var rec = Recurse(asm.RootNamespace, path);
+                if (rec is not null) return rec;
+            }
+        }
+        throw new InvalidOperationException();
+
+        Symbol? Recurse(Symbol parent, string[] path)
+        {
+            if (path.Length == 0) return parent;
+            var sym = parent.Members.Where(x => x.Name == path[0]);
+            if (sym.Any()) return Recurse(sym.First(), path[1..]);
+            return null;
+        }
+    }
+
     private protected static Binder GetDefiningScope(Compilation compilation, Symbol? symbol)
     {
         Assert.NotNull(symbol);

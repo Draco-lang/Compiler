@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Draco.SourceGeneration.Dap.CsModel;
+using Enum = Draco.SourceGeneration.Dap.CsModel.Enum;
 using Type = Draco.SourceGeneration.Dap.CsModel.Type;
 
 namespace Draco.SourceGeneration.Dap;
@@ -19,7 +20,7 @@ internal sealed class Translator
     private readonly JsonDocument sourceModel;
     private readonly Model targetModel = new();
     private readonly Dictionary<string, Type> builtinTypes = new();
-    private readonly Dictionary<string, Class> translatedTypes = new();
+    private readonly Dictionary<string, Declaration> translatedTypes = new();
 
     public Translator(JsonDocument sourceModel)
     {
@@ -52,35 +53,12 @@ internal sealed class Translator
         var types = this.sourceModel.RootElement
             .GetProperty("definitions")
             .EnumerateObject();
-        foreach (var prop in types) this.TranslateByPath($"#/definitions/{prop.Name}");
-
-        // Fix property names in types
-        foreach (var c in this.translatedTypes.Values) this.RenameCollidingPropertyNames(c);
-
-        // Fix overrides
-        foreach (var c in this.translatedTypes.Values) this.CopyOverridenPropertyNames(c);
+        foreach (var prop in types) this.TranslateDeclarationByPath($"#/definitions/{prop.Name}");
 
         return this.targetModel;
     }
 
-    private void RenameCollidingPropertyNames(Class @class)
-    {
-        foreach (var prop in @class.Properties)
-        {
-            if (prop.Name == @class.Name) prop.Name = $"{prop.Name}_";
-        }
-    }
-
-    private void CopyOverridenPropertyNames(Class @class)
-    {
-        foreach (var prop in @class.Properties)
-        {
-            if (prop.Overrides is null) continue;
-            prop.Name = prop.Overrides.Name;
-        }
-    }
-
-    private Class TranslateByPath(string path)
+    private Declaration TranslateDeclarationByPath(string path)
     {
         if (this.translatedTypes.TryGetValue(path, out var existing)) return existing;
 
@@ -95,203 +73,99 @@ internal sealed class Translator
             .FirstOrDefault(prop => prop.Name == typeName);
         if (typeToTranslate.Name is null) throw new KeyNotFoundException($"the type {typeName} could not be found for translation");
 
-        var target = new Class();
-        target.Name = typeName;
-        this.translatedTypes.Add(path, target);
-        this.targetModel.Declarations.Add(target);
-        this.TranslateType(typeToTranslate.Value, target);
-        return target;
+        return this.TranslateDeclaration(typeToTranslate.Name, typeToTranslate.Value, path: path);
     }
 
-    private void TranslateType(JsonElement sourceType, Class targetType)
+    private Declaration TranslateDeclaration(string name, JsonElement element, string? path)
     {
-        if (sourceType.ValueKind != JsonValueKind.Object) throw new ArgumentException($"definition {targetType.Name} is not an object");
-
-        if (sourceType.TryGetProperty("allOf", out var elements))
+        // Class type with inheritance
+        if (element.TryGetProperty("allOf", out var allOfElements))
         {
-            var toImplement = elements.EnumerateArray().ToList();
-            if (toImplement.Count != 2) throw new NotSupportedException($"definition {targetType.Name} does not mix in 2 types");
-
-            // Base class
-            if (!TryGetRef(toImplement[0], out var path)) throw new NotSupportedException($"definition {targetType.Name} uses allOf, but does not mix in a type as its first element");
-            targetType.Base = this.TranslateByPath(path);
-
-            // Mixin
-            this.TranslateType(toImplement[1], targetType);
+            // TODO
+            throw new NotImplementedException($"not implemented declaration {name}");
         }
-        else
+
+        // Enum
+        if (TryGetEnum(element, out var enumMembers, out var enumDocs) && enumMembers.Count > 1)
         {
-            ExtractDocumentation(sourceType, targetType);
-
-            if (sourceType.TryGetProperty("properties", out var props))
-            {
-                foreach (var prop in props.EnumerateObject())
-                {
-                    var targetProp = new Property
-                    {
-                        SerializedName = prop.Name,
-                        Name = ToPascalCase(prop.Name),
-                    };
-
-                    // Type
-                    this.TranslateProperty(prop.Value, targetProp, targetType);
-                    targetType.Properties.Add(targetProp);
-                }
-            }
-
-            // Get the required properties
-            var requiredPropNames = sourceType.TryGetProperty("required", out var reqProps)
-                ? reqProps.EnumerateArray().Select(e => e.GetString()!).ToHashSet()
-                : new HashSet<string>();
-            // Mark with required, if needed
-            foreach (var prop in targetType.Properties)
-            {
-                if (requiredPropNames.Contains(prop.SerializedName))
-                {
-                    prop.Required = true;
-                }
-                else
-                {
-                    // Make it optional and nullable
-                    prop.OmitIfNull = true;
-                    if (prop.Type is not NullableType) prop.Type = new NullableType(prop.Type);
-                }
-            }
+            var result = this.TranslateEnumDeclaration(name, enumMembers, enumDocs, path: path);
+            ExtractDocumentation(element, result);
+            return result;
         }
+
+        // Tagged type
+        if (element.TryGetProperty("type", out var typeTag))
+        {
+            var typeName = typeTag.GetString();
+            // TODO
+            throw new NotImplementedException($"not implemented tag {typeName} for {name}");
+        }
+
+        // Unknown
+        throw new NotImplementedException($"can not recognize type {name}");
     }
 
-    private void TranslateProperty(JsonElement sourceProperty, Property targetProperty, Class parent)
+    private Enum TranslateEnumDeclaration(
+        string name,
+        IReadOnlyList<string> members,
+        IReadOnlyList<string>? docs,
+        string? path)
     {
-        ExtractDocumentation(sourceProperty, targetProperty);
+        var result = new Enum() { Name = name };
+        if (path is not null) this.translatedTypes.Add(path, result);
 
-        // Determine type
-        targetProperty.Type = this.TranslateType(sourceProperty, parent: parent, hintName: targetProperty.Name);
-
-        // Check if it's a single possible value
-        if (sourceProperty.TryGetProperty("enum", out var values) && values.GetArrayLength() == 1)
+        // Add members
+        for (var i = 0; i < members.Count; ++i)
         {
-            var value = values.EnumerateArray().First().GetString();
-            targetProperty.Value = value;
-            targetProperty.Required = false;
+            var member = new EnumMember()
+            {
+                Name = ToPascalCase(members[i]),
+                Documentation = docs?[i],
+                Value = members[i],
+            };
+            result.Members.Add(member);
         }
 
-        // For props where the base type has a different type for the same prop, we erase it from base
-        var inBase = parent.Base?.Properties.FirstOrDefault(p => p.Name == targetProperty.Name);
-        if (inBase is not null)
-        {
-            if (inBase.Type == targetProperty.Type)
-            {
-                // Mark the one in the base abstract, implement here
-                inBase.IsAbstract = true;
-                targetProperty.Overrides = inBase;
-                parent.Base!.IsAbstract = true;
-            }
-            else
-            {
-                // Delete in base
-                parent.Base?.Properties.Remove(inBase);
-            }
-        }
+        return result;
     }
 
-    private Type TranslateType(JsonElement source, Class parent, string? hintName)
+    private static bool TryGetEnum(
+        JsonElement element,
+        [MaybeNullWhen(false)] out IReadOnlyList<string> members,
+        out IReadOnlyList<string>? docs)
     {
-        if (source.ValueKind == JsonValueKind.String)
+        docs = null;
+        if (element.TryGetProperty("enumDescriptions", out var enumDesc))
         {
-            return this.builtinTypes[source.GetString()!];
-        }
-        else if (source.TryGetProperty("type", out var type))
-        {
-            if (type.ValueKind == JsonValueKind.String)
-            {
-                var typeName = type.GetString()!;
-                if (typeName == "object")
-                {
-                    if (hintName is null) throw new InvalidOperationException("can not generate anonymous type without hint name");
-
-                    // Generate nested type
-                    var nestedClass = new Class();
-                    nestedClass.Name = $"{ExtractNamePrefix(parent.Name)}{hintName}";
-                    parent.NestedDeclarations.Add(nestedClass);
-                    nestedClass.Parent = parent;
-
-                    this.TranslateType(source, nestedClass);
-
-                    return new DeclarationType(nestedClass);
-                }
-                if (typeName == "array")
-                {
-                    var elementType = this.TranslateType(source.GetProperty("items"), parent: parent, hintName: null);
-                    return new ArrayType(elementType);
-                }
-
-                // Builtin
-                if (!this.builtinTypes.TryGetValue(typeName, out var builtinType))
-                {
-                    throw new KeyNotFoundException($"the builtin {typeName} was not declared");
-                }
-                return builtinType;
-            }
-            else if (type.ValueKind == JsonValueKind.Array)
-            {
-                if (type.GetArrayLength() >= 7)
-                {
-                    // Assume any type
-                    return this.builtinTypes["any"];
-                }
-                else
-                {
-                    var altElements = type
-                        .EnumerateArray()
-                        .ToList();
-
-                    // Check if a null is involved
-                    // If so, we need to unwrap it
-                    var toNullable = false;
-                    if (altElements.Any(IsNull))
-                    {
-                        toNullable = true;
-                        altElements = altElements
-                            .Where(e => !IsNull(e))
-                            .ToList();
-                        if (altElements.Count == 1)
-                        {
-                            var element = this.TranslateType(altElements[0], parent: parent, hintName: hintName);
-                            return new NullableType(element);
-                        }
-                    }
-
-                    var alternatives = altElements
-                        .Select(e => this.TranslateType(e, parent: parent, hintName: hintName))
-                        .ToImmutableArray();
-                    var result = new DiscriminatedUnionType(alternatives) as CsModel.Type;
-                    if (toNullable) result = new NullableType(result);
-                    return result;
-                }
-            }
-            else
-            {
-                // TODO
-                return new CsModel.BuiltinType($"Unknown<{type}>");
-            }
-        }
-        else if (TryGetRef(source, out var path))
-        {
-            var refClass = this.TranslateByPath(path);
-            return new DeclarationType(refClass);
-        }
-        else if (source.TryGetProperty("oneOf", out var variants))
-        {
-            var elements = variants
+            docs = enumDesc
                 .EnumerateArray()
-                .Select(e => this.TranslateType(e, parent: parent, hintName: hintName))
-                .ToImmutableArray();
-            return new DiscriminatedUnionType(elements);
+                .Select(e => e.GetString()!)
+                .ToList();
         }
-        else
+        if (element.TryGetProperty("enum", out var @enum))
         {
-            throw new ArgumentException($"could not determine the type");
+            members = @enum
+                .EnumerateArray()
+                .Select(e => e.GetString()!)
+                .ToList();
+            return true;
         }
+        if (element.TryGetProperty("_enum", out var _enum))
+        {
+            members = _enum
+                .EnumerateArray()
+                .Select(e => e.GetString()!)
+                .ToList();
+            return true;
+        }
+        members = null;
+        return false;
+    }
+
+    private static void ExtractDocumentation(JsonElement element, Declaration declaration)
+    {
+        if (element.TryGetProperty("title", out _)) { /* no-op*/ }
+        if (element.TryGetProperty("description", out var doc)) declaration.Documentation = doc.GetString();
     }
 
     private static bool TryGetRef(JsonElement element, [MaybeNullWhen(false)] out string path)
@@ -308,13 +182,7 @@ internal sealed class Translator
         }
     }
 
-    private static void ExtractDocumentation(JsonElement element, Declaration declaration)
-    {
-        if (element.TryGetProperty("title", out _)) { /* no-op*/ }
-        if (element.TryGetProperty("description", out var doc)) declaration.Documentation = doc.GetString();
-    }
-
-    private static bool IsNull(JsonElement element) =>
+    private static bool IsNullString(JsonElement element) =>
            element.ValueKind == JsonValueKind.String
         && element.GetString() == "null";
 

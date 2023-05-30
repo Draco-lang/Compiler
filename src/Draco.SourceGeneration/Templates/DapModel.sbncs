@@ -45,7 +45,7 @@ namespace Draco.Dap.Model;
     public
     {{if decl.IsAbstract}}abstract{{end}}
     {{if decl.Overrides}}override{{end}}
-    {{$use_required_modifier = !decl.IsAbstract && !decl.Overrides && decl.Required}}
+    {{$use_required_modifier = !decl.IsAbstract && !decl.Overrides && decl.IsRequired}}
     {{if $use_required_modifier}}required{{end}}
     {{type(decl.Type)}} {{decl.Name}}
     {{if decl.Value}}

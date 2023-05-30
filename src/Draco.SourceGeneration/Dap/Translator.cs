@@ -270,6 +270,11 @@ internal sealed class Translator
                     translatedProp.OmitIfNull = true;
                     if (translatedProp.Type is not NullableType) translatedProp.Type = new NullableType(translatedProp.Type);
                 }
+                else
+                {
+                    // Mark with required
+                    translatedProp.IsRequired = true;
+                }
             }
         }
 

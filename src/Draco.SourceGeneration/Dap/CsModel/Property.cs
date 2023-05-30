@@ -30,6 +30,11 @@ public sealed class Property : Declaration
     public bool IsAbstract { get; set; }
 
     /// <summary>
+    /// True, if this is a required property.
+    /// </summary>
+    public bool IsRequired { get; set; }
+
+    /// <summary>
     /// True, if this is an overriding property.
     /// </summary>
     public Property? Overrides { get; set; }

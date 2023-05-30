@@ -211,7 +211,7 @@ internal sealed class Translator
 
                     // Generate nested type
                     var nestedClass = new Class();
-                    nestedClass.Name = $"{hintName}{ExtractNameSuffix(parent.Name)}";
+                    nestedClass.Name = $"{ExtractNamePrefix(parent.Name)}{hintName}";
                     parent.NestedClasses.Add(nestedClass);
                     nestedClass.Parent = parent;
 
@@ -331,21 +331,21 @@ internal sealed class Translator
     }
 
     /// <summary>
-    /// Extracts a suffix from a name, which is the last capitalized word in it.
+    /// Extracts a prefix from a name, which is the first capitalized word in it.
     /// </summary>
-    /// <param name="name">The name to extract the suffix from.</param>
-    /// <returns>The last capitalized word in <paramref name="name"/>.</returns>
-    private static string ExtractNameSuffix(string name)
+    /// <param name="name">The name to extract the prefix from.</param>
+    /// <returns>The first capitalized word in <paramref name="name"/>.</returns>
+    private static string ExtractNamePrefix(string name)
     {
-        // Search for the last uppercase letter
-        var startIndex = name.Length - 1;
-        for (; startIndex >= 0; --startIndex)
+        // Search for the second uppercase letter
+        var endIndex = 1;
+        for (; endIndex < name.Length; ++endIndex)
         {
-            var ch = name[startIndex];
+            var ch = name[endIndex];
             if (ch == char.ToUpper(ch)) break;
         }
         // Cut it off
-        return name[startIndex..];
+        return name[..endIndex];
     }
 
     /// <summary>

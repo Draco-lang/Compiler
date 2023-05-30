@@ -10,6 +10,7 @@ using System.IO;
 using System.Threading;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using Draco.Dap.Serialization;
 
 namespace Draco.Dap.Adapter;
 
@@ -21,9 +22,7 @@ public sealed class DebugAdapterConnection
 
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
-        Converters =
-        {
-        }
+        Converters = { new ProtocolMessageConverter() },
     };
 
     public DebugAdapterConnection(IDuplexPipe transport)

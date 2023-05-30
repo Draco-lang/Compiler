@@ -39,7 +39,7 @@ namespace Draco.Dap.Model;
     {{summary(decl.Documentation)}}
     [JsonPropertyName({{string.literal(decl.SerializedName)}})]
     [JsonIgnore(Condition = JsonIgnoreCondition.{{if decl.OmitIfNull}}WhenWritingDefault{{else}}Never{{end}})]
-    {{if !decl.OmitIfNull}}
+    {{if !decl.OmitIfNull && !decl.Value}}
         [JsonRequired]
     {{end}}
     public

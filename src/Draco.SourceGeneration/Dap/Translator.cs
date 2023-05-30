@@ -131,24 +131,6 @@ internal sealed class Translator
                     if (prop.Type is not NullableType) prop.Type = new NullableType(prop.Type);
                 }
             }
-
-            // For props where the base type has a different type for the same prop, we erase it from base
-            foreach (var prop in targetType.Properties)
-            {
-                var inBase = targetType.Base?.Properties.FirstOrDefault(p => p.Name == prop.Name);
-                if (inBase is null) continue;
-
-                if (inBase.Type == prop.Type)
-                {
-                    // Delete it here, it's inherited
-                    // TODO
-                }
-                else
-                {
-                    // Delete in base
-                    targetType.Base?.Properties.Remove(inBase);
-                }
-            }
         }
     }
 
@@ -158,6 +140,29 @@ internal sealed class Translator
 
         // Determine type
         targetProperty.Type = this.TranslateType(sourceProperty, parent: parent, hintName: targetProperty.Name);
+
+        // Check if it's a single possible value
+        if (sourceProperty.TryGetProperty("enum", out var values) && values.GetArrayLength() == 1)
+        {
+            var value = values.EnumerateArray().First().GetString();
+            targetProperty.Value = value;
+        }
+
+        // For props where the base type has a different type for the same prop, we erase it from base
+        var inBase = parent.Base?.Properties.FirstOrDefault(p => p.Name == targetProperty.Name);
+        if (inBase is not null)
+        {
+            if (inBase.Type == targetProperty.Type)
+            {
+                // Delete it here, it's inherited
+                // TODO
+            }
+            else
+            {
+                // Delete in base
+                parent.Base?.Properties.Remove(inBase);
+            }
+        }
     }
 
     private Type TranslateType(JsonElement source, Class parent, string? hintName)

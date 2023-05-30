@@ -41,7 +41,17 @@ namespace Draco.Dap.Model;
     {{if !decl.OmitIfNull}}
         [JsonRequired]
     {{end}}
-    public {{if decl.Required}}required{{end}} {{type(decl.Type)}} {{decl.Name}} { get; set; }
+    public {{if decl.Required}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
+    {{if decl.Value}}
+        =>
+        {{case decl.ValueDiscriminator}}
+        {{when 'String'}}
+            {{string.literal(decl.Value)}}
+        {{end}}
+        ;
+    {{else}}
+        { get; set; }
+    {{end}}
 {{end}}
 
 {{func class(cl)}}

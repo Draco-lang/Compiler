@@ -82,6 +82,9 @@ internal sealed class Translator
 
     private Type TranslateType(JsonElement element, string? nameHint, Class? parent, string? path)
     {
+        // Reference type
+        if (TryGetRef(element, out var typePath)) return this.TranslateDeclarationByPath(typePath);
+
         // Class type with inheritance
         if (element.TryGetProperty("allOf", out var allOfElements))
         {
@@ -104,7 +107,10 @@ internal sealed class Translator
         if (TryGetEnum(element, out var enumMembers, out var enumDocs) && enumMembers.Count > 1)
         {
             if (nameHint is null) throw new ArgumentNullException(nameof(nameHint));
-            var result = this.TranslateEnumDeclaration(nameHint, enumMembers, enumDocs, path: path);
+            var name = parent is null
+                ? nameHint
+                : $"{ExtractNamePrefix(parent.Name)}{nameHint}";
+            var result = this.TranslateEnumDeclaration(name, enumMembers, enumDocs, parent: parent, path: path);
             ExtractDocumentation(element, result);
             return new DeclarationType(result);
         }
@@ -114,10 +120,14 @@ internal sealed class Translator
         {
             if (typeTag.ValueKind == JsonValueKind.String)
             {
-                var typeName = typeTag.GetString();
+                var typeName = typeTag.GetString()!;
+
+                // Builtin type
+                if (this.builtinTypes.TryGetValue(typeName, out var type)) return type;
+
+                // Class type
                 if (typeName == "object")
                 {
-                    // Class type
                     if (nameHint is null) throw new ArgumentNullException(nameof(nameHint));
                     var name = parent is null
                         ? nameHint
@@ -126,31 +136,42 @@ internal sealed class Translator
                     ExtractDocumentation(element, result);
                     return new DeclarationType(result);
                 }
-                else
+
+                // Array type
+                if (typeName == "array")
                 {
-                    // TODO
-                    throw new NotImplementedException($"not implemented tag {typeName} for {nameHint}");
+                    var itemElement = element.GetProperty("items");
+                    var elementType = this.TranslateType(itemElement, nameHint: nameHint, parent: parent, path: null);
+                    return new ArrayType(elementType);
                 }
+
+                // TODO
+                return new CsModel.BuiltinType($"Unknown<{typeTag.GetRawText()}>");
             }
             else
             {
                 // TODO
-                throw new NotImplementedException($"not implemented type {typeTag.GetRawText()}");
+                return new CsModel.BuiltinType($"Unknown<{typeTag.GetRawText()}>");
             }
         }
 
+        // TODO
+        return new CsModel.BuiltinType($"Unknown<{element.GetRawText()}>");
         // Unknown
-        throw new NotImplementedException($"can not recognize type {nameHint}");
+        throw new NotImplementedException($"can not recognize type {element.GetRawText()}");
     }
 
     private Enum TranslateEnumDeclaration(
         string name,
         IReadOnlyList<string> members,
         IReadOnlyList<string>? docs,
+        Class? parent,
         string? path)
     {
         var result = new Enum() { Name = name };
         if (path is not null) this.translatedTypes.Add(path, result);
+
+        if (parent is not null) parent.NestedDeclarations.Add(result);
 
         // Add members
         for (var i = 0; i < members.Count; ++i)
@@ -176,7 +197,35 @@ internal sealed class Translator
         };
         if (path is not null) this.translatedTypes.Add(path, result);
 
-        // TODO: props
+        if (parent is not null)
+        {
+            parent.NestedDeclarations.Add(result);
+            result.Parent = parent;
+        }
+
+        if (element.TryGetProperty("properties", out var props))
+        {
+            foreach (var prop in props.EnumerateObject())
+            {
+                var translatedProp = this.TranslatePropertyDeclaration(prop.Name, prop.Value, parent: result);
+                ExtractDocumentation(prop.Value, translatedProp);
+                result.Properties.Add(translatedProp);
+            }
+        }
+
+        return result;
+    }
+
+    private Property TranslatePropertyDeclaration(string name, JsonElement element, Class parent)
+    {
+        var result = new Property()
+        {
+            Name = ToPascalCase(name),
+            SerializedName = name,
+        };
+
+        // Translate the type
+        result.Type = this.TranslateType(element, nameHint: result.Name, parent: parent, path: null);
 
         return result;
     }

@@ -313,6 +313,7 @@ internal sealed class TypeSymbol : SymbolBase<Internal.Symbols.TypeSymbol>, ITyp
 internal sealed class TypeParameterSymbol : SymbolBase<Internal.Symbols.TypeParameterSymbol>, ITypeParameterSymbol
 {
     public bool IsStatic => this.Symbol.IsStatic;
+
     public TypeParameterSymbol(Internal.Symbols.TypeParameterSymbol type)
         : base(type)
     {

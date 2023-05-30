@@ -25,9 +25,9 @@ public sealed class Class : Declaration
     public bool IsAbstract { get; set; }
 
     /// <summary>
-    /// The classes this class has nested within it.
+    /// The declarations this class has nested within it.
     /// </summary>
-    public IList<Class> NestedClasses { get; set; } = new List<Class>();
+    public IList<Declaration> NestedDeclarations { get; set; } = new List<Declaration>();
 
     /// <summary>
     /// The properties within this class.

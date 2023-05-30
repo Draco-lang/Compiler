@@ -98,7 +98,7 @@ internal sealed class Translator
         var target = new Class();
         target.Name = typeName;
         this.translatedTypes.Add(path, target);
-        this.targetModel.Classes.Add(target);
+        this.targetModel.Declarations.Add(target);
         this.TranslateType(typeToTranslate.Value, target);
         return target;
     }
@@ -212,7 +212,7 @@ internal sealed class Translator
                     // Generate nested type
                     var nestedClass = new Class();
                     nestedClass.Name = $"{ExtractNamePrefix(parent.Name)}{hintName}";
-                    parent.NestedClasses.Add(nestedClass);
+                    parent.NestedDeclarations.Add(nestedClass);
                     nestedClass.Parent = parent;
 
                     this.TranslateType(source, nestedClass);

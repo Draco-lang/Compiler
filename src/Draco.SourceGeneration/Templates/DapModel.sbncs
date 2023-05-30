@@ -67,13 +67,12 @@ namespace Draco.Dap.Model;
 {{end}}
 
 {{func class(cl)}}
-    {{summary(cl.Documentation)}}
     public
     {{if cl.IsAbstract}}abstract{{end}}
     class {{cl.Name}} {{base(cl.Base)}}
     {
-        {{for $nested in cl.NestedClasses}}
-            {{class($nested)}}
+        {{for $nested in cl.NestedDeclarations}}
+            {{declaration($nested)}}
         {{end}}
 
         {{for $prop in cl.Properties}}
@@ -82,9 +81,17 @@ namespace Draco.Dap.Model;
     }
 {{end}}
 
+{{func declaration(decl)}}
+    {{summary(decl.Documentation)}}
+    {{case decl.Discriminator}}
+    {{when 'Class'}} {{class(decl)}}
+    {{when 'Enum'}} {{enum(decl)}}
+    {{end}}
+{{end}}
+
 #nullable enable
 #pragma warning disable CS9042
-{{for $class in Classes}}
-    {{class($class)}}
+{{for $decl in Declarations}}
+    {{declaration($decl)}}
 {{end}}
 #pragma warning restore CS9042

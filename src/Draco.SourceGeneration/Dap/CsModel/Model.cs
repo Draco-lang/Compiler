@@ -10,7 +10,7 @@ namespace Draco.SourceGeneration.Dap.CsModel;
 public sealed class Model
 {
     /// <summary>
-    /// The classes of the model.
+    /// The declarations of the model.
     /// </summary>
-    public IList<Class> Classes { get; set; } = new List<Class>();
+    public IList<Declaration> Declarations { get; set; } = new List<Declaration>();
 }

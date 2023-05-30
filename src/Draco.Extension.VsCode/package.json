@@ -105,9 +105,38 @@
         "type": "draco",
         "label": "Draco Debug",
 
-        "configurationAttributes": {},
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the application to launch.",
+                "default": "${workspaceFolder}/bin/Debug/<insert-target-framework-here>/<insert-project-name-here>.dll"
+              },
+              "stopAtEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": false
+              }
+            }
+          }
+        },
 
-        "configurationSnippets": []
+        "configurationSnippets": [
+          {
+            "label": "Draco: Launch Console App",
+            "description": "Launch a Draco Console App with a debugger.",
+            "body": {
+              "name": "Draco Launch (console)",
+              "type": "draco",
+              "request": "launch",
+              "preLaunchTask": "build",
+              "program": "^\"\\${workspaceFolder}/bin/Debug/${1:<target-framework>}/${2:<project-name.dll>}\"",
+              "stopAtEntry": false
+            }
+          }
+        ]
       }
     ]
   },

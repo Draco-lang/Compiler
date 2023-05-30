@@ -3,6 +3,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
+using Draco.Dap.Serialization;
 
 namespace Draco.Dap.Model;
 
@@ -79,6 +80,29 @@ namespace Draco.Dap.Model;
             {{property($prop)}}
         {{end}}
     }
+{{end}}
+
+{{func enum(decl)}}
+    {{if decl.IsStringEnum}}
+        [JsonConverter(typeof(EnumValueConverter))]
+    {{end}}
+    public enum {{decl.Name}}
+    {
+        {{for $mem in decl.Members}}
+            {{enum_member($mem)}},
+        {{end}}
+    }
+{{end}}
+
+{{func enum_member(decl)}}
+    {{summary(decl.Documentation)}}
+    {{case decl.ValueDiscriminator}}
+    {{when 'Int'}}
+        {{decl.Name}} = {{decl.Value}}
+    {{when 'String'}}
+        [EnumMember(Value = {{string.literal(decl.Value)}})]
+        {{decl.Name}}
+    {{end}}
 {{end}}
 
 {{func declaration(decl)}}

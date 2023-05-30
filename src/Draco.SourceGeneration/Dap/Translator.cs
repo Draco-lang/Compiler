@@ -53,7 +53,11 @@ internal sealed class Translator
         var types = this.sourceModel.RootElement
             .GetProperty("definitions")
             .EnumerateObject();
-        foreach (var prop in types) this.TranslateDeclarationByPath($"#/definitions/{prop.Name}");
+        foreach (var prop in types)
+        {
+            var type = this.TranslateDeclarationByPath($"#/definitions/{prop.Name}");
+            if (type is DeclarationType declType) this.targetModel.Declarations.Add(declType.Declaration);
+        }
 
         return this.targetModel;
     }
@@ -81,8 +85,19 @@ internal sealed class Translator
         // Class type with inheritance
         if (element.TryGetProperty("allOf", out var allOfElements))
         {
-            // TODO
-            throw new NotImplementedException($"not implemented declaration {nameHint}");
+            // Assume first element is the base type by ref
+            // Second is the derived class
+            var parts = allOfElements.EnumerateArray().ToList();
+            // Extract base path
+            if (!TryGetRef(parts[0], out var basePath)) throw new InvalidOperationException($"allOf type {nameHint} did not follow the assumed pattern");
+            // Build derived type
+            var derivedType = this.TranslateType(parts[1], nameHint: nameHint, parent: parent, path: path);
+            // Connect up
+            var derivedClass = (Class)((DeclarationType)derivedType).Declaration;
+            var baseType = this.TranslateDeclarationByPath(basePath);
+            var baseClass = (Class)((DeclarationType)baseType).Declaration;
+            derivedClass.Base = baseClass;
+            return derivedType;
         }
 
         // Enum

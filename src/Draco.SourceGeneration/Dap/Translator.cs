@@ -250,24 +250,42 @@ internal sealed class Translator
 
         if (element.TryGetProperty("properties", out var props))
         {
+            var requiredPropNames = element.TryGetProperty("required", out var reqProps)
+                ? reqProps.EnumerateArray().Select(e => e.GetString()!).ToHashSet()
+                : new HashSet<string>();
+
             foreach (var prop in props.EnumerateObject())
             {
                 var translatedProp = this.TranslatePropertyDeclaration(prop.Name, prop.Value, parent: result);
+                if (translatedProp is null) continue;
+
                 ExtractDocumentation(prop.Value, translatedProp);
                 result.Properties.Add(translatedProp);
+
+                if (!requiredPropNames.Contains(translatedProp.SerializedName))
+                {
+                    // Optional prop
+                    translatedProp.OmitIfNull = true;
+                    if (translatedProp.Type is not NullableType) translatedProp.Type = new NullableType(translatedProp.Type);
+                }
             }
         }
 
         return result;
     }
 
-    private Property TranslatePropertyDeclaration(string name, JsonElement element, Class parent)
+    private Property? TranslatePropertyDeclaration(string name, JsonElement element, Class parent)
     {
         var result = new Property()
         {
             Name = ToPascalCase(name),
             SerializedName = name,
         };
+
+        // Check if it exists in the base class
+        var inBase = parent.Base?.Properties.FirstOrDefault(p => p.SerializedName == result.SerializedName);
+        if (inBase is not null) return null;
+
         // Adjust name to avoid name collisions
         if (parent.Name == result.Name) result.Name = $"{result.Name}_";
 

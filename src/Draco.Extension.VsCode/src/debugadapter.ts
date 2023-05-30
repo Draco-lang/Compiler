@@ -23,7 +23,7 @@ class DebugAdapterDotnetToolFactory implements vscode.DebugAdapterDescriptorFact
     createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
         return new vscode.DebugAdapterExecutable(
             DracoDebugAdapterCommandName,
-            ['--stdio'],
+            ['run', '--stdio'],
             undefined);
     }
 }

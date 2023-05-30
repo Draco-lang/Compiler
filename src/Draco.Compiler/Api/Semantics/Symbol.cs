@@ -303,6 +303,7 @@ internal sealed class LabelSymbol : SymbolBase<Internal.Symbols.LabelSymbol>, IL
 internal sealed class TypeSymbol : SymbolBase<Internal.Symbols.TypeSymbol>, ITypeSymbol
 {
     public bool IsStatic => this.Symbol.IsStatic;
+
     public TypeSymbol(Internal.Symbols.TypeSymbol type)
         : base(type)
     {

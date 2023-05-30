@@ -18,6 +18,16 @@ const DracoLangserverToolName = 'Draco.LanguageServer';
 const DracoLangserverCommandName = 'draco-langserver';
 
 /**
+ * The debug adapter package name.
+ */
+export const DracoDebugAdapterToolName = 'Draco.DebugAdapter';
+
+/**
+ * The debug adapter command that can be used to start it up.
+ */
+export const DracoDebugAdapterCommandName = 'draco-debugadapter';
+
+/**
  * Reads options for the language server.
  * The settings are also validated accordingly, and prompted for editing if needed.
  * @returns The read out @see ServerOptions, or @constant undefined, if the language server

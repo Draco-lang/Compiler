@@ -48,12 +48,36 @@ internal sealed class Translator
     /// <returns>The translated C# model.</returns>
     public Model Translate()
     {
+        // Translate definitions
         var types = this.sourceModel.RootElement
             .GetProperty("definitions")
             .EnumerateObject();
         foreach (var prop in types) this.TranslateByPath($"#/definitions/{prop.Name}");
 
+        // Fix property names in types
+        foreach (var c in this.translatedTypes.Values) this.RenameCollidingPropertyNames(c);
+
+        // Fix overrides
+        foreach (var c in this.translatedTypes.Values) this.CopyOverridenPropertyNames(c);
+
         return this.targetModel;
+    }
+
+    private void RenameCollidingPropertyNames(Class @class)
+    {
+        foreach (var prop in @class.Properties)
+        {
+            if (prop.Name == @class.Name) prop.Name = $"{prop.Name}_";
+        }
+    }
+
+    private void CopyOverridenPropertyNames(Class @class)
+    {
+        foreach (var prop in @class.Properties)
+        {
+            if (prop.Overrides is null) continue;
+            prop.Name = prop.Overrides.Name;
+        }
     }
 
     private Class TranslateByPath(string path)
@@ -109,9 +133,6 @@ internal sealed class Translator
                         Name = ToPascalCase(prop.Name),
                     };
 
-                    // Fix name in case of a collision
-                    // if (targetProp.Name == targetType.Name) targetProp.Name = $"{targetProp.Name}_";
-
                     // Type
                     this.TranslateProperty(prop.Value, targetProp, targetType);
                     targetType.Properties.Add(targetProp);
@@ -162,7 +183,7 @@ internal sealed class Translator
             {
                 // Mark the one in the base abstract, implement here
                 inBase.IsAbstract = true;
-                targetProperty.IsOverride = true;
+                targetProperty.Overrides = inBase;
                 parent.Base!.IsAbstract = true;
             }
             else

@@ -35,9 +35,9 @@ public sealed class Property : Declaration
     public bool IsAbstract { get; set; }
 
     /// <summary>
-    /// True, if this is an overriding property.
+    /// The property this one overrides.
     /// </summary>
-    public bool IsOverride { get; set; }
+    public Property? Overrides { get; set; }
 
     /// <summary>
     /// The value of the enumeration member.

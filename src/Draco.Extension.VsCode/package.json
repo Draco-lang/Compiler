@@ -13,12 +13,15 @@
     "vscode": "^1.72.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Debuggers"
   ],
   "activationEvents": [
     "onLanguage:draco",
     "workspaceContains:**/*.draco",
-    "workspaceContains:**/*.dracoproj"
+    "workspaceContains:**/*.dracoproj",
+    "onDebugInitialConfigurations",
+    "onDebugResolve:draco"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -95,7 +98,18 @@
           "description": "Show variable type hints."
         }
       }
-    }
+    },
+    "breakpoints": [{ "language": "draco" }],
+    "debuggers": [
+      {
+        "type": "draco",
+        "label": "Draco Debug",
+
+        "configurationAttributes": {},
+
+        "configurationSnippets": []
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

@@ -27,16 +27,16 @@ internal static class Program
     {
         var stdioFlag = new Option<bool>(name: "--stdio", description: "A flag to set the transportation option to stdio");
 
-        var runCommand = new Command("run", "Runs the language server")
+        var runCommand = new Command("run", "Runs the debug adapter")
         {
             stdioFlag,
         };
         runCommand.SetHandler(RunAdapterAsync, stdioFlag);
 
-        var checkForUpdatesCommand = new Command("check-for-updates", "Checks for language server updates");
+        var checkForUpdatesCommand = new Command("check-for-updates", "Checks for debug adapter updates");
         checkForUpdatesCommand.SetHandler(CheckForUpdatesAsync);
 
-        var rootCommand = new RootCommand("Language Server for Draco");
+        var rootCommand = new RootCommand("Debug Adapter for Draco");
         rootCommand.AddCommand(runCommand);
         rootCommand.AddCommand(checkForUpdatesCommand);
 

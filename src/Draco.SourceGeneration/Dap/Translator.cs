@@ -224,6 +224,7 @@ internal sealed class Translator
         {
             var member = new EnumMember()
             {
+                DeclaringEnum = result,
                 Name = ToPascalCase(members[i].Replace(' ', '_')),
                 Documentation = docs?[i],
                 Value = members[i],
@@ -297,6 +298,14 @@ internal sealed class Translator
             prop.Name = baseProp.Name;
             baseProp.IsAbstract = true;
             @class.Base.IsAbstract = true;
+
+            // If the derived property has a value that is a string, but the type is now an enum,
+            // it means that the property specializes an enum member, replace
+            if (prop.Value is string && baseProp.Type is DeclarationType { Declaration: Enum baseEnum })
+            {
+                var baseEnumMember = baseEnum.Members.First(m => prop.Value.Equals(m.Value));
+                prop.Value = baseEnumMember;
+            }
         }
     }
 

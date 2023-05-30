@@ -45,6 +45,7 @@ public sealed class Property : Declaration
     public string ValueDiscriminator => this.Value switch
     {
         string => "String",
+        EnumMember => "Enum",
         _ => throw new ArgumentOutOfRangeException(),
     };
 }

@@ -58,9 +58,9 @@ internal sealed class Translator
         return this.targetModel;
     }
 
-    private Declaration TranslateDeclarationByPath(string path)
+    private Type TranslateDeclarationByPath(string path)
     {
-        if (this.translatedTypes.TryGetValue(path, out var existing)) return existing;
+        if (this.translatedTypes.TryGetValue(path, out var existing)) return new DeclarationType(existing);
 
         if (!path.StartsWith("#/definitions/")) throw new ArgumentException($"only definition references are supported, {path} is not one");
         var pathParts = path.Split('/');
@@ -73,36 +73,59 @@ internal sealed class Translator
             .FirstOrDefault(prop => prop.Name == typeName);
         if (typeToTranslate.Name is null) throw new KeyNotFoundException($"the type {typeName} could not be found for translation");
 
-        return this.TranslateDeclaration(typeToTranslate.Name, typeToTranslate.Value, path: path);
+        return this.TranslateType(typeToTranslate.Value, nameHint: typeToTranslate.Name, parent: null, path: path);
     }
 
-    private Declaration TranslateDeclaration(string name, JsonElement element, string? path)
+    private Type TranslateType(JsonElement element, string? nameHint, Class? parent, string? path)
     {
         // Class type with inheritance
         if (element.TryGetProperty("allOf", out var allOfElements))
         {
             // TODO
-            throw new NotImplementedException($"not implemented declaration {name}");
+            throw new NotImplementedException($"not implemented declaration {nameHint}");
         }
 
         // Enum
         if (TryGetEnum(element, out var enumMembers, out var enumDocs) && enumMembers.Count > 1)
         {
-            var result = this.TranslateEnumDeclaration(name, enumMembers, enumDocs, path: path);
+            if (nameHint is null) throw new ArgumentNullException(nameof(nameHint));
+            var result = this.TranslateEnumDeclaration(nameHint, enumMembers, enumDocs, path: path);
             ExtractDocumentation(element, result);
-            return result;
+            return new DeclarationType(result);
         }
 
         // Tagged type
         if (element.TryGetProperty("type", out var typeTag))
         {
-            var typeName = typeTag.GetString();
-            // TODO
-            throw new NotImplementedException($"not implemented tag {typeName} for {name}");
+            if (typeTag.ValueKind == JsonValueKind.String)
+            {
+                var typeName = typeTag.GetString();
+                if (typeName == "object")
+                {
+                    // Class type
+                    if (nameHint is null) throw new ArgumentNullException(nameof(nameHint));
+                    var name = parent is null
+                        ? nameHint
+                        : $"{ExtractNamePrefix(parent.Name)}{nameHint}";
+                    var result = this.TranslateClassDeclaration(name, element, parent: parent, path: path);
+                    ExtractDocumentation(element, result);
+                    return new DeclarationType(result);
+                }
+                else
+                {
+                    // TODO
+                    throw new NotImplementedException($"not implemented tag {typeName} for {nameHint}");
+                }
+            }
+            else
+            {
+                // TODO
+                throw new NotImplementedException($"not implemented type {typeTag.GetRawText()}");
+            }
         }
 
         // Unknown
-        throw new NotImplementedException($"can not recognize type {name}");
+        throw new NotImplementedException($"can not recognize type {nameHint}");
     }
 
     private Enum TranslateEnumDeclaration(
@@ -125,6 +148,20 @@ internal sealed class Translator
             };
             result.Members.Add(member);
         }
+
+        return result;
+    }
+
+    private Class TranslateClassDeclaration(string name, JsonElement element, Class? parent, string? path)
+    {
+        var result = new Class()
+        {
+            Name = name,
+            Parent = parent,
+        };
+        if (path is not null) this.translatedTypes.Add(path, result);
+
+        // TODO: props
 
         return result;
     }

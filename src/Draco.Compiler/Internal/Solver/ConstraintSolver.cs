@@ -145,17 +145,17 @@ internal sealed class ConstraintSolver
     /// <returns>The promise that is resolved, when <paramref name="awaited"/>.</returns>
     public IConstraintPromise<TResult> Await<TAwaitedResult, TResult>(
         IConstraintPromise<TAwaitedResult> awaited,
-        Func<TAwaitedResult, TResult> map)
+        Func<TResult> map)
     {
         if (awaited.IsResolved)
         {
             // If resolved, don't bother with indirections
-            var constraint = map(awaited.Result);
+            var constraint = map();
             return ConstraintPromise.FromResult(constraint);
         }
         else
         {
-            var constraint = new AwaitConstraint<TAwaitedResult, TResult>(this, awaited.Constraint, map);
+            var constraint = new AwaitConstraint<TAwaitedResult, TResult>(this, () => awaited.IsResolved, map);
             this.Add(constraint);
             return constraint.Promise;
         }
@@ -167,11 +167,11 @@ internal sealed class ConstraintSolver
     /// <param name="original">The original type, usually a type variable.</param>
     /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
     /// <returns>The promise of the type symbol symbol.</returns>
-    public IConstraintPromise<TResult> Type<TResult>(TypeSymbol original, Func<TypeSymbol, IConstraintPromise<TResult>> map)
+    public IConstraintPromise<T> Type<TResult, T>(TypeSymbol original, Func<TResult> map) where TResult : IConstraintPromise<T>
     {
-        var constraint = new TypeConstraint<TResult>(this, original, map);
+        var constraint = new AwaitConstraint<TypeSymbol, TResult>(this, () => !this.Unwrap(original).IsTypeVariable, map);
         this.Add(constraint);
-        return ConstraintPromise.Unwrap(constraint.Promise);
+        return ConstraintPromise.Unwrap<T>(constraint.Promise);
     }
 
     /// <summary>

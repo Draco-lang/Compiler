@@ -19,9 +19,6 @@ public abstract class SemanticTestsBase
     private protected static TMember GetMemberSymbol<TMember>(Symbol parent, string memberName) where TMember : Symbol =>
         (TMember)parent.Members.Single(x => x.Name == memberName);
 
-    private protected static TMember GetTypeMemberSymbol<TMember>(Internal.Symbols.ITypedSymbol parent, string memberName) where TMember : Symbol =>
-        (TMember)parent.Type.Members.Single(x => x.Name == memberName);
-
     private protected static Binder GetDefiningScope(Compilation compilation, Symbol? symbol)
     {
         Assert.NotNull(symbol);

@@ -241,10 +241,10 @@ internal partial class Binder
         {
             // The binding is delayed, we have to delay this as well
             var promisedType = constraints.AllocateTypeVariable();
-            var promise = constraints.Await(delayed.Promise, UntypedExpression (resolved) =>
+            var promise = constraints.Await(delayed.Promise, () =>
             {
                 // Retry binding with the resolved variant
-                var call = this.BindCallExpression(syntax, resolved, args, constraints, diagnostics);
+                var call = this.BindCallExpression(syntax, delayed.Promise.Result, args, constraints, diagnostics);
                 constraints.Unify(promisedType, call.TypeRequired);
                 return call;
             });
@@ -271,8 +271,9 @@ internal partial class Binder
             // otherwise this becomes an indirect call
 
             var promisedType = constraints.AllocateTypeVariable();
-            var promise = constraints.Await(mem.Member, UntypedExpression (members) =>
+            var promise = constraints.Await<ImmutableArray<Symbol>, UntypedExpression>(mem.Member, () =>
             {
+                var members = mem.Member.Result;
                 if (members.All(m => m is FunctionSymbol))
                 {
                     // Overloaded member call
@@ -528,9 +529,9 @@ internal partial class Binder
         }
         var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
         var returnType = constraints.AllocateTypeVariable();
-        var promise = constraints.Type(receiver.TypeRequired, t =>
+        var promise = constraints.Type<IConstraintPromise<FunctionSymbol>, FunctionSymbol>(receiver.TypeRequired, () =>
         {
-            var indexers = t.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Getter).OfType<FunctionSymbol>().ToImmutableArray();
+            var indexers = constraints.Unwrap(receiver.TypeRequired).Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Getter).OfType<FunctionSymbol>().ToImmutableArray();
             if (indexers.Length == 0)
             {
                 diagnostics.Add(Diagnostic.Create(
@@ -591,8 +592,9 @@ internal partial class Binder
             // We are playing the same game as with call expression
             // A member access has to be delayed to get resolved
 
-            var promise = constraints.Await(member.Member, UntypedExpression (members) =>
+            var promise = constraints.Await<ImmutableArray<Symbol>, UntypedExpression>(member.Member, () =>
             {
+                var members = member.Member.Result;
                 // Search for all function members with the same number of generic parameters
                 var withSameNoParams = members
                     .OfType<FunctionSymbol>()

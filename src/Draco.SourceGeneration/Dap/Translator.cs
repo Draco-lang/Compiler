@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -82,6 +83,9 @@ internal sealed class Translator
 
     private Type TranslateType(JsonElement element, string? nameHint, Class? parent, string? path)
     {
+        // Builtin type
+        if (element.ValueKind == JsonValueKind.String) return this.builtinTypes[element.GetString()!];
+
         // Reference type
         if (TryGetRef(element, out var typePath)) return this.TranslateDeclarationByPath(typePath);
 
@@ -101,6 +105,13 @@ internal sealed class Translator
             var baseClass = (Class)((DeclarationType)baseType).Declaration;
             derivedClass.Base = baseClass;
             return derivedType;
+        }
+
+        // DU in yet another form
+        if (element.TryGetProperty("oneOf", out var oneOfElements))
+        {
+            var elements = oneOfElements.EnumerateArray().ToList();
+            return this.TranslateDiscriminatedUnionType(elements, nameHint: nameHint, parent: parent);
         }
 
         // Enum
@@ -148,6 +159,11 @@ internal sealed class Translator
                 // TODO
                 return new CsModel.BuiltinType($"Unknown<{typeTag.GetRawText()}>");
             }
+            if (typeTag.ValueKind == JsonValueKind.Array)
+            {
+                var elements = typeTag.EnumerateArray().ToList();
+                return this.TranslateDiscriminatedUnionType(elements, nameHint: nameHint, parent: parent);
+            }
             else
             {
                 // TODO
@@ -159,6 +175,35 @@ internal sealed class Translator
         return new CsModel.BuiltinType($"Unknown<{element.GetRawText()}>");
         // Unknown
         throw new NotImplementedException($"can not recognize type {element.GetRawText()}");
+    }
+
+    private Type TranslateDiscriminatedUnionType(
+        IReadOnlyList<JsonElement> alternatives,
+        string? nameHint,
+        Class? parent)
+    {
+        // Assume any
+        if (alternatives.Count >= 7) return this.builtinTypes["any"];
+
+        // If there's only one left, not a DU
+        if (alternatives.Count == 1) return this.TranslateType(alternatives[0], nameHint: nameHint, parent: parent, path: null);
+
+        // Check, if there's a null among them
+        if (alternatives.Any(IsNullString))
+        {
+            // Translate the rest and make it nullable
+            var nonNullAlternatives = alternatives
+                .Where(a => !IsNullString(a))
+                .ToList();
+            var subtype = this.TranslateDiscriminatedUnionType(nonNullAlternatives, nameHint: nameHint, parent: parent);
+            return new NullableType(subtype);
+        }
+
+        // Regular DU
+        var translatedAlternatives = alternatives
+            .Select(a => this.TranslateType(a, nameHint: nameHint, parent: parent, path: null))
+            .ToImmutableArray();
+        return new DiscriminatedUnionType(translatedAlternatives);
     }
 
     private Enum TranslateEnumDeclaration(
@@ -178,7 +223,7 @@ internal sealed class Translator
         {
             var member = new EnumMember()
             {
-                Name = ToPascalCase(members[i]),
+                Name = ToPascalCase(members[i].Replace(' ', '_')),
                 Documentation = docs?[i],
                 Value = members[i],
             };
@@ -223,6 +268,8 @@ internal sealed class Translator
             Name = ToPascalCase(name),
             SerializedName = name,
         };
+        // Adjust name to avoid name collisions
+        if (parent.Name == result.Name) result.Name = $"{result.Name}_";
 
         // Translate the type
         result.Type = this.TranslateType(element, nameHint: result.Name, parent: parent, path: null);

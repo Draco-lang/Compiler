@@ -318,6 +318,11 @@ internal sealed class Translator
            element.ValueKind == JsonValueKind.String
         && element.GetString() == "null";
 
+    /// <summary>
+    /// Translates a snake_case name to PascalCase.
+    /// </summary>
+    /// <param name="name">The name to translate.</param>
+    /// <returns>The PascalCase version of <paramref name="name"/>.</returns>
     private static string ToPascalCase(string name)
     {
         var parts = name.Split('_');

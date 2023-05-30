@@ -6,12 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Model\OneOf.xml" />
+    <AdditionalFiles Include="Model\DapModel.xml" />
+    <AdditionalFiles Include="Model\OneOf.xml" />
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="Model\DapModel.xml" />
-    <AdditionalFiles Include="Model\OneOf.xml" />
+    <PackageReference Include="System.IO.Pipelines" Version="7.0.0" />
   </ItemGroup>
   
   <ItemGroup>

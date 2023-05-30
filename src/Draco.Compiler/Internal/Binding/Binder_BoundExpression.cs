@@ -233,7 +233,7 @@ internal partial class Binder
                 index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray());
         }
 
-        else if (assignment.Left is UntypedMemberLvalue mem && mem.Expression.Member.Result[0] is PropertySymbol pr)
+        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
         {
             var setter = pr.Setter;
             if (setter is null)
@@ -247,10 +247,10 @@ internal partial class Binder
             return new BoundPropertySetExpression(
                 assignment.Syntax,
                 setter!,
-                this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics),
+                this.TypeExpression(mem.Accessed, constraints, diagnostics),
                 compoundOperator is not null
                     ? this.CompoundPropertyExpression(assignment.Syntax,
-                        this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics),
+                        this.TypeExpression(mem.Accessed, constraints, diagnostics),
                         typedRight,
                         pr,
                         compoundOperator,

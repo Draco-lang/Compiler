@@ -167,11 +167,11 @@ internal sealed class ConstraintSolver
     /// <param name="original">The original type, usually a type variable.</param>
     /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
     /// <returns>The promise of the type symbol symbol.</returns>
-    public IConstraintPromise<T> Type<TResult, T>(TypeSymbol original, Func<TResult> map) where TResult : IConstraintPromise<T>
+    public IConstraintPromise<TResult> Type<TResult>(TypeSymbol original, Func<IConstraintPromise<TResult>> map)
     {
-        var constraint = new AwaitConstraint<TypeSymbol, TResult>(this, () => !this.Unwrap(original).IsTypeVariable, map);
+        var constraint = new AwaitConstraint<TypeSymbol, IConstraintPromise<TResult>>(this, () => !this.Unwrap(original).IsTypeVariable, map);
         this.Add(constraint);
-        return ConstraintPromise.Unwrap<T>(constraint.Promise);
+        return ConstraintPromise.Unwrap(constraint.Promise);
     }
 
     /// <summary>

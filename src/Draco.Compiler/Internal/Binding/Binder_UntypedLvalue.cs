@@ -109,7 +109,7 @@ internal partial class Binder
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType);
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
-            return new UntypedMemberLvalue(syntax, new UntypedMemberExpression(syntax, left, memberType, promise));
+            return new UntypedMemberLvalue(syntax, left, memberType, promise);
         }
     }
 
@@ -132,9 +132,9 @@ internal partial class Binder
         }
         var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
         var returnType = constraints.AllocateTypeVariable();
-        var promise = constraints.Type(receiver.TypeRequired, t =>
+        var promise = constraints.Type(receiver.TypeRequired, () =>
         {
-            var indexers = t.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Setter).OfType<FunctionSymbol>().ToImmutableArray();
+            var indexers = constraints.Unwrap(receiver.TypeRequired).Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Setter).OfType<FunctionSymbol>().ToImmutableArray();
             if (indexers.Length == 0)
             {
                 diagnostics.Add(Diagnostic.Create(

@@ -154,7 +154,7 @@ internal partial class UntypedPropertySetLvalue
 
 internal partial class UntypedMemberLvalue
 {
-    public override TypeSymbol Type => this.Expression.MemberType;
+    public override TypeSymbol Type => this.MemberType;
 }
 
 internal partial class UntypedLvalue

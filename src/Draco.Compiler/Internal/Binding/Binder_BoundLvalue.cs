@@ -49,8 +49,8 @@ internal partial class Binder
 
     private BoundLvalue TypeMemberLvalue(UntypedMemberLvalue mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var left = this.TypeExpression(mem.Expression.Accessed, constraints, diagnostics);
-        var members = mem.Expression.Member.Result;
+        var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
+        var members = mem.Member.Result;
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
             if (member is FieldSymbol field)

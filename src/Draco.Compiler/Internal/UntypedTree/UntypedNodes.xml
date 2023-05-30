@@ -244,6 +244,8 @@
   </Node>
 
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">
-    <Field Name="Expression" Type="UntypedMemberExpression"/>
+    <Field Name="Accessed" Type="UntypedExpression" />
+    <Field Name="MemberType" Type="TypeSymbol" />
+    <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
   </Node>
 </Tree>

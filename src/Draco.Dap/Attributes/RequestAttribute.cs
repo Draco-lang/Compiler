@@ -1,6 +1,6 @@
 using System;
 
-namespace Draco.Lsp.Attributes;
+namespace Draco.Dap.Attributes;
 
 /// <summary>
 /// Annotates a JSON-RPC request.

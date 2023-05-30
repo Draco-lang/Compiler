@@ -106,8 +106,13 @@ internal sealed class Translator
                     var targetProp = new Property
                     {
                         SerializedName = prop.Name,
-                        Name = Capitalize(prop.Name),
+                        Name = ToPascalCase(prop.Name),
                     };
+
+                    // Fix name in case of a collision
+                    // if (targetProp.Name == targetType.Name) targetProp.Name = $"{targetProp.Name}_";
+
+                    // Type
                     this.TranslateProperty(prop.Value, targetProp, targetType);
                     targetType.Properties.Add(targetProp);
                 }
@@ -146,6 +151,7 @@ internal sealed class Translator
         {
             var value = values.EnumerateArray().First().GetString();
             targetProperty.Value = value;
+            targetProperty.Required = false;
         }
 
         // For props where the base type has a different type for the same prop, we erase it from base
@@ -154,8 +160,10 @@ internal sealed class Translator
         {
             if (inBase.Type == targetProperty.Type)
             {
-                // Delete it here, it's inherited
-                // TODO
+                // Mark the one in the base abstract, implement here
+                inBase.IsAbstract = true;
+                targetProperty.IsOverride = true;
+                parent.Base!.IsAbstract = true;
             }
             else
             {
@@ -288,6 +296,18 @@ internal sealed class Translator
     private static bool IsNull(JsonElement element) =>
            element.ValueKind == JsonValueKind.String
         && element.GetString() == "null";
+
+    private static string ToPascalCase(string name)
+    {
+        var parts = name.Split('_');
+        var result = new StringBuilder();
+        foreach (var part in parts)
+        {
+            if (part.Length == 0) result.Append('_');
+            else result.Append(Capitalize(part));
+        }
+        return result.ToString();
+    }
 
     /// <summary>
     /// Extracts a suffix from a name, which is the last capitalized word in it.

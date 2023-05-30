@@ -30,6 +30,16 @@ public sealed class Property : Declaration
     public bool Required { get; set; }
 
     /// <summary>
+    /// True, if this is an abstract property.
+    /// </summary>
+    public bool IsAbstract { get; set; }
+
+    /// <summary>
+    /// True, if this is an overriding property.
+    /// </summary>
+    public bool IsOverride { get; set; }
+
+    /// <summary>
     /// The value of the enumeration member.
     /// </summary>
     public object? Value { get; set; }

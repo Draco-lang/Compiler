@@ -41,22 +41,36 @@ namespace Draco.Dap.Model;
     {{if !decl.OmitIfNull}}
         [JsonRequired]
     {{end}}
-    public {{if decl.Required}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
+    public
+    {{if decl.IsAbstract}}abstract{{end}}
+    {{if decl.IsOverride}}override{{end}}
+    {{$use_required_modifier = !decl.IsAbstract && !decl.IsOverride}}
+    {{if $use_required_modifier}}required{{end}}
+    {{type(decl.Type)}} {{decl.Name}}
     {{if decl.Value}}
-        =>
-        {{case decl.ValueDiscriminator}}
-        {{when 'String'}}
-            {{string.literal(decl.Value)}}
+        {{if decl.IsAbstract}}
+            get;
+        {{else}}
+            =>
+            {{case decl.ValueDiscriminator}}
+            {{when 'String'}}
+                {{string.literal(decl.Value)}}
+            {{end}}
+            ;
         {{end}}
-        ;
     {{else}}
-        { get; set; }
+        {
+            get;
+            {{if !decl.IsAbstract}}set;{{end}}
+        }
     {{end}}
 {{end}}
 
 {{func class(cl)}}
     {{summary(cl.Documentation)}}
-    public class {{cl.Name}} {{base(cl.Base)}}
+    public
+    {{if cl.IsAbstract}}abstract{{end}}
+    class {{cl.Name}} {{base(cl.Base)}}
     {
         {{for $nested in cl.NestedClasses}}
             {{class($nested)}}

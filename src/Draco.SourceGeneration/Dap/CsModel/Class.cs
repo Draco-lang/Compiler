@@ -20,6 +20,11 @@ public sealed class Class : Declaration
     public Class? Parent { get; set; }
 
     /// <summary>
+    /// True, if this is an abstract class.
+    /// </summary>
+    public bool IsAbstract { get; set; }
+
+    /// <summary>
     /// The classes this class has nested within it.
     /// </summary>
     public IList<Class> NestedClasses { get; set; } = new List<Class>();

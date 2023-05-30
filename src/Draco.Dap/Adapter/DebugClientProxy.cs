@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 
 namespace Draco.Dap.Adapter;
@@ -12,6 +13,17 @@ internal class DebugClientProxy : DispatchProxy
 
     protected override object? Invoke(MethodInfo? method, object?[]? args)
     {
-        return null;
+        ArgumentNullException.ThrowIfNull(method, nameof(method));
+        ArgumentNullException.ThrowIfNull(args, nameof(args));
+
+        if (method.Name == $"get_{nameof(IDebugClient.Connection)}")
+        {
+            return this.Connection;
+        }
+        else
+        {
+            // TODO: RPC proxy calls
+            return null;
+        }
     }
 }

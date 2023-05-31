@@ -18,10 +18,17 @@ namespace Draco.SourceGeneration.Dap;
 /// </summary>
 internal sealed class Translator
 {
+    private static readonly string[] basicStructures = new[]
+    {
+        "ProtocolMessage",
+        "Request",
+        "Response",
+        "Event",
+    };
+
     private readonly JsonDocument sourceModel;
     private readonly Model targetModel = new();
-    private readonly Dictionary<string, Type> builtinTypes = new();
-    private readonly Dictionary<string, Declaration> translatedTypes = new();
+    private readonly Dictionary<string, Type> translatedTypes = new();
 
     public Translator(JsonDocument sourceModel)
     {
@@ -42,7 +49,7 @@ internal sealed class Translator
     /// <param name="name">The name of the type.</param>
     /// <param name="fullName">The full name of the type.</param>
     public void AddBuiltinType(string name, string fullName) =>
-        this.builtinTypes.Add(name, new CsModel.BuiltinType(fullName));
+        this.translatedTypes.Add(name, new CsModel.BuiltinType(fullName));
 
     /// <summary>
     /// Translated the source model to a C# model.
@@ -50,12 +57,22 @@ internal sealed class Translator
     /// <returns>The translated C# model.</returns>
     public Model Translate()
     {
-        // Translate definitions
+        // Get all definitions in the schema
         var types = this.sourceModel.RootElement
             .GetProperty("definitions")
             .EnumerateObject();
 
-        // TODO
+        foreach (var type in types)
+        {
+            var typeName = type.Name;
+            var typeDesc = type.Value;
+
+            // We skip basic structures
+            if (basicStructures.Contains(typeName)) continue;
+
+            // We skip requests, as all of their content is already among definitions as arguments
+            if (typeName.EndsWith("Request")) continue;
+        }
 
         return this.targetModel;
     }

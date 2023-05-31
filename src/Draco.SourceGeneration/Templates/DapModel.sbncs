@@ -42,11 +42,7 @@ namespace Draco.Dap.Model;
     {{if !decl.OmitIfNull && !decl.Value}}
         [JsonRequired]
     {{end}}
-    public
-    {{if decl.IsAbstract}}abstract{{end}}
-    {{if decl.Overrides}}override{{end}}
-    {{$use_required_modifier = !decl.IsAbstract && !decl.Overrides && decl.IsRequired}}
-    {{if $use_required_modifier}}required{{end}}
+    public required
     {{type(decl.Type)}} {{decl.Name}}
     {{if decl.Value}}
         {{if decl.IsAbstract}}
@@ -56,28 +52,17 @@ namespace Draco.Dap.Model;
             {{case decl.ValueDiscriminator}}
             {{when 'String'}}
                 {{string.literal(decl.Value)}}
-            {{when 'Enum'}}
-                {{decl.Value.DeclaringEnum.Name}}.{{decl.Value.Name}}
             {{end}}
             ;
         {{end}}
     {{else}}
-        {
-            get;
-            {{if !decl.IsAbstract}}set;{{end}}
-        }
+        { get; set; }
     {{end}}
 {{end}}
 
 {{func class(cl)}}
-    public
-    {{if cl.IsAbstract}}abstract{{end}}
-    class {{cl.Name}} {{base(cl.Base)}}
+    public class {{cl.Name}} {{base(cl.Base)}}
     {
-        {{for $nested in cl.NestedDeclarations}}
-            {{declaration($nested)}}
-        {{end}}
-
         {{for $prop in cl.Properties}}
             {{property($prop)}}
         {{end}}

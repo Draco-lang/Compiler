@@ -11,5 +11,5 @@ namespace Draco.Dap.Adapter.Basic;
 public interface IBreakpoints
 {
     [Request("setBreakpoints", Mutating = true)]
-    public Task<SetBreakpointsResponse> SetBreakpoints(SetBreakpointsArguments args);
+    public Task<SetBreakpointsResponse> SetBreakpointsAsync(SetBreakpointsArguments args);
 }

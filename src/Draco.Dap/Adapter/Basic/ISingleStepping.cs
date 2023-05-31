@@ -11,11 +11,11 @@ namespace Draco.Dap.Adapter.Basic;
 public interface ISingleStepping
 {
     [Request("stepIn")]
-    public Task<StepInResponse> StepInto(StepInArguments args);
+    public Task<StepInResponse> StepIntoAsync(StepInArguments args);
 
     [Request("next")]
-    public Task<NextResponse> StepOver(NextArguments args);
+    public Task<NextResponse> StepOverAsync(NextArguments args);
 
     [Request("stepOut")]
-    public Task<StepOutResponse> StepOut(StepOutArguments args);
+    public Task<StepOutResponse> StepOutAsync(StepOutArguments args);
 }

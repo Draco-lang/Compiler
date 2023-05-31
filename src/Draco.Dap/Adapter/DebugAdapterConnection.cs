@@ -13,6 +13,8 @@ using System.Diagnostics.CodeAnalysis;
 using Draco.Dap.Serialization;
 using System.Reflection;
 
+using DapMessage = Draco.Dap.Model.OneOf<Draco.Dap.Model.RequestMessage, Draco.Dap.Model.EventMessage, Draco.Dap.Model.ResponseMessage>;
+
 namespace Draco.Dap.Adapter;
 
 public sealed class DebugAdapterConnection
@@ -24,7 +26,7 @@ public sealed class DebugAdapterConnection
 
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
-        Converters = { new ProtocolMessageConverter() },
+        Converters = { },
     };
 
     public DebugAdapterConnection(IDuplexPipe transport)
@@ -47,11 +49,11 @@ public sealed class DebugAdapterConnection
         }
     }
 
-    private async IAsyncEnumerable<ProtocolMessage> DeserializeFromTransport()
+    private async IAsyncEnumerable<DapMessage> DeserializeFromTransport()
     {
         while (true)
         {
-            ProtocolMessage? message;
+            DapMessage? message;
 
             try
             {
@@ -76,7 +78,7 @@ public sealed class DebugAdapterConnection
 
             if (message is not null)
             {
-                yield return message;
+                yield return message.Value;
             }
             else
             {
@@ -85,7 +87,7 @@ public sealed class DebugAdapterConnection
         }
     }
 
-    private async Task<ProtocolMessage?> ReadDapMessage()
+    private async Task<DapMessage?> ReadDapMessage()
     {
         var contentLength = -1;
         var reader = this.transport.Input;
@@ -119,7 +121,7 @@ public sealed class DebugAdapterConnection
         return null;
     }
 
-    private static bool TryParseMessage(ref ReadOnlySequence<byte> buffer, ref int contentLength, [MaybeNullWhen(false)] out ProtocolMessage message)
+    private static bool TryParseMessage(ref ReadOnlySequence<byte> buffer, ref int contentLength, out DapMessage message)
     {
         var reader = new SequenceReader<byte>(buffer);
 
@@ -133,7 +135,7 @@ public sealed class DebugAdapterConnection
                     buffer = buffer.Slice(reader.Position, reader.Position);
 
                     var jsonReader = new Utf8JsonReader(utf8Json);
-                    message = JsonSerializer.Deserialize<ProtocolMessage>(ref jsonReader, jsonOptions)!;
+                    message = JsonSerializer.Deserialize<DapMessage>(ref jsonReader, jsonOptions)!;
                     return true;
                 }
                 else

@@ -25,13 +25,10 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
         this.connection = connection;
     }
 
-    public async Task<InitializeResponse> InitializeAsync(InitializeRequestArguments args)
+    public async Task<Capabilities> InitializeAsync(InitializeRequestArguments args)
     {
         await this.adapter.InitializeAsync(args);
-        return new InitializeResponse()
-        {
-            Body = this.BuildAdapterCapabilities(),
-        };
+        return this.BuildAdapterCapabilities();
     }
 
     private Capabilities BuildAdapterCapabilities()

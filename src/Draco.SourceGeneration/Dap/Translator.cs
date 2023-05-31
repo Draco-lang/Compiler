@@ -126,13 +126,11 @@ internal sealed class Translator
         if (this.translatedTypes.TryGetValue(name, out var existing)) return existing;
 
         // Get all definitions in the schema
-        var types = this.sourceModel.RootElement
-            .GetProperty("definitions")
-            .EnumerateObject();
+        var types = this.sourceModel.RootElement.GetProperty("definitions");
 
-        foreach (var type in types)
+        if (types.TryGetProperty(name, out var typeDesc))
         {
-            if (type.Name == name) return this.TranslateType(type.Value, nameHint: name, parent: null);
+            return this.TranslateType(typeDesc, nameHint: name, parent: null);
         }
 
         throw new KeyNotFoundException($"the type {name} was not found by name");

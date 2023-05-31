@@ -1766,6 +1766,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public readonly int foo = 0;
@@ -1780,9 +1782,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)).Type, "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
         Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
     }
 
@@ -1803,6 +1809,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType { }
@@ -1816,9 +1825,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
 
         // Assert
         Assert.Single(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
@@ -1839,6 +1854,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType { }
@@ -1852,9 +1869,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
 
         // Assert
         Assert.Equal(2, diags.Length);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
         AssertDiagnostic(diags, SymbolResolutionErrors.IllegalLvalue);
     }
@@ -1874,6 +1895,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule { }
@@ -1887,9 +1910,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooModuleSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef));
+        var fooModuleDecl = GetMetadataSymbol(compilation, null, "FooModule");
 
         // Assert
         Assert.Single(diags);
+        Assert.False(fooModuleSym.IsError);
+        Assert.Same(fooModuleSym, fooModuleDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
@@ -1908,6 +1935,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule { }
@@ -1921,9 +1951,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooModuleSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef));
+        var fooModuleDecl = GetMetadataSymbol(compilation, null, "FooModule");
 
         // Assert
         Assert.Single(diags);
+        Assert.False(fooModuleSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooModuleSym, fooModuleDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 

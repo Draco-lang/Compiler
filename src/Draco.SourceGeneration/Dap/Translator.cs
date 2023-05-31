@@ -18,16 +18,6 @@ namespace Draco.SourceGeneration.Dap;
 /// </summary>
 internal sealed class Translator
 {
-    // Properties that are filled by the internals, so the user does not have to
-    // Essentially just removes the 'required' keyword from the prop
-    private static readonly string[] requiredPropsFilledOutInternally = new[]
-    {
-        "seq",
-        "request_seq",
-        "command",
-        "success",
-    };
-
     private readonly JsonDocument sourceModel;
     private readonly Model targetModel = new();
     private readonly Dictionary<string, Type> builtinTypes = new();
@@ -280,7 +270,7 @@ internal sealed class Translator
                     translatedProp.OmitIfNull = true;
                     if (translatedProp.Type is not NullableType) translatedProp.Type = new NullableType(translatedProp.Type);
                 }
-                else if (!requiredPropsFilledOutInternally.Contains(translatedProp.SerializedName))
+                else
                 {
                     // Mark with required
                     translatedProp.IsRequired = true;
@@ -379,6 +369,22 @@ internal sealed class Translator
         }
         members = null;
         return false;
+    }
+
+    private static JsonElement ExtractContent(string name, JsonElement element)
+    {
+        JsonElement Extract(string propName)
+        {
+            var root = element;
+            if (root.TryGetProperty("allOf", out var allOf)) root = allOf.EnumerateArray().Last();
+            if (!root.TryGetProperty("properties", out var props)) return default;
+            props.TryGetProperty(propName, out var prop);
+            return prop;
+        }
+
+        if (name.EndsWith("Request")) return Extract("arguments");
+        if (name.EndsWith("Response") || name.EndsWith("Event")) return Extract("body");
+        return element;
     }
 
     private static void ExtractDocumentation(JsonElement element, Declaration declaration)

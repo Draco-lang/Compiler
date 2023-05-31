@@ -44,7 +44,7 @@ public static class DebugAdapter
 
         // Register builtin adapter methods. In the future, we should consider making this extensible in some way.
         var lifecycle = new DebugAdapterLifecycle(adapter, connection);
-        RegisterAdapterRpcMethods(adapter, connection);
+        RegisterAdapterRpcMethods(lifecycle, connection);
 
         // Done, now we can actually start
         await connection.ListenAsync();

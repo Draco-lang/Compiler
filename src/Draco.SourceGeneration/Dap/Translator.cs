@@ -73,31 +73,226 @@ internal sealed class Translator
             // We skip requests, as all of their content is already among definitions as arguments
             if (typeName.EndsWith("Request")) continue;
 
+            var result = null as Type;
+
             // Responses and Events have a "body" property
-            if (typeName.EndsWith("Response"))
+            if (typeName.EndsWith("Response") || typeName.EndsWith("Event"))
             {
                 var innerTypeDesc = typeDesc
                     .GetProperty("allOf")
                     .EnumerateArray()
                     .Last();
 
-                if (innerTypeDesc.TryGetProperty("body", out var body))
+                if (innerTypeDesc.TryGetProperty("properties", out var props)
+                 && props.TryGetProperty("body", out var body))
                 {
-                    // TODO
-                    throw new NotImplementedException($"have body for {typeName}");
+                    result = this.TranslateType(body, nameHint: typeName, parent: null);
+
+                    if (result is DeclarationType { Declaration: var innerDecl })
+                    {
+                        // Update docs
+                        ExtractDocumentation(props, innerDecl);
+                }
                 }
                 else
                 {
-                    // TODO
-                    throw new NotImplementedException($"no body for {typeName}");
+                    var emptyClass = new Class() { Name = typeName };
+                    this.ForwardDeclare(emptyClass);
+                    result = new DeclarationType(emptyClass);
                 }
             }
 
-            // TODO
-            throw new NotImplementedException($"not handled type definition {typeName}");
+            // Regular type
+            result ??= this.TranslateTypeByName(typeName);
+
+            if (result is DeclarationType { Declaration: var decl })
+            {
+                // We update the docs with the original definition
+                ExtractDocumentation(typeDesc, decl);
+                // Add to the target model
+                this.targetModel.Declarations.Add(decl);
+            }
         }
 
         return this.targetModel;
+    }
+
+    private void ForwardDeclare(Declaration declaration) =>
+        this.translatedTypes.Add(declaration.Name, new DeclarationType(declaration));
+
+    private Type TranslateTypeByName(string name)
+    {
+        // Check, if already present
+        if (this.translatedTypes.TryGetValue(name, out var existing)) return existing;
+
+        // Get all definitions in the schema
+        var types = this.sourceModel.RootElement
+            .GetProperty("definitions")
+            .EnumerateObject();
+
+        foreach (var type in types)
+        {
+            if (type.Name == name) return this.TranslateType(type.Value, nameHint: name, parent: null);
+        }
+
+        throw new KeyNotFoundException($"the type {name} was not found by name");
+    }
+
+    private Type TranslateType(JsonElement description, string? nameHint, Class? parent)
+    {
+        static Class UnwrapClass(Type type) => (Class)((DeclarationType)type).Declaration;
+
+        string GetDeclarationName()
+        {
+            if (nameHint is null) throw new ArgumentNullException(nameof(nameHint));
+            return parent is null
+                ? nameHint
+                : $"{ExtractNamePrefix(parent.Name)}{nameHint}";
+        }
+
+        void Declare(Declaration declaration)
+        {
+            parent?.NestedDeclarations.Add(declaration);
+            ExtractDocumentation(description, declaration);
+            this.ForwardDeclare(declaration);
+        }
+
+        var typeTag = ExtractTypeTag(description);
+
+        // Builtins
+        if (typeTag is not null && this.translatedTypes.TryGetValue(typeTag, out var builtin)) return builtin;
+        if (description.ValueKind == JsonValueKind.String) return this.translatedTypes[description.GetString()!];
+
+        // References
+        if (TryGetRef(description, out var path))
+        {
+            if (!path.StartsWith("#/definitions/")) throw new NotSupportedException($"the path {path} is not supported");
+            var typeName = path.Split('/')[2];
+            return this.TranslateTypeByName(typeName);
+        }
+
+        if (typeTag == "string" && TryGetEnum(description, out var members))
+        {
+            // Enumeration, declare
+            var result = new Enum() { Name = GetDeclarationName() };
+            Declare(result);
+
+            // Extract members
+            foreach (var (name, doc) in members)
+            {
+                var member = new EnumMember()
+                {
+                    Name = ToPascalCase(name),
+                    Value = name,
+                    Documentation = doc,
+                };
+                result.Members.Add(member);
+            }
+
+            return new DeclarationType(result);
+        }
+
+        if (typeTag == "array")
+        {
+            // Array type, translate element type
+            var itemsDesc = description.GetProperty("items");
+            var elementType = this.TranslateType(itemsDesc, nameHint: nameHint, parent: parent);
+            return new ArrayType(elementType);
+        }
+
+        if (typeTag == "object")
+        {
+            // Regular class, declare
+            var result = new Class() { Name = GetDeclarationName() };
+            Declare(result);
+
+            // Extract properties
+            if (description.TryGetProperty("properties", out var props))
+            {
+                foreach (var propDesc in props.EnumerateObject())
+                {
+                    var prop = this.TranslateProperty(propDesc.Value, name: propDesc.Name, parent: result);
+                    result.Properties.Add(prop);
+                }
+            }
+
+            return new DeclarationType(result);
+        }
+
+        // Check for an array type-tag
+        if (TryGetProperty(description, "type", out var type) && type.ValueKind == JsonValueKind.Array)
+        {
+            // This is a DU description
+            return this.TranslateDuType(type.EnumerateArray().ToList(), nameHint: nameHint, parent: parent);
+        }
+
+        // Check for oneOf, just another way to specify DUs
+        if (TryGetProperty(description, "oneOf", out var oneOf))
+        {
+            // This is a DU description
+            return this.TranslateDuType(oneOf.EnumerateArray().ToList(), nameHint: nameHint, parent: parent);
+        }
+
+        // Check for allOf, which is essentially inheritance
+        if (TryGetProperty(description, "allOf", out var allOf))
+        {
+            var elements = allOf.EnumerateArray().ToList();
+            if (elements.Count != 2) throw new NotSupportedException($"the allOf type {nameHint} does not have 2 elements");
+
+            // Translate both the base and derived types
+            var baseType = UnwrapClass(this.TranslateType(elements[0], nameHint: null, parent: parent));
+            var derivedType = UnwrapClass(this.TranslateType(elements[1], nameHint: nameHint, parent: parent));
+
+            // Assign hierarchy
+            derivedType.Base = baseType;
+            return new DeclarationType(derivedType);
+        }
+
+        throw new NotImplementedException($"can not translate type {nameHint}: {description.GetRawText().Replace("\r\n", "")}");
+    }
+
+    private Type TranslateDuType(IReadOnlyList<JsonElement> descriptions, string? nameHint, Class? parent)
+    {
+        // A singleton is just that singular type
+        if (descriptions.Count == 1) return this.TranslateType(descriptions[0], nameHint: nameHint, parent: parent);
+
+        // If there are at least 7 elements, assume any type
+        if (descriptions.Count >= 7) return this.translatedTypes["any"];
+
+        // Check for a null string among the possibilities
+        if (descriptions.Any(IsNullString))
+        {
+            // There is one, remove it
+            descriptions = descriptions
+                .Where(d => !IsNullString(d))
+                .ToList();
+            // Create a DU from the subset
+            var subtype = this.TranslateDuType(descriptions, nameHint: nameHint, parent: parent);
+            // Wrap in nullable
+            return new NullableType(subtype);
+        }
+
+        // Just translate as-is
+        var subtypes = descriptions
+            .Select(d => this.TranslateType(d, nameHint: nameHint, parent: parent))
+            .ToImmutableArray();
+        return new DiscriminatedUnionType(subtypes);
+    }
+
+    private Property TranslateProperty(JsonElement description, string name, Class parent)
+    {
+        // Construct declaration
+        var result = new Property()
+        {
+            Name = ToPascalCase(name),
+            SerializedName = name,
+        };
+        ExtractDocumentation(description, result);
+
+        // Translate type
+        result.Type = this.TranslateType(description, nameHint: name, parent: parent);
+
+        return result;
     }
 
     private static bool TryGetEnum(
@@ -134,6 +329,12 @@ internal sealed class Translator
         return false;
     }
 
+    private static string? ExtractTypeTag(JsonElement element) =>
+        TryGetProperty(element, "type", out var typeTag)
+     && typeTag.ValueKind == JsonValueKind.String
+        ? typeTag.GetString()
+        : null;
+
     private static void ExtractDocumentation(JsonElement element, Declaration declaration)
     {
         if (element.TryGetProperty("title", out _)) { /* no-op*/ }
@@ -142,7 +343,7 @@ internal sealed class Translator
 
     private static bool TryGetRef(JsonElement element, [MaybeNullWhen(false)] out string path)
     {
-        if (element.TryGetProperty("$ref", out var value))
+        if (TryGetProperty(element, "$ref", out var value))
         {
             path = value.GetString()!;
             return true;
@@ -152,6 +353,14 @@ internal sealed class Translator
             path = null;
             return false;
         }
+    }
+
+    private static bool TryGetProperty(JsonElement element, string propName, out JsonElement prop)
+    {
+        if (element.ValueKind == JsonValueKind.Object) return element.TryGetProperty(propName, out prop);
+
+        prop = default;
+        return false;
     }
 
     private static bool IsNullString(JsonElement element) =>

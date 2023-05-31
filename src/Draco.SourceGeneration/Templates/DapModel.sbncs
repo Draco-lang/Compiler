@@ -63,6 +63,10 @@ namespace Draco.Dap.Model;
 {{func class(cl)}}
     public class {{cl.Name}} {{base(cl.Base)}}
     {
+        {{for $nested in cl.NestedDeclarations}}
+            {{declaration($nested)}}
+        {{end}}
+
         {{for $prop in cl.Properties}}
             {{property($prop)}}
         {{end}}

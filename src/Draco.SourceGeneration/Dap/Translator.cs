@@ -92,7 +92,7 @@ internal sealed class Translator
                     {
                         // Update docs
                         ExtractDocumentation(props, innerDecl);
-                }
+                    }
                 }
                 else
                 {

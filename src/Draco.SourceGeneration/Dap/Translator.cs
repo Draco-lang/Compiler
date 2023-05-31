@@ -217,6 +217,19 @@ internal sealed class Translator
                 }
             }
 
+            // Check for required props
+            var requiredProps = description.TryGetProperty("required", out var requiredArray)
+                ? requiredArray.EnumerateArray().Select(a => a.GetString()!).ToHashSet()
+                : new HashSet<string>();
+            foreach (var prop in result.Properties)
+            {
+                if (requiredProps.Contains(prop.SerializedName)) continue;
+
+                // Make it optional
+                prop.OmitIfNull = true;
+                if (prop.Type is not NullableType) prop.Type = new NullableType(prop.Type);
+            }
+
             return new DeclarationType(result);
         }
 

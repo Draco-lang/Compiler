@@ -11,12 +11,14 @@ using System.Threading;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using Draco.Dap.Serialization;
+using System.Reflection;
 
 namespace Draco.Dap.Adapter;
 
 public sealed class DebugAdapterConnection
 {
     private readonly IDuplexPipe transport;
+    private readonly Dictionary<string, DebugAdapterMethodHandler> methodHandlers = new();
 
     private readonly CancellationTokenSource shutdownTokenSource = new();
 
@@ -28,6 +30,12 @@ public sealed class DebugAdapterConnection
     public DebugAdapterConnection(IDuplexPipe transport)
     {
         this.transport = transport;
+    }
+
+    public void AddRpcMethod(MethodInfo handlerMethod, object? target)
+    {
+        var handler = new DebugAdapterMethodHandler(handlerMethod, target);
+        this.methodHandlers.Add(handler.MethodName, handler);
     }
 
     public async Task ListenAsync()

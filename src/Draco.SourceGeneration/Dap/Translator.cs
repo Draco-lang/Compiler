@@ -107,6 +107,9 @@ internal sealed class Translator
 
             if (result is DeclarationType { Declaration: var decl })
             {
+                // In case there is a name mismatch, we compiled a reference, don't add here
+                if (decl.Name != typeName) continue;
+
                 // We update the docs with the original definition
                 ExtractDocumentation(typeDesc, decl);
                 // Add to the target model
@@ -286,6 +289,9 @@ internal sealed class Translator
             SerializedName = name,
         };
         ExtractDocumentation(description, result);
+
+        // Check for name collision with containing class
+        if (result.Name == parent.Name) result.Name = $"{result.Name}_";
 
         // Translate type
         result.Type = this.TranslateType(description, nameHint: name, parent: parent);

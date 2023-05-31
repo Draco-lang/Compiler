@@ -30,6 +30,7 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
         await this.adapter.InitializeAsync(args);
         return new InitializeResponse()
         {
+            Body = this.BuildAdapterCapabilities(),
         };
     }
 

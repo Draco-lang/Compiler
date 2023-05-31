@@ -18,6 +18,16 @@ namespace Draco.SourceGeneration.Dap;
 /// </summary>
 internal sealed class Translator
 {
+    // Properties that are filled by the internals, so the user does not have to
+    // Essentially just removes the 'required' keyword from the prop
+    private static readonly string[] requiredPropsFilledOutInternally = new[]
+    {
+        "seq",
+        "request_seq",
+        "command",
+        "success",
+    };
+
     private readonly JsonDocument sourceModel;
     private readonly Model targetModel = new();
     private readonly Dictionary<string, Type> builtinTypes = new();
@@ -270,7 +280,7 @@ internal sealed class Translator
                     translatedProp.OmitIfNull = true;
                     if (translatedProp.Type is not NullableType) translatedProp.Type = new NullableType(translatedProp.Type);
                 }
-                else
+                else if (!requiredPropsFilledOutInternally.Contains(translatedProp.SerializedName))
                 {
                     // Mark with required
                     translatedProp.IsRequired = true;

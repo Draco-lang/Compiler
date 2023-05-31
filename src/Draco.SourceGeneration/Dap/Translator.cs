@@ -72,6 +72,29 @@ internal sealed class Translator
 
             // We skip requests, as all of their content is already among definitions as arguments
             if (typeName.EndsWith("Request")) continue;
+
+            // Responses and Events have a "body" property
+            if (typeName.EndsWith("Response"))
+            {
+                var innerTypeDesc = typeDesc
+                    .GetProperty("allOf")
+                    .EnumerateArray()
+                    .Last();
+
+                if (innerTypeDesc.TryGetProperty("body", out var body))
+                {
+                    // TODO
+                    throw new NotImplementedException($"have body for {typeName}");
+                }
+                else
+                {
+                    // TODO
+                    throw new NotImplementedException($"no body for {typeName}");
+                }
+            }
+
+            // TODO
+            throw new NotImplementedException($"not handled type definition {typeName}");
         }
 
         return this.targetModel;

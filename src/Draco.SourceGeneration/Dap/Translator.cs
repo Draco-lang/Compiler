@@ -87,18 +87,18 @@ internal sealed class Translator
                  && props.TryGetProperty("body", out var body))
                 {
                     result = this.TranslateType(body, nameHint: typeName, parent: null);
-
-                    if (result is DeclarationType { Declaration: var innerDecl })
-                    {
-                        // Update docs
-                        ExtractDocumentation(props, innerDecl);
-                    }
                 }
                 else
                 {
                     var emptyClass = new Class() { Name = typeName };
                     this.ForwardDeclare(emptyClass);
                     result = new DeclarationType(emptyClass);
+                }
+
+                if (result is DeclarationType { Declaration: var innerDecl })
+                {
+                    // Update docs
+                    ExtractDocumentation(innerTypeDesc, innerDecl);
                 }
             }
 

@@ -249,7 +249,7 @@ internal sealed class Translator
             return new DeclarationType(derivedType);
         }
 
-        throw new NotImplementedException($"can not translate type {nameHint}: {description.GetRawText().Replace("\r\n", "")}");
+        throw new NotSupportedException($"can not translate type {nameHint}");
     }
 
     private Type TranslateDuType(IReadOnlyList<JsonElement> descriptions, string? nameHint, Class? parent)

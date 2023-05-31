@@ -8,11 +8,6 @@ namespace Draco.SourceGeneration.Dap.CsModel;
 public sealed class EnumMember : Declaration
 {
     /// <summary>
-    /// The enum that declared this member.
-    /// </summary>
-    public Enum DeclaringEnum { get; set; } = null!;
-
-    /// <summary>
     /// The value of this enum member.
     /// </summary>
     public object? Value { get; set; }

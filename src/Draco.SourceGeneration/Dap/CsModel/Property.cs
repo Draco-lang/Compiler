@@ -25,21 +25,6 @@ public sealed class Property : Declaration
     public bool OmitIfNull { get; set; }
 
     /// <summary>
-    /// True, if this is an abstract property.
-    /// </summary>
-    public bool IsAbstract { get; set; }
-
-    /// <summary>
-    /// True, if this is a required property.
-    /// </summary>
-    public bool IsRequired { get; set; }
-
-    /// <summary>
-    /// True, if this is an overriding property.
-    /// </summary>
-    public Property? Overrides { get; set; }
-
-    /// <summary>
     /// The value of the enumeration member.
     /// </summary>
     public object? Value { get; set; }
@@ -50,7 +35,6 @@ public sealed class Property : Declaration
     public string ValueDiscriminator => this.Value switch
     {
         string => "String",
-        EnumMember => "Enum",
         _ => throw new ArgumentOutOfRangeException(),
     };
 }

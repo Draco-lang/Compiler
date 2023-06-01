@@ -56,7 +56,6 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         var toRun = args.LaunchAttributes!["program"].GetString()!;
         if (args.NoDebug == true)
         {
-            await Task.Delay(10000);
             this.debugger = this.debuggerHost.StartProcess("dotnet", toRun);
 
             this.debugger.OnStandardOut += async (_, args) =>

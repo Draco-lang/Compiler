@@ -42,6 +42,12 @@ public sealed class DebugAdapterConnection
         this.transport = transport;
     }
 
+    public void AddRpcMethod(MethodInfo handlerMethod, object? target)
+    {
+        var handler = new DebugAdapterMethodHandler(handlerMethod, target);
+        this.methodHandlers.Add(handler.MethodName, handler);
+    }
+
     private int NextSeq() => Interlocked.Increment(ref this.lastMessageSeq);
 
     public async Task ListenAsync()

@@ -34,6 +34,7 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly FieldDefinition fieldDefinition;
+
     public MetadataFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition)
     {
         this.ContainingSymbol = containingSymbol;

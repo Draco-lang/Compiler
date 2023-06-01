@@ -2331,6 +2331,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), PlusAssign, LiteralExpression(2)))))));
 
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo { get; set; }
@@ -2345,9 +2347,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
     }
 
     [Fact]

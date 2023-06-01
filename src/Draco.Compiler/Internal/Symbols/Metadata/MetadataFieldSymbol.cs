@@ -5,7 +5,7 @@ using System.Reflection.Metadata;
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
 /// <summary>
-/// Class for fields read from metadata.
+/// Fields read from metadata.
 /// </summary>
 internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 {

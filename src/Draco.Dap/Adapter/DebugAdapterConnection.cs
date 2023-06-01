@@ -16,6 +16,7 @@ using System.Threading.Tasks.Dataflow;
 using System.Collections.Concurrent;
 
 using DapMessage = Draco.Dap.Model.OneOf<Draco.Dap.Model.RequestMessage, Draco.Dap.Model.EventMessage, Draco.Dap.Model.ResponseMessage>;
+using System.Text;
 
 namespace Draco.Dap.Adapter;
 
@@ -40,6 +41,91 @@ public sealed class DebugAdapterConnection
     public DebugAdapterConnection(IDuplexPipe transport)
     {
         this.transport = transport;
+
+        // We create a dataflow network to handle the processing of messages from the LSP client.
+
+        var scheduler = new ConcurrentExclusiveSchedulerPair();
+
+        // When the adapter is started, we post DeserializeFromTransport() to this block.
+        // This will start deserializing messages from the client and pushing them through the dataflow network.
+        this.messageParser = new TransformManyBlock<IAsyncEnumerable<DapMessage>, DapMessage>(
+            ae => ae,
+            new()
+            {
+                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
+            });
+
+        // Requests and events are sent to one of two blocks, the concurrent block or the exclusive block, based on whether the request processing
+        // is expected to mutate the state of the workspace. These blocks are configured using ConcurrentExclusiveSchedulerPair so that messages sent
+        // to the exclusive block are processed one at a time, in order, and never simultaneously with messages sent to the concurrent block. The concurrent block
+        // will accept and process messages in parallel as long as no mutating messages are waiting to be processed.
+        // This allows us to use parallel processing for non-mutating ("query") requests while ensuring that mutating requests are processed in the order that the
+        // client sends them.
+        //
+        // (There are likely still race conditions that can lead to messages being processed in the wrong order, but someone would need
+        // to study the code in TPL Dataflow to work out all the edge cases. However, it's clear that the current situation is better than allowing all requests
+        // to execute in parallel, which corrupts the state of the debug adapter very quickly.)
+        var concurrentMessageHandler = new TransformBlock<DapMessage, DapMessage?>(
+            this.ProcessRequestOrEvent,
+            new()
+            {
+                TaskScheduler = scheduler.ConcurrentScheduler,
+                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded,
+                EnsureOrdered = false,
+            });
+
+        var exclusiveMessageHandler = new TransformBlock<DapMessage, DapMessage?>(
+            this.ProcessRequestOrEvent,
+            new()
+            {
+                TaskScheduler = scheduler.ExclusiveScheduler
+                // By default, blocks execute messages in order and with no parallelism.
+            });
+
+        // ProcessRequestOrEvent returns a non-null result when a response message needs to be sent back to the client.
+        // We keep only non-null responses and forward them to SerializeToTransport, which will serialize each LspMessage object it consumes to the output stream.
+        var filterNullResponses = new TransformManyBlock<DapMessage?, DapMessage>(
+            m => m.HasValue ? new[] { m.Value } : Array.Empty<DapMessage>());
+
+        this.outgoingMessages = new ActionBlock<DapMessage>(this.SerializeToTransport!);
+
+        bool ShouldHandle(DapMessage message, bool isExclusiveBlock)
+        {
+            string method;
+            if (message.Is<RequestMessage>(out var request))
+            {
+                method = request.Command;
+            }
+            else if (message.Is<EventMessage>(out var @event))
+            {
+                method = @event.Event;
+            }
+            else // Response messages are handled in SendRequestAsync
+            {
+                return false;
+            }
+
+            if (this.methodHandlers.TryGetValue(method, out var handler))
+            {
+                return isExclusiveBlock == handler.Mutating;
+            }
+
+            // Handle in the concurrent block.
+            return isExclusiveBlock == false;
+        }
+
+        var propCompletion = new DataflowLinkOptions { PropagateCompletion = true };
+
+        this.messageParser.LinkTo(concurrentMessageHandler, propCompletion, m => ShouldHandle(m, isExclusiveBlock: false));
+        this.messageParser.LinkTo(exclusiveMessageHandler, propCompletion, m => ShouldHandle(m, isExclusiveBlock: true));
+
+        concurrentMessageHandler.LinkTo(filterNullResponses, propCompletion);
+        exclusiveMessageHandler.LinkTo(filterNullResponses, propCompletion);
+        filterNullResponses.LinkTo(this.outgoingMessages, propCompletion);
+
+        // Complete the transport streams when the dataflow networks are themselves completed.
+        this.messageParser.Completion.ContinueWith(t => this.transport.Input.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
+        this.outgoingMessages.Completion.ContinueWith(t => this.transport.Output.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
     }
 
     public void AddRpcMethod(MethodInfo handlerMethod, object? target)
@@ -50,13 +136,11 @@ public sealed class DebugAdapterConnection
 
     private int NextSeq() => Interlocked.Increment(ref this.lastMessageSeq);
 
-    public async Task ListenAsync()
+    public Task ListenAsync()
     {
-        // TODO: Temporary
-        await foreach (var msg in this.DeserializeFromTransport())
-        {
-            var x = 0;
-        }
+        this.messageParser.Post(this.DeserializeFromTransport());
+        this.messageParser.Complete();
+        return this.outgoingMessages.Completion;
     }
 
     private async IAsyncEnumerable<DapMessage> DeserializeFromTransport()
@@ -78,11 +162,8 @@ public sealed class DebugAdapterConnection
             }
             catch (JsonException ex)
             {
-                // TODO
-                throw new NotImplementedException();
-                // If we're sent invalid JSON, we're not really sure what we're responding to.
-                // According to the spec, we should send an error response with a null id.
-                // this.outgoingMessages.Post(CreateResponseMessage(id: null, FromJsonException(ex)));
+                // NOTE: This probably isn't following the specs
+                this.outgoingMessages.Post(this.CreateResponseMessage(seq: -1, command: "unknown", FromJsonException(ex)));
                 continue;
             }
 
@@ -470,4 +551,15 @@ public sealed class DebugAdapterConnection
     }
 
     public void Shutdown() => this.shutdownTokenSource.Cancel();
+}
+
+internal sealed class DapResponseException : Exception
+{
+    public DapResponseException(ErrorResponse error)
+        : base(error.GetMessage())
+    {
+        this.ResponseError = error;
+    }
+
+    public ErrorResponse ResponseError { get; }
 }

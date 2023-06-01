@@ -53,6 +53,11 @@ public sealed class Debugger
     public StreamWriter StandardInput => this.ioWorker.StandardInput;
 
     /// <summary>
+    /// The debuggee has exited.
+    /// </summary>
+    public event EventHandler<int>? OnExited;
+
+    /// <summary>
     /// The event that triggers, when a breakpoint is hit.
     /// </summary>
     public event EventHandler<OnBreakpointEventArgs>? OnBreakpoint;
@@ -275,6 +280,8 @@ public sealed class Debugger
     {
         this.terminateTokenSource.Cancel();
         this.terminatedCompletionSource.SetResult();
+        // TODO: Get exit code properly
+        this.OnExited?.Invoke(sender, 0);
         this.Continue();
     }
 

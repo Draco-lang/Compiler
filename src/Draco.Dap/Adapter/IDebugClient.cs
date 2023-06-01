@@ -16,4 +16,7 @@ public interface IDebugClient
 
     [Event("output", Mutating = true)]
     public Task SendOutput(OutputEvent args);
+
+    [Event("exited", Mutating = true)]
+    public Task ProcessExited(ExitedEvent args);
 }

@@ -146,9 +146,10 @@ internal sealed class Translator
         string GetDeclarationName()
         {
             if (nameHint is null) throw new ArgumentNullException(nameof(nameHint));
+            var pascalHint = ToPascalCase(nameHint);
             return parent is null
-                ? nameHint
-                : $"{ExtractNamePrefix(parent.Name)}{nameHint}";
+                ? pascalHint
+                : $"{ExtractNamePrefix(parent.Name)}{pascalHint}";
         }
 
         void Declare(Declaration declaration)
@@ -159,10 +160,6 @@ internal sealed class Translator
         }
 
         var typeTag = ExtractTypeTag(description);
-
-        // Builtins
-        if (typeTag is not null && this.translatedTypes.TryGetValue(typeTag, out var builtin)) return builtin;
-        if (description.ValueKind == JsonValueKind.String) return this.translatedTypes[description.GetString()!];
 
         // References
         if (TryGetRef(description, out var path))
@@ -183,7 +180,7 @@ internal sealed class Translator
             {
                 var member = new EnumMember()
                 {
-                    Name = ToPascalCase(name),
+                    Name = ToPascalCase(name.Replace(' ', '_')),
                     Value = name,
                     Documentation = doc,
                 };
@@ -249,6 +246,10 @@ internal sealed class Translator
 
             return new DeclarationType(result);
         }
+
+        // Builtins
+        if (typeTag is not null && this.translatedTypes.TryGetValue(typeTag, out var builtin)) return builtin;
+        if (description.ValueKind == JsonValueKind.String) return this.translatedTypes[description.GetString()!];
 
         // Check for an array type-tag
         if (TryGetProperty(description, "type", out var type) && type.ValueKind == JsonValueKind.Array)
@@ -334,14 +335,14 @@ internal sealed class Translator
         [MaybeNullWhen(false)] out IReadOnlyList<(string Name, string? Doc)> members)
     {
         var docs = null as IReadOnlyList<string?>;
-        if (element.TryGetProperty("enumDescriptions", out var enumDesc))
+        if (TryGetProperty(element, "enumDescriptions", out var enumDesc))
         {
             docs = enumDesc
                 .EnumerateArray()
                 .Select(e => e.GetString())
                 .ToList();
         }
-        if (element.TryGetProperty("enum", out var @enum))
+        if (TryGetProperty(element, "enum", out var @enum))
         {
             docs ??= new string?[@enum.GetArrayLength()];
             members = @enum
@@ -350,9 +351,9 @@ internal sealed class Translator
                 .ToList();
             return true;
         }
-        if (element.TryGetProperty("_enum", out var _enum))
+        if (TryGetProperty(element, "_enum", out var _enum))
         {
-            docs ??= new string?[@enum.GetArrayLength()];
+            docs ??= new string?[_enum.GetArrayLength()];
             members = _enum
                 .EnumerateArray()
                 .Zip(docs, (a, b) => (Name: a.GetString()!, Docs: b))

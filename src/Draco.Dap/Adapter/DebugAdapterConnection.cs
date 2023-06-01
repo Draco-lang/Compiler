@@ -265,13 +265,10 @@ public sealed class DebugAdapterConnection
                 {
                     Id = -32601, // MethodNotFound
                     Format = "A handler for the method '{method}' was not registered.",
-                    // TODO: Fix SG
-                    /*
                     Variables = new Dictionary<string, string>()
                     {
                         { "method", method },
                     },
-                    */
                 }
             });
         }
@@ -303,13 +300,10 @@ public sealed class DebugAdapterConnection
                 {
                     Id = -32603,
                     Format = "A handler for the method '{method}' was registered as an event handler.",
-                    // TODO: Fix SG
-                    /*
                     Variables = new Dictionary<string, string>
                     {
                         { "method", method },
                     },
-                    */
                 },
             });
         }

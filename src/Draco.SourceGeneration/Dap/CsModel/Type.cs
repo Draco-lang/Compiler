@@ -65,3 +65,10 @@ public sealed record class DiscriminatedUnionType(ImmutableArray<Type> Alternati
         return h.ToHashCode();
     }
 }
+
+/// <summary>
+/// A C# dictionary type.
+/// </summary>
+/// <param name="KeyType">The key type.</param>
+/// <param name="ValueType">The value type.</param>
+public sealed record class DictionaryType(Type KeyType, Type ValueType) : Type;

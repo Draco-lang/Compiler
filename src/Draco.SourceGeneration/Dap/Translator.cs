@@ -203,6 +203,23 @@ internal sealed class Translator
 
         if (typeTag == "object")
         {
+            // If there are additional props, this is just a weird way we are specifying a dictionary
+            if (description.TryGetProperty("additionalProperties", out var additionalProps))
+            {
+                // There are two forms in the schema:
+                //     additionalProperties: true     // We assume this is just a dictionary of string -> any
+                //     additionalProperties: { ... }  // We translate the value type
+
+                var keyType = this.translatedTypes["string"];
+                var valueType = this.translatedTypes["any"];
+                if (additionalProps.ValueKind == JsonValueKind.Object)
+                {
+                    valueType = this.TranslateType(additionalProps, nameHint: nameHint, parent: parent);
+                }
+
+                return new DictionaryType(keyType, valueType);
+            }
+
             // Regular class, declare
             var result = new Class() { Name = GetDeclarationName() };
             Declare(result);

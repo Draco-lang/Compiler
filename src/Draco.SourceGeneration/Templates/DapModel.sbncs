@@ -32,6 +32,8 @@ namespace Draco.Dap.Model;
     {{when 'Array'}} IList<{{type(t.ElementType)}}>
     {{when 'DiscriminatedUnion'}}
         OneOf<{{wrap separated(', ', t.Alternatives)}}{{type($element)}}{{end}}>
+    {{when 'Dictionary'}}
+        IDictionary<{{type(t.KeyType)}}, {{type(t.ValueType)}}>
     {{end}}
 {{end}}
 

@@ -1,3 +1,7 @@
+using System.Threading.Tasks;
+using Draco.Dap.Attributes;
+using Draco.Dap.Model;
+
 namespace Draco.Dap.Adapter;
 
 /// <summary>
@@ -9,4 +13,7 @@ public interface IDebugClient
     /// The RPC connection between the client and the server.
     /// </summary>
     public DebugAdapterConnection Connection { get; }
+
+    [Event("output", Mutating = true)]
+    public Task SendOutput(OutputEvent args);
 }

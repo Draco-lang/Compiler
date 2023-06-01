@@ -550,16 +550,69 @@ public sealed class DebugAdapterConnection
         return responseError;
     }
 
+    public void PostEvent(string method, object? @params)
+    {
+        var serializedParams = JsonSerializer.SerializeToElement(@params, jsonOptions);
+        this.outgoingMessages.Post(new EventMessage
+        {
+            SequenceNumber = this.NextSeq(),
+            Event = method,
+            Body = serializedParams,
+        });
+    }
+
+    public async Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params)
+    {
+        var id = this.NextSeq();
+
+        var serializedParams = JsonSerializer.SerializeToElement(@params, jsonOptions);
+        this.outgoingMessages.Post(new RequestMessage
+        {
+            SequenceNumber = id,
+            Command = method,
+            Arguments = serializedParams,
+        });
+
+        JsonElement? response;
+        var block = new WriteOnceBlock<DapMessage>(null);
+
+        // Response messages are not handled by the dataflow blocks built in LanguageServerConnection's constructor. Instead, when we send a request to the client,
+        // we create a new block that will only consume a response message with the same ID we used for the request. The block is removed from the network after
+        // the response is received.
+        bool IsThisResponse(DapMessage m) => m.Is<ResponseMessage>(out var r) && r.SequenceNumber == id;
+        using (this.messageParser.LinkTo(block, new() { MaxMessages = 1 }, IsThisResponse))
+        {
+            var responseMessage = (await block.ReceiveAsync()).As<ResponseMessage>();
+
+            if (this.pendingIncomingRequests.Remove(id, out var cts))
+            {
+                cts.Dispose();
+            }
+
+            if (!responseMessage.Success)
+            {
+                var error = responseMessage.Body?.Deserialize<ErrorResponse>(jsonOptions);
+                throw new DapResponseException(error);
+            }
+
+            response = responseMessage.Body;
+        };
+
+        return response is null
+            ? default
+            : response.Value.Deserialize<TResponse>(jsonOptions);
+    }
+
     public void Shutdown() => this.shutdownTokenSource.Cancel();
 }
 
 internal sealed class DapResponseException : Exception
 {
-    public DapResponseException(ErrorResponse error)
-        : base(error.GetMessage())
+    public DapResponseException(ErrorResponse? error)
+        : base(error?.GetMessage())
     {
         this.ResponseError = error;
     }
 
-    public ErrorResponse ResponseError { get; }
+    public ErrorResponse? ResponseError { get; }
 }

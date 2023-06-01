@@ -1980,6 +1980,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo { get; set; }
@@ -1994,9 +1997,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooModuleSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef));
+        var fooModuleDecl = GetMetadataSymbol(compilation, null, "FooModule");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooModuleSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooModuleSym, fooModuleDecl);
     }
 
     [Fact]
@@ -2018,6 +2027,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo { get; set; }
@@ -2032,9 +2044,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooSym, fooDecl);
     }
 
     [Fact]

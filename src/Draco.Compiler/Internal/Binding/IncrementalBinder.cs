@@ -150,10 +150,10 @@ public sealed partial class SemanticModel
             BoundCallExpression c => c.Method,
             BoundFieldLvalue f => f.Field,
             BoundFieldExpression f => f.Field,
-            BoundPropertyGetExpression p => p.Getter,
-            BoundPropertySetExpression p => p.Setter,
-            BoundIndexGetExpression i => i.Getter,
-            BoundIndexSetExpression i => i.Setter,
+            BoundPropertyGetExpression p => (p.Getter as IPropertyAccessorSymbol)?.Property,
+            BoundPropertySetExpression p => (p.Setter as IPropertyAccessorSymbol)?.Property,
+            BoundIndexGetExpression i => (i.Getter as IPropertyAccessorSymbol)?.Property,
+            BoundIndexSetExpression i => (i.Setter as IPropertyAccessorSymbol)?.Property,
             _ => null,
         };
     }

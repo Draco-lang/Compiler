@@ -20,6 +20,10 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol
     public abstract FunctionSymbol? Setter { get; }
 
     public abstract TypeSymbol Type { get; }
+
+    /// <summary>
+    /// True, if this property is indexer.
+    /// </summary>
     public abstract bool IsIndexer { get; }
     public abstract bool IsStatic { get; }
 

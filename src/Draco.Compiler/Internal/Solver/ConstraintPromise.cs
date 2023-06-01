@@ -27,9 +27,6 @@ internal static class ConstraintPromise
     public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
         new ResolvedConstraintPromise<TResult>(result);
 
-    public static IConstraintPromise<TResult> Unwrap<TResult>(IConstraintPromise<IConstraintPromise<TResult>> toUnwrap) =>
-        new UnwrapConstraintPromise<TResult>(toUnwrap);
-
     private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
         public bool IsResolved => true;
@@ -98,30 +95,5 @@ internal static class ConstraintPromise
                 diagnostics.Add(diag);
             }
         }
-    }
-
-    private sealed class UnwrapConstraintPromise<TResult> : IConstraintPromise<TResult>
-    {
-        public bool IsResolved => this.original.IsResolved && this.original.Result.IsResolved;
-
-        public TResult Result => this.original.Result.Result;
-
-        private IConstraintPromise<IConstraintPromise<TResult>> original;
-        public IConstraint<TResult> Constraint => throw new NotSupportedException();
-        IConstraint IConstraintPromise.Constraint => this.Constraint;
-
-        public UnwrapConstraintPromise(IConstraintPromise<IConstraintPromise<TResult>> promise)
-        {
-            this.original = promise;
-        }
-
-        public void Resolve(TResult result) =>
-            throw new InvalidOperationException("can not resolve an already solved constraint");
-        public void Fail(TResult result, DiagnosticBag? diagnostics) =>
-            throw new InvalidOperationException("can not resolve an already solved constraint");
-
-        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => this;
-        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
-            this.ConfigureDiagnostic(configure);
     }
 }

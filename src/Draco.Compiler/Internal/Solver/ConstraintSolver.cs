@@ -171,7 +171,12 @@ internal sealed class ConstraintSolver
     {
         var constraint = new AwaitConstraint<TypeSymbol, IConstraintPromise<TResult>>(this, () => !this.Unwrap(original).IsTypeVariable, map);
         this.Add(constraint);
-        return ConstraintPromise.Unwrap(constraint.Promise);
+
+        var await = new AwaitConstraint<IConstraintPromise<IConstraintPromise<TResult>>, TResult>(this,
+            () => constraint.Promise.IsResolved && constraint.Promise.Result.IsResolved,
+            () => constraint.Promise.Result.Result);
+        this.Add(await);
+        return await.Promise;
     }
 
     /// <summary>

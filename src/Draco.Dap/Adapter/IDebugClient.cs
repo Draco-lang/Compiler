@@ -19,4 +19,7 @@ public interface IDebugClient
 
     [Event("exited", Mutating = true)]
     public Task ProcessExited(ExitedEvent args);
+
+    [Event("terminated", Mutating = true)]
+    public Task DebuggerTerminated(TerminatedEvent args);
 }

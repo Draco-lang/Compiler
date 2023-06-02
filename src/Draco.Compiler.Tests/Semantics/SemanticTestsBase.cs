@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
@@ -26,8 +27,7 @@ public abstract class SemanticTestsBase
         {
             if (asm.RootNamespace.Name == @namespace)
             {
-                var rec = Recurse(asm.RootNamespace, path);
-                if (rec is not null) return rec;
+                return asm.RootNamespace.Lookup(path.ToImmutableArray()).First();
             }
         }
         throw new InvalidOperationException();

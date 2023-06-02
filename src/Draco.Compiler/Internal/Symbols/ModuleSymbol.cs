@@ -30,7 +30,7 @@ internal abstract partial class ModuleSymbol : Symbol, IMemberSymbol
         {
             var part = parts[i];
             current = current.Members
-                .Where(m => m.MetadataName == part)
+                .Where(m => m.MetadataName == part && m is ModuleSymbol or TypeSymbol)
                 .Single();
         }
 

@@ -1,7 +1,6 @@
 using System;
 using System.IO.Pipes;
 using System.IO;
-using System.Runtime.InteropServices;
 using Draco.Debugger.Platform;
 
 namespace Draco.Debugger.IO;

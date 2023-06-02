@@ -8,15 +8,11 @@ using System.Buffers.Text;
 using System.Buffers;
 using System.IO;
 using System.Threading;
-using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
-using Draco.Dap.Serialization;
 using System.Reflection;
 using System.Threading.Tasks.Dataflow;
 using System.Collections.Concurrent;
 
 using DapMessage = Draco.Dap.Model.OneOf<Draco.Dap.Model.RequestMessage, Draco.Dap.Model.EventMessage, Draco.Dap.Model.ResponseMessage>;
-using System.Text;
 
 namespace Draco.Dap.Adapter;
 

@@ -1,4 +1,3 @@
-using System.Text;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;

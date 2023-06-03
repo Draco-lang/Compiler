@@ -56,6 +56,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly PropertyDefinition propertyDefinition;
+
     public MetadataPropertySymbol(Symbol containingSymbol, PropertyDefinition propertyDefinition, string? defaultMemberName)
     {
         this.ContainingSymbol = containingSymbol;

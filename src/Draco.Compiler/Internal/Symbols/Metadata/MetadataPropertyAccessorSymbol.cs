@@ -11,7 +11,8 @@ internal sealed class MetadataPropertyAccessorSymbol : MetadataMethodSymbol, IPr
 {
     public PropertySymbol Property { get; }
 
-    public MetadataPropertyAccessorSymbol(Symbol containingSymbol, MethodDefinition definition, PropertySymbol property) : base(containingSymbol, definition)
+    public MetadataPropertyAccessorSymbol(Symbol containingSymbol, MethodDefinition definition, PropertySymbol property)
+        : base(containingSymbol, definition)
     {
         this.Property = property;
     }

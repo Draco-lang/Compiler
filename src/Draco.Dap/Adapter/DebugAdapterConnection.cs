@@ -321,13 +321,11 @@ public sealed class DebugAdapterConnection
             throw new InvalidDataException();
         }
 
-        // TODO: Handle custom messages like cancellation
-        /*
-        if (method.StartsWith("$/"))
+        // Handle custom messages like cancellation
+        if (this.TryProcessImplementationDefinedMethod(method, @params, seq, out var response))
         {
-            return this.ProcessImplementationDefinedMethod(method, @params, seq);
+            return response;
         }
-        */
 
         DapMessage? Error(ErrorResponse error)
         {
@@ -544,6 +542,37 @@ public sealed class DebugAdapterConnection
         };
 
         return responseError;
+    }
+
+    private bool TryProcessImplementationDefinedMethod(string method, JsonElement? @params, int? seq, out DapMessage response)
+    {
+        if (method == "cancel")
+        {
+            var cancelArgs = @params!.Value.Deserialize<CancelArguments>(jsonOptions)!;
+            if (cancelArgs.RequestId is not null)
+            {
+                // A request is being canceled
+                if (this.pendingIncomingRequests.TryGetValue(cancelArgs.RequestId.Value, out var cts))
+                {
+                    cts.Cancel();
+                }
+            }
+            if (cancelArgs.ProgressId is not null)
+            {
+                // If we supported progress, we would handle cancelling them here.
+            }
+            response = new ResponseMessage()
+            {
+                Command = method,
+                RequestSequenceNumber = seq!.Value,
+                SequenceNumber = this.NextSeq(),
+                Success = true,
+            };
+            return true;
+        }
+
+        response = default;
+        return false;
     }
 
     public void PostEvent(string method, object? @params)

@@ -23,14 +23,8 @@ public abstract class SemanticTestsBase
     private protected static Symbol GetMetadataSymbol(Compilation compilation, string? @namespace, params string[] path)
     {
         @namespace = @namespace ?? string.Empty;
-        foreach (var asm in compilation.MetadataAssemblies.Values)
-        {
-            if (asm.RootNamespace.Name == @namespace)
-            {
-                return asm.RootNamespace.Lookup(path.ToImmutableArray()).First();
-            }
-        }
-        throw new InvalidOperationException();
+        var asm = compilation.MetadataAssemblies.Values.Single(a => a.RootNamespace == @namespace);
+        return asm.RootNamespace.Lookup(path.ToImmutableArray()).Single();
 
         Symbol? Recurse(Symbol parent, string[] path)
         {

@@ -11,7 +11,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 {
     public override TypeSymbol Type => this.Getter?.ReturnType ?? this.Setter?.Parameters[0].Type ?? throw new InvalidOperationException();
 
-    // TODO: This can lead to re-asking for the accessord
+    // NOTE: This can lead to re-asking for the accessor, in case there isn't one
     public override FunctionSymbol? Getter => this.getter ??= this.BuildGetter();
     private FunctionSymbol? getter;
 
